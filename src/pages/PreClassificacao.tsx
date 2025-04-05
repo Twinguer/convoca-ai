@@ -13,9 +13,9 @@ import {
 
 const PreClassificacao: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedConcurso, setSelectedConcurso] = useState('');
-  const [selectedCargo, setSelectedCargo] = useState('');
-  const [selectedLocalidade, setSelectedLocalidade] = useState('');
+  const [selectedConcurso, setSelectedConcurso] = useState('all');
+  const [selectedCargo, setSelectedCargo] = useState('all');
+  const [selectedLocalidade, setSelectedLocalidade] = useState('all');
   const [orderBy, setOrderBy] = useState('posicao');
   const [orderDirection, setOrderDirection] = useState('asc');
   
@@ -51,18 +51,18 @@ const PreClassificacao: React.FC = () => {
     { id: "6", nome: "Rafael Souza", inscricao: "234567", nota: 83.75, posicao: 15, concursoId: "3", cargoId: "3", localidadeId: "4" }
   ];
 
-  const filteredCargos = selectedConcurso
+  const filteredCargos = selectedConcurso !== 'all'
     ? cargos.filter(c => c.concursoId === selectedConcurso)
     : [];
 
-  const filteredLocalidades = selectedConcurso
+  const filteredLocalidades = selectedConcurso !== 'all'
     ? localidades.filter(l => l.concursoId === selectedConcurso)
     : [];
   
   const filteredCandidatos = candidatos.filter(c => {
-    if (selectedConcurso && c.concursoId !== selectedConcurso) return false;
-    if (selectedCargo && c.cargoId !== selectedCargo) return false;
-    if (selectedLocalidade && c.localidadeId !== selectedLocalidade) return false;
+    if (selectedConcurso !== 'all' && c.concursoId !== selectedConcurso) return false;
+    if (selectedCargo !== 'all' && c.cargoId !== selectedCargo) return false;
+    if (selectedLocalidade !== 'all' && c.localidadeId !== selectedLocalidade) return false;
     if (searchTerm && !c.nome.toLowerCase().includes(searchTerm.toLowerCase()) && !c.inscricao.includes(searchTerm)) return false;
     return true;
   });
@@ -112,15 +112,15 @@ const PreClassificacao: React.FC = () => {
                 value={selectedConcurso}
                 onValueChange={(value) => {
                   setSelectedConcurso(value);
-                  setSelectedCargo('');
-                  setSelectedLocalidade('');
+                  setSelectedCargo('all');
+                  setSelectedLocalidade('all');
                 }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o concurso" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os concursos</SelectItem>
+                  <SelectItem value="all">Todos os concursos</SelectItem>
                   {concursos.map((concurso) => (
                     <SelectItem key={concurso.id} value={concurso.id}>
                       {concurso.nome}
@@ -137,13 +137,13 @@ const PreClassificacao: React.FC = () => {
               <Select
                 value={selectedCargo}
                 onValueChange={setSelectedCargo}
-                disabled={!selectedConcurso}
+                disabled={selectedConcurso === 'all'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o cargo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os cargos</SelectItem>
+                  <SelectItem value="all">Todos os cargos</SelectItem>
                   {filteredCargos.map((cargo) => (
                     <SelectItem key={cargo.id} value={cargo.id}>
                       {cargo.nome}
@@ -160,13 +160,13 @@ const PreClassificacao: React.FC = () => {
               <Select
                 value={selectedLocalidade}
                 onValueChange={setSelectedLocalidade}
-                disabled={!selectedConcurso}
+                disabled={selectedConcurso === 'all'}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a localidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as localidades</SelectItem>
+                  <SelectItem value="all">Todas as localidades</SelectItem>
                   {filteredLocalidades.map((localidade) => (
                     <SelectItem key={localidade.id} value={localidade.id}>
                       {localidade.nome}
