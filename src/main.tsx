@@ -1,23 +1,25 @@
 
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import App from "./App";
-import "./index.css";
-import { triggerScrapeCebraspe } from "./services/concursoService";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+import { triggerScrapeCebraspe } from './services/concursoService.ts'
 
-// Initialize React Query client
-const queryClient = new QueryClient();
+// Initialize data fetching for concursos
+const initializeConcursos = async () => {
+  try {
+    await triggerScrapeCebraspe();
+    console.log('Initial scraping completed');
+  } catch (error) {
+    console.error('Initial scraping failed:', error);
+  }
+};
 
-// Trigger the scraper to populate initial data
-triggerScrapeCebraspe()
-  .then(() => console.log("Initial scraping completed"))
-  .catch((error) => console.error("Initial scraping failed:", error));
+// Call initialization
+initializeConcursos();
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
-  </React.StrictMode>
-);
+    <App />
+  </React.StrictMode>,
+)

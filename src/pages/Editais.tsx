@@ -1,19 +1,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Filter, Clock, Calendar, Building, User, Briefcase } from 'lucide-react';
+import { Search, Filter, Building, Calendar, User, ChevronRight } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import { fetchConcursos } from '../services/concursoService';
 import { Link } from 'react-router-dom';
 import { Concurso, ConcursoFilter } from '../types/concursos';
+import { useToast } from '../hooks/use-toast';
 
 const Editais: React.FC = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<ConcursoFilter>({
     status: 'Em andamento'
@@ -57,6 +58,11 @@ const Editais: React.FC = () => {
 
   // Count active filters
   const activeFilterCount = Object.keys(filters).length;
+
+  useEffect(() => {
+    // Refresh data on component mount
+    refetch();
+  }, [refetch]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -168,7 +174,12 @@ const Editais: React.FC = () => {
               : 'bg-gray-100 text-gray-600'}`}
           >
             <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
+              <div className="grid grid-cols-2 gap-1 h-4 w-4">
+                <div className="bg-current rounded-sm"></div>
+                <div className="bg-current rounded-sm"></div>
+                <div className="bg-current rounded-sm"></div>
+                <div className="bg-current rounded-sm"></div>
+              </div>
               <span className="hidden md:inline">Cards</span>
             </div>
           </button>
@@ -179,7 +190,11 @@ const Editais: React.FC = () => {
               : 'bg-gray-100 text-gray-600'}`}
           >
             <div className="flex items-center gap-2">
-              <Table className="h-4 w-4" />
+              <div className="flex flex-col justify-between h-4 w-4">
+                <div className="h-0.5 bg-current rounded-full"></div>
+                <div className="h-0.5 bg-current rounded-full"></div>
+                <div className="h-0.5 bg-current rounded-full"></div>
+              </div>
               <span className="hidden md:inline">Tabela</span>
             </div>
           </button>
@@ -245,9 +260,7 @@ const Editais: React.FC = () => {
                   className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
                 >
                   Ver detalhes
-                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Link>
               </div>
             </div>
@@ -288,9 +301,7 @@ const Editais: React.FC = () => {
                       className="inline-flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
                     >
                       Ver detalhes
-                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                      </svg>
+                      <ChevronRight className="h-4 w-4 ml-1" />
                     </Link>
                   </TableCell>
                 </TableRow>
