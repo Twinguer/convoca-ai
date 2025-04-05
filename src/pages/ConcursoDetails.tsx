@@ -1,295 +1,147 @@
 
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { 
-  Calendar, 
-  User, 
-  Building, 
-  Briefcase, 
-  GraduationCap, 
-  MapPin, 
-  DollarSign, 
-  FileText,
-  Clock,
-  ArrowLeft,
-  BookOpen,
-  AlertCircle
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Calendar, Building, Users, Award, FileText, ExternalLink } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbList } from '../components/ui/breadcrumb';
+import { fetchConcursoById } from '../services/concursoService';
 
 const ConcursoDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   
-  // Normalmente, esses dados viriam de uma API com base no ID
-  const concurso = {
-    id: id || '1',
-    titulo: "Analista Administrativo",
-    orgao: "Ministério da Economia",
-    cargo: "Analista Administrativo",
-    nivel: "Superior",
-    localidades: ["Brasília", "Rio de Janeiro", "São Paulo"],
-    vagas: 120,
-    salario: "R$ 12.500,00",
-    dataInscricao: "01/01/2025 a 31/01/2025",
-    dataProva: "15/03/2025",
-    status: "Em andamento",
-    edital: "https://exemplo.com/edital.pdf",
-    descricao: "Concurso para o cargo de Analista Administrativo no Ministério da Economia, com oportunidades em diversas localidades. Exige formação superior em qualquer área.",
-    etapas: [
-      { id: 1, nome: "Inscrições", data: "01/01/2025 a 31/01/2025", status: "Concluído" },
-      { id: 2, nome: "Prova Objetiva", data: "15/03/2025", status: "Em andamento" },
-      { id: 3, nome: "Resultado Preliminar", data: "30/03/2025", status: "Pendente" },
-      { id: 4, nome: "Recursos", data: "01/04/2025 a 05/04/2025", status: "Pendente" },
-      { id: 5, nome: "Resultado Final", data: "15/04/2025", status: "Pendente" },
-      { id: 6, nome: "Convocação", data: "A definir", status: "Pendente" }
-    ],
-    disciplinas: [
-      { id: 1, nome: "Língua Portuguesa", questoes: 20, peso: 2 },
-      { id: 2, nome: "Raciocínio Lógico", questoes: 10, peso: 1 },
-      { id: 3, nome: "Noções de Informática", questoes: 10, peso: 1 },
-      { id: 4, nome: "Conhecimentos Específicos", questoes: 30, peso: 3 }
-    ]
+  const { data: concurso, isLoading, isError } = useQuery({
+    queryKey: ['concurso', id],
+    queryFn: () => fetchConcursoById(id || ''),
+    enabled: !!id
+  });
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
-  
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "Concluído": return "bg-blue-100 text-blue-800";
-      case "Em andamento": return "bg-green-100 text-green-800";
-      case "Pendente": return "bg-yellow-100 text-yellow-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-  
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
+        <div className="h-40 bg-gray-200 rounded mb-6"></div>
+        <div className="h-20 bg-gray-200 rounded mb-6"></div>
+        <div className="h-20 bg-gray-200 rounded"></div>
+      </div>
+    );
+  }
+
+  if (isError || !concurso) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Concurso não encontrado</h2>
+        <p className="text-gray-600 mb-6">O concurso que você está procurando não existe ou foi removido.</p>
+        <Button onClick={() => navigate('/')}>Voltar para Editais</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="page-container">
-      <div className="mb-6">
-        <Link to="/" className="inline-flex items-center text-convoca-600 hover:text-convoca-700">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar para editais
-        </Link>
+    <div className="container mx-auto px-4 py-8">
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Editais</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink>{concurso.titulo}</BreadcrumbLink>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mb-4 flex items-center gap-1"
+        onClick={() => navigate('/')}
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Voltar
+      </Button>
+      
+      <div className="flex justify-between items-start flex-wrap gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{concurso.titulo}</h1>
+          <p className="text-gray-600 flex items-center mt-1">
+            <Building className="mr-1 h-4 w-4" />
+            {concurso.orgao}
+          </p>
+        </div>
+        <Badge className={`${
+          concurso.status === 'Em andamento' 
+            ? 'bg-green-100 text-green-800' 
+            : 'bg-blue-100 text-blue-800'
+        }`}>
+          {concurso.status}
+        </Badge>
       </div>
       
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">{concurso.titulo}</h1>
-        <div className="flex items-center text-gray-600 mb-4">
-          <Building className="h-5 w-5 mr-2" />
-          <span className="text-base">{concurso.orgao}</span>
-        </div>
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Informações do Concurso</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div className="flex items-start">
-            <Calendar className="h-5 w-5 mr-2 text-convoca-600 mt-0.5" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-start gap-3">
+            <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
             <div>
-              <p className="text-sm text-gray-500">Data da Prova</p>
-              <p className="font-medium">{concurso.dataProva}</p>
+              <p className="text-sm text-gray-500">Data de Publicação</p>
+              <p className="font-medium">{formatDate(concurso.data_publicacao)}</p>
             </div>
           </div>
           
-          <div className="flex items-start">
-            <User className="h-5 w-5 mr-2 text-convoca-600 mt-0.5" />
+          <div className="flex items-start gap-3">
+            <Users className="h-5 w-5 text-gray-500 mt-0.5" />
             <div>
               <p className="text-sm text-gray-500">Vagas</p>
               <p className="font-medium">{concurso.vagas}</p>
             </div>
           </div>
           
-          <div className="flex items-start">
-            <DollarSign className="h-5 w-5 mr-2 text-convoca-600 mt-0.5" />
+          <div className="flex items-start gap-3">
+            <Award className="h-5 w-5 text-gray-500 mt-0.5" />
             <div>
-              <p className="text-sm text-gray-500">Salário</p>
-              <p className="font-medium">{concurso.salario}</p>
+              <p className="text-sm text-gray-500">Banca</p>
+              <p className="font-medium">{concurso.banca}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-3">
+            <Users className="h-5 w-5 text-gray-500 mt-0.5" />
+            <div>
+              <p className="text-sm text-gray-500">Inscritos</p>
+              <p className="font-medium">{concurso.inscritos?.toLocaleString('pt-BR') || 'Não informado'}</p>
             </div>
           </div>
         </div>
-        
-        <div className="border-t border-gray-200 pt-4 flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="inline-flex items-center">
-            <FileText className="mr-2 h-4 w-4" />
-            <a href={concurso.edital} target="_blank" rel="noopener noreferrer">
-              Ver Edital
-            </a>
-          </Button>
-          
-          <Button variant="outline" size="sm" className="inline-flex items-center">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Materiais de Estudo
-          </Button>
-          
-          <Button variant="outline" size="sm" className="inline-flex items-center">
-            <AlertCircle className="mr-2 h-4 w-4" />
-            Receber Atualizações
-          </Button>
+      </div>
+      
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Status do Concurso</h2>
+        <div className="flex items-start gap-3">
+          <FileText className="h-5 w-5 text-gray-500 mt-0.5" />
+          <div>
+            <p className="text-sm text-gray-500">Etapa Atual</p>
+            <p className="font-medium">{concurso.etapa_atual}</p>
+          </div>
         </div>
       </div>
       
-      <Tabs defaultValue="detalhes" className="mb-8">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
-          <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
-          <TabsTrigger value="provas">Provas</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="detalhes" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações do Concurso</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <h3 className="font-semibold mb-2">Descrição</h3>
-                <p className="text-gray-600">{concurso.descricao}</p>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Cargo</h3>
-                <div className="flex items-center text-gray-600">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  <span>{concurso.cargo}</span>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Nível</h3>
-                <div className="flex items-center text-gray-600">
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  <span>{concurso.nivel}</span>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Localidades</h3>
-                <div className="flex items-start text-gray-600">
-                  <MapPin className="h-4 w-4 mr-2 mt-0.5" />
-                  <div>
-                    {concurso.localidades.map((localidade, index) => (
-                      <div key={index}>{localidade}</div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Período de Inscrição</h3>
-                <div className="flex items-center text-gray-600">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span>{concurso.dataInscricao}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="cronograma" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cronograma</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {concurso.etapas.map((etapa) => (
-                  <div key={etapa.id} className="flex items-start">
-                    <div className="flex-shrink-0 mr-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-convoca-100 text-convoca-600">
-                        {etapa.id}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <h3 className="font-medium text-gray-900">{etapa.nome}</h3>
-                        <span className={`text-xs px-2 py-1 rounded-full ${statusColor(etapa.status)}`}>
-                          {etapa.status}
-                        </span>
-                      </div>
-                      <div className="flex items-center text-gray-500 mt-1">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{etapa.data}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="provas" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Disciplinas e Pontuação</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Disciplina
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Questões
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Peso
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Pontos Máximos
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {concurso.disciplinas.map((disciplina) => (
-                      <tr key={disciplina.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {disciplina.nome}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {disciplina.questoes}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {disciplina.peso}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {disciplina.questoes * disciplina.peso}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        Total
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {concurso.disciplinas.reduce((sum, d) => sum + d.questoes, 0)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        -
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {concurso.disciplinas.reduce((sum, d) => sum + (d.questoes * d.peso), 0)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      <div className="bg-convoca-50 rounded-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Acompanhe seu Desempenho</h2>
-        <p className="text-gray-600 mb-4">
-          Utilize nosso sistema de pré-classificação para acompanhar seu desempenho neste concurso.
-        </p>
-        <Link to="/pre-classificacao">
-          <Button>Ver Pré-Classificação</Button>
-        </Link>
+      <div className="flex justify-center">
+        <Button asChild className="gap-2">
+          <a href={concurso.link} target="_blank" rel="noopener noreferrer">
+            Acessar Edital
+            <ExternalLink className="h-4 w-4" />
+          </a>
+        </Button>
       </div>
     </div>
   );

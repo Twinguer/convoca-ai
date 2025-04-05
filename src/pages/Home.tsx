@@ -1,110 +1,204 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Search, Filter } from 'lucide-react';
 import ConcursoCard from '../components/ConcursoCard';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { fetchConcursos } from '../services/concursoService';
+import { Concurso, ConcursoFilter } from '../types/concursos';
+import { Label } from '../components/ui/label';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
+import { Badge } from '../components/ui/badge';
+import { useToast } from '../hooks/use-toast';
 
 const Home: React.FC = () => {
-  // Exemplo de dados. Em uma aplicação real, isso viria de uma API
-  const concursosRecentes = [
-    {
-      id: "1",
-      titulo: "Analista Administrativo",
-      orgao: "Ministério da Economia",
-      data: "15/03/2025",
-      vagas: 120,
-      status: "Em andamento",
-      path: "/resultado/1"
-    },
-    {
-      id: "2",
-      titulo: "Técnico em Informática",
-      orgao: "INSS",
-      data: "10/04/2025",
-      vagas: 80,
-      status: "Em andamento",
-      path: "/resultado/2"
-    },
-    {
-      id: "3",
-      titulo: "Auditor Fiscal",
-      orgao: "Receita Federal",
-      data: "22/02/2025",
-      vagas: 50,
-      status: "Finalizado",
-      path: "/resultado/3"
-    },
-    {
-      id: "4",
-      titulo: "Técnico Judiciário",
-      orgao: "Tribunal Regional Federal",
-      data: "05/05/2025",
-      vagas: 65,
-      status: "Próximo",
-      path: "/resultado/4"
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<ConcursoFilter>({
+    status: 'Em andamento'
+  });
+  
+  // Fetch concursos with React Query
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['concursos', filters],
+    queryFn: () => fetchConcursos(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Filter concursos based on search term
+  const filteredConcursos = data?.filter(concurso => 
+    concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  // Get unique values for filter dropdowns
+  const uniqueOrgaos = [...new Set(data?.map(c => c.orgao) || [])];
+  const uniqueBancas = [...new Set(data?.map(c => c.banca) || [])];
+  const statusOptions = ['Em andamento', 'Finalizado', 'Todos'];
+
+  // Handle filter changes
+  const handleFilterChange = (key: keyof ConcursoFilter, value: string) => {
+    if (value === 'Todos') {
+      const newFilters = { ...filters };
+      delete newFilters[key];
+      setFilters(newFilters);
+    } else {
+      setFilters({ ...filters, [key]: value });
     }
-  ];
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({ status: 'Em andamento' });
+    setSearchTerm('');
+  };
+
+  // Count active filters
+  const activeFilterCount = Object.keys(filters).length;
+
+  useEffect(() => {
+    // Initial fetch to populate data
+    refetch();
+  }, [refetch]);
 
   return (
-    <div className="page-container">
+    <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Concursos Públicos</h1>
-        <p className="text-gray-600 max-w-3xl">
-          Acompanhe os rankings, resultados e nomeações dos principais concursos públicos em andamento.
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Editais de Concursos</h1>
+        <p className="text-gray-600">
+          Confira os concursos abertos e em andamento dos últimos 5 anos
         </p>
       </div>
-      
-      <section className="mb-10">
-        <h2 className="section-title">Últimos Resultados</h2>
+
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar concurso ou órgão..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="flex items-center gap-2" onClick={() => setShowFilters(true)}>
+              <Filter className="h-4 w-4" />
+              Filtros
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="ml-1">{activeFilterCount}</Badge>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Filtros</SheetTitle>
+            </SheetHeader>
+            <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={filters.status || 'Todos'} 
+                  onValueChange={(value) => handleFilterChange('status', value)}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((status) => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="orgao">Órgão</Label>
+                <Select 
+                  value={filters.orgao || 'Todos'} 
+                  onValueChange={(value) => handleFilterChange('orgao', value)}
+                >
+                  <SelectTrigger id="orgao">
+                    <SelectValue placeholder="Órgão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todos">Todos</SelectItem>
+                    {uniqueOrgaos.map((orgao) => (
+                      <SelectItem key={orgao} value={orgao}>{orgao}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="banca">Banca</Label>
+                <Select 
+                  value={filters.banca || 'Todos'} 
+                  onValueChange={(value) => handleFilterChange('banca', value)}
+                >
+                  <SelectTrigger id="banca">
+                    <SelectValue placeholder="Banca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Todos">Todos</SelectItem>
+                    {uniqueBancas.map((banca) => (
+                      <SelectItem key={banca} value={banca}>{banca}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                className="w-full mt-6" 
+                onClick={clearFilters}
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+          {[...Array(6)].map((_, index) => (
+            <div key={index} className="bg-gray-100 rounded-lg shadow p-6 h-48"></div>
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="text-center py-10">
+          <p className="text-red-500">Erro ao carregar concursos. Tente novamente mais tarde.</p>
+          <Button variant="outline" className="mt-4" onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      ) : filteredConcursos.length === 0 ? (
+        <div className="text-center py-10">
+          <p className="text-gray-500">Nenhum concurso encontrado com os filtros selecionados.</p>
+          <Button variant="outline" className="mt-4" onClick={clearFilters}>
+            Limpar filtros
+          </Button>
+        </div>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {concursosRecentes.map((concurso) => (
+          {filteredConcursos.map((concurso) => (
             <ConcursoCard
               key={concurso.id}
               id={concurso.id}
               titulo={concurso.titulo}
               orgao={concurso.orgao}
-              data={concurso.data}
+              data={new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')}
               vagas={concurso.vagas}
               status={concurso.status}
-              path={concurso.path}
             />
           ))}
         </div>
-      </section>
-      
-      <section className="mb-10 bg-convoca-50 p-6 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Como Funciona o Convoca Aí</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-convoca-600 font-bold text-lg mb-2">1. Acompanhe Resultados</div>
-            <p className="text-gray-600 text-sm">Acesse resultados atualizados dos principais concursos públicos federais.</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-convoca-600 font-bold text-lg mb-2">2. Confira Pré-Classificações</div>
-            <p className="text-gray-600 text-sm">Veja sua posição provável no ranking antes mesmo do resultado oficial.</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <div className="text-convoca-600 font-bold text-lg mb-2">3. Monitore Nomeações</div>
-            <p className="text-gray-600 text-sm">Fique por dentro das nomeações e convocações em tempo real.</p>
-          </div>
-        </div>
-      </section>
-      
-      <section>
-        <h2 className="section-title">Perguntas Frequentes</h2>
-        <div className="space-y-4 max-w-3xl">
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Como é feito o cálculo da pré-classificação?</h3>
-            <p className="text-gray-600 text-sm">A pré-classificação é calculada com base nas notas divulgadas e nos critérios de desempate previstos no edital de cada concurso.</p>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Os resultados são oficiais?</h3>
-            <p className="text-gray-600 text-sm">Não. O Convoca Aí reúne e organiza informações divulgadas pelos órgãos oficiais, mas a plataforma não substitui a consulta aos canais oficiais de cada concurso.</p>
-          </div>
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-2">Como saber quando serei nomeado?</h3>
-            <p className="text-gray-600 text-sm">A nomeação depende da classificação final, do número de vagas e do cronograma definido pelo órgão realizador do concurso. O Convoca Aí acompanha as publicações no Diário Oficial.</p>
-          </div>
-        </div>
-      </section>
+      )}
     </div>
   );
 };
