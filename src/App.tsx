@@ -5,7 +5,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Menu from "./components/Menu";
+import Index from "./pages/Index";
 import Home from "./pages/Home";
+import Editais from "./pages/Editais";
 import PreClassificacao from "./pages/PreClassificacao";
 import Resultado from "./pages/Resultado";
 import Nomeacoes from "./pages/Nomeacoes";
@@ -22,7 +24,8 @@ const App = () => (
       <BrowserRouter>
         <Menu />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/editais" element={<Editais />} />
           <Route path="/pre-classificacao" element={<PreClassificacao />} />
           <Route path="/resultado" element={<Resultado />} />
           <Route path="/nomeacoes" element={<Nomeacoes />} />
