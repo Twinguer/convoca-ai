@@ -10,7 +10,7 @@ interface ConcursoCardProps {
   data: string;
   vagas: number;
   status?: string;
-  path: string;
+  path?: string;
 }
 
 const ConcursoCard: React.FC<ConcursoCardProps> = ({
@@ -22,6 +22,9 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
   status = "Em andamento",
   path,
 }) => {
+  // If no custom path is provided, use the concurso/:id path
+  const detailsPath = path || `/concurso/${id}`;
+  
   return (
     <div className="concurso-card">
       <div className="flex justify-between items-start mb-4">
@@ -55,7 +58,7 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
       </div>
       
       <Link 
-        to={path}
+        to={detailsPath}
         className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
       >
         Ver detalhes

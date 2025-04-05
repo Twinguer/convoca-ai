@@ -17,7 +17,7 @@ const Menu: React.FC = () => {
   };
 
   const navItems = [
-    { path: '/', label: 'Home' },
+    { path: '/', label: 'Editais' },
     { path: '/pre-classificacao', label: 'Pré-Classificação' },
     { path: '/resultado', label: 'Resultado' },
     { path: '/nomeacoes', label: 'Nomeações' },

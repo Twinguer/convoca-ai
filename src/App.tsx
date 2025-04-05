@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import PreClassificacao from "./pages/PreClassificacao";
 import Resultado from "./pages/Resultado";
 import Nomeacoes from "./pages/Nomeacoes";
+import ConcursoDetails from "./pages/ConcursoDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/pre-classificacao" element={<PreClassificacao />} />
           <Route path="/resultado" element={<Resultado />} />
           <Route path="/nomeacoes" element={<Nomeacoes />} />
+          <Route path="/concurso/:id" element={<ConcursoDetails />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

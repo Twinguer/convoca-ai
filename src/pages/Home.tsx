@@ -46,9 +46,9 @@ const Home: React.FC = () => {
   return (
     <div className="page-container">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Concursos Públicos Federais</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">Concursos Públicos</h1>
         <p className="text-gray-600 max-w-3xl">
-          Acompanhe os rankings, resultados e nomeações dos principais concursos públicos federais em andamento.
+          Acompanhe os rankings, resultados e nomeações dos principais concursos públicos em andamento.
         </p>
       </div>
       
