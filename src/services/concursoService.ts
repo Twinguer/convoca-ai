@@ -1,4 +1,3 @@
-
 import { supabase } from '../integrations/supabase/client';
 import { Concurso, ConcursoFilter } from '../types/concursos';
 
@@ -33,7 +32,17 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
   // If no data is returned, we'll provide some mock data for development
   if (!data || data.length === 0) {
     console.log('No concursos found in database, using mock data');
-    return filters?.banca === 'Cebraspe' ? getMockCebraspeConcursos() : getMockConcursos();
+    if (filters?.banca === 'Cebraspe') {
+      if (filters?.status === 'Em andamento') {
+        return getMockCebraspeAtivos();
+      } else if (filters?.status === 'Finalizado') {
+        return getMockCebraspeEncerrados();
+      } else {
+        return [...getMockCebraspeAtivos(), ...getMockCebraspeEncerrados()];
+      }
+    } else {
+      return getMockConcursos();
+    }
   }
 
   return data as Concurso[];
@@ -80,11 +89,11 @@ export const triggerScrapeCebraspe = async (): Promise<void> => {
 
 // Update main.tsx to trigger the scraper less frequently to avoid hitting API limits
 export const scheduleScraper = () => {
-  // Only run once every 6 hours
+  // Alterar para verificar a cada 4 horas
   const lastScraped = localStorage.getItem('lastScraped');
   const now = new Date();
   
-  if (!lastScraped || (now.getTime() - new Date(lastScraped).getTime()) > 6 * 60 * 60 * 1000) {
+  if (!lastScraped || (now.getTime() - new Date(lastScraped).getTime()) > 4 * 60 * 60 * 1000) {
     console.log('Scheduled scraping initiated...');
     triggerScrapeCebraspe()
       .then(() => {
@@ -177,8 +186,8 @@ const getMockConcursos = (): Concurso[] => {
   ];
 };
 
-// Mock Cebraspe concursos 
-const getMockCebraspeConcursos = (): Concurso[] => {
+// Mock concursos Cebraspe ativos
+const getMockCebraspeAtivos = (): Concurso[] => {
   const currentYear = new Date().getFullYear();
   
   return [
@@ -205,18 +214,6 @@ const getMockCebraspeConcursos = (): Concurso[] => {
       link: "https://www.cebraspe.org.br/concursos/pf_23",
       status: "Em andamento",
       data_publicacao: `${currentYear}-01-20`
-    },
-    {
-      id: "c3",
-      titulo: "INSS - Técnico do Seguro Social",
-      orgao: "INSS",
-      banca: "Cebraspe",
-      vagas: 1000,
-      inscritos: 1000000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/inss_22",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-1}-11-10`
     },
     {
       id: "c4",
@@ -363,18 +360,6 @@ const getMockCebraspeConcursos = (): Concurso[] => {
       data_publicacao: `${currentYear}-02-15`
     },
     {
-      id: "c16",
-      titulo: "Instituto Brasileiro de Geografia e Estatística",
-      orgao: "IBGE",
-      banca: "Cebraspe",
-      vagas: 5000,
-      inscritos: 180000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/ibge_22",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-1}-10-20`
-    },
-    {
       id: "c17",
       titulo: "Controladoria-Geral da União",
       orgao: "CGU",
@@ -421,6 +406,74 @@ const getMockCebraspeConcursos = (): Concurso[] => {
       link: "https://www.cebraspe.org.br/concursos/pf_escrivao_23",
       status: "Em andamento",
       data_publicacao: `${currentYear}-02-20`
+    }
+  ];
+};
+
+// Mock concursos Cebraspe encerrados
+const getMockCebraspeEncerrados = (): Concurso[] => {
+  const currentYear = new Date().getFullYear();
+  
+  return [
+    {
+      id: "c3",
+      titulo: "INSS - Técnico do Seguro Social",
+      orgao: "INSS",
+      banca: "Cebraspe",
+      vagas: 1000,
+      inscritos: 1000000,
+      etapa_atual: "Resultado Final",
+      link: "https://www.cebraspe.org.br/concursos/inss_22",
+      status: "Finalizado",
+      data_publicacao: `${currentYear-1}-11-10`
+    },
+    {
+      id: "c16",
+      titulo: "Instituto Brasileiro de Geografia e Estatística",
+      orgao: "IBGE",
+      banca: "Cebraspe",
+      vagas: 5000,
+      inscritos: 180000,
+      etapa_atual: "Resultado Final",
+      link: "https://www.cebraspe.org.br/concursos/ibge_22",
+      status: "Finalizado",
+      data_publicacao: `${currentYear-1}-10-20`
+    },
+    {
+      id: "c21",
+      titulo: "Ministério da Economia",
+      orgao: "ME",
+      banca: "Cebraspe",
+      vagas: 300,
+      inscritos: 120000,
+      etapa_atual: "Resultado Final",
+      link: "https://www.cebraspe.org.br/concursos/me_22",
+      status: "Finalizado",
+      data_publicacao: `${currentYear-1}-09-15`
+    },
+    {
+      id: "c22",
+      titulo: "Tribunal Regional do Trabalho - 10ª Região",
+      orgao: "TRT 10",
+      banca: "Cebraspe",
+      vagas: 50,
+      inscritos: 40000,
+      etapa_atual: "Resultado Final",
+      link: "https://www.cebraspe.org.br/concursos/trt10_21",
+      status: "Finalizado",
+      data_publicacao: `${currentYear-2}-11-10`
+    },
+    {
+      id: "c23",
+      titulo: "Advocacia-Geral da União",
+      orgao: "AGU",
+      banca: "Cebraspe",
+      vagas: 100,
+      inscritos: 85000,
+      etapa_atual: "Nomeação",
+      link: "https://www.cebraspe.org.br/concursos/agu_21",
+      status: "Finalizado",
+      data_publicacao: `${currentYear-2}-08-20`
     }
   ];
 };
