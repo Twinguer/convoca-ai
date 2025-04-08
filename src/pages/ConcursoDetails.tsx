@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Calendar, Building, Users, Award, FileText, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Calendar, Building, Users, Award, FileText, ExternalLink, BarChart } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbList } from '../components/ui/breadcrumb';
@@ -135,12 +135,19 @@ const ConcursoDetails: React.FC = () => {
         </div>
       </div>
       
-      <div className="flex justify-center">
+      <div className="flex flex-col sm:flex-row justify-center gap-4">
         <Button asChild className="gap-2">
           <a href={concurso.link} target="_blank" rel="noopener noreferrer">
             Acessar Edital
             <ExternalLink className="h-4 w-4" />
           </a>
+        </Button>
+        
+        <Button asChild variant="secondary" className="gap-2">
+          <Link to={`/concurso/${id}/resultados`}>
+            Resultados
+            <BarChart className="h-4 w-4" />
+          </Link>
         </Button>
       </div>
     </div>

@@ -24,6 +24,7 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
 }) => {
   // If no custom path is provided, use the concurso/:id path
   const detailsPath = path || `/concurso/${id}`;
+  const resultsPath = `/concurso/${id}/resultados`;
   
   return (
     <div className="concurso-card">
@@ -57,13 +58,23 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
         </div>
       </div>
       
-      <Link 
-        to={detailsPath}
-        className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
-      >
-        Ver detalhes
-        <ChevronRight className="h-4 w-4 ml-1" />
-      </Link>
+      <div className="flex space-x-4">
+        <Link 
+          to={detailsPath}
+          className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
+        >
+          Ver detalhes
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Link>
+        
+        <Link 
+          to={resultsPath}
+          className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
+        >
+          Resultados
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Link>
+      </div>
     </div>
   );
 };

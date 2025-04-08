@@ -12,6 +12,7 @@ import PreClassificacao from "./pages/PreClassificacao";
 import Resultado from "./pages/Resultado";
 import Nomeacoes from "./pages/Nomeacoes";
 import ConcursoDetails from "./pages/ConcursoDetails";
+import ResultadosPage from "./pages/ResultadosPage";
 import NotFound from "./pages/NotFound";
 import ConcursosPage from "./pages/ConcursosPage";
 import CebraspeConcursos from "./pages/CebraspeConcursos";
@@ -42,6 +43,7 @@ const App = () => {
             <Route path="/resultado" element={<Resultado />} />
             <Route path="/nomeacoes" element={<Nomeacoes />} />
             <Route path="/concurso/:id" element={<ConcursoDetails />} />
+            <Route path="/concurso/:id/resultados" element={<ResultadosPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
