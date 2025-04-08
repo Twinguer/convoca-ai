@@ -1,4 +1,3 @@
-
 // This edge function scrapes concursos from Cebraspe website
 // Follow the Supabase Edge Function format
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -34,8 +33,8 @@ serve(async (req: Request) => {
     const method = req.method;
     
     if (method === 'GET') {
-      // Scrape concursos from Cebraspe
-      const concursos = await scrapeCebraspe();
+      // Fetch concursos from Cebraspe API
+      const concursos = await fetchCebraspeAPI();
 
       // Store concursos in database
       if (concursos.length > 0) {
@@ -71,22 +70,82 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error("Server error:", error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });
 
-// Function to scrape concursos from Cebraspe
-async function scrapeCebraspe() {
-  console.log("Starting Cebraspe scraping");
+// Function to fetch concursos from Cebraspe API
+async function fetchCebraspeAPI() {
+  console.log("Starting Cebraspe API fetch");
   
-  // Simulated concursos data
-  // In a real implementation, we would fetch the HTML from Cebraspe and parse it
+  try {
+    // Fetch data from the Cebraspe API
+    const response = await fetch('https://apis.cebraspe.org.br/cebraspe/eventos/tipo/concursos/');
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Fetched ${data.length} events from Cebraspe API`);
+    
+    // Transform API data to match our database schema
+    const transformedData = data.map(item => ({
+      titulo: item.titulo || item.nome,
+      orgao: item.instituicao || 'Não informado',
+      banca: 'Cebraspe',
+      vagas: item.vagas || null,
+      inscritos: null, // API doesn't provide this information
+      etapa_atual: getEtapaAtual(item),
+      link: item.link || `https://www.cebraspe.org.br/concursos/${item.sigla?.toLowerCase()}`,
+      status: getStatus(item.fases, item.situacao),
+      data_publicacao: item.dataPublicacao || new Date().toISOString().split('T')[0]
+    }));
+    
+    return transformedData;
+  } catch (error) {
+    console.error("Error fetching from Cebraspe API:", error);
+    // Return mock data as fallback in case of API failure
+    return getMockConcursos();
+  }
+}
+
+// Helper function to determine current stage based on API data
+function getEtapaAtual(item) {
+  if (item.situacao === 'Inscrições abertas') {
+    return 'Inscrições Abertas';
+  }
+  
+  if (item.fases && item.fases.length > 0) {
+    const currentPhase = item.fases.find(fase => 
+      fase.situacao === 'Em andamento' || fase.situacao === 'Próxima'
+    );
+    
+    if (currentPhase) {
+      return currentPhase.descricao || currentPhase.titulo;
+    }
+  }
+  
+  return item.situacao || 'Não informado';
+}
+
+// Helper function to determine status based on API data
+function getStatus(fases, situacao) {
+  if (situacao === 'Encerrado' || situacao === 'Concluído') {
+    return 'Finalizado';
+  }
+  
+  return 'Em andamento';
+}
+
+// Mock concursos for development/fallback
+function getMockConcursos() {
+  console.log("Using mock data as fallback");
   const currentYear = new Date().getFullYear();
-  const fiveYearsAgo = currentYear - 5;
   
-  const mockConcursos = [
+  return [
     {
       titulo: "Concurso Banco do Brasil",
       orgao: "Banco do Brasil",
@@ -176,8 +235,4 @@ async function scrapeCebraspe() {
       data_publicacao: `${currentYear}-03-25`
     }
   ];
-
-  // For demo purposes, return mock data
-  console.log(`Scraped ${mockConcursos.length} mock concursos`);
-  return mockConcursos;
 }

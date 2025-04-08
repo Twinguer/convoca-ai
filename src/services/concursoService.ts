@@ -20,6 +20,9 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
     }
   }
 
+  // Order by publication date (newest first)
+  query = query.order('data_publicacao', { ascending: false });
+
   const { data, error } = await query;
 
   if (error) {
@@ -53,6 +56,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
 
 export const triggerScrapeCebraspe = async (): Promise<void> => {
   try {
+    console.log('Triggering Cebraspe scraper...');
     const response = await fetch('https://ppsymqrdtjyaguftracc.functions.supabase.co/scrape-cebraspe', {
       method: 'GET',
       headers: {
@@ -61,6 +65,8 @@ export const triggerScrapeCebraspe = async (): Promise<void> => {
     });
 
     if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(`Error response: ${errorDetails}`);
       throw new Error(`Error: ${response.status}`);
     }
 
@@ -69,6 +75,25 @@ export const triggerScrapeCebraspe = async (): Promise<void> => {
   } catch (error) {
     console.error('Error triggering scrape:', error);
     throw new Error('Failed to trigger scrape');
+  }
+};
+
+// Update main.tsx to trigger the scraper less frequently to avoid hitting API limits
+export const scheduleScraper = () => {
+  // Only run once every 6 hours
+  const lastScraped = localStorage.getItem('lastScraped');
+  const now = new Date();
+  
+  if (!lastScraped || (now.getTime() - new Date(lastScraped).getTime()) > 6 * 60 * 60 * 1000) {
+    console.log('Scheduled scraping initiated...');
+    triggerScrapeCebraspe()
+      .then(() => {
+        localStorage.setItem('lastScraped', now.toISOString());
+        console.log('Scheduled scraping completed');
+      })
+      .catch(err => console.error('Scheduled scraping failed:', err));
+  } else {
+    console.log('Skipping scheduled scraping - ran recently');
   }
 };
 

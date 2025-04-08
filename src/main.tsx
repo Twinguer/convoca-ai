@@ -3,15 +3,15 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { triggerScrapeCebraspe } from './services/concursoService.ts'
+import { scheduleScraper } from './services/concursoService.ts'
 
 // Initialize data fetching for concursos
 const initializeConcursos = async () => {
   try {
-    await triggerScrapeCebraspe();
-    console.log('Initial scraping completed');
+    await scheduleScraper();
+    console.log('Initial data load completed');
   } catch (error) {
-    console.error('Initial scraping failed:', error);
+    console.error('Initial data load failed:', error);
   }
 };
 
