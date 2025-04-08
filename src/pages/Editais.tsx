@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Filter, Building, Calendar, User, ChevronRight } from 'lucide-react';
