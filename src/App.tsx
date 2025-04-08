@@ -12,6 +12,11 @@ import Resultado from "./pages/Resultado";
 import Nomeacoes from "./pages/Nomeacoes";
 import ConcursoDetails from "./pages/ConcursoDetails";
 import NotFound from "./pages/NotFound";
+import ConcursosPage from "./pages/ConcursosPage";
+import CebraspeConcursos from "./pages/CebraspeConcursos";
+import FCCConcursos from "./pages/FCCConcursos";
+import FGVConcursos from "./pages/FGVConcursos";
+import VunespConcursos from "./pages/VunespConcursos";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +30,11 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/editais" element={<Editais />} />
+          <Route path="/concursos" element={<ConcursosPage />} />
+          <Route path="/concursos/cebraspe" element={<CebraspeConcursos />} />
+          <Route path="/concursos/fcc" element={<FCCConcursos />} />
+          <Route path="/concursos/fgv" element={<FGVConcursos />} />
+          <Route path="/concursos/vunesp" element={<VunespConcursos />} />
           <Route path="/pre-classificacao" element={<PreClassificacao />} />
           <Route path="/resultado" element={<Resultado />} />
           <Route path="/nomeacoes" element={<Nomeacoes />} />
