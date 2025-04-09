@@ -326,7 +326,7 @@ const Index = () => {
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Pronto para conquistar sua aprovação?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Junte-se a milhares de concurseiros que estão juntos trocando experiências em nossa comunidade.
+            Junte-se a nós e vamos juntos iniciar uma comunidade onde temos o mesmo propósito: A tão sonhada nomeação no cargo dos sonhos!
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
