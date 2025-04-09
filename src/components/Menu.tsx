@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Users, Home, FileText, Trophy, AwardCheck, User } from 'lucide-react';
+import { Users, Home, FileText, Trophy, Check, User } from 'lucide-react';
 
 const Menu = () => {
   const location = useLocation();
@@ -72,7 +72,7 @@ const Menu = () => {
             className="flex items-center gap-1"
           >
             <Link to="/resultado">
-              <AwardCheck className="h-4 w-4" />
+              <Check className="h-4 w-4" />
               <span className="hidden md:inline ml-1">Resultado</span>
             </Link>
           </Button>
