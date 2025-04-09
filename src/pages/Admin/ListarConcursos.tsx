@@ -1,0 +1,236 @@
+
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Concurso, ConcursoFilter } from '@/types/concursos';
+import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Building, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+
+const ListarConcursos: React.FC = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [filter, setFilter] = useState<ConcursoFilter>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const fetchConcursos = async () => {
+    let query = supabase.from('concursos').select('*');
+    
+    if (filter.banca) {
+      query = query.eq('banca', filter.banca);
+    }
+    
+    if (filter.status) {
+      query = query.eq('status', filter.status);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data as Concurso[];
+  };
+  
+  const { data: concursos, isLoading, isError, refetch } = useQuery({
+    queryKey: ['admin-concursos', filter],
+    queryFn: fetchConcursos
+  });
+  
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este concurso?')) {
+      try {
+        const { error } = await supabase
+          .from('concursos')
+          .delete()
+          .eq('id', id);
+        
+        if (error) throw error;
+        
+        toast({
+          title: 'Concurso excluído com sucesso!',
+          variant: 'default',
+        });
+        
+        refetch();
+      } catch (error) {
+        console.error('Erro ao excluir concurso:', error);
+        toast({
+          title: 'Erro ao excluir concurso',
+          description: 'Ocorreu um erro ao tentar excluir o concurso.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+  
+  const filteredConcursos = concursos?.filter(concurso =>
+    concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Concursos Cadastrados</h1>
+        <Button onClick={() => navigate('/admin/concursos/novo')}>
+          <Plus className="mr-2 h-4 w-4" /> Novo Concurso
+        </Button>
+      </div>
+      
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Filtre os concursos por diferentes critérios</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Buscar concursos..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-1 block">Banca</label>
+              <Select
+                onValueChange={(value) => setFilter({ ...filter, banca: value || undefined })}
+                value={filter.banca || ''}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as bancas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as bancas</SelectItem>
+                  <SelectItem value="Cebraspe">Cebraspe</SelectItem>
+                  <SelectItem value="FGV">FGV</SelectItem>
+                  <SelectItem value="FCC">FCC</SelectItem>
+                  <SelectItem value="Vunesp">Vunesp</SelectItem>
+                  <SelectItem value="Cesgranrio">Cesgranrio</SelectItem>
+                  <SelectItem value="IBFC">IBFC</SelectItem>
+                  <SelectItem value="IDECAN">IDECAN</SelectItem>
+                  <SelectItem value="QUADRIX">QUADRIX</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-1 block">Status</label>
+              <Select
+                onValueChange={(value) => setFilter({ ...filter, status: value || undefined })}
+                value={filter.status || ''}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="Aberto">Aberto</SelectItem>
+                  <SelectItem value="Em andamento">Em andamento</SelectItem>
+                  <SelectItem value="Encerrado">Encerrado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex justify-center items-center p-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : isError ? (
+            <div className="text-center text-red-500 p-6">
+              Erro ao carregar os concursos. Por favor, tente novamente.
+            </div>
+          ) : filteredConcursos?.length === 0 ? (
+            <div className="text-center p-8 text-gray-500">
+              <Building className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+              <h3 className="font-medium text-lg">Nenhum concurso encontrado</h3>
+              <p className="mt-1">Tente ajustar os filtros ou adicione um novo concurso.</p>
+              <Button onClick={() => navigate('/admin/concursos/novo')} variant="outline" className="mt-4">
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Concurso
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Órgão</TableHead>
+                    <TableHead>Banca</TableHead>
+                    <TableHead>Vagas</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredConcursos?.map((concurso) => (
+                    <TableRow key={concurso.id}>
+                      <TableCell className="font-medium">{concurso.titulo}</TableCell>
+                      <TableCell>{concurso.orgao}</TableCell>
+                      <TableCell>{concurso.banca}</TableCell>
+                      <TableCell>{concurso.vagas}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            concurso.status === 'Aberto'
+                              ? 'bg-green-100 text-green-800'
+                              : concurso.status === 'Em andamento'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {concurso.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {concurso.data_publicacao
+                          ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/admin/concursos/editar/${concurso.id}`)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDelete(concurso.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <span className="sr-only">Excluir</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default ListarConcursos;

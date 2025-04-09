@@ -1,0 +1,73 @@
+
+import React, { useEffect } from 'react';
+import { useNavigate, Outlet, Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Home, Plus, ListChecks, LogOut } from 'lucide-react';
+
+const AdminLayout: React.FC = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if the user is authenticated
+    const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
+    if (!isAuthenticated) {
+      navigate('/admin/login');
+    }
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth');
+    navigate('/admin/login');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold text-gray-800">ConvocAI Admin</h1>
+          </div>
+          <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-2">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <div className="flex flex-1">
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r hidden md:block">
+          <nav className="p-4 space-y-2">
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link to="/admin/dashboard" className="flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link to="/admin/concursos/novo" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Concurso
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link to="/admin/concursos" className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4" />
+                Listar Concursos
+              </Link>
+            </Button>
+          </nav>
+        </aside>
+
+        {/* Content */}
+        <main className="flex-1 p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default AdminLayout;
