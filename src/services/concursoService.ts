@@ -94,9 +94,10 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     if (error) throw error;
     
     // Transform the data to match the Ranking interface
+    // Fix here: Correctly access the nested users_profiles.name property
     const rankings = data.map((item, index) => ({
       position: index + 1,
-      name: item.users_profiles?.name || 'Usuário Anônimo',
+      name: item.users_profiles?.[0]?.name || 'Usuário Anônimo',
       score: item.score,
       userId: item.user_id
     }));
