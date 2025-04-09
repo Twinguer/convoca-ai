@@ -32,10 +32,10 @@ import NovoConcurso from "./pages/Admin/NovoConcurso";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 
-// Create a client
-const queryClient = new QueryClient();
-
 const App = () => {
+  // Create a client inside the component
+  const queryClient = new QueryClient();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

@@ -108,13 +108,12 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
   }
 };
 
-// Add the scheduleScraper function that was missing
+// Fix the scheduleScraper function to ensure it's properly exported
 export const scheduleScraper = async (): Promise<void> => {
   try {
     console.log('Scheduling scraper for concursos...');
     // This would typically make an API call to schedule scraping
     // For now, we'll just log that it was called
-    // If you need actual implementation, you'll need to create an edge function
   } catch (error) {
     console.error('Error scheduling scraper:', error);
   }
