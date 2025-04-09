@@ -81,7 +81,7 @@ const UserProfile = () => {
         
       if (error) throw error;
       
-      // Transform data for display
+      // Fixed: Access the titulo property correctly from the nested object
       return data.map(item => ({
         concursoId: item.concurso_id,
         concursoTitle: item.concursos?.titulo || 'Concurso sem título',
