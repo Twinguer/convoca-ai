@@ -1,11 +1,27 @@
-import { supabase } from '@/integrations/supabase/client';
-import { Concurso } from '@/types/concursos';
 
-export const fetchConcursos = async (): Promise<Concurso[]> => {
+import { supabase } from '@/integrations/supabase/client';
+import { Concurso, ConcursoFilter } from '@/types/concursos';
+
+export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('concursos')
       .select('*');
+
+    // Apply filters if they exist
+    if (filters) {
+      if (filters.status && filters.status !== 'Todos') {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.orgao && filters.orgao !== 'Todos') {
+        query = query.eq('orgao', filters.orgao);
+      }
+      if (filters.banca && filters.banca !== 'Todos') {
+        query = query.eq('banca', filters.banca);
+      }
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;
@@ -89,5 +105,17 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
+  }
+};
+
+// Add the scheduleScraper function that was missing
+export const scheduleScraper = async (): Promise<void> => {
+  try {
+    console.log('Scheduling scraper for concursos...');
+    // This would typically make an API call to schedule scraping
+    // For now, we'll just log that it was called
+    // If you need actual implementation, you'll need to create an edge function
+  } catch (error) {
+    console.error('Error scheduling scraper:', error);
   }
 };

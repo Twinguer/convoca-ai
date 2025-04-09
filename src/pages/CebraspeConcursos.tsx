@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +15,7 @@ const CebraspeConcursos: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewType, setViewType] = useState<'cards' | 'table'>('cards');
   
-  // Fetch concursos em andamento
+  // Fetch concursos em andamento - Updated to pass filter object correctly
   const { data: concursosAtivos, isLoading, isError, refetch } = useQuery({
     queryKey: ['concursos', { banca: 'Cebraspe', status: 'Em andamento' }],
     queryFn: () => fetchConcursos({ banca: 'Cebraspe', status: 'Em andamento' }),
