@@ -105,13 +105,13 @@ const ListarConcursos: React.FC = () => {
               <label className="text-sm font-medium mb-1 block">Banca</label>
               <Select
                 onValueChange={(value) => setFilter({ ...filter, banca: value || undefined })}
-                value={filter.banca || ''}
+                value={filter.banca || undefined}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as bancas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as bancas</SelectItem>
+                  <SelectItem value="all">Todas as bancas</SelectItem>
                   <SelectItem value="Cebraspe">Cebraspe</SelectItem>
                   <SelectItem value="FGV">FGV</SelectItem>
                   <SelectItem value="FCC">FCC</SelectItem>
@@ -128,13 +128,13 @@ const ListarConcursos: React.FC = () => {
               <label className="text-sm font-medium mb-1 block">Status</label>
               <Select
                 onValueChange={(value) => setFilter({ ...filter, status: value || undefined })}
-                value={filter.status || ''}
+                value={filter.status || undefined}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
                   <SelectItem value="Aberto">Aberto</SelectItem>
                   <SelectItem value="Em andamento">Em andamento</SelectItem>
                   <SelectItem value="Encerrado">Encerrado</SelectItem>
