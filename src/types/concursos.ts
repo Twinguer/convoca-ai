@@ -56,3 +56,10 @@ export interface UserProfile {
   created_at: string;
   updated_at: string;
 }
+
+export interface Follower {
+  id: string;
+  follower_id: string;
+  followed_id: string;
+  created_at: string;
+}

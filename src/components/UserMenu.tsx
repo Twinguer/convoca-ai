@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, LogOut, Award } from 'lucide-react';
+import { User, LogOut, Award, Users, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -93,7 +93,13 @@ const UserMenu: React.FC = () => {
         <DropdownMenuItem asChild>
           <Link to="/meus-concursos" className="flex w-full cursor-pointer items-center">
             <Award className="mr-2 h-4 w-4" />
-            <span>Meus Rankings</span>
+            <span>Meus Concursos</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
+            <Users className="mr-2 h-4 w-4" />
+            <span>Meus Seguidores</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

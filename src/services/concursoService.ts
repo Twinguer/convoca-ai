@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso, ConcursoFilter } from '@/types/concursos';
+import { Concurso, ConcursoFilter, UserRanking } from '@/types/concursos';
 
 export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {
   try {
@@ -106,6 +106,54 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
+  }
+};
+
+// New function to fetch all user rankings for any concurso
+export const fetchUserConcursoRankings = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('user_rankings')
+      .select(`
+        id,
+        concurso_id,
+        score,
+        concursos (
+          titulo,
+          orgao,
+          banca
+        )
+      `)
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching user concurso rankings:', error);
+    return [];
+  }
+};
+
+// Function to get a user's position in a specific concurso
+export const getUserRankingPosition = async (userId: string, concursoId: string): Promise<number> => {
+  try {
+    // First get all rankings for this concurso ordered by score
+    const { data, error } = await supabase
+      .from('user_rankings')
+      .select('user_id, score')
+      .eq('concurso_id', concursoId)
+      .order('score', { ascending: false });
+      
+    if (error) throw error;
+    
+    // Find the user's position in the rankings
+    const position = data.findIndex(ranking => ranking.user_id === userId);
+    
+    return position >= 0 ? position + 1 : 0; // +1 because array indices start at 0
+  } catch (error) {
+    console.error('Error getting user ranking position:', error);
+    return 0;
   }
 };
 

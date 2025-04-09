@@ -23,6 +23,8 @@ import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import UserProfile from "./pages/UserProfile";
 import { AuthProvider } from "./hooks/useAuth";
+import UserFollowers from "./pages/UserFollowers";
+import UserConcursos from "./pages/UserConcursos";
 
 // Admin pages
 import AdminLogin from "./pages/Admin/Login";
@@ -68,6 +70,18 @@ const App = () => {
                 <>
                   <Menu />
                   <UserProfile />
+                </>
+              } />
+              <Route path="/seguidores" element={
+                <>
+                  <Menu />
+                  <UserFollowers />
+                </>
+              } />
+              <Route path="/meus-concursos" element={
+                <>
+                  <Menu />
+                  <UserConcursos />
                 </>
               } />
               
