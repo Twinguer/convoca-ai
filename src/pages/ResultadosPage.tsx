@@ -26,18 +26,48 @@ const generateMockRanking = (seed: number) => {
   // Use seed to get different candidates for unofficial and official rankings
   const startIdx = seed * 20;
   
-  return Array.from({ length: 20 }, (_, i) => {
-    const nameSeed = (startIdx + i) % names.length;
-    // Generate a score between 70 and 100 with one decimal place
-    const score = (70 + Math.random() * 30).toFixed(1);
-    
-    return {
-      position: i + 1,
-      name: names[nameSeed],
-      score: score
-    };
-  }).sort((a, b) => parseFloat(b.score) - parseFloat(a.score))
-    .map((candidate, idx) => ({ ...candidate, position: idx + 1 }));
+  if (seed === 0) {
+    // For unofficial ranking, generate detailed scores
+    return Array.from({ length: 20 }, (_, i) => {
+      const nameSeed = (startIdx + i) % names.length;
+      
+      // Generate scores for each category with one decimal place
+      const basicScore = (15 + Math.random() * 15).toFixed(1);
+      const specificScore = (20 + Math.random() * 30).toFixed(1);
+      const discursiveScore = (10 + Math.random() * 10).toFixed(1);
+      
+      // Calculate final score (sum of all categories)
+      const finalScore = (
+        parseFloat(basicScore) + 
+        parseFloat(specificScore) + 
+        parseFloat(discursiveScore)
+      ).toFixed(1);
+      
+      return {
+        position: i + 1,
+        name: names[nameSeed],
+        basicScore,
+        specificScore,
+        discursiveScore,
+        finalScore
+      };
+    }).sort((a, b) => parseFloat(b.finalScore) - parseFloat(a.finalScore))
+      .map((candidate, idx) => ({ ...candidate, position: idx + 1 }));
+  } else {
+    // For official ranking, only use final score
+    return Array.from({ length: 20 }, (_, i) => {
+      const nameSeed = (startIdx + i) % names.length;
+      // Generate a score between 70 and 100 with one decimal place
+      const score = (70 + Math.random() * 30).toFixed(1);
+      
+      return {
+        position: i + 1,
+        name: names[nameSeed],
+        score: score
+      };
+    }).sort((a, b) => parseFloat(b.score) - parseFloat(a.score))
+      .map((candidate, idx) => ({ ...candidate, position: idx + 1 }));
+  }
 };
 
 const unofficialRanking = generateMockRanking(0);
@@ -126,9 +156,12 @@ const ResultadosPage: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-24">Posição</TableHead>
+                      <TableHead className="w-16">Posição</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead className="w-32 text-right">Nota</TableHead>
+                      <TableHead className="text-center">C. Básicos</TableHead>
+                      <TableHead className="text-center">C. Específicos</TableHead>
+                      <TableHead className="text-center">Discur/Est. Caso</TableHead>
+                      <TableHead className="text-right">Nota Final</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -136,7 +169,10 @@ const ResultadosPage: React.FC = () => {
                       <TableRow key={`unofficial-${candidate.position}`}>
                         <TableCell className="font-medium">{candidate.position}º</TableCell>
                         <TableCell>{candidate.name}</TableCell>
-                        <TableCell className="text-right">{candidate.score}</TableCell>
+                        <TableCell className="text-center">{candidate.basicScore}</TableCell>
+                        <TableCell className="text-center">{candidate.specificScore}</TableCell>
+                        <TableCell className="text-center">{candidate.discursiveScore}</TableCell>
+                        <TableCell className="text-right font-medium">{candidate.finalScore}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
