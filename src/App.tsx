@@ -44,10 +44,10 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin" element={
+              {/* Admin Routes with new path */}
+              <Route path="/project/admin/man/login" element={<AdminLogin />} />
+              <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
+              <Route path="/project/admin/man" element={
                 <ProtectedRoute>
                   <AdminLayout />
                 </ProtectedRoute>
@@ -57,6 +57,10 @@ const App = () => {
                 <Route path="concursos/novo" element={<NovoConcurso />} />
                 <Route path="concursos/editar/:id" element={<NovoConcurso />} />
               </Route>
+              
+              {/* Redirect old admin paths to new ones */}
+              <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
+              <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
               
               {/* Auth Routes */}
               <Route path="/auth" element={<Auth />} />

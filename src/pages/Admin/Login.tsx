@@ -35,10 +35,10 @@ const AdminLogin: React.FC = () => {
   const onSubmit = (values: FormValues) => {
     setIsLoading(true);
     
-    // Simple mock login - in a real app this would be an API call
+    // Check for the new admin credentials
     setTimeout(() => {
-      if (values.username === 'Admin' && values.password === 'Admin') {
-        // Store auth status in localStorage (in a real app, use proper token management)
+      if (values.username === 'RlimaAdmin' && values.password === '#Tijolo14@') {
+        // Store auth status in localStorage
         localStorage.setItem('adminAuth', 'true');
         
         toast({
@@ -47,7 +47,7 @@ const AdminLogin: React.FC = () => {
           variant: 'default',
         });
         
-        navigate('/admin/dashboard');
+        navigate('/project/admin/man/dashboard');
       } else {
         toast({
           title: 'Falha no login',

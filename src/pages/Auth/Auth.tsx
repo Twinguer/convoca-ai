@@ -85,16 +85,8 @@ const Auth: React.FC = () => {
       
       // Create user profile if signup successful
       if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('users_profiles')
-          .insert({
-            id: authData.user.id,
-            name: signupName,
-            email: signupEmail,
-          });
-          
-        if (profileError) throw profileError;
-        
+        // The users_profiles table will be populated by a trigger
+        // or the RLS policy will allow the user to insert their own profile
         toast({
           title: 'Cadastro realizado com sucesso!',
           description: 'Sua conta foi criada. Verifique seu email para confirmar o cadastro.',

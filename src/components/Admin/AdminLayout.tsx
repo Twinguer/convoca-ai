@@ -11,13 +11,13 @@ const AdminLayout: React.FC = () => {
     // Check if the user is authenticated
     const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
     if (!isAuthenticated) {
-      navigate('/admin/login');
+      navigate('/project/admin/man/login');
     }
   }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
-    navigate('/admin/login');
+    navigate('/project/admin/man/login');
   };
 
   return (
@@ -41,19 +41,19 @@ const AdminLayout: React.FC = () => {
         <aside className="w-64 bg-white border-r hidden md:block">
           <nav className="p-4 space-y-2">
             <Button asChild variant="ghost" className="w-full justify-start">
-              <Link to="/admin/dashboard" className="flex items-center gap-2">
+              <Link to="/project/admin/man/dashboard" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 Dashboard
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full justify-start">
-              <Link to="/admin/concursos/novo" className="flex items-center gap-2">
+              <Link to="/project/admin/man/concursos/novo" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Novo Concurso
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full justify-start">
-              <Link to="/admin/concursos" className="flex items-center gap-2">
+              <Link to="/project/admin/man/concursos" className="flex items-center gap-2">
                 <ListChecks className="h-4 w-4" />
                 Listar Concursos
               </Link>
