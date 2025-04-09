@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -25,7 +26,7 @@ import { AuthProvider } from "./hooks/useAuth";
 
 // Admin pages
 import AdminLogin from "./pages/Admin/Login";
-import AdminLayout from "./pages/Admin/AdminLayout";
+import AdminLayout from "./components/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
 import ListarConcursos from "./pages/Admin/ListarConcursos";

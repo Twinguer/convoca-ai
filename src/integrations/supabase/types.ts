@@ -162,6 +162,10 @@ export type Database = {
       }
       users_profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
+          concursos_aprovados: string | null
+          concursos_participando: string | null
           created_at: string
           email: string
           id: string
@@ -169,6 +173,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          concursos_aprovados?: string | null
+          concursos_participando?: string | null
           created_at?: string
           email: string
           id: string
@@ -176,6 +184,10 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          concursos_aprovados?: string | null
+          concursos_participando?: string | null
           created_at?: string
           email?: string
           id?: string

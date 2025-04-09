@@ -139,7 +139,8 @@ const UserProfile: React.FC = () => {
   };
   
   if (!user) {
-    return <Navigate to="/auth" />;
+    navigate("/auth");
+    return null;
   }
   
   return (
