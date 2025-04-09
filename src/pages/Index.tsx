@@ -38,10 +38,10 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="animate-fade-in">
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
-                Prepare-se e Conquiste seu Concurso
+                Compare seus resultados com outros que buscam o mesmo objetivo. Mostre seu sucesso para inspirar outros concurseiros.
               </h1>
               <p className="text-xl text-gray-700 mb-8">
-                Acompanhe editais, pré-classificações, resultados e nomeações de concursos públicos em um só lugar. Sua jornada de sucesso começa aqui.
+                Acompanhe editais, pré-classificações, resultados e nomeações de concursos públicos em um só lugar.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
