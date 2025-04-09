@@ -87,9 +87,9 @@ const Index = () => {
       {/* Features Section with Images */}
       <section className="bg-white py-20 px-4">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Seu caminho para a aprovação</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">Siga pessoas com o mesmo propósito que o seu</h2>
           <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">
-            A plataforma completa para acompanhar sua jornada rumo à aprovação em concursos públicos.
+            Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro. Já recebeu seu convite? 
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -108,7 +108,7 @@ const Index = () => {
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Editais Atualizados</h3>
                 <p className="text-gray-600">
-                  Acesse editais de concursos públicos atualizados diariamente. Fique por dentro de todas as oportunidades.
+                  Todos os participantes comprovaram que fazem ou já fizeram algum concurso público. 
                 </p>
               </div>
             </div>
