@@ -1,17 +1,45 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
+import { 
+  LayoutDashboard, 
+  FileText, 
+  Award, 
+  Medal, 
+  Users,
+  Menu as MenuIcon
+} from 'lucide-react';
+import { Button } from './ui/button';
+import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
+  };
+
+  const isAdmin = () => {
+    // Verificar se o usuário possui privilégios de administrador
+    // Isso poderia ser baseado em metadados do usuário ou em uma tabela de roles
+    return user?.email?.includes('admin'); // Exemplo simples, deve ser substituído por lógica real
   };
 
   return (
@@ -23,80 +51,213 @@ const Menu = () => {
               Convoca<span className="text-convoca-600">.</span>
             </span>
           </Link>
-          <nav className="flex items-center gap-3 font-medium md:gap-6">
-            <Link
-              to="/"
-              className={cn(
-                "text-foreground/60 transition-colors hover:text-foreground",
-                isActive('/') ? "text-foreground" : ""
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <Link to="/">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Home
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <NavigationMenuTrigger>Concursos</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-convoca-50 to-blue-50 p-6 no-underline outline-none focus:shadow-md"
+                          to="/concursos"
+                        >
+                          <div className="mb-2 mt-4 text-lg font-medium">
+                            Todos os Concursos
+                          </div>
+                          <p className="text-sm leading-tight text-muted-foreground">
+                            Explore todos os concursos disponíveis, filtre por categorias e encontre o que melhor se adapta ao seu perfil.
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <Link
+                        to="/concursos/cebraspe"
+                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div className="text-sm font-medium leading-none">Cebraspe</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          Concursos organizados pelo Cebraspe
+                        </p>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/concursos/fcc"
+                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div className="text-sm font-medium leading-none">FCC</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          Concursos organizados pela Fundação Carlos Chagas
+                        </p>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/concursos/fgv"
+                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div className="text-sm font-medium leading-none">FGV</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          Concursos organizados pela Fundação Getúlio Vargas
+                        </p>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        to="/concursos/vunesp"
+                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                      >
+                        <div className="text-sm font-medium leading-none">Vunesp</div>
+                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                          Concursos organizados pela Vunesp
+                        </p>
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <Link to="/editais">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Editais
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <Link to="/pre-classificacao">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Pré-classificação
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
+                <Link to="/nomeacoes">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Nomeações
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              {isAdmin() && (
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger>Administração</NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-3 p-4 w-[220px]">
+                      <li>
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Dashboard</div>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/admin/concursos"
+                          className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Concursos</div>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/admin/concursos/novo"
+                          className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <Medal className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Novo Concurso</div>
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/admin/usuarios"
+                          className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                        >
+                          <Users className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Usuários</div>
+                        </Link>
+                      </li>
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
               )}
-            >
-              Home
-            </Link>
-            <Link
-              to="/concursos"
-              className={cn(
-                "text-foreground/60 transition-colors hover:text-foreground",
-                isActive('/concursos') ? "text-foreground" : ""
-              )}
-            >
-              Concursos
-            </Link>
-            <Link
-              to="/editais"
-              className={cn(
-                "text-foreground/60 transition-colors hover:text-foreground",
-                isActive('/editais') ? "text-foreground" : ""
-              )}
-            >
-              Editais
-            </Link>
-            <Link
-              to="/pre-classificacao"
-              className={cn(
-                "text-foreground/60 transition-colors hover:text-foreground",
-                isActive('/pre-classificacao') ? "text-foreground" : ""
-              )}
-            >
-              Pré-classificação
-            </Link>
-            <Link
-              to="/nomeacoes"
-              className={cn(
-                "text-foreground/60 transition-colors hover:text-foreground",
-                isActive('/nomeacoes') ? "text-foreground" : ""
-              )}
-            >
-              Nomeações
-            </Link>
-          </nav>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
-        <button
-          className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:text-accent-foreground h-9 py-2 mr-2 px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-          type="button"
-          aria-haspopup="dialog"
-          aria-expanded="false"
-          aria-controls="radix-:R36hja:"
-          data-state="closed"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="w-6 h-6"
-          >
-            <line x1="4" x2="20" y1="12" y2="12"></line>
-            <line x1="4" x2="20" y1="6" y2="6"></line>
-            <line x1="4" x2="20" y1="18" y2="18"></line>
-          </svg>
-          <span className="sr-only">Toggle Menu</span>
-        </button>
+        
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
+            >
+              <MenuIcon className="w-6 h-6" />
+              <span className="sr-only">Abrir Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="pr-0">
+            <div className="px-7">
+              <Link to="/" className="flex items-center space-x-2 mb-8">
+                <span className="font-bold text-xl">
+                  Convoca<span className="text-convoca-600">.</span>
+                </span>
+              </Link>
+            </div>
+            <nav className="flex flex-col gap-4 px-7">
+              <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-convoca-600" : "text-foreground/70")}>
+                Home
+              </Link>
+              <Link to="/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/concursos') ? "text-convoca-600" : "text-foreground/70")}>
+                Concursos
+              </Link>
+              <Link to="/editais" className={cn("flex items-center text-lg font-semibold", isActive('/editais') ? "text-convoca-600" : "text-foreground/70")}>
+                Editais
+              </Link>
+              <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-convoca-600" : "text-foreground/70")}>
+                Pré-classificação
+              </Link>
+              <Link to="/nomeacoes" className={cn("flex items-center text-lg font-semibold", isActive('/nomeacoes') ? "text-convoca-600" : "text-foreground/70")}>
+                Nomeações
+              </Link>
+              
+              {isAdmin() && (
+                <>
+                  <div className="h-px bg-border mt-2 mb-2"></div>
+                  <div className="font-bold text-foreground/70 mb-2">Administração</div>
+                  <Link to="/admin/dashboard" className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-convoca-600" : "text-foreground/70")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                  <Link to="/admin/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-convoca-600" : "text-foreground/70")}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Concursos
+                  </Link>
+                  <Link to="/admin/concursos/novo" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos/novo') ? "text-convoca-600" : "text-foreground/70")}>
+                    <Medal className="mr-2 h-4 w-4" />
+                    Novo Concurso
+                  </Link>
+                </>
+              )}
+            </nav>
+          </SheetContent>
+        </Sheet>
+        
         <div className="flex flex-1 items-center justify-between md:justify-end gap-6">
           <nav className="flex items-center">
             <UserMenu />

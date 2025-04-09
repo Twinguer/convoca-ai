@@ -29,6 +29,11 @@ const Auth: React.FC = () => {
     return <Navigate to="/" />;
   }
   
+  // Handle click to return to home
+  const handleReturnHome = () => {
+    navigate('/');
+  };
+  
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,14 +94,15 @@ const Auth: React.FC = () => {
           });
           
         if (profileError) throw profileError;
+        
+        toast({
+          title: 'Cadastro realizado com sucesso!',
+          description: 'Sua conta foi criada. Verifique seu email para confirmar o cadastro.',
+        });
+      } else {
+        throw new Error('Não foi possível criar o usuário');
       }
       
-      toast({
-        title: 'Cadastro realizado com sucesso!',
-        description: 'Sua conta foi criada. Você será redirecionado para a página inicial.',
-      });
-      
-      navigate('/');
     } catch (error: any) {
       toast({
         title: 'Erro ao criar conta',
@@ -117,7 +123,7 @@ const Auth: React.FC = () => {
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/')}
+              onClick={handleReturnHome}
               className="flex items-center gap-1"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -218,6 +224,13 @@ const Auth: React.FC = () => {
           <div className="text-sm text-muted-foreground text-center">
             Ao criar uma conta, você concorda com nossos termos de serviço e política de privacidade.
           </div>
+          <Button 
+            variant="outline" 
+            className="w-full" 
+            onClick={handleReturnHome}
+          >
+            Voltar para a página inicial
+          </Button>
         </CardFooter>
       </Card>
     </div>
