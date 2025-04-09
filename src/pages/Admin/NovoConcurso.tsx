@@ -14,12 +14,29 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from '@/lib/utils';
+
+// Available job positions
+const cargosDisponiveis = [
+  'Analista Judiciário - Especialidade: Enfermagem',
+  'Analista Judiciário - Área: Apoio Especializado - Especialidade: Estatística',
+  'Analista Judiciário - Especialidade: Medicina (Clínica Médica)',
+  'Analista Judiciário - Especialidade: Medicina (Psiquiatria)',
+  'Analista Judiciário - Especialidade: Odontologia',
+  'Analista Judiciário - Especialidade: Psicologia',
+  'Analista Judiciário - Área Administrativa',
+  'Técnico Judiciário - Área Administrativa',
+  'Técnico Judiciário - Agente de Polícia Judicial',
+  'Técnico Judiciário - Programação de Sistemas',
+];
 
 // Form validation schema
 const formSchema = z.object({
   titulo: z.string().min(1, 'Título é obrigatório'),
+  cargos: z.array(z.string()).min(1, 'Selecione pelo menos um cargo'),
   orgao: z.string().min(1, 'Órgão é obrigatório'),
   banca: z.string().min(1, 'Banca é obrigatória'),
   bancaOutra: z.string().optional(),
@@ -40,6 +57,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const DEFAULT_FORM_VALUES: FormValues = {
   titulo: '',
+  cargos: [],
   orgao: '',
   banca: '',
   bancaOutra: '',
@@ -72,6 +90,8 @@ const NovoConcurso: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCargos, setSelectedCargos] = useState<string[]>([]);
+  const [cargoInput, setCargoInput] = useState('');
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -81,43 +101,61 @@ const NovoConcurso: React.FC = () => {
   const watchBanca = form.watch('banca');
   const watchTipoProva = form.watch('tipoProva');
   
+  const handleAddCargo = (cargo: string) => {
+    if (cargo && !selectedCargos.includes(cargo)) {
+      const newCargos = [...selectedCargos, cargo];
+      setSelectedCargos(newCargos);
+      form.setValue('cargos', newCargos);
+    }
+    setCargoInput('');
+  };
+
+  const handleRemoveCargo = (cargo: string) => {
+    const newCargos = selectedCargos.filter(c => c !== cargo);
+    setSelectedCargos(newCargos);
+    form.setValue('cargos', newCargos);
+  };
+  
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     
     try {
-      // Prepare the data
-      const concursoData = {
-        id: uuidv4(),
-        titulo: values.titulo,
-        orgao: values.orgao,
-        banca: values.banca === 'Outra' ? values.bancaOutra : values.banca,
-        data_publicacao: values.dataPublicacao,
-        vagas: values.vagas,
-        status: values.status,
-        etapa_atual: 'Inscrições',
-        link: values.link || null,
-        // Store additional info in a metadata field or separate table in a real app
-        meta: JSON.stringify({
-          tipoProva: values.tipoProva,
-          descontoPorErro: values.descontoPorErro,
-          numAlternativas: values.numAlternativas,
-          pesoBasicos: values.pesoBasicos,
-          pesoEspecificos: values.pesoEspecificos,
-          pesoDiscursiva: values.pesoDiscursiva,
-          fatorMultiplicador: values.fatorMultiplicador,
-        }),
-      };
-      
-      // Insert into Supabase
-      const { error } = await supabase
-        .from('concursos')
-        .insert([concursoData]);
-      
-      if (error) throw error;
+      // Create one concurso entry for each cargo
+      for (const cargo of values.cargos) {
+        // Prepare the data
+        const concursoData = {
+          id: uuidv4(),
+          titulo: values.titulo,
+          orgao: cargo, // Use cargo as orgao for now
+          banca: values.banca === 'Outra' ? values.bancaOutra : values.banca,
+          data_publicacao: values.dataPublicacao,
+          vagas: values.vagas,
+          status: values.status,
+          etapa_atual: 'Inscrições',
+          link: values.link || null,
+          // Store additional info in a metadata field or separate table in a real app
+          meta: JSON.stringify({
+            tipoProva: values.tipoProva,
+            descontoPorErro: values.descontoPorErro,
+            numAlternativas: values.numAlternativas,
+            pesoBasicos: values.pesoBasicos,
+            pesoEspecificos: values.pesoEspecificos,
+            pesoDiscursiva: values.pesoDiscursiva,
+            fatorMultiplicador: values.fatorMultiplicador,
+          }),
+        };
+        
+        // Insert into Supabase
+        const { error } = await supabase
+          .from('concursos')
+          .insert([concursoData]);
+        
+        if (error) throw error;
+      }
       
       toast({
         title: 'Concurso criado com sucesso!',
-        description: 'O novo concurso foi adicionado ao sistema.',
+        description: `Foram criados ${values.cargos.length} cargos para este concurso.`,
         variant: 'default',
       });
       
@@ -178,6 +216,66 @@ const NovoConcurso: React.FC = () => {
                   )}
                 />
               </div>
+              
+              <FormField
+                control={form.control}
+                name="cargos"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Escolha o cargo*</FormLabel>
+                    <div className="flex flex-col space-y-4">
+                      <div className="flex gap-2">
+                        <Select 
+                          value={cargoInput} 
+                          onValueChange={(value) => handleAddCargo(value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione um cargo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cargosDisponiveis.map((cargo) => (
+                              <SelectItem 
+                                key={cargo} 
+                                value={cargo}
+                                disabled={selectedCargos.includes(cargo)}
+                              >
+                                {cargo}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {selectedCargos.map((cargo) => (
+                          <Badge key={cargo} variant="secondary" className="flex items-center gap-1 py-1 px-3">
+                            {cargo}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 ml-1"
+                              onClick={() => handleRemoveCargo(cargo)}
+                            >
+                              <X className="h-3 w-3" />
+                              <span className="sr-only">Remove</span>
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                      
+                      {form.formState.errors.cargos && (
+                        <p className="text-sm font-medium text-destructive">
+                          {form.formState.errors.cargos.message}
+                        </p>
+                      )}
+                    </div>
+                    <FormDescription>
+                      Selecione um ou mais cargos para este concurso
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
               
               <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
                 <div>
