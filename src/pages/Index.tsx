@@ -47,7 +47,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
-                    Ver Editais Abertos
+                    Participar da comunidade.
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -302,7 +302,7 @@ const Index = () => {
                   </li>
                   <li className="flex items-center">
                     <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Resultados oficiais de todas as bancas</span>
+                    <span>Resultados oficiais</span>
                   </li>
                   <li className="flex items-center">
                     <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
@@ -312,7 +312,7 @@ const Index = () => {
                 
                 <Link to="/editais">
                   <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    Ver Editais Disponíveis
+                    Ver concursos com ranking
                   </Button>
                 </Link>
               </div>
@@ -326,7 +326,7 @@ const Index = () => {
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Pronto para conquistar sua aprovação?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Junte-se a milhares de concurseiros que estão realizando seus sonhos através da nossa plataforma.
+            Junte-se a milhares de concurseiros que estão juntos trocando experiências em nossa comunidade.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
