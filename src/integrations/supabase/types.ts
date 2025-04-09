@@ -11,46 +11,64 @@ export type Database = {
     Tables: {
       concursos: {
         Row: {
+          alternatives_count: number | null
           banca: string
+          basic_knowledge_weight: number | null
           created_at: string
           data_publicacao: string | null
+          discursive_weight: number | null
           etapa_atual: string | null
+          exam_type: string | null
           id: string
           inscritos: number | null
           link: string | null
           orgao: string
+          specific_knowledge_weight: number | null
           status: string
           titulo: string
           updated_at: string
           vagas: number | null
+          wrong_answer_penalty: number | null
         }
         Insert: {
+          alternatives_count?: number | null
           banca?: string
+          basic_knowledge_weight?: number | null
           created_at?: string
           data_publicacao?: string | null
+          discursive_weight?: number | null
           etapa_atual?: string | null
+          exam_type?: string | null
           id?: string
           inscritos?: number | null
           link?: string | null
           orgao: string
+          specific_knowledge_weight?: number | null
           status?: string
           titulo: string
           updated_at?: string
           vagas?: number | null
+          wrong_answer_penalty?: number | null
         }
         Update: {
+          alternatives_count?: number | null
           banca?: string
+          basic_knowledge_weight?: number | null
           created_at?: string
           data_publicacao?: string | null
+          discursive_weight?: number | null
           etapa_atual?: string | null
+          exam_type?: string | null
           id?: string
           inscritos?: number | null
           link?: string | null
           orgao?: string
+          specific_knowledge_weight?: number | null
           status?: string
           titulo?: string
           updated_at?: string
           vagas?: number | null
+          wrong_answer_penalty?: number | null
         }
         Relationships: []
       }
@@ -69,12 +87,112 @@ export type Database = {
         }
         Relationships: []
       }
+      user_answers: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          is_basic_knowledge: boolean
+          question_number: number
+          updated_at: string
+          user_ranking_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          is_basic_knowledge?: boolean
+          question_number: number
+          updated_at?: string
+          user_ranking_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          is_basic_knowledge?: boolean
+          question_number?: number
+          updated_at?: string
+          user_ranking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_answers_user_ranking_id_fkey"
+            columns: ["user_ranking_id"]
+            isOneToOne: false
+            referencedRelation: "user_rankings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_rankings: {
+        Row: {
+          concurso_id: string
+          created_at: string
+          id: string
+          score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          concurso_id: string
+          created_at?: string
+          id?: string
+          score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          concurso_id?: string
+          created_at?: string
+          id?: string
+          score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rankings_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users_profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      count_concurso_participants: {
+        Args: { concurso_id: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

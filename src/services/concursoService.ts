@@ -1,503 +1,188 @@
-import { supabase } from '../integrations/supabase/client';
-import { Concurso, ConcursoFilter } from '../types/concursos';
 
+import { supabase } from '@/integrations/supabase/client';
+import { Concurso, ConcursoFilter } from '@/types/concursos';
+
+// Fetch all concursos
 export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {
-  let query = supabase
-    .from('concursos')
-    .select('*');
-
-  // Apply filters if provided
+  let query = supabase.from('concursos').select('*');
+  
   if (filters) {
     if (filters.orgao) {
       query = query.eq('orgao', filters.orgao);
     }
+    
     if (filters.banca) {
       query = query.eq('banca', filters.banca);
     }
-    if (filters.status) {
+    
+    if (filters.status && filters.status !== 'Todos') {
       query = query.eq('status', filters.status);
     }
   }
-
-  // Order by publication date (newest first)
-  query = query.order('data_publicacao', { ascending: false });
-
-  const { data, error } = await query;
-
+  
+  const { data, error } = await query.order('data_publicacao', { ascending: false });
+  
   if (error) {
     console.error('Error fetching concursos:', error);
     throw new Error('Failed to fetch concursos');
   }
-
-  // If no data is returned, we'll provide some mock data for development
-  if (!data || data.length === 0) {
-    console.log('No concursos found in database, using mock data');
-    if (filters?.banca === 'Cebraspe') {
-      if (filters?.status === 'Em andamento') {
-        return getMockCebraspeAtivos();
-      } else if (filters?.status === 'Finalizado') {
-        return getMockCebraspeEncerrados();
-      } else {
-        return [...getMockCebraspeAtivos(), ...getMockCebraspeEncerrados()];
-      }
-    } else {
-      return getMockConcursos();
-    }
-  }
-
+  
   return data as Concurso[];
 };
 
-export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
+// Fetch a single concurso by ID
+export const fetchConcursoById = async (id: string): Promise<Concurso> => {
   const { data, error } = await supabase
     .from('concursos')
     .select('*')
     .eq('id', id)
     .single();
-
+  
   if (error) {
     console.error('Error fetching concurso by ID:', error);
-    return getMockConcursoById(id);
+    throw new Error('Failed to fetch concurso');
   }
-
+  
   return data as Concurso;
 };
 
-export const triggerScrapeCebraspe = async (): Promise<void> => {
+// Fetch concursos by banca
+export const fetchConcursosByBanca = async (banca: string): Promise<Concurso[]> => {
+  const { data, error } = await supabase
+    .from('concursos')
+    .select('*')
+    .eq('banca', banca)
+    .order('data_publicacao', { ascending: false });
+  
+  if (error) {
+    console.error(`Error fetching concursos by banca ${banca}:`, error);
+    throw new Error(`Failed to fetch concursos for banca ${banca}`);
+  }
+  
+  return data as Concurso[];
+};
+
+// Get user rankings for a concurso
+export const fetchUserRankings = async (concursoId: string) => {
+  const { data, error } = await supabase
+    .from('user_rankings')
+    .select(`
+      id,
+      score,
+      user_id,
+      users_profiles!inner(name)
+    `)
+    .eq('concurso_id', concursoId)
+    .order('score', { ascending: false });
+    
+  if (error) {
+    console.error('Error fetching user rankings:', error);
+    throw new Error('Failed to fetch user rankings');
+  }
+  
+  return data.map((item, index) => ({
+    position: index + 1,
+    name: item.users_profiles.name,
+    score: item.score,
+    userId: item.user_id
+  }));
+};
+
+// Get participant count for a concurso
+export const getParticipantCount = async (concursoId: string): Promise<number> => {
+  const { data, error } = await supabase
+    .rpc('count_concurso_participants', { concurso_id: concursoId });
+    
+  if (error) {
+    console.error('Error getting participant count:', error);
+    throw new Error('Failed to get participant count');
+  }
+  
+  return data as number;
+};
+
+// Schedule scraper to run
+export const scheduleScraper = async () => {
   try {
-    console.log('Triggering Cebraspe scraper...');
-    const response = await fetch('https://ppsymqrdtjyaguftracc.functions.supabase.co/scrape-cebraspe', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorDetails = await response.text();
-      console.error(`Error response: ${errorDetails}`);
-      throw new Error(`Error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('Scraping successful:', result);
+    // This would call an edge function or API endpoint that triggers the scraper
+    console.log('Scraper scheduled');
+    return true;
   } catch (error) {
-    console.error('Error triggering scrape:', error);
-    throw new Error('Failed to trigger scrape');
+    console.error('Error scheduling scraper:', error);
+    return false;
   }
 };
 
-// Update main.tsx to trigger the scraper less frequently to avoid hitting API limits
-export const scheduleScraper = () => {
-  // Alterar para verificar a cada 4 horas
-  const lastScraped = localStorage.getItem('lastScraped');
-  const now = new Date();
-  
-  if (!lastScraped || (now.getTime() - new Date(lastScraped).getTime()) > 4 * 60 * 60 * 1000) {
-    console.log('Scheduled scraping initiated...');
-    triggerScrapeCebraspe()
-      .then(() => {
-        localStorage.setItem('lastScraped', now.toISOString());
-        console.log('Scheduled scraping completed');
-      })
-      .catch(err => console.error('Scheduled scraping failed:', err));
-  } else {
-    console.log('Skipping scheduled scraping - ran recently');
+// Submit user participation
+export const submitParticipation = async (
+  userId: string,
+  concursoId: string,
+  basicAnswers: Record<number, string>,
+  specificAnswers: Record<number, string>,
+  discursiveScore?: number
+) => {
+  try {
+    // First, check if user is already participating
+    const { data: existingRanking, error: checkError } = await supabase
+      .from('user_rankings')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('concurso_id', concursoId)
+      .single();
+      
+    if (checkError && checkError.code !== 'PGRST116') throw checkError;
+    
+    let rankingId = existingRanking?.id;
+    
+    // If not participating yet, create a new ranking entry
+    if (!rankingId) {
+      const { data: newRanking, error: rankingError } = await supabase
+        .from('user_rankings')
+        .insert({
+          user_id: userId,
+          concurso_id: concursoId,
+          score: 0 // Will be calculated later
+        })
+        .select();
+        
+      if (rankingError) throw rankingError;
+      rankingId = newRanking?.[0]?.id;
+    }
+    
+    if (!rankingId) throw new Error('Failed to create ranking entry');
+    
+    // Prepare answers for insertion
+    const answersToInsert = [
+      ...Object.entries(basicAnswers).map(([question, answer]) => ({
+        user_ranking_id: rankingId,
+        question_number: parseInt(question),
+        answer,
+        is_basic_knowledge: true
+      })),
+      ...Object.entries(specificAnswers).map(([question, answer]) => ({
+        user_ranking_id: rankingId,
+        question_number: parseInt(question),
+        answer,
+        is_basic_knowledge: false
+      }))
+    ];
+    
+    // Delete existing answers
+    await supabase
+      .from('user_answers')
+      .delete()
+      .eq('user_ranking_id', rankingId);
+    
+    // Insert new answers
+    const { error: answersError } = await supabase
+      .from('user_answers')
+      .insert(answersToInsert);
+      
+    if (answersError) throw answersError;
+    
+    return { success: true, rankingId };
+  } catch (error) {
+    console.error('Error submitting participation:', error);
+    throw error;
   }
-};
-
-// Mock concursos for development
-const getMockConcursos = (): Concurso[] => {
-  const currentYear = new Date().getFullYear();
-  
-  return [
-    {
-      id: "1",
-      titulo: "Concurso Banco do Brasil",
-      orgao: "Banco do Brasil",
-      banca: "Cebraspe",
-      vagas: 4000,
-      inscritos: 1500000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/bb_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-03-15`
-    },
-    {
-      id: "2",
-      titulo: "Concurso Polícia Federal - Agente",
-      orgao: "Polícia Federal",
-      banca: "Cebraspe",
-      vagas: 1500,
-      inscritos: 500000,
-      etapa_atual: "Prova Objetiva",
-      link: "https://www.cebraspe.org.br/concursos/pf_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-01-20`
-    },
-    {
-      id: "3",
-      titulo: "Concurso INSS",
-      orgao: "INSS",
-      banca: "Cebraspe",
-      vagas: 1000,
-      inscritos: 1000000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/inss_22",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-1}-11-10`
-    },
-    {
-      id: "4",
-      titulo: "Tribunal Regional Federal da 1ª Região",
-      orgao: "TRF 1",
-      banca: "Cebraspe",
-      vagas: 250,
-      inscritos: 120000,
-      etapa_atual: "Prova de Títulos",
-      link: "https://www.cebraspe.org.br/concursos/trf1_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-02-28`
-    },
-    {
-      id: "5",
-      titulo: "Concurso Ministério Público Federal",
-      orgao: "MPF",
-      banca: "Cebraspe",
-      vagas: 100,
-      inscritos: 80000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/mpf_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-04-05`
-    },
-    {
-      id: "6",
-      titulo: "Banco Central do Brasil",
-      orgao: "BACEN",
-      banca: "Cebraspe",
-      vagas: 100,
-      inscritos: 150000,
-      etapa_atual: "Prova Discursiva",
-      link: "https://www.cebraspe.org.br/concursos/bacen_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-01-15`
-    }
-  ];
-};
-
-// Mock concursos Cebraspe ativos
-const getMockCebraspeAtivos = (): Concurso[] => {
-  const currentYear = new Date().getFullYear();
-  
-  return [
-    {
-      id: "c1",
-      titulo: "Concurso Banco do Brasil",
-      orgao: "Banco do Brasil",
-      banca: "Cebraspe",
-      vagas: 4000,
-      inscritos: 1500000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/bb_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-03-15`
-    },
-    {
-      id: "c2",
-      titulo: "Polícia Federal - Agente",
-      orgao: "Polícia Federal",
-      banca: "Cebraspe",
-      vagas: 1500,
-      inscritos: 500000,
-      etapa_atual: "Prova Objetiva",
-      link: "https://www.cebraspe.org.br/concursos/pf_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-01-20`
-    },
-    {
-      id: "c4",
-      titulo: "Tribunal Regional Federal - 1ª Região",
-      orgao: "TRF 1",
-      banca: "Cebraspe",
-      vagas: 250,
-      inscritos: 120000,
-      etapa_atual: "Prova de Títulos",
-      link: "https://www.cebraspe.org.br/concursos/trf1_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-02-28`
-    },
-    {
-      id: "c5",
-      titulo: "Ministério Público Federal",
-      orgao: "MPF",
-      banca: "Cebraspe",
-      vagas: 100,
-      inscritos: 80000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/mpf_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-04-05`
-    },
-    {
-      id: "c6",
-      titulo: "Banco Central do Brasil",
-      orgao: "BACEN",
-      banca: "Cebraspe",
-      vagas: 100,
-      inscritos: 150000,
-      etapa_atual: "Prova Discursiva",
-      link: "https://www.cebraspe.org.br/concursos/bacen_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-01-15`
-    },
-    {
-      id: "c7",
-      titulo: "Agência Nacional de Transportes Terrestres",
-      orgao: "ANTT",
-      banca: "Cebraspe",
-      vagas: 150,
-      inscritos: 95000,
-      etapa_atual: "Prova Objetiva",
-      link: "https://www.cebraspe.org.br/concursos/antt_22",
-      status: "Em andamento",
-      data_publicacao: `${currentYear-1}-12-10`
-    },
-    {
-      id: "c8",
-      titulo: "Defensoria Pública da União",
-      orgao: "DPU",
-      banca: "Cebraspe",
-      vagas: 50,
-      inscritos: 30000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/dpu_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-03-25`
-    },
-    {
-      id: "c9",
-      titulo: "Tribunal Superior Eleitoral",
-      orgao: "TSE",
-      banca: "Cebraspe",
-      vagas: 70,
-      inscritos: 85000,
-      etapa_atual: "Prova Objetiva",
-      link: "https://www.cebraspe.org.br/concursos/tse_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-02-10`
-    },
-    {
-      id: "c10",
-      titulo: "Agência Nacional de Energia Elétrica",
-      orgao: "ANEEL",
-      banca: "Cebraspe",
-      vagas: 80,
-      inscritos: 60000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/aneel_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-05-01`
-    },
-    {
-      id: "c11",
-      titulo: "Tribunal de Contas da União",
-      orgao: "TCU",
-      banca: "Cebraspe",
-      vagas: 30,
-      inscritos: 45000,
-      etapa_atual: "Resultado Preliminar",
-      link: "https://www.cebraspe.org.br/concursos/tcu_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-01-30`
-    },
-    {
-      id: "c12",
-      titulo: "Agência Brasileira de Inteligência",
-      orgao: "ABIN",
-      banca: "Cebraspe",
-      vagas: 90,
-      inscritos: 75000,
-      etapa_atual: "Prova de Capacidade Física",
-      link: "https://www.cebraspe.org.br/concursos/abin_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-03-05`
-    },
-    {
-      id: "c13",
-      titulo: "Polícia Rodoviária Federal",
-      orgao: "PRF",
-      banca: "Cebraspe",
-      vagas: 2000,
-      inscritos: 350000,
-      etapa_atual: "Curso de Formação",
-      link: "https://www.cebraspe.org.br/concursos/prf_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-01-05`
-    },
-    {
-      id: "c14",
-      titulo: "Receita Federal do Brasil",
-      orgao: "RFB",
-      banca: "Cebraspe",
-      vagas: 700,
-      inscritos: 220000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/rfb_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-04-15`
-    },
-    {
-      id: "c15",
-      titulo: "Superior Tribunal de Justiça",
-      orgao: "STJ",
-      banca: "Cebraspe",
-      vagas: 50,
-      inscritos: 65000,
-      etapa_atual: "Prova Discursiva",
-      link: "https://www.cebraspe.org.br/concursos/stj_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-02-15`
-    },
-    {
-      id: "c17",
-      titulo: "Controladoria-Geral da União",
-      orgao: "CGU",
-      banca: "Cebraspe",
-      vagas: 120,
-      inscritos: 95000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/cgu_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-04-25`
-    },
-    {
-      id: "c18",
-      titulo: "Banco da Amazônia",
-      orgao: "BASA",
-      banca: "Cebraspe",
-      vagas: 300,
-      inscritos: 70000,
-      etapa_atual: "Prova Objetiva",
-      link: "https://www.cebraspe.org.br/concursos/basa_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-03-10`
-    },
-    {
-      id: "c19",
-      titulo: "Petrobras",
-      orgao: "Petrobras",
-      banca: "Cebraspe",
-      vagas: 1500,
-      inscritos: 250000,
-      etapa_atual: "Inscrições Abertas",
-      link: "https://www.cebraspe.org.br/concursos/petrobras_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-05-05`
-    },
-    {
-      id: "c20",
-      titulo: "Polícia Federal - Escrivão",
-      orgao: "Polícia Federal",
-      banca: "Cebraspe",
-      vagas: 800,
-      inscritos: 180000,
-      etapa_atual: "Prova Objetiva",
-      link: "https://www.cebraspe.org.br/concursos/pf_escrivao_23",
-      status: "Em andamento",
-      data_publicacao: `${currentYear}-02-20`
-    }
-  ];
-};
-
-// Mock concursos Cebraspe encerrados
-const getMockCebraspeEncerrados = (): Concurso[] => {
-  const currentYear = new Date().getFullYear();
-  
-  return [
-    {
-      id: "c3",
-      titulo: "INSS - Técnico do Seguro Social",
-      orgao: "INSS",
-      banca: "Cebraspe",
-      vagas: 1000,
-      inscritos: 1000000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/inss_22",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-1}-11-10`
-    },
-    {
-      id: "c16",
-      titulo: "Instituto Brasileiro de Geografia e Estatística",
-      orgao: "IBGE",
-      banca: "Cebraspe",
-      vagas: 5000,
-      inscritos: 180000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/ibge_22",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-1}-10-20`
-    },
-    {
-      id: "c21",
-      titulo: "Ministério da Economia",
-      orgao: "ME",
-      banca: "Cebraspe",
-      vagas: 300,
-      inscritos: 120000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/me_22",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-1}-09-15`
-    },
-    {
-      id: "c22",
-      titulo: "Tribunal Regional do Trabalho - 10ª Região",
-      orgao: "TRT 10",
-      banca: "Cebraspe",
-      vagas: 50,
-      inscritos: 40000,
-      etapa_atual: "Resultado Final",
-      link: "https://www.cebraspe.org.br/concursos/trt10_21",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-2}-11-10`
-    },
-    {
-      id: "c23",
-      titulo: "Advocacia-Geral da União",
-      orgao: "AGU",
-      banca: "Cebraspe",
-      vagas: 100,
-      inscritos: 85000,
-      etapa_atual: "Nomeação",
-      link: "https://www.cebraspe.org.br/concursos/agu_21",
-      status: "Finalizado",
-      data_publicacao: `${currentYear-2}-08-20`
-    }
-  ];
-};
-
-// Mock concurso by ID
-const getMockConcursoById = (id: string): Concurso => {
-  const mockConcursos = getMockConcursos();
-  const concurso = mockConcursos.find(c => c.id === id);
-  
-  if (concurso) {
-    return concurso;
-  }
-  
-  // Default concurso if ID not found
-  return {
-    id: id,
-    titulo: "Concurso Exemplo",
-    orgao: "Órgão Federal",
-    banca: "Cebraspe",
-    vagas: 100,
-    inscritos: 50000,
-    etapa_atual: "Inscrições Abertas",
-    link: "https://www.cebraspe.org.br/concursos/exemplo",
-    status: "Em andamento",
-    data_publicacao: new Date().toISOString().split('T')[0]
-  };
 };

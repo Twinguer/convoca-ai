@@ -19,6 +19,9 @@ import CebraspeConcursos from "./pages/CebraspeConcursos";
 import FCCConcursos from "./pages/FCCConcursos";
 import FGVConcursos from "./pages/FGVConcursos";
 import VunespConcursos from "./pages/VunespConcursos";
+import ConcursoParticipation from "./pages/ConcursoParticipation";
+import Auth from "./pages/Auth/Auth";
+import { AuthProvider } from "./hooks/useAuth";
 
 // Admin pages
 import AdminLogin from "./pages/Admin/Login";
@@ -34,108 +37,119 @@ const queryClient = new QueryClient();
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="concursos" element={<ListarConcursos />} />
-              <Route path="concursos/novo" element={<NovoConcurso />} />
-              <Route path="concursos/editar/:id" element={<NovoConcurso />} />
-            </Route>
-            
-            {/* Public Routes */}
-            <Route path="/" element={
-              <>
-                <Menu />
-                <Index />
-              </>
-            } />
-            <Route path="/editais" element={
-              <>
-                <Menu />
-                <Editais />
-              </>
-            } />
-            <Route path="/concursos" element={
-              <>
-                <Menu />
-                <ConcursosPage />
-              </>
-            } />
-            <Route path="/concursos/cebraspe" element={
-              <>
-                <Menu />
-                <CebraspeConcursos />
-              </>
-            } />
-            <Route path="/concursos/fcc" element={
-              <>
-                <Menu />
-                <FCCConcursos />
-              </>
-            } />
-            <Route path="/concursos/fgv" element={
-              <>
-                <Menu />
-                <FGVConcursos />
-              </>
-            } />
-            <Route path="/concursos/vunesp" element={
-              <>
-                <Menu />
-                <VunespConcursos />
-              </>
-            } />
-            <Route path="/pre-classificacao" element={
-              <>
-                <Menu />
-                <PreClassificacao />
-              </>
-            } />
-            <Route path="/resultado" element={
-              <>
-                <Menu />
-                <Resultado />
-              </>
-            } />
-            <Route path="/nomeacoes" element={
-              <>
-                <Menu />
-                <Nomeacoes />
-              </>
-            } />
-            <Route path="/concurso/:id" element={
-              <>
-                <Menu />
-                <ConcursoDetails />
-              </>
-            } />
-            <Route path="/concurso/:id/resultados" element={
-              <>
-                <Menu />
-                <ResultadosPage />
-              </>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={
-              <>
-                <Menu />
-                <NotFound />
-              </>
-            } />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin" element={
+                <ProtectedRoute>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }>
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="concursos" element={<ListarConcursos />} />
+                <Route path="concursos/novo" element={<NovoConcurso />} />
+                <Route path="concursos/editar/:id" element={<NovoConcurso />} />
+              </Route>
+              
+              {/* Auth Routes */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Public Routes */}
+              <Route path="/" element={
+                <>
+                  <Menu />
+                  <Index />
+                </>
+              } />
+              <Route path="/editais" element={
+                <>
+                  <Menu />
+                  <Editais />
+                </>
+              } />
+              <Route path="/concursos" element={
+                <>
+                  <Menu />
+                  <ConcursosPage />
+                </>
+              } />
+              <Route path="/concursos/cebraspe" element={
+                <>
+                  <Menu />
+                  <CebraspeConcursos />
+                </>
+              } />
+              <Route path="/concursos/fcc" element={
+                <>
+                  <Menu />
+                  <FCCConcursos />
+                </>
+              } />
+              <Route path="/concursos/fgv" element={
+                <>
+                  <Menu />
+                  <FGVConcursos />
+                </>
+              } />
+              <Route path="/concursos/vunesp" element={
+                <>
+                  <Menu />
+                  <VunespConcursos />
+                </>
+              } />
+              <Route path="/pre-classificacao" element={
+                <>
+                  <Menu />
+                  <PreClassificacao />
+                </>
+              } />
+              <Route path="/resultado" element={
+                <>
+                  <Menu />
+                  <Resultado />
+                </>
+              } />
+              <Route path="/nomeacoes" element={
+                <>
+                  <Menu />
+                  <Nomeacoes />
+                </>
+              } />
+              <Route path="/concurso/:id" element={
+                <>
+                  <Menu />
+                  <ConcursoDetails />
+                </>
+              } />
+              <Route path="/concurso/:id/resultados" element={
+                <>
+                  <Menu />
+                  <ResultadosPage />
+                </>
+              } />
+              <Route path="/concurso/:id/participar" element={
+                <>
+                  <Menu />
+                  <ConcursoParticipation />
+                </>
+              } />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={
+                <>
+                  <Menu />
+                  <NotFound />
+                </>
+              } />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };
