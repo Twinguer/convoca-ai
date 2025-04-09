@@ -70,7 +70,7 @@ export const fetchUserRankings = async (concursoId: string) => {
       id,
       score,
       user_id,
-      users_profiles!inner(name)
+      users_profiles(name)
     `)
     .eq('concurso_id', concursoId)
     .order('score', { ascending: false });
@@ -82,7 +82,7 @@ export const fetchUserRankings = async (concursoId: string) => {
   
   return data.map((item, index) => ({
     position: index + 1,
-    name: item.users_profiles.name,
+    name: item.users_profiles?.name || 'Usuário Anônimo',
     score: item.score,
     userId: item.user_id
   }));

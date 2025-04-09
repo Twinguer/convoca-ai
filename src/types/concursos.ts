@@ -49,6 +49,10 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  bio?: string;
+  avatar_url?: string;
+  concursos_aprovados?: string;
+  concursos_participando?: string;
   created_at: string;
   updated_at: string;
 }

@@ -9,15 +9,35 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, LogOut, Settings, Award } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, LogOut, Award } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Fetch user profile for avatar
+  const { data: profile } = useQuery({
+    queryKey: ['user-profile-menu', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      
+      const { data, error } = await supabase
+        .from('users_profiles')
+        .select('name, avatar_url')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user
+  });
   
   const handleSignOut = async () => {
     try {
@@ -49,14 +69,18 @@ const UserMenu: React.FC = () => {
     );
   }
   
-  const userName = user.user_metadata?.name || user.email || 'Usuário';
+  const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
   
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+            {profile?.avatar_url ? (
+              <AvatarImage src={profile.avatar_url} alt={userName} />
+            ) : (
+              <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+            )}
           </Avatar>
         </Button>
       </DropdownMenuTrigger>

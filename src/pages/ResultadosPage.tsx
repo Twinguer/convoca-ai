@@ -45,7 +45,7 @@ const ResultadosPage: React.FC = () => {
           id,
           score,
           user_id,
-          users_profiles!inner(name)
+          users_profiles(name)
         `)
         .eq('concurso_id', id)
         .order('score', { ascending: false });
@@ -55,7 +55,7 @@ const ResultadosPage: React.FC = () => {
       // Format data
       return (data || []).map((item, index) => ({
         position: index + 1,
-        name: item.users_profiles.name,
+        name: item.users_profiles?.name || 'Usuário Anônimo',
         finalScore: item.score.toFixed(1),
         userId: item.user_id
       })) as RankingUser[];

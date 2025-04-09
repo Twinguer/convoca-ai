@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { ArrowLeft } from 'lucide-react';
 
 const Auth: React.FC = () => {
   const { toast } = useToast();
@@ -111,7 +112,18 @@ const Auth: React.FC = () => {
     <div className="container flex h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Acesso ao Sistema</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold">Acesso ao Sistema</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Button>
+          </div>
           <CardDescription>
             Entre com sua conta ou crie uma nova para participar dos rankings
           </CardDescription>

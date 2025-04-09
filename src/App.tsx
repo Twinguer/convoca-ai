@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,11 +20,12 @@ import FGVConcursos from "./pages/FGVConcursos";
 import VunespConcursos from "./pages/VunespConcursos";
 import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
+import UserProfile from "./pages/UserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 
 // Admin pages
 import AdminLogin from "./pages/Admin/Login";
-import AdminLayout from "./components/Admin/AdminLayout";
+import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
@@ -59,6 +59,12 @@ const App = () => {
               
               {/* Auth Routes */}
               <Route path="/auth" element={<Auth />} />
+              <Route path="/perfil" element={
+                <>
+                  <Menu />
+                  <UserProfile />
+                </>
+              } />
               
               {/* Public Routes */}
               <Route path="/" element={
@@ -139,7 +145,6 @@ const App = () => {
                   <ConcursoParticipation />
                 </>
               } />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={
                 <>
                   <Menu />
