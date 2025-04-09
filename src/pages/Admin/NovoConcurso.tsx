@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -35,12 +34,11 @@ const cargosDisponiveis = [
 
 // Form validation schema
 const formSchema = z.object({
-  titulo: z.string().min(1, 'Título é obrigatório'),
-  cargos: z.array(z.string()).min(1, 'Selecione pelo menos um cargo'),
   orgao: z.string().min(1, 'Órgão é obrigatório'),
   banca: z.string().min(1, 'Banca é obrigatória'),
   bancaOutra: z.string().optional(),
   dataPublicacao: z.string().min(1, 'Data de publicação é obrigatória'),
+  cargos: z.array(z.string()).min(1, 'Selecione pelo menos um cargo'),
   vagas: z.number().min(1, 'Número de vagas é obrigatório'),
   status: z.string(),
   tipoProva: z.string(),
@@ -56,12 +54,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const DEFAULT_FORM_VALUES: FormValues = {
-  titulo: '',
-  cargos: [],
   orgao: '',
   banca: '',
   bancaOutra: '',
   dataPublicacao: new Date().toISOString().split('T')[0],
+  cargos: [],
   vagas: 1,
   status: 'Aberto',
   tipoProva: 'Alternativas',
@@ -125,8 +122,8 @@ const NovoConcurso: React.FC = () => {
         // Prepare the data
         const concursoData = {
           id: uuidv4(),
-          titulo: values.titulo,
-          orgao: cargo, // Use cargo as orgao for now
+          titulo: `${values.orgao} - ${cargo}`, // Generate title from orgao and cargo
+          orgao: values.orgao,
           banca: values.banca === 'Outra' ? values.bancaOutra : values.banca,
           data_publicacao: values.dataPublicacao,
           vagas: values.vagas,
@@ -190,20 +187,6 @@ const NovoConcurso: React.FC = () => {
               <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
                 <FormField
                   control={form.control}
-                  name="titulo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título do Concurso*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Concurso TSE - Analista Judiciário" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
                   name="orgao"
                   render={({ field }) => (
                     <FormItem>
@@ -215,7 +198,65 @@ const NovoConcurso: React.FC = () => {
                     </FormItem>
                   )}
                 />
+                
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="banca"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Banca Organizadora*</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a banca" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {bancas.map((banca) => (
+                              <SelectItem key={banca} value={banca}>{banca}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {watchBanca === 'Outra' && (
+                    <FormField
+                      control={form.control}
+                      name="bancaOutra"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel>Nome da banca*</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Digite o nome da banca" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
               </div>
+              
+              <FormField
+                control={form.control}
+                name="dataPublicacao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Publicação*</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}
@@ -277,113 +318,51 @@ const NovoConcurso: React.FC = () => {
                 )}
               />
               
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="banca"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Banca Organizadora*</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione a banca" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {bancas.map((banca) => (
-                              <SelectItem key={banca} value={banca}>{banca}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {watchBanca === 'Outra' && (
-                    <FormField
-                      control={form.control}
-                      name="bancaOutra"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Nome da banca*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Digite o nome da banca" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
+              <FormField
+                control={form.control}
+                name="vagas"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Vagas*</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        min="1" 
+                        placeholder="Ex: 10" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
                 
-                <FormField
-                  control={form.control}
-                  name="dataPublicacao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data de Publicação*</FormLabel>
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status*</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="vagas"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número de Vagas*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          min="1" 
-                          placeholder="Ex: 10" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status*</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Aberto">Aberto</SelectItem>
-                          <SelectItem value="Em andamento">Em andamento</SelectItem>
-                          <SelectItem value="Encerrado">Encerrado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        <SelectItem value="Aberto">Aberto</SelectItem>
+                        <SelectItem value="Em andamento">Em andamento</SelectItem>
+                        <SelectItem value="Encerrado">Encerrado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}

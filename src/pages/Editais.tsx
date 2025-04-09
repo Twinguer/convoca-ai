@@ -2,6 +2,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursos } from '../services/concursoService';
+import ConcursoCard from '../components/ConcursoCard';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const Editais: React.FC = () => {
   // Use the updated fetchConcursos function with the correct parameter type
@@ -11,24 +14,40 @@ const Editais: React.FC = () => {
   });
 
   if (isLoading) {
-    return <div>Carregando editais...</div>;
+    return <div className="flex justify-center items-center min-h-[60vh]">
+      <p className="text-lg">Carregando editais...</p>
+    </div>;
   }
 
   if (error) {
-    return <div>Erro ao carregar editais.</div>;
+    return <div className="flex justify-center items-center min-h-[60vh]">
+      <p className="text-lg text-red-500">Erro ao carregar editais.</p>
+    </div>;
   }
 
   return (
-    <div>
-      <h1>Editais em Andamento</h1>
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">Editais em Andamento</h1>
+      
       {data && data.length > 0 ? (
-        <ul>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {data.map((edital) => (
-            <li key={edital.id}>{edital.titulo}</li>
+            <div key={edital.id} className="border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
+              <ConcursoCard 
+                id={edital.id}
+                titulo={edital.titulo}
+                orgao={edital.orgao}
+                data={edital.data_publicacao ? format(new Date(edital.data_publicacao), 'dd/MM/yyyy', { locale: ptBR }) : 'Data não definida'}
+                vagas={edital.vagas || 0}
+                status={edital.status}
+              />
+            </div>
           ))}
-        </ul>
+        </div>
       ) : (
-        <div>Nenhum edital encontrado.</div>
+        <div className="flex justify-center items-center min-h-[40vh]">
+          <p className="text-lg text-gray-500">Nenhum edital encontrado.</p>
+        </div>
       )}
     </div>
   );

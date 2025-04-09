@@ -86,7 +86,7 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         id,
         user_id,
         score,
-        users_profiles!inner (name)
+        users_profiles (name)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
