@@ -9,6 +9,10 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
+  avatarUrl?: string;
+  basicKnowledgeScore?: number;
+  specificKnowledgeScore?: number;
+  discursiveScore?: number;
 }
 
 export function useResultadosData() {

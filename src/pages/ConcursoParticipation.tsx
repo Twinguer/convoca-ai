@@ -18,11 +18,11 @@ const ConcursoParticipation = () => {
     queryFn: () => fetchConcursoById(id!),
   });
   
-  // Check if user is already participating
-  const { data: isParticipating, isLoading: isCheckingParticipation } = useQuery({
+  // Check if user is already participating and get ranking ID
+  const { data: userRanking, isLoading: isCheckingParticipation } = useQuery({
     queryKey: ['participating', id, user?.id],
     queryFn: async () => {
-      if (!user || !id) return false;
+      if (!user || !id) return null;
       
       const { data, error } = await supabase
         .from('user_rankings')
@@ -34,12 +34,12 @@ const ConcursoParticipation = () => {
       if (error) {
         if (error.code === 'PGRST116') {
           // No rows found, user is not participating
-          return false;
+          return null;
         }
         throw error;
       }
       
-      return !!data;
+      return data;
     },
     enabled: !!user && !!id,
   });
@@ -60,11 +60,15 @@ const ConcursoParticipation = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">{concurso.titulo}</h1>
+      <p className="text-gray-600 mb-8">
+        Para participar deste ranking, registre suas notas abaixo. Sua posição será calculada com base em sua pontuação total.
+      </p>
       
       <div className="mt-8">
         <ParticipationForm 
           concurso={concurso} 
-          isAlreadyParticipating={!!isParticipating} 
+          isAlreadyParticipating={!!userRanking} 
+          userRankingId={userRanking?.id}
         />
       </div>
     </div>

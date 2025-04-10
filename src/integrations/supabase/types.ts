@@ -148,26 +148,35 @@ export type Database = {
       }
       user_rankings: {
         Row: {
+          basic_knowledge_score: number | null
           concurso_id: string
           created_at: string
+          discursive_score: number | null
           id: string
           score: number | null
+          specific_knowledge_score: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          basic_knowledge_score?: number | null
           concurso_id: string
           created_at?: string
+          discursive_score?: number | null
           id?: string
           score?: number | null
+          specific_knowledge_score?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          basic_knowledge_score?: number | null
           concurso_id?: string
           created_at?: string
+          discursive_score?: number | null
           id?: string
           score?: number | null
+          specific_knowledge_score?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -177,6 +186,50 @@ export type Database = {
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_scores: {
+        Row: {
+          basic_knowledge_score: number | null
+          created_at: string | null
+          discursive_score: number | null
+          id: string
+          ranking_id: string
+          specific_knowledge_score: number | null
+          total_score: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          basic_knowledge_score?: number | null
+          created_at?: string | null
+          discursive_score?: number | null
+          id?: string
+          ranking_id: string
+          specific_knowledge_score?: number | null
+          total_score?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          basic_knowledge_score?: number | null
+          created_at?: string | null
+          discursive_score?: number | null
+          id?: string
+          ranking_id?: string
+          specific_knowledge_score?: number | null
+          total_score?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scores_ranking_id_fkey"
+            columns: ["ranking_id"]
+            isOneToOne: false
+            referencedRelation: "user_rankings"
             referencedColumns: ["id"]
           },
         ]

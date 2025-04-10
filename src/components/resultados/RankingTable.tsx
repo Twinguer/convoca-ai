@@ -17,6 +17,9 @@ interface RankingItem {
   score: number;
   userId: string;
   avatarUrl?: string;
+  basicKnowledgeScore?: number;
+  specificKnowledgeScore?: number;
+  discursiveScore?: number;
 }
 
 interface RankingTableProps {
@@ -37,16 +40,18 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-16">Posição</TableHead>
               <TableHead>Participante</TableHead>
-              <TableHead className="text-right">Pontuação</TableHead>
+              <TableHead className="text-right">C.Básicos</TableHead>
+              <TableHead className="text-right">C.Espe.</TableHead>
+              <TableHead className="text-right">Disc/E.Caso</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-center">Posição</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rankings && rankings.length > 0 ? (
               rankings.map((ranking) => (
                 <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
-                  <TableCell className="font-medium">{ranking.position}º</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
@@ -56,12 +61,16 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                       <span>{ranking.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">{ranking.score}</TableCell>
+                  <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell className="text-right">{ranking.specificKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell className="text-right">{ranking.score.toFixed(2)}</TableCell>
+                  <TableCell className="text-center font-medium">{ranking.position}º</TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-4">
+                <TableCell colSpan={6} className="text-center py-4">
                   Nenhum participante registrado ainda
                 </TableCell>
               </TableRow>

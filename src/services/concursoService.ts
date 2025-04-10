@@ -76,6 +76,10 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
+  avatarUrl?: string;
+  basicKnowledgeScore?: number;
+  specificKnowledgeScore?: number; 
+  discursiveScore?: number;
 }
 
 export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
@@ -86,7 +90,10 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         id,
         user_id,
         score,
-        users_profiles (name)
+        basic_knowledge_score,
+        specific_knowledge_score,
+        discursive_score,
+        users_profiles (name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -94,18 +101,52 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     if (error) throw error;
     
     // Transform the data to match the Ranking interface
-    // Fix here: Correctly access the nested users_profiles.name property
     const rankings = data.map((item, index) => ({
       position: index + 1,
-      name: item.users_profiles?.[0]?.name || 'Usuário Anônimo',
-      score: item.score,
-      userId: item.user_id
+      name: item.users_profiles?.name || 'Usuário Anônimo',
+      score: item.score || 0,
+      userId: item.user_id,
+      avatarUrl: item.users_profiles?.avatar_url,
+      basicKnowledgeScore: item.basic_knowledge_score || 0,
+      specificKnowledgeScore: item.specific_knowledge_score || 0,
+      discursiveScore: item.discursive_score || 0
     }));
     
     return rankings;
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
+  }
+};
+
+// Function to update user scores
+export const updateUserScores = async (
+  rankingId: string, 
+  userId: string, 
+  basicKnowledgeScore: number, 
+  specificKnowledgeScore: number, 
+  discursiveScore: number
+): Promise<boolean> => {
+  try {
+    const totalScore = basicKnowledgeScore + specificKnowledgeScore + discursiveScore;
+    
+    const { data, error } = await supabase.rpc('admin_operations', {
+      operation: 'update_user_scores',
+      data: {
+        ranking_id: rankingId,
+        user_id: userId,
+        basic_knowledge_score: basicKnowledgeScore,
+        specific_knowledge_score: specificKnowledgeScore,
+        discursive_score: discursiveScore,
+        total_score: totalScore
+      }
+    });
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('Error updating user scores:', error);
+    return false;
   }
 };
 
@@ -118,6 +159,9 @@ export const fetchUserConcursoRankings = async (userId: string): Promise<any[]> 
         id,
         concurso_id,
         score,
+        basic_knowledge_score,
+        specific_knowledge_score,
+        discursive_score,
         concursos (
           titulo,
           orgao,

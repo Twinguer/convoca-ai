@@ -49,13 +49,13 @@ const AdminLayout: React.FC = () => {
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link to="/project/admin/man/concursos/novo" className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
-                Novo Concurso
+                Novo Ranking
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link to="/project/admin/man/concursos" className="flex items-center gap-2">
                 <ListChecks className="h-4 w-4" />
-                Listar Concursos
+                Lista de Rankings
               </Link>
             </Button>
           </nav>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Building, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 
 const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
@@ -41,7 +41,7 @@ const ListarConcursos: React.FC = () => {
   });
   
   const handleDelete = async (id: string) => {
-    if (window.confirm('Tem certeza que deseja excluir este concurso?')) {
+    if (window.confirm('Tem certeza que deseja excluir este ranking?')) {
       try {
         const { error } = await supabase
           .from('concursos')
@@ -51,16 +51,16 @@ const ListarConcursos: React.FC = () => {
         if (error) throw error;
         
         toast({
-          title: 'Concurso excluído com sucesso!',
+          title: 'Ranking excluído com sucesso!',
           variant: 'default',
         });
         
         refetch();
       } catch (error) {
-        console.error('Erro ao excluir concurso:', error);
+        console.error('Erro ao excluir ranking:', error);
         toast({
-          title: 'Erro ao excluir concurso',
-          description: 'Ocorreu um erro ao tentar excluir o concurso.',
+          title: 'Erro ao excluir ranking',
+          description: 'Ocorreu um erro ao tentar excluir o ranking.',
           variant: 'destructive',
         });
       }
@@ -75,16 +75,16 @@ const ListarConcursos: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Concursos Cadastrados</h1>
+        <h1 className="text-2xl font-bold">Rankings Cadastrados</h1>
         <Button onClick={() => navigate('/admin/concursos/novo')}>
-          <Plus className="mr-2 h-4 w-4" /> Novo Concurso
+          <Plus className="mr-2 h-4 w-4" /> Novo Ranking
         </Button>
       </div>
       
       <Card className="mb-6">
         <CardHeader className="pb-3">
           <CardTitle>Filtros</CardTitle>
-          <CardDescription>Filtre os concursos por diferentes critérios</CardDescription>
+          <CardDescription>Filtre os rankings por diferentes critérios</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -93,7 +93,7 @@ const ListarConcursos: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                 <Input
-                  placeholder="Buscar concursos..."
+                  placeholder="Buscar rankings..."
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -153,15 +153,15 @@ const ListarConcursos: React.FC = () => {
             </div>
           ) : isError ? (
             <div className="text-center text-red-500 p-6">
-              Erro ao carregar os concursos. Por favor, tente novamente.
+              Erro ao carregar os rankings. Por favor, tente novamente.
             </div>
           ) : filteredConcursos?.length === 0 ? (
             <div className="text-center p-8 text-gray-500">
               <Building className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-              <h3 className="font-medium text-lg">Nenhum concurso encontrado</h3>
-              <p className="mt-1">Tente ajustar os filtros ou adicione um novo concurso.</p>
+              <h3 className="font-medium text-lg">Nenhum ranking encontrado</h3>
+              <p className="mt-1">Tente ajustar os filtros ou adicione um novo ranking.</p>
               <Button onClick={() => navigate('/admin/concursos/novo')} variant="outline" className="mt-4">
-                <Plus className="mr-2 h-4 w-4" /> Adicionar Concurso
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Ranking
               </Button>
             </div>
           ) : (
@@ -169,8 +169,8 @@ const ListarConcursos: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Órgão</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Concurso</TableHead>
                     <TableHead>Banca</TableHead>
                     <TableHead>Vagas</TableHead>
                     <TableHead>Status</TableHead>
@@ -203,7 +203,15 @@ const ListarConcursos: React.FC = () => {
                           ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')
                           : 'N/A'}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
+                      <TableCell className="text-right space-x-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => navigate(`/concurso/${concurso.id}/resultados`)}
+                        >
+                          <Eye className="h-4 w-4 text-blue-500" />
+                          <span className="sr-only">Ver</span>
+                        </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
