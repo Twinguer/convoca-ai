@@ -1,54 +1,200 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Users, UserPlus, User } from 'lucide-react';
+import { Users, UserPlus, User, Loader2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
-// This is a placeholder page for the followers feature
-// In a real implementation, this would connect to a followers table in the database
+interface FollowerUser {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  email: string;
+  isFollowing?: boolean;
+}
 
 const UserFollowers = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   
-  // Mock followers and following data
-  const mockUsers = [
-    { id: '1', name: 'Ana Silva', avatar_url: null, bio: 'Aprovada em 3 concursos federais' },
-    { id: '2', name: 'João Pereira', avatar_url: null, bio: 'Estudante de Direito, futuro Juiz Federal' },
-    { id: '3', name: 'Maria Oliveira', avatar_url: null, bio: 'Concurseira desde 2018, aprovada no BB' },
-    { id: '4', name: 'Carlos Santos', avatar_url: null, bio: 'Professor de matemática para concursos' },
-    { id: '5', name: 'Juliana Costa', avatar_url: null, bio: 'Técnica Judiciária TRF-4' },
-    { id: '6', name: 'Roberto Almeida', avatar_url: null, bio: 'Especialista em Direito Administrativo' },
-    { id: '7', name: 'Fernanda Lima', avatar_url: null, bio: 'Estudando para o TCU' },
-    { id: '8', name: 'Paulo Mendes', avatar_url: null, bio: 'Auditor Fiscal da Receita Federal' },
-  ];
-  
-  // In a real app, we would fetch followers from the database
+  // Fetch the user's followers
   const { data: followers, isLoading: isLoadingFollowers } = useQuery({
-    queryKey: ['followers', user?.id],
+    queryKey: ['user-followers', user?.id],
     queryFn: async () => {
-      // Simulating an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return mockUsers.slice(0, 5); // First 5 users as followers
+      if (!user) return [];
+      
+      // Get IDs of people following this user
+      const { data: followerData, error } = await supabase
+        .from('user_followers')
+        .select('follower_id')
+        .eq('followed_id', user.id);
+        
+      if (error) {
+        console.error('Error fetching followers:', error);
+        return [];
+      }
+      
+      if (!followerData || followerData.length === 0) return [];
+      
+      // Get the profiles of the followers
+      const followerIds = followerData.map(f => f.follower_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('users_profiles')
+        .select('id, name, avatar_url, bio, email')
+        .in('id', followerIds);
+        
+      if (profilesError) {
+        console.error('Error fetching follower profiles:', profilesError);
+        return [];
+      }
+      
+      // Get who the current user is following
+      const { data: userFollowing, error: followingError } = await supabase
+        .from('user_followers')
+        .select('followed_id')
+        .eq('follower_id', user.id);
+        
+      if (followingError) {
+        console.error('Error fetching user following:', followingError);
+      } else {
+        // Create a map of who the user is following
+        const followMap: Record<string, boolean> = {};
+        userFollowing?.forEach(f => {
+          followMap[f.followed_id] = true;
+        });
+        setFollowingMap(followMap);
+      }
+      
+      return profiles.map(profile => ({
+        ...profile,
+        isFollowing: followingMap[profile.id] || false
+      }));
     },
     enabled: !!user
   });
   
-  // And similarly for users that the current user is following
+  // Fetch users that the current user is following
   const { data: following, isLoading: isLoadingFollowing } = useQuery({
-    queryKey: ['following', user?.id],
+    queryKey: ['user-following', user?.id],
     queryFn: async () => {
-      // Simulating an API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return mockUsers.slice(3, 8); // Last 5 users as following
+      if (!user) return [];
+      
+      // Get IDs of people this user is following
+      const { data: followingData, error } = await supabase
+        .from('user_followers')
+        .select('followed_id')
+        .eq('follower_id', user.id);
+        
+      if (error) {
+        console.error('Error fetching following:', error);
+        return [];
+      }
+      
+      if (!followingData || followingData.length === 0) return [];
+      
+      // Get the profiles of the people being followed
+      const followingIds = followingData.map(f => f.followed_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from('users_profiles')
+        .select('id, name, avatar_url, bio, email')
+        .in('id', followingIds);
+        
+      if (profilesError) {
+        console.error('Error fetching following profiles:', profilesError);
+        return [];
+      }
+      
+      // All these users are being followed by the current user
+      const newFollowingMap = { ...followingMap };
+      profiles.forEach(profile => {
+        newFollowingMap[profile.id] = true;
+      });
+      setFollowingMap(newFollowingMap);
+      
+      return profiles.map(profile => ({
+        ...profile,
+        isFollowing: true
+      }));
     },
     enabled: !!user
   });
+  
+  const toggleFollow = async (userId: string) => {
+    if (!user) {
+      toast({
+        title: "Ação necessária",
+        description: "Você precisa estar conectado para seguir outros usuários.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (user.id === userId) {
+      toast({
+        title: "Aviso",
+        description: "Você não pode seguir a si mesmo.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      if (followingMap[userId]) {
+        // Unfollow
+        const { error } = await supabase
+          .from('user_followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('followed_id', userId);
+          
+        if (error) throw error;
+        
+        setFollowingMap(prev => {
+          const updated = { ...prev };
+          updated[userId] = false;
+          return updated;
+        });
+        
+        toast({
+          title: "Sucesso",
+          description: "Você deixou de seguir este usuário."
+        });
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('user_followers')
+          .insert({ follower_id: user.id, followed_id: userId });
+          
+        if (error) throw error;
+        
+        setFollowingMap(prev => {
+          const updated = { ...prev };
+          updated[userId] = true;
+          return updated;
+        });
+        
+        toast({
+          title: "Sucesso",
+          description: "Você começou a seguir este usuário."
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao tentar seguir este usuário.",
+        variant: "destructive"
+      });
+    }
+  };
   
   // Generate initials for avatar
   const getInitials = (name: string) => {
@@ -71,11 +217,11 @@ const UserFollowers = () => {
     );
   }
   
-  const renderUserList = (users: any[] | undefined, isLoading: boolean, emptyMessage: string) => {
+  const renderUserList = (users: FollowerUser[] | undefined, isLoading: boolean, emptyMessage: string) => {
     if (isLoading) {
       return (
         <div className="flex justify-center items-center py-12">
-          <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent"></div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
     }
@@ -91,26 +237,53 @@ const UserFollowers = () => {
     
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {users.map(user => (
-          <Card key={user.id} className="overflow-hidden">
+        {users.map(userProfile => (
+          <Card key={userProfile.id} className="overflow-hidden">
             <div className="p-4 flex space-x-4">
               <Avatar className="h-16 w-16">
-                {user.avatar_url ? (
-                  <AvatarImage src={user.avatar_url} alt={user.name} />
+                {userProfile.avatar_url ? (
+                  <AvatarImage src={userProfile.avatar_url} alt={userProfile.name} />
                 ) : (
-                  <AvatarFallback className="text-lg">{getInitials(user.name)}</AvatarFallback>
+                  <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
                 )}
               </Avatar>
               
               <div className="flex-1">
-                <h3 className="font-medium">{user.name}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{user.bio}</p>
+                <h3 className="font-medium">{userProfile.name}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-2">{userProfile.bio || 'Sem biografia'}</p>
                 
                 <div className="mt-3 flex space-x-2">
-                  <Button variant="outline" size="sm">Ver perfil</Button>
-                  <Button size="sm" className="px-3">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Seguir
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    asChild
+                  >
+                    <a href={`/perfil/${userProfile.id}`}>Ver perfil</a>
+                  </Button>
+                  
+                  <Button 
+                    size="sm" 
+                    className="px-3"
+                    variant={followingMap[userProfile.id] ? "default" : "outline"}
+                    onClick={() => toggleFollow(userProfile.id)}
+                    disabled={user.id === userProfile.id}
+                  >
+                    {user.id === userProfile.id ? (
+                      <>
+                        <User className="h-4 w-4 mr-2" />
+                        Seu perfil
+                      </>
+                    ) : followingMap[userProfile.id] ? (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Seguindo
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Seguir
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
@@ -129,11 +302,11 @@ const UserFollowers = () => {
         <TabsList className="w-full max-w-md mx-auto grid grid-cols-2 mb-6">
           <TabsTrigger value="followers">
             <Users className="h-4 w-4 mr-2" />
-            Seguidores
+            Seguidores ({followers?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="following">
             <UserPlus className="h-4 w-4 mr-2" />
-            Seguindo
+            Seguindo ({following?.length || 0})
           </TabsTrigger>
         </TabsList>
         
@@ -175,10 +348,6 @@ const UserFollowers = () => {
       </Tabs>
       
       <div className="mt-8 text-center">
-        <p className="text-muted-foreground mb-4">
-          Esta é uma demonstração do sistema de seguidores. Na implementação final, 
-          você poderá se conectar com outros candidatos e acompanhar seus resultados.
-        </p>
         <Button onClick={() => navigate('/perfil')}>
           Voltar ao perfil
         </Button>

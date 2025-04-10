@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -21,7 +20,6 @@ const UserMenu: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Fetch user profile for avatar
   const { data: profile } = useQuery({
     queryKey: ['user-profile-menu', user?.id],
     queryFn: async () => {
@@ -100,6 +98,12 @@ const UserMenu: React.FC = () => {
           <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
             <Users className="mr-2 h-4 w-4" />
             <span>Meus Seguidores</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/comunidade" className="flex w-full cursor-pointer items-center">
+            <Users className="mr-2 h-4 w-4" />
+            <span>Comunidade</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

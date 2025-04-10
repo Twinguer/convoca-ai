@@ -1,34 +1,39 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, MessageSquare, Heart } from 'lucide-react';
+import { Users, MessageSquare, Heart, Trophy, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 interface UserProfile {
   id: string;
   name: string;
   avatar_url: string | null;
+  bio: string | null;
+  email: string;
   followerCount: number;
   postCount: number;
+  approvalCount: number;
 }
 
 const Comunidade: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
   
-  const { data: users, isLoading, error } = useQuery({
+  const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['community-users'],
     queryFn: async () => {
       // Get all users with their follower counts
       const { data: profiles, error } = await supabase
         .from('users_profiles')
-        .select('id, name, avatar_url');
+        .select('id, name, avatar_url, bio, email');
         
       if (error) throw error;
       
@@ -41,16 +46,22 @@ const Comunidade: React.FC = () => {
             
           if (followerError) console.error('Error fetching follower count:', followerError);
           
-          // Get post count
+          // Get post count (currently a placeholder)
           const { data: postCount, error: postError } = await supabase
             .rpc('count_user_posts', { user_id: profile.id });
             
           if (postError) console.error('Error fetching post count:', postError);
           
+          // Get approval count (a placeholder for approved exams)
+          const approvalCount = profile.concursos_aprovados 
+            ? profile.concursos_aprovados.split(',').length 
+            : 0;
+          
           return {
             ...profile,
             followerCount: followerCount || 0,
-            postCount: postCount || 0
+            postCount: postCount || 0,
+            approvalCount: approvalCount
           };
         })
       );
@@ -58,6 +69,33 @@ const Comunidade: React.FC = () => {
       // Sort by follower count (highest first)
       return usersWithCounts.sort((a, b) => b.followerCount - a.followerCount);
     }
+  });
+  
+  // Get following status for the current user
+  const { data: followingData } = useQuery({
+    queryKey: ['following-status', user?.id],
+    queryFn: async () => {
+      if (!user) return {};
+      
+      const { data, error } = await supabase
+        .from('user_followers')
+        .select('followed_id')
+        .eq('follower_id', user.id);
+        
+      if (error) {
+        console.error('Error fetching following status:', error);
+        return {};
+      }
+      
+      const followingMap: Record<string, boolean> = {};
+      data.forEach(item => {
+        followingMap[item.followed_id] = true;
+      });
+      
+      setFollowingStatus(followingMap);
+      return followingMap;
+    },
+    enabled: !!user
   });
   
   const followUser = async (userId: string) => {
@@ -70,24 +108,27 @@ const Comunidade: React.FC = () => {
       return;
     }
     
+    if (user.id === userId) {
+      toast({
+        title: "Aviso",
+        description: "Você não pode seguir a si mesmo.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
-      // Check if already following
-      const { data: existingFollow } = await supabase
-        .from('user_followers')
-        .select('*')
-        .eq('follower_id', user.id)
-        .eq('following_id', userId)
-        .single();
-        
-      if (existingFollow) {
+      if (followingStatus[userId]) {
         // Unfollow
         const { error } = await supabase
           .from('user_followers')
           .delete()
           .eq('follower_id', user.id)
-          .eq('following_id', userId);
+          .eq('followed_id', userId);
           
         if (error) throw error;
+        
+        setFollowingStatus(prev => ({ ...prev, [userId]: false }));
         
         toast({
           title: "Sucesso",
@@ -97,15 +138,20 @@ const Comunidade: React.FC = () => {
         // Follow
         const { error } = await supabase
           .from('user_followers')
-          .insert({ follower_id: user.id, following_id: userId });
+          .insert({ follower_id: user.id, followed_id: userId });
           
         if (error) throw error;
+        
+        setFollowingStatus(prev => ({ ...prev, [userId]: true }));
         
         toast({
           title: "Sucesso",
           description: "Você começou a seguir este usuário."
         });
       }
+      
+      // Refresh the data to update follower counts
+      refetch();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -113,19 +159,6 @@ const Comunidade: React.FC = () => {
         variant: "destructive"
       });
     }
-  };
-  
-  const isFollowing = async (userId: string): Promise<boolean> => {
-    if (!user) return false;
-    
-    const { data } = await supabase
-      .from('user_followers')
-      .select('*')
-      .eq('follower_id', user.id)
-      .eq('following_id', userId)
-      .single();
-      
-    return !!data;
   };
   
   const getInitials = (name: string) => {
@@ -154,52 +187,64 @@ const Comunidade: React.FC = () => {
           {users.map((userProfile) => (
             <Card key={userProfile.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center text-center">
                   <Link to={`/perfil/${userProfile.id}`}>
-                    <Avatar className="h-12 w-12">
+                    <Avatar className="h-20 w-20 mb-2">
                       <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name} />
-                      <AvatarFallback>{getInitials(userProfile.name)}</AvatarFallback>
+                      <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
                     </Avatar>
                   </Link>
                   <div>
-                    <Link to={`/perfil/${userProfile.id}`} className="font-semibold hover:underline">
+                    <Link to={`/perfil/${userProfile.id}`} className="font-semibold hover:underline text-lg">
                       {userProfile.name}
                     </Link>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center">
-                        <Users className="h-3 w-3 mr-1" /> 
-                        {userProfile.followerCount} seguidores
-                      </span>
-                      <span className="flex items-center">
-                        <MessageSquare className="h-3 w-3 mr-1" /> 
-                        {userProfile.postCount} posts
-                      </span>
-                    </div>
+                    <p className="text-sm text-muted-foreground">{userProfile.email}</p>
+                    {userProfile.bio && (
+                      <p className="text-sm mt-2 line-clamp-2">{userProfile.bio}</p>
+                    )}
                   </div>
                 </div>
               </CardHeader>
+              
               <CardContent className="pt-0">
-                <div className="mt-2 grid grid-cols-3 gap-1 h-24 overflow-hidden">
-                  {/* Placeholder for recent posts/images */}
-                  {[1, 2, 3].map((i) => (
-                    <div 
-                      key={i} 
-                      className="bg-gray-100 rounded aspect-square w-full flex items-center justify-center"
-                    >
-                      <MessageSquare className="h-6 w-6 text-gray-400" />
+                <div className="flex justify-center space-x-4 py-4">
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center text-amber-500">
+                      <Trophy className="h-4 w-4 mr-1" />
+                      <span className="font-medium">Rankings</span>
                     </div>
-                  ))}
+                    <span className="text-lg font-bold">{userProfile.postCount}</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center text-blue-500">
+                      <Users className="h-4 w-4 mr-1" />
+                      <span className="font-medium">Seguidores</span>
+                    </div>
+                    <span className="text-lg font-bold">{userProfile.followerCount}</span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center">
+                    <div className="flex items-center text-green-500">
+                      <BookOpen className="h-4 w-4 mr-1" />
+                      <span className="font-medium">Aprovações</span>
+                    </div>
+                    <span className="text-lg font-bold">{userProfile.approvalCount}</span>
+                  </div>
                 </div>
               </CardContent>
+              
               <CardFooter className="border-t pt-3 flex justify-between">
                 <Button 
-                  variant="outline" 
+                  variant={followingStatus[userProfile.id] ? "default" : "outline"}
                   size="sm" 
                   onClick={() => followUser(userProfile.id)}
+                  disabled={user?.id === userProfile.id}
                   className="flex-1"
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  {user && user.id === userProfile.id ? 'Seu perfil' : 'Seguir'}
+                  {user?.id === userProfile.id ? 'Seu perfil' : 
+                   followingStatus[userProfile.id] ? 'Seguindo' : 'Seguir'}
                 </Button>
                 <Button 
                   variant="outline" 
