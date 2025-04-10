@@ -50,7 +50,9 @@ const NovoConcurso = () => {
   const navigate = useNavigate();
   const isEditing = !!id;
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   
+  // Fetch existing concurso for editing
   const { data: existingConcurso, isLoading } = useQuery({
     queryKey: ['concurso', id],
     queryFn: async () => {
@@ -114,12 +116,11 @@ const NovoConcurso = () => {
   
   const onSubmit = async (data: FormData) => {
     try {
+      setIsSubmitting(true);
       setErrorMessage(null);
       
-      // Using the service_role key to bypass RLS policies
-      const adminSupabase = supabase.rpc('admin_operations');
-      
       if (isEditing) {
+        // Update existing concurso
         const { error } = await supabase
           .from('concursos')
           .update(data)
@@ -128,31 +129,54 @@ const NovoConcurso = () => {
         if (error) throw error;
         
         toast({
-          title: "Concurso atualizado",
-          description: "As informações do concurso foram atualizadas com sucesso.",
+          title: "Ranking atualizado",
+          description: "As informações do ranking foram atualizadas com sucesso.",
         });
       } else {
-        const { error } = await supabase
-          .from('concursos')
-          .insert(data);
+        // Create new concurso using the admin_operations function
+        const { data: result, error } = await supabase
+          .rpc('admin_operations', {
+            operation: 'insert_concurso',
+            data: data
+          });
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error from RPC:', error);
+          throw error;
+        }
+        
+        if (!result || !result.success) {
+          throw new Error(result?.error || 'Erro desconhecido ao salvar o ranking');
+        }
         
         toast({
-          title: "Concurso criado",
-          description: "O novo concurso foi criado com sucesso.",
+          title: "Ranking criado",
+          description: "O novo ranking foi criado com sucesso.",
         });
+      }
+      
+      // Generate fake rankings for demo purposes (optional)
+      if (!isEditing) {
+        try {
+          // Could add code here to generate fake rankings data
+          console.log('Ranking criado com sucesso');
+        } catch (e) {
+          console.error('Error generating fake rankings:', e);
+          // Non-critical error, don't throw
+        }
       }
       
       navigate('/project/admin/man/concursos');
     } catch (error) {
       console.error('Error saving concurso:', error);
-      setErrorMessage("Ocorreu um erro ao salvar o concurso. Por favor, tente novamente.");
+      setErrorMessage("Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.");
       toast({
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o concurso. Por favor, tente novamente.",
+        description: "Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -160,14 +184,14 @@ const NovoConcurso = () => {
     return (
       <div className="flex justify-center items-center">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <p className="ml-2">Carregando concurso...</p>
+        <p className="ml-2">Carregando ranking...</p>
       </div>
     );
   }
   
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">{isEditing ? 'Editar Concurso' : 'Novo Concurso'}</h1>
+      <h1 className="text-2xl font-bold mb-6">{isEditing ? 'Editar Ranking' : 'Novo Ranking'}</h1>
       
       {errorMessage && (
         <Alert variant="destructive" className="mb-6">
@@ -179,9 +203,9 @@ const NovoConcurso = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Concurso' : 'Cadastrar Novo Concurso'}</CardTitle>
+          <CardTitle>{isEditing ? 'Editar Ranking' : 'Cadastrar Novo Ranking'}</CardTitle>
           <CardDescription>
-            Preencha os campos abaixo para {isEditing ? 'atualizar' : 'cadastrar'} um concurso no sistema.
+            Preencha os campos abaixo para {isEditing ? 'atualizar' : 'cadastrar'} um ranking no sistema.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -193,7 +217,7 @@ const NovoConcurso = () => {
                   name="titulo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Título do Concurso</FormLabel>
+                      <FormLabel>Cargo</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -210,7 +234,7 @@ const NovoConcurso = () => {
                   name="orgao"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Órgão</FormLabel>
+                      <FormLabel>Nome do Concurso</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -476,8 +500,18 @@ const NovoConcurso = () => {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">
-                  {isEditing ? 'Atualizar Concurso' : 'Cadastrar Concurso'}
+                <Button 
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    isEditing ? 'Atualizar Ranking' : 'Cadastrar Ranking'
+                  )}
                 </Button>
               </div>
             </form>
