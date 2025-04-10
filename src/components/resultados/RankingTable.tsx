@@ -34,7 +34,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Classificação Geral</CardTitle>
+        <CardTitle>Classificação Pós-prova</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>

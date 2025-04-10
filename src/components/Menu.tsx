@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -19,7 +20,8 @@ import {
   Medal, 
   Users,
   Menu as MenuIcon,
-  MessageSquare
+  MessageSquare,
+  Trophy
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -62,73 +64,6 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <NavigationMenuTrigger>Concursos</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                    <li className="row-span-3">
-                      <NavigationMenuLink asChild>
-                        <Link
-                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-convoca-50 to-blue-50 p-6 no-underline outline-none focus:shadow-md"
-                          to="/concursos"
-                        >
-                          <div className="mb-2 mt-4 text-lg font-medium">
-                            Todos os Concursos
-                          </div>
-                          <p className="text-sm leading-tight text-muted-foreground">
-                            Explore todos os concursos disponíveis, filtre por categorias e encontre o que melhor se adapta ao seu perfil.
-                          </p>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <Link
-                        to="/concursos/cebraspe"
-                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                      >
-                        <div className="text-sm font-medium leading-none">Cebraspe</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                          Concursos organizados pelo Cebraspe
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/concursos/fcc"
-                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                      >
-                        <div className="text-sm font-medium leading-none">FCC</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                          Concursos organizados pela Fundação Carlos Chagas
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/concursos/fgv"
-                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                      >
-                        <div className="text-sm font-medium leading-none">FGV</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                          Concursos organizados pela Fundação Getúlio Vargas
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/concursos/vunesp"
-                        className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
-                      >
-                        <div className="text-sm font-medium leading-none">Vunesp</div>
-                        <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                          Concursos organizados pela Vunesp
-                        </p>
-                      </Link>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
                 <Link to="/comunidade">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <Users className="mr-2 h-4 w-4" />
@@ -140,15 +75,8 @@ const Menu = () => {
               <NavigationMenuItem>
                 <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
                     Rankings
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <Link to="/nomeacoes">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Nomeações
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -224,18 +152,13 @@ const Menu = () => {
               <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-convoca-600" : "text-foreground/70")}>
                 Home
               </Link>
-              <Link to="/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/concursos') ? "text-convoca-600" : "text-foreground/70")}>
-                Concursos
-              </Link>
               <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-convoca-600" : "text-foreground/70")}>
                 <Users className="mr-2 h-4 w-4" />
                 Comunidade
               </Link>
               <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-convoca-600" : "text-foreground/70")}>
-                Pré-classificação
-              </Link>
-              <Link to="/nomeacoes" className={cn("flex items-center text-lg font-semibold", isActive('/nomeacoes') ? "text-convoca-600" : "text-foreground/70")}>
-                Nomeações
+                <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
+                Rankings
               </Link>
               
               {isAdmin() && (

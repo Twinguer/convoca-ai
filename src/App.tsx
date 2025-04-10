@@ -10,15 +10,9 @@ import Index from "./pages/Index";
 import Editais from "./pages/Editais";
 import PreClassificacao from "./pages/PreClassificacao";
 import Resultado from "./pages/Resultado";
-import Nomeacoes from "./pages/Nomeacoes";
 import ConcursoDetails from "./pages/ConcursoDetails";
 import ResultadosPage from "./pages/ResultadosPage";
 import NotFound from "./pages/NotFound";
-import ConcursosPage from "./pages/ConcursosPage";
-import CebraspeConcursos from "./pages/CebraspeConcursos";
-import FCCConcursos from "./pages/FCCConcursos";
-import FGVConcursos from "./pages/FGVConcursos";
-import VunespConcursos from "./pages/VunespConcursos";
 import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import UserProfile from "./pages/UserProfile";
@@ -95,36 +89,6 @@ const App = () => {
                   <Editais />
                 </>
               } />
-              <Route path="/concursos" element={
-                <>
-                  <Menu />
-                  <ConcursosPage />
-                </>
-              } />
-              <Route path="/concursos/cebraspe" element={
-                <>
-                  <Menu />
-                  <CebraspeConcursos />
-                </>
-              } />
-              <Route path="/concursos/fcc" element={
-                <>
-                  <Menu />
-                  <FCCConcursos />
-                </>
-              } />
-              <Route path="/concursos/fgv" element={
-                <>
-                  <Menu />
-                  <FGVConcursos />
-                </>
-              } />
-              <Route path="/concursos/vunesp" element={
-                <>
-                  <Menu />
-                  <VunespConcursos />
-                </>
-              } />
               <Route path="/pre-classificacao" element={
                 <>
                   <Menu />
@@ -135,12 +99,6 @@ const App = () => {
                 <>
                   <Menu />
                   <Resultado />
-                </>
-              } />
-              <Route path="/nomeacoes" element={
-                <>
-                  <Menu />
-                  <Nomeacoes />
                 </>
               } />
               <Route path="/concurso/:id" element={

@@ -12,7 +12,6 @@ export interface RankingItemProps {
   concursoTitle: string;
   cargoTitle: string;
   participantCount: number;
-  logoUrl?: string;
 }
 
 export const RankingItem: React.FC<RankingItemProps> = ({
@@ -22,33 +21,21 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   concursoTitle,
   cargoTitle,
   participantCount,
-  logoUrl
 }) => {
   return (
     <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <p className="text-lg font-semibold mb-4">{formatDate(examDate)}</p>
-              <div className="flex items-center mb-2">
-                <p className="text-sm font-medium text-gray-600">{banca} • {concursoTitle}</p>
-              </div>
-              <h3 className="text-lg font-bold">{cargoTitle}</h3>
-              <p className="text-sm mt-2">
-                <Trophy className="inline-block mr-1 h-4 w-4 text-yellow-500" />
-                {participantCount.toLocaleString()} participantes
-              </p>
+          <div>
+            <p className="text-lg font-semibold mb-4">{formatDate(examDate)}</p>
+            <div className="flex items-center mb-2">
+              <p className="text-sm font-medium text-gray-600">{banca} • {concursoTitle}</p>
             </div>
-            {logoUrl && (
-              <div className="w-24 h-24 flex-shrink-0">
-                <img 
-                  src={logoUrl} 
-                  alt={`Logo ${banca}`} 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
+            <h3 className="text-lg font-bold">{cargoTitle}</h3>
+            <p className="text-sm mt-2">
+              <Trophy className="inline-block mr-1 h-4 w-4 text-yellow-500" />
+              {participantCount.toLocaleString()} participantes
+            </p>
           </div>
         </CardContent>
       </Card>
