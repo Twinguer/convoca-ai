@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, generateSpecificUsers } from '../integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Trophy, Users, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 
 interface UserProfile {
   id: string;
@@ -22,7 +23,7 @@ interface UserProfile {
 const Comunidade: React.FC = () => {
   const { user } = useAuth();
   
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['community-users'],
     queryFn: async () => {
       // Get all users without filtering
@@ -61,13 +62,21 @@ const Comunidade: React.FC = () => {
         })
       );
       
-      return usersWithCounts;
+      // Sort users by follower count (most followers first)
+      return usersWithCounts.sort((a, b) => b.followerCount - a.followerCount);
     }
   });
   
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
+  const handleCreateUsers = async () => {
+    const result = await generateSpecificUsers();
+    if (result.success) {
+      refetch();
+    }
   };
 
   if (isLoading) {
@@ -78,10 +87,21 @@ const Comunidade: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Comunidade</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Comunidade</h1>
+        
+        {/* Admin button - hidden in production but available for this exercise */}
+        <Button 
+          onClick={handleCreateUsers} 
+          variant="outline"
+          className="hidden" // Hide the button as requested
+        >
+          Gerar 10 usuários específicos
+        </Button>
+      </div>
       
       {users && users.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {users.map((userProfile: UserProfile) => (
             <Card key={userProfile.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <CardHeader className="pb-2 flex flex-col items-center text-center">
@@ -91,7 +111,7 @@ const Comunidade: React.FC = () => {
                 </Avatar>
                 <div className="space-y-1">
                   <p className="font-semibold text-sm">{userProfile.name}</p>
-                  <p className="text-xs text-muted-foreground">{userProfile.email}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{userProfile.bio}</p>
                 </div>
               </CardHeader>
               

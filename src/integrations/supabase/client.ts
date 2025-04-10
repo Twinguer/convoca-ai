@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize the Supabase client
@@ -103,6 +102,124 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
   } catch (error) {
     console.error('Error fetching rankings with user info:', error);
     return [];
+  }
+};
+
+// Function to generate specific users for the community
+export const generateSpecificUsers = async () => {
+  try {
+    // Check if these specific users already exist
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('users_profiles')
+      .select('id')
+      .ilike('name', 'Camila Oliveira')
+      .limit(1);
+      
+    if (checkError) throw checkError;
+    
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('Specific users already exist. Skipping generation.');
+      return { success: true, message: 'Specific users already exist' };
+    }
+
+    // List of specific users to create
+    const users = [
+      { name: 'Camila Oliveira', bio: 'Advogada, estudando para concursos da área jurídica há 3 anos.', concursos_aprovados: 'TRT,TJ-SP' },
+      { name: 'João Pereira', bio: 'Formado em Administração, focado em concursos da área fiscal.', concursos_aprovados: 'Receita Federal' },
+      { name: 'Mariana Costa', bio: 'Engenheira, buscando aprovação em concursos de tribunais.', concursos_aprovados: 'TCU' },
+      { name: 'Ana Silva', bio: 'Professora de Português, estudando para o Banco do Brasil.', concursos_aprovados: 'Banco do Brasil,Caixa' },
+      { name: 'Rafael Souza', bio: 'Contador, especializado em contabilidade pública.', concursos_aprovados: 'INSS,TCE' },
+      { name: 'Lucas Santos', bio: 'Programador, interessado em concursos da área de tecnologia.', concursos_aprovados: null },
+      { name: 'Zé Mané', bio: 'Estudante de Direito, primeira tentativa em concursos.', concursos_aprovados: null },
+      { name: 'Maria Clara', bio: 'Psicóloga, buscando concursos na área de saúde.', concursos_aprovados: 'SES-SP' },
+      { name: 'Ravabete Zefa', bio: 'Economista, especialista em finanças públicas.', concursos_aprovados: 'Tesouro Nacional' },
+      { name: 'Cucurim Jare', bio: 'Estudante de concursos há 5 anos, focado em carreiras policiais.', concursos_aprovados: 'Polícia Federal' }
+    ];
+    
+    // Create the users with specific details
+    const testUsers = users.map(user => ({
+      id: crypto.randomUUID(),
+      name: user.name,
+      email: `${user.name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+      avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
+      bio: user.bio,
+      concursos_aprovados: user.concursos_aprovados
+    }));
+    
+    // Insert users into the database
+    const { error: insertError } = await supabase
+      .from('users_profiles')
+      .insert(testUsers);
+      
+    if (insertError) throw insertError;
+    
+    // Create follower relationships - everyone follows everyone else
+    const followerRelationships = [];
+    
+    // Create a relationship for each user to follow every other user
+    testUsers.forEach(follower => {
+      testUsers.forEach(followed => {
+        // Don't follow yourself
+        if (follower.id !== followed.id) {
+          followerRelationships.push({
+            follower_id: follower.id,
+            followed_id: followed.id
+          });
+        }
+      });
+    });
+    
+    // Insert follower relationships into the database
+    if (followerRelationships.length > 0) {
+      const { error: followError } = await supabase
+        .from('user_followers')
+        .insert(followerRelationships);
+        
+      if (followError) throw followError;
+    }
+    
+    // Create random ranking entries for each user in various concursos
+    const { data: concursos, error: concursosError } = await supabase
+      .from('concursos')
+      .select('id')
+      .limit(5);
+      
+    if (concursosError) throw concursosError;
+    
+    if (concursos && concursos.length > 0) {
+      const rankings = [];
+      
+      testUsers.forEach(user => {
+        // Each user participates in 1-3 random concursos
+        const participationCount = Math.floor(Math.random() * 3) + 1;
+        const selectedConcursos = [...concursos]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, participationCount);
+          
+        selectedConcursos.forEach(concurso => {
+          rankings.push({
+            user_id: user.id,
+            concurso_id: concurso.id,
+            score: Math.floor(Math.random() * 100) // Random score between 0-100
+          });
+        });
+      });
+      
+      if (rankings.length > 0) {
+        const { error: rankingsError } = await supabase
+          .from('user_rankings')
+          .insert(rankings);
+          
+        if (rankingsError) throw rankingsError;
+      }
+    }
+    
+    console.log(`Created ${testUsers.length} specific users with mutual follower relationships`);
+    return { success: true, message: `Criados ${testUsers.length} usuários específicos` };
+    
+  } catch (error) {
+    console.error('Error generating specific users:', error);
+    return { success: false, message: 'Erro ao gerar usuários específicos' };
   }
 };
 
