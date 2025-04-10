@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -19,7 +18,8 @@ import {
   Award, 
   Medal, 
   Users,
-  Menu as MenuIcon
+  Menu as MenuIcon,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -129,9 +129,10 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/editais">
+                <Link to="/comunidade">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Editais
+                    <Users className="mr-2 h-4 w-4" />
+                    Comunidade
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -226,8 +227,9 @@ const Menu = () => {
               <Link to="/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/concursos') ? "text-convoca-600" : "text-foreground/70")}>
                 Concursos
               </Link>
-              <Link to="/editais" className={cn("flex items-center text-lg font-semibold", isActive('/editais') ? "text-convoca-600" : "text-foreground/70")}>
-                Editais
+              <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-convoca-600" : "text-foreground/70")}>
+                <Users className="mr-2 h-4 w-4" />
+                Comunidade
               </Link>
               <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-convoca-600" : "text-foreground/70")}>
                 Pré-classificação

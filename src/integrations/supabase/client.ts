@@ -80,10 +80,10 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
     // Format the data with position
     return data.map((item, index) => ({
       position: index + 1,
-      name: item.users_profiles?.name || 'Unknown User',
+      name: item.users_profiles.name || 'Unknown User',
       score: item.score,
       userId: item.user_id,
-      avatarUrl: item.users_profiles?.avatar_url || null
+      avatarUrl: item.users_profiles.avatar_url || null
     }));
     
   } catch (error) {

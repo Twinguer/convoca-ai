@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -25,17 +24,9 @@ import UserProfile from "./pages/UserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
 import UserConcursos from "./pages/UserConcursos";
-
-// Admin pages
-import AdminLogin from "./pages/Admin/Login";
-import AdminLayout from "./components/Admin/AdminLayout";
-import AdminDashboard from "./pages/Admin/Dashboard";
-import NovoConcurso from "./pages/Admin/NovoConcurso";
-import ListarConcursos from "./pages/Admin/ListarConcursos";
-import ProtectedRoute from "./components/Admin/ProtectedRoute";
+import Comunidade from "./pages/Comunidade";
 
 const App = () => {
-  // Create a client inside the component
   const queryClient = new QueryClient();
 
   return (
@@ -46,7 +37,6 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Admin Routes with new path */}
               <Route path="/project/admin/man/login" element={<AdminLogin />} />
               <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
               <Route path="/project/admin/man" element={
@@ -59,12 +49,8 @@ const App = () => {
                 <Route path="concursos/novo" element={<NovoConcurso />} />
                 <Route path="concursos/editar/:id" element={<NovoConcurso />} />
               </Route>
-              
-              {/* Redirect old admin paths to new ones */}
               <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
               <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
-              
-              {/* Auth Routes */}
               <Route path="/auth" element={<Auth />} />
               <Route path="/perfil" element={
                 <>
@@ -84,18 +70,22 @@ const App = () => {
                   <UserConcursos />
                 </>
               } />
-              
-              {/* Public Routes */}
               <Route path="/" element={
                 <>
                   <Menu />
                   <Index />
                 </>
               } />
+              <Route path="/comunidade" element={
+                <>
+                  <Menu />
+                  <Comunidade />
+                </>
+              } />
               <Route path="/editais" element={
                 <>
                   <Menu />
-                  <Editais />
+                  <Comunidade />
                 </>
               } />
               <Route path="/concursos" element={
