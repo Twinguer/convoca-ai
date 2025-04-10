@@ -41,6 +41,15 @@ const Comunidade: React.FC = () => {
     }
   }, [navigate, showDemoUsers, toast]);
 
+  // Handle refresh button click
+  const handleRefresh = useCallback(() => {
+    refetch();
+    toast({
+      title: 'Atualizando',
+      description: 'Buscando usuários mais recentes...',
+    });
+  }, [refetch, toast]);
+
   // Loading state
   if (isLoading) {
     return <CommunityLoadingState />;
@@ -53,15 +62,6 @@ const Comunidade: React.FC = () => {
 
   // Determine which users to display (real or demo)
   const displayUsers = (users && users.length > 0) ? users : (showDemoUsers ? demoUsers : []);
-
-  // Handle refresh button click
-  const handleRefresh = useCallback(() => {
-    refetch();
-    toast({
-      title: 'Atualizando',
-      description: 'Buscando usuários mais recentes...',
-    });
-  }, [refetch, toast]);
 
   return (
     <div className="container mx-auto p-6">
