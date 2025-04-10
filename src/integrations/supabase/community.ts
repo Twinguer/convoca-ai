@@ -1,4 +1,3 @@
-
 import { supabase } from './client';
 
 // Function to generate specific users for the community
@@ -213,4 +212,73 @@ export const generateTestUsers = async (count: number = 30) => {
     console.error('Error generating test users:', error);
     return { success: false, message: 'Erro ao gerar usuários de teste' };
   }
+};
+
+// Function to get demo users for the community
+export const getDemoUsers = () => {
+  // Array of fixed demo users
+  const demoUsers = [
+    {
+      id: '1',
+      name: 'Camila Oliveira',
+      email: 'camila.oliveira@example.com',
+      bio: 'Advogada, estudando para concursos da área jurídica há 3 anos.',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Camila Oliveira',
+      concursos_aprovados: 'TRT,TJ-SP',
+      followerCount: 45,
+      postCount: 12,
+      approvalCount: 2,
+      status_concurseiro: 'Aprovada'
+    },
+    {
+      id: '2',
+      name: 'João Pereira',
+      email: 'joao.pereira@example.com',
+      bio: 'Formado em Administração, focado em concursos da área fiscal.',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=João Pereira',
+      concursos_aprovados: 'Receita Federal',
+      followerCount: 28,
+      postCount: 8,
+      approvalCount: 1,
+      status_concurseiro: 'Aprovado'
+    },
+    {
+      id: '3',
+      name: 'Mariana Costa',
+      email: 'mariana.costa@example.com',
+      bio: 'Engenheira, buscando aprovação em concursos de tribunais.',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mariana Costa',
+      concursos_aprovados: 'TCU',
+      followerCount: 32,
+      postCount: 15,
+      approvalCount: 1,
+      status_concurseiro: 'Aprovada'
+    },
+    {
+      id: '4',
+      name: 'Rafael Souza',
+      email: 'rafael.souza@example.com',
+      bio: 'Contador, especializado em contabilidade pública.',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rafael Souza',
+      concursos_aprovados: 'INSS,TCE',
+      followerCount: 18,
+      postCount: 9,
+      approvalCount: 2,
+      status_concurseiro: 'Aprovado'
+    },
+    {
+      id: '5',
+      name: 'Ana Silva',
+      email: 'ana.silva@example.com',
+      bio: 'Professora de Português, estudando para o Banco do Brasil.',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana Silva',
+      concursos_aprovados: 'Banco do Brasil,Caixa',
+      followerCount: 22,
+      postCount: 7,
+      approvalCount: 2,
+      status_concurseiro: 'Aprovada'
+    }
+  ];
+  
+  return demoUsers;
 };
