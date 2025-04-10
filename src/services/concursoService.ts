@@ -101,16 +101,21 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     if (error) throw error;
     
     // Transform the data to match the Ranking interface
-    const rankings = data.map((item, index) => ({
-      position: index + 1,
-      name: item.users_profiles?.name || 'Usuário Anônimo',
-      score: item.score || 0,
-      userId: item.user_id,
-      avatarUrl: item.users_profiles?.avatar_url,
-      basicKnowledgeScore: item.basic_knowledge_score || 0,
-      specificKnowledgeScore: item.specific_knowledge_score || 0,
-      discursiveScore: item.discursive_score || 0
-    }));
+    const rankings = data.map((item, index) => {
+      // Fix: Correctly access the nested users_profiles object
+      const userProfile = item.users_profiles;
+      
+      return {
+        position: index + 1,
+        name: userProfile?.name || 'Usuário Anônimo',
+        score: item.score || 0,
+        userId: item.user_id,
+        avatarUrl: userProfile?.avatar_url,
+        basicKnowledgeScore: item.basic_knowledge_score || 0,
+        specificKnowledgeScore: item.specific_knowledge_score || 0,
+        discursiveScore: item.discursive_score || 0
+      };
+    });
     
     return rankings;
   } catch (error) {
