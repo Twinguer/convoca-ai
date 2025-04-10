@@ -140,7 +140,7 @@ const Menu = () => {
               <NavigationMenuItem>
                 <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Pré-classificação
+                    Ranking
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
