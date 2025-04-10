@@ -1,16 +1,19 @@
 
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { format, parseISO } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Simple UUID v4 generator function
-export function v4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+export function formatDate(dateString: string): string {
+  try {
+    const date = parseISO(dateString);
+    return format(date, "dd/MM/yyyy", { locale: ptBR });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return dateString;
+  }
 }

@@ -1,587 +1,467 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
+import React from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useToast } from '@/components/ui/use-toast';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { v4 as uuidv4 } from '@/lib/utils';
+import { useNavigate, useParams } from 'react-router-dom';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
+import { Concurso } from '@/types/concursos';
+import { Loader2 } from 'lucide-react';
 
-// Available job positions
-const cargosDisponiveis = [
-  'Analista Judiciário - Especialidade: Enfermagem',
-  'Analista Judiciário - Área: Apoio Especializado - Especialidade: Estatística',
-  'Analista Judiciário - Especialidade: Medicina (Clínica Médica)',
-  'Analista Judiciário - Especialidade: Medicina (Psiquiatria)',
-  'Analista Judiciário - Especialidade: Odontologia',
-  'Analista Judiciário - Especialidade: Psicologia',
-  'Analista Judiciário - Área Administrativa',
-  'Técnico Judiciário - Área Administrativa',
-  'Técnico Judiciário - Agente de Polícia Judicial',
-  'Técnico Judiciário - Programação de Sistemas',
-];
-
-// Form validation schema
 const formSchema = z.object({
-  orgao: z.string().min(1, 'Órgão é obrigatório'),
-  banca: z.string().min(1, 'Banca é obrigatória'),
-  bancaOutra: z.string().optional(),
-  dataPublicacao: z.string().min(1, 'Data de publicação é obrigatória'),
-  cargos: z.array(z.string()).min(1, 'Selecione pelo menos um cargo'),
-  vagas: z.number().min(1, 'Número de vagas é obrigatório'),
-  status: z.string(),
-  tipoProva: z.string(),
-  descontoPorErro: z.number().optional(),
-  numAlternativas: z.string().optional(),
-  pesoBasicos: z.number().optional(),
-  pesoEspecificos: z.number().optional(),
-  pesoDiscursiva: z.number().optional(),
-  fatorMultiplicador: z.string().optional(),
+  titulo: z.string().min(1, 'O título é obrigatório'),
+  orgao: z.string().min(1, 'O órgão é obrigatório'),
+  banca: z.string().min(1, 'A banca é obrigatória'),
+  vagas: z.coerce.number().optional(),
+  inscritos: z.coerce.number().optional(),
+  data_publicacao: z.string().optional(),
+  etapa_atual: z.string().optional(),
+  status: z.string().default('Em andamento'),
+  exam_type: z.string().default('Alternativas'),
+  alternatives_count: z.coerce.number().default(5),
+  wrong_answer_penalty: z.coerce.number().default(0),
+  basic_knowledge_weight: z.coerce.number().default(1),
+  specific_knowledge_weight: z.coerce.number().default(1),
+  discursive_weight: z.coerce.number().default(1),
   link: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchema>;
 
-const DEFAULT_FORM_VALUES: FormValues = {
-  orgao: '',
-  banca: '',
-  bancaOutra: '',
-  dataPublicacao: new Date().toISOString().split('T')[0],
-  cargos: [],
-  vagas: 1,
-  status: 'Aberto',
-  tipoProva: 'Alternativas',
-  descontoPorErro: 0,
-  numAlternativas: 'ABCDE',
-  pesoBasicos: 1,
-  pesoEspecificos: 1,
-  pesoDiscursiva: 0,
-  fatorMultiplicador: 'x1',
-  link: '',
-};
-
-const bancas = [
-  'Cebraspe',
-  'FGV',
-  'FCC',
-  'Vunesp',
-  'Cesgranrio',
-  'IBFC',
-  'IDECAN',
-  'QUADRIX',
-  'Outra'
-];
-
-const NovoConcurso: React.FC = () => {
+const NovoConcurso = () => {
+  const { id } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedCargos, setSelectedCargos] = useState<string[]>([]);
-  const [cargoInput, setCargoInput] = useState('');
+  const isEditing = !!id;
   
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: DEFAULT_FORM_VALUES,
+  const { data: existingConcurso, isLoading } = useQuery({
+    queryKey: ['concurso', id],
+    queryFn: async () => {
+      if (!id) return null;
+      
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      return data as Concurso;
+    },
+    enabled: isEditing,
   });
   
-  const watchBanca = form.watch('banca');
-  const watchTipoProva = form.watch('tipoProva');
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      titulo: '',
+      orgao: '',
+      banca: 'Cebraspe',
+      vagas: undefined,
+      inscritos: undefined,
+      data_publicacao: new Date().toISOString().split('T')[0],
+      etapa_atual: 'Edital publicado',
+      status: 'Em andamento',
+      exam_type: 'Alternativas',
+      alternatives_count: 5,
+      wrong_answer_penalty: 0,
+      basic_knowledge_weight: 1,
+      specific_knowledge_weight: 1,
+      discursive_weight: 1,
+      link: '',
+    },
+  });
   
-  const handleAddCargo = (cargo: string) => {
-    if (cargo && !selectedCargos.includes(cargo)) {
-      const newCargos = [...selectedCargos, cargo];
-      setSelectedCargos(newCargos);
-      form.setValue('cargos', newCargos);
+  // Update form values when editing an existing concurso
+  React.useEffect(() => {
+    if (existingConcurso) {
+      form.reset({
+        titulo: existingConcurso.titulo,
+        orgao: existingConcurso.orgao,
+        banca: existingConcurso.banca,
+        vagas: existingConcurso.vagas,
+        inscritos: existingConcurso.inscritos,
+        data_publicacao: existingConcurso.data_publicacao ? new Date(existingConcurso.data_publicacao).toISOString().split('T')[0] : undefined,
+        etapa_atual: existingConcurso.etapa_atual,
+        status: existingConcurso.status,
+        exam_type: existingConcurso.exam_type,
+        alternatives_count: existingConcurso.alternatives_count,
+        wrong_answer_penalty: existingConcurso.wrong_answer_penalty,
+        basic_knowledge_weight: existingConcurso.basic_knowledge_weight,
+        specific_knowledge_weight: existingConcurso.specific_knowledge_weight,
+        discursive_weight: existingConcurso.discursive_weight,
+        link: existingConcurso.link,
+      });
     }
-    setCargoInput('');
-  };
-
-  const handleRemoveCargo = (cargo: string) => {
-    const newCargos = selectedCargos.filter(c => c !== cargo);
-    setSelectedCargos(newCargos);
-    form.setValue('cargos', newCargos);
-  };
+  }, [existingConcurso, form]);
   
-  const onSubmit = async (values: FormValues) => {
-    setIsSubmitting(true);
-    
+  const onSubmit = async (data: FormData) => {
     try {
-      // Create one concurso entry for each cargo
-      for (const cargo of values.cargos) {
-        // Prepare the data
-        const concursoData = {
-          id: uuidv4(),
-          titulo: `${values.orgao} - ${cargo}`, // Generate title from orgao and cargo
-          orgao: values.orgao,
-          banca: values.banca === 'Outra' ? values.bancaOutra : values.banca,
-          data_publicacao: values.dataPublicacao,
-          vagas: values.vagas,
-          status: values.status,
-          etapa_atual: 'Inscrições',
-          link: values.link || null,
-          // Store additional info in a metadata field or separate table in a real app
-          meta: JSON.stringify({
-            tipoProva: values.tipoProva,
-            descontoPorErro: values.descontoPorErro,
-            numAlternativas: values.numAlternativas,
-            pesoBasicos: values.pesoBasicos,
-            pesoEspecificos: values.pesoEspecificos,
-            pesoDiscursiva: values.pesoDiscursiva,
-            fatorMultiplicador: values.fatorMultiplicador,
-          }),
-        };
-        
-        // Insert into Supabase
+      if (isEditing) {
         const { error } = await supabase
           .from('concursos')
-          .insert([concursoData]);
-        
+          .update(data)
+          .eq('id', id);
+          
         if (error) throw error;
+        
+        toast({
+          title: "Concurso atualizado",
+          description: "As informações do concurso foram atualizadas com sucesso.",
+        });
+      } else {
+        const { error } = await supabase
+          .from('concursos')
+          .insert(data);
+          
+        if (error) throw error;
+        
+        toast({
+          title: "Concurso criado",
+          description: "O novo concurso foi criado com sucesso.",
+        });
       }
       
-      toast({
-        title: 'Concurso criado com sucesso!',
-        description: `Foram criados ${values.cargos.length} cargos para este concurso.`,
-        variant: 'default',
-      });
-      
-      // Redirect to the concursos list
-      navigate('/admin/concursos');
+      navigate('/project/admin/man/concursos');
     } catch (error) {
-      console.error('Erro ao criar concurso:', error);
+      console.error('Error saving concurso:', error);
       toast({
-        title: 'Erro ao criar concurso',
-        description: 'Ocorreu um erro ao tentar criar o concurso. Tente novamente.',
-        variant: 'destructive',
+        title: "Erro ao salvar",
+        description: "Ocorreu um erro ao salvar o concurso. Por favor, tente novamente.",
+        variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
+  
+  if (isEditing && isLoading) {
+    return (
+      <div className="flex justify-center items-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="ml-2">Carregando concurso...</p>
+      </div>
+    );
+  }
   
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Cadastrar Novo Concurso</h1>
+      <h1 className="text-2xl font-bold mb-6">{isEditing ? 'Editar Concurso' : 'Novo Concurso'}</h1>
       
       <Card>
         <CardHeader>
-          <CardTitle>Informações do Concurso</CardTitle>
+          <CardTitle>{isEditing ? 'Editar Concurso' : 'Cadastrar Novo Concurso'}</CardTitle>
           <CardDescription>
-            Preencha os campos abaixo com as informações do concurso a ser cadastrado.
+            Preencha os campos abaixo para {isEditing ? 'atualizar' : 'cadastrar'} um concurso no sistema.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="orgao"
+                  name="titulo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Órgão*</FormLabel>
+                      <FormLabel>Título do Concurso</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Tribunal Superior Eleitoral" {...field} />
+                        <Input {...field} />
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div>
-                  <FormField
-                    control={form.control}
-                    name="banca"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Banca Organizadora*</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione a banca" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {bancas.map((banca) => (
-                              <SelectItem key={banca} value={banca}>{banca}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {watchBanca === 'Outra' && (
-                    <FormField
-                      control={form.control}
-                      name="bancaOutra"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Nome da banca*</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Digite o nome da banca" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                </div>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="dataPublicacao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Data de Publicação*</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="cargos"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Escolha o cargo*</FormLabel>
-                    <div className="flex flex-col space-y-4">
-                      <div className="flex gap-2">
-                        <Select 
-                          value={cargoInput} 
-                          onValueChange={(value) => handleAddCargo(value)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione um cargo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {cargosDisponiveis.map((cargo) => (
-                              <SelectItem 
-                                key={cargo} 
-                                value={cargo}
-                                disabled={selectedCargos.includes(cargo)}
-                              >
-                                {cargo}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {selectedCargos.map((cargo) => (
-                          <Badge key={cargo} variant="secondary" className="flex items-center gap-1 py-1 px-3">
-                            {cargo}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-4 w-4 p-0 ml-1"
-                              onClick={() => handleRemoveCargo(cargo)}
-                            >
-                              <X className="h-3 w-3" />
-                              <span className="sr-only">Remove</span>
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      {form.formState.errors.cargos && (
-                        <p className="text-sm font-medium text-destructive">
-                          {form.formState.errors.cargos.message}
-                        </p>
-                      )}
-                    </div>
-                    <FormDescription>
-                      Selecione um ou mais cargos para este concurso
-                    </FormDescription>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="vagas"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Número de Vagas*</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        placeholder="Ex: 10" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-                
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status*</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Aberto">Aberto</SelectItem>
-                        <SelectItem value="Em andamento">Em andamento</SelectItem>
-                        <SelectItem value="Encerrado">Encerrado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="tipoProva"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>Tipo de Prova*</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="Certo ou Errado" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Certo ou Errado
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value="Alternativas" />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            Alternativas
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {watchTipoProva === 'Certo ou Errado' && (
-                <FormField
-                  control={form.control}
-                  name="descontoPorErro"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Desconto por Erro</FormLabel>
-                      <Select 
-                        onValueChange={(val) => field.onChange(parseFloat(val))} 
-                        defaultValue={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o desconto" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="0">Sem desconto</SelectItem>
-                          <SelectItem value="0.33">0.33 por item errado</SelectItem>
-                          <SelectItem value="0.5">0.5 por item errado</SelectItem>
-                          <SelectItem value="1">1.0 por item errado</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormDescription>
-                        Quantidade de pontos descontados para cada item errado
+                        Ex: Analista Judiciário - Área Administrativa
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
+                
+                <FormField
+                  control={form.control}
+                  name="orgao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Órgão</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Ex: Tribunal Regional Federal da 1ª Região
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
-              {watchTipoProva === 'Alternativas' && (
-                <div className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="numAlternativas"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número de Alternativas</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Selecione as alternativas" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="ABCD">A, B, C, D</SelectItem>
-                            <SelectItem value="ABCDE">A, B, C, D, E</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="border rounded-lg p-4 space-y-4">
-                    <h3 className="font-medium text-lg">Pontuação das Provas</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="pesoBasicos"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Peso C. Básicos</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.1"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="pesoEspecificos"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Peso C. Específicos</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.1"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="pesoDiscursiva"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Peso Discursiva</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                min="0" 
-                                step="0.1"
-                                {...field}
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="fatorMultiplicador"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Fator Multiplicador</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione o multiplicador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="x1">x1 (sem multiplicador)</SelectItem>
-                              <SelectItem value="x2">x2 (dobro da pontuação)</SelectItem>
-                              <SelectItem value="x3">x3 (triplo da pontuação)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Aplicado às notas finais
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="banca"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Banca Organizadora</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma banca" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Cebraspe">Cebraspe</SelectItem>
+                          <SelectItem value="FGV">FGV</SelectItem>
+                          <SelectItem value="FCC">FCC</SelectItem>
+                          <SelectItem value="IBFC">IBFC</SelectItem>
+                          <SelectItem value="Vunesp">Vunesp</SelectItem>
+                          <SelectItem value="Outra">Outra</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="vagas"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Vagas</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="inscritos"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Inscritos</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="data_publicacao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data da Prova</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="etapa_atual"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Etapa Atual</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Ex: Edital publicado, Inscrições abertas
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Em andamento">Em andamento</SelectItem>
+                          <SelectItem value="Concluído">Concluído</SelectItem>
+                          <SelectItem value="Cancelado">Cancelado</SelectItem>
+                          <SelectItem value="Suspenso">Suspenso</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="exam_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Prova</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
+                          <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                          <SelectItem value="Dissertativa">Dissertativa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="alternatives_count"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantidade de Alternativas</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Para provas de Certo ou Errado, considere 2
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="basic_knowledge_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso - Conhecimentos Básicos</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="specific_knowledge_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso - Conhecimentos Específicos</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="discursive_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso - Discursiva</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="wrong_answer_penalty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Penalidade por Erro</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.1" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Para Cebraspe, geralmente é 1 (perde um ponto por erro)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={form.control}
                 name="link"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Link do Edital (opcional)</FormLabel>
+                    <FormLabel>Link do Edital</FormLabel>
                     <FormControl>
-                      <Input placeholder="URL do edital do concurso" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormDescription>
-                      Link para o edital ou site oficial do concurso
+                      URL completa para o edital do concurso
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <div className="pt-4 flex justify-end space-x-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate('/admin/dashboard')}
+              <div className="flex justify-end space-x-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => navigate('/project/admin/man/concursos')}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Salvando...' : 'Salvar Concurso'}
+                <Button type="submit">
+                  {isEditing ? 'Atualizar Concurso' : 'Cadastrar Concurso'}
                 </Button>
               </div>
             </form>
