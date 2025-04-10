@@ -26,16 +26,27 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
+  // Generate a placeholder avatar URL if none exists
+  const avatarUrl = userProfile.avatar_url || 
+    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userProfile.name || 'user')}`;
+
   return (
-    <Card key={userProfile.id} className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card key={userProfile.id} className="overflow-hidden hover:shadow-md transition-shadow h-full">
       <CardHeader className="pb-2 flex flex-col items-center text-center">
         <Avatar className="h-16 w-16 mb-2">
-          <AvatarImage src={userProfile.avatar_url || undefined} alt={userProfile.name} />
+          <AvatarImage src={avatarUrl} alt={userProfile.name} />
           <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
         </Avatar>
         <div className="space-y-1">
           <p className="font-semibold text-sm">{userProfile.name}</p>
-          <p className="text-xs text-muted-foreground truncate max-w-[200px]">{userProfile.bio}</p>
+          <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+            {userProfile.email}
+          </p>
+          {userProfile.bio && (
+            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+              {userProfile.bio}
+            </p>
+          )}
         </div>
       </CardHeader>
       
