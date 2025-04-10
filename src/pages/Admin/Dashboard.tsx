@@ -79,13 +79,13 @@ const AdminDashboard: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-2">
             <a 
-              href="/admin/concursos/novo" 
+              href="/project/admin/man/concursos/novo" 
               className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
             >
               Cadastrar novo concurso
             </a>
             <a 
-              href="/admin/concursos" 
+              href="/project/admin/man/concursos" 
               className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
             >
               Gerenciar concursos

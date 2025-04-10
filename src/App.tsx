@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -25,6 +26,12 @@ import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
 import UserConcursos from "./pages/UserConcursos";
 import Comunidade from "./pages/Comunidade";
+import AdminLogin from "./pages/Admin/Login";
+import AdminDashboard from "./pages/Admin/Dashboard";
+import ListarConcursos from "./pages/Admin/ListarConcursos";
+import NovoConcurso from "./pages/Admin/NovoConcurso";
+import AdminLayout from "./components/Admin/AdminLayout";
+import ProtectedRoute from "./components/Admin/ProtectedRoute";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -85,7 +92,7 @@ const App = () => {
               <Route path="/editais" element={
                 <>
                   <Menu />
-                  <Comunidade />
+                  <Editais />
                 </>
               } />
               <Route path="/concursos" element={
