@@ -7,6 +7,7 @@ import { UserGrid } from '@/components/community/UserGrid';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { generateSpecificUsers, generateTestUsers } from '@/integrations/supabase/community';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserProfile {
   id: string;
@@ -22,6 +23,7 @@ interface UserProfile {
 
 const Comunidade: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [showDemoUsers, setShowDemoUsers] = useState(false);
   
   // Default demo users to display when no real users are found
@@ -184,7 +186,7 @@ const Comunidade: React.FC = () => {
             
             // Get approval count (based on concursos_aprovados field if it exists)
             const approvalCount = profile.concursos_aprovados 
-              ? profile.concursos_aprovados.split(',').length 
+              ? profile.concursos_aprovados.split(',').filter(Boolean).length 
               : 0;
             
             return {
@@ -209,12 +211,16 @@ const Comunidade: React.FC = () => {
     },
     staleTime: 60000, // 1 minute
     retry: 1, // Don't keep retrying on failure
+    refetchOnWindowFocus: false,
   });
 
   const handleUserClick = (userId: string) => {
     if (showDemoUsers) {
       // For demo users, just show an alert instead of navigating
-      alert(`Este é um usuário de demonstração. Em uma conta real, você seria redirecionado para o perfil.`);
+      toast({
+        title: 'Demonstração',
+        description: 'Este é um usuário de demonstração. Em uma conta real, você seria redirecionado para o perfil.',
+      });
     } else {
       navigate(`/usuario/${userId}`);
     }
@@ -254,9 +260,11 @@ const Comunidade: React.FC = () => {
         </div>
         <UserGrid>
           {demoUsers.map((userProfile) => (
-            <div key={userProfile.id} onClick={() => handleUserClick(userProfile.id)} className="cursor-pointer">
-              <UserCard userProfile={userProfile} />
-            </div>
+            <UserCard 
+              key={userProfile.id} 
+              userProfile={userProfile} 
+              onClick={handleUserClick} 
+            />
           ))}
         </UserGrid>
       </div>
@@ -284,9 +292,11 @@ const Comunidade: React.FC = () => {
       {displayUsers.length > 0 ? (
         <UserGrid>
           {displayUsers.map((userProfile: UserProfile) => (
-            <div key={userProfile.id} onClick={() => handleUserClick(userProfile.id)} className="cursor-pointer">
-              <UserCard userProfile={userProfile} />
-            </div>
+            <UserCard 
+              key={userProfile.id} 
+              userProfile={userProfile} 
+              onClick={handleUserClick} 
+            />
           ))}
         </UserGrid>
       ) : (

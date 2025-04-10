@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -128,42 +129,44 @@ const UserProfile = () => {
       
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user!.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
       
       setUploading(true);
       
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const profileBucket = buckets?.find(bucket => bucket.name === 'profiles');
+      console.log("Uploading file to path:", filePath);
       
-      if (!profileBucket) {
-        console.log("Creating 'profiles' bucket");
-        const { error: bucketError } = await supabase.storage.createBucket('profiles', { public: true });
-        if (bucketError) {
-          throw bucketError;
-        }
-      }
-      
-      const { error: uploadError } = await supabase.storage
+      // Upload the file to the "profiles" bucket
+      const { data, error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, file);
         
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
       
-      const { data } = supabase.storage
+      console.log("Upload data:", data);
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(filePath);
         
-      console.log("File uploaded, public URL:", data.publicUrl);
+      console.log("Generated public URL:", publicUrl);
       
+      // Update the user's profile with the new avatar URL
       const { error: updateError } = await supabase
         .from('users_profiles')
-        .update({ avatar_url: data.publicUrl })
+        .update({ avatar_url: publicUrl })
         .eq('id', user!.id);
         
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Update profile error:", updateError);
+        throw updateError;
+      }
       
-      setAvatarUrl(data.publicUrl);
+      setAvatarUrl(publicUrl);
       
       toast({
         title: 'Foto de perfil atualizada',
