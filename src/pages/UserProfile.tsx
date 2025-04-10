@@ -81,7 +81,7 @@ const UserProfile = () => {
         
       if (error) throw error;
       
-      // Fixed: Access the titulo property correctly from the nested object
+      // Fix: Access the titulo property correctly from the nested object
       return data.map(item => ({
         concursoId: item.concurso_id,
         concursoTitle: item.concursos?.titulo || 'Concurso sem título',
@@ -126,6 +126,9 @@ const UserProfile = () => {
       setConcursosAprovados(profile.concursos_aprovados || '');
       setConcursosParticipando(profile.concursos_participando || '');
       setAvatarUrl(profile.avatar_url);
+      
+      console.log("Profile loaded:", profile);
+      console.log("Avatar URL:", profile.avatar_url);
     }
   }, [profile]);
   
@@ -143,6 +146,18 @@ const UserProfile = () => {
       
       setUploading(true);
       
+      // Check if the 'profiles' bucket exists, create it if it doesn't
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const profileBucket = buckets?.find(bucket => bucket.name === 'profiles');
+      
+      if (!profileBucket) {
+        console.log("Creating 'profiles' bucket");
+        const { error: bucketError } = await supabase.storage.createBucket('profiles', { public: true });
+        if (bucketError) {
+          throw bucketError;
+        }
+      }
+      
       // Upload the file
       const { error: uploadError } = await supabase.storage
         .from('profiles')
@@ -155,6 +170,8 @@ const UserProfile = () => {
         .from('profiles')
         .getPublicUrl(filePath);
         
+      console.log("File uploaded, public URL:", data.publicUrl);
+      
       // Update avatar_url in the profile
       const { error: updateError } = await supabase
         .from('users_profiles')
@@ -172,6 +189,7 @@ const UserProfile = () => {
       
       refetch();
     } catch (error: any) {
+      console.error("Avatar upload error:", error);
       toast({
         title: 'Erro ao fazer upload',
         description: error.message || 'Ocorreu um erro ao enviar a imagem. Tente novamente.',
