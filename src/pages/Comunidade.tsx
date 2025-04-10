@@ -2,9 +2,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../integrations/supabase/client';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Trophy, Users, BookOpen } from 'lucide-react';
 import { UserCard } from '@/components/community/UserCard';
 import { UserGrid } from '@/components/community/UserGrid';
 

@@ -1,0 +1,112 @@
+
+import { supabase } from './client';
+
+// Function to generate fake rankings for a concurso
+export const generateFakeRankings = async (concursoId: string, count: number = 10) => {
+  try {
+    // Get existing users from users_profiles
+    const { data: users, error: usersError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .limit(count);
+
+    if (usersError) throw usersError;
+    
+    if (!users || users.length === 0) {
+      console.error('No users found to create rankings');
+      return;
+    }
+
+    // Check if rankings already exist for this concurso
+    const { data: existingRankings, error: rankingsError } = await supabase
+      .from('user_rankings')
+      .select('*')
+      .eq('concurso_id', concursoId);
+      
+    if (rankingsError) throw rankingsError;
+    
+    if (existingRankings && existingRankings.length > 0) {
+      console.log(`Rankings already exist for concurso ${concursoId}`);
+      return;
+    }
+
+    // Create rankings for each user
+    const rankings = users.map(user => ({
+      user_id: user.id,
+      concurso_id: concursoId,
+      score: Math.floor(Math.random() * 100) // Random score between 0-100
+    }));
+
+    // Insert rankings into database
+    const { error: insertError } = await supabase
+      .from('user_rankings')
+      .insert(rankings);
+
+    if (insertError) throw insertError;
+    
+    console.log(`Created ${rankings.length} fake rankings for concurso ${concursoId}`);
+    
+  } catch (error) {
+    console.error('Error generating fake rankings:', error);
+  }
+};
+
+// Function to get rankings for a concurso with user information
+export const getRankingsWithUserInfo = async (concursoId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_rankings')
+      .select(`
+        id,
+        score,
+        user_id,
+        users_profiles!inner(name, avatar_url)
+      `)
+      .eq('concurso_id', concursoId)
+      .order('score', { ascending: false });
+      
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      return [];
+    }
+    
+    // Format the data with position
+    return data.map((item, index) => {
+      // Fix: Correctly access nested properties
+      const userProfile = item.users_profiles || {};
+      
+      // Safely access properties with type checking
+      const name = typeof userProfile === 'object' && userProfile !== null && 'name' in userProfile 
+        ? userProfile.name 
+        : 'Unknown User';
+        
+      const avatarUrl = typeof userProfile === 'object' && userProfile !== null && 'avatar_url' in userProfile 
+        ? userProfile.avatar_url 
+        : null;
+      
+      return {
+        position: index + 1,
+        name: name,
+        score: item.score,
+        userId: item.user_id,
+        avatarUrl: avatarUrl
+      };
+    });
+    
+  } catch (error) {
+    console.error('Error fetching rankings with user info:', error);
+    return [];
+  }
+};
+
+// Function to schedule scraper for concursos
+export const scheduleScraper = async (): Promise<void> => {
+  try {
+    console.log('Scheduling scraper for concursos...');
+    // This would typically make an API call to schedule scraping
+    // For now, we'll just log that it was called
+  } catch (error) {
+    console.error('Error scheduling scraper:', error);
+  }
+};
