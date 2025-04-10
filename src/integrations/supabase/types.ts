@@ -125,6 +125,27 @@ export type Database = {
           },
         ]
       }
+      user_followers: {
+        Row: {
+          created_at: string
+          followed_id: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_id: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          followed_id?: string
+          follower_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_rankings: {
         Row: {
           concurso_id: string
@@ -203,6 +224,14 @@ export type Database = {
     Functions: {
       count_concurso_participants: {
         Args: { concurso_id: string }
+        Returns: number
+      }
+      count_user_followers: {
+        Args: { user_id: string }
+        Returns: number
+      }
+      count_user_posts: {
+        Args: { user_id: string }
         Returns: number
       }
     }

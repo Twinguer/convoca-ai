@@ -17,6 +17,7 @@ interface UserProfile {
   avatar_url: string | null;
   bio: string | null;
   email: string;
+  concursos_aprovados?: string | null;
   followerCount: number;
   postCount: number;
   approvalCount: number;
@@ -33,7 +34,7 @@ const Comunidade: React.FC = () => {
       // Get all users with their follower counts
       const { data: profiles, error } = await supabase
         .from('users_profiles')
-        .select('id, name, avatar_url, bio, email');
+        .select('id, name, avatar_url, bio, email, concursos_aprovados');
         
       if (error) throw error;
       
@@ -52,7 +53,7 @@ const Comunidade: React.FC = () => {
             
           if (postError) console.error('Error fetching post count:', postError);
           
-          // Get approval count (a placeholder for approved exams)
+          // Get approval count (based on concursos_aprovados field if it exists)
           const approvalCount = profile.concursos_aprovados 
             ? profile.concursos_aprovados.split(',').length 
             : 0;
