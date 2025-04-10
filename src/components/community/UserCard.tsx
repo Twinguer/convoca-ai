@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Trophy, Users, BookOpen } from 'lucide-react';
@@ -21,20 +21,28 @@ interface UserCardProps {
 }
 
 export const UserCard: React.FC<UserCardProps> = ({ userProfile }) => {
+  const [avatarError, setAvatarError] = useState(false);
+  
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  // Generate a placeholder avatar URL if none exists
-  const avatarUrl = userProfile.avatar_url || 
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userProfile.name || 'user')}`;
+  // Generate a fallback avatar URL if none exists or if the original has an error
+  const fallbackAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userProfile.name || 'user')}`;
+  
+  // Use the user's avatar_url if available and not erroring, otherwise use fallback
+  const avatarUrl = avatarError || !userProfile.avatar_url ? fallbackAvatarUrl : userProfile.avatar_url;
 
   return (
     <Card key={userProfile.id} className="overflow-hidden hover:shadow-md transition-shadow h-full">
       <CardHeader className="pb-2 flex flex-col items-center text-center">
         <Avatar className="h-16 w-16 mb-2">
-          <AvatarImage src={avatarUrl} alt={userProfile.name} />
+          <AvatarImage 
+            src={avatarUrl} 
+            alt={userProfile.name} 
+            onError={() => setAvatarError(true)}
+          />
           <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
         </Avatar>
         <div className="space-y-1">

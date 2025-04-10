@@ -120,12 +120,18 @@ const Comunidade: React.FC = () => {
     queryKey: ['community-users'],
     queryFn: async () => {
       try {
+        console.log('Fetching community users...');
         // Get all users without filtering
         const { data: profiles, error } = await supabase
           .from('users_profiles')
           .select('id, name, avatar_url, bio, email, concursos_aprovados');
           
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching profiles:', error);
+          throw error;
+        }
+        
+        console.log('Profiles fetched:', profiles?.length || 0);
         
         if (!profiles || profiles.length === 0) {
           // If no users found, try to generate some test users for display
@@ -164,13 +170,17 @@ const Comunidade: React.FC = () => {
             const { data: followerCount, error: followerError } = await supabase
               .rpc('count_user_followers', { user_id: profile.id });
               
-            if (followerError) console.error('Error fetching follower count:', followerError);
+            if (followerError) {
+              console.error('Error fetching follower count:', followerError);
+            }
             
             // Get post count (currently a placeholder)
             const { data: postCount, error: postError } = await supabase
               .rpc('count_user_posts', { user_id: profile.id });
               
-            if (postError) console.error('Error fetching post count:', postError);
+            if (postError) {
+              console.error('Error fetching post count:', postError);
+            }
             
             // Get approval count (based on concursos_aprovados field if it exists)
             const approvalCount = profile.concursos_aprovados 
@@ -186,6 +196,8 @@ const Comunidade: React.FC = () => {
           })
         );
         
+        console.log('Users with counts:', usersWithCounts.length);
+        
         // Sort users by follower count (most followers first)
         return usersWithCounts.sort((a, b) => b.followerCount - a.followerCount);
       } catch (error) {
@@ -196,6 +208,7 @@ const Comunidade: React.FC = () => {
       }
     },
     staleTime: 60000, // 1 minute
+    retry: 1, // Don't keep retrying on failure
   });
 
   const handleUserClick = (userId: string) => {
@@ -214,6 +227,8 @@ const Comunidade: React.FC = () => {
     // If no users were found from the database, show demo users
     if (users && users.length === 0) {
       setShowDemoUsers(true);
+    } else if (users && users.length > 0) {
+      setShowDemoUsers(false);
     }
   }, [users]);
 
@@ -222,6 +237,28 @@ const Comunidade: React.FC = () => {
       <div className="flex justify-center items-center min-h-[60vh]">
         <Loader2 className="h-8 w-8 animate-spin mr-2" />
         <p className="text-lg">Carregando usuários...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Comunidade</h1>
+          <div className="mt-4 p-4 border border-red-300 bg-red-50 rounded-md">
+            <p className="text-red-700">
+              Ocorreu um erro ao carregar os usuários. Tente novamente mais tarde.
+            </p>
+          </div>
+        </div>
+        <UserGrid>
+          {demoUsers.map((userProfile) => (
+            <div key={userProfile.id} onClick={() => handleUserClick(userProfile.id)} className="cursor-pointer">
+              <UserCard userProfile={userProfile} />
+            </div>
+          ))}
+        </UserGrid>
       </div>
     );
   }
