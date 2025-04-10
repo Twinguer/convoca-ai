@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, generateTestUsers } from '../integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, MessageSquare, Heart, Trophy, BookOpen } from 'lucide-react';
+import { Users, Heart, Trophy, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ const Comunidade: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['community-users'],
@@ -162,6 +163,36 @@ const Comunidade: React.FC = () => {
     }
   };
   
+  const handleGenerateTestUsers = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await generateTestUsers(30);
+      
+      if (result.success) {
+        toast({
+          title: "Sucesso",
+          description: result.message
+        });
+        // Refresh the user list
+        refetch();
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message,
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao gerar usuários de teste.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -173,15 +204,19 @@ const Comunidade: React.FC = () => {
     </div>;
   }
 
-  if (error) {
-    return <div className="flex justify-center items-center min-h-[60vh]">
-      <p className="text-lg text-red-500">Erro ao carregar usuários.</p>
-    </div>;
-  }
-
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Comunidade</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Comunidade</h1>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleGenerateTestUsers}
+          disabled={isGenerating}
+        >
+          {isGenerating ? 'Gerando...' : 'Gerar 30 Usuários de Teste'}
+        </Button>
+      </div>
       
       {users && users.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -263,8 +298,11 @@ const Comunidade: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="flex justify-center items-center min-h-[40vh]">
-          <p className="text-lg text-gray-500">Nenhum usuário encontrado.</p>
+        <div className="flex flex-col justify-center items-center min-h-[40vh]">
+          <p className="text-lg text-gray-500 mb-4">Nenhum usuário encontrado.</p>
+          <Button onClick={handleGenerateTestUsers} disabled={isGenerating}>
+            {isGenerating ? 'Gerando...' : 'Gerar 30 Usuários de Teste'}
+          </Button>
         </div>
       )}
     </div>
