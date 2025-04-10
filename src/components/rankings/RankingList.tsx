@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
+import { Trophy } from 'lucide-react';
 
 export interface RankingItemProps {
   id: string;
@@ -34,7 +35,10 @@ export const RankingItem: React.FC<RankingItemProps> = ({
                 <p className="text-sm font-medium text-gray-600">{banca} • {concursoTitle}</p>
               </div>
               <h3 className="text-lg font-bold">{cargoTitle}</h3>
-              <p className="text-sm mt-2">{participantCount.toLocaleString()} participantes</p>
+              <p className="text-sm mt-2">
+                <Trophy className="inline-block mr-1 h-4 w-4 text-yellow-500" />
+                {participantCount.toLocaleString()} participantes
+              </p>
             </div>
             {logoUrl && (
               <div className="w-24 h-24 flex-shrink-0">

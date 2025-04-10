@@ -16,6 +16,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { createRanking } from '@/integrations/supabase/rankings';
 import { useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -133,21 +134,8 @@ const NovoConcurso = () => {
           description: "As informações do ranking foram atualizadas com sucesso.",
         });
       } else {
-        // Create new concurso using the admin_operations function
-        const { data: result, error } = await supabase
-          .rpc('admin_operations', {
-            operation: 'insert_concurso',
-            data: data
-          });
-          
-        if (error) {
-          console.error('Error from RPC:', error);
-          throw error;
-        }
-        
-        if (!result || !result.success) {
-          throw new Error(result?.error || 'Erro desconhecido ao salvar o ranking');
-        }
+        // Create new concurso using the createRanking function
+        await createRanking(data);
         
         toast({
           title: "Ranking criado",

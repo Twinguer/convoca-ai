@@ -110,3 +110,29 @@ export const scheduleScraper = async (): Promise<void> => {
     console.error('Error scheduling scraper:', error);
   }
 };
+
+// Function to create a new ranking
+export const createRanking = async (rankingData: any) => {
+  try {
+    const { data: result, error } = await supabase
+      .rpc('admin_operations', {
+        operation: 'insert_concurso',
+        data: rankingData
+      });
+      
+    if (error) {
+      console.error('Error creating ranking:', error);
+      throw error;
+    }
+    
+    if (!result || !result.success) {
+      throw new Error(result?.error || 'Erro desconhecido ao salvar o ranking');
+    }
+    
+    console.log('Ranking created successfully');
+    return result.data;
+  } catch (error) {
+    console.error('Error creating ranking:', error);
+    throw error;
+  }
+};
