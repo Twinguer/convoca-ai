@@ -173,7 +173,8 @@ const UserProfile = () => {
         description: 'Sua foto de perfil foi atualizada com sucesso.',
       });
       
-      refetch();
+      // Chamar refetch aqui para atualizar os dados do perfil
+      await refetch();
     } catch (error: any) {
       console.error("Avatar upload error:", error);
       toast({
@@ -190,6 +191,9 @@ const UserProfile = () => {
     try {
       setSaving(true);
       
+      // Guardar a URL do avatar atual antes de atualizar
+      const currentAvatarUrl = avatarUrl;
+      
       const { error } = await supabase
         .from('users_profiles')
         .update({
@@ -197,6 +201,8 @@ const UserProfile = () => {
           bio,
           concursos_aprovados: concursosAprovados,
           concursos_participando: concursosParticipando,
+          // Manter a URL do avatar que já existe
+          avatar_url: currentAvatarUrl,
           updated_at: new Date().toISOString()
         })
         .eq('id', user!.id);
@@ -208,7 +214,8 @@ const UserProfile = () => {
         description: 'Seu perfil foi atualizado com sucesso.',
       });
       
-      refetch();
+      // Importante: refetch após salvar para ter os dados atualizados
+      await refetch();
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar',
