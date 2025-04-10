@@ -1,3 +1,4 @@
+
 // This edge function scrapes concursos from Cebraspe website
 // Follow the Supabase Edge Function format
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
@@ -91,12 +92,20 @@ async function fetchCebraspeAPI() {
     const data = await response.json();
     console.log(`Fetched ${data.length} events from Cebraspe API`);
     
+    // Sort by number of vagas (if available) and take the top 20
+    const sortedData = data.sort((a, b) => {
+      // Convert vagas to numbers for comparison
+      const vagasA = parseInt(a.vagas) || 0;
+      const vagasB = parseInt(b.vagas) || 0;
+      return vagasB - vagasA; // Sort in descending order
+    }).slice(0, 20); // Take top 20
+    
     // Transform API data to match our database schema
-    const transformedData = data.map(item => ({
+    const transformedData = sortedData.map(item => ({
       titulo: item.titulo || item.nome,
       orgao: item.instituicao || 'Não informado',
       banca: 'Cebraspe',
-      vagas: item.vagas || null,
+      vagas: parseInt(item.vagas) || null,
       inscritos: null, // API doesn't provide this information
       etapa_atual: getEtapaAtual(item),
       link: item.link || `https://www.cebraspe.org.br/concursos/${item.sigla?.toLowerCase()}`,

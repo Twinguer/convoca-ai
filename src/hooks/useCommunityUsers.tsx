@@ -15,6 +15,7 @@ interface UserProfile {
   followerCount: number;
   postCount: number;
   approvalCount: number;
+  status_concurseiro?: string | null;
 }
 
 /**
@@ -36,7 +37,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: 'TRT,TJ-SP',
       followerCount: 35,
       postCount: 12,
-      approvalCount: 2
+      approvalCount: 2,
+      status_concurseiro: 'Na Ativa'
     },
     {
       id: '2',
@@ -47,7 +49,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: 'Receita Federal',
       followerCount: 28,
       postCount: 8,
-      approvalCount: 1
+      approvalCount: 1,
+      status_concurseiro: 'Na Ativa'
     },
     {
       id: '3',
@@ -58,7 +61,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: 'TCU',
       followerCount: 42,
       postCount: 15,
-      approvalCount: 1
+      approvalCount: 1,
+      status_concurseiro: 'Na Ativa'
     },
     {
       id: '4',
@@ -69,7 +73,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: 'Banco do Brasil,Caixa',
       followerCount: 31,
       postCount: 10,
-      approvalCount: 2
+      approvalCount: 2,
+      status_concurseiro: 'Aposentado'
     },
     {
       id: '5',
@@ -80,7 +85,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: 'INSS,TCE',
       followerCount: 25,
       postCount: 7,
-      approvalCount: 2
+      approvalCount: 2,
+      status_concurseiro: 'Na Ativa'
     },
     {
       id: '6',
@@ -91,7 +97,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: null,
       followerCount: 18,
       postCount: 5,
-      approvalCount: 0
+      approvalCount: 0,
+      status_concurseiro: 'Na Ativa'
     },
     {
       id: '7',
@@ -102,7 +109,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: 'SES-SP',
       followerCount: 23,
       postCount: 9,
-      approvalCount: 1
+      approvalCount: 1,
+      status_concurseiro: 'Na Ativa'
     },
     {
       id: '8',
@@ -113,7 +121,8 @@ export const useCommunityUsers = () => {
       concursos_aprovados: null,
       followerCount: 12,
       postCount: 3,
-      approvalCount: 0
+      approvalCount: 0,
+      status_concurseiro: 'Na Ativa'
     }
   ];
 
@@ -133,7 +142,7 @@ export const useCommunityUsers = () => {
         // Get all users without filtering
         const { data: profiles, error } = await supabase
           .from('users_profiles')
-          .select('id, name, avatar_url, bio, email, concursos_aprovados')
+          .select('id, name, avatar_url, bio, email, concursos_aprovados, status_concurseiro')
           .order('created_at', { ascending: false });
           
         if (error) {
@@ -155,7 +164,7 @@ export const useCommunityUsers = () => {
               // If specific users were generated, refetch immediately
               const { data: newProfiles } = await supabase
                 .from('users_profiles')
-                .select('id, name, avatar_url, bio, email, concursos_aprovados')
+                .select('id, name, avatar_url, bio, email, concursos_aprovados, status_concurseiro')
                 .order('created_at', { ascending: false });
                 
               if (newProfiles && newProfiles.length > 0) {
@@ -176,7 +185,7 @@ export const useCommunityUsers = () => {
               // Refetch the data immediately after generating test users
               const { data: newProfiles } = await supabase
                 .from('users_profiles')
-                .select('id, name, avatar_url, bio, email, concursos_aprovados')
+                .select('id, name, avatar_url, bio, email, concursos_aprovados, status_concurseiro')
                 .order('created_at', { ascending: false });
                 
               if (newProfiles && newProfiles.length > 0) {
@@ -245,7 +254,8 @@ export const useCommunityUsers = () => {
             ...profile,
             followerCount: followerCount || 0,
             postCount: postCount || 0,
-            approvalCount: approvalCount
+            approvalCount: approvalCount,
+            status_concurseiro: profile.status_concurseiro || 'Na Ativa'
           };
         })
       );
@@ -260,7 +270,8 @@ export const useCommunityUsers = () => {
         ...profile,
         followerCount: 0,
         postCount: 0,
-        approvalCount: 0
+        approvalCount: 0,
+        status_concurseiro: profile.status_concurseiro || 'Na Ativa'
       }));
     }
   };

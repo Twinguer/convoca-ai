@@ -12,16 +12,15 @@ export const CommunityEmptyState: React.FC<CommunityEmptyStateProps> = ({ onRefr
   const navigate = useNavigate();
   
   return (
-    <div className="flex flex-col justify-center items-center min-h-[40vh] p-6 border border-dashed border-gray-300 rounded-lg bg-gray-50">
-      <UserPlus className="h-12 w-12 text-gray-400 mb-4" />
-      <p className="text-lg font-medium text-gray-700">Nenhum usuário encontrado.</p>
-      <p className="text-sm text-gray-500 mt-2 mb-4 text-center">
+    <div className="flex flex-col justify-center items-center min-h-[40vh] p-8 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+      <UserPlus className="h-16 w-16 text-gray-400 mb-4" />
+      <p className="text-xl font-medium text-gray-700">Nenhum usuário encontrado.</p>
+      <p className="text-sm text-gray-500 mt-2 mb-6 text-center max-w-md">
         Seja o primeiro a se cadastrar ou tente atualizar a página para carregar os perfis existentes.
       </p>
       
-      <div className="flex flex-col sm:flex-row gap-2 mt-2">
+      <div className="flex flex-col sm:flex-row gap-4 mt-2">
         <Button 
-          variant="outline" 
           onClick={() => navigate('/auth')}
           className="flex items-center"
         >

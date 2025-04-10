@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen } from 'lucide-react';
+import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
 import { fetchUserRankings } from '@/services/concursoService';
 import { UserRankingDisplay } from '@/types/concursos';
 
@@ -37,8 +36,8 @@ const UserProfile = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
+  const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   
-  // Enhanced profile data query with error handling and refetch interval
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -55,7 +54,6 @@ const UserProfile = () => {
         if (error) {
           console.error('Error fetching profile:', error);
           
-          // If no profile exists, create one
           if (error.code === 'PGRST116') {
             console.log('Profile not found, creating new profile');
             const { data: newProfile, error: createError } = await supabase
@@ -96,7 +94,7 @@ const UserProfile = () => {
     enabled: !!user,
     refetchOnWindowFocus: false,
     refetchInterval: false,
-    staleTime: 300000, // 5 minutes
+    staleTime: 300000,
   });
   
   const { data: rankings } = useQuery({
@@ -152,7 +150,6 @@ const UserProfile = () => {
     }
   }, [rankings]);
   
-  // Update form values when profile data is loaded
   useEffect(() => {
     if (profile) {
       console.log("Setting profile state with data:", profile);
@@ -161,6 +158,7 @@ const UserProfile = () => {
       setConcursosAprovados(profile.concursos_aprovados || '');
       setConcursosParticipando(profile.concursos_participando || '');
       setAvatarUrl(profile.avatar_url);
+      setStatusConcurseiro(profile.status_concurseiro || 'Na Ativa');
     }
   }, [profile]);
   
@@ -179,7 +177,6 @@ const UserProfile = () => {
       
       console.log("Uploading file to path:", filePath);
       
-      // Upload the file to the "profiles" bucket
       const { data, error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, file, {
@@ -194,14 +191,12 @@ const UserProfile = () => {
       
       console.log("Upload data:", data);
       
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(filePath);
         
       console.log("Generated public URL:", publicUrl);
       
-      // Update the user's profile with the new avatar URL
       const { data: profileData, error: updateError } = await supabase
         .from('users_profiles')
         .update({ 
@@ -219,7 +214,6 @@ const UserProfile = () => {
       
       console.log("Updated profile data:", profileData);
       
-      // Set the avatar URL in the local state
       setAvatarUrl(publicUrl);
       
       toast({
@@ -227,7 +221,6 @@ const UserProfile = () => {
         description: 'Sua foto de perfil foi atualizada com sucesso.',
       });
       
-      // Refetch the profile data to ensure everything is up-to-date
       await refetch();
     } catch (error: any) {
       console.error("Avatar upload error:", error);
@@ -250,10 +243,10 @@ const UserProfile = () => {
         bio,
         concursosAprovados,
         concursosParticipando,
-        avatarUrl
+        avatarUrl,
+        statusConcurseiro
       });
       
-      // Get the current avatar URL to ensure we don't lose it
       const currentAvatarUrl = avatarUrl;
       
       const { data, error } = await supabase
@@ -264,6 +257,7 @@ const UserProfile = () => {
           concursos_aprovados: concursosAprovados,
           concursos_participando: concursosParticipando,
           avatar_url: currentAvatarUrl,
+          status_concurseiro: statusConcurseiro,
           updated_at: new Date().toISOString()
         })
         .eq('id', user!.id)
@@ -282,7 +276,6 @@ const UserProfile = () => {
         description: 'Seu perfil foi atualizado com sucesso.',
       });
       
-      // Important: refetch after saving to have the updated data
       await refetch();
     } catch (error: any) {
       console.error("Save profile error:", error);
@@ -395,6 +388,14 @@ const UserProfile = () => {
                       {concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0}
                     </span>
                   </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Pen className="h-4 w-4 mr-2 text-purple-500" />
+                      <span className="text-sm">Status</span>
+                    </div>
+                    <span className="text-sm font-semibold">{statusConcurseiro}</span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -468,6 +469,19 @@ const UserProfile = () => {
                       disabled 
                       className="bg-muted"
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="status-concurseiro">Status de concurseiro</Label>
+                    <select
+                      id="status-concurseiro"
+                      value={statusConcurseiro}
+                      onChange={(e) => setStatusConcurseiro(e.target.value)}
+                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+                    >
+                      <option value="Na Ativa">Na Ativa</option>
+                      <option value="Aposentado">Aposentado</option>
+                    </select>
                   </div>
                   
                   <div className="space-y-2">
