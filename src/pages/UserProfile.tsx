@@ -14,18 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen } from 'lucide-react';
 import { fetchUserRankings } from '@/services/concursoService';
+import { UserRankingDisplay } from '@/types/concursos';
 
 interface Follower {
   id: string;
   name: string;
   avatar_url?: string | null;
-}
-
-interface UserRanking {
-  concursoId: string;
-  concursoTitle: string;
-  position: number;
-  score: number;
 }
 
 const UserProfile = () => {
@@ -41,7 +35,7 @@ const UserProfile = () => {
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [followers, setFollowers] = useState<Follower[]>([]);
-  const [userRankings, setUserRankings] = useState<UserRanking[]>([]);
+  const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['user-profile', user?.id],
@@ -82,7 +76,7 @@ const UserProfile = () => {
         const titulo = typeof concursoData === 'object' && 
                       concursoData !== null && 
                       'titulo' in concursoData ? 
-                      concursoData.titulo : 'Concurso sem título';
+                      String(concursoData.titulo) : 'Concurso sem título';
         
         return {
           concursoId: item.concurso_id,
@@ -90,7 +84,7 @@ const UserProfile = () => {
           position: 0,
           score: item.score
         };
-      });
+      }) as UserRankingDisplay[];
     },
     enabled: !!user
   });

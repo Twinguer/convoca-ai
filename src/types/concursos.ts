@@ -35,6 +35,14 @@ export interface UserRanking {
   updated_at: string;
 }
 
+// Add this interface for the UserProfile component
+export interface UserRankingDisplay {
+  concursoId: string;
+  concursoTitle: string;
+  position: number;
+  score: number;
+}
+
 export interface UserAnswer {
   id: string;
   user_ranking_id: string;
