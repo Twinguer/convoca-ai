@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Trophy, Users, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -18,10 +19,12 @@ interface UserProfile {
 
 interface UserCardProps {
   userProfile: UserProfile;
+  onClick?: (userId: string) => void;
 }
 
-export const UserCard: React.FC<UserCardProps> = ({ userProfile }) => {
+export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
   const [avatarError, setAvatarError] = useState(false);
+  const navigate = useNavigate();
   
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -34,8 +37,25 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile }) => {
   // Use the user's avatar_url if available and not erroring, otherwise use fallback
   const avatarUrl = avatarError || !userProfile.avatar_url ? fallbackAvatarUrl : userProfile.avatar_url;
 
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick(userProfile.id);
+    } else {
+      navigate(`/usuario/${userProfile.id}`);
+    }
+  };
+
+  // Get the number of approvals from concursos_aprovados (if it's a comma-separated string)
+  const approvalCount = userProfile.concursos_aprovados 
+    ? userProfile.concursos_aprovados.split(',').filter(Boolean).length 
+    : userProfile.approvalCount || 0;
+
   return (
-    <Card key={userProfile.id} className="overflow-hidden hover:shadow-md transition-shadow h-full">
+    <Card 
+      key={userProfile.id} 
+      className="overflow-hidden hover:shadow-md transition-shadow h-full cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardHeader className="pb-2 flex flex-col items-center text-center">
         <Avatar className="h-16 w-16 mb-2">
           <AvatarImage 
@@ -81,7 +101,7 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile }) => {
               <BookOpen className="h-3 w-3 mr-1" />
               <span className="text-xs">Aprovações</span>
             </div>
-            <span className="text-sm font-bold">{userProfile.approvalCount}</span>
+            <span className="text-sm font-bold">{approvalCount}</span>
           </div>
         </div>
       </CardContent>
