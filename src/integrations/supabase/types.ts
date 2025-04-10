@@ -222,6 +222,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_operations: {
+        Args: { operation: string; data?: Json }
+        Returns: Json
+      }
       count_concurso_participants: {
         Args: { concurso_id: string }
         Returns: number
