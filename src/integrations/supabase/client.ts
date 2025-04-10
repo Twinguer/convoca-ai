@@ -78,13 +78,17 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
     }
     
     // Format the data with position
-    return data.map((item, index) => ({
-      position: index + 1,
-      name: item.users_profiles?.name || 'Unknown User',
-      score: item.score,
-      userId: item.user_id,
-      avatarUrl: item.users_profiles?.avatar_url || null
-    }));
+    return data.map((item, index) => {
+      // Fix: Correctly access nested properties
+      const userProfile = item.users_profiles || {}; 
+      return {
+        position: index + 1,
+        name: userProfile.name || 'Unknown User',
+        score: item.score,
+        userId: item.user_id,
+        avatarUrl: userProfile.avatar_url || null
+      };
+    });
     
   } catch (error) {
     console.error('Error fetching rankings with user info:', error);

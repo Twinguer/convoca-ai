@@ -79,7 +79,7 @@ const UserProfile = () => {
       
       return data.map(item => ({
         concursoId: item.concurso_id,
-        concursoTitle: item.concursos?.titulo || 'Concurso sem título',
+        concursoTitle: item.concursos ? item.concursos.titulo || 'Concurso sem título' : 'Concurso sem título',
         position: 0,
         score: item.score
       }));
