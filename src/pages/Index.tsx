@@ -9,7 +9,6 @@ import {
   ChevronRight, 
   FileText, 
   GraduationCap, 
-  Search, 
   Trophy, 
   Users, 
   Briefcase,
@@ -18,6 +17,14 @@ import {
   ChartPieIcon
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
+} from "@/components/ui/carousel";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 const Index = () => {
   const { user } = useAuth();
@@ -69,7 +76,7 @@ const Index = () => {
               
               <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <img 
-                  src="/lovable-uploads/d9dd6b7e-0366-4902-bda7-4276442d9a96.png" 
+                  src="/lovable-uploads/95b3453d-2c74-48d6-b670-44eff515a18a.png" 
                   alt="Estudante se preparando para concurso" 
                   className="w-full h-auto rounded-xl object-cover"
                 />
@@ -84,7 +91,7 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Features Section with Images */}
+      {/* Features Section with Carousel */}
       <section className="bg-white py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Siga pessoas com o mesmo propósito que o seu</h2>
@@ -92,67 +99,77 @@ const Index = () => {
             Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro. Já recebeu seu convite? 
           </p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="feature-card group">
-              <div className="relative overflow-hidden">
-                <img 
-                  src="/lovable-uploads/36833afc-6f71-4ffe-b0f2-41aee0a8e0c4.png" 
-                  alt="Gabarito de concurso" 
-                  className="feature-card-image group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-              <div className="p-6">
-                <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-                  <FileText className="h-8 w-8 text-emerald-600" />
+          <Carousel className="w-full max-w-5xl mx-auto">
+            <CarouselContent>
+              <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+                <div className="feature-card group p-1 h-full">
+                  <div className="relative overflow-hidden h-48">
+                    <img 
+                      src="/lovable-uploads/fd0eba58-40c1-491f-8f67-241432ac3290.png" 
+                      alt="Gabarito de concurso" 
+                      className="feature-card-image group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <div className="p-6">
+                    <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                      <FileText className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Editais Atualizados</h3>
+                    <p className="text-gray-600">
+                      Todos os participantes comprovaram que fazem ou já fizeram algum concurso público. 
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Editais Atualizados</h3>
-                <p className="text-gray-600">
-                  Todos os participantes comprovaram que fazem ou já fizeram algum concurso público. 
-                </p>
-              </div>
-            </div>
-            
-            <div className="feature-card group">
-              <div className="relative overflow-hidden">
-                <img 
-                  src="/lovable-uploads/fd0eba58-40c1-491f-8f67-241432ac3290.png" 
-                  alt="Resultado de concurso" 
-                  className="feature-card-image group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-              <div className="p-6">
-                <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-                  <Trophy className="h-8 w-8 text-emerald-600" />
+              </CarouselItem>
+              
+              <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+                <div className="feature-card group p-1 h-full">
+                  <div className="relative overflow-hidden h-48">
+                    <img 
+                      src="/lovable-uploads/36833afc-6f71-4ffe-b0f2-41aee0a8e0c4.png" 
+                      alt="Resultado de concurso" 
+                      className="feature-card-image group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <div className="p-6">
+                    <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                      <Trophy className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Rankings Detalhados</h3>
+                    <p className="text-gray-600">
+                      Participe dos rankings de classificação e compare seu desempenho com outros candidatos.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Rankings Detalhados</h3>
-                <p className="text-gray-600">
-                  Participe dos rankings de classificação e compare seu desempenho com outros candidatos.
-                </p>
-              </div>
-            </div>
-            
-            <div className="feature-card group">
-              <div className="relative overflow-hidden">
-                <img 
-                  src="/lovable-uploads/b9f4f05a-3df3-4589-a1c0-72d8c6f86bec.png" 
-                  alt="Sala de aula de concurso" 
-                  className="feature-card-image group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-              <div className="p-6">
-                <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-                  <Briefcase className="h-8 w-8 text-emerald-600" />
+              </CarouselItem>
+              
+              <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+                <div className="feature-card group p-1 h-full">
+                  <div className="relative overflow-hidden h-48">
+                    <img 
+                      src="/lovable-uploads/b9f4f05a-3df3-4589-a1c0-72d8c6f86bec.png" 
+                      alt="Sala de aula de concurso" 
+                      className="feature-card-image group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <div className="p-6">
+                    <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                      <Briefcase className="h-8 w-8 text-emerald-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Nomeações e Convocações</h3>
+                    <p className="text-gray-600">
+                      Fique atualizado com as nomeações e convocações mais recentes dos concursos que você acompanha.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Nomeações e Convocações</h3>
-                <p className="text-gray-600">
-                  Fique atualizado com as nomeações e convocações mais recentes dos concursos que você acompanha.
-                </p>
-              </div>
-            </div>
-          </div>
+              </CarouselItem>
+            </CarouselContent>
+            <CarouselPrevious className="left-0" />
+            <CarouselNext className="right-0" />
+          </Carousel>
         </div>
       </section>
       
@@ -231,7 +248,7 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Tools Section */}
+      {/* Tools Section with Hover Cards */}
       <section className="bg-white py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Ferramentas para seu sucesso</h2>
@@ -240,83 +257,107 @@ const Index = () => {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="rounded-xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full bg-white hover:shadow-xl transition-shadow duration-300">
-              <div className="relative h-64">
-                <img 
-                  src="/lovable-uploads/95b3453d-2c74-48d6-b670-44eff515a18a.png" 
-                  alt="Ferramentas digitais para concursos" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/70 to-transparent flex items-end">
-                  <div className="p-6 text-white">
-                    <h3 className="text-2xl font-bold mb-2">Gabaritos e Pré-classificação</h3>
-                    <p>Compare suas respostas e veja sua posição antes do resultado oficial</p>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <div className="rounded-xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full bg-white hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                  <div className="relative h-64">
+                    <img 
+                      src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
+                      alt="Ferramentas digitais para concursos" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/70 to-transparent flex items-end">
+                      <div className="p-6 text-white">
+                        <h3 className="text-2xl font-bold mb-2">Gabaritos e Pré-classificação</h3>
+                        <p>Compare suas respostas e veja sua posição antes do resultado oficial</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 flex flex-col flex-grow">
+                    <ul className="space-y-3 mb-6 flex-grow">
+                      <li className="flex items-center">
+                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
+                        <span>Lançamento automático do seu gabarito</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
+                        <span>Cálculo de pontuação por tipo de prova</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
+                        <span>Visualização da posição no ranking</span>
+                      </li>
+                    </ul>
+                    
+                    <Link to="/pre-classificacao">
+                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
+                        Acessar Pré-classificação
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-              </div>
-              
-              <div className="p-6 flex flex-col flex-grow">
-                <ul className="space-y-3 mb-6 flex-grow">
-                  <li className="flex items-center">
-                    <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Lançamento automático do seu gabarito</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Cálculo de pontuação por tipo de prova</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Visualização da posição no ranking</span>
-                  </li>
-                </ul>
-                
-                <Link to="/pre-classificacao">
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    Acessar Pré-classificação
-                  </Button>
-                </Link>
-              </div>
-            </div>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 p-0 bg-emerald-50 border border-emerald-100">
+                <div className="p-4">
+                  <h4 className="font-semibold text-emerald-800 mb-2">Dica para concurseiros</h4>
+                  <p className="text-sm text-emerald-700">
+                    Compare seu desempenho com outros candidatos e identifique áreas para melhorar antes do resultado oficial.
+                  </p>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
             
-            <div className="rounded-xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full bg-white hover:shadow-xl transition-shadow duration-300">
-              <div className="relative h-64">
-                <img 
-                  src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
-                  alt="Pessoa estudando para concurso" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/70 to-transparent flex items-end">
-                  <div className="p-6 text-white">
-                    <h3 className="text-2xl font-bold mb-2">Editais e Resultados</h3>
-                    <p>Acompanhe todas as etapas dos concursos em um só lugar</p>
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <div className="rounded-xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full bg-white hover:shadow-xl transition-shadow duration-300 cursor-pointer">
+                  <div className="relative h-64">
+                    <img 
+                      src="/lovable-uploads/d9dd6b7e-0366-4902-bda7-4276442d9a96.png" 
+                      alt="Pessoa estudando para concurso" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/70 to-transparent flex items-end">
+                      <div className="p-6 text-white">
+                        <h3 className="text-2xl font-bold mb-2">Editais e Resultados</h3>
+                        <p>Acompanhe todas as etapas dos concursos em um só lugar</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-6 flex flex-col flex-grow">
+                    <ul className="space-y-3 mb-6 flex-grow">
+                      <li className="flex items-center">
+                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
+                        <span>Notificações de novos editais</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
+                        <span>Resultados oficiais</span>
+                      </li>
+                      <li className="flex items-center">
+                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
+                        <span>Informações sobre nomeações e convocações</span>
+                      </li>
+                    </ul>
+                    
+                    <Link to="/editais">
+                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
+                        Ver concursos com ranking
+                      </Button>
+                    </Link>
                   </div>
                 </div>
-              </div>
-              
-              <div className="p-6 flex flex-col flex-grow">
-                <ul className="space-y-3 mb-6 flex-grow">
-                  <li className="flex items-center">
-                    <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Notificações de novos editais</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Resultados oficiais</span>
-                  </li>
-                  <li className="flex items-center">
-                    <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                    <span>Informações sobre nomeações e convocações</span>
-                  </li>
-                </ul>
-                
-                <Link to="/editais">
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    Ver concursos com ranking
-                  </Button>
-                </Link>
-              </div>
-            </div>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80 p-0 bg-emerald-50 border border-emerald-100">
+                <div className="p-4">
+                  <h4 className="font-semibold text-emerald-800 mb-2">Não perca nenhum prazo!</h4>
+                  <p className="text-sm text-emerald-700">
+                    Receba alertas personalizados sobre concursos da sua área de interesse e nunca perca um prazo importante.
+                  </p>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           </div>
         </div>
       </section>

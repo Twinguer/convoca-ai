@@ -9,12 +9,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface RankingItem {
   position: number;
   name: string;
   score: number;
   userId: string;
+  avatarUrl?: string;
 }
 
 interface RankingTableProps {
@@ -45,7 +47,15 @@ export const RankingTable: React.FC<RankingTableProps> = ({
               rankings.map((ranking) => (
                 <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
                   <TableCell className="font-medium">{ranking.position}º</TableCell>
-                  <TableCell>{ranking.name}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={ranking.avatarUrl} alt={ranking.name} />
+                        <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <span>{ranking.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-right">{ranking.score}</TableCell>
                 </TableRow>
               ))

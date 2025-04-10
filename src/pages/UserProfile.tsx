@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -44,7 +43,6 @@ const UserProfile = () => {
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [userRankings, setUserRankings] = useState<UserRanking[]>([]);
   
-  // Fetch user profile
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
@@ -62,13 +60,11 @@ const UserProfile = () => {
     enabled: !!user
   });
   
-  // Fetch user rankings
   const { data: rankings } = useQuery({
     queryKey: ['user-rankings', user?.id],
     queryFn: async () => {
       if (!user) return [];
       
-      // Fetch concursos where user has a ranking
       const { data, error } = await supabase
         .from('user_rankings')
         .select(`
@@ -81,22 +77,18 @@ const UserProfile = () => {
         
       if (error) throw error;
       
-      // Fix: Access the titulo property correctly from the nested object
       return data.map(item => ({
         concursoId: item.concurso_id,
         concursoTitle: item.concursos?.titulo || 'Concurso sem título',
-        position: 0, // Will be fetched in a separate call
+        position: 0,
         score: item.score
       }));
     },
     enabled: !!user
   });
   
-  // Fetch mock followers data (for demonstration)
   useEffect(() => {
     if (user) {
-      // In a real app, this would fetch from a followers table
-      // For now, we'll use mock data
       setFollowers([
         { id: '1', name: 'Ana Silva', avatar_url: null },
         { id: '2', name: 'João Pereira', avatar_url: null },
@@ -107,18 +99,12 @@ const UserProfile = () => {
     }
   }, [user]);
   
-  // Process rankings data when it changes
   useEffect(() => {
     if (rankings && rankings.length > 0) {
       setUserRankings(rankings);
-      
-      // For each ranking, we could fetch the actual position
-      // This would be a more complex operation in a real app
-      // Simulating it for demonstration purposes
     }
   }, [rankings]);
   
-  // Update state when profile data is loaded
   useEffect(() => {
     if (profile) {
       setName(profile.name || '');
@@ -132,7 +118,6 @@ const UserProfile = () => {
     }
   }, [profile]);
   
-  // Handle avatar upload
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!event.target.files || !event.target.files.length) {
@@ -146,7 +131,6 @@ const UserProfile = () => {
       
       setUploading(true);
       
-      // Check if the 'profiles' bucket exists, create it if it doesn't
       const { data: buckets } = await supabase.storage.listBuckets();
       const profileBucket = buckets?.find(bucket => bucket.name === 'profiles');
       
@@ -158,21 +142,18 @@ const UserProfile = () => {
         }
       }
       
-      // Upload the file
       const { error: uploadError } = await supabase.storage
         .from('profiles')
         .upload(filePath, file);
         
       if (uploadError) throw uploadError;
       
-      // Get public URL
       const { data } = supabase.storage
         .from('profiles')
         .getPublicUrl(filePath);
         
       console.log("File uploaded, public URL:", data.publicUrl);
       
-      // Update avatar_url in the profile
       const { error: updateError } = await supabase
         .from('users_profiles')
         .update({ avatar_url: data.publicUrl })
@@ -200,7 +181,6 @@ const UserProfile = () => {
     }
   };
   
-  // Handle save profile
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -235,7 +215,6 @@ const UserProfile = () => {
     }
   };
   
-  // Generate initials for avatar
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -250,7 +229,6 @@ const UserProfile = () => {
   }
   
   if (!user) {
-    // Usando useEffect para evitar problemas de renderização com Navigate
     useEffect(() => {
       navigate("/auth");
     }, [navigate]);
@@ -265,7 +243,6 @@ const UserProfile = () => {
   return (
     <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Left sidebar */}
         <div className="md:col-span-1">
           <Card>
             <CardContent className="pt-6">
@@ -342,7 +319,6 @@ const UserProfile = () => {
             </CardContent>
           </Card>
           
-          {/* Followers Card */}
           <Card className="mt-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center">
@@ -373,7 +349,6 @@ const UserProfile = () => {
           </Card>
         </div>
         
-        {/* Main content */}
         <div className="md:col-span-3">
           <Card>
             <CardHeader>
