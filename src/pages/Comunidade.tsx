@@ -6,6 +6,7 @@ import { UserCard } from '@/components/community/UserCard';
 import { UserGrid } from '@/components/community/UserGrid';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { generateSpecificUsers, generateTestUsers } from '@/integrations/supabase/community';
 
 interface UserProfile {
   id: string;
@@ -21,7 +22,7 @@ interface UserProfile {
 
 const Comunidade: React.FC = () => {
   const navigate = useNavigate();
-  const { data: users, isLoading, isError } = useQuery({
+  const { data: users, isLoading, isError, refetch } = useQuery({
     queryKey: ['community-users'],
     queryFn: async () => {
       // Get all users without filtering
@@ -30,6 +31,24 @@ const Comunidade: React.FC = () => {
         .select('id, name, avatar_url, bio, email, concursos_aprovados');
         
       if (error) throw error;
+      
+      if (!profiles || profiles.length === 0) {
+        // If no users found, try to generate some test users for display
+        console.log('No users found, attempting to generate test users');
+        const specificResult = await generateSpecificUsers();
+        if (specificResult.success) {
+          console.log('Generated specific users:', specificResult.message);
+          // If specific users were generated, refetch the data
+          return refetch();
+        }
+        
+        const testResult = await generateTestUsers(10);
+        if (testResult.success) {
+          console.log('Generated test users:', testResult.message);
+          // If test users were generated, refetch the data
+          return refetch();
+        }
+      }
       
       // For each user, get their follower count and post count
       const usersWithCounts = await Promise.all(
@@ -62,12 +81,18 @@ const Comunidade: React.FC = () => {
       
       // Sort users by follower count (most followers first)
       return usersWithCounts.sort((a, b) => b.followerCount - a.followerCount);
-    }
+    },
+    staleTime: 60000, // 1 minute
   });
 
   const handleUserClick = (userId: string) => {
     navigate(`/usuario/${userId}`);
   };
+
+  React.useEffect(() => {
+    // This is a debug log to check if users are being loaded
+    console.log('Loaded users:', users);
+  }, [users]);
 
   if (isLoading) {
     return (
