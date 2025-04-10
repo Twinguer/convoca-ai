@@ -45,7 +45,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="animate-fade-in">
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
-                Compare seus resultados com outros que buscam o mesmo objetivo. Mostre seu sucesso para inspirar outros concurseiros.
+                Compare seus resultados. Somos todos concurseiros onde o que conta é o TBC. 
               </h1>
               <p className="text-xl text-gray-700 mb-8">
                 Acompanhe editais, pré-classificações, resultados e nomeações de concursos públicos em um só lugar.
