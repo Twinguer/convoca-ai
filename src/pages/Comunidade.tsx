@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../integrations/supabase/client';
+import { supabase, generateTestUsers } from '../integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -27,6 +27,7 @@ const Comunidade: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['community-users'],
@@ -167,6 +168,35 @@ const Comunidade: React.FC = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
+  const handleGenerateTestUsers = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await generateTestUsers(20);
+      if (result) {
+        toast({
+          title: "Sucesso",
+          description: "Usuários de teste criados com sucesso.",
+        });
+        // Refetch to update the list
+        refetch();
+      } else {
+        toast({
+          title: "Erro",
+          description: "Falha ao criar usuários de teste.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Ocorreu um erro ao gerar usuários de teste.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-[60vh]">
       <p className="text-lg">Carregando usuários...</p>
@@ -181,7 +211,19 @@ const Comunidade: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Comunidade</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Comunidade</h1>
+        
+        {user && (
+          <Button 
+            onClick={handleGenerateTestUsers} 
+            disabled={isGenerating}
+            variant="outline"
+          >
+            {isGenerating ? 'Gerando usuários...' : 'Gerar 20 usuários de teste'}
+          </Button>
+        )}
+      </div>
       
       {users && users.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -263,8 +305,16 @@ const Comunidade: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="flex justify-center items-center min-h-[40vh]">
+        <div className="flex flex-col justify-center items-center min-h-[40vh] gap-4">
           <p className="text-lg text-gray-500">Nenhum usuário encontrado.</p>
+          {user && (
+            <Button 
+              onClick={handleGenerateTestUsers} 
+              disabled={isGenerating}
+            >
+              {isGenerating ? 'Gerando usuários...' : 'Gerar 20 usuários de teste'}
+            </Button>
+          )}
         </div>
       )}
     </div>
