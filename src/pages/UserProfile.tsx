@@ -77,12 +77,20 @@ const UserProfile = () => {
         
       if (error) throw error;
       
-      return data.map(item => ({
-        concursoId: item.concurso_id,
-        concursoTitle: item.concursos ? item.concursos.titulo || 'Concurso sem título' : 'Concurso sem título',
-        position: 0,
-        score: item.score
-      }));
+      return data.map(item => {
+        const concursoData = item.concursos || {};
+        const titulo = typeof concursoData === 'object' && 
+                      concursoData !== null && 
+                      'titulo' in concursoData ? 
+                      concursoData.titulo : 'Concurso sem título';
+        
+        return {
+          concursoId: item.concurso_id,
+          concursoTitle: titulo,
+          position: 0,
+          score: item.score
+        };
+      });
     },
     enabled: !!user
   });
