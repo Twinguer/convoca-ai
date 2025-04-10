@@ -1,8 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { generateSpecificUsers, generateTestUsers } from '@/integrations/supabase/community';
+import { useToast } from '@/components/ui/use-toast';
 
 interface UserProfile {
   id: string;
@@ -16,7 +17,12 @@ interface UserProfile {
   approvalCount: number;
 }
 
+/**
+ * Custom hook for fetching and managing community users
+ * Handles loading, error states, and demo users
+ */
 export const useCommunityUsers = () => {
+  const { toast } = useToast();
   const [showDemoUsers, setShowDemoUsers] = useState(false);
   
   // Default demo users to display when no real users are found
@@ -111,15 +117,24 @@ export const useCommunityUsers = () => {
     }
   ];
 
-  const { data: users, isLoading, isError, refetch } = useQuery({
+  // Fetch users with improved error handling and automatic refresh
+  const { 
+    data: users, 
+    isLoading, 
+    isError, 
+    refetch,
+    error 
+  } = useQuery({
     queryKey: ['community-users'],
     queryFn: async () => {
       try {
         console.log('Fetching community users...');
+        
         // Get all users without filtering
         const { data: profiles, error } = await supabase
           .from('users_profiles')
-          .select('id, name, avatar_url, bio, email, concursos_aprovados');
+          .select('id, name, avatar_url, bio, email, concursos_aprovados')
+          .order('created_at', { ascending: false });
           
         if (error) {
           console.error('Error fetching profiles:', error);
@@ -129,25 +144,45 @@ export const useCommunityUsers = () => {
         console.log('Profiles fetched:', profiles?.length || 0);
         
         if (!profiles || profiles.length === 0) {
-          // If no users found, try to generate some test users for display
+          // If no users found, try to generate test users
           console.log('No users found, attempting to generate test users');
+          
           try {
+            // First try to generate specific users
             const specificResult = await generateSpecificUsers();
             if (specificResult.success) {
               console.log('Generated specific users:', specificResult.message);
-              // If specific users were generated, refetch the data
-              return refetch();
+              // If specific users were generated, refetch immediately
+              const { data: newProfiles } = await supabase
+                .from('users_profiles')
+                .select('id, name, avatar_url, bio, email, concursos_aprovados')
+                .order('created_at', { ascending: false });
+                
+              if (newProfiles && newProfiles.length > 0) {
+                console.log('New profiles fetched after generation:', newProfiles.length);
+                return await processProfiles(newProfiles);
+              }
             }
           } catch (specificError) {
             console.error('Error generating specific users:', specificError);
           }
           
           try {
+            // If specific users didn't work, try generating random test users
             const testResult = await generateTestUsers(10);
             if (testResult.success) {
               console.log('Generated test users:', testResult.message);
-              // If test users were generated, refetch the data
-              return refetch();
+              
+              // Refetch the data immediately after generating test users
+              const { data: newProfiles } = await supabase
+                .from('users_profiles')
+                .select('id, name, avatar_url, bio, email, concursos_aprovados')
+                .order('created_at', { ascending: false });
+                
+              if (newProfiles && newProfiles.length > 0) {
+                console.log('New profiles fetched after generation:', newProfiles.length);
+                return await processProfiles(newProfiles);
+              }
             }
           } catch (testError) {
             console.error('Error generating test users:', testError);
@@ -158,66 +193,118 @@ export const useCommunityUsers = () => {
           return [];
         }
         
-        // For each user, get their follower count and post count
-        const usersWithCounts = await Promise.all(
-          profiles.map(async (profile) => {
-            // Get follower count
-            const { data: followerCount, error: followerError } = await supabase
-              .rpc('count_user_followers', { user_id: profile.id });
-              
-            if (followerError) {
-              console.error('Error fetching follower count:', followerError);
-            }
-            
-            // Get post count (currently a placeholder)
-            const { data: postCount, error: postError } = await supabase
-              .rpc('count_user_posts', { user_id: profile.id });
-              
-            if (postError) {
-              console.error('Error fetching post count:', postError);
-            }
-            
-            // Get approval count (based on concursos_aprovados field if it exists)
-            const approvalCount = profile.concursos_aprovados 
-              ? profile.concursos_aprovados.split(',').filter(Boolean).length 
-              : 0;
-            
-            return {
-              ...profile,
-              followerCount: followerCount || 0,
-              postCount: postCount || 0,
-              approvalCount: approvalCount
-            };
-          })
-        );
+        // Process the profiles to add additional data
+        return await processProfiles(profiles);
         
-        console.log('Users with counts:', usersWithCounts.length);
-        
-        // Sort users by follower count (most followers first)
-        return usersWithCounts.sort((a, b) => b.followerCount - a.followerCount);
       } catch (error) {
         console.error('Error fetching users:', error);
-        // If there was an error fetching users, show the demo users
+        toast({
+          title: 'Erro ao carregar usuários',
+          description: 'Não foi possível carregar os usuários da comunidade.',
+          variant: 'destructive',
+        });
+        
+        // Show demo users on error
         setShowDemoUsers(true);
         return [];
       }
     },
     staleTime: 60000, // 1 minute
-    retry: 1, // Don't keep retrying on failure
     refetchOnWindowFocus: false,
+    retry: 2, // Retry twice on failure
   });
 
+  // Process profiles to add follower and post counts
+  const processProfiles = async (profiles: any[]) => {
+    try {
+      // For each user, get their follower count and post count
+      const usersWithCounts = await Promise.all(
+        profiles.map(async (profile) => {
+          // Get follower count
+          const { data: followerCount, error: followerError } = await supabase
+            .rpc('count_user_followers', { user_id: profile.id });
+            
+          if (followerError) {
+            console.error('Error fetching follower count:', followerError);
+          }
+          
+          // Get post count (currently a placeholder)
+          const { data: postCount, error: postError } = await supabase
+            .rpc('count_user_posts', { user_id: profile.id });
+            
+          if (postError) {
+            console.error('Error fetching post count:', postError);
+          }
+          
+          // Get approval count (based on concursos_aprovados field if it exists)
+          const approvalCount = profile.concursos_aprovados 
+            ? profile.concursos_aprovados.split(',').filter(Boolean).length 
+            : 0;
+          
+          return {
+            ...profile,
+            followerCount: followerCount || 0,
+            postCount: postCount || 0,
+            approvalCount: approvalCount
+          };
+        })
+      );
+      
+      console.log('Users with counts:', usersWithCounts.length);
+      
+      // Sort users by follower count (most followers first)
+      return usersWithCounts.sort((a, b) => b.followerCount - a.followerCount);
+    } catch (error) {
+      console.error('Error processing profiles:', error);
+      return profiles.map(profile => ({
+        ...profile,
+        followerCount: 0,
+        postCount: 0,
+        approvalCount: 0
+      }));
+    }
+  };
+
+  // Fetch users if we're showing demo users but there are now real users available
+  const checkForRealUsers = useCallback(async () => {
+    if (showDemoUsers) {
+      const { data: profiles } = await supabase
+        .from('users_profiles')
+        .select('id')
+        .limit(1);
+        
+      if (profiles && profiles.length > 0) {
+        console.log('Real users now available, refetching...');
+        setShowDemoUsers(false);
+        refetch();
+      }
+    }
+  }, [showDemoUsers, refetch]);
+
   useEffect(() => {
-    // This is a debug log to check if users are being loaded
-    console.log('Loaded users:', users);
+    // Check for real users periodically if showing demo users
+    if (showDemoUsers) {
+      const interval = setInterval(checkForRealUsers, 30000); // Check every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [showDemoUsers, checkForRealUsers]);
+
+  useEffect(() => {
+    // This debug log helps track when and what users are loaded
+    console.log('Current users state:', { 
+      count: users?.length || 0, 
+      showDemoUsers, 
+      isError,
+      errorDetails: error
+    });
     
-    // If no users were found from the database, show demo users
-    if (users && users.length === 0) {
+    // If no users were found from the database and we're not in an error state, show demo users
+    if (users && users.length === 0 && !isError) {
       setShowDemoUsers(true);
     } else if (users && users.length > 0) {
       setShowDemoUsers(false);
     }
-  }, [users]);
+  }, [users, isError, error]);
 
   return {
     users,

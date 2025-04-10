@@ -38,21 +38,65 @@ const UserProfile = () => {
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   
+  // Enhanced profile data query with error handling and refetch interval
   const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user) return null;
       
-      const { data, error } = await supabase
-        .from('users_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      try {
+        console.log('Fetching user profile for ID:', user.id);
+        const { data, error } = await supabase
+          .from('users_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching profile:', error);
+          
+          // If no profile exists, create one
+          if (error.code === 'PGRST116') {
+            console.log('Profile not found, creating new profile');
+            const { data: newProfile, error: createError } = await supabase
+              .from('users_profiles')
+              .insert({
+                id: user.id,
+                email: user.email,
+                name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select('*')
+              .single();
+              
+            if (createError) {
+              console.error('Error creating profile:', createError);
+              throw createError;
+            }
+            
+            return newProfile;
+          }
+          
+          throw error;
+        }
         
-      if (error) throw error;
-      return data;
+        console.log('Profile fetched successfully:', data);
+        return data;
+      } catch (err) {
+        console.error('Error in profile query:', err);
+        toast({
+          title: 'Erro ao carregar perfil',
+          description: 'Não foi possível carregar os dados do perfil. Tente novamente.',
+          variant: 'destructive',
+        });
+        throw err;
+      }
     },
-    enabled: !!user
+    enabled: !!user,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+    staleTime: 300000, // 5 minutes
   });
   
   const { data: rankings } = useQuery({
@@ -108,16 +152,15 @@ const UserProfile = () => {
     }
   }, [rankings]);
   
+  // Update form values when profile data is loaded
   useEffect(() => {
     if (profile) {
+      console.log("Setting profile state with data:", profile);
       setName(profile.name || '');
       setBio(profile.bio || '');
       setConcursosAprovados(profile.concursos_aprovados || '');
       setConcursosParticipando(profile.concursos_participando || '');
       setAvatarUrl(profile.avatar_url);
-      
-      console.log("Profile loaded:", profile);
-      console.log("Avatar URL:", profile.avatar_url);
     }
   }, [profile]);
   
@@ -129,7 +172,7 @@ const UserProfile = () => {
       
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
       
       setUploading(true);
@@ -139,7 +182,10 @@ const UserProfile = () => {
       // Upload the file to the "profiles" bucket
       const { data, error: uploadError } = await supabase.storage
         .from('profiles')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
         
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -156,16 +202,24 @@ const UserProfile = () => {
       console.log("Generated public URL:", publicUrl);
       
       // Update the user's profile with the new avatar URL
-      const { error: updateError } = await supabase
+      const { data: profileData, error: updateError } = await supabase
         .from('users_profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user!.id);
+        .update({ 
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user!.id)
+        .select()
+        .single();
         
       if (updateError) {
         console.error("Update profile error:", updateError);
         throw updateError;
       }
       
+      console.log("Updated profile data:", profileData);
+      
+      // Set the avatar URL in the local state
       setAvatarUrl(publicUrl);
       
       toast({
@@ -173,7 +227,7 @@ const UserProfile = () => {
         description: 'Sua foto de perfil foi atualizada com sucesso.',
       });
       
-      // Chamar refetch aqui para atualizar os dados do perfil
+      // Refetch the profile data to ensure everything is up-to-date
       await refetch();
     } catch (error: any) {
       console.error("Avatar upload error:", error);
@@ -191,32 +245,47 @@ const UserProfile = () => {
     try {
       setSaving(true);
       
-      // Guardar a URL do avatar atual antes de atualizar
+      console.log("Saving profile with data:", {
+        name,
+        bio,
+        concursosAprovados,
+        concursosParticipando,
+        avatarUrl
+      });
+      
+      // Get the current avatar URL to ensure we don't lose it
       const currentAvatarUrl = avatarUrl;
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users_profiles')
         .update({
           name,
           bio,
           concursos_aprovados: concursosAprovados,
           concursos_participando: concursosParticipando,
-          // Manter a URL do avatar que já existe
           avatar_url: currentAvatarUrl,
           updated_at: new Date().toISOString()
         })
-        .eq('id', user!.id);
+        .eq('id', user!.id)
+        .select()
+        .single();
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving profile:", error);
+        throw error;
+      }
+      
+      console.log("Profile saved successfully:", data);
       
       toast({
         title: 'Perfil atualizado',
         description: 'Seu perfil foi atualizado com sucesso.',
       });
       
-      // Importante: refetch após salvar para ter os dados atualizados
+      // Important: refetch after saving to have the updated data
       await refetch();
     } catch (error: any) {
+      console.error("Save profile error:", error);
       toast({
         title: 'Erro ao salvar',
         description: error.message || 'Ocorreu um erro ao salvar o perfil. Tente novamente.',
