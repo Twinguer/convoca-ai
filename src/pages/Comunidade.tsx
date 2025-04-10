@@ -32,7 +32,7 @@ const Comunidade: React.FC = () => {
   const { data: users, isLoading, error, refetch } = useQuery({
     queryKey: ['community-users'],
     queryFn: async () => {
-      // Get all users with their follower counts
+      // Get all users without filtering
       const { data: profiles, error } = await supabase
         .from('users_profiles')
         .select('id, name, avatar_url, bio, email, concursos_aprovados');

@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize the Supabase client
@@ -193,10 +194,10 @@ export const generateTestUsers = async (count: number = 30) => {
     }
     
     console.log(`Created ${testUsers.length} test users with ${uniqueRelationships.length} follower relationships`);
-    return { success: true, message: `Created ${testUsers.length} test users` };
+    return { success: true, message: `Criados ${testUsers.length} usuários de teste` };
     
   } catch (error) {
     console.error('Error generating test users:', error);
-    return { success: false, message: 'Error generating test users' };
+    return { success: false, message: 'Erro ao gerar usuários de teste' };
   }
 };
