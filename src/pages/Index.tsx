@@ -14,7 +14,10 @@ import {
   Briefcase,
   CheckSquare,
   BarChart3,
-  ChartPieIcon
+  ChartPieIcon,
+  Mail,
+  MapPin,
+  Instagram
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -173,220 +176,116 @@ const Index = () => {
         </div>
       </section>
       
-      {/* About / Statistics Section */}
-      <section className="bg-gradient-to-br from-emerald-50 to-white py-20 px-4">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Por que escolher a Convoca?</h2>
-              <p className="text-lg text-gray-700 mb-6">
-                Nossa plataforma foi desenvolvida especialmente para concurseiros que desejam organizar sua jornada de estudos e acompanhar seu progresso.
-              </p>
-              
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 bg-emerald-100 p-1 rounded-full mr-3">
-                    <CheckSquare className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <p className="text-gray-700">Acompanhamento completo de concursos por todo o Brasil</p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 bg-emerald-100 p-1 rounded-full mr-3">
-                    <Book className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <p className="text-gray-700">Dicas e materiais para otimizar seus estudos</p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 bg-emerald-100 p-1 rounded-full mr-3">
-                    <Award className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <p className="text-gray-700">Comunidade de concurseiros compartilhando experiências</p>
-                </li>
-                <li className="flex items-start">
-                  <div className="flex-shrink-0 bg-emerald-100 p-1 rounded-full mr-3">
-                    <GraduationCap className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <p className="text-gray-700">Histórico de aprovações e nomeações para inspirar sua jornada</p>
-                </li>
-              </ul>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-6">
-              <Card className="p-6 text-center border-2 border-emerald-100 shadow hover:shadow-lg transition-shadow duration-300 bg-white">
-                <CardContent className="p-0">
-                  <BarChart3 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-                  <div className="text-4xl font-bold text-emerald-600 mb-2">2.500+</div>
-                  <p className="text-gray-700">Concursos cadastrados</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="p-6 text-center border-2 border-emerald-100 shadow hover:shadow-lg transition-shadow duration-300 bg-white">
-                <CardContent className="p-0">
-                  <Users className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-                  <div className="text-4xl font-bold text-emerald-600 mb-2">15.000+</div>
-                  <p className="text-gray-700">Usuários ativos</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="p-6 text-center border-2 border-emerald-100 shadow hover:shadow-lg transition-shadow duration-300 bg-white">
-                <CardContent className="p-0">
-                  <ChartPieIcon className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-                  <div className="text-4xl font-bold text-emerald-600 mb-2">98%</div>
-                  <p className="text-gray-700">Satisfação dos usuários</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="p-6 text-center border-2 border-emerald-100 shadow hover:shadow-lg transition-shadow duration-300 bg-white">
-                <CardContent className="p-0">
-                  <Award className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
-                  <div className="text-4xl font-bold text-emerald-600 mb-2">5.000+</div>
-                  <p className="text-gray-700">Aprovações registradas</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Tools Section with Hover Cards */}
-      <section className="bg-white py-20 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Ferramentas para seu sucesso</h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">
-            Acompanhe todo o processo do concurso, desde o edital até sua nomeação.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <div className="rounded-xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full bg-white hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                  <div className="relative h-64">
-                    <img 
-                      src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
-                      alt="Ferramentas digitais para concursos" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/70 to-transparent flex items-end">
-                      <div className="p-6 text-white">
-                        <h3 className="text-2xl font-bold mb-2">Gabaritos e Pré-classificação</h3>
-                        <p>Compare suas respostas e veja sua posição antes do resultado oficial</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-6 flex flex-col flex-grow">
-                    <ul className="space-y-3 mb-6 flex-grow">
-                      <li className="flex items-center">
-                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                        <span>Lançamento automático do seu gabarito</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                        <span>Cálculo de pontuação por tipo de prova</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                        <span>Visualização da posição no ranking</span>
-                      </li>
-                    </ul>
-                    
-                    <Link to="/pre-classificacao">
-                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-                        Acessar Pré-classificação
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80 p-0 bg-emerald-50 border border-emerald-100">
-                <div className="p-4">
-                  <h4 className="font-semibold text-emerald-800 mb-2">Dica para concurseiros</h4>
-                  <p className="text-sm text-emerald-700">
-                    Compare seu desempenho com outros candidatos e identifique áreas para melhorar antes do resultado oficial.
-                  </p>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-            
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <div className="rounded-xl overflow-hidden shadow-lg border border-gray-100 flex flex-col h-full bg-white hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                  <div className="relative h-64">
-                    <img 
-                      src="/lovable-uploads/d9dd6b7e-0366-4902-bda7-4276442d9a96.png" 
-                      alt="Pessoa estudando para concurso" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/70 to-transparent flex items-end">
-                      <div className="p-6 text-white">
-                        <h3 className="text-2xl font-bold mb-2">Editais e Resultados</h3>
-                        <p>Acompanhe todas as etapas dos concursos em um só lugar</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-6 flex flex-col flex-grow">
-                    <ul className="space-y-3 mb-6 flex-grow">
-                      <li className="flex items-center">
-                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                        <span>Notificações de novos editais</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                        <span>Resultados oficiais</span>
-                      </li>
-                      <li className="flex items-center">
-                        <div className="mr-3 text-emerald-500"><CheckSquare size={18} /></div>
-                        <span>Informações sobre nomeações e convocações</span>
-                      </li>
-                    </ul>
-                    
-                    <Link to="/editais">
-                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700">
-                        Ver concursos com ranking
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80 p-0 bg-emerald-50 border border-emerald-100">
-                <div className="p-4">
-                  <h4 className="font-semibold text-emerald-800 mb-2">Não perca nenhum prazo!</h4>
-                  <p className="text-sm text-emerald-700">
-                    Receba alertas personalizados sobre concursos da sua área de interesse e nunca perca um prazo importante.
-                  </p>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-          </div>
-        </div>
-      </section>
-      
       {/* CTA Section */}
-      <section className="bg-emerald-600 text-white py-16 px-4">
+      <section className="bg-emerald-600 text-white py-16 px-4 mb-0">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Pronto para conquistar sua aprovação?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
             Junte-se a nós e vamos juntos iniciar uma comunidade onde temos o mesmo propósito: A tão sonhada nomeação no cargo dos sonhos!
           </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/concursos">
-              <Button className="bg-white text-emerald-600 hover:bg-gray-100 rounded-md text-lg px-8 py-3 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
-                Ver Todos os Concursos
-              </Button>
-            </Link>
-            
-            {!user && (
-              <Link to="/auth">
-                <Button variant="outline" className="border-white text-white hover:bg-white/10 rounded-md text-lg px-8 py-3 shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-1">
-                  Criar Conta Gratuita
-                </Button>
-              </Link>
-            )}
+        </div>
+      </section>
+
+      {/* Instagram Banner */}
+      <section className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-between text-white">
+            <div className="mb-4 md:mb-0">
+              <h3 className="text-2xl font-bold">Siga a gente no Instagram</h3>
+              <p className="text-white/90">Dicas exclusivas, novidades e interações com a comunidade</p>
+            </div>
+            <a 
+              href="https://instagram.com/convoca.ai" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center bg-white text-pink-600 font-semibold py-2 px-6 rounded-full hover:bg-pink-100 transition duration-300"
+            >
+              <Instagram className="mr-2 h-5 w-5" />
+              @convoca.ai
+            </a>
           </div>
         </div>
       </section>
+      
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-300">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Convoca.ai</h3>
+              <p className="mb-4">
+                Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
+              </p>
+              <div className="flex items-center mt-4">
+                <Mail className="h-5 w-5 mr-2" />
+                <span>contato@convocai.com.br</span>
+              </div>
+              <div className="flex items-center mt-2">
+                <MapPin className="h-5 w-5 mr-2" />
+                <span>São Paulo</span>
+              </div>
+              <div className="flex items-center mt-2">
+                <Instagram className="h-5 w-5 mr-2" />
+                <a 
+                  href="https://instagram.com/convoca.ai" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  @convoca.ai
+                </a>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Links Rápidos</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/editais" className="hover:text-white transition-colors">Editais</Link>
+                </li>
+                <li>
+                  <Link to="/pre-classificacao" className="hover:text-white transition-colors">Pré-classificação</Link>
+                </li>
+                <li>
+                  <Link to="/comunidade" className="hover:text-white transition-colors">Comunidade</Link>
+                </li>
+                <li>
+                  <Link to="/auth" className="hover:text-white transition-colors">Criar Conta</Link>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Suporte</h3>
+              <ul className="space-y-2">
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">FAQ</a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">Contato</a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">Termos de Uso</a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">Política de Privacidade</a>
+                </li>
+              </ul>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Sobre</h3>
+              <p>
+                Nossa missão é ajudar concurseiros a acompanhar seus resultados e conectar-se com uma comunidade de pessoas com o mesmo propósito.
+              </p>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center">
+            <p>&copy; {new Date().getFullYear()} Convoca.ai. Todos os direitos reservados.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
