@@ -16,7 +16,10 @@ import {
   BarChart3,
   Mail,
   MapPin,
-  Instagram
+  Instagram,
+  UserCircle2,
+  LayoutDashboard,
+  Search
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -34,59 +37,118 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
-      {/* Hero Section with Image */}
-      <section className="relative py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/50 to-emerald-50/50 z-0"></div>
-        <div 
-          className="absolute inset-0 z-0 opacity-10"
-          style={{ 
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.2\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-          }}
-        ></div>
-        
+      {/* Hero Section with new layout */}
+      <section className="relative bg-mint-50 py-12 px-4 overflow-hidden">
         <div className="container mx-auto relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="animate-fade-in">
-              <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
-                Somos todos concurseiros onde o que conta é o TBC. 
-              </h1>
-              <p className="text-xl text-gray-700 mb-8">
-                Compare seus resultados em rankings pós-prova com o resultado oficial da banca.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left side with logo and text */}
+            <div className="lg:col-span-7 space-y-8">
+              <div className="mb-8">
+                <Logo variant="large" className="h-20 w-auto mb-8" />
+                <h1 className="text-4xl md:text-5xl font-bold text-emerald-700 mb-4">
+                  Somos todos concurseiros onde o que conta é o TBC.
+                </h1>
+                <p className="text-xl text-gray-700 mb-6">
+                  Compare seus resultados em rankings pós-prova com o resultado oficial da banca.
+                </p>
                 <Link to="/editais">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-6 py-3 shadow-lg hover:shadow-xl transition duration-300">
                     Ver Rankings
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                
-                {!user && (
-                  <Link to="/auth">
-                    <Button variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-1">
-                      Criar Conta
-                      <Users className="ml-2 h-5 w-5" />
+              </div>
+              
+              {/* Sample competition card */}
+              <div className="bg-white rounded-lg shadow-md p-5">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center">
+                    <Trophy className="text-yellow-500 h-6 w-6 mr-2" />
+                    <h3 className="font-bold text-lg">Analista Judiciário - Área Judiciária - Resultados</h3>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" className="flex items-center">
+                      <LayoutDashboard className="h-4 w-4 mr-1" /> Atualizar
                     </Button>
-                  </Link>
-                )}
+                    <Button size="sm" className="bg-emerald-600 text-white">
+                      <UserCircle2 className="h-4 w-4 mr-1" /> Participar
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="bg-gray-50 rounded p-3">
+                    <p className="text-sm text-gray-500">Data do exame</p>
+                    <p className="font-medium">15/03/2025</p>
+                  </div>
+                  <div className="bg-gray-50 rounded p-3">
+                    <p className="text-sm text-gray-500">Banca</p>
+                    <p className="font-medium">Cebraspe</p>
+                  </div>
+                  <div className="bg-gray-50 rounded p-3">
+                    <p className="text-sm text-gray-500">Tipo de prova</p>
+                    <p className="font-medium">Objetiva + Dissertativa</p>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">C.B.</th>
+                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">C.E.</th>
+                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dis.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      <tr>
+                        <td className="py-2 px-3 whitespace-nowrap">1º</td>
+                        <td className="py-2 px-3 whitespace-nowrap">Ricardo Lima</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">107.00</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">10.00</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">17.00</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">80.00</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 whitespace-nowrap">2º</td>
+                        <td className="py-2 px-3 whitespace-nowrap">Jailton Sabino</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">98.00</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">12.00</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">26.00</td>
+                        <td className="py-2 px-3 text-right whitespace-nowrap">60.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
             
-            <div className="relative animate-fade-in hidden md:block">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{ animationDelay: '1s' }}></div>
-              
-              <div className="relative rounded-xl overflow-hidden shadow-2xl">
-                <img 
-                  src="/lovable-uploads/3b493399-f5e4-4883-88aa-247b72e4e74b.png" 
-                  alt="Estudante se preparando para concurso" 
-                  className="w-full h-auto rounded-xl object-cover"
-                />
+            {/* Right side with community widget */}
+            <div className="lg:col-span-5">
+              <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="bg-emerald-700 text-white p-4 flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">COMUNIDADE</h2>
+                  <Search className="h-6 w-6" />
+                </div>
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent"></div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <p className="font-semibold text-lg">Uma comunidade simples, mas só nossa.</p>
+                <div className="p-4 bg-mint-50">
+                  <h3 className="text-3xl font-bold text-gray-800">Concurseiro</h3>
+                  <p className="text-gray-600">Estudante interessado em concursos</p>
+                  
+                  <div className="mt-6">
+                    <div className="font-bold text-lg">Seguidores</div>
+                    <div className="grid grid-cols-3 gap-3 mt-2">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                        <div key={i} className="bg-mint-100 rounded-md p-2 text-center">
+                          <div className="bg-gray-200 h-12 w-12 rounded-full mx-auto mb-1"></div>
+                          <p className="text-sm font-medium">Pessoa {i}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -94,21 +156,26 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Features Section with Carousel */}
-      <section className="bg-white py-20 px-4">
-        <div className="container mx-auto">
+      {/* Section heading */}
+      <section className="bg-white py-12 px-4">
+        <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold text-center mb-4">Siga pessoas com o mesmo propósito que o seu</h2>
           <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">
             Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro. Já recebeu seu convite? 
           </p>
-          
+        </div>
+      </section>
+
+      {/* Features Section with Carousel */}
+      <section className="bg-white py-12 px-4">
+        <div className="container mx-auto">
           <Carousel className="w-full max-w-5xl mx-auto">
             <CarouselContent>
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/f90af83d-1a4a-42c0-a60d-de4ba2bc8b50.png" 
+                      src="/lovable-uploads/df12135e-3c3b-45eb-87bf-a8c439d307aa.png" 
                       alt="Gabarito de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -130,7 +197,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/4e59f82e-1362-457d-b622-d06b371a8148.png" 
+                      src="/lovable-uploads/698b1f82-1bae-45e7-b224-af09241bc03a.png" 
                       alt="Resultado de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -152,7 +219,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
+                      src="/lovable-uploads/3213661a-c7c7-4bb7-b03c-7dbd70b39145.png" 
                       alt="Sala de aula de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -207,12 +274,14 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Footer */}
+      {/* Footer with logo added */}
       <footer className="bg-gray-900 text-gray-300">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Convoca.ai</h3>
+              <div className="flex items-center mb-4">
+                <Logo variant="full" className="h-8 w-auto mr-2" />
+              </div>
               <p className="mb-4">
                 Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
               </p>
