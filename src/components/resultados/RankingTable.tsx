@@ -11,20 +11,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-
-interface RankingItem {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
-  avatarUrl?: string | null;
-  basicKnowledgeScore?: number;
-  specificKnowledgeScore?: number;
-  discursiveScore?: number;
-}
+import type { Ranking } from '@/services/rankingService';
 
 interface RankingTableProps {
-  rankings?: RankingItem[];
+  rankings?: Ranking[];
   currentUserId?: string | null;
 }
 
@@ -32,7 +22,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   currentUserId,
 }) => {
-  // Add debugging log
+  // Add debugging log to verify rankings data
   console.log('RankingTable received rankings:', rankings);
   
   return (
