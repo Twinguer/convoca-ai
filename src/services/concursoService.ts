@@ -113,16 +113,30 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     
     // Transform the data to match the Ranking interface
     const rankings = data.map((item, index) => {
-      // Access the users_profiles object properly
-      // This is coming back as an object with name and avatar_url properties
+      // Properly access the users_profiles object
       const userProfile = item.users_profiles;
       
-      const name = userProfile && typeof userProfile === 'object' ? userProfile.name : 'Usuário Anônimo';
-      const avatarUrl = userProfile && typeof userProfile === 'object' ? userProfile.avatar_url : null;
+      // Check if userProfile exists and is an object (not an array)
+      let name = 'Usuário Anônimo';
+      let avatarUrl = null;
+      
+      // Handle the case when userProfile is present
+      if (userProfile) {
+        // If it's a single object
+        if (!Array.isArray(userProfile)) {
+          name = userProfile.name || 'Usuário Anônimo';
+          avatarUrl = userProfile.avatar_url;
+        } 
+        // If it's an array with at least one element
+        else if (Array.isArray(userProfile) && userProfile.length > 0) {
+          name = userProfile[0].name || 'Usuário Anônimo';
+          avatarUrl = userProfile[0].avatar_url;
+        }
+      }
       
       return {
         position: index + 1,
-        name: name || 'Usuário Anônimo',
+        name: name,
         score: item.score || 0,
         userId: item.user_id,
         avatarUrl: avatarUrl,
