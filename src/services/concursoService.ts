@@ -93,7 +93,7 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         basic_knowledge_score,
         specific_knowledge_score,
         discursive_score,
-        users_profiles (name, avatar_url)
+        users_profiles!inner (name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -106,15 +106,15 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     
     // Transform the data to match the Ranking interface
     const rankings = data.map((item, index) => {
-      // Fix: Correctly access the nested users_profiles object
+      // Fix: Access the users_profiles object correctly - it contains an object, not an array
       const userProfile = item.users_profiles;
       
       return {
         position: index + 1,
-        name: userProfile?.name || 'Usuário Anônimo',
+        name: userProfile ? userProfile.name || 'Usuário Anônimo' : 'Usuário Anônimo',
         score: item.score || 0,
         userId: item.user_id,
-        avatarUrl: userProfile?.avatar_url,
+        avatarUrl: userProfile ? userProfile.avatar_url : null,
         basicKnowledgeScore: item.basic_knowledge_score || 0,
         specificKnowledgeScore: item.specific_knowledge_score || 0,
         discursiveScore: item.discursive_score || 0
