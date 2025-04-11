@@ -26,19 +26,19 @@ export function useResultadosData() {
   });
   
   // Fetch rankings with more frequent refetching
-  const { data: rankings, isLoading: isLoadingRankings } = useQuery({
+  const { data: rankings, isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 5000, // Refetch every 5 seconds
     refetchOnWindowFocus: true,
-    staleTime: 5000, // Consider data stale after 5 seconds
+    staleTime: 2000, // Consider data stale after 2 seconds
   });
   
   // Fetch participant count
-  const { data: participantCount, isLoading: isLoadingCount } = useQuery({
+  const { data: participantCount, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 10000,
+    refetchInterval: 5000,
     refetchOnWindowFocus: true,
   });
   
@@ -47,12 +47,19 @@ export function useResultadosData() {
   
   const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount;
   
+  // Function to manually refresh all data
+  const refreshData = () => {
+    refetchRankings();
+    refetchCount();
+  };
+  
   return {
     concurso,
     rankings,
     participantCount,
     userRanking,
     isLoading,
-    user
+    user,
+    refreshData
   };
 }

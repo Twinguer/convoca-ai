@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -89,7 +89,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         description: 'Suas notas foram salvas e seu ranking foi atualizado.',
       });
       
-      onSuccess();
+      // Small delay to let the toast appear before redirecting
+      setTimeout(onSuccess, 1500);
     } catch (error) {
       console.error('Error updating scores:', error);
       toast({
@@ -106,6 +107,9 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
     <Card className="max-w-lg mx-auto">
       <CardHeader>
         <CardTitle>Registrar suas notas - {concurso.titulo}</CardTitle>
+        <CardDescription>
+          Preencha abaixo com suas notas para participar do ranking deste concurso
+        </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -115,7 +119,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
               name="basicKnowledgeScore"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Conhecimentos Básicos</FormLabel>
+                  <FormLabel>Conhecimentos Básicos (C.B.)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -137,7 +141,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
               name="specificKnowledgeScore"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Conhecimentos Específicos</FormLabel>
+                  <FormLabel>Conhecimentos Específicos (C.E.)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -159,7 +163,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
               name="discursiveScore"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Discursiva / Estudo de Caso</FormLabel>
+                  <FormLabel>Discursiva / Estudo de Caso (Dis.)</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 

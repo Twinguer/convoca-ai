@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 
 interface RankingItem {
   position: number;
@@ -43,18 +44,29 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Participante</TableHead>
-              <TableHead className="text-right">C.Básicos</TableHead>
-              <TableHead className="text-right">C.Espe.</TableHead>
-              <TableHead className="text-right">Disc/E.Caso</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead className="text-center">Posição</TableHead>
+              <TableHead className="text-center w-16">
+                # <span className="inline-block">↕️</span>
+              </TableHead>
+              <TableHead>Candidato</TableHead>
+              <TableHead className="text-right">
+                Total <span className="inline-block">↕️</span>
+              </TableHead>
+              <TableHead className="text-right">
+                C.B. <span className="inline-block">↕️</span>
+              </TableHead>
+              <TableHead className="text-right">
+                C.E. <span className="inline-block">↕️</span>
+              </TableHead>
+              <TableHead className="text-right">
+                Dis. <span className="inline-block">↕️</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rankings && rankings.length > 0 ? (
               rankings.map((ranking) => (
                 <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
+                  <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
@@ -64,11 +76,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                       <span>{ranking.name}</span>
                     </div>
                   </TableCell>
+                  <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
                   <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="text-right">{ranking.specificKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
-                  <TableCell className="text-right">{ranking.score.toFixed(2)}</TableCell>
-                  <TableCell className="text-center font-medium">{ranking.position}º</TableCell>
                 </TableRow>
               ))
             ) : (

@@ -113,26 +113,28 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     
     // Transform the data to match the Ranking interface
     const rankings = data.map((item, index) => {
-      // Properly access the users_profiles object
+      // Get the user profile data
       const userProfile = item.users_profiles;
+      console.log('User profile data for user:', item.user_id, userProfile);
       
-      // Check if userProfile exists and is an object (not an array)
+      // Default values
       let name = 'Usuário Anônimo';
-      let avatarUrl = null;
+      let avatarUrl: string | null = null;
       
-      // Handle the case when userProfile is present
+      // Handle different possible structures of userProfile
       if (userProfile) {
-        // If it's a single object with name property
-        if (!Array.isArray(userProfile) && userProfile && 'name' in userProfile) {
+        if (typeof userProfile === 'object' && !Array.isArray(userProfile) && 'name' in userProfile) {
+          // Handle case when userProfile is a single object
           name = userProfile.name || 'Usuário Anônimo';
-          avatarUrl = userProfile.avatar_url;
+          avatarUrl = userProfile.avatar_url || null;
         } 
-        // If it's an array with at least one element
         else if (Array.isArray(userProfile) && userProfile.length > 0) {
-          // Type assertion - telling TypeScript this is an object with these properties
-          const firstProfile = userProfile[0] as { name?: string; avatar_url?: string | null };
-          name = firstProfile.name || 'Usuário Anônimo';
-          avatarUrl = firstProfile.avatar_url || null;
+          // Handle case when userProfile is an array of objects
+          const profile = userProfile[0];
+          if (profile && typeof profile === 'object') {
+            name = profile.name || 'Usuário Anônimo';
+            avatarUrl = profile.avatar_url || null;
+          }
         }
       }
       

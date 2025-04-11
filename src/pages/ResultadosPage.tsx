@@ -7,21 +7,22 @@ import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
-import { Trophy, UserPlus } from 'lucide-react';
+import { RefreshCw, Trophy, UserPlus } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/components/ui/use-toast';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
-  const { concurso, rankings, participantCount, userRanking, isLoading, user } = useResultadosData();
+  const { concurso, rankings, participantCount, userRanking, isLoading, user, refreshData } = useResultadosData();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Force a refresh of data when component mounts
   useEffect(() => {
     if (concurso?.id) {
-      queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
-      queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
+      refreshData();
     }
-  }, [concurso?.id, queryClient]);
+  }, [concurso?.id]);
   
   // Debug logs
   useEffect(() => {
@@ -29,6 +30,15 @@ const ResultadosPage = () => {
     console.log('ResultadosPage - Rankings:', rankings);
     console.log('ResultadosPage - Participant Count:', participantCount);
   }, [concurso, rankings, participantCount]);
+  
+  const handleRefresh = () => {
+    refreshData();
+    toast({
+      title: "Atualizando ranking",
+      description: "Os dados estão sendo atualizados...",
+      duration: 2000,
+    });
+  };
   
   if (isLoading) {
     return <LoadingState />;
@@ -42,15 +52,26 @@ const ResultadosPage = () => {
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
         </h1>
         
-        {concurso && !userRanking && user && (
+        <div className="flex gap-2">
           <Button 
-            onClick={() => navigate(`/concurso/${concurso.id}/participar`)}
+            variant="outline" 
+            onClick={handleRefresh}
             className="flex items-center gap-2"
           >
-            <UserPlus className="h-4 w-4" />
-            Participar
+            <RefreshCw className="h-4 w-4" />
+            Atualizar
           </Button>
-        )}
+          
+          {concurso && !userRanking && user && (
+            <Button 
+              onClick={() => navigate(`/concurso/${concurso.id}/participar`)}
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Participar
+            </Button>
+          )}
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -66,21 +87,6 @@ const ResultadosPage = () => {
         rankings={rankings} 
         currentUserId={user?.id} 
       />
-      
-      {/* Add a refresh button to manually refresh the data */}
-      <div className="mt-4 text-center">
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            if (concurso?.id) {
-              queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
-              queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
-            }
-          }}
-        >
-          Atualizar Rankings
-        </Button>
-      </div>
     </div>
   );
 };
