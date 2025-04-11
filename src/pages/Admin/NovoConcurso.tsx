@@ -135,32 +135,41 @@ const NovoConcurso = () => {
         });
       } else {
         // Create new concurso using the createRanking function
-        await createRanking(data);
-        
-        toast({
-          title: "Ranking criado",
-          description: "O novo ranking foi criado com sucesso.",
-        });
-      }
-      
-      // Generate fake rankings for demo purposes (optional)
-      if (!isEditing) {
         try {
-          // Could add code here to generate fake rankings data
-          console.log('Ranking criado com sucesso');
-        } catch (e) {
-          console.error('Error generating fake rankings:', e);
-          // Non-critical error, don't throw
+          const result = await createRanking(data);
+          
+          if (!result) {
+            throw new Error('Erro ao criar ranking: Nenhum dado retornado');
+          }
+          
+          toast({
+            title: "Ranking criado",
+            description: "O novo ranking foi criado com sucesso.",
+          });
+          
+          // Generate fake rankings for demo purposes (optional)
+          try {
+            if (result[0] && result[0].id) {
+              console.log('Generating fake rankings for new concurso:', result[0].id);
+              // You could add code here to generate fake rankings
+            }
+          } catch (e) {
+            console.error('Error generating fake rankings:', e);
+            // Non-critical error, don't throw
+          }
+        } catch (error: any) {
+          console.error('Error in createRanking:', error);
+          throw new Error(`Erro ao criar ranking: ${error.message || 'Erro desconhecido'}`);
         }
       }
       
       navigate('/project/admin/man/concursos');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving concurso:', error);
-      setErrorMessage("Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.");
+      setErrorMessage(error.message || "Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.");
       toast({
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.",
+        description: error.message || "Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
