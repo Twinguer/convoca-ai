@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import UserProfile from "./pages/UserProfile";
+import PublicUserProfile from "./pages/PublicUserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
 import UserConcursos from "./pages/UserConcursos";
@@ -57,6 +58,12 @@ const App = () => {
                 <>
                   <Menu />
                   <UserProfile />
+                </>
+              } />
+              <Route path="/usuario/:id" element={
+                <>
+                  <Menu />
+                  <PublicUserProfile />
                 </>
               } />
               <Route path="/seguidores" element={

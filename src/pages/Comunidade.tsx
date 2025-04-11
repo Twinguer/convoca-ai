@@ -28,7 +28,7 @@ const Comunidade: React.FC = () => {
     refetch
   } = useCommunityUsers();
 
-  // Handle user card click - navigate to user profile or show toast for demo users
+  // Handle user card click - navigate to user profile
   const handleUserClick = useCallback((userId: string) => {
     if (showDemoUsers) {
       // For demo users, show a toast instead of navigating

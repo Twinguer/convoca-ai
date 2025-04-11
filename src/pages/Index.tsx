@@ -79,7 +79,7 @@ const Index = () => {
               
               <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <img 
-                  src="/lovable-uploads/95b3453d-2c74-48d6-b670-44eff515a18a.png" 
+                  src="/lovable-uploads/3b493399-f5e4-4883-88aa-247b72e4e74b.png" 
                   alt="Estudante se preparando para concurso" 
                   className="w-full h-auto rounded-xl object-cover"
                 />
@@ -108,7 +108,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/fd0eba58-40c1-491f-8f67-241432ac3290.png" 
+                      src="/lovable-uploads/f90af83d-1a4a-42c0-a60d-de4ba2bc8b50.png" 
                       alt="Gabarito de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -130,7 +130,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/36833afc-6f71-4ffe-b0f2-41aee0a8e0c4.png" 
+                      src="/lovable-uploads/4e59f82e-1362-457d-b622-d06b371a8148.png" 
                       alt="Resultado de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -152,7 +152,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/b9f4f05a-3df3-4589-a1c0-72d8c6f86bec.png" 
+                      src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
                       alt="Sala de aula de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
