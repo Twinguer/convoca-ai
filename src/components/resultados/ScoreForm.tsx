@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
-import { updateUserScores } from '@/services/concursoService';
+import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 
 interface ScoreFormProps {
@@ -49,23 +49,30 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      const result = await updateUserScores(
-        rankingId,
-        userId,
-        values.basicKnowledgeScore,
-        values.specificKnowledgeScore,
-        values.discursiveScore
-      );
+      // Calculate total score as sum of the component scores
+      const totalScore = values.basicKnowledgeScore + values.specificKnowledgeScore + values.discursiveScore;
+      
+      // Update the user ranking directly
+      const { error } = await supabase
+        .from('user_rankings')
+        .update({
+          basic_knowledge_score: values.basicKnowledgeScore,
+          specific_knowledge_score: values.specificKnowledgeScore,
+          discursive_score: values.discursiveScore,
+          score: totalScore,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rankingId)
+        .eq('user_id', userId);
 
-      if (result) {
-        toast({
-          title: 'Notas registradas com sucesso!',
-          description: 'Suas notas foram salvas e seu ranking foi atualizado.',
-        });
-        onSuccess();
-      } else {
-        throw new Error('Falha ao atualizar notas');
-      }
+      if (error) throw error;
+      
+      toast({
+        title: 'Notas registradas com sucesso!',
+        description: 'Suas notas foram salvas e seu ranking foi atualizado.',
+      });
+      
+      onSuccess();
     } catch (error) {
       console.error('Error updating scores:', error);
       toast({

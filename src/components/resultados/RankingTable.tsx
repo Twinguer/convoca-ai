@@ -16,7 +16,7 @@ interface RankingItem {
   name: string;
   score: number;
   userId: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   basicKnowledgeScore?: number;
   specificKnowledgeScore?: number;
   discursiveScore?: number;
@@ -55,7 +55,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={ranking.avatarUrl} alt={ranking.name} />
+                        <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                         <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <span>{ranking.name}</span>

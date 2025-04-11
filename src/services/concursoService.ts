@@ -76,7 +76,7 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   basicKnowledgeScore?: number;
   specificKnowledgeScore?: number; 
   discursiveScore?: number;
@@ -100,13 +100,14 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
       
     if (error) throw error;
     
+    if (!data || data.length === 0) {
+      return [];
+    }
+    
     // Transform the data to match the Ranking interface
     const rankings = data.map((item, index) => {
       // Fix: Correctly access the nested users_profiles object
-      // In Supabase joins, the related table data can be returned as a single object or an array with one item
-      const userProfile = Array.isArray(item.users_profiles) 
-        ? item.users_profiles[0] 
-        : item.users_profiles;
+      const userProfile = item.users_profiles;
       
       return {
         position: index + 1,

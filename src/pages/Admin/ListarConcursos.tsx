@@ -76,7 +76,7 @@ const ListarConcursos: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Rankings Cadastrados</h1>
-        <Button onClick={() => navigate('/admin/concursos/novo')}>
+        <Button onClick={() => navigate('/project/admin/man/concursos/novo')}>
           <Plus className="mr-2 h-4 w-4" /> Novo Ranking
         </Button>
       </div>
@@ -160,7 +160,7 @@ const ListarConcursos: React.FC = () => {
               <Building className="mx-auto h-12 w-12 text-gray-400 mb-2" />
               <h3 className="font-medium text-lg">Nenhum ranking encontrado</h3>
               <p className="mt-1">Tente ajustar os filtros ou adicione um novo ranking.</p>
-              <Button onClick={() => navigate('/admin/concursos/novo')} variant="outline" className="mt-4">
+              <Button onClick={() => navigate('/project/admin/man/concursos/novo')} variant="outline" className="mt-4">
                 <Plus className="mr-2 h-4 w-4" /> Adicionar Ranking
               </Button>
             </div>
@@ -170,7 +170,7 @@ const ListarConcursos: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Cargo</TableHead>
-                    <TableHead>Concurso</TableHead>
+                    <TableHead>Ranking</TableHead>
                     <TableHead>Banca</TableHead>
                     <TableHead>Vagas</TableHead>
                     <TableHead>Status</TableHead>
@@ -215,7 +215,7 @@ const ListarConcursos: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => navigate(`/admin/concursos/editar/${concurso.id}`)}
+                          onClick={() => navigate(`/project/admin/man/concursos/editar/${concurso.id}`)}
                         >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Editar</span>
