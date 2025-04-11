@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ScoreFormProps {
   concurso: Concurso;
@@ -36,6 +37,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userId, onSuccess }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -52,6 +54,15 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       // Calculate total score as sum of the component scores
       const totalScore = values.basicKnowledgeScore + values.specificKnowledgeScore + values.discursiveScore;
       
+      console.log('Updating scores:', {
+        rankingId,
+        userId,
+        basicKnowledge: values.basicKnowledgeScore,
+        specificKnowledge: values.specificKnowledgeScore,
+        discursive: values.discursiveScore,
+        total: totalScore
+      });
+      
       // Update the user ranking directly
       const { error } = await supabase
         .from('user_rankings')
@@ -62,10 +73,16 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
           score: totalScore,
           updated_at: new Date().toISOString()
         })
-        .eq('id', rankingId)
-        .eq('user_id', userId);
+        .eq('id', rankingId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error while updating rankings:', error);
+        throw error;
+      }
+      
+      // Invalidate related queries to force a refresh
+      queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
       
       toast({
         title: 'Notas registradas com sucesso!',

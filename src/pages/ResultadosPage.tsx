@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
 import { ConcursoInfoCard } from '@/components/resultados/ConcursoInfoCard';
@@ -8,10 +8,27 @@ import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { Trophy, UserPlus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const { concurso, rankings, participantCount, userRanking, isLoading, user } = useResultadosData();
+  const queryClient = useQueryClient();
+  
+  // Force a refresh of data when component mounts
+  useEffect(() => {
+    if (concurso?.id) {
+      queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
+    }
+  }, [concurso?.id, queryClient]);
+  
+  // Debug logs
+  useEffect(() => {
+    console.log('ResultadosPage - Concurso:', concurso);
+    console.log('ResultadosPage - Rankings:', rankings);
+    console.log('ResultadosPage - Participant Count:', participantCount);
+  }, [concurso, rankings, participantCount]);
   
   if (isLoading) {
     return <LoadingState />;
@@ -49,6 +66,21 @@ const ResultadosPage = () => {
         rankings={rankings} 
         currentUserId={user?.id} 
       />
+      
+      {/* Add a refresh button to manually refresh the data */}
+      <div className="mt-4 text-center">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            if (concurso?.id) {
+              queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+              queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
+            }
+          }}
+        >
+          Atualizar Rankings
+        </Button>
+      </div>
     </div>
   );
 };

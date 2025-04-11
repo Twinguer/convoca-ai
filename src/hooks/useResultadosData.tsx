@@ -9,7 +9,7 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
   basicKnowledgeScore?: number;
   specificKnowledgeScore?: number;
   discursiveScore?: number;
@@ -25,16 +25,21 @@ export function useResultadosData() {
     queryFn: () => fetchConcursoById(id),
   });
   
-  // Fetch rankings
+  // Fetch rankings with more frequent refetching
   const { data: rankings, isLoading: isLoadingRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
+    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
   
   // Fetch participant count
   const { data: participantCount, isLoading: isLoadingCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   });
   
   // Find user's ranking

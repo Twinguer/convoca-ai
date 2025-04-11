@@ -84,6 +84,8 @@ export interface Ranking {
 
 export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
   try {
+    console.log('Fetching rankings for concurso:', concursoId);
+    
     const { data, error } = await supabase
       .from('user_rankings')
       .select(`
@@ -93,12 +95,17 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         basic_knowledge_score,
         specific_knowledge_score,
         discursive_score,
-        users_profiles!inner (name, avatar_url)
+        users_profiles (name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error in fetchUserRankings query:', error);
+      throw error;
+    }
+    
+    console.log('Rankings data fetched:', data);
     
     if (!data || data.length === 0) {
       return [];
@@ -106,21 +113,26 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     
     // Transform the data to match the Ranking interface
     const rankings = data.map((item, index) => {
-      // Fix: Access the users_profiles object correctly - it contains an object, not an array
+      // Access the users_profiles object properly
+      // This is coming back as an object with name and avatar_url properties
       const userProfile = item.users_profiles;
+      
+      const name = userProfile && typeof userProfile === 'object' ? userProfile.name : 'Usuário Anônimo';
+      const avatarUrl = userProfile && typeof userProfile === 'object' ? userProfile.avatar_url : null;
       
       return {
         position: index + 1,
-        name: userProfile ? userProfile.name || 'Usuário Anônimo' : 'Usuário Anônimo',
+        name: name || 'Usuário Anônimo',
         score: item.score || 0,
         userId: item.user_id,
-        avatarUrl: userProfile ? userProfile.avatar_url : null,
+        avatarUrl: avatarUrl,
         basicKnowledgeScore: item.basic_knowledge_score || 0,
         specificKnowledgeScore: item.specific_knowledge_score || 0,
         discursiveScore: item.discursive_score || 0
       };
     });
     
+    console.log('Transformed rankings:', rankings);
     return rankings;
   } catch (error) {
     console.error('Error fetching rankings:', error);

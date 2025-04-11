@@ -31,6 +31,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   currentUserId,
 }) => {
+  // Add debugging log
+  console.log('RankingTable received rankings:', rankings);
+  
   return (
     <Card>
       <CardHeader>
