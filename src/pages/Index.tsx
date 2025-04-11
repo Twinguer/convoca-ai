@@ -57,7 +57,7 @@ const Index = () => {
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
-                    Em fase de classificação
+                    Ver Rankings
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -86,7 +86,7 @@ const Index = () => {
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent"></div>
                 <div className="absolute bottom-4 left-4 text-white">
-                  <p className="font-semibold text-lg">Estude com foco e determinação</p>
+                  <p className="font-semibold text-lg">Uma comunidade simples, mas só nossa.</p>
                 </div>
               </div>
             </div>
@@ -118,7 +118,7 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <FileText className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Editais Atualizados</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Informações Atualizados</h3>
                     <p className="text-gray-600">
                       Todos os participantes comprovaram que fazem ou já fizeram algum concurso público. 
                     </p>
@@ -162,9 +162,9 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Briefcase className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Nomeações e Convocações</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Conhecemos o Processo</h3>
                     <p className="text-gray-600">
-                      Fique atualizado com as nomeações e convocações mais recentes dos concursos que você acompanha.
+                      Sabemos que a jornada é longa e muitas vezes solitária, estamos aqui para te dar um ânimo. Somos todos iguais a você, buscamos o mesmo objetivo.
                     </p>
                   </div>
                 </div>
@@ -212,10 +212,25 @@ const Index = () => {
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
+<<<<<<< HEAD
+              <h2 className="text-3xl font-bold mb-6">Por que escolher a Convoca?</h2>
+              <p className="text-lg text-gray-700 mb-6">
+                Nossa plataforma foi desenvolvida especialmente para concurseiros que desejam diminuir aquela ansiedade do pós-prova. 
+=======
               <h3 className="text-xl font-bold text-white mb-4">Convoca.ai</h3>
               <p className="mb-4">
                 Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
+>>>>>>> 9d834f3541e24f52a6317a20363ac6fb30395e5c
               </p>
+<<<<<<< HEAD
+              
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 bg-emerald-100 p-1 rounded-full mr-3">
+                    <CheckSquare className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <p className="text-gray-700">Quem busca resultados está aqui.</p>
+=======
               <div className="flex items-center mt-4">
                 <Mail className="h-5 w-5 mr-2" />
                 <span>contato@convocai.com.br</span>
@@ -242,9 +257,18 @@ const Index = () => {
               <ul className="space-y-2">
                 <li>
                   <Link to="/editais" className="hover:text-white transition-colors">Editais</Link>
+>>>>>>> 9d834f3541e24f52a6317a20363ac6fb30395e5c
                 </li>
+<<<<<<< HEAD
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 bg-emerald-100 p-1 rounded-full mr-3">
+                    <Book className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <p className="text-gray-700">Conheça quem está mais avançado, encontre os melhores colocados aqui.</p>
+=======
                 <li>
                   <Link to="/pre-classificacao" className="hover:text-white transition-colors">Pré-classificação</Link>
+>>>>>>> 9d834f3541e24f52a6317a20363ac6fb30395e5c
                 </li>
                 <li>
                   <Link to="/comunidade" className="hover:text-white transition-colors">Comunidade</Link>

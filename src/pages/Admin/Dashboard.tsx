@@ -134,13 +134,13 @@ const AdminDashboard: React.FC = () => {
               href="/project/admin/man/concursos/novo" 
               className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
             >
-              Cadastrar novo concurso
+              Cadastrar novo Ranking
             </a>
             <a 
               href="/project/admin/man/concursos" 
               className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
             >
-              Gerenciar concursos
+              Gerenciar Raankings
             </a>
             <a 
               href="/" 
@@ -154,7 +154,7 @@ const AdminDashboard: React.FC = () => {
               target="_blank" 
               className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
             >
-              Atualizar concursos do Cebraspe
+              Atualizar rankings do Cebraspe
             </a>
           </CardContent>
         </Card>
