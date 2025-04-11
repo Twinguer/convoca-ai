@@ -1,7 +1,8 @@
 
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { fetchConcursoById, fetchUserRankings, getParticipantCount } from '@/services/concursoService';
+import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
+import { fetchUserRankings, Ranking } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 
 export interface Ranking {
