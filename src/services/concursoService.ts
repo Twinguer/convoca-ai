@@ -122,15 +122,17 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
       
       // Handle the case when userProfile is present
       if (userProfile) {
-        // If it's a single object
-        if (!Array.isArray(userProfile)) {
+        // If it's a single object with name property
+        if (!Array.isArray(userProfile) && userProfile && 'name' in userProfile) {
           name = userProfile.name || 'Usuário Anônimo';
           avatarUrl = userProfile.avatar_url;
         } 
         // If it's an array with at least one element
         else if (Array.isArray(userProfile) && userProfile.length > 0) {
-          name = userProfile[0].name || 'Usuário Anônimo';
-          avatarUrl = userProfile[0].avatar_url;
+          // Type assertion - telling TypeScript this is an object with these properties
+          const firstProfile = userProfile[0] as { name?: string; avatar_url?: string | null };
+          name = firstProfile.name || 'Usuário Anônimo';
+          avatarUrl = firstProfile.avatar_url || null;
         }
       }
       
