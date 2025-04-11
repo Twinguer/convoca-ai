@@ -16,7 +16,8 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
   try {
     console.log('Fetching rankings for concurso:', concursoId);
     
-    const { data, error } = await supabase
+    // First, get all rankings for the concurso
+    const { data: rankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select(`
         id,
@@ -24,65 +25,54 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         score,
         basic_knowledge_score,
         specific_knowledge_score,
-        discursive_score,
-        users_profiles (name, avatar_url)
+        discursive_score
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
       
-    if (error) {
-      console.error('Error in fetchUserRankings query:', error);
-      throw error;
+    if (rankingsError) {
+      console.error('Error in fetchUserRankings query:', rankingsError);
+      throw rankingsError;
     }
     
-    console.log('Rankings data fetched:', data);
-    
-    if (!data || data.length === 0) {
+    // If no rankings, return empty array
+    if (!rankings || rankings.length === 0) {
       return [];
     }
     
-    // Transform the data to match the Ranking interface
-    const rankings = data.map((item, index) => {
-      // Get the user profile data
-      const userProfile = item.users_profiles;
-      console.log('User profile data for user:', item.user_id, userProfile);
+    // Now fetch the user profiles separately
+    const userIds = rankings.map(ranking => ranking.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
       
-      // Default values
-      let name = 'Usuário Anônimo';
-      let avatarUrl: string | null = null;
-      
-      // Handle different possible structures of userProfile with proper TypeScript type checking
-      if (userProfile) {
-        if (typeof userProfile === 'object' && !Array.isArray(userProfile)) {
-          // Single object case
-          const profile = userProfile as { name?: string; avatar_url?: string };
-          name = profile.name || 'Usuário Anônimo';
-          avatarUrl = profile.avatar_url || null;
-        } 
-        else if (Array.isArray(userProfile) && userProfile.length > 0) {
-          // Array case
-          const profile = userProfile[0] as { name?: string; avatar_url?: string };
-          if (profile) {
-            name = profile.name || 'Usuário Anônimo';
-            avatarUrl = profile.avatar_url || null;
-          }
-        }
-      }
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+      throw profilesError;
+    }
+    
+    console.log('User profiles data:', profiles);
+    
+    // Map the rankings with profile information
+    const formattedRankings = rankings.map((ranking, index) => {
+      // Find the matching profile
+      const profile = profiles?.find(p => p.id === ranking.user_id);
       
       return {
         position: index + 1,
-        name: name,
-        score: item.score || 0,
-        userId: item.user_id,
-        avatarUrl: avatarUrl,
-        basicKnowledgeScore: item.basic_knowledge_score || 0,
-        specificKnowledgeScore: item.specific_knowledge_score || 0,
-        discursiveScore: item.discursive_score || 0
+        name: profile?.name || 'Usuário Anônimo',
+        score: ranking.score || 0,
+        userId: ranking.user_id,
+        avatarUrl: profile?.avatar_url || null,
+        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
+        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
+        discursiveScore: ranking.discursive_score || 0
       };
     });
     
-    console.log('Transformed rankings:', rankings);
-    return rankings;
+    console.log('Transformed rankings:', formattedRankings);
+    return formattedRankings;
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
