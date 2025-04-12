@@ -106,7 +106,14 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              followerProfiles.push(...(profiles as Follower[]));
+              // Fix: Add each profile to the followerProfiles array instead of spreading the array
+              profiles.forEach((profile: any) => {
+                followerProfiles.push({
+                  id: profile.id,
+                  name: profile.name,
+                  avatar_url: profile.avatar_url
+                });
+              });
             }
           }
           
@@ -132,7 +139,14 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              followingProfiles.push(...(profiles as Follower[]));
+              // Fix: Add each profile to the followingProfiles array instead of spreading the array
+              profiles.forEach((profile: any) => {
+                followingProfiles.push({
+                  id: profile.id,
+                  name: profile.name,
+                  avatar_url: profile.avatar_url
+                });
+              });
             }
           }
           
