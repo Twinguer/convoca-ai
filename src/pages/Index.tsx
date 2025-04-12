@@ -108,9 +108,7 @@ const Index = () => {
                       <Briefcase className="h-8 w-8 text-emerald-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Nomeações e Convocações</h3>
-                    <p className="text-gray-600">
-                      Fique atualizado com as nomeações e convocações mais recentes dos concursos que você acompanha.
-                    </p>
+                    <p className="text-gray-600">Como estamos todos aqui, acompanhe as nomeações e convocações. Veja se quem está melhor colocado assumiu o cargo.</p>
                   </div>
                 </div>
               </CarouselItem>
