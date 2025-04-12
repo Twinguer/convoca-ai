@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -37,13 +36,13 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
-      {/* Hero Section with new layout */}
-      <section className="relative bg-mint-50 py-12 px-4 overflow-hidden">
+      {/* Hero Section with new layout matching the design */}
+      <section className="relative py-16 px-4 overflow-hidden">
         <div className="container mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left side with logo and text */}
-            <div className="lg:col-span-7 space-y-8">
-              <div className="mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            {/* Left side with text */}
+            <div className="space-y-8">
+              <div>
                 <Logo variant="large" className="h-20 w-auto mb-8" />
                 <h1 className="text-4xl md:text-5xl font-bold text-emerald-700 mb-4">
                   Somos todos concurseiros onde o que conta é o TBC.
@@ -58,8 +57,45 @@ const Index = () => {
                   </Button>
                 </Link>
               </div>
-              
-              {/* Sample competition card */}
+            </div>
+            
+            {/* Right side with images */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <img 
+                  src="/lovable-uploads/36833afc-6f71-4ffe-b0f2-41aee0a8e0c4.png" 
+                  alt="Concurseiro estudando" 
+                  className="rounded-lg shadow-md w-full h-48 object-cover"
+                />
+                <img 
+                  src="/lovable-uploads/3b493399-f5e4-4883-88aa-247b72e4e74b.png" 
+                  alt="Material de estudo" 
+                  className="rounded-lg shadow-md w-full h-64 object-cover"
+                />
+              </div>
+              <div className="mt-8 space-y-4">
+                <img 
+                  src="/lovable-uploads/d9dd6b7e-0366-4902-bda7-4276442d9a96.png" 
+                  alt="Pessoa comemorando aprovação" 
+                  className="rounded-lg shadow-md w-full h-64 object-cover"
+                />
+                <img 
+                  src="/lovable-uploads/95b3453d-2c74-48d6-b670-44eff515a18a.png" 
+                  alt="Ranking de aprovados" 
+                  className="rounded-lg shadow-md w-full h-48 object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Community and competition section */}
+      <section className="relative bg-white py-12 px-4 overflow-hidden">
+        <div className="container mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Sample competition card */}
+            <div className="lg:col-span-7">
               <div className="bg-white rounded-lg shadow-md p-5">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
@@ -280,7 +316,11 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center mb-4">
-                <Logo variant="full" className="h-8 w-auto mr-2" />
+                <img 
+                  src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
+                  alt="Convoca.ai Logo" 
+                  className="h-10 w-auto" 
+                />
               </div>
               <p className="mb-4">
                 Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.

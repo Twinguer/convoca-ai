@@ -14,10 +14,10 @@ const Logo: React.FC<LogoProps> = ({ className = "h-8 w-auto", variant = 'defaul
       logoSrc = "/lovable-uploads/f79fabe5-25d9-41f4-bfe6-3a3a22ec192e.png";
       break;
     case 'large':
-      logoSrc = "/lovable-uploads/38354503-aabf-415a-9939-c634a8048c24.png";
+      logoSrc = "/lovable-uploads/4e59f82e-1362-457d-b622-d06b371a8148.png";
       break;
     default:
-      logoSrc = "/lovable-uploads/97631d44-f5b6-4e7f-8fb3-92d8bbddb4d5.png";
+      logoSrc = "/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png";
   }
     
   return (
