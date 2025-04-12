@@ -331,7 +331,7 @@ const UserProfile = () => {
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
                           <Users className="h-4 w-4 mr-2 text-blue-500" />
-                          <span className="text-sm">Seguidores</span>
+                          <span className="text-sm">Nome de concurseira(o):</span>
                         </div>
                         <span className="text-sm font-semibold">{followers.length}</span>
                       </div>
