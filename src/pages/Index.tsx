@@ -6,7 +6,6 @@ import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Brie
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-
 const Index = () => {
   const {
     user
@@ -155,7 +154,7 @@ const Index = () => {
               <div className="mb-4">
                 <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-30 w-auto object-contain" />
               </div>
-              <p className="text-gray-400 mt-4">Acompanhe seus resultados e conecte-se com outros concurseiros.</p>
+              
             </div>
             
             {/* Column 2: Contatos */}
@@ -229,5 +228,4 @@ const Index = () => {
       </footer>
     </div>;
 };
-
 export default Index;
