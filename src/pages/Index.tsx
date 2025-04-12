@@ -151,7 +151,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
               <div className="mb-4">
-                <img src="https://tibizurada.store/logo-2.png" alt="Convoca.ai Logo" className="h-10 w-auto" />
+                <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-10 w-auto object-contain" />
               </div>
               <p className="mb-4">
                 Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
