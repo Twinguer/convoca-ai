@@ -32,7 +32,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
           .from('user_followers')
           .select(`
             follower_id,
-            users_profiles!user_followers_follower_id_fkey(
+            follower:follower_id(
               id,
               name,
               avatar_url
@@ -48,7 +48,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
           .from('user_followers')
           .select(`
             followed_id,
-            users_profiles!user_followers_followed_id_fkey(
+            followed:followed_id(
               id,
               name,
               avatar_url
@@ -60,29 +60,90 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
         if (followingError) throw followingError;
 
         // Format followers data
-        const formattedFollowers = followersData.map(item => {
-          const profile = item.users_profiles;
-          return {
-            id: profile.id,
-            name: profile.name,
-            avatar_url: profile.avatar_url
-          };
-        });
+        const formattedFollowers = followersData
+          .filter(item => item.follower) // Filter out any null followers
+          .map(item => ({
+            id: item.follower.id,
+            name: item.follower.name,
+            avatar_url: item.follower.avatar_url
+          }));
 
         // Format following data
-        const formattedFollowing = followingData.map(item => {
-          const profile = item.users_profiles;
-          return {
-            id: profile.id,
-            name: profile.name,
-            avatar_url: profile.avatar_url
-          };
-        });
+        const formattedFollowing = followingData
+          .filter(item => item.followed) // Filter out any null followed
+          .map(item => ({
+            id: item.followed.id,
+            name: item.followed.name,
+            avatar_url: item.followed.avatar_url
+          }));
 
         setFollowers(formattedFollowers);
         setFollowing(formattedFollowing);
       } catch (error) {
         console.error('Error fetching followers:', error);
+        
+        // Fallback to fetching directly from users_profiles if the join doesn't work
+        try {
+          // For followers
+          const { data: followerIds, error: followerIdsError } = await supabase
+            .from('user_followers')
+            .select('follower_id')
+            .eq('followed_id', userId)
+            .limit(10);
+            
+          if (followerIdsError) throw followerIdsError;
+          
+          const followerProfiles: Follower[] = [];
+          
+          if (followerIds && followerIds.length > 0) {
+            const followerIdList = followerIds.map(f => f.follower_id);
+            
+            const { data: profiles, error: profilesError } = await supabase
+              .from('users_profiles')
+              .select('id, name, avatar_url')
+              .in('id', followerIdList);
+              
+            if (profilesError) throw profilesError;
+            
+            if (profiles) {
+              followerProfiles.push(...profiles);
+            }
+          }
+          
+          // For following
+          const { data: followingIds, error: followingIdsError } = await supabase
+            .from('user_followers')
+            .select('followed_id')
+            .eq('follower_id', userId)
+            .limit(10);
+            
+          if (followingIdsError) throw followingIdsError;
+          
+          const followingProfiles: Follower[] = [];
+          
+          if (followingIds && followingIds.length > 0) {
+            const followingIdList = followingIds.map(f => f.followed_id);
+            
+            const { data: profiles, error: profilesError } = await supabase
+              .from('users_profiles')
+              .select('id, name, avatar_url')
+              .in('id', followingIdList);
+              
+            if (profilesError) throw profilesError;
+            
+            if (profiles) {
+              followingProfiles.push(...profiles);
+            }
+          }
+          
+          setFollowers(followerProfiles);
+          setFollowing(followingProfiles);
+        } catch (fallbackError) {
+          console.error('Error using fallback method:', fallbackError);
+          // Set empty arrays if all else fails
+          setFollowers([]);
+          setFollowing([]);
+        }
       } finally {
         setIsLoading(false);
       }
