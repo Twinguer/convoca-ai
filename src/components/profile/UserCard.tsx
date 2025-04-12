@@ -17,7 +17,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 }) => {
   return (
     <div 
-      className="flex flex-col items-center text-center cursor-pointer" 
+      className="flex flex-col items-center text-center cursor-pointer p-2 w-full"
       onClick={() => onClick(id)}
     >
       <UserAvatar name={name} avatarUrl={avatarUrl} />

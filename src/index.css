@@ -100,42 +100,62 @@
 
 @layer components {
   .concurso-card {
-    @apply bg-white rounded-lg shadow-md p-6 transition-all duration-300 hover:animate-card-hover hover:shadow-lg border border-emerald-100;
+    @apply bg-white rounded-lg shadow-md p-4 sm:p-6 transition-all duration-300 hover:animate-card-hover hover:shadow-lg border border-emerald-100 mb-1 mx-0;
   }
   
   .nav-link {
-    @apply text-gray-600 hover:text-emerald-600 px-3 py-2 text-sm font-medium transition-colors;
+    @apply text-gray-600 hover:text-emerald-600 px-2 sm:px-3 py-2 text-sm font-medium transition-colors;
   }
   
   .nav-link-active {
-    @apply text-emerald-600 border-b-2 border-emerald-500 px-3 py-2 text-sm font-medium;
+    @apply text-emerald-600 border-b-2 border-emerald-500 px-2 sm:px-3 py-2 text-sm font-medium;
   }
   
   .btn-primary {
-    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-md transition-colors shadow-sm;
+    @apply bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 sm:py-2 px-2 sm:px-4 rounded-md transition-colors shadow-sm;
   }
   
   .section-title {
-    @apply text-2xl font-bold text-gray-800 mb-6;
+    @apply text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6;
   }
   
   .page-container {
-    @apply container mx-auto px-4 py-8 max-w-7xl;
+    @apply container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-full sm:max-w-7xl;
   }
 
   .feature-card {
-    @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100;
+    @apply bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 mb-1 mx-0;
   }
   
   .feature-card-image {
-    @apply w-full h-48 object-cover;
+    @apply w-full h-36 sm:h-48 object-cover;
   }
   
   .glass-card {
-    @apply backdrop-blur-md bg-white/90 border border-white/20 shadow-xl;
+    @apply backdrop-blur-md bg-white/90 border border-white/20 shadow-xl mb-1 mx-0;
   }
 
   footer {
     @apply w-full py-4 bg-background border-t border-border;
+  }
+  
+  /* Ajuste para cards em grade */
+  .grid {
+    @apply gap-1;
+  }
+  
+  .card-grid {
+    @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1;
+  }
+  
+  /* Responsividade para dispositivos móveis */
+  @media (max-width: 640px) {
+    .container {
+      @apply px-2;
+    }
+    
+    .nav-link, .nav-link-active {
+      @apply px-2 py-1;
+    }
   }
 }

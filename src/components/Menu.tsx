@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -7,6 +8,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
@@ -14,19 +16,23 @@ const Menu = () => {
   const {
     user
   } = useAuth();
+  
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
   };
+  
   const isAdmin = () => {
     return user?.email?.includes('admin');
   };
-  return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <NavigationMenu>
-            <NavigationMenuList>
+  
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-2 sm:px-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <NavigationMenu className="hidden md:flex">
+            <NavigationMenuList className="space-x-1">
               <NavigationMenuItem>
                 <Link to="/">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
@@ -55,7 +61,7 @@ const Menu = () => {
               </NavigationMenuItem>
               
               {isAdmin() && <NavigationMenuItem>
-                <NavigationMenuTrigger>Administração</NavigationMenuTrigger>
+                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 w-[220px]">
                     <li>
@@ -95,54 +101,48 @@ const Menu = () => {
                 <span className="sr-only">Abrir Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="pr-0">
-              <div className="px-7">
-                <Link to="/" className="flex items-center space-x-2 mb-8">
-                  <img src="https://tibizurada.store/logo-02.png" alt="Convoca Aí" className="h-10" />
-                </Link>
-              </div>
-              <nav className="flex flex-col gap-4 px-7">
-                <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-convoca-600" : "text-foreground/70")}>
+            <SheetContent side="left" className="pr-0 max-w-[280px]">
+              <nav className="flex flex-col gap-4 px-4 pt-8">
+                <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-primary" : "text-foreground/70")}>
                   <Home className="mr-2 h-4 w-4" />
                   Home
                 </Link>
-                <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-convoca-600" : "text-foreground/70")}>
+                <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
                 </Link>
-                <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-convoca-600" : "text-foreground/70")}>
+                <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
                   Rankings
                 </Link>
                 
                 {isAdmin() && <>
-                    <div className="h-px bg-border mt-2 mb-2"></div>
-                    <div className="font-bold text-foreground/70 mb-2">Administração</div>
-                    <Link to="/admin/dashboard" className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-convoca-600" : "text-foreground/70")}>
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </Link>
-                    <Link to="/admin/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-convoca-600" : "text-foreground/70")}>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Concursos
-                    </Link>
-                    <Link to="/admin/concursos/novo" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos/novo') ? "text-convoca-600" : "text-foreground/70")}>
-                      <Medal className="mr-2 h-4 w-4" />
-                      Novo Concurso
-                    </Link>
-                  </>}
+                  <div className="h-px bg-border mt-2 mb-2"></div>
+                  <div className="font-bold text-foreground/70 mb-2">Administração</div>
+                  <Link to="/admin/dashboard" className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                  <Link to="/admin/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Concursos
+                  </Link>
+                  <Link to="/admin/concursos/novo" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos/novo') ? "text-primary" : "text-foreground/70")}>
+                    <Medal className="mr-2 h-4 w-4" />
+                    Novo Concurso
+                  </Link>
+                </>}
               </nav>
             </SheetContent>
           </Sheet>
         </div>
         
         <div className="flex items-center">
-          <Link to="/" className="mr-4">
-            
-          </Link>
           <UserMenu />
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Menu;

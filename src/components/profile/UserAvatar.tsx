@@ -19,9 +19,9 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   };
 
   const sizeClass = {
-    sm: 'h-8 w-8',
-    md: 'h-12 w-12',
-    lg: 'h-16 w-16'
+    sm: 'h-6 w-6 sm:h-8 sm:w-8',
+    md: 'h-10 w-10 sm:h-12 sm:w-12',
+    lg: 'h-14 w-14 sm:h-16 sm:w-16'
   }[size];
 
   return (
