@@ -75,10 +75,8 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <FileText className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Editais Atualizados</h3>
-                    <p className="text-gray-600">
-                      Todos os participantes comprovaram que fazem ou já fizeram algum concurso público. 
-                    </p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Mantenha o foco.</h3>
+                    <p className="text-gray-600">É importante que tenhamos tudo por perto, inclusive como estão os meus resultados e o dos outros candidatos.</p>
                   </div>
                 </div>
               </CarouselItem>
@@ -93,10 +91,8 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Trophy className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Rankings Detalhados</h3>
-                    <p className="text-gray-600">
-                      Participe dos rankings de classificação e compare seu desempenho com outros candidatos.
-                    </p>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Cabeça fria.</h3>
+                    <p className="text-gray-600">Com o Convoca Aí vamos para a prova sabendo quem são os nossos concorrentes que em que nível eles estão. </p>
                   </div>
                 </div>
               </CarouselItem>
