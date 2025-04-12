@@ -4,7 +4,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
-import Logo from '@/assets/logo';
 import { 
   NavigationMenu,
   NavigationMenuContent,
@@ -47,10 +46,12 @@ const Menu = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-20 max-w-screen-2xl items-center">
+      <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="mr-4 hidden md:flex">
           <Link to="/" className="mr-6 flex items-center space-x-2">
-            <Logo variant="full" className="h-12 w-auto" />
+            <span className="hidden font-bold sm:inline-block">
+              Convoca<span className="text-convoca-600">.</span>
+            </span>
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
@@ -142,7 +143,9 @@ const Menu = () => {
           <SheetContent side="left" className="pr-0">
             <div className="px-7">
               <Link to="/" className="flex items-center space-x-2 mb-8">
-                <Logo variant="full" className="h-10 w-auto" />
+                <span className="font-bold text-xl">
+                  Convoca<span className="text-convoca-600">.</span>
+                </span>
               </Link>
             </div>
             <nav className="flex flex-col gap-4 px-7">

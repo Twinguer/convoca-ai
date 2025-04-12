@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Filter } from 'lucide-react';
@@ -12,7 +11,6 @@ import { Label } from '../components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
-import Logo from '@/assets/logo';
 
 const Home: React.FC = () => {
   const { toast } = useToast();
@@ -67,10 +65,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 text-center">
-        <div className="flex justify-center mb-5">
-          <Logo variant="default" className="h-24 w-auto" />
-        </div>
+      <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Editais de Concursos</h1>
         <p className="text-gray-600">
           Confira os concursos abertos e em andamento dos últimos 5 anos

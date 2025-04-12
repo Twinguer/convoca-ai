@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,10 @@ import {
   Briefcase,
   CheckSquare,
   BarChart3,
+  ChartPieIcon,
   Mail,
   MapPin,
-  Instagram,
-  UserCircle2,
-  LayoutDashboard,
-  Search
+  Instagram
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -29,88 +28,88 @@ import {
   CarouselPrevious
 } from "@/components/ui/carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import Logo from '@/assets/logo';
 
 const Index = () => {
   const { user } = useAuth();
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
-      {/* Hero Section with new layout matching the design */}
-      <section className="relative py-16 px-4 overflow-hidden">
+      {/* Hero Section with Image */}
+      <section className="relative py-20 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/50 to-emerald-50/50 z-0"></div>
+        <div 
+          className="absolute inset-0 z-0 opacity-10"
+          style={{ 
+            backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%239C92AC\' fill-opacity=\'0.2\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+          }}
+        ></div>
+        
         <div className="container mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            {/* Left side with text */}
-            <div className="space-y-8">
-              <div>
-                <Logo variant="large" className="h-20 w-auto mb-8" />
-                <h1 className="text-4xl md:text-5xl font-bold text-emerald-700 mb-4">
-                  Somos todos concurseiros onde o que conta é o TBC.
-                </h1>
-                <p className="text-xl text-gray-700 mb-6">
-                  Compare seus resultados em rankings pós-prova com o resultado oficial da banca.
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="animate-fade-in">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
+                Somos todos concurseiros onde o que conta é o TBC. 
+              </h1>
+              <p className="text-xl text-gray-700 mb-8">
+                Compare seus resultados em rankings pós-prova com o resultado oficial da banca.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-6 py-3 shadow-lg hover:shadow-xl transition duration-300">
-                    Ver Rankings
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
+                    Em fase de classificação
                     <ChevronRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
+                
+                {!user && (
+                  <Link to="/auth">
+                    <Button variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50 rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-md hover:shadow-lg transition duration-300 transform hover:-translate-y-1">
+                      Criar Conta
+                      <Users className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
             
-            {/* Right side with images */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4">
+            <div className="relative animate-fade-in hidden md:block">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{ animationDelay: '1s' }}></div>
+              
+              <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <img 
-                  src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
-                  alt="Concurseiro estudando" 
-                  className="rounded-lg shadow-md w-full h-auto object-cover"
+                  src="/lovable-uploads/3b493399-f5e4-4883-88aa-247b72e4e74b.png" 
+                  alt="Estudante se preparando para concurso" 
+                  className="w-full h-auto rounded-xl object-cover"
                 />
-                <img 
-                  src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
-                  alt="Material de estudo" 
-                  className="rounded-lg shadow-md w-full h-64 object-cover"
-                />
-              </div>
-              <div className="mt-8 space-y-4">
-                <img 
-                  src="/lovable-uploads/f79fabe5-25d9-41f4-bfe6-3a3a22ec192e.png" 
-                  alt="Pessoa comemorando aprovação" 
-                  className="rounded-lg shadow-md w-full h-64 object-cover"
-                />
-                <img 
-                  src="/lovable-uploads/95b3453d-2c74-48d6-b670-44eff515a18a.png" 
-                  alt="Ranking de aprovados" 
-                  className="rounded-lg shadow-md w-full h-48 object-cover"
-                />
+                
+                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent"></div>
+                <div className="absolute bottom-4 left-4 text-white">
+                  <p className="font-semibold text-lg">Estude com foco e determinação</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
       
-      {/* Section heading */}
-      <section className="bg-white py-12 px-4">
-        <div className="container mx-auto text-center">
+      {/* Features Section with Carousel */}
+      <section className="bg-white py-20 px-4">
+        <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Siga pessoas com o mesmo propósito que o seu</h2>
           <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">
             Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro. Já recebeu seu convite? 
           </p>
-        </div>
-      </section>
-
-      {/* Features Section with Carousel */}
-      <section className="bg-white py-12 px-4">
-        <div className="container mx-auto">
+          
           <Carousel className="w-full max-w-5xl mx-auto">
             <CarouselContent>
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/b9f4f05a-3df3-4589-a1c0-72d8c6f86bec.png" 
-                      alt="Hora dos estudos" 
+                      src="/lovable-uploads/f90af83d-1a4a-42c0-a60d-de4ba2bc8b50.png" 
+                      alt="Gabarito de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -119,7 +118,7 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <FileText className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Informações Atualizados</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Editais Atualizados</h3>
                     <p className="text-gray-600">
                       Todos os participantes comprovaram que fazem ou já fizeram algum concurso público. 
                     </p>
@@ -131,8 +130,8 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/97631d44-f5b6-4e7f-8fb3-92d8bbddb4d5.png" 
-                      alt="Hora da prova" 
+                      src="/lovable-uploads/4e59f82e-1362-457d-b622-d06b371a8148.png" 
+                      alt="Resultado de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -153,8 +152,8 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/38354503-aabf-415a-9939-c634a8048c24.png" 
-                      alt="Fui nomeado" 
+                      src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
+                      alt="Sala de aula de concurso" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -163,9 +162,9 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Briefcase className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Conhecemos o Processo</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Nomeações e Convocações</h3>
                     <p className="text-gray-600">
-                      Sabemos que a jornada é longa e muitas vezes solitária, estamos aqui para te dar um ânimo. Somos todos iguais a você, buscamos o mesmo objetivo.
+                      Fique atualizado com as nomeações e convocações mais recentes dos concursos que você acompanha.
                     </p>
                   </div>
                 </div>
@@ -208,18 +207,12 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Footer with logo added */}
+      {/* Footer */}
       <footer className="bg-gray-900 text-gray-300">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center mb-4">
-                <img 
-                  src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
-                  alt="Convoca.ai Logo" 
-                  className="h-10 w-auto" 
-                />
-              </div>
+              <h3 className="text-xl font-bold text-white mb-4">Convoca.ai</h3>
               <p className="mb-4">
                 Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
               </p>
