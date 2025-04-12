@@ -4,14 +4,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDemoUsers } from '@/integrations/supabase/community';
 
 // Hook para buscar usuários da comunidade
-export const useCommunityUsers = () => {
+export const useCommunityUsers = (searchQuery: string = '') => {
   // Fetch real users from Supabase
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['community-users'],
+    queryKey: ['community-users', searchQuery],
     queryFn: async () => {
       try {
         // Buscando usuários reais com metadados adicionais
-        const { data: profiles, error } = await supabase
+        let query = supabase
           .from('users_profiles')
           .select(`
             id,
@@ -20,9 +20,17 @@ export const useCommunityUsers = () => {
             bio,
             avatar_url,
             concursos_aprovados,
-            concursos_participando
-          `)
-          .limit(20);
+            concursos_participando,
+            status_concurseiro
+          `);
+          
+        // Apply search filter if provided
+        if (searchQuery) {
+          query = query.ilike('name', `%${searchQuery}%`);
+        }
+        
+        // Execute the query with pagination
+        const { data: profiles, error } = await query.limit(20);
 
         if (error) throw error;
 
@@ -35,7 +43,7 @@ export const useCommunityUsers = () => {
 
             if (followerError) console.error('Error counting followers:', followerError);
 
-            // Contar posts (placeholder)
+            // Contar rankings (posts)
             const { count: postCount, error: postError } = await supabase
               .from('user_rankings')
               .select('*', { count: 'exact', head: true })
