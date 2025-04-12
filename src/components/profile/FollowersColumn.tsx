@@ -106,13 +106,11 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              profiles.forEach((profile) => {
-                followerProfiles.push({
-                  id: profile.id,
-                  name: profile.name,
-                  avatar_url: profile.avatar_url
-                });
-              });
+              followerProfiles.push(...profiles.map(profile => ({
+                id: profile.id,
+                name: profile.name,
+                avatar_url: profile.avatar_url
+              })));
             }
           }
           
@@ -138,13 +136,11 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              profiles.forEach((profile) => {
-                followingProfiles.push({
-                  id: profile.id,
-                  name: profile.name,
-                  avatar_url: profile.avatar_url
-                });
-              });
+              followingProfiles.push(...profiles.map(profile => ({
+                id: profile.id,
+                name: profile.name,
+                avatar_url: profile.avatar_url
+              })));
             }
           }
           
@@ -269,4 +265,3 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
     </>
   );
 };
-
