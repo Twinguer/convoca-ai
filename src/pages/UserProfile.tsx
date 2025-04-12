@@ -18,19 +18,18 @@ import { UserRankingDisplay } from '@/types/concursos';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
+import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
+
 interface Follower {
   id: string;
   name: string;
   avatar_url?: string | null;
 }
+
 const UserProfile = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [concursosAprovados, setConcursosAprovados] = useState('');
@@ -41,6 +40,7 @@ const UserProfile = () => {
   const [followers, setFollowers] = useState<Follower[]>([]);
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
+
   const {
     data: profile,
     isLoading,
@@ -95,6 +95,7 @@ const UserProfile = () => {
     refetchInterval: false,
     staleTime: 300000
   });
+
   const {
     data: rankings
   } = useQuery({
@@ -124,6 +125,7 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
+
   useEffect(() => {
     if (user) {
       setFollowers([{
@@ -149,11 +151,13 @@ const UserProfile = () => {
       }]);
     }
   }, [user]);
+
   useEffect(() => {
     if (rankings && rankings.length > 0) {
       setUserRankings(rankings);
     }
   }, [rankings]);
+
   useEffect(() => {
     if (profile) {
       console.log("Setting profile state with data:", profile);
@@ -165,6 +169,7 @@ const UserProfile = () => {
       setStatusConcurseiro(profile.status_concurseiro || 'Na Ativa');
     }
   }, [profile]);
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!event.target.files || !event.target.files.length) {
@@ -223,6 +228,7 @@ const UserProfile = () => {
       setUploading(false);
     }
   };
+
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -268,15 +274,18 @@ const UserProfile = () => {
       setSaving(false);
     }
   };
+
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
       </div>;
   }
+
   if (!user) {
     useEffect(() => {
       navigate("/auth");
@@ -285,196 +294,218 @@ const UserProfile = () => {
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
       </div>;
   }
-  return <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
-        <div className="md:col-span-9 md:order-2">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
-            <div className="md:col-span-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center space-y-4">
-                    <Avatar className="h-32 w-32">
-                      {avatarUrl ? <AvatarImage src={avatarUrl} alt={name} /> : <AvatarFallback className="text-3xl">
-                          {name ? getInitials(name) : <User className="h-12 w-12" />}
-                        </AvatarFallback>}
-                    </Avatar>
-                    
-                    <div className="text-center">
-                      <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      
-                      <div className="mt-2">
-                        <Label htmlFor="avatar" className="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
-                          {uploading ? <div className="flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Enviando...
-                            </div> : <div className="flex items-center gap-2">
-                              <Upload className="h-4 w-4" />
-                              Alterar foto
-                            </div>}
-                        </Label>
-                        <Input id="avatar" type="file" className="hidden" onChange={handleAvatarUpload} accept="image/*" disabled={uploading} />
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="w-full space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
-                          <span className="text-sm">Rankings</span>
-                        </div>
-                        <span className="text-sm font-semibold">{userRankings.length}</span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-2 text-blue-500" />
-                          <span className="text-sm">Nome de concurseira(o):</span>
-                        </div>
-                        <span className="text-sm font-semibold">{followers.length}</span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <BookOpen className="h-4 w-4 mr-2 text-green-500" />
-                          <span className="text-sm">Aprovações</span>
-                        </div>
-                        <span className="text-sm font-semibold">
-                          {concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0}
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Pen className="h-4 w-4 mr-2 text-purple-500" />
-                          <span className="text-sm">Status</span>
-                        </div>
-                        <span className="text-sm font-semibold">{statusConcurseiro}</span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <div className="md:col-span-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">Meu Perfil</CardTitle>
-                  <CardDescription>
-                    Gerencie suas informações pessoais e preferências
-                  </CardDescription>
-                </CardHeader>
+
+  return (
+    <div className="container mx-auto p-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-3">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center space-y-4">
+                <Avatar className="h-32 w-32">
+                  {avatarUrl ? (
+                    <AvatarImage src={avatarUrl} alt={name} />
+                  ) : (
+                    <AvatarFallback className="text-3xl">
+                      {name ? getInitials(name) : <User className="h-12 w-12" />}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                 
-                <Tabs defaultValue="profile">
-                  <div className="px-6">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="profile">Perfil</TabsTrigger>
-                      <TabsTrigger value="concursos">Concursos</TabsTrigger>
-                      <TabsTrigger value="rankings">Rankings</TabsTrigger>
-                    </TabsList>
+                <div className="text-center">
+                  <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                  
+                  <div className="mt-2">
+                    <Label htmlFor="avatar" className="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
+                      {uploading ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Enviando...
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Upload className="h-4 w-4" />
+                          Alterar foto
+                        </div>
+                      )}
+                    </Label>
+                    <Input 
+                      id="avatar" 
+                      type="file" 
+                      className="hidden" 
+                      onChange={handleAvatarUpload} 
+                      accept="image/*" 
+                      disabled={uploading} 
+                    />
+                  </div>
+                </div>
+                
+                <Separator />
+                
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
+                      <span className="text-sm">Rankings</span>
+                    </div>
+                    <span className="text-sm font-semibold">{userRankings.length}</span>
                   </div>
                   
-                  <TabsContent value="profile">
-                    <CardContent className="pt-6 space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nome completo</Label>
-                        <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" value={user.email || ''} disabled className="bg-muted" />
-                      </div>
-                      
-                      <StatusSelect value={statusConcurseiro} onChange={setStatusConcurseiro} />
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="bio">Biografia de concurseira(o):</Label>
-                        <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="Conte um pouco sobre você e sua jornada nos concursos públicos" rows={4} />
-                      </div>
-                    </CardContent>
-                  </TabsContent>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-blue-500" />
+                      <span className="text-sm">Seguidores</span>
+                    </div>
+                    <span className="text-sm font-semibold">{followers.length}</span>
+                  </div>
                   
-                  <TabsContent value="concursos">
-                    <CardContent className="pt-6 space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="concursos-aprovados">Concursos em que foi aprovado</Label>
-                        <Textarea id="concursos-aprovados" value={concursosAprovados} onChange={e => setConcursosAprovados(e.target.value)} placeholder="Liste os concursos em que você foi aprovado (um por linha)" rows={5} />
-                        <p className="text-sm text-muted-foreground">
-                          Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
-                        </p>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor="concursos-participando">Concursos em que está participando</Label>
-                        <Textarea id="concursos-participando" value={concursosParticipando} onChange={e => setConcursosParticipando(e.target.value)} placeholder="Liste os concursos em que você está participando atualmente (um por linha)" rows={5} />
-                        <p className="text-sm text-muted-foreground">
-                          Dica: Liste um por linha, incluindo o nome do concurso, órgão e data da prova
-                        </p>
-                      </div>
-                    </CardContent>
-                  </TabsContent>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <BookOpen className="h-4 w-4 mr-2 text-green-500" />
+                      <span className="text-sm">Aprovações</span>
+                    </div>
+                    <span className="text-sm font-semibold">
+                      {concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0}
+                    </span>
+                  </div>
                   
-                  <TabsContent value="rankings">
-                    <CardContent className="pt-6">
-                      {userRankings && userRankings.length > 0 ? <div className="space-y-1">
-                          {userRankings.map((ranking, index) => <Card key={ranking.concursoId} className="overflow-hidden">
-                              <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-4 flex justify-between items-center">
-                                <div>
-                                  <h3 className="font-medium">{ranking.concursoTitle}</h3>
-                                  <div className="flex items-center mt-1">
-                                    <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                                    <span className="text-sm">
-                                      {ranking.position > 0 ? `${ranking.position}º lugar` : 'Posição não definida'}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
-                                  <span className="text-lg font-bold">{ranking.score}</span>
-                                  <span className="text-xs ml-1">pts</span>
-                                </div>
-                              </div>
-                              <div className="p-4 bg-white">
-                                <Button variant="outline" size="sm" onClick={() => navigate(`/concurso/${ranking.concursoId}/resultados`)}>
-                                  Ver ranking completo
-                                </Button>
-                              </div>
-                            </Card>)}
-                        </div> : <div className="text-center py-8">
-                          <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                          <h3 className="text-lg font-medium">Você ainda não tem rankings</h3>
-                          <p className="text-muted-foreground">
-                            Participe de concursos e simulados para ver sua classificação aqui
-                          </p>
-                          <Button variant="outline" className="mt-4" onClick={() => navigate('/concursos')}>
-                            Ver concursos disponíveis
-                          </Button>
-                        </div>}
-                    </CardContent>
-                  </TabsContent>
-                </Tabs>
-                
-                <CardFooter className="flex justify-end py-6">
-                  <Button onClick={handleSaveProfile} disabled={saving} className="relative">
-                    {saving ? <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Salvando...
-                      </> : <>
-                        <Check className="h-4 w-4 mr-2" />
-                        Salvar alterações
-                      </>}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Pen className="h-4 w-4 mr-2 text-purple-500" />
+                      <span className="text-sm">Status</span>
+                    </div>
+                    <span className="text-sm font-semibold">{statusConcurseiro}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="mt-4">
+            {user && <FollowersColumn userId={user.id} />}
           </div>
         </div>
         
-        <div className="md:col-span-3 md:order-1">
-          {user && <FollowersColumn userId={user.id} />}
+        <div className="md:col-span-9">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">Meu Perfil</CardTitle>
+              <CardDescription>
+                Gerencie suas informações pessoais e preferências
+              </CardDescription>
+            </CardHeader>
+            
+            <Tabs defaultValue="profile">
+              <div className="px-6">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="profile">Perfil</TabsTrigger>
+                  <TabsTrigger value="concursos">Concursos</TabsTrigger>
+                  <TabsTrigger value="rankings">Rankings</TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <TabsContent value="profile">
+                <CardContent className="pt-6 space-y-4">
+                  <ProfileInfoTab
+                    name={name}
+                    setName={setName}
+                    email={user.email || ''}
+                    bio={bio}
+                    setBio={setBio}
+                    statusConcurseiro={statusConcurseiro}
+                    setStatusConcurseiro={setStatusConcurseiro}
+                  />
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="concursos">
+                <CardContent className="pt-6 space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="concursos-aprovados">Concursos em que foi aprovado</Label>
+                    <Textarea 
+                      id="concursos-aprovados" 
+                      value={concursosAprovados} 
+                      onChange={e => setConcursosAprovados(e.target.value)} 
+                      placeholder="Liste os concursos em que você foi aprovado (um por linha)" 
+                      rows={5} 
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="concursos-participando">Concursos em que está participando</Label>
+                    <Textarea 
+                      id="concursos-participando" 
+                      value={concursosParticipando} 
+                      onChange={e => setConcursosParticipando(e.target.value)} 
+                      placeholder="Liste os concursos em que você está participando atualmente (um por linha)" 
+                      rows={5} 
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Dica: Liste um por linha, incluindo o nome do concurso, órgão e data da prova
+                    </p>
+                  </div>
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="rankings">
+                <CardContent className="pt-6">
+                  {userRankings && userRankings.length > 0 ? <div className="space-y-1">
+                      {userRankings.map((ranking, index) => <Card key={ranking.concursoId} className="overflow-hidden">
+                          <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-4 flex justify-between items-center">
+                            <div>
+                              <h3 className="font-medium">{ranking.concursoTitle}</h3>
+                              <div className="flex items-center mt-1">
+                                <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
+                                <span className="text-sm">
+                                  {ranking.position > 0 ? `${ranking.position}º lugar` : 'Posição não definida'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
+                              <span className="text-lg font-bold">{ranking.score}</span>
+                              <span className="text-xs ml-1">pts</span>
+                            </div>
+                          </div>
+                          <div className="p-4 bg-white">
+                            <Button variant="outline" size="sm" onClick={() => navigate(`/concurso/${ranking.concursoId}/resultados`)}>
+                              Ver ranking completo
+                            </Button>
+                          </div>
+                        </Card>)}
+                    </div> : <div className="text-center py-8">
+                      <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                      <h3 className="text-lg font-medium">Você ainda não tem rankings</h3>
+                      <p className="text-muted-foreground">
+                        Participe de concursos e simulados para ver sua classificação aqui
+                      </p>
+                      <Button variant="outline" className="mt-4" onClick={() => navigate('/concursos')}>
+                        Ver concursos disponíveis
+                      </Button>
+                    </div>}
+                </CardContent>
+              </TabsContent>
+            </Tabs>
+            
+            <CardFooter className="flex justify-end py-6">
+              <Button onClick={handleSaveProfile} disabled={saving} className="relative">
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Salvar alterações
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
 
@@ -490,6 +521,8 @@ const UserProfile = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default UserProfile;
