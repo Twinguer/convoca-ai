@@ -153,9 +153,7 @@ const Index = () => {
               <div className="mb-4">
                 <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-30 w-auto object-contain" />
               </div>
-              <p className="mb-4">
-                Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
-              </p>
+              
               <div className="flex items-center mt-4">
                 <Mail className="h-5 w-5 mr-2" />
                 <span>contato@convocai.com.br</span>
@@ -208,12 +206,7 @@ const Index = () => {
               </ul>
             </div>
             
-            <div>
-              <h3 className="text-xl font-bold text-white mb-4">Sobre</h3>
-              <p>
-                Nossa missão é ajudar concurseiros a acompanhar seus resultados e conectar-se com uma comunidade de pessoas com o mesmo propósito.
-              </p>
-            </div>
+            
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center">
