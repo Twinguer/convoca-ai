@@ -41,7 +41,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           <TableHeader>
             <TableRow>
               <TableHead className="text-center w-16">
-                # <span className="inline-block">↕️</span>
+                # 
               </TableHead>
               <TableHead>Candidato</TableHead>
               <TableHead className="text-right">
