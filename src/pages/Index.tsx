@@ -63,19 +63,19 @@ const Index = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <img 
-                  src="https://tibizurada.store/img-01.png" 
+                  src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
                   alt="Concurseiro estudando" 
-                  className="rounded-lg shadow-md w-full h-100 object-cover"
+                  className="rounded-lg shadow-md w-full h-auto object-cover"
                 />
                 <img 
-                  src="https://tibizurada.store/img-04.png" 
+                  src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
                   alt="Material de estudo" 
                   className="rounded-lg shadow-md w-full h-64 object-cover"
                 />
               </div>
               <div className="mt-8 space-y-4">
                 <img 
-                  src="https://tibizurada.store/img-02.png" 
+                  src="/lovable-uploads/f79fabe5-25d9-41f4-bfe6-3a3a22ec192e.png" 
                   alt="Pessoa comemorando aprovação" 
                   className="rounded-lg shadow-md w-full h-64 object-cover"
                 />
@@ -109,7 +109,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="https://tibizurada.store/img-03.png" 
+                      src="/lovable-uploads/b9f4f05a-3df3-4589-a1c0-72d8c6f86bec.png" 
                       alt="Hora dos estudos" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -131,7 +131,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="https://tibizurada.store/img-04.png" 
+                      src="/lovable-uploads/97631d44-f5b6-4e7f-8fb3-92d8bbddb4d5.png" 
                       alt="Hora da prova" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -153,7 +153,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="https://tibizurada.store/img-05.png" 
+                      src="/lovable-uploads/38354503-aabf-415a-9939-c634a8048c24.png" 
                       alt="Fui nomeado" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -215,7 +215,7 @@ const Index = () => {
             <div>
               <div className="flex items-center mb-4">
                 <img 
-                  src="https://tibizurada.store/logo-01.png" 
+                  src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
                   alt="Convoca.ai Logo" 
                   className="h-10 w-auto" 
                 />
