@@ -63,19 +63,19 @@ const Index = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <img 
-                  src="/lovable-uploads/36833afc-6f71-4ffe-b0f2-41aee0a8e0c4.png" 
+                  src="https://tibizurada.store/img-03.png" 
                   alt="Concurseiro estudando" 
                   className="rounded-lg shadow-md w-full h-48 object-cover"
                 />
                 <img 
-                  src="/lovable-uploads/3b493399-f5e4-4883-88aa-247b72e4e74b.png" 
+                  src="https://tibizurada.store/img-04.png" 
                   alt="Material de estudo" 
                   className="rounded-lg shadow-md w-full h-64 object-cover"
                 />
               </div>
               <div className="mt-8 space-y-4">
                 <img 
-                  src="/lovable-uploads/d9dd6b7e-0366-4902-bda7-4276442d9a96.png" 
+                  src="https://tibizurada.store/img-05.png" 
                   alt="Pessoa comemorando aprovação" 
                   className="rounded-lg shadow-md w-full h-64 object-cover"
                 />
