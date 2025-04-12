@@ -152,7 +152,7 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="https://tibizurada.store/img-04.png" 
+                      src="https://tibizurada.store/img-05.png" 
                       alt="Resultado" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
