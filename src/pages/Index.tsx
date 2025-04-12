@@ -63,7 +63,7 @@ const Index = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <img 
-                  src="https://tibizurada.store/img-03.png" 
+                  src="https://tibizurada.store/img-01.png" 
                   alt="Concurseiro estudando" 
                   className="rounded-lg shadow-md w-full h-100 object-cover"
                 />
@@ -75,7 +75,7 @@ const Index = () => {
               </div>
               <div className="mt-8 space-y-4">
                 <img 
-                  src="https://tibizurada.store/img-05.png" 
+                  src="https://tibizurada.store/img-02.png" 
                   alt="Pessoa comemorando aprovação" 
                   className="rounded-lg shadow-md w-full h-64 object-cover"
                 />
