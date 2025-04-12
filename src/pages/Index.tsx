@@ -51,7 +51,7 @@ const Index = () => {
               animationDelay: '1s'
             }}></div>
               
-              <img src="https://tibizurada.store/img-10.png" alt="Estudante se preparando para concurso" className="w-full h-auto object-cover" />
+              <img alt="Estudante se preparando para concurso" className="w-full h-auto object-cover" src="/lovable-uploads/6db7a9e7-91f3-4c1b-b0cd-9602045ffe0e.png" />
             </div>
           </div>
         </div>
