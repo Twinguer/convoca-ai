@@ -2,15 +2,36 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getDemoUsers } from '@/integrations/supabase/community';
+import { useState, useEffect } from 'react';
+import { useDebounce } from '@/hooks/useDebounce';
 
-// Hook para buscar usuários da comunidade
+// Custom hook for debouncing values
+export const useDebounce = <T,>(value: T, delay: number): T => {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Hook to fetch community users
 export const useCommunityUsers = (searchQuery: string = '') => {
+  const debouncedSearchQuery = useDebounce(searchQuery, 500); // 500ms delay
+
   // Fetch real users from Supabase
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['community-users', searchQuery],
+    queryKey: ['community-users', debouncedSearchQuery],
     queryFn: async () => {
       try {
-        // Buscando usuários reais com metadados adicionais
+        // Fetching users with additional metadata
         let query = supabase
           .from('users_profiles')
           .select(`
@@ -25,8 +46,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           `);
           
         // Apply search filter if provided
-        if (searchQuery) {
-          query = query.ilike('name', `%${searchQuery}%`);
+        if (debouncedSearchQuery) {
+          query = query.ilike('name', `%${debouncedSearchQuery}%`);
         }
         
         // Execute the query with pagination
@@ -34,16 +55,16 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
         if (error) throw error;
 
-        // Adicionar contagens de seguidores para cada usuário
+        // Add follower and rankings counts for each user
         const usersWithCounts = await Promise.all(
           profiles.map(async (profile) => {
-            // Contar seguidores
-            const { count: followerCount, error: followerError } = await supabase
+            // Use RPC function to count followers
+            const { data: followerCount, error: followerError } = await supabase
               .rpc('count_user_followers', { user_id: profile.id });
 
             if (followerError) console.error('Error counting followers:', followerError);
 
-            // Contar rankings (posts)
+            // Count user rankings
             const { count: postCount, error: postError } = await supabase
               .from('user_rankings')
               .select('*', { count: 'exact', head: true })
@@ -51,11 +72,12 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
             if (postError) console.error('Error counting posts:', postError);
 
-            // Determinar o número de concursos aprovados
+            // Determine the number of concursos aprovados
             const approvalCount = profile.concursos_aprovados 
               ? profile.concursos_aprovados.split(',').filter(Boolean).length 
               : 0;
 
+            // Store the counts directly in the object to ensure persistence
             return {
               ...profile,
               followerCount: followerCount || 0,

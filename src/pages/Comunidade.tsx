@@ -56,6 +56,8 @@ const Comunidade: React.FC = () => {
   // Handle search query change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
+    // Note: We're using the useDebounce hook in the useCommunityUsers hook
+    // so we don't need to debounce the search here
   };
 
   // Loading state
@@ -88,6 +90,9 @@ const Comunidade: React.FC = () => {
           onChange={handleSearchChange}
           className="pl-10 w-full md:w-80"
         />
+        <p className="text-xs text-muted-foreground mt-1">
+          A busca será realizada após você parar de digitar...
+        </p>
       </div>
       
       {/* Display user grid or empty state */}
