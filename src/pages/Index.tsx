@@ -84,7 +84,7 @@ const Index = () => {
                   className="w-full h-auto rounded-xl object-cover"
                 />
                 
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent"></div>
+                <!--div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent"></div-->
                 <div className="absolute bottom-4 left-4 text-white">
                   <p className="font-semibold text-lg"></p>
                 </div>
