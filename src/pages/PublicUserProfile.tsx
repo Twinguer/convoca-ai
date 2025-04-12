@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Trophy, Users, BookOpen, Pen, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { FollowersColumn } from '@/components/profile/FollowersColumn';
 
 interface UserProfile {
   id: string;
@@ -38,14 +38,12 @@ const PublicUserProfile: React.FC = () => {
   const { toast } = useToast();
   const [isFollowing, setIsFollowing] = useState(false);
   
-  // Fetch user profile data
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['public-user-profile', id],
     queryFn: async () => {
       if (!id) return null;
       
       try {
-        // Get user profile
         const { data: profileData, error: profileError } = await supabase
           .from('users_profiles')
           .select('*')
@@ -54,13 +52,11 @@ const PublicUserProfile: React.FC = () => {
           
         if (profileError) throw profileError;
         
-        // Get follower count
         const { count: followerCount, error: followerError } = await supabase
           .rpc('count_user_followers', { user_id: id });
           
         if (followerError) console.error('Error counting followers:', followerError);
         
-        // Get participation count
         const { count: postCount, error: postError } = await supabase
           .from('user_rankings')
           .select('*', { count: 'exact', head: true })
@@ -86,7 +82,6 @@ const PublicUserProfile: React.FC = () => {
     enabled: !!id
   });
   
-  // Fetch user rankings
   const { data: rankings } = useQuery({
     queryKey: ['public-user-rankings', id],
     queryFn: async () => {
@@ -116,7 +111,7 @@ const PublicUserProfile: React.FC = () => {
           return {
             concursoId: item.concurso_id,
             concursoTitle: titulo,
-            position: 0, // Position would be calculated based on all rankings
+            position: 0,
             score: item.score
           };
         }) as UserRanking[];
@@ -128,7 +123,6 @@ const PublicUserProfile: React.FC = () => {
     enabled: !!id
   });
   
-  // Check if current user is following the profile user
   useEffect(() => {
     const checkFollowing = async () => {
       if (user && id && user.id !== id) {
@@ -151,7 +145,6 @@ const PublicUserProfile: React.FC = () => {
     checkFollowing();
   }, [user, id]);
   
-  // Handle follow/unfollow action
   const handleFollowToggle = async () => {
     if (!user) {
       toast({
@@ -167,7 +160,6 @@ const PublicUserProfile: React.FC = () => {
     
     try {
       if (isFollowing) {
-        // Unfollow
         const { error } = await supabase
           .from('user_followers')
           .delete()
@@ -182,7 +174,6 @@ const PublicUserProfile: React.FC = () => {
           description: `Você deixou de seguir ${profile?.name}.`
         });
       } else {
-        // Follow
         const { error } = await supabase
           .from('user_followers')
           .insert({
@@ -236,7 +227,6 @@ const PublicUserProfile: React.FC = () => {
     );
   }
   
-  // Process concursos_aprovados to count
   const approvalCount = profile.concursos_aprovados 
     ? profile.concursos_aprovados.split('\n').filter(Boolean).length 
     : 0;
@@ -252,26 +242,29 @@ const PublicUserProfile: React.FC = () => {
         Voltar para Comunidade
       </Button>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Left Column - Profile Card */}
-        <div className="md:col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="md:col-span-3">
+          <FollowersColumn userId={id || ''} />
+        </div>
+        
+        <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center space-y-4">
                 <Avatar className="h-32 w-32">
-                  {profile.avatar_url ? (
+                  {profile?.avatar_url ? (
                     <AvatarImage src={profile.avatar_url} alt={profile.name} />
                   ) : (
                     <AvatarFallback className="text-3xl">
-                      {getInitials(profile.name)}
+                      {getInitials(profile?.name || '')}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 
                 <div className="text-center">
-                  <h2 className="text-xl font-bold">{profile.name}</h2>
+                  <h2 className="text-xl font-bold">{profile?.name}</h2>
                   
-                  {profile.bio && (
+                  {profile?.bio && (
                     <p className="text-sm text-muted-foreground mt-2">{profile.bio}</p>
                   )}
                   
@@ -294,7 +287,7 @@ const PublicUserProfile: React.FC = () => {
                       <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
                       <span className="text-sm">Rankings</span>
                     </div>
-                    <span className="text-sm font-semibold">{profile.postCount || 0}</span>
+                    <span className="text-sm font-semibold">{profile?.postCount || 0}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
@@ -302,7 +295,7 @@ const PublicUserProfile: React.FC = () => {
                       <Users className="h-4 w-4 mr-2 text-blue-500" />
                       <span className="text-sm">Seguidores</span>
                     </div>
-                    <span className="text-sm font-semibold">{profile.followerCount || 0}</span>
+                    <span className="text-sm font-semibold">{profile?.followerCount || 0}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
@@ -318,7 +311,7 @@ const PublicUserProfile: React.FC = () => {
                       <Pen className="h-4 w-4 mr-2 text-purple-500" />
                       <span className="text-sm">Status</span>
                     </div>
-                    <span className="text-sm font-semibold">{profile.status_concurseiro || 'Na Ativa'}</span>
+                    <span className="text-sm font-semibold">{profile?.status_concurseiro || 'Na Ativa'}</span>
                   </div>
                 </div>
               </div>
@@ -326,8 +319,7 @@ const PublicUserProfile: React.FC = () => {
           </Card>
         </div>
         
-        {/* Right Column - Rankings and Approvals */}
-        <div className="md:col-span-3">
+        <div className="md:col-span-6">
           <Card className="mb-6">
             <CardHeader className="pb-3">
               <h3 className="text-xl font-bold">Rankings</h3>

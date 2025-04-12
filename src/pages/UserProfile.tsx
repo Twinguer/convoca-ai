@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
 import { fetchUserRankings } from '@/services/concursoService';
 import { UserRankingDisplay } from '@/types/concursos';
+import { FollowersColumn } from '@/components/profile/FollowersColumn';
 
 interface Follower {
   id: string;
@@ -316,8 +317,12 @@ const UserProfile = () => {
   
   return (
     <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="md:col-span-3">
+          {user && <FollowersColumn userId={user.id} />}
+        </div>
+        
+        <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center space-y-4">
@@ -400,38 +405,9 @@ const UserProfile = () => {
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="mt-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center">
-                <Users className="h-4 w-4 mr-2 text-blue-500" />
-                Seguidores ({followers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-2">
-                {followers.map((follower) => (
-                  <div key={follower.id} className="flex flex-col items-center text-center">
-                    <Avatar className="h-14 w-14">
-                      {follower.avatar_url ? (
-                        <AvatarImage src={follower.avatar_url} alt={follower.name} />
-                      ) : (
-                        <AvatarFallback>{getInitials(follower.name)}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    <span className="text-xs mt-1 truncate w-full">{follower.name}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <Button variant="link" className="w-full mt-2 text-sm">
-                Ver todos
-              </Button>
-            </CardContent>
-          </Card>
         </div>
         
-        <div className="md:col-span-3">
+        <div className="md:col-span-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Meu Perfil</CardTitle>

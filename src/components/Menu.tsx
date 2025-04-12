@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -40,21 +39,15 @@ const Menu = () => {
   };
 
   const isAdmin = () => {
-    // Verificar se o usuário possui privilégios de administrador
-    // Isso poderia ser baseado em metadados do usuário ou em uma tabela de roles
-    return user?.email?.includes('admin'); // Exemplo simples, deve ser substituído por lógica real
+    return user?.email?.includes('admin');
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="mr-4 hidden md:flex">
-          <Link to="/" className="mr-6 flex items-center space-x-2">
-            <img 
-              src="https://tibizurada.store/logo-2.png" 
-              alt="Convoca.ai Logo" 
-              className="h-8 w-auto"
-            />
+          <Link to="/" className="flex items-center">
+            <img src="https://tibizurada.store/logo-02.png" alt="Convoca Aí" className="h-10" />
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
@@ -148,9 +141,9 @@ const Menu = () => {
             <div className="px-7">
               <Link to="/" className="flex items-center space-x-2 mb-8">
                 <img 
-                  src="https://tibizurada.store/logo-2.png" 
-                  alt="Convoca.ai Logo" 
-                  className="h-8 w-auto"
+                  src="https://tibizurada.store/logo-02.png" 
+                  alt="Convoca Aí" 
+                  className="h-10"
                 />
               </Link>
             </div>
