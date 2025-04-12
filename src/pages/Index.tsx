@@ -212,7 +212,7 @@ const Index = () => {
                   <div className="relative overflow-hidden h-48">
                     <img 
                       src="https://tibizurada.store/img-03.png" 
-                      alt="Gabarito de concurso" 
+                      alt="Hora dos estudos" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -234,7 +234,7 @@ const Index = () => {
                   <div className="relative overflow-hidden h-48">
                     <img 
                       src="https://tibizurada.store/img-04.png" 
-                      alt="Resultado de concurso" 
+                      alt="Hora da prova" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -256,7 +256,7 @@ const Index = () => {
                   <div className="relative overflow-hidden h-48">
                     <img 
                       src="https://tibizurada.store/img-05.png" 
-                      alt="Sala de aula de concurso" 
+                      alt="Fui nomeado" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
