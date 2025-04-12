@@ -51,7 +51,7 @@ const Index = () => {
               animationDelay: '1s'
             }}></div>
               
-              <img alt="Estudante se preparando para concurso" className="w-full h-auto object-cover" src="/lovable-uploads/d89af21a-f47c-42ad-8495-d2a61345267f.png" />
+              <img alt="Estudante se preparando para concurso" className="w-full h-auto object-cover" src="/lovable-uploads/2a0c1b65-d603-47ad-8e30-b3454dfb08ab.png" />
             </div>
           </div>
         </div>
