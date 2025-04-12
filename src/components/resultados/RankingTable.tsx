@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -10,20 +11,39 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Ranking } from '@/services/rankingService';
 
 interface RankingTableProps {
   rankings?: Ranking[];
   currentUserId?: string | null;
+  isAuthenticated: boolean;
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   currentUserId,
+  isAuthenticated,
 }) => {
-  // Add debugging log to verify rankings data
-  console.log('RankingTable received rankings:', rankings);
+  if (!isAuthenticated) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Classificação Pós-prova</CardTitle>
+        </CardHeader>
+        <CardContent className="text-center">
+          <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
+          <Button asChild>
+            <Link to="/auth" className="flex items-center">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Cadastrar-se
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card>

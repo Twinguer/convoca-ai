@@ -8,7 +8,6 @@ import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 
 const ResultadosPage = () => {
@@ -23,8 +22,8 @@ const ResultadosPage = () => {
     refreshData 
   } = useResultadosData();
   
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const isAuthenticated = !!user;
   
   // Force a refresh of data when component mounts
   useEffect(() => {
@@ -32,13 +31,6 @@ const ResultadosPage = () => {
       refreshData();
     }
   }, [concurso?.id]);
-  
-  // Debug logs
-  useEffect(() => {
-    console.log('ResultadosPage - Concurso:', concurso);
-    console.log('ResultadosPage - Rankings:', rankings);
-    console.log('ResultadosPage - Participant Count:', participantCount);
-  }, [concurso, rankings, participantCount]);
   
   const handleRefresh = () => {
     refreshData();
@@ -105,10 +97,11 @@ const ResultadosPage = () => {
       
       <RankingTable 
         rankings={rankings} 
-        currentUserId={user?.id} 
+        currentUserId={user?.id}
+        isAuthenticated={isAuthenticated}
       />
       
-      {!user && rankings && rankings.length > 0 && (
+      {!isAuthenticated && (
         <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
           <p className="text-center text-gray-600">
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.

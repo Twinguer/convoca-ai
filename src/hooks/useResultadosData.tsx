@@ -9,6 +9,7 @@ import type { Ranking } from '@/services/rankingService';
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
   const { user } = useAuth();
+  const isAuthenticated = !!user;
   
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -16,31 +17,34 @@ export function useResultadosData() {
     queryFn: () => fetchConcursoById(id),
   });
   
-  // Fetch rankings with more frequent refetching
-  const { data: rankings, isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
+  // Fetch rankings with more frequent refetching - only if user is authenticated
+  const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
-    queryFn: () => fetchUserRankings(id),
+    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
     refetchInterval: 5000, // Refetch every 5 seconds
     refetchOnWindowFocus: true,
     staleTime: 2000, // Consider data stale after 2 seconds
+    enabled: isAuthenticated,
   });
   
-  // Fetch participant count
-  const { data: participantCount, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
+  // Fetch participant count - for all users (authenticated or not)
+  const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
   });
   
-  // Find user's ranking
-  const userRanking = rankings?.find((r: Ranking) => r.userId === user?.id);
+  // Find user's ranking - only if user is authenticated
+  const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount;
+  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount;
   
   // Function to manually refresh all data
   const refreshData = () => {
-    refetchRankings();
+    if (isAuthenticated) {
+      refetchRankings();
+    }
     refetchCount();
   };
   

@@ -56,7 +56,7 @@ export function useRankingsData() {
     queryFn: fetchRankings,
     // Garantindo que os dados sejam atualizados a cada 5 minutos mesmo para usuários não logados
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000, // Changed from cacheTime to gcTime
+    gcTime: 10 * 60 * 1000,
     // Desabilitando o retry para evitar muitas chamadas em caso de erro
     retry: 1
   });
