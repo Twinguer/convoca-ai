@@ -106,8 +106,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              // Fix: Add each profile to the followerProfiles array instead of spreading the array
-              profiles.forEach((profile: any) => {
+              profiles.forEach((profile) => {
                 followerProfiles.push({
                   id: profile.id,
                   name: profile.name,
@@ -139,8 +138,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              // Fix: Add each profile to the followingProfiles array instead of spreading the array
-              profiles.forEach((profile: any) => {
+              profiles.forEach((profile) => {
                 followingProfiles.push({
                   id: profile.id,
                   name: profile.name,
