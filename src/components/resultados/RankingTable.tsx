@@ -1,34 +1,23 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Ranking } from '@/services/rankingService';
-
 interface RankingTableProps {
   rankings?: Ranking[];
   currentUserId?: string | null;
   isAuthenticated: boolean;
 }
-
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   currentUserId,
-  isAuthenticated,
+  isAuthenticated
 }) => {
   if (!isAuthenticated) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle>Classificação Pós-prova</CardTitle>
         </CardHeader>
@@ -41,12 +30,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </Link>
           </Button>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-  
-  return (
-    <Card>
+  return <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
       </CardHeader>
@@ -59,23 +45,21 @@ export const RankingTable: React.FC<RankingTableProps> = ({
               </TableHead>
               <TableHead>Candidato</TableHead>
               <TableHead className="text-right">
-                Total <span className="inline-block">↕️</span>
+                Total 
               </TableHead>
               <TableHead className="text-right">
-                C.B. <span className="inline-block">↕️</span>
+                C.B. 
               </TableHead>
               <TableHead className="text-right">
-                C.E. <span className="inline-block">↕️</span>
+                C.E. 
               </TableHead>
               <TableHead className="text-right">
-                Dis. <span className="inline-block">↕️</span>
+                Dis. 
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rankings && rankings.length > 0 ? (
-              rankings.map((ranking) => (
-                <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
+            {rankings && rankings.length > 0 ? rankings.map(ranking => <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
                   <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -90,18 +74,13 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="text-right">{ranking.specificKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
+                </TableRow>) : <TableRow>
                 <TableCell colSpan={6} className="text-center py-4">
                   Nenhum participante registrado ainda
                 </TableCell>
-              </TableRow>
-            )}
+              </TableRow>}
           </TableBody>
         </Table>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
