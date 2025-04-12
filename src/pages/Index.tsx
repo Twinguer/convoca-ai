@@ -65,7 +65,7 @@ const Index = () => {
                 <img 
                   src="https://tibizurada.store/img-03.png" 
                   alt="Concurseiro estudando" 
-                  className="rounded-lg shadow-md w-full h-48 object-cover"
+                  className="rounded-lg shadow-md w-full h-100 object-cover"
                 />
                 <img 
                   src="https://tibizurada.store/img-04.png" 
