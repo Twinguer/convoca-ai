@@ -317,7 +317,7 @@ const Index = () => {
             <div>
               <div className="flex items-center mb-4">
                 <img 
-                  src="/lovable-uploads/6ee31b0a-acde-4381-aee0-cc2cef46d263.png" 
+                  src="https://tibizurada.store/logo-01.png" 
                   alt="Convoca.ai Logo" 
                   className="h-10 w-auto" 
                 />
