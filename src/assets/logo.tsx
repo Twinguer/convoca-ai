@@ -11,13 +11,13 @@ const Logo: React.FC<LogoProps> = ({ className = "h-8 w-auto", variant = 'defaul
   
   switch (variant) {
     case 'full':
-      logoSrc = "/lovable-uploads/f79fabe5-25d9-41f4-bfe6-3a3a22ec192e.png";
+      logoSrc = "https://tibizurada.store/logo-01.png";
       break;
     case 'large':
-      logoSrc = "/lovable-uploads/4e59f82e-1362-457d-b622-d06b371a8148.png";
+      logoSrc = "https://tibizurada.store/logo-01.png";
       break;
     default:
-      logoSrc = "/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png";
+      logoSrc = "https://tibizurada.store/logo-01.png";
   }
     
   return (
