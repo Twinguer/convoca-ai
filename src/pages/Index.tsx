@@ -74,8 +74,8 @@ const Index = () => {
             </div>
             
             <div className="relative animate-fade-in hidden md:block">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-float" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute top-0 right-0 w-48 h-48 rounded-full mix-blend-multiply filter blur-xl opacity-90 animate-float"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full mix-blend-multiply filter blur-xl opacity-90 animate-float" style={{ animationDelay: '1s' }}></div>
               
               <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <img 
