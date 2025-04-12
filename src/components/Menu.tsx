@@ -21,7 +21,8 @@ import {
   Users,
   Menu as MenuIcon,
   MessageSquare,
-  Trophy
+  Trophy,
+  Home
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -49,15 +50,18 @@ const Menu = () => {
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="mr-4 hidden md:flex">
           <Link to="/" className="mr-6 flex items-center space-x-2">
-            <span className="hidden font-bold sm:inline-block">
-              Convoca<span className="text-convoca-600">.</span>
-            </span>
+            <img 
+              src="https://tibizurada.store/logo-2.png" 
+              alt="Convoca.ai Logo" 
+              className="h-8 w-auto"
+            />
           </Link>
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
                 <Link to="/">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <Home className="mr-2 h-4 w-4" />
                     Home
                   </NavigationMenuLink>
                 </Link>
@@ -143,13 +147,16 @@ const Menu = () => {
           <SheetContent side="left" className="pr-0">
             <div className="px-7">
               <Link to="/" className="flex items-center space-x-2 mb-8">
-                <span className="font-bold text-xl">
-                  Convoca<span className="text-convoca-600">.</span>
-                </span>
+                <img 
+                  src="https://tibizurada.store/logo-2.png" 
+                  alt="Convoca.ai Logo" 
+                  className="h-8 w-auto"
+                />
               </Link>
             </div>
             <nav className="flex flex-col gap-4 px-7">
               <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-convoca-600" : "text-foreground/70")}>
+                <Home className="mr-2 h-4 w-4" />
                 Home
               </Link>
               <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-convoca-600" : "text-foreground/70")}>

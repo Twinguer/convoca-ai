@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -77,18 +76,11 @@ const Index = () => {
               <div className="absolute top-0 right-0 w-48 h-48 rounded-full mix-blend-multiply filter blur-xl opacity-90 animate-float"></div>
               <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full mix-blend-multiply filter blur-xl opacity-90 animate-float" style={{ animationDelay: '1s' }}></div>
               
-              <div className="relative rounded-xl overflow-hidden shadow-2xl">
-                <img 
-                  src="https://tibizurada.store/img-10.png" 
-                  alt="Estudante se preparando para concurso" 
-                  className="w-full h-auto rounded-xl object-cover"
-                />
-                
-                {/* <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent"></div> */}
-                <div className="absolute bottom-4 left-4 text-white">
-                  <p className="font-semibold text-lg"></p>
-                </div>
-              </div>
+              <img 
+                src="https://tibizurada.store/img-10.png" 
+                alt="Estudante se preparando para concurso" 
+                className="w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
@@ -212,7 +204,13 @@ const Index = () => {
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Convoca.ai</h3>
+              <div className="mb-4">
+                <img 
+                  src="https://tibizurada.store/logo-2.png" 
+                  alt="Convoca.ai Logo" 
+                  className="h-10 w-auto"
+                />
+              </div>
               <p className="mb-4">
                 Uma plataforma para acompanhar seus resultados. Uma comunidade só para quem é concurseiro.
               </p>

@@ -7,13 +7,22 @@ import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Trophy, UserPlus } from 'lucide-react';
+import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
-  const { concurso, rankings, participantCount, userRanking, isLoading, user, refreshData } = useResultadosData();
+  const { 
+    concurso, 
+    rankings, 
+    participantCount, 
+    userRanking, 
+    isLoading, 
+    user, 
+    refreshData 
+  } = useResultadosData();
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -71,6 +80,17 @@ const ResultadosPage = () => {
               Participar
             </Button>
           )}
+          
+          {concurso && !user && (
+            <Button 
+              onClick={() => navigate(`/auth`)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <LogIn className="h-4 w-4" />
+              Fazer Login
+            </Button>
+          )}
         </div>
       </div>
       
@@ -87,6 +107,14 @@ const ResultadosPage = () => {
         rankings={rankings} 
         currentUserId={user?.id} 
       />
+      
+      {!user && rankings && rankings.length > 0 && (
+        <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <p className="text-center text-gray-600">
+            Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
