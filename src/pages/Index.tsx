@@ -79,7 +79,7 @@ const Index = () => {
               
               <div className="relative rounded-xl overflow-hidden shadow-2xl">
                 <img 
-                  src="/lovable-uploads/3b493399-f5e4-4883-88aa-247b72e4e74b.png" 
+                  src="https://tibizurada.store/img-01.png" 
                   alt="Estudante se preparando para concurso" 
                   className="w-full h-auto rounded-xl object-cover"
                 />
