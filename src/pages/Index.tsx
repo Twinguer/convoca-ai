@@ -108,8 +108,8 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/f90af83d-1a4a-42c0-a60d-de4ba2bc8b50.png" 
-                      alt="Gabarito de concurso" 
+                      src="https://tibizurada.store/img-03.png" 
+                      alt="Tempo TBC" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -130,8 +130,8 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/4e59f82e-1362-457d-b622-d06b371a8148.png" 
-                      alt="Resultado de concurso" 
+                      src="https://tibizurada.store/img-04.png" 
+                      alt="Dia da Prova" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -152,8 +152,8 @@ const Index = () => {
                 <div className="feature-card group p-1 h-full">
                   <div className="relative overflow-hidden h-48">
                     <img 
-                      src="/lovable-uploads/73f7abd9-6b67-4ead-ba7f-32619c4476b3.png" 
-                      alt="Sala de aula de concurso" 
+                      src="https://tibizurada.store/img-04.png" 
+                      alt="Resultado" 
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
