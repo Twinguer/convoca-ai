@@ -104,7 +104,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
 
   return (
     <>
-      <Card className="mb-6">
+      <Card className="mb-1">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center">
             <Users className="h-4 w-4 mr-2 text-blue-500" />
@@ -117,7 +117,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
               <div className="animate-spin h-5 w-5 border-2 border-emerald-600 rounded-full border-t-transparent"></div>
             </div>
           ) : followers.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1">
               {followers.map((follower) => (
                 <div 
                   key={follower.id} 
@@ -162,7 +162,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
               <div className="animate-spin h-5 w-5 border-2 border-emerald-600 rounded-full border-t-transparent"></div>
             </div>
           ) : following.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1">
               {following.map((follow) => (
                 <div 
                   key={follow.id} 

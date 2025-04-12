@@ -22,10 +22,9 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
     // For each concurso, get the participant count
     const rankings = await Promise.all(
       concursos.map(async (concurso) => {
-        const { count, error: countError } = await supabase
-          .from('user_rankings')
-          .select('*', { count: 'exact', head: true })
-          .eq('concurso_id', concurso.id);
+        // Use RPC function to get participant count more reliably
+        const { data: countData, error: countError } = await supabase
+          .rpc('count_concurso_participants', { concurso_id: concurso.id });
 
         if (countError) {
           console.error('Error fetching participant count:', countError);
@@ -38,7 +37,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           banca: concurso.banca,
           concursoTitle: concurso.orgao,
           cargoTitle: concurso.titulo,
-          participantCount: count || 0
+          participantCount: countData || 0
         };
       })
     );
@@ -54,10 +53,10 @@ export function useRankingsData() {
   const { data: rankings = [], isLoading } = useQuery({
     queryKey: ['rankings'],
     queryFn: fetchRankings,
-    // Garantindo que os dados sejam atualizados a cada 5 minutos mesmo para usuários não logados
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    // Desabilitando o retry para evitar muitas chamadas em caso de erro
+    // Ensuring data is updated every 2 minutes for all users
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    // Disabling retry to avoid too many calls in case of error
     retry: 1
   });
 

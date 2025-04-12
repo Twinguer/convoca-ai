@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Trophy, Users, BookOpen, Pen, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
+import Logo from '@/assets/logo';
 
 interface UserProfile {
   id: string;
@@ -242,7 +243,7 @@ const PublicUserProfile: React.FC = () => {
         Voltar para Comunidade
       </Button>
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
           <FollowersColumn userId={id || ''} />
         </div>
@@ -385,6 +386,19 @@ const PublicUserProfile: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <footer className="mt-12 border-t pt-8 pb-6">
+        <div className="container mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="mb-4 md:mb-0">
+              <Logo className="h-16 w-auto" />
+            </div>
+            <p className="text-sm text-gray-600">
+              © {new Date().getFullYear()} Convoca Aí - Todos os direitos reservados
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

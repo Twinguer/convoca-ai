@@ -33,6 +33,7 @@ export function useResultadosData() {
     queryFn: () => getParticipantCount(id),
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
+    staleTime: 2000, // Make this more responsive for all users
   });
   
   // Find user's ranking - only if user is authenticated
