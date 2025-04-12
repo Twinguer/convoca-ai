@@ -131,9 +131,9 @@ const Index = () => {
                   <table className="min-w-full">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                        <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classificação</th>
                         <th className="py-2 px-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Pontos</th>
                         <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">C.B.</th>
                         <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">C.E.</th>
                         <th className="py-2 px-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Dis.</th>
