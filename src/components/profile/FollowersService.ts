@@ -20,7 +20,7 @@ export const fetchFollowers = async (userId: string): Promise<User[]> => {
 
     if (followersError) throw followersError;
 
-    // The error is occurring here. We need to correctly map the items in the array
+    // Correct mapping of follower data
     const formattedFollowers = followersData
       .filter(item => item.follower) // Filter out any null followers
       .map(item => ({
@@ -90,7 +90,7 @@ export const fetchFollowing = async (userId: string): Promise<User[]> => {
 
     if (followingError) throw followingError;
 
-    // Similar fix here for the following data
+    // Correct mapping of following data
     const formattedFollowing = followingData
       .filter(item => item.followed) // Filter out any null followed
       .map(item => ({
