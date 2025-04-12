@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -8,25 +7,22 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
-  const { user } = useAuth();
-
+  const {
+    user
+  } = useAuth();
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
   };
-
   const isAdmin = () => {
     return user?.email?.includes('admin');
   };
-
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
         <div className="flex items-center space-x-4">
           <NavigationMenu>
@@ -142,17 +138,11 @@ const Menu = () => {
         
         <div className="flex items-center">
           <Link to="/" className="mr-4">
-            <img 
-              alt="Convoca Aí" 
-              src="/lovable-uploads/ef63b99a-d622-4bc1-a515-34b3776155d5.png" 
-              className="h-10" 
-            />
+            
           </Link>
           <UserMenu />
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Menu;
