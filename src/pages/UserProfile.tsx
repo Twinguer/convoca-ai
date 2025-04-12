@@ -17,6 +17,7 @@ import { fetchUserRankings } from '@/services/concursoService';
 import { UserRankingDisplay } from '@/types/concursos';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
+import StatusSelect from '@/components/profile/StatusSelect';
 
 interface Follower {
   id: string;
@@ -65,7 +66,8 @@ const UserProfile = () => {
                 email: user.email,
                 name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                status_concurseiro: 'Na Ativa'
               })
               .select('*')
               .single();
@@ -446,18 +448,10 @@ const UserProfile = () => {
                         />
                       </div>
                       
-                      <div className="space-y-2">
-                        <Label htmlFor="status-concurseiro">Status de concurseiro</Label>
-                        <select
-                          id="status-concurseiro"
-                          value={statusConcurseiro}
-                          onChange={(e) => setStatusConcurseiro(e.target.value)}
-                          className="w-full p-2 border rounded-md focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
-                        >
-                          <option value="Na Ativa">Na Ativa</option>
-                          <option value="Aposentado">Aposentado</option>
-                        </select>
-                      </div>
+                      <StatusSelect 
+                        value={statusConcurseiro}
+                        onChange={setStatusConcurseiro}
+                      />
                       
                       <div className="space-y-2">
                         <Label htmlFor="bio">Biografia</Label>
@@ -586,7 +580,7 @@ const UserProfile = () => {
         </div>
       </div>
 
-      <footer className="mt-12 border-t pt-8 pb-6">
+      <footer className="mt-12 text-center">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between">
             <div className="mb-4 md:mb-0">

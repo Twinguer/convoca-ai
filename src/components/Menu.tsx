@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -147,9 +148,7 @@ const Menu = () => {
               className="h-10" 
             />
           </Link>
-          <nav className="flex items-center">
-            <UserMenu />
-          </nav>
+          <UserMenu />
         </div>
       </div>
     </header>

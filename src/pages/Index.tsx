@@ -2,10 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Briefcase, CheckSquare, BarChart3, ChartPieIcon, Mail, MapPin, Instagram } from 'lucide-react';
+import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Briefcase, CheckSquare, BarChart3, ChartPieIcon, Mail, MapPin, Instagram, Phone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+
 const Index = () => {
   const {
     user
@@ -92,7 +93,7 @@ const Index = () => {
                       <Trophy className="h-8 w-8 text-emerald-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">Cabeça fria.</h3>
-                    <p className="text-gray-600">Com o Convoca Aí vamos para a prova sabendo quem são os nossos concorrentes que em que nível eles estão. </p>
+                    <p className="text-gray-600">Com o Convoca Aí vamos para a prova sabendo quem são os nossos concorrentes que em que nível eles estão. </p>
                   </div>
                 </div>
               </CarouselItem>
@@ -145,49 +146,44 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Footer */}
+      {/* Footer - Updated with 4 columns */}
       <footer className="bg-gray-900 text-gray-300">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Column 1: Logo */}
             <div>
               <div className="mb-4">
                 <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-30 w-auto object-contain" />
               </div>
-              
-              <div className="flex items-center mt-4">
-                <Mail className="h-5 w-5 mr-2" />
-                <span>contato@convocai.com.br</span>
-              </div>
-              <div className="flex items-center mt-2">
-                <MapPin className="h-5 w-5 mr-2" />
-                <span>São Paulo</span>
-              </div>
-              <div className="flex items-center mt-2">
-                <Instagram className="h-5 w-5 mr-2" />
-                <a href="https://instagram.com/convoca.ai" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  @convoca.ai
-                </a>
-              </div>
+              <p className="text-gray-400 mt-4">Acompanhe seus resultados e conecte-se com outros concurseiros.</p>
             </div>
             
+            {/* Column 2: Contatos */}
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Links Rápidos</h3>
+              <h3 className="text-xl font-bold text-white mb-4">Contatos</h3>
               <ul className="space-y-2">
-                <li>
-                  <Link to="/editais" className="hover:text-white transition-colors">Editais</Link>
+                <li className="flex items-center">
+                  <Mail className="h-5 w-5 mr-2" />
+                  <span>contato@convocai.com.br</span>
                 </li>
-                <li>
-                  <Link to="/pre-classificacao" className="hover:text-white transition-colors">Pré-classificação</Link>
+                <li className="flex items-center mt-2">
+                  <Phone className="h-5 w-5 mr-2" />
+                  <span>(11) 99999-9999</span>
                 </li>
-                <li>
-                  <Link to="/comunidade" className="hover:text-white transition-colors">Comunidade</Link>
+                <li className="flex items-center mt-2">
+                  <MapPin className="h-5 w-5 mr-2" />
+                  <span>São Paulo</span>
                 </li>
-                <li>
-                  <Link to="/auth" className="hover:text-white transition-colors">Criar Conta</Link>
+                <li className="flex items-center mt-2">
+                  <Instagram className="h-5 w-5 mr-2" />
+                  <a href="https://instagram.com/convoca.ai" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    @convoca.ai
+                  </a>
                 </li>
               </ul>
             </div>
             
+            {/* Column 3: Suporte */}
             <div>
               <h3 className="text-xl font-bold text-white mb-4">Suporte</h3>
               <ul className="space-y-2">
@@ -206,7 +202,24 @@ const Index = () => {
               </ul>
             </div>
             
-            
+            {/* Column 4: Links Rápidos */}
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Links Rápidos</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link to="/editais" className="hover:text-white transition-colors">Editais</Link>
+                </li>
+                <li>
+                  <Link to="/pre-classificacao" className="hover:text-white transition-colors">Pré-classificação</Link>
+                </li>
+                <li>
+                  <Link to="/comunidade" className="hover:text-white transition-colors">Comunidade</Link>
+                </li>
+                <li>
+                  <Link to="/auth" className="hover:text-white transition-colors">Criar Conta</Link>
+                </li>
+              </ul>
+            </div>
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center">
@@ -216,4 +229,5 @@ const Index = () => {
       </footer>
     </div>;
 };
+
 export default Index;

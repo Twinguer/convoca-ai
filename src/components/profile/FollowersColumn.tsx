@@ -106,7 +106,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              followerProfiles.push(...profiles);
+              followerProfiles.push(...profiles as Follower[]);
             }
           }
           
@@ -132,7 +132,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             if (profilesError) throw profilesError;
             
             if (profiles) {
-              followingProfiles.push(...profiles);
+              followingProfiles.push(...profiles as Follower[]);
             }
           }
           
