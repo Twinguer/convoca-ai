@@ -68,6 +68,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             icon={<></>}
             onViewProfile={handleViewProfile}
             onViewAll={() => navigate(`/usuario/${userId}/seguidores`)}
+            showNamesInCards={false}
           />
         </CardContent>
       </Card>
@@ -88,6 +89,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             icon={<></>}
             onViewProfile={handleViewProfile}
             onViewAll={() => navigate(`/usuario/${userId}/seguindo`)}
+            showNamesInCards={false}
           />
         </CardContent>
       </Card>

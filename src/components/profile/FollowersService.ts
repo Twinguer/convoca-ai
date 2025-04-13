@@ -60,7 +60,7 @@ export const FollowersService = {
       }
 
       // Process the data to extract follower information
-      return (data as FollowerData[]).map(item => {
+      return (data as unknown as FollowerData[]).map(item => {
         const follower = item.follower;
         
         if (!follower) {
@@ -111,7 +111,7 @@ export const FollowersService = {
       }
 
       // Process the data to extract followed user information
-      return (data as FollowingData[]).map(item => {
+      return (data as unknown as FollowingData[]).map(item => {
         const followed = item.followed;
         
         if (!followed) {
