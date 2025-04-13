@@ -61,19 +61,21 @@ export const FollowersService = {
 
       // Process the data to extract follower information
       return data.map(item => {
-        if (!item.follower) {
+        const follower = item.follower;
+        
+        if (!follower) {
           return { id: '', name: 'Usuário', avatar_url: null };
         }
 
-        const profiles = item.follower.users_profiles;
-        if (!profiles || profiles.length === 0) {
-          return { id: item.follower.id, name: 'Usuário', avatar_url: null };
-        }
+        // Access the first item from the users_profiles array if it exists
+        const profile = Array.isArray(follower.users_profiles) && follower.users_profiles.length > 0 
+          ? follower.users_profiles[0] 
+          : null;
 
         return {
-          id: item.follower.id,
-          name: profiles[0].name || 'Usuário',
-          avatar_url: profiles[0].avatar_url
+          id: follower.id,
+          name: profile?.name || 'Usuário',
+          avatar_url: profile?.avatar_url || null
         };
       });
     } catch (error) {
@@ -110,19 +112,21 @@ export const FollowersService = {
 
       // Process the data to extract followed user information
       return data.map(item => {
-        if (!item.followed) {
+        const followed = item.followed;
+        
+        if (!followed) {
           return { id: '', name: 'Usuário', avatar_url: null };
         }
 
-        const profiles = item.followed.users_profiles;
-        if (!profiles || profiles.length === 0) {
-          return { id: item.followed.id, name: 'Usuário', avatar_url: null };
-        }
+        // Access the first item from the users_profiles array if it exists
+        const profile = Array.isArray(followed.users_profiles) && followed.users_profiles.length > 0 
+          ? followed.users_profiles[0] 
+          : null;
 
         return {
-          id: item.followed.id,
-          name: profiles[0].name || 'Usuário',
-          avatar_url: profiles[0].avatar_url
+          id: followed.id,
+          name: profile?.name || 'Usuário',
+          avatar_url: profile?.avatar_url || null
         };
       });
     } catch (error) {

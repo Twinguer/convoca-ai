@@ -26,7 +26,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   };
 
   if (!isAuthenticated) {
-    return <Card>
+    return (
+      <Card>
         <CardHeader>
           <CardTitle>Classificação Pós-prova</CardTitle>
         </CardHeader>
@@ -39,10 +40,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </Link>
           </Button>
         </CardContent>
-      </Card>;
+      </Card>
+    );
   }
   
-  return <Card>
+  return (
+    <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
       </CardHeader>
@@ -102,5 +105,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           </TableBody>
         </Table>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
