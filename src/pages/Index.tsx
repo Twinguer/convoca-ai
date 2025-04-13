@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Users } from 'lucide-react';
+import { ChevronRight, Users, FileText, Trophy, Briefcase, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
