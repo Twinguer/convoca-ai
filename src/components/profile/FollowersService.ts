@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface FollowerProfile {
+export interface User {
   id: string;
   name: string;
   avatar_url: string | null;
@@ -34,7 +34,7 @@ interface FollowingData {
 
 export const FollowersService = {
   // Fetch user's followers
-  async getUserFollowers(userId: string) {
+  async getUserFollowers(userId: string): Promise<User[]> {
     try {
       const { data, error } = await supabase
         .from('user_followers')
@@ -55,19 +55,25 @@ export const FollowersService = {
         throw error;
       }
 
-      // Use a type assertion with 'as unknown as FollowerData[]' to safely convert
-      return (data as unknown as FollowerData[]).map(item => {
-        // Correctly accessing the nested properties
-        const followerProfile = item.follower && 
-          Array.isArray(item.follower.users_profiles) && 
-          item.follower.users_profiles.length > 0
-            ? item.follower.users_profiles[0]
-            : null;
-        
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // Process the data to extract follower information
+      return data.map(item => {
+        if (!item.follower) {
+          return { id: '', name: 'Usuário', avatar_url: null };
+        }
+
+        const profiles = item.follower.users_profiles;
+        if (!profiles || profiles.length === 0) {
+          return { id: item.follower.id, name: 'Usuário', avatar_url: null };
+        }
+
         return {
-          id: item.follower?.id || '',
-          name: followerProfile?.name || 'Usuário',
-          avatar_url: followerProfile?.avatar_url || null,
+          id: item.follower.id,
+          name: profiles[0].name || 'Usuário',
+          avatar_url: profiles[0].avatar_url
         };
       });
     } catch (error) {
@@ -77,7 +83,7 @@ export const FollowersService = {
   },
 
   // Fetch users being followed by the user
-  async getUserFollowing(userId: string) {
+  async getUserFollowing(userId: string): Promise<User[]> {
     try {
       const { data, error } = await supabase
         .from('user_followers')
@@ -97,20 +103,26 @@ export const FollowersService = {
       if (error) {
         throw error;
       }
+      
+      if (!data || data.length === 0) {
+        return [];
+      }
 
-      // Use a type assertion with 'as unknown as FollowingData[]' to safely convert
-      return (data as unknown as FollowingData[]).map(item => {
-        // Correctly accessing the nested properties
-        const followedProfile = item.followed && 
-          Array.isArray(item.followed.users_profiles) && 
-          item.followed.users_profiles.length > 0
-            ? item.followed.users_profiles[0]
-            : null;
+      // Process the data to extract followed user information
+      return data.map(item => {
+        if (!item.followed) {
+          return { id: '', name: 'Usuário', avatar_url: null };
+        }
+
+        const profiles = item.followed.users_profiles;
+        if (!profiles || profiles.length === 0) {
+          return { id: item.followed.id, name: 'Usuário', avatar_url: null };
+        }
 
         return {
-          id: item.followed?.id || '',
-          name: followedProfile?.name || 'Usuário',
-          avatar_url: followedProfile?.avatar_url || null,
+          id: item.followed.id,
+          name: profiles[0].name || 'Usuário',
+          avatar_url: profiles[0].avatar_url
         };
       });
     } catch (error) {
@@ -120,7 +132,7 @@ export const FollowersService = {
   },
 
   // Check if one user follows another
-  async checkIfFollowing(followerId: string, followedId: string) {
+  async checkIfFollowing(followerId: string, followedId: string): Promise<boolean> {
     try {
       const { count, error } = await supabase
         .from('user_followers')
@@ -140,7 +152,7 @@ export const FollowersService = {
   },
 
   // Toggle follow status
-  async toggleFollow(followerId: string, followedId: string) {
+  async toggleFollow(followerId: string, followedId: string): Promise<boolean> {
     try {
       const isFollowing = await this.checkIfFollowing(followerId, followedId);
 

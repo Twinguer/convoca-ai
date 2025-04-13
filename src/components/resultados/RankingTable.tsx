@@ -31,7 +31,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           <CardTitle>Classificação Pós-prova</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
+          <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking completo.</p>
           <Button asChild>
             <Link to="/auth" className="flex items-center">
               <UserPlus className="mr-2 h-4 w-4" />

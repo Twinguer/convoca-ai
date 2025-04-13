@@ -101,7 +101,7 @@ const ResultadosPage = () => {
       <RankingTable 
         rankings={rankings} 
         currentUserId={user?.id}
-        isAuthenticated={true} // Changed from isAuthenticated to true to allow all visitors to see rankings
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );
