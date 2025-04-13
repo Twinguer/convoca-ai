@@ -33,7 +33,7 @@ export const RankingCard: React.FC<RankingCardProps> = ({
             <Badge variant="secondary">{userRanking.score} pontos</Badge>
           </p>}
         
-        {!userRanking && <p className="mt-4 text-sm text-gray-600">Faça login para ver a quantidade de participantes atual.</p>}
+        {!userRanking}
       </CardContent>
     </Card>;
 };
