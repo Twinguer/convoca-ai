@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Users, BookOpen, Pen, ArrowLeft } from 'lucide-react';
+import { Trophy, Users, BookOpen, Pen, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
+import { Link } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -299,7 +300,20 @@ const PublicUserProfile: React.FC = () => {
               <h3 className="text-xl font-bold">Rankings</h3>
             </CardHeader>
             <CardContent>
-              {rankings && rankings.length > 0 ? (
+              {!user ? (
+                <div className="text-center py-6">
+                  <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground mb-4">
+                    Você precisa estar cadastrado para visualizar os rankings.
+                  </p>
+                  <Button asChild>
+                    <Link to="/auth" className="flex items-center">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Cadastrar-se
+                    </Link>
+                  </Button>
+                </div>
+              ) : rankings && rankings.length > 0 ? (
                 <div className="space-y-4">
                   {rankings.map((ranking, index) => (
                     <Card key={ranking.concursoId} className="overflow-hidden">
