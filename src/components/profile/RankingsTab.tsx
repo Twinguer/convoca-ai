@@ -3,15 +3,34 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Trophy } from 'lucide-react';
+import { Trophy, UserPlus } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
+import { Link } from 'react-router-dom';
 
 interface RankingsTabProps {
   userRankings: UserRankingDisplay[];
+  isAuthenticated: boolean;
 }
 
-const RankingsTab: React.FC<RankingsTabProps> = ({ userRankings }) => {
+const RankingsTab: React.FC<RankingsTabProps> = ({ userRankings, isAuthenticated }) => {
   const navigate = useNavigate();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-6">
+        <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <p className="text-muted-foreground mb-4">
+          Você precisa estar cadastrado para visualizar os rankings.
+        </p>
+        <Button asChild>
+          <Link to="/auth" className="flex items-center">
+            <UserPlus className="mr-2 h-4 w-4" />
+            Cadastrar-se
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>
