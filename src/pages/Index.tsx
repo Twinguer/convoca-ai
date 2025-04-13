@@ -169,7 +169,7 @@ const Index = () => {
                 </li>
                 <li className="flex items-center mt-2">
                   <Phone className="h-5 w-5 mr-2" />
-                  <span>(11) 99999-9999</span>
+                  <span>(11) 95350-1988</span>
                 </li>
                 <li className="flex items-center mt-2">
                   <MapPin className="h-5 w-5 mr-2" />
