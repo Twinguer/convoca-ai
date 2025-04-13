@@ -21,17 +21,19 @@ import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
-
 interface Follower {
   id: string;
   name: string;
   avatar_url?: string | null;
 }
-
 const UserProfile = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [concursosAprovados, setConcursosAprovados] = useState('');
@@ -43,7 +45,6 @@ const UserProfile = () => {
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
-
   const {
     data: profile,
     isLoading,
@@ -99,7 +100,6 @@ const UserProfile = () => {
     refetchInterval: false,
     staleTime: 300000
   });
-
   const {
     data: rankings
   } = useQuery({
@@ -129,14 +129,18 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
-
   const {
     data: followerData
   } = useQuery({
     queryKey: ['user-followers-count', user?.id],
     queryFn: async () => {
       if (!user) return 0;
-      const { data, error } = await supabase.rpc('count_user_followers', { user_id: user.id });
+      const {
+        data,
+        error
+      } = await supabase.rpc('count_user_followers', {
+        user_id: user.id
+      });
       if (error) {
         console.error('Error fetching follower count:', error);
         return 0;
@@ -145,19 +149,16 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
-
   useEffect(() => {
     if (followerData !== undefined) {
       setFollowersCount(followerData);
     }
   }, [followerData]);
-
   useEffect(() => {
     if (rankings && rankings.length > 0) {
       setUserRankings(rankings);
     }
   }, [rankings]);
-
   useEffect(() => {
     if (profile) {
       console.log("Setting profile state with data:", profile);
@@ -170,7 +171,6 @@ const UserProfile = () => {
       setProfileText(profile.profile_text || '');
     }
   }, [profile]);
-
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!event.target.files || !event.target.files.length) {
@@ -229,7 +229,6 @@ const UserProfile = () => {
       setUploading(false);
     }
   };
-
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -277,20 +276,16 @@ const UserProfile = () => {
       setSaving(false);
     }
   };
-
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-
   const concursosAprovadosCount = concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0;
-
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
       </div>;
   }
-
   if (!user) {
     useEffect(() => {
       navigate("/auth");
@@ -299,22 +294,12 @@ const UserProfile = () => {
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
       </div>;
   }
-
-  return (
-    <div className="container mx-auto p-4 py-8">
+  return <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
-              <ProfileHeader
-                name={name}
-                email={user.email || ''}
-                avatarUrl={avatarUrl}
-                uploading={uploading}
-                handleAvatarUpload={handleAvatarUpload}
-                statusConcurseiro={statusConcurseiro}
-                profileText={profileText}
-              />
+              <ProfileHeader name={name} email={user.email || ''} avatarUrl={avatarUrl} uploading={uploading} handleAvatarUpload={handleAvatarUpload} statusConcurseiro={statusConcurseiro} profileText={profileText} />
             </CardContent>
           </Card>
         </div>
@@ -339,75 +324,40 @@ const UserProfile = () => {
               
               <TabsContent value="profile">
                 <CardContent className="pt-6 space-y-4">
-                  <ProfileInfoTab
-                    name={name}
-                    setName={setName}
-                    email={user.email || ''}
-                    bio={bio}
-                    setBio={setBio}
-                    statusConcurseiro={statusConcurseiro}
-                    setStatusConcurseiro={setStatusConcurseiro}
-                    profileText={profileText}
-                    setProfileText={setProfileText}
-                  />
+                  <ProfileInfoTab name={name} setName={setName} email={user.email || ''} bio={bio} setBio={setBio} statusConcurseiro={statusConcurseiro} setStatusConcurseiro={setStatusConcurseiro} profileText={profileText} setProfileText={setProfileText} />
                 </CardContent>
               </TabsContent>
               
               <TabsContent value="concursos">
                 <CardContent className="pt-6 space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="concursos-aprovados">Concursos em que foi aprovado</Label>
-                    <Textarea 
-                      id="concursos-aprovados" 
-                      value={concursosAprovados} 
-                      onChange={e => setConcursosAprovados(e.target.value)} 
-                      placeholder="Liste os concursos em que você foi aprovado (um por linha)" 
-                      rows={5} 
-                    />
+                    <Label htmlFor="concursos-aprovados">Aprovações:</Label>
+                    <Textarea id="concursos-aprovados" value={concursosAprovados} onChange={e => setConcursosAprovados(e.target.value)} placeholder="Liste os concursos em que você foi aprovado (um por linha)" rows={5} />
                     <p className="text-sm text-muted-foreground">
                       Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
                     </p>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="concursos-participando">Concursos em que está participando</Label>
-                    <Textarea 
-                      id="concursos-participando" 
-                      value={concursosParticipando} 
-                      onChange={e => setConcursosParticipando(e.target.value)} 
-                      placeholder="Liste os concursos em que você está participando atualmente (um por linha)" 
-                      rows={5} 
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Dica: Liste um por linha, incluindo o nome do concurso, órgão e data da prova
-                    </p>
-                  </div>
+                  
                 </CardContent>
               </TabsContent>
               
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
-                  <RankingsTab 
-                    userRankings={userRankings}
-                    isAuthenticated={!!user}
-                  />
+                  <RankingsTab userRankings={userRankings} isAuthenticated={!!user} />
                 </CardContent>
               </TabsContent>
             </Tabs>
             
             <CardFooter className="flex justify-end py-6">
               <Button onClick={handleSaveProfile} disabled={saving} className="relative">
-                {saving ? (
-                  <>
+                {saving ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Salvando...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Check className="h-4 w-4 mr-2" />
                     Salvar alterações
-                  </>
-                )}
+                  </>}
               </Button>
             </CardFooter>
           </Card>
@@ -430,8 +380,6 @@ const UserProfile = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default UserProfile;
