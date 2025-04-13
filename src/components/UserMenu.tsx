@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, LogOut, Award, Users, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -60,11 +61,7 @@ const UserMenu: React.FC = () => {
   };
   
   if (!user) {
-    return (
-      <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
-        Entrar
-      </Button>
-    );
+    return null;
   }
   
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';

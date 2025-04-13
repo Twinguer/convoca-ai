@@ -1,143 +1,137 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User } from './UsersList';
 
-export const fetchFollowers = async (userId: string): Promise<User[]> => {
-  try {
-    // First try the joined approach
-    const { data: followersData, error: followersError } = await supabase
-      .from('user_followers')
-      .select(`
-        follower_id,
-        follower:follower_id(
-          id,
-          name,
-          avatar_url
-        )
-      `)
-      .eq('followed_id', userId)
-      .limit(10);
-
-    if (followersError) throw followersError;
-
-    // Correct mapping of follower data
-    const formattedFollowers = followersData
-      .filter(item => item.follower) // Filter out any null followers
-      .map(item => ({
-        id: item.follower.id,
-        name: item.follower.name,
-        avatar_url: item.follower.avatar_url
-      }));
-
-    return formattedFollowers;
-  } catch (error) {
-    console.error('Error fetching followers with join:', error);
-    
-    // Fallback to fetching in two steps
+export const FollowersService = {
+  // Fetch user's followers
+  async getUserFollowers(userId: string) {
     try {
-      const { data: followerIds, error: followerIdsError } = await supabase
+      const { data, error } = await supabase
         .from('user_followers')
-        .select('follower_id')
-        .eq('followed_id', userId)
-        .limit(10);
-        
-      if (followerIdsError) throw followerIdsError;
-      
-      const followerProfiles: User[] = [];
-      
-      if (followerIds && followerIds.length > 0) {
-        const followerIdList = followerIds.map(f => f.follower_id);
-        
-        const { data: profiles, error: profilesError } = await supabase
-          .from('users_profiles')
-          .select('id, name, avatar_url')
-          .in('id', followerIdList);
-          
-        if (profilesError) throw profilesError;
-        
-        if (profiles) {
-          return profiles.map(profile => ({
-            id: profile.id,
-            name: profile.name,
-            avatar_url: profile.avatar_url
-          }));
-        }
+        .select(`
+          id,
+          follower: follower_id (
+            id,
+            users_profiles (
+              id,
+              name,
+              avatar_url
+            )
+          )
+        `)
+        .eq('followed_id', userId);
+
+      if (error) {
+        throw error;
       }
-      
-      return followerProfiles;
-    } catch (fallbackError) {
-      console.error('Error using fallback method for followers:', fallbackError);
+
+      return data.map(item => {
+        // Correctly accessing the nested properties
+        const followerProfile = Array.isArray(item.follower?.users_profiles) && item.follower.users_profiles.length > 0
+          ? item.follower.users_profiles[0]
+          : null;
+        
+        return {
+          id: item.follower?.id || '',
+          name: followerProfile?.name || 'Usuário',
+          avatar_url: followerProfile?.avatar_url || null,
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching followers:', error);
       return [];
     }
-  }
-};
+  },
 
-export const fetchFollowing = async (userId: string): Promise<User[]> => {
-  try {
-    // First try the joined approach
-    const { data: followingData, error: followingError } = await supabase
-      .from('user_followers')
-      .select(`
-        followed_id,
-        followed:followed_id(
-          id,
-          name,
-          avatar_url
-        )
-      `)
-      .eq('follower_id', userId)
-      .limit(10);
-
-    if (followingError) throw followingError;
-
-    // Correct mapping of following data
-    const formattedFollowing = followingData
-      .filter(item => item.followed) // Filter out any null followed
-      .map(item => ({
-        id: item.followed.id,
-        name: item.followed.name,
-        avatar_url: item.followed.avatar_url
-      }));
-
-    return formattedFollowing;
-  } catch (error) {
-    console.error('Error fetching following with join:', error);
-    
-    // Fallback to fetching in two steps
+  // Fetch users being followed by the user
+  async getUserFollowing(userId: string) {
     try {
-      const { data: followingIds, error: followingIdsError } = await supabase
+      const { data, error } = await supabase
         .from('user_followers')
-        .select('followed_id')
-        .eq('follower_id', userId)
-        .limit(10);
-        
-      if (followingIdsError) throw followingIdsError;
-      
-      const followingProfiles: User[] = [];
-      
-      if (followingIds && followingIds.length > 0) {
-        const followingIdList = followingIds.map(f => f.followed_id);
-        
-        const { data: profiles, error: profilesError } = await supabase
-          .from('users_profiles')
-          .select('id, name, avatar_url')
-          .in('id', followingIdList);
-          
-        if (profilesError) throw profilesError;
-        
-        if (profiles) {
-          return profiles.map(profile => ({
-            id: profile.id,
-            name: profile.name,
-            avatar_url: profile.avatar_url
-          }));
-        }
+        .select(`
+          id,
+          followed: followed_id (
+            id,
+            users_profiles (
+              id,
+              name,
+              avatar_url
+            )
+          )
+        `)
+        .eq('follower_id', userId);
+
+      if (error) {
+        throw error;
       }
-      
-      return followingProfiles;
-    } catch (fallbackError) {
-      console.error('Error using fallback method for following:', fallbackError);
+
+      return data.map(item => {
+        // Correctly accessing the nested properties
+        const followedProfile = Array.isArray(item.followed?.users_profiles) && item.followed.users_profiles.length > 0
+          ? item.followed.users_profiles[0]
+          : null;
+
+        return {
+          id: item.followed?.id || '',
+          name: followedProfile?.name || 'Usuário',
+          avatar_url: followedProfile?.avatar_url || null,
+        };
+      });
+    } catch (error) {
+      console.error('Error fetching following:', error);
       return [];
+    }
+  },
+
+  // Check if one user follows another
+  async checkIfFollowing(followerId: string, followedId: string) {
+    try {
+      const { count, error } = await supabase
+        .from('user_followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', followerId)
+        .eq('followed_id', followedId);
+
+      if (error) {
+        throw error;
+      }
+
+      return count > 0;
+    } catch (error) {
+      console.error('Error checking follow status:', error);
+      return false;
+    }
+  },
+
+  // Toggle follow status
+  async toggleFollow(followerId: string, followedId: string) {
+    try {
+      const isFollowing = await this.checkIfFollowing(followerId, followedId);
+
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('user_followers')
+          .delete()
+          .eq('follower_id', followerId)
+          .eq('followed_id', followedId);
+
+        if (error) throw error;
+        return false; // Not following anymore
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('user_followers')
+          .insert({
+            follower_id: followerId,
+            followed_id: followedId
+          });
+
+        if (error) throw error;
+        return true; // Now following
+      }
+    } catch (error) {
+      console.error('Error toggling follow status:', error);
+      throw error;
     }
   }
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,10 +7,12 @@ import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Brie
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+
 const Index = () => {
   const {
     user
   } = useAuth();
+  
   return <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
       {/* Hero Section with Image */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -21,6 +24,11 @@ const Index = () => {
         <div className="container mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="animate-fade-in">
+              {/* Logo acima do texto principal */}
+              <div className="mb-8 flex justify-center md:justify-start">
+                <img src="https://tibizurada.store/logo-01.png" alt="Convoca.ai Logo" className="h-32 w-auto object-contain" />
+              </div>
+              
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
                 Somos todos concurseiros onde o que conta é o HBC. 
               </h1>
@@ -29,7 +37,7 @@ const Index = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                <Link to="/editais">
+                <Link to="/pre-classificacao">
                   <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
                     Rankings
                     <ChevronRight className="ml-2 h-5 w-5" />
@@ -228,4 +236,5 @@ const Index = () => {
       </footer>
     </div>;
 };
+
 export default Index;
