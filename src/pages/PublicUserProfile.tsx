@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -223,6 +224,7 @@ const PublicUserProfile: React.FC = () => {
       </Button>
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Left Column - Profile Card */}
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
@@ -287,13 +289,10 @@ const PublicUserProfile: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-
-          <div className="mt-4">
-            <FollowersColumn userId={id || ''} />
-          </div>
         </div>
         
-        <div className="md:col-span-9">
+        {/* Middle Column - Rankings and Concursos */}
+        <div className="md:col-span-6">
           <Card className="mb-4">
             <CardHeader className="pb-3">
               <h3 className="text-xl font-bold">Rankings</h3>
@@ -354,6 +353,11 @@ const PublicUserProfile: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Right Column - Followers */}
+        <div className="md:col-span-3">
+          <FollowersColumn userId={id || ''} />
         </div>
       </div>
     </div>

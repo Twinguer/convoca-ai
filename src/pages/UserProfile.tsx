@@ -19,6 +19,7 @@ import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
+import ProfileHeader from '@/components/profile/ProfileHeader';
 
 interface Follower {
   id: string;
@@ -37,7 +38,7 @@ const UserProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [followers, setFollowers] = useState<Follower[]>([]);
+  const [followersCount, setFollowersCount] = useState(0);
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
 
@@ -126,31 +127,27 @@ const UserProfile = () => {
     enabled: !!user
   });
 
+  const {
+    data: followerData
+  } = useQuery({
+    queryKey: ['user-followers-count', user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { data, error } = await supabase.rpc('count_user_followers', { user_id: user.id });
+      if (error) {
+        console.error('Error fetching follower count:', error);
+        return 0;
+      }
+      return data || 0;
+    },
+    enabled: !!user
+  });
+
   useEffect(() => {
-    if (user) {
-      setFollowers([{
-        id: '1',
-        name: 'Ana Silva',
-        avatar_url: null
-      }, {
-        id: '2',
-        name: 'João Pereira',
-        avatar_url: null
-      }, {
-        id: '3',
-        name: 'Maria Oliveira',
-        avatar_url: null
-      }, {
-        id: '4',
-        name: 'Carlos Santos',
-        avatar_url: null
-      }, {
-        id: '5',
-        name: 'Juliana Costa',
-        avatar_url: null
-      }]);
+    if (followerData !== undefined) {
+      setFollowersCount(followerData);
     }
-  }, [user]);
+  }, [followerData]);
 
   useEffect(() => {
     if (rankings && rankings.length > 0) {
@@ -280,6 +277,8 @@ const UserProfile = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
+  const concursosAprovadosCount = concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0;
+
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
@@ -301,93 +300,22 @@ const UserProfile = () => {
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
-              <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-32 w-32">
-                  {avatarUrl ? (
-                    <AvatarImage src={avatarUrl} alt={name} />
-                  ) : (
-                    <AvatarFallback className="text-3xl">
-                      {name ? getInitials(name) : <User className="h-12 w-12" />}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                
-                <div className="text-center">
-                  <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  
-                  <div className="mt-2">
-                    <Label htmlFor="avatar" className="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
-                      {uploading ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Enviando...
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Upload className="h-4 w-4" />
-                          Alterar foto
-                        </div>
-                      )}
-                    </Label>
-                    <Input 
-                      id="avatar" 
-                      type="file" 
-                      className="hidden" 
-                      onChange={handleAvatarUpload} 
-                      accept="image/*" 
-                      disabled={uploading} 
-                    />
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="w-full space-y-2">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
-                      <span className="text-sm">Rankings</span>
-                    </div>
-                    <span className="text-sm font-semibold">{userRankings.length}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Seguidores</span>
-                    </div>
-                    <span className="text-sm font-semibold">{followers.length}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <BookOpen className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Aprovações</span>
-                    </div>
-                    <span className="text-sm font-semibold">
-                      {concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Pen className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="text-sm">Status</span>
-                    </div>
-                    <span className="text-sm font-semibold">{statusConcurseiro}</span>
-                  </div>
-                </div>
-              </div>
+              <ProfileHeader
+                name={name}
+                email={user.email || ''}
+                avatarUrl={avatarUrl}
+                uploading={uploading}
+                handleAvatarUpload={handleAvatarUpload}
+                userRankingsCount={userRankings.length}
+                followersCount={followersCount}
+                concursosAprovadosCount={concursosAprovadosCount}
+                statusConcurseiro={statusConcurseiro}
+              />
             </CardContent>
           </Card>
-          
-          <div className="mt-4">
-            {user && <FollowersColumn userId={user.id} />}
-          </div>
         </div>
         
-        <div className="md:col-span-9">
+        <div className="md:col-span-6">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Meu Perfil</CardTitle>
@@ -453,8 +381,10 @@ const UserProfile = () => {
               
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
-                  {userRankings && userRankings.length > 0 ? <div className="space-y-1">
-                      {userRankings.map((ranking, index) => <Card key={ranking.concursoId} className="overflow-hidden">
+                  {userRankings && userRankings.length > 0 ? 
+                    <div className="space-y-1">
+                      {userRankings.map((ranking, index) => 
+                        <Card key={ranking.concursoId} className="overflow-hidden">
                           <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-4 flex justify-between items-center">
                             <div>
                               <h3 className="font-medium">{ranking.concursoTitle}</h3>
@@ -475,8 +405,11 @@ const UserProfile = () => {
                               Ver ranking completo
                             </Button>
                           </div>
-                        </Card>)}
-                    </div> : <div className="text-center py-8">
+                        </Card>
+                      )}
+                    </div> 
+                    : 
+                    <div className="text-center py-8">
                       <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                       <h3 className="text-lg font-medium">Você ainda não tem rankings</h3>
                       <p className="text-muted-foreground">
@@ -485,7 +418,8 @@ const UserProfile = () => {
                       <Button variant="outline" className="mt-4" onClick={() => navigate('/concursos')}>
                         Ver concursos disponíveis
                       </Button>
-                    </div>}
+                    </div>
+                  }
                 </CardContent>
               </TabsContent>
             </Tabs>
@@ -506,6 +440,10 @@ const UserProfile = () => {
               </Button>
             </CardFooter>
           </Card>
+        </div>
+
+        <div className="md:col-span-3">
+          {user && <FollowersColumn userId={user.id} />}
         </div>
       </div>
 
