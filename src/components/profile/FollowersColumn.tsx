@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Users } from 'lucide-react';
-import { fetchUserFollowers } from './FollowersService';
+import { getFollowers } from './FollowersService';
 
 interface Follower {
   id: string;
@@ -26,7 +26,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
     const loadFollowers = async () => {
       try {
         setLoading(true);
-        const followersList = await fetchUserFollowers(userId);
+        const followersList = await getFollowers(userId);
         setFollowers(followersList);
       } catch (error) {
         console.error('Error loading followers:', error);
