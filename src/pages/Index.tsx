@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { ChevronRight, Users, FileText, Trophy, Briefcase, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-
 const Index = () => {
-  const { user } = useAuth();
-  
+  const {
+    user
+  } = useAuth();
   return <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
       {/* Hero Section with Image */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -21,19 +21,14 @@ const Index = () => {
             <div className="animate-fade-in">
               {/* Logo added above the main heading */}
               <div className="flex justify-center md:justify-start mb-8">
-                <img 
-                  src="https://tibizurada.store/logo-01.png" 
-                  alt="Convoca.ai Logo" 
-                  className="h-auto max-w-[350px] md:max-w-[437px]" // Increased by 25%: 280 * 1.25 = 350, and 350 * 1.25 = 437
-                />
+                <img src="https://tibizurada.store/logo-01.png" alt="Convoca.ai Logo" className="h-auto max-w-[350px] md:max-w-[437px]" // Increased by 25%: 280 * 1.25 = 350, and 350 * 1.25 = 437
+              />
               </div>
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
                 Somos todos concurseiros onde o que conta é o HBC. 
               </h1>
-              <p className="text-xl text-gray-700 mb-8">
-                Compare seus resultados em rankings pós-prova com o resultado oficial da banca.
-              </p>
+              <p className="text-xl text-gray-700 mb-8">Compare seus resultados em rankings pós-prova com o resultado de outros concurseiros como você.</p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
