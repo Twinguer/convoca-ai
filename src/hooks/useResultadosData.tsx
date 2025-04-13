@@ -17,14 +17,13 @@ export function useResultadosData() {
     queryFn: () => fetchConcursoById(id),
   });
   
-  // Fetch rankings with more frequent refetching - only if user is authenticated
+  // Fetch rankings for all users (authenticated or not)
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
-    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
+    queryFn: () => fetchUserRankings(id),
     refetchInterval: 5000, // Refetch every 5 seconds
     refetchOnWindowFocus: true,
     staleTime: 2000, // Consider data stale after 2 seconds
-    enabled: isAuthenticated,
   });
   
   // Fetch participant count - for all users (authenticated or not)
@@ -33,19 +32,17 @@ export function useResultadosData() {
     queryFn: () => getParticipantCount(id),
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000, // Make this more responsive for all users
+    staleTime: 2000,
   });
   
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount;
+  const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount;
   
   // Function to manually refresh all data
   const refreshData = () => {
-    if (isAuthenticated) {
-      refetchRankings();
-    }
+    refetchRankings();
     refetchCount();
   };
   

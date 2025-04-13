@@ -18,6 +18,11 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
 
   useEffect(() => {
     const loadFollowersData = async () => {
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+      
       setIsLoading(true);
       try {
         // Load followers and following in parallel
@@ -38,9 +43,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
       }
     };
 
-    if (userId) {
-      loadFollowersData();
-    }
+    loadFollowersData();
   }, [userId]);
 
   const handleViewProfile = (id: string) => {
