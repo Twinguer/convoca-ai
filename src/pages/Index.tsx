@@ -6,10 +6,10 @@ import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Brie
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-
 const Index = () => {
-  const { user } = useAuth();
-  
+  const {
+    user
+  } = useAuth();
   return <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
       {/* Hero Section with Image */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -23,11 +23,7 @@ const Index = () => {
             <div className="animate-fade-in">
               {/* Updated Logo with 20% larger size and centered */}
               <div className="mb-12 flex justify-center md:justify-start">
-                <img 
-                  src="https://tibizurada.store/logo-01.png" 
-                  alt="Convoca.ai Logo" 
-                  className="h-60 w-auto object-contain" 
-                />
+                <img src="https://tibizurada.store/logo-01.png" alt="Convoca.ai Logo" className="h-60 w-auto object-contain" />
               </div>
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
@@ -161,7 +157,7 @@ const Index = () => {
             {/* Column 1: Logo */}
             <div>
               <div className="mb-4">
-                <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-30 w-auto object-contain" />
+                <img alt="Convoca.ai Logo" className="h-30 w-auto object-contain" src="/lovable-uploads/6d5d2634-94df-403d-8945-2001f5e9b5a9.png" />
               </div>
               
             </div>
@@ -237,5 +233,4 @@ const Index = () => {
       </footer>
     </div>;
 };
-
 export default Index;
