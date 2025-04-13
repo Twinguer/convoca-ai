@@ -21,12 +21,12 @@ const Index = () => {
         <div className="container mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="animate-fade-in">
-              {/* Updated Logo with larger size and centered */}
+              {/* Updated Logo with 20% larger size and centered */}
               <div className="mb-12 flex justify-center md:justify-start">
                 <img 
-                  src="https://tibizurada.store/Convoca.png" 
+                  src="https://tibizurada.store/logo-01.png" 
                   alt="Convoca.ai Logo" 
-                  className="h-48 w-auto object-contain" 
+                  className="h-60 w-auto object-contain" 
                 />
               </div>
               
