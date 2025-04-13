@@ -7,7 +7,7 @@ export const CommunitySectionHeader: React.FC<CommunitySectionHeaderProps> = ({
 }) => {
   return <div className="mb-6">
       <h1 className="text-2xl font-bold">Concurseiros</h1>
-      <p className="text-gray-500">Conheça outros candidatos e compartilhe sua jornada</p>
+      
       
       {showDemoUsers && <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-yellow-700 text-sm">
