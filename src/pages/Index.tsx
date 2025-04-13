@@ -152,7 +152,7 @@ const Index = () => {
             {/* Column 1: Logo */}
             <div>
               <div className="mb-4">
-                <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-30 w-auto object-contain" />
+                <img alt="Convoca.ai Logo" className="h-30 w-auto object-contain" src="/lovable-uploads/099271d5-4e92-4e8b-825c-a1e72803431f.png" />
               </div>
               
             </div>
