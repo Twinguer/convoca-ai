@@ -18,11 +18,11 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userRankings, isAuthenticated
   if (!isAuthenticated) {
     return (
       <div className="text-center py-6">
-        <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+        <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
         <p className="text-muted-foreground mb-4">
           Você precisa estar cadastrado para visualizar os rankings.
         </p>
-        <Button asChild>
+        <Button asChild className="bg-emerald-500 hover:bg-emerald-600">
           <Link to="/auth" className="flex items-center">
             <UserPlus className="mr-2 h-4 w-4" />
             Cadastrar-se
@@ -72,11 +72,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userRankings, isAuthenticated
           <p className="text-muted-foreground">
             Participe de concursos e simulados para ver sua classificação aqui
           </p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => navigate('/concursos')}
-          >
+          <Button variant="outline" className="mt-4" onClick={() => navigate('/concursos')}>
             Ver concursos disponíveis
           </Button>
         </div>
