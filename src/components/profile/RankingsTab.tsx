@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Trophy } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
+import { useAuth } from '@/hooks/useAuth';
 
 interface RankingsTabProps {
   userRankings: UserRankingDisplay[];
@@ -12,6 +13,24 @@ interface RankingsTabProps {
 
 const RankingsTab: React.FC<RankingsTabProps> = ({ userRankings }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="text-center py-8">
+        <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+        <h3 className="text-lg font-medium">Informação exclusiva para usuários cadastrados</h3>
+        <p className="text-muted-foreground mb-4">
+          Faça login para ver os rankings
+        </p>
+        <Button 
+          onClick={() => navigate('/auth')}
+        >
+          Cadastrar-se
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <>

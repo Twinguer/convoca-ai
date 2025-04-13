@@ -20,6 +20,8 @@ import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
+import ConcursosTab from '@/components/profile/ConcursosTab';
+import RankingsTab from '@/components/profile/RankingsTab';
 
 interface Follower {
   id: string;
@@ -301,7 +303,7 @@ const UserProfile = () => {
 
   return (
     <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
@@ -354,77 +356,18 @@ const UserProfile = () => {
               
               <TabsContent value="concursos">
                 <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="concursos-aprovados">Concursos em que foi aprovado</Label>
-                    <Textarea 
-                      id="concursos-aprovados" 
-                      value={concursosAprovados} 
-                      onChange={e => setConcursosAprovados(e.target.value)} 
-                      placeholder="Liste os concursos em que você foi aprovado (um por linha)" 
-                      rows={5} 
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="concursos-participando">Concursos em que está participando</Label>
-                    <Textarea 
-                      id="concursos-participando" 
-                      value={concursosParticipando} 
-                      onChange={e => setConcursosParticipando(e.target.value)} 
-                      placeholder="Liste os concursos em que você está participando atualmente (um por linha)" 
-                      rows={5} 
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Dica: Liste um por linha, incluindo o nome do concurso, órgão e data da prova
-                    </p>
-                  </div>
+                  <ConcursosTab
+                    concursosAprovados={concursosAprovados}
+                    setConcursosAprovados={setConcursosAprovados}
+                    concursosParticipando={concursosParticipando}
+                    setConcursosParticipando={setConcursosParticipando}
+                  />
                 </CardContent>
               </TabsContent>
               
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
-                  {userRankings && userRankings.length > 0 ? 
-                    <div className="space-y-1">
-                      {userRankings.map((ranking, index) => 
-                        <Card key={ranking.concursoId} className="overflow-hidden">
-                          <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-4 flex justify-between items-center">
-                            <div>
-                              <h3 className="font-medium">{ranking.concursoTitle}</h3>
-                              <div className="flex items-center mt-1">
-                                <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                                <span className="text-sm">
-                                  {ranking.position > 0 ? `${ranking.position}º lugar` : 'Posição não definida'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
-                              <span className="text-lg font-bold">{ranking.score}</span>
-                              <span className="text-xs ml-1">pts</span>
-                            </div>
-                          </div>
-                          <div className="p-4 bg-white">
-                            <Button variant="outline" size="sm" onClick={() => navigate(`/concurso/${ranking.concursoId}/resultados`)}>
-                              Ver ranking completo
-                            </Button>
-                          </div>
-                        </Card>
-                      )}
-                    </div> 
-                    : 
-                    <div className="text-center py-8">
-                      <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <h3 className="text-lg font-medium">Você ainda não tem rankings</h3>
-                      <p className="text-muted-foreground">
-                        Participe de concursos e simulados para ver sua classificação aqui
-                      </p>
-                      <Button variant="outline" className="mt-4" onClick={() => navigate('/concursos')}>
-                        Ver concursos disponíveis
-                      </Button>
-                    </div>
-                  }
+                  <RankingsTab userRankings={userRankings} />
                 </CardContent>
               </TabsContent>
             </Tabs>

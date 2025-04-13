@@ -244,7 +244,7 @@ const PublicUserProfile: React.FC = () => {
         Voltar para Comunidade
       </Button>
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
@@ -294,40 +294,54 @@ const PublicUserProfile: React.FC = () => {
         </div>
         
         <div className="md:col-span-6">
-          <Card className="mb-4">
+          <Card className="mb-1">
             <CardHeader className="pb-3">
               <h3 className="text-xl font-bold">Rankings</h3>
             </CardHeader>
             <CardContent>
-              {rankings && rankings.length > 0 ? (
-                <div className="space-y-4">
-                  {rankings.map((ranking, index) => (
-                    <Card key={ranking.concursoId} className="overflow-hidden">
-                      <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium">{ranking.concursoTitle}</h3>
-                          <div className="flex items-center mt-1">
-                            <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                            <span className="text-sm">
-                              {ranking.position > 0 ? `Posição: ${ranking.position}º` : 'Posição não definida'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
-                          <span className="text-lg font-bold">{ranking.score}</span>
-                          <span className="text-xs ml-1">pts</span>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
+              {!user ? (
                 <div className="text-center py-6">
                   <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">
-                    Nenhum ranking encontrado para este usuário.
+                  <p className="text-muted-foreground mb-4">
+                    Informação exclusiva para usuários cadastrados.
                   </p>
+                  <Button 
+                    onClick={() => navigate('/auth')}
+                  >
+                    Cadastrar-se
+                  </Button>
                 </div>
+              ) : (
+                rankings && rankings.length > 0 ? (
+                  <div className="space-y-4">
+                    {rankings.map((ranking, index) => (
+                      <Card key={ranking.concursoId} className="overflow-hidden">
+                        <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
+                          <div>
+                            <h3 className="font-medium">{ranking.concursoTitle}</h3>
+                            <div className="flex items-center mt-1">
+                              <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
+                              <span className="text-sm">
+                                {ranking.position > 0 ? `Posição: ${ranking.position}º` : 'Posição não definida'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
+                            <span className="text-lg font-bold">{ranking.score}</span>
+                            <span className="text-xs ml-1">pts</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground">
+                      Nenhum ranking encontrado para este usuário.
+                    </p>
+                  </div>
+                )
               )}
             </CardContent>
           </Card>
