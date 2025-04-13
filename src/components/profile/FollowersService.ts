@@ -60,7 +60,7 @@ export const FollowersService = {
       }
 
       // Process the data to extract follower information
-      return data.map(item => {
+      return (data as FollowerData[]).map(item => {
         const follower = item.follower;
         
         if (!follower) {
@@ -68,7 +68,7 @@ export const FollowersService = {
         }
 
         // Access the first item from the users_profiles array if it exists
-        const profile = Array.isArray(follower.users_profiles) && follower.users_profiles.length > 0 
+        const profile = follower.users_profiles && follower.users_profiles.length > 0 
           ? follower.users_profiles[0] 
           : null;
 
@@ -111,7 +111,7 @@ export const FollowersService = {
       }
 
       // Process the data to extract followed user information
-      return data.map(item => {
+      return (data as FollowingData[]).map(item => {
         const followed = item.followed;
         
         if (!followed) {
@@ -119,7 +119,7 @@ export const FollowersService = {
         }
 
         // Access the first item from the users_profiles array if it exists
-        const profile = Array.isArray(followed.users_profiles) && followed.users_profiles.length > 0 
+        const profile = followed.users_profiles && followed.users_profiles.length > 0 
           ? followed.users_profiles[0] 
           : null;
 
