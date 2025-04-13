@@ -1,95 +1,38 @@
-
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Ranking } from '@/services/rankingService';
-
 interface RankingTableProps {
   rankings?: Ranking[];
   currentUserId?: string | null;
   isAuthenticated: boolean;
 }
-
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   currentUserId,
   isAuthenticated
 }) => {
-  const navigate = useNavigate();
-
-  const handleUserClick = (userId: string) => {
-    navigate(`/usuario/${userId}`);
-  };
-
-  // Show limited view for non-authenticated users
   if (!isAuthenticated) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle>Classificação Pós-prova</CardTitle>
         </CardHeader>
-        <CardContent>
-          {/* Display limited ranking data (top 3) for non-authenticated users */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-center w-16"># </TableHead>
-                <TableHead>Candidato</TableHead>
-                <TableHead className="text-right">Total </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rankings && rankings.length > 0 ? (
-                // Show only top 3 positions for non-authenticated users
-                rankings.slice(0, 3).map(ranking => (
-                  <TableRow key={ranking.userId}>
-                    <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
-                    <TableCell>
-                      <div 
-                        className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors" 
-                        onClick={() => handleUserClick(ranking.userId)}
-                      >
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                          <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <span>{ranking.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center py-4">
-                    Nenhum participante registrado ainda
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          <div className="text-center mt-6 mb-2">
-            <p className="text-gray-600 mb-4">Para ver o ranking completo e todas as notas, faça login.</p>
-            <Button asChild>
-              <Link to="/auth" className="flex items-center justify-center">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Cadastrar-se
-              </Link>
-            </Button>
-          </div>
+        <CardContent className="text-center">
+          <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
+          <Button asChild>
+            <Link to="/auth" className="flex items-center">
+              <UserPlus className="mr-2 h-4 w-4" />
+              Cadastrar-se
+            </Link>
+          </Button>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-  
-  // Full view for authenticated users
-  return (
-    <Card>
+  return <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
       </CardHeader>
@@ -116,17 +59,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rankings && rankings.length > 0 ? rankings.map(ranking => (
-                <TableRow 
-                  key={ranking.userId} 
-                  className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}
-                >
+            {rankings && rankings.length > 0 ? rankings.map(ranking => <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
                   <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
                   <TableCell>
-                    <div 
-                      className="flex items-center gap-2 cursor-pointer hover:text-blue-600 transition-colors" 
-                      onClick={() => handleUserClick(ranking.userId)}
-                    >
+                    <div className="flex items-center gap-2">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                         <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -138,17 +74,13 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="text-right">{ranking.specificKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
-                </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
-                    Nenhum participante registrado ainda
-                  </TableCell>
-                </TableRow>
-              )}
+                </TableRow>) : <TableRow>
+                <TableCell colSpan={6} className="text-center py-4">
+                  Nenhum participante registrado ainda
+                </TableCell>
+              </TableRow>}
           </TableBody>
         </Table>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };

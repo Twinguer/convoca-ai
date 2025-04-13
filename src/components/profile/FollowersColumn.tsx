@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck } from 'lucide-react';
 import { UsersList, User } from './UsersList';
-import { FollowersService } from './FollowersService';
+import { fetchFollowers, fetchFollowing } from './FollowersService';
 
 interface FollowersColumnProps {
   userId: string;
@@ -18,17 +18,12 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
 
   useEffect(() => {
     const loadFollowersData = async () => {
-      if (!userId) {
-        setIsLoading(false);
-        return;
-      }
-      
       setIsLoading(true);
       try {
         // Load followers and following in parallel
         const [followersData, followingData] = await Promise.all([
-          FollowersService.getUserFollowers(userId),
-          FollowersService.getUserFollowing(userId)
+          fetchFollowers(userId),
+          fetchFollowing(userId)
         ]);
         
         setFollowers(followersData);
@@ -43,7 +38,9 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
       }
     };
 
-    loadFollowersData();
+    if (userId) {
+      loadFollowersData();
+    }
   }, [userId]);
 
   const handleViewProfile = (id: string) => {
@@ -68,7 +65,6 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             icon={<></>}
             onViewProfile={handleViewProfile}
             onViewAll={() => navigate(`/usuario/${userId}/seguidores`)}
-            showNamesInCards={false}
           />
         </CardContent>
       </Card>
@@ -89,7 +85,6 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             icon={<></>}
             onViewProfile={handleViewProfile}
             onViewAll={() => navigate(`/usuario/${userId}/seguindo`)}
-            showNamesInCards={false}
           />
         </CardContent>
       </Card>

@@ -53,20 +53,13 @@ const PublicUserProfile: React.FC = () => {
           error: profileError
         } = await supabase.from('users_profiles').select('*').eq('id', id).single();
         if (profileError) throw profileError;
-        
-        // Get follower count - using count RPC function instead of fetching all followers
         const {
           count: followerCount,
           error: followerError
         } = await supabase.rpc('count_user_followers', {
           user_id: id
         });
-        if (followerError) {
-          console.error('Error counting followers:', followerError);
-          throw followerError;
-        }
-        
-        // Get ranking/post count - count user's rankings in user_rankings table
+        if (followerError) console.error('Error counting followers:', followerError);
         const {
           count: postCount,
           error: postError
@@ -74,11 +67,7 @@ const PublicUserProfile: React.FC = () => {
           count: 'exact',
           head: true
         }).eq('user_id', id);
-        if (postError) {
-          console.error('Error counting posts:', postError);
-          throw postError;
-        }
-        
+        if (postError) console.error('Error counting posts:', postError);
         return {
           ...profileData,
           followerCount: followerCount || 0,
@@ -98,8 +87,7 @@ const PublicUserProfile: React.FC = () => {
   });
 
   const {
-    data: rankings,
-    isLoading: rankingsLoading
+    data: rankings
   } = useQuery({
     queryKey: ['public-user-rankings', id],
     queryFn: async () => {
@@ -117,30 +105,16 @@ const PublicUserProfile: React.FC = () => {
           ascending: false
         });
         if (error) throw error;
-        
-        // Get position for each ranking
-        return await Promise.all(data.map(async (item) => {
+        return data.map(item => {
           const concursoData = item.concursos || {};
-          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData 
-            ? String(concursoData.titulo) 
-            : 'Concurso sem título';
-          
-          // Calculate position for this user in this concurso
-          const { data: betterScores, error: positionError } = await supabase
-            .from('user_rankings')
-            .select('id', { count: 'exact', head: true })
-            .eq('concurso_id', item.concurso_id)
-            .gt('score', item.score);
-            
-          const position = positionError ? 0 : ((betterScores || 0) as number) + 1;
-          
+          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
           return {
             concursoId: item.concurso_id,
             concursoTitle: titulo,
-            position: position,
+            position: 0,
             score: item.score
           };
-        }));
+        }) as UserRanking[];
       } catch (error) {
         console.error('Error fetching rankings:', error);
         return [];
@@ -221,7 +195,7 @@ const PublicUserProfile: React.FC = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  if (profileLoading || rankingsLoading) {
+  if (profileLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
@@ -249,7 +223,7 @@ const PublicUserProfile: React.FC = () => {
         Voltar para Comunidade
       </Button>
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         {/* Left Column - Profile Card */}
         <div className="md:col-span-3">
           <Card>
@@ -319,27 +293,18 @@ const PublicUserProfile: React.FC = () => {
         
         {/* Middle Column - Rankings and Concursos */}
         <div className="md:col-span-6">
-          <Card className="mb-1">
+          <Card className="mb-4">
             <CardHeader className="pb-3">
               <h3 className="text-xl font-bold">Rankings</h3>
             </CardHeader>
             <CardContent>
               {rankings && rankings.length > 0 ? (
-                <div className="space-y-1">
+                <div className="space-y-4">
                   {rankings.map((ranking, index) => (
                     <Card key={ranking.concursoId} className="overflow-hidden">
-                      <div 
-                        className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center cursor-pointer" 
-                        onClick={() => navigate(`/concurso/${ranking.concursoId}/resultados`)}
-                      >
+                      <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
                         <div>
                           <h3 className="font-medium">{ranking.concursoTitle}</h3>
-                          {ranking.position > 0 && (
-                            <p className="text-sm flex items-center mt-1">
-                              <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                              {ranking.position}º posição
-                            </p>
-                          )}
                         </div>
                         <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
                           <span className="text-lg font-bold">{ranking.score}</span>
@@ -366,7 +331,7 @@ const PublicUserProfile: React.FC = () => {
             </CardHeader>
             <CardContent>
               {profile.concursos_aprovados ? (
-                <div className="space-y-1">
+                <div className="space-y-2">
                   {profile.concursos_aprovados.split('\n').filter(Boolean).map((concurso, index) => (
                     <div key={index} className="p-3 bg-emerald-50 rounded-md">
                       <div className="flex items-start">

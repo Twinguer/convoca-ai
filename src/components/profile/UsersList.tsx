@@ -17,7 +17,6 @@ interface UsersListProps {
   icon: React.ReactNode;
   onViewProfile: (id: string) => void;
   onViewAll?: () => void;
-  showNamesInCards?: boolean;
 }
 
 export const UsersList: React.FC<UsersListProps> = ({
@@ -27,8 +26,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   emptyMessage,
   icon,
   onViewProfile,
-  onViewAll,
-  showNamesInCards = true
+  onViewAll
 }) => {
   return (
     <>
@@ -50,7 +48,6 @@ export const UsersList: React.FC<UsersListProps> = ({
               name={user.name}
               avatarUrl={user.avatar_url}
               onClick={onViewProfile}
-              showName={showNamesInCards}
             />
           ))}
         </div>

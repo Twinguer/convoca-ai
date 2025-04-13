@@ -35,7 +35,7 @@ export const RankingCard: React.FC<RankingCardProps> = ({
         {userRanking && (
           <p className="mt-4 text-lg">
             Sua posição: <Badge>{userRanking.position}º</Badge> com{' '}
-            <Badge variant="secondary">{userRanking.score.toFixed(2)} pontos</Badge>
+            <Badge variant="secondary">{userRanking.score} pontos</Badge>
           </p>
         )}
         
