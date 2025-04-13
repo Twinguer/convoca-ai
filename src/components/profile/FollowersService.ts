@@ -7,6 +7,7 @@ export interface FollowerProfile {
   avatar_url: string | null;
 }
 
+// Updated interfaces to match the shape of the data returned by Supabase
 interface FollowerData {
   id: string;
   follower: {
@@ -54,7 +55,8 @@ export const FollowersService = {
         throw error;
       }
 
-      return (data as FollowerData[]).map(item => {
+      // Use a type assertion with 'as unknown as FollowerData[]' to safely convert
+      return (data as unknown as FollowerData[]).map(item => {
         // Correctly accessing the nested properties
         const followerProfile = item.follower && 
           Array.isArray(item.follower.users_profiles) && 
@@ -96,7 +98,8 @@ export const FollowersService = {
         throw error;
       }
 
-      return (data as FollowingData[]).map(item => {
+      // Use a type assertion with 'as unknown as FollowingData[]' to safely convert
+      return (data as unknown as FollowingData[]).map(item => {
         // Correctly accessing the nested properties
         const followedProfile = item.followed && 
           Array.isArray(item.followed.users_profiles) && 
