@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -62,7 +63,7 @@ const UserMenu: React.FC = () => {
   if (!user) {
     return (
       <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
-        Entrar
+        Fazer Login
       </Button>
     );
   }
