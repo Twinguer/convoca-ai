@@ -244,6 +244,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          profile_text: string | null
           status_concurseiro: string | null
           updated_at: string
         }
@@ -256,6 +257,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          profile_text?: string | null
           status_concurseiro?: string | null
           updated_at?: string
         }
@@ -268,6 +270,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          profile_text?: string | null
           status_concurseiro?: string | null
           updated_at?: string
         }
