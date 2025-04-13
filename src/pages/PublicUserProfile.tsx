@@ -54,16 +54,19 @@ const PublicUserProfile: React.FC = () => {
         } = await supabase.from('users_profiles').select('*').eq('id', id).single();
         if (profileError) throw profileError;
         
-        // Get follower count
+        // Get follower count - using count RPC function instead of fetching all followers
         const {
           count: followerCount,
           error: followerError
         } = await supabase.rpc('count_user_followers', {
           user_id: id
         });
-        if (followerError) console.error('Error counting followers:', followerError);
+        if (followerError) {
+          console.error('Error counting followers:', followerError);
+          throw followerError;
+        }
         
-        // Get ranking/post count
+        // Get ranking/post count - count user's rankings in user_rankings table
         const {
           count: postCount,
           error: postError
@@ -71,7 +74,10 @@ const PublicUserProfile: React.FC = () => {
           count: 'exact',
           head: true
         }).eq('user_id', id);
-        if (postError) console.error('Error counting posts:', postError);
+        if (postError) {
+          console.error('Error counting posts:', postError);
+          throw postError;
+        }
         
         return {
           ...profileData,
@@ -126,7 +132,7 @@ const PublicUserProfile: React.FC = () => {
             .eq('concurso_id', item.concurso_id)
             .gt('score', item.score);
             
-          const position = positionError ? 0 : (betterScores || 0) + 1;
+          const position = positionError ? 0 : ((betterScores || 0) as number) + 1;
           
           return {
             concursoId: item.concurso_id,
