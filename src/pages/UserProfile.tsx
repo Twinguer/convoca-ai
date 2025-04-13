@@ -41,6 +41,7 @@ const UserProfile = () => {
   const [followersCount, setFollowersCount] = useState(0);
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
+  const [profileText, setProfileText] = useState('');
 
   const {
     data: profile,
@@ -69,7 +70,8 @@ const UserProfile = () => {
               name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              status_concurseiro: 'Na Ativa'
+              status_concurseiro: 'Na Ativa',
+              profile_text: ''
             }).select('*').single();
             if (createError) {
               console.error('Error creating profile:', createError);
@@ -164,6 +166,7 @@ const UserProfile = () => {
       setConcursosParticipando(profile.concursos_participando || '');
       setAvatarUrl(profile.avatar_url);
       setStatusConcurseiro(profile.status_concurseiro || 'Na Ativa');
+      setProfileText(profile.profile_text || '');
     }
   }, [profile]);
 
@@ -235,7 +238,8 @@ const UserProfile = () => {
         concursosAprovados,
         concursosParticipando,
         avatarUrl,
-        statusConcurseiro
+        statusConcurseiro,
+        profileText
       });
       const currentAvatarUrl = avatarUrl;
       const {
@@ -248,6 +252,7 @@ const UserProfile = () => {
         concursos_participando: concursosParticipando,
         avatar_url: currentAvatarUrl,
         status_concurseiro: statusConcurseiro,
+        profile_text: profileText,
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
       if (error) {
@@ -306,10 +311,8 @@ const UserProfile = () => {
                 avatarUrl={avatarUrl}
                 uploading={uploading}
                 handleAvatarUpload={handleAvatarUpload}
-                userRankingsCount={userRankings.length}
-                followersCount={followersCount}
-                concursosAprovadosCount={concursosAprovadosCount}
                 statusConcurseiro={statusConcurseiro}
+                profileText={profileText}
               />
             </CardContent>
           </Card>
@@ -343,6 +346,8 @@ const UserProfile = () => {
                     setBio={setBio}
                     statusConcurseiro={statusConcurseiro}
                     setStatusConcurseiro={setStatusConcurseiro}
+                    profileText={profileText}
+                    setProfileText={setProfileText}
                   />
                 </CardContent>
               </TabsContent>

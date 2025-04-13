@@ -13,6 +13,8 @@ interface ProfileInfoTabProps {
   setBio: (bio: string) => void;
   statusConcurseiro: string;
   setStatusConcurseiro: (status: string) => void;
+  profileText: string;
+  setProfileText: (text: string) => void;
 }
 
 const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
@@ -22,7 +24,9 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
   bio,
   setBio,
   statusConcurseiro,
-  setStatusConcurseiro
+  setStatusConcurseiro,
+  profileText,
+  setProfileText
 }) => {
   return (
     <div className="space-y-4">
@@ -50,6 +54,20 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
         value={statusConcurseiro}
         onChange={setStatusConcurseiro}
       />
+      
+      <div className="space-y-2">
+        <Label htmlFor="profileText">Texto de perfil</Label>
+        <Textarea 
+          id="profileText" 
+          value={profileText} 
+          onChange={(e) => setProfileText(e.target.value)}
+          placeholder="Digite uma frase ou mensagem para mostrar em seu perfil"
+          rows={2}
+        />
+        <p className="text-xs text-muted-foreground">
+          Este texto será exibido no seu cartão de perfil para outros usuários
+        </p>
+      </div>
       
       <div className="space-y-2">
         <Label htmlFor="bio">Biografia</Label>

@@ -23,6 +23,7 @@ interface UserProfile {
   status_concurseiro: string | null;
   followerCount?: number;
   postCount?: number;
+  profile_text?: string | null;
 }
 
 interface UserRanking {
@@ -275,35 +276,17 @@ const PublicUserProfile: React.FC = () => {
                 <div className="w-full space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
-                      <span className="text-sm">Rankings</span>
-                    </div>
-                    <span className="text-sm font-semibold">{profile?.postCount || 0}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Seguidores</span>
-                    </div>
-                    <span className="text-sm font-semibold">{profile?.followerCount || 0}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <BookOpen className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Aprovações</span>
-                    </div>
-                    <span className="text-sm font-semibold">{approvalCount}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
                       <Pen className="h-4 w-4 mr-2 text-purple-500" />
                       <span className="text-sm">Status</span>
                     </div>
                     <span className="text-sm font-semibold">{profile?.status_concurseiro || 'Na Ativa'}</span>
                   </div>
+                  
+                  {profile?.profile_text && (
+                    <div className="mt-3 text-sm text-center py-2 px-3 bg-gray-50 rounded-md italic">
+                      "{profile.profile_text}"
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
