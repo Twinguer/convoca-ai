@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -93,28 +92,49 @@ const PublicUserProfile: React.FC = () => {
     queryFn: async () => {
       if (!id) return [];
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('user_rankings').select(`
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select(`
             id,
             concurso_id,
             score,
             concursos(titulo)
-          `).eq('user_id', id).order('score', {
-          ascending: false
-        });
+          `)
+          .eq('user_id', id)
+          .order('score', { ascending: false });
+        
         if (error) throw error;
-        return data.map(item => {
-          const concursoData = item.concursos || {};
-          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
-          return {
-            concursoId: item.concurso_id,
-            concursoTitle: titulo,
-            position: 0,
-            score: item.score
-          };
-        }) as UserRanking[];
+        
+        const rankingsWithPosition = await Promise.all(
+          data.map(async (item) => {
+            const { data: allScores, error: scoresError } = await supabase
+              .from('user_rankings')
+              .select('score')
+              .eq('concurso_id', item.concurso_id)
+              .order('score', { ascending: false });
+            
+            if (scoresError) {
+              console.error('Error fetching scores:', scoresError);
+              return null;
+            }
+            
+            const position = allScores.findIndex(s => s.score <= item.score) + 1;
+            
+            const concursoData = item.concursos || {};
+            const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData 
+              ? String(concursoData.titulo) 
+              : 'Concurso sem título';
+            
+            return {
+              concursoId: item.concurso_id,
+              concursoTitle: titulo,
+              position,
+              score: item.score
+            };
+          })
+        );
+        
+        return rankingsWithPosition.filter(Boolean) as UserRanking[];
       } catch (error) {
         console.error('Error fetching rankings:', error);
         return [];
@@ -224,7 +244,6 @@ const PublicUserProfile: React.FC = () => {
       </Button>
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Left Column - Profile Card */}
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
@@ -291,7 +310,6 @@ const PublicUserProfile: React.FC = () => {
           </Card>
         </div>
         
-        {/* Middle Column - Rankings and Concursos */}
         <div className="md:col-span-6">
           <Card className="mb-4">
             <CardHeader className="pb-3">
@@ -305,6 +323,12 @@ const PublicUserProfile: React.FC = () => {
                       <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
                         <div>
                           <h3 className="font-medium">{ranking.concursoTitle}</h3>
+                          <div className="flex items-center mt-1">
+                            <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
+                            <span className="text-sm">
+                              {ranking.position > 0 ? `Posição: ${ranking.position}º` : 'Posição não definida'}
+                            </span>
+                          </div>
                         </div>
                         <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
                           <span className="text-lg font-bold">{ranking.score}</span>
@@ -354,8 +378,7 @@ const PublicUserProfile: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Right Column - Followers */}
+        
         <div className="md:col-span-3">
           <FollowersColumn userId={id || ''} />
         </div>

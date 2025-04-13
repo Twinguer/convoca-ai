@@ -1,21 +1,30 @@
+
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Ranking } from '@/services/rankingService';
+
 interface RankingTableProps {
   rankings?: Ranking[];
   currentUserId?: string | null;
   isAuthenticated: boolean;
 }
+
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   currentUserId,
   isAuthenticated
 }) => {
+  const navigate = useNavigate();
+  
+  const handleUserClick = (userId: string) => {
+    navigate(`/usuario/${userId}`);
+  };
+
   if (!isAuthenticated) {
     return <Card>
         <CardHeader>
@@ -32,6 +41,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         </CardContent>
       </Card>;
   }
+  
   return <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -62,7 +72,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             {rankings && rankings.length > 0 ? rankings.map(ranking => <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
                   <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div 
+                      className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" 
+                      onClick={() => handleUserClick(ranking.userId)}
+                    >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                         <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
