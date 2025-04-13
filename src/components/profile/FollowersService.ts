@@ -7,6 +7,30 @@ export interface FollowerProfile {
   avatar_url: string | null;
 }
 
+interface FollowerData {
+  id: string;
+  follower: {
+    id: string;
+    users_profiles: Array<{
+      id: string;
+      name: string;
+      avatar_url: string | null;
+    }>;
+  } | null;
+}
+
+interface FollowingData {
+  id: string;
+  followed: {
+    id: string;
+    users_profiles: Array<{
+      id: string;
+      name: string;
+      avatar_url: string | null;
+    }>;
+  } | null;
+}
+
 export const FollowersService = {
   // Fetch user's followers
   async getUserFollowers(userId: string) {
@@ -30,7 +54,7 @@ export const FollowersService = {
         throw error;
       }
 
-      return data.map(item => {
+      return (data as FollowerData[]).map(item => {
         // Correctly accessing the nested properties
         const followerProfile = item.follower && 
           Array.isArray(item.follower.users_profiles) && 
@@ -72,7 +96,7 @@ export const FollowersService = {
         throw error;
       }
 
-      return data.map(item => {
+      return (data as FollowingData[]).map(item => {
         // Correctly accessing the nested properties
         const followedProfile = item.followed && 
           Array.isArray(item.followed.users_profiles) && 
