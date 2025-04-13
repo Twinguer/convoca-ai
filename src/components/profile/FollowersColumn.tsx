@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck } from 'lucide-react';
 import { UsersList, User } from './UsersList';
-import { fetchFollowers, fetchFollowing } from './FollowersService';
+import { FollowersService } from './FollowersService';
 
 interface FollowersColumnProps {
   userId: string;
@@ -22,8 +22,8 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
       try {
         // Load followers and following in parallel
         const [followersData, followingData] = await Promise.all([
-          fetchFollowers(userId),
-          fetchFollowing(userId)
+          FollowersService.getUserFollowers(userId),
+          FollowersService.getUserFollowing(userId)
         ]);
         
         setFollowers(followersData);

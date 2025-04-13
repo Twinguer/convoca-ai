@@ -1,6 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface FollowerProfile {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+}
+
 export const FollowersService = {
   // Fetch user's followers
   async getUserFollowers(userId: string) {
@@ -26,9 +32,11 @@ export const FollowersService = {
 
       return data.map(item => {
         // Correctly accessing the nested properties
-        const followerProfile = Array.isArray(item.follower?.users_profiles) && item.follower.users_profiles.length > 0
-          ? item.follower.users_profiles[0]
-          : null;
+        const followerProfile = item.follower && 
+          Array.isArray(item.follower.users_profiles) && 
+          item.follower.users_profiles.length > 0
+            ? item.follower.users_profiles[0]
+            : null;
         
         return {
           id: item.follower?.id || '',
@@ -66,9 +74,11 @@ export const FollowersService = {
 
       return data.map(item => {
         // Correctly accessing the nested properties
-        const followedProfile = Array.isArray(item.followed?.users_profiles) && item.followed.users_profiles.length > 0
-          ? item.followed.users_profiles[0]
-          : null;
+        const followedProfile = item.followed && 
+          Array.isArray(item.followed.users_profiles) && 
+          item.followed.users_profiles.length > 0
+            ? item.followed.users_profiles[0]
+            : null;
 
         return {
           id: item.followed?.id || '',
