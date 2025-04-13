@@ -43,7 +43,7 @@ const ResultadosPage = () => {
   }
   return <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
           
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
         </h1>
