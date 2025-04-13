@@ -1,16 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Briefcase, CheckSquare, BarChart3, ChartPieIcon, Mail, MapPin, Instagram, Phone } from 'lucide-react';
+import { ChevronRight, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 const Index = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  
   return <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
       {/* Hero Section with Image */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -27,7 +24,7 @@ const Index = () => {
                 <img 
                   src="https://tibizurada.store/logo-01.png" 
                   alt="Convoca.ai Logo" 
-                  className="h-auto max-w-[280px] md:max-w-[350px]" 
+                  className="h-auto max-w-[350px] md:max-w-[437px]" // Increased by 25%: 280 * 1.25 = 350, and 350 * 1.25 = 437
                 />
               </div>
               
