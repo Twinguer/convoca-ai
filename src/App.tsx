@@ -115,7 +115,7 @@ const App = () => {
                 } />
                 {/* Redirecionar a rota antiga de participação para a nova */}
                 <Route path="/concurso/:id/participar" element={
-                  <Navigate to={location => `/concurso/${location.pathname.split('/')[2]}/resultados?showAnswerSheet=true`} replace />
+                  <Navigate to={`/concurso/:id/resultados?showAnswerSheet=true`} replace />
                 } />
                 <Route path="*" element={
                   <>
