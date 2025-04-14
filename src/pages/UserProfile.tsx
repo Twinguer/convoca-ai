@@ -21,11 +21,13 @@ import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
+
 interface Follower {
   id: string;
   name: string;
   avatar_url?: string | null;
 }
+
 const UserProfile = () => {
   const {
     user
@@ -45,6 +47,7 @@ const UserProfile = () => {
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
+
   const {
     data: profile,
     isLoading,
@@ -100,6 +103,7 @@ const UserProfile = () => {
     refetchInterval: false,
     staleTime: 300000
   });
+
   const {
     data: rankings
   } = useQuery({
@@ -129,6 +133,7 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
+
   const {
     data: followerData
   } = useQuery({
@@ -149,16 +154,19 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
+
   useEffect(() => {
     if (followerData !== undefined) {
       setFollowersCount(followerData);
     }
   }, [followerData]);
+
   useEffect(() => {
     if (rankings && rankings.length > 0) {
       setUserRankings(rankings);
     }
   }, [rankings]);
+
   useEffect(() => {
     if (profile) {
       console.log("Setting profile state with data:", profile);
@@ -171,6 +179,7 @@ const UserProfile = () => {
       setProfileText(profile.profile_text || '');
     }
   }, [profile]);
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!event.target.files || !event.target.files.length) {
@@ -229,6 +238,7 @@ const UserProfile = () => {
       setUploading(false);
     }
   };
+
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -276,16 +286,20 @@ const UserProfile = () => {
       setSaving(false);
     }
   };
+
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
   const concursosAprovadosCount = concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0;
+
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
       </div>;
   }
+
   if (!user) {
     useEffect(() => {
       navigate("/auth");
@@ -294,6 +308,7 @@ const UserProfile = () => {
         <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
       </div>;
   }
+
   return <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-3">
@@ -344,7 +359,7 @@ const UserProfile = () => {
               
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
-                  <RankingsTab userRankings={userRankings} isAuthenticated={!!user} />
+                  <RankingsTab userId={user?.id || ''} userRankings={userRankings} isAuthenticated={!!user} />
                 </CardContent>
               </TabsContent>
             </Tabs>
@@ -382,4 +397,5 @@ const UserProfile = () => {
       </footer>
     </div>;
 };
+
 export default UserProfile;

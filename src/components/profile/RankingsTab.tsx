@@ -38,7 +38,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
       if (error) throw error;
       return data || [];
     },
-    enabled: !userRankings, // Only fetch if userRankings is not provided
+    enabled: !userRankings && !!userId, // Only fetch if userRankings is not provided and userId exists
   });
   
   // Use provided userRankings if available, otherwise use fetched rankings
