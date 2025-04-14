@@ -14,27 +14,21 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 interface AnswerSheetProps {
   concurso: Concurso;
   rankingId: string;
   onSuccess: () => void;
 }
-
 export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   concurso,
   rankingId,
   onSuccess
 }) => {
   const [discursiveScore, setDiscursiveScore] = useState<number | null>(null);
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const {
     answers,
     selectedSection,
@@ -53,28 +47,28 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     questionType,
     getAnsweredQuestionsCount
   } = useAnswerSheet(concurso, rankingId);
-
-  const { data: userRankingData, isLoading: isLoadingRanking } = useQuery({
+  const {
+    data: userRankingData,
+    isLoading: isLoadingRanking
+  } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('user_rankings').select('*').eq('id', rankingId).single();
       if (error) throw error;
       return data || {};
     }
   });
-
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
     }
   }, [userRankingData]);
-
-  const { handleSaveAnswers } = useSaveAnswers({
+  const {
+    handleSaveAnswers
+  } = useSaveAnswers({
     rankingId,
     concurso,
     answers,
@@ -86,29 +80,27 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     discursiveScore,
     editCount: userRankingData?.edit_count || 0
   });
-
-  const { isLoading: isLoadingAnswers } = useQuery({
+  const {
+    isLoading: isLoadingAnswers
+  } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_answers')
-        .select('*')
-        .eq('user_ranking_id', rankingId);
+      const {
+        data,
+        error
+      } = await supabase.from('user_answers').select('*').eq('user_ranking_id', rankingId);
       if (error) throw error;
       return data || [];
     }
   });
-
   const handleDiscursiveScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (value === '') {
       setDiscursiveScore(null);
       return;
     }
-    
     const numberValue = parseFloat(value);
     if (isNaN(numberValue)) return;
-    
     if (numberValue < 0 || numberValue > 100) {
       toast({
         title: "Valor inválido",
@@ -117,10 +109,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       });
       return;
     }
-    
     setDiscursiveScore(numberValue);
   };
-
   if (isLoadingAnswers || isLoadingRanking) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -129,27 +119,21 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         </CardContent>
       </Card>;
   }
-
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
-
   return <Card className="shadow-lg">
       <CardHeader className="bg-emerald-50 border-b">
         <CardTitle className="text-xl md:text-2xl">Cartão de Respostas - {concurso.titulo}</CardTitle>
         <CardDescription>
-          {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
-            <div className="text-sm font-medium text-emerald-700 mt-2">
+          {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && <div className="text-sm font-medium text-emerald-700 mt-2">
               Edições disponíveis: {editsLeft} de 3
-              {!canEdit && (
-                <span className="text-destructive ml-2">
+              {!canEdit && <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)
-                </span>
-              )}
-            </div>
-          )}
+                </span>}
+            </div>}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -165,31 +149,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         
         <AnswerSheetHeader concurso={concurso} getTotalQuestions={getTotalQuestions} />
         
-        {concurso.exam_type === 'Alternativas' && (
-          <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+        {concurso.exam_type === 'Alternativas' && <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
             <p className="text-sm text-amber-800">
               <strong>Importante:</strong> Neste tipo de prova, você deve responder a todas as questões antes de salvar o cartão.
             </p>
-          </div>
-        )}
+          </div>}
         
-        {concurso.exam_type === 'Certo ou Errado' && (
-          <div className="bg-blue-50 p-4 rounded-md border border-blue-200 flex items-start gap-2">
-            <HelpCircle className="h-5 w-5 text-blue-500 mt-0.5" />
-            <div className="text-sm text-blue-800">
-              <p><strong>Dica:</strong> Neste tipo de prova:</p>
-              <ul className="list-disc ml-5 mt-1">
-                <li>Você pode deixar questões em branco (não marca nem perde pontos)</li>
-                <li>Acertos somam pontos</li>
-                {concurso.wrong_answer_penalty > 0 && (
-                  <li>Erros subtraem {concurso.wrong_answer_penalty} ponto(s)</li>
-                )}
-                <li>Para remover uma resposta, clique no botão "Limpar"</li>
-              </ul>
-            </div>
-          </div>
-        )}
+        {concurso.exam_type === 'Certo ou Errado'}
         
         <div className="flex items-center justify-between">
           <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
@@ -200,19 +167,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <div className="border rounded-md overflow-hidden shadow-sm">
           <SectionToggle selectedSection={selectedSection} onSectionChange={setSelectedSection} concurso={concurso} />
           
-          <AnswerMatrix 
-            matrix={createAnswerMatrix()} 
-            answers={answers} 
-            onAnswerChange={handleAnswerChange}
-            onClearAnswer={handleClearAnswer} 
-            getOptionsForQuestion={getOptionsForQuestion}
-            disabled={!canEdit && userRankingData?.edit_count !== undefined}
-            examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} 
-          />
+          <AnswerMatrix matrix={createAnswerMatrix()} answers={answers} onAnswerChange={handleAnswerChange} onClearAnswer={handleClearAnswer} getOptionsForQuestion={getOptionsForQuestion} disabled={!canEdit && userRankingData?.edit_count !== undefined} examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
         </div>
         
-        {concurso.has_discursive && (
-          <div className="border p-4 rounded-md shadow-sm space-y-3 bg-gray-50">
+        {concurso.has_discursive && <div className="border p-4 rounded-md shadow-sm space-y-3 bg-gray-50">
             <div className="flex justify-between items-center">
               <Label htmlFor="discursive-score" className="text-base font-medium">
                 Nota da Prova Discursiva / Estudo de Caso
@@ -229,46 +187,23 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               </TooltipProvider>
             </div>
             <div className="flex items-center">
-              <Input 
-                id="discursive-score"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                placeholder="Informe sua nota (opcional)"
-                value={discursiveScore === null ? '' : discursiveScore}
-                onChange={handleDiscursiveScoreChange}
-                className="w-64"
-                disabled={!canEdit && userRankingData?.edit_count !== undefined}
-              />
+              <Input id="discursive-score" type="number" min="0" max="100" step="0.01" placeholder="Informe sua nota (opcional)" value={discursiveScore === null ? '' : discursiveScore} onChange={handleDiscursiveScoreChange} className="w-64" disabled={!canEdit && userRankingData?.edit_count !== undefined} />
               <span className="ml-2 text-gray-500">/ 100</span>
             </div>
-          </div>
-        )}
+          </div>}
       </CardContent>
       <CardFooter className="p-4 bg-gray-50 border-t">
-        <Button 
-          onClick={handleSaveAnswers} 
-          className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
-          disabled={isSaving || (!canEdit && userRankingData?.edit_count !== undefined)} 
-          size="lg"
-        >
-          {isSaving ? (
-            <>
+        <Button onClick={handleSaveAnswers} className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSaving || !canEdit && userRankingData?.edit_count !== undefined} size="lg">
+          {isSaving ? <>
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
               Salvando respostas...
-            </>
-          ) : !canEdit && userRankingData?.edit_count !== undefined ? (
-            <>
+            </> : !canEdit && userRankingData?.edit_count !== undefined ? <>
               <AlertTriangle className="h-5 w-5 mr-2" />
               Limite de edições atingido
-            </>
-          ) : (
-            <>
+            </> : <>
               <Save className="h-5 w-5 mr-2" />
               Salvar Cartão de Respostas
-            </>
-          )}
+            </>}
         </Button>
       </CardFooter>
     </Card>;
