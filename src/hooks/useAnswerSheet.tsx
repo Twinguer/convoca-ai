@@ -88,6 +88,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       [questionNumber]: answer
     }));
   };
+  
+  const handleClearAnswer = (questionNumber: number) => {
+    setAnswers((prev) => {
+      const newAnswers = { ...prev };
+      delete newAnswers[questionNumber];
+      return newAnswers;
+    });
+  };
 
   const getTotalQuestions = () => {
     if (!concurso) return 0;
@@ -178,6 +186,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     savedSuccess,
     setSavedSuccess,
     handleAnswerChange,
+    handleClearAnswer,
     getTotalQuestions,
     getAnsweredQuestionsCount,
     getOptionsForQuestion,

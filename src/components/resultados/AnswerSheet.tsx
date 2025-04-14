@@ -46,6 +46,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     savedSuccess,
     setSavedSuccess,
     handleAnswerChange,
+    handleClearAnswer,
     getTotalQuestions,
     getOptionsForQuestion,
     createAnswerMatrix,
@@ -182,8 +183,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                 <li>Você pode deixar questões em branco (não marca nem perde pontos)</li>
                 <li>Acertos somam pontos</li>
                 {concurso.wrong_answer_penalty > 0 && (
-                  <li>Erros podem subtrair {concurso.wrong_answer_penalty} ponto(s)</li>
+                  <li>Erros subtraem {concurso.wrong_answer_penalty} ponto(s)</li>
                 )}
+                <li>Para remover uma resposta, clique no botão "Limpar"</li>
               </ul>
             </div>
           </div>
@@ -201,9 +203,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <AnswerMatrix 
             matrix={createAnswerMatrix()} 
             answers={answers} 
-            onAnswerChange={handleAnswerChange} 
+            onAnswerChange={handleAnswerChange}
+            onClearAnswer={handleClearAnswer} 
             getOptionsForQuestion={getOptionsForQuestion}
-            disabled={!canEdit && userRankingData?.edit_count !== undefined} 
+            disabled={!canEdit && userRankingData?.edit_count !== undefined}
+            examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} 
           />
         </div>
         

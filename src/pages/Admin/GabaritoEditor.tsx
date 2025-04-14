@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -401,7 +402,7 @@ const AnswerKeyTable: React.FC<AnswerKeyTableProps> = ({
                   {rowQuestions.map(questionNumber => (
                     <TableCell key={questionNumber} className="text-center p-2">
                       <Select 
-                        value={answerKey[questionNumber] || ''}
+                        value={answerKey[questionNumber] || undefined}
                         onValueChange={(value) => onChange(questionNumber, value)}
                       >
                         <SelectTrigger className="w-20 mx-auto">

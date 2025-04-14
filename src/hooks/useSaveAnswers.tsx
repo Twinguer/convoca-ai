@@ -33,7 +33,7 @@ export const useSaveAnswers = ({
   const queryClient = useQueryClient();
 
   const validateAnswers = (): boolean => {
-    // If exam type is alternatives, ensure all questions are answered unless it's Certo or Errado
+    // For "Alternativas" type exams, all questions must be answered
     if (concurso.exam_type !== 'Certo ou Errado') {
       const totalQuestions = (concurso.basic_knowledge_questions || 0) +
                              (concurso.specific_knowledge_1_questions || 0) +
@@ -76,30 +76,37 @@ export const useSaveAnswers = ({
       let totalCorrect = 0;
       let totalQuestions = 0;
       
-      Object.entries(answers).forEach(([questionNumber, answer]) => {
-        const qNum = parseInt(questionNumber);
-        const officialAnswer = answerKey?.find(a => a.question_number === qNum);
+      // First count the total questions from the answer key
+      const totalQuestionsInAnswerKey = answerKey.length;
+      
+      // For each question in the answer key, check if the user answered it correctly
+      answerKey.forEach(officialAnswer => {
+        totalQuestions++;
+        const questionNumber = officialAnswer.question_number;
+        const userAnswer = answers[questionNumber];
         
-        if (officialAnswer) {
-          totalQuestions++;
+        // Skip score calculation for blank answers in Certo ou Errado exam type
+        if (concurso.exam_type === 'Certo ou Errado' && !userAnswer) {
+          // No points added or subtracted for blank answers
+          return;
+        }
+        
+        // Check for correct answer
+        if (userAnswer && officialAnswer.answer.toUpperCase() === userAnswer.toUpperCase()) {
+          totalCorrect++;
           
-          // Check for correct answer
-          if (officialAnswer.answer.toUpperCase() === answer.toUpperCase()) {
-            totalCorrect++;
-            
-            if (officialAnswer.is_basic_knowledge) {
-              basicKnowledgeScore++;
-            } else {
-              specificKnowledgeScore++;
-            }
-          } else if (concurso.exam_type === 'Certo ou Errado' && concurso.wrong_answer_penalty && answer) {
-            // Apply penalty for wrong answers in "Certo ou Errado" type exams
-            // Only if the answer is provided (not blank)
-            if (officialAnswer.is_basic_knowledge) {
-              basicKnowledgeScore -= concurso.wrong_answer_penalty;
-            } else {
-              specificKnowledgeScore -= concurso.wrong_answer_penalty;
-            }
+          if (officialAnswer.is_basic_knowledge) {
+            basicKnowledgeScore++;
+          } else {
+            specificKnowledgeScore++;
+          }
+        } else if (concurso.exam_type === 'Certo ou Errado' && userAnswer && concurso.wrong_answer_penalty) {
+          // Apply penalty for wrong answers in "Certo ou Errado" type exams
+          // Only if the answer is provided (not blank)
+          if (officialAnswer.is_basic_knowledge) {
+            basicKnowledgeScore -= concurso.wrong_answer_penalty;
+          } else {
+            specificKnowledgeScore -= concurso.wrong_answer_penalty;
           }
         }
       });
@@ -127,7 +134,7 @@ export const useSaveAnswers = ({
           specific_knowledge_score: specificKnowledgeScore,
           discursive_score: discursiveScore || 0,
           score: totalScore,
-          all_questions_answered: concurso.exam_type === 'Certo ou Errado' ? true : Object.keys(answers).length === totalQuestions,
+          all_questions_answered: concurso.exam_type === 'Certo ou Errado' ? true : Object.keys(answers).length === totalQuestionsInAnswerKey,
           updated_at: new Date().toISOString()
         })
         .eq('id', rankingId);
@@ -150,7 +157,8 @@ export const useSaveAnswers = ({
     setSavedSuccess(false);
     
     try {
-      if (Object.keys(answers).length === 0) {
+      // For "Alternativas" type exams, you must answer at least one question
+      if (concurso.exam_type !== 'Certo ou Errado' && Object.keys(answers).length === 0) {
         setError("Você ainda não respondeu nenhuma questão. Por favor, responda ao menos uma questão antes de salvar.");
         setIsSaving(false);
         return;
@@ -178,7 +186,7 @@ export const useSaveAnswers = ({
         return;
       }
       
-      // Prepare batch data for upsert operation
+      // Prepare batch data for upsert operation - only for answered questions
       const upsertData = Object.entries(answers).map(([questionNumber, answer]) => {
         const questionNum = parseInt(questionNumber);
         const type = questionType[questionNum] || 'basic';
@@ -202,12 +210,14 @@ export const useSaveAnswers = ({
         
       if (deleteError) throw deleteError;
       
-      // Insert new answers
-      const { error: insertError } = await supabase
-        .from('user_answers')
-        .insert(upsertData);
-        
-      if (insertError) throw insertError;
+      // Only insert new answers if there are any (for C/E, might be all blank)
+      if (upsertData.length > 0) {
+        const { error: insertError } = await supabase
+          .from('user_answers')
+          .insert(upsertData);
+          
+        if (insertError) throw insertError;
+      }
       
       // Compare with answer key to calculate the score
       const scoreResult = await calculateScore();

@@ -6,18 +6,26 @@ interface AnswerOptionProps {
   isSelected: boolean;
   onClick: () => void;
   disabled?: boolean;
+  examType?: 'Alternativas' | 'Certo ou Errado';
 }
 
 export const AnswerOption: React.FC<AnswerOptionProps> = ({ 
   option, 
   isSelected, 
   onClick,
-  disabled = false
+  disabled = false,
+  examType = 'Alternativas'
 }) => {
+  const isCertoErrado = examType === 'Certo ou Errado';
+  
   return (
     <div 
       className={`
-        w-10 h-10 flex items-center justify-center rounded-full cursor-pointer shadow-sm
+        ${isCertoErrado 
+          ? 'w-12 h-12 text-base font-medium'
+          : 'w-10 h-10 text-base font-medium'
+        }
+        flex items-center justify-center rounded-full cursor-pointer shadow-sm
         ${isSelected 
           ? 'bg-emerald-600 text-white font-bold ring-2 ring-emerald-300 ring-offset-2' 
           : disabled 
@@ -25,7 +33,6 @@ export const AnswerOption: React.FC<AnswerOptionProps> = ({
             : 'bg-white hover:bg-emerald-50 text-gray-800 border border-gray-300 hover:border-emerald-300'
         }
         ${disabled ? 'opacity-70 cursor-not-allowed' : 'transition-all duration-150 ease-in-out'}
-        text-base font-medium
       `}
       onClick={disabled ? undefined : onClick}
       role="button"

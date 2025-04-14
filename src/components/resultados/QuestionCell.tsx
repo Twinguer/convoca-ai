@@ -8,6 +8,8 @@ interface QuestionCellProps {
   onAnswerChange: (questionNumber: number, answer: string) => void;
   options: string[];
   disabled?: boolean;
+  examType?: 'Alternativas' | 'Certo ou Errado';
+  onClearAnswer?: (questionNumber: number) => void;
 }
 
 export const QuestionCell: React.FC<QuestionCellProps> = ({ 
@@ -15,18 +17,22 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   selectedAnswer, 
   onAnswerChange, 
   options,
-  disabled = false
+  disabled = false,
+  examType = 'Alternativas',
+  onClearAnswer
 }) => {
   if (questionNumber === null) {
     return null;
   }
+  
+  const isCertoErrado = examType === 'Certo ou Errado';
 
   return (
     <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
       <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200">
         Questão {questionNumber}
       </div>
-      <div className="flex justify-center items-center gap-3 p-4">
+      <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
         {options.map((option) => (
           <AnswerOption
             key={option}
@@ -34,8 +40,22 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             isSelected={selectedAnswer === option}
             onClick={() => !disabled && onAnswerChange(questionNumber, option)}
             disabled={disabled}
+            examType={examType}
           />
         ))}
+        
+        {isCertoErrado && onClearAnswer && (
+          <button
+            onClick={() => onClearAnswer(questionNumber)}
+            disabled={disabled || !selectedAnswer}
+            className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
+              ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+              : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
+            title="Limpar resposta"
+          >
+            Limpar
+          </button>
+        )}
       </div>
     </div>
   );

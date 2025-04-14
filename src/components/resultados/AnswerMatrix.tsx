@@ -8,6 +8,8 @@ interface AnswerMatrixProps {
   onAnswerChange: (questionNumber: number, answer: string) => void;
   getOptionsForQuestion: (questionNumber: number) => string[];
   disabled?: boolean;
+  examType?: 'Alternativas' | 'Certo ou Errado';
+  onClearAnswer?: (questionNumber: number) => void;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({ 
@@ -15,7 +17,9 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   answers, 
   onAnswerChange,
   getOptionsForQuestion,
-  disabled = false
+  disabled = false,
+  examType = 'Alternativas',
+  onClearAnswer
 }) => {
   if (matrix.length === 0) {
     return (
@@ -39,6 +43,8 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     onAnswerChange={onAnswerChange}
                     options={getOptionsForQuestion(questionNumber)}
                     disabled={disabled}
+                    examType={examType}
+                    onClearAnswer={onClearAnswer}
                   />
                 </div>
               )
