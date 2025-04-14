@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -36,7 +35,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const queryClient = useQueryClient();
   const maxEditsReached = editCount >= 3;
 
-  // If showAnswerSheet is changed via props, update state
   useEffect(() => {
     setIsShowingAnswerSheet(showAnswerSheet);
   }, [showAnswerSheet]);
@@ -74,9 +72,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         description: "Você agora está participando deste ranking.",
       });
       
-      // Redirect to the answer form
       setTimeout(() => {
-        // We have the ranking ID from the INSERT operation above
         if (data) {
           setIsLoading(false);
           navigate(window.location.pathname, { replace: true });
@@ -103,7 +99,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
-  // If max edits reached, show warning
   if (isAlreadyParticipating && maxEditsReached && !isShowingAnswerSheet && !isShowingScoreForm) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -129,7 +124,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
-  // If user is already participating and we're not showing any form yet, show options
   if (isAlreadyParticipating && !isShowingScoreForm && !isShowingAnswerSheet) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -179,12 +173,11 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
-  // Show the answer sheet if selected and we have a ranking ID
   if (isShowingAnswerSheet && userRankingId) {
     if (maxEditsReached) {
       return (
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="default" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Limite de edições atingido</AlertTitle>
             <AlertDescription>
@@ -230,7 +223,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
-  // Show the score form if selected and we have a ranking ID
   if (isShowingScoreForm && userRankingId) {
     return (
       <ScoreForm 
@@ -245,7 +237,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
-  // Default view for non-participating users
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border">
       <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
