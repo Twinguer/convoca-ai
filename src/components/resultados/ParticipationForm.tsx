@@ -107,7 +107,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   if (isAlreadyParticipating && maxEditsReached && !isShowingAnswerSheet && !isShowingScoreForm) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <Alert variant="warning" className="mb-4">
+        <Alert variant="default" className="mb-4">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Limite de edições atingido</AlertTitle>
           <AlertDescription>
