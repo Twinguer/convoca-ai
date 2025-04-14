@@ -16,15 +16,15 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   options 
 }) => {
   if (questionNumber === null) {
-    return <div className="p-2 h-full bg-gray-50"></div>;
+    return null;
   }
 
   return (
-    <div className="p-2">
-      <div className="text-center font-medium text-sm bg-blue-100 py-1 rounded-t-md">
+    <div className="flex flex-col">
+      <div className="text-center font-medium text-sm bg-blue-100 py-1">
         {questionNumber}
       </div>
-      <div className="grid grid-cols-5 gap-1 pt-1">
+      <div className="grid grid-cols-5 gap-1 p-2">
         {options.map((option) => (
           <AnswerOption
             key={option}

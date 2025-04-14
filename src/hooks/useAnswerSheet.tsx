@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +10,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Fetch existing answers if any
   const fetchExistingAnswers = async () => {
     try {
       const { data, error } = await supabase
@@ -45,13 +43,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   };
 
-  // Auto-assign question types based on concurso structure
   const initializeQuestionTypes = () => {
     if (concurso && Object.keys(questionType).length === 0) {
       const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' } = {};
       let questionNumber = 1;
       
-      // Basic knowledge questions
       if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
           typesMap[questionNumber] = 'basic';
@@ -59,7 +55,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
       }
       
-      // Specific knowledge 1 questions
       if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
         for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
           typesMap[questionNumber] = 'specific1';
@@ -67,7 +62,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
       }
       
-      // Specific knowledge 2 questions
       if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
         for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
           typesMap[questionNumber] = 'specific2';
@@ -79,7 +73,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   };
 
-  // Load data on mount
   useEffect(() => {
     fetchExistingAnswers();
   }, [rankingId]);
@@ -115,13 +108,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     return total;
   };
 
-  // Generate question numbers for currently selected section
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
     const questions: number[] = [];
     
-    // Get all question numbers for the selected section
     Object.entries(questionType).forEach(([num, type]) => {
       if (
         (selectedSection === 'basic' && type === 'basic') ||
@@ -142,30 +133,27 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       return ['C', 'E'];
     }
     
-    // For multiple choice, use the alternatives_count or default to 5
     const count = concurso.alternatives_count || 5;
-    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, etc.
+    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
   };
-  
-  // Create matrix-style layout for answers
+
   const createAnswerMatrix = () => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) return [];
     
-    // Define matrix size - try to get a balanced layout
-    const COLUMNS = 6; // Fixed number of columns
-    const rows = Math.ceil(sectionQuestions.length / COLUMNS);
+    const QUESTIONS_PER_ROW = 5;
+    const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
     
     const matrix = [];
     
     for (let row = 0; row < rows; row++) {
       const rowData = [];
-      for (let col = 0; col < COLUMNS; col++) {
-        const index = row * COLUMNS + col;
+      for (let col = 0; col < QUESTIONS_PER_ROW; col++) {
+        const index = row * QUESTIONS_PER_ROW + col;
         if (index < sectionQuestions.length) {
           rowData.push(sectionQuestions[index]);
         } else {
-          rowData.push(null); // Empty cell
+          rowData.push(null);
         }
       }
       matrix.push(rowData);

@@ -17,24 +17,24 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
 }) => {
   return (
     <div className="p-4">
-      <table className="w-full border-collapse">
-        <tbody>
-          {matrix.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((questionNumber, colIndex) => (
-                <td key={`${rowIndex}-${colIndex}`} className="border border-gray-300 p-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {matrix.map((row, rowIndex) => (
+          <React.Fragment key={rowIndex}>
+            {row.map((questionNumber, colIndex) => (
+              questionNumber !== null && (
+                <div key={`${rowIndex}-${colIndex}`} className="border border-gray-300 rounded-md overflow-hidden">
                   <QuestionCell
                     questionNumber={questionNumber}
-                    selectedAnswer={questionNumber !== null ? answers[questionNumber] : undefined}
+                    selectedAnswer={answers[questionNumber]}
                     onAnswerChange={onAnswerChange}
-                    options={questionNumber !== null ? getOptionsForQuestion(questionNumber) : []}
+                    options={getOptionsForQuestion(questionNumber)}
                   />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                </div>
+              )
+            ))}
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 };
