@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursos } from '../services/concursoService';
 import ConcursoCard from '../components/ConcursoCard';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
 const Editais: React.FC = () => {
   // Use the updated fetchConcursos function with the correct parameter type
   const {
@@ -16,20 +18,23 @@ const Editais: React.FC = () => {
       status: 'Em andamento'
     })
   });
+
   if (isLoading) {
     return <div className="flex justify-center items-center min-h-[60vh]">
       <p className="text-lg">Carregando editais...</p>
     </div>;
   }
+
   if (error) {
     return <div className="flex justify-center items-center min-h-[60vh]">
       <p className="text-lg text-red-500">Erro ao carregar editais.</p>
     </div>;
   }
+
   return <div className="container mx-auto p-6">
       
       
-      {data && data.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {data && data.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
           {data.map(edital => <div key={edital.id} className="border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
               <ConcursoCard id={edital.id} titulo={edital.titulo} orgao={edital.orgao} data={edital.data_publicacao ? format(new Date(edital.data_publicacao), 'dd/MM/yyyy', {
           locale: ptBR
@@ -40,4 +45,5 @@ const Editais: React.FC = () => {
         </div>}
     </div>;
 };
+
 export default Editais;

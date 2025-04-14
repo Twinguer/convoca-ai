@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ExternalLink } from 'lucide-react';
+import { PencilLine, Trophy, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
 
 interface RankingsTabProps {
@@ -17,6 +17,7 @@ interface RankingsTabProps {
 
 const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthenticated = false }) => {
   const navigate = useNavigate();
+  const [showAllRankings, setShowAllRankings] = useState(false);
   
   const { data: rankings, isLoading } = useQuery({
     queryKey: ['user-rankings', userId],
@@ -33,7 +34,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           concursos(id, titulo, orgao, banca)
         `)
         .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .order('score', { ascending: false });
         
       if (error) throw error;
       return data || [];
@@ -42,8 +43,17 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
   });
   
   // Use provided userRankings if available, otherwise use fetched rankings
-  const displayRankings = userRankings || rankings;
+  const allRankings = userRankings || rankings;
   const showSkeleton = isLoading && !userRankings;
+  
+  // Sort rankings by score (highest first)
+  const sortedRankings = [...(allRankings || [])].sort((a, b) => 
+    (typeof b.score === 'number' ? b.score : 0) - (typeof a.score === 'number' ? a.score : 0)
+  );
+  
+  // Display only top 2 if not showing all
+  const displayRankings = showAllRankings ? sortedRankings : sortedRankings?.slice(0, 2);
+  const hasMoreRankings = sortedRankings?.length > 2;
   
   if (showSkeleton) {
     return (
@@ -55,7 +65,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
     );
   }
   
-  if (!displayRankings || displayRankings.length === 0) {
+  if (!allRankings || allRankings.length === 0) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -72,9 +82,9 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
   
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Rankings ({displayRankings.length})</h3>
+      <h3 className="text-lg font-medium">Rankings ({allRankings.length})</h3>
       
-      <div className="grid gap-4">
+      <div className="grid gap-1">
         {displayRankings.map((ranking: any) => (
           <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
             <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
@@ -110,7 +120,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
             </div>
             
             <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-1">
                 <div className="p-3 bg-emerald-50 rounded-md text-center">
                   <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
                   <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
@@ -140,6 +150,26 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
             </CardContent>
           </Card>
         ))}
+        
+        {hasMoreRankings && (
+          <Button 
+            variant="ghost" 
+            onClick={() => setShowAllRankings(!showAllRankings)}
+            className="mt-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+          >
+            {showAllRankings ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-2" />
+                Mostrar menos
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-2" />
+                Ver mais rankings ({sortedRankings.length - 2})
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

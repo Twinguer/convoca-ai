@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
+
 const ConcursoDetails = () => {
   const {
     id
@@ -20,15 +22,18 @@ const ConcursoDetails = () => {
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id!)
   });
+
   if (isLoading) {
     return <LoadingState />;
   }
+
   if (!concurso) {
     return <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Concurso não encontrado</h1>
         <p>O concurso que você está tentando acessar não existe ou foi removido.</p>
       </div>;
   }
+
   return <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-2">{concurso.titulo}</h1>
       <div className="flex items-center gap-2 mb-6">
@@ -39,7 +44,7 @@ const ConcursoDetails = () => {
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mb-1">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xl">Informações Gerais</CardTitle>
@@ -111,7 +116,7 @@ const ConcursoDetails = () => {
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -165,4 +170,5 @@ const ConcursoDetails = () => {
       </div>
     </div>;
 };
+
 export default ConcursoDetails;

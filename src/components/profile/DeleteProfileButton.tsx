@@ -66,13 +66,13 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
   return (
     <>
       <Button 
-        variant="destructive" 
+        variant="outline" 
         size="sm" 
         onClick={() => setIsOpen(true)} 
-        className="gap-2"
+        className="gap-1 text-xs text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700 w-1/4"
       >
-        <Trash2 className="h-4 w-4" />
-        Excluir Perfil
+        <Trash2 className="h-3 w-3" />
+        Excluir
       </Button>
       
       <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
