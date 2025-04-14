@@ -20,11 +20,11 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   }
 
   return (
-    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden">
-      <div className="text-center font-medium text-sm bg-blue-100 py-2 border-b border-gray-200">
+    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
+      <div className="text-center font-bold text-sm bg-blue-100 py-2 border-b border-gray-200">
         Questão {questionNumber}
       </div>
-      <div className="flex justify-center items-center gap-2 p-3">
+      <div className="flex justify-center items-center gap-3 p-4">
         {options.map((option) => (
           <AnswerOption
             key={option}

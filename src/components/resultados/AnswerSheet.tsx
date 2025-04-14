@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, AlertTriangle, Check } from 'lucide-react';
@@ -12,6 +12,8 @@ import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
 import { useSaveAnswers } from '@/hooks/useSaveAnswers';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BookOpen, BookText, GraduationCap } from 'lucide-react';
 
 interface AnswerSheetProps {
   concurso: Concurso;

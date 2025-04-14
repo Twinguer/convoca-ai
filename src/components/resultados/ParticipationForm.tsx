@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,11 +24,20 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Changed to true to show by default
+  const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
   const [showScoreForm, setShowScoreForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Check URL params to see if we should force display answer sheet
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showAnswerSheet') === 'true') {
+      setShowAnswerSheet(true);
+      setShowScoreForm(false);
+    }
+  }, []);
 
   const handleParticipate = async () => {
     if (!user) {
@@ -91,6 +100,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
+  // If user is already participating and we're not showing any form yet, show options
   if (isAlreadyParticipating && !showScoreForm && !showAnswerSheet) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
@@ -130,6 +140,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
+  // Show the answer sheet if selected and we have a ranking ID
   if (showAnswerSheet && userRankingId) {
     return (
       <AnswerSheet 
@@ -147,6 +158,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
+  // Show the score form if selected and we have a ranking ID
   if (showScoreForm && userRankingId) {
     return (
       <ScoreForm 
@@ -161,6 +173,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
+  // Default view for non-participating users
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border">
       <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
@@ -185,3 +198,4 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     </div>
   );
 };
+
