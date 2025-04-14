@@ -135,7 +135,7 @@ const AdminDashboard: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>Informações do Sistema</CardTitle>
-            <CardDescription>Detalhes do sistema ConvocAI</CardDescription>
+            
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
