@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { createRanking } from '@/integrations/supabase/rankings';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
@@ -59,6 +59,7 @@ const NovoConcurso = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const isEditing = !!id;
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -204,10 +205,13 @@ const NovoConcurso = () => {
   
   // Check the URL state for showing answer key tab
   React.useEffect(() => {
-    if (location.state && (location.state as any).showAnswerKeyTab) {
+    // Fix: Using type assertion to access the state property
+    const locationState = location.state as { showAnswerKeyTab?: boolean } | null;
+    
+    if (locationState && locationState.showAnswerKeyTab) {
       setActiveTab("gabarito");
     }
-  }, [location.state]);
+  }, [location]);
   
   if (isEditing && isLoading) {
     return (
