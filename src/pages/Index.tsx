@@ -32,10 +32,7 @@ const Index = () => {
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
-                    Rankings
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </Button>
+                  
                 </Link>
                 
                 {!user && <Link to="/auth">
