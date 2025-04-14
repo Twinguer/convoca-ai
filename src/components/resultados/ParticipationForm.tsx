@@ -8,36 +8,38 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
-import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowDown, PencilLine, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ParticipationFormProps {
   concurso: Concurso;
   isAlreadyParticipating: boolean;
   userRankingId?: string;
+  editCount?: number;
+  showAnswerSheet?: boolean;
 }
 
 export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   concurso,
   isAlreadyParticipating,
-  userRankingId
+  userRankingId,
+  editCount = 0,
+  showAnswerSheet = false
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
-  const [showScoreForm, setShowScoreForm] = useState(false);
+  const [isShowingAnswerSheet, setIsShowingAnswerSheet] = useState(showAnswerSheet);
+  const [isShowingScoreForm, setIsShowingScoreForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const maxEditsReached = editCount >= 3;
 
-  // Check URL params to see if we should force display answer sheet
+  // If showAnswerSheet is changed via props, update state
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('showAnswerSheet') === 'true') {
-      setShowAnswerSheet(true);
-      setShowScoreForm(false);
-    }
-  }, []);
+    setIsShowingAnswerSheet(showAnswerSheet);
+  }, [showAnswerSheet]);
 
   const handleParticipate = async () => {
     if (!user) {
@@ -58,6 +60,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           user_id: user.id,
           concurso_id: concurso.id,
           score: 0,
+          edit_count: 0,
         })
         .select('id')
         .single();
@@ -100,8 +103,34 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     );
   }
 
+  // If max edits reached, show warning
+  if (isAlreadyParticipating && maxEditsReached && !isShowingAnswerSheet && !isShowingScoreForm) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <Alert variant="warning" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Limite de edições atingido</AlertTitle>
+          <AlertDescription>
+            Você já atingiu o limite máximo de 3 edições do seu cartão de respostas para este concurso.
+            Não é possível fazer mais alterações.
+          </AlertDescription>
+        </Alert>
+        
+        <div className="mt-4">
+          <Button 
+            onClick={() => navigate(`/concurso/${concurso.id}/resultados`)}
+            variant="outline"
+            className="w-full"
+          >
+            Ver Ranking do Concurso
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // If user is already participating and we're not showing any form yet, show options
-  if (isAlreadyParticipating && !showScoreForm && !showAnswerSheet) {
+  if (isAlreadyParticipating && !isShowingScoreForm && !isShowingAnswerSheet) {
     return (
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-xl font-bold mb-4">Você já está participando!</h2>
@@ -109,15 +138,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Button 
-            onClick={() => setShowAnswerSheet(true)}
-            className="flex items-center justify-center gap-2"
+            onClick={() => setIsShowingAnswerSheet(true)}
+            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700"
+            disabled={maxEditsReached}
           >
             <PencilLine className="h-4 w-4" />
             Preencher Cartão de Respostas
+            {maxEditsReached && <span className="text-xs ml-1">(limite atingido)</span>}
           </Button>
           
           <Button 
-            onClick={() => setShowScoreForm(true)} 
+            onClick={() => setIsShowingScoreForm(true)} 
             variant="outline"
             className="flex items-center justify-center gap-2"
           >
@@ -125,6 +156,14 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             Inserir Notas Diretamente
           </Button>
         </div>
+        
+        {editCount > 0 && (
+          <div className="mt-4 text-sm text-center">
+            <p className="text-muted-foreground">
+              Você já editou seu cartão de respostas {editCount} vez(es) de 3 permitidas.
+            </p>
+          </div>
+        )}
         
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
@@ -141,14 +180,47 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   }
 
   // Show the answer sheet if selected and we have a ranking ID
-  if (showAnswerSheet && userRankingId) {
+  if (isShowingAnswerSheet && userRankingId) {
+    if (maxEditsReached) {
+      return (
+        <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Limite de edições atingido</AlertTitle>
+            <AlertDescription>
+              Você já atingiu o limite máximo de 3 edições do seu cartão de respostas para este concurso.
+              Não é possível fazer mais alterações.
+            </AlertDescription>
+          </Alert>
+          
+          <div className="mt-4 flex gap-2">
+            <Button 
+              onClick={() => setIsShowingAnswerSheet(false)}
+              variant="outline"
+              className="flex-1"
+            >
+              Voltar
+            </Button>
+            
+            <Button 
+              onClick={() => navigate(`/concurso/${concurso.id}/resultados`)}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              Ver Ranking do Concurso
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <AnswerSheet 
         concurso={concurso}
         rankingId={userRankingId}
         onSuccess={() => {
-          setShowAnswerSheet(false);
+          setIsShowingAnswerSheet(false);
           queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+          queryClient.invalidateQueries({ queryKey: ['participating', concurso.id, user.id] });
           toast({
             title: "Cartão de Respostas Processado",
             description: "Suas respostas foram processadas e seu ranking foi atualizado.",
@@ -159,14 +231,14 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   }
 
   // Show the score form if selected and we have a ranking ID
-  if (showScoreForm && userRankingId) {
+  if (isShowingScoreForm && userRankingId) {
     return (
       <ScoreForm 
         concurso={concurso}
         rankingId={userRankingId}
         userId={user.id}
         onSuccess={() => {
-          setShowScoreForm(false);
+          setIsShowingScoreForm(false);
           queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
         }}
       />
@@ -184,7 +256,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       <Button 
         onClick={handleParticipate} 
         disabled={isLoading}
-        className="w-full"
+        className="w-full bg-emerald-600 hover:bg-emerald-700"
       >
         {isLoading ? (
           <>
@@ -198,4 +270,3 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     </div>
   );
 };
-

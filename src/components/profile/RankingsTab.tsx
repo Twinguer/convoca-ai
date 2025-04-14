@@ -29,6 +29,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           basic_knowledge_score,
           specific_knowledge_score,
           discursive_score,
+          edit_count,
           created_at,
           concursos(id, titulo, orgao, banca)
         `)

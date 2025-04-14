@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -12,15 +13,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
+import { User, Upload, Check, Loader2, Trophy, Users } from 'lucide-react';
 import { fetchUserRankings } from '@/services/concursoService';
 import { UserRankingDisplay } from '@/types/concursos';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
-import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
+import DeleteProfileDialog from '@/components/profile/DeleteProfileDialog';
 
 interface Follower {
   id: string;
@@ -29,13 +30,9 @@ interface Follower {
 }
 
 const UserProfile = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [concursosAprovados, setConcursosAprovados] = useState('');
@@ -48,28 +45,18 @@ const UserProfile = () => {
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
 
-  const {
-    data: profile,
-    isLoading,
-    refetch
-  } = useQuery({
+  const { data: profile, isLoading, refetch } = useQuery({
     queryKey: ['user-profile', user?.id],
     queryFn: async () => {
       if (!user) return null;
       try {
         console.log('Fetching user profile for ID:', user.id);
-        const {
-          data,
-          error
-        } = await supabase.from('users_profiles').select('*').eq('id', user.id).single();
+        const { data, error } = await supabase.from('users_profiles').select('*').eq('id', user.id).single();
         if (error) {
           console.error('Error fetching profile:', error);
           if (error.code === 'PGRST116') {
             console.log('Profile not found, creating new profile');
-            const {
-              data: newProfile,
-              error: createError
-            } = await supabase.from('users_profiles').insert({
+            const { data: newProfile, error: createError } = await supabase.from('users_profiles').insert({
               id: user.id,
               email: user.email,
               name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
@@ -104,19 +91,17 @@ const UserProfile = () => {
     staleTime: 300000
   });
 
-  const {
-    data: rankings
-  } = useQuery({
+  const { data: rankings } = useQuery({
     queryKey: ['user-rankings', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const {
-        data,
-        error
-      } = await supabase.from('user_rankings').select(`
+      const { data, error } = await supabase.from('user_rankings').select(`
           id,
           concurso_id,
           score,
+          basic_knowledge_score,
+          specific_knowledge_score,
+          discursive_score,
           concursos(titulo)
         `).eq('user_id', user.id);
       if (error) throw error;
@@ -127,23 +112,21 @@ const UserProfile = () => {
           concursoId: item.concurso_id,
           concursoTitle: titulo,
           position: 0,
-          score: item.score
+          score: item.score,
+          basicKnowledgeScore: item.basic_knowledge_score,
+          specificKnowledgeScore: item.specific_knowledge_score,
+          discursiveScore: item.discursive_score
         };
       }) as UserRankingDisplay[];
     },
     enabled: !!user
   });
 
-  const {
-    data: followerData
-  } = useQuery({
+  const { data: followerData } = useQuery({
     queryKey: ['user-followers-count', user?.id],
     queryFn: async () => {
       if (!user) return 0;
-      const {
-        data,
-        error
-      } = await supabase.rpc('count_user_followers', {
+      const { data, error } = await supabase.rpc('count_user_followers', {
         user_id: user.id
       });
       if (error) {
@@ -191,10 +174,7 @@ const UserProfile = () => {
       const filePath = `${fileName}`;
       setUploading(true);
       console.log("Uploading file to path:", filePath);
-      const {
-        data,
-        error: uploadError
-      } = await supabase.storage.from('profiles').upload(filePath, file, {
+      const { data, error: uploadError } = await supabase.storage.from('profiles').upload(filePath, file, {
         cacheControl: '3600',
         upsert: true
       });
@@ -203,16 +183,9 @@ const UserProfile = () => {
         throw uploadError;
       }
       console.log("Upload data:", data);
-      const {
-        data: {
-          publicUrl
-        }
-      } = supabase.storage.from('profiles').getPublicUrl(filePath);
+      const { data: { publicUrl } } = supabase.storage.from('profiles').getPublicUrl(filePath);
       console.log("Generated public URL:", publicUrl);
-      const {
-        data: profileData,
-        error: updateError
-      } = await supabase.from('users_profiles').update({
+      const { data: profileData, error: updateError } = await supabase.from('users_profiles').update({
         avatar_url: publicUrl,
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
@@ -252,10 +225,7 @@ const UserProfile = () => {
         profileText
       });
       const currentAvatarUrl = avatarUrl;
-      const {
-        data,
-        error
-      } = await supabase.from('users_profiles').update({
+      const { data, error } = await supabase.from('users_profiles').update({
         name,
         bio,
         concursos_aprovados: concursosAprovados,
@@ -296,7 +266,7 @@ const UserProfile = () => {
 
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
   }
 
@@ -305,7 +275,7 @@ const UserProfile = () => {
       navigate("/auth");
     }, [navigate]);
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
   }
 
@@ -330,9 +300,8 @@ const UserProfile = () => {
             
             <Tabs defaultValue="profile">
               <div className="px-6">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="profile">Perfil</TabsTrigger>
-                  <TabsTrigger value="concursos">Concursos</TabsTrigger>
                   <TabsTrigger value="rankings">Rankings</TabsTrigger>
                 </TabsList>
               </div>
@@ -340,12 +309,8 @@ const UserProfile = () => {
               <TabsContent value="profile">
                 <CardContent className="pt-6 space-y-4">
                   <ProfileInfoTab name={name} setName={setName} email={user.email || ''} bio={bio} setBio={setBio} statusConcurseiro={statusConcurseiro} setStatusConcurseiro={setStatusConcurseiro} profileText={profileText} setProfileText={setProfileText} />
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="concursos">
-                <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-2">
+                  
+                  <div className="space-y-2 pt-4">
                     <Label htmlFor="concursos-aprovados">Aprovações:</Label>
                     <Textarea id="concursos-aprovados" value={concursosAprovados} onChange={e => setConcursosAprovados(e.target.value)} placeholder="Liste os concursos em que você foi aprovado (um por linha)" rows={5} />
                     <p className="text-sm text-muted-foreground">
@@ -353,7 +318,14 @@ const UserProfile = () => {
                     </p>
                   </div>
                   
+                  <Separator className="my-4" />
                   
+                  <div className="mt-4">
+                    <DeleteProfileDialog />
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Ao excluir seu perfil, todos os seus dados serão removidos permanentemente.
+                    </p>
+                  </div>
                 </CardContent>
               </TabsContent>
               
@@ -365,7 +337,7 @@ const UserProfile = () => {
             </Tabs>
             
             <CardFooter className="flex justify-end py-6">
-              <Button onClick={handleSaveProfile} disabled={saving} className="relative">
+              <Button onClick={handleSaveProfile} disabled={saving} className="relative bg-emerald-600 hover:bg-emerald-700">
                 {saving ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Salvando...
