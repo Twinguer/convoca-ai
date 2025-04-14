@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
@@ -41,6 +44,13 @@ const formSchema = z.object({
   specific_knowledge_weight: z.coerce.number().default(1),
   discursive_weight: z.coerce.number().default(1),
   link: z.string().optional(),
+  has_basic_knowledge: z.boolean().default(true),
+  has_specific_knowledge_1: z.boolean().default(true),
+  has_specific_knowledge_2: z.boolean().default(false),
+  has_discursive: z.boolean().default(false),
+  basic_knowledge_questions: z.coerce.number().optional(),
+  specific_knowledge_1_questions: z.coerce.number().optional(),
+  specific_knowledge_2_questions: z.coerce.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -52,6 +62,7 @@ const NovoConcurso = () => {
   const isEditing = !!id;
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [activeTab, setActiveTab] = useState<string>("informacoes");
   
   // Fetch existing concurso for editing
   const { data: existingConcurso, isLoading } = useQuery({
@@ -89,6 +100,13 @@ const NovoConcurso = () => {
       specific_knowledge_weight: 1,
       discursive_weight: 1,
       link: '',
+      has_basic_knowledge: true,
+      has_specific_knowledge_1: true,
+      has_specific_knowledge_2: false,
+      has_discursive: false,
+      basic_knowledge_questions: 40,
+      specific_knowledge_1_questions: 60,
+      specific_knowledge_2_questions: 0,
     },
   });
   
@@ -111,6 +129,13 @@ const NovoConcurso = () => {
         specific_knowledge_weight: existingConcurso.specific_knowledge_weight,
         discursive_weight: existingConcurso.discursive_weight,
         link: existingConcurso.link,
+        has_basic_knowledge: existingConcurso.has_basic_knowledge ?? true,
+        has_specific_knowledge_1: existingConcurso.has_specific_knowledge_1 ?? true,
+        has_specific_knowledge_2: existingConcurso.has_specific_knowledge_2 ?? false,
+        has_discursive: existingConcurso.has_discursive ?? false,
+        basic_knowledge_questions: existingConcurso.basic_knowledge_questions,
+        specific_knowledge_1_questions: existingConcurso.specific_knowledge_1_questions,
+        specific_knowledge_2_questions: existingConcurso.specific_knowledge_2_questions,
       });
     }
   }, [existingConcurso, form]);
@@ -147,15 +172,10 @@ const NovoConcurso = () => {
             description: "O novo ranking foi criado com sucesso.",
           });
           
-          // Generate fake rankings for demo purposes (optional)
-          try {
-            if (result[0] && result[0].id) {
-              console.log('Generating fake rankings for new concurso:', result[0].id);
-              // You could add code here to generate fake rankings
-            }
-          } catch (e) {
-            console.error('Error generating fake rankings:', e);
-            // Non-critical error, don't throw
+          // Redirect to the answer key tab if it's a new concurso
+          if (result[0] && result[0].id) {
+            navigate(`/project/admin/man/concursos/editar/${result[0].id}`, { state: { showAnswerKeyTab: true } });
+            return;
           }
         } catch (error: any) {
           console.error('Error in createRanking:', error);
@@ -163,7 +183,12 @@ const NovoConcurso = () => {
         }
       }
       
-      navigate('/project/admin/man/concursos');
+      // If we're in edit mode and on the informacoes tab, switch to the gabarito tab
+      if (isEditing && activeTab === "informacoes") {
+        setActiveTab("gabarito");
+      } else {
+        navigate('/project/admin/man/concursos');
+      }
     } catch (error: any) {
       console.error('Error saving concurso:', error);
       setErrorMessage(error.message || "Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.");
@@ -177,6 +202,13 @@ const NovoConcurso = () => {
     }
   };
   
+  // Check the URL state for showing answer key tab
+  React.useEffect(() => {
+    if (location.state && (location.state as any).showAnswerKeyTab) {
+      setActiveTab("gabarito");
+    }
+  }, [location.state]);
+  
   if (isEditing && isLoading) {
     return (
       <div className="flex justify-center items-center">
@@ -185,6 +217,25 @@ const NovoConcurso = () => {
       </div>
     );
   }
+  
+  const getTotalQuestions = () => {
+    const values = form.getValues();
+    let total = 0;
+    
+    if (values.has_basic_knowledge && values.basic_knowledge_questions) {
+      total += Number(values.basic_knowledge_questions);
+    }
+    
+    if (values.has_specific_knowledge_1 && values.specific_knowledge_1_questions) {
+      total += Number(values.specific_knowledge_1_questions);
+    }
+    
+    if (values.has_specific_knowledge_2 && values.specific_knowledge_2_questions) {
+      total += Number(values.specific_knowledge_2_questions);
+    }
+    
+    return total;
+  };
   
   return (
     <div>
@@ -198,323 +249,455 @@ const NovoConcurso = () => {
         </Alert>
       )}
       
-      <Card>
-        <CardHeader>
-          <CardTitle>{isEditing ? 'Editar Ranking' : 'Cadastrar Novo Ranking'}</CardTitle>
-          <CardDescription>
-            Preencha os campos abaixo para {isEditing ? 'atualizar' : 'cadastrar'} um ranking no sistema.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="titulo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cargo</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ex: Analista Judiciário - Área Administrativa
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="orgao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Concurso</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ex: Tribunal Regional Federal da 1ª Região
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="banca"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Banca Organizadora</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma banca" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Cebraspe">Cebraspe</SelectItem>
-                          <SelectItem value="FGV">FGV</SelectItem>
-                          <SelectItem value="FCC">FCC</SelectItem>
-                          <SelectItem value="IBFC">IBFC</SelectItem>
-                          <SelectItem value="Vunesp">Vunesp</SelectItem>
-                          <SelectItem value="Outra">Outra</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="vagas"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número de Vagas</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="inscritos"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Número de Inscritos</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="data_publicacao"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Data da Prova</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="etapa_atual"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Etapa Atual</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Ex: Edital publicado, Inscrições abertas
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Em andamento">Em andamento</SelectItem>
-                          <SelectItem value="Concluído">Concluído</SelectItem>
-                          <SelectItem value="Cancelado">Cancelado</SelectItem>
-                          <SelectItem value="Suspenso">Suspenso</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="exam_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipo de Prova</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um tipo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
-                          <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
-                          <SelectItem value="Dissertativa">Dissertativa</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="alternatives_count"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quantidade de Alternativas</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Para provas de Certo ou Errado, considere 2
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="basic_knowledge_weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso - Conhecimentos Básicos</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="specific_knowledge_weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso - Conhecimentos Específicos</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="discursive_weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Pontos da discursiva</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.1" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="wrong_answer_penalty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Penalidade por Erro</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Para Cebraspe, geralmente é 1 (perde um ponto por erro)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="link"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Link do Edital</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      URL completa para o edital do concurso
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => navigate('/project/admin/man/concursos')}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    isEditing ? 'Atualizar Ranking' : 'Cadastrar Ranking'
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="informacoes">Informações do Ranking</TabsTrigger>
+          <TabsTrigger value="gabarito" disabled={!isEditing}>Gabarito Oficial</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="informacoes">
+          <Card>
+            <CardHeader>
+              <CardTitle>{isEditing ? 'Editar Ranking' : 'Cadastrar Novo Ranking'}</CardTitle>
+              <CardDescription>
+                Preencha os campos abaixo para {isEditing ? 'atualizar' : 'cadastrar'} um ranking no sistema.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="titulo"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cargo</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Ex: Analista Judiciário - Área Administrativa
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="orgao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Concurso</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Ex: Tribunal Regional Federal da 1ª Região
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="banca"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Banca Organizadora</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione uma banca" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Cebraspe">Cebraspe</SelectItem>
+                              <SelectItem value="FGV">FGV</SelectItem>
+                              <SelectItem value="FCC">FCC</SelectItem>
+                              <SelectItem value="IBFC">IBFC</SelectItem>
+                              <SelectItem value="Vunesp">Vunesp</SelectItem>
+                              <SelectItem value="Outra">Outra</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="vagas"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número de Vagas</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="inscritos"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número de Inscritos</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="data_publicacao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data da Prova</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="etapa_atual"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Etapa Atual</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Ex: Edital publicado, Inscrições abertas
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Em andamento">Em andamento</SelectItem>
+                              <SelectItem value="Concluído">Concluído</SelectItem>
+                              <SelectItem value="Cancelado">Cancelado</SelectItem>
+                              <SelectItem value="Suspenso">Suspenso</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="exam_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tipo de Prova</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
+                              <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                              <SelectItem value="Dissertativa">Dissertativa</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="alternatives_count"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quantidade de Alternativas</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Para provas de Certo ou Errado, considere 2
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Estrutura da Prova - Nova Seção */}
+                  <div className="space-y-4 border p-4 rounded-md">
+                    <h3 className="text-lg font-medium">Estrutura da Prova</h3>
+                    
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="has_basic_knowledge"
+                        render={({ field }) => (
+                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange} 
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none w-full">
+                                <FormLabel>Conhecimentos Básicos</FormLabel>
+                                {field.value && (
+                                  <FormField
+                                    control={form.control}
+                                    name="basic_knowledge_questions"
+                                    render={({ field: questionsField }) => (
+                                      <FormItem className="mt-2">
+                                        <FormLabel>Número de questões</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" {...questionsField} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_specific_knowledge_1"
+                        render={({ field }) => (
+                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange} 
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none w-full">
+                                <FormLabel>Conhecimentos Específicos-1</FormLabel>
+                                {field.value && (
+                                  <FormField
+                                    control={form.control}
+                                    name="specific_knowledge_1_questions"
+                                    render={({ field: questionsField }) => (
+                                      <FormItem className="mt-2">
+                                        <FormLabel>Número de questões</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" {...questionsField} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_specific_knowledge_2"
+                        render={({ field }) => (
+                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange} 
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none w-full">
+                                <FormLabel>Conhecimentos Específicos-2</FormLabel>
+                                {field.value && (
+                                  <FormField
+                                    control={form.control}
+                                    name="specific_knowledge_2_questions"
+                                    render={({ field: questionsField }) => (
+                                      <FormItem className="mt-2">
+                                        <FormLabel>Número de questões</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" {...questionsField} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_discursive"
+                        render={({ field }) => (
+                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange} 
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none w-full">
+                                <FormLabel>Discursiva</FormLabel>
+                                {field.value && (
+                                  <FormField
+                                    control={form.control}
+                                    name="discursive_weight"
+                                    render={({ field: weightField }) => (
+                                      <FormItem className="mt-2">
+                                        <FormLabel>Valor máximo</FormLabel>
+                                        <FormControl>
+                                          <Input type="number" step="0.1" {...weightField} />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="text-sm text-muted-foreground">
+                      Total de questões: <span className="font-semibold">{getTotalQuestions()}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="wrong_answer_penalty"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Penalidade por Erro</FormLabel>
+                          <FormControl>
+                            <Input type="number" step="0.1" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Para Cebraspe, geralmente é 1 (perde um ponto por erro)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="link"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Link do Edital</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            URL completa para o edital do concurso
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end space-x-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => navigate('/project/admin/man/concursos')}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        isEditing ? 'Atualizar Ranking' : 'Cadastrar Ranking'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="gabarito">
+          {isEditing && id ? (
+            <AnswerKeyForm concursoId={id} />
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center p-6">
+                <p className="text-muted-foreground">
+                  Salve as informações do ranking primeiro para cadastrar o gabarito.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

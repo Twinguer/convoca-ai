@@ -18,6 +18,15 @@ export interface Concurso {
   discursive_weight?: number;
   created_at?: string;
   updated_at?: string;
+  
+  // New exam structure fields
+  has_basic_knowledge?: boolean;
+  has_specific_knowledge_1?: boolean;
+  has_specific_knowledge_2?: boolean;
+  has_discursive?: boolean;
+  basic_knowledge_questions?: number;
+  specific_knowledge_1_questions?: number;
+  specific_knowledge_2_questions?: number;
 }
 
 export interface ConcursoFilter {
@@ -53,6 +62,18 @@ export interface UserAnswer {
   updated_at: string;
 }
 
+export interface AnswerKey {
+  id: string;
+  concurso_id: string;
+  question_number: number;
+  answer: string;
+  is_basic_knowledge: boolean;
+  is_specific_1: boolean;
+  is_specific_2: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -63,6 +84,7 @@ export interface UserProfile {
   concursos_participando?: string;
   created_at: string;
   updated_at: string;
+  status_concurseiro?: string;
 }
 
 export interface Follower {

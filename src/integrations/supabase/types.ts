@@ -9,20 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      answer_keys: {
+        Row: {
+          answer: string
+          concurso_id: string | null
+          created_at: string | null
+          id: string
+          is_basic_knowledge: boolean | null
+          is_specific_1: boolean | null
+          is_specific_2: boolean | null
+          question_number: number
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          concurso_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_basic_knowledge?: boolean | null
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          question_number: number
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          concurso_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_basic_knowledge?: boolean | null
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          question_number?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_keys_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concursos: {
         Row: {
           alternatives_count: number | null
           banca: string
+          basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
           created_at: string
           data_publicacao: string | null
           discursive_weight: number | null
           etapa_atual: string | null
           exam_type: string | null
+          has_basic_knowledge: boolean | null
+          has_discursive: boolean | null
+          has_specific_knowledge_1: boolean | null
+          has_specific_knowledge_2: boolean | null
           id: string
           inscritos: number | null
           link: string | null
           orgao: string
+          specific_knowledge_1_questions: number | null
+          specific_knowledge_2_questions: number | null
           specific_knowledge_weight: number | null
           status: string
           titulo: string
@@ -33,16 +84,23 @@ export type Database = {
         Insert: {
           alternatives_count?: number | null
           banca?: string
+          basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
           created_at?: string
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
+          has_basic_knowledge?: boolean | null
+          has_discursive?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
           id?: string
           inscritos?: number | null
           link?: string | null
           orgao: string
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_2_questions?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo: string
@@ -53,16 +111,23 @@ export type Database = {
         Update: {
           alternatives_count?: number | null
           banca?: string
+          basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
           created_at?: string
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
+          has_basic_knowledge?: boolean | null
+          has_discursive?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
           id?: string
           inscritos?: number | null
           link?: string | null
           orgao?: string
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_2_questions?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo?: string

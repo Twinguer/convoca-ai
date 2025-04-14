@@ -34,7 +34,9 @@ export const generateFakeRankings = async (concursoId: string, count: number = 1
     const rankings = users.map(user => ({
       user_id: user.id,
       concurso_id: concursoId,
-      score: Math.floor(Math.random() * 100) // Random score between 0-100
+      score: Math.floor(Math.random() * 100), // Random score between 0-100
+      basic_knowledge_score: Math.floor(Math.random() * 40),
+      specific_knowledge_score: Math.floor(Math.random() * 60)
     }));
 
     // Insert rankings into database
@@ -59,6 +61,9 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
       .select(`
         id,
         score,
+        basic_knowledge_score,
+        specific_knowledge_score,
+        discursive_score,
         user_id,
         users_profiles!inner(name, avatar_url)
       `)
@@ -90,7 +95,10 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
         name: name,
         score: item.score,
         userId: item.user_id,
-        avatarUrl: avatarUrl
+        avatarUrl: avatarUrl,
+        basicKnowledgeScore: item.basic_knowledge_score,
+        specificKnowledgeScore: item.specific_knowledge_score,
+        discursiveScore: item.discursive_score
       };
     });
     
@@ -142,7 +150,16 @@ export const createRanking = async (rankingData: any) => {
         basic_knowledge_weight: rankingData.basic_knowledge_weight,
         specific_knowledge_weight: rankingData.specific_knowledge_weight,
         discursive_weight: rankingData.discursive_weight,
-        link: rankingData.link
+        link: rankingData.link,
+        
+        // Add new exam structure fields
+        has_basic_knowledge: rankingData.has_basic_knowledge,
+        has_specific_knowledge_1: rankingData.has_specific_knowledge_1,
+        has_specific_knowledge_2: rankingData.has_specific_knowledge_2,
+        has_discursive: rankingData.has_discursive,
+        basic_knowledge_questions: rankingData.basic_knowledge_questions,
+        specific_knowledge_1_questions: rankingData.specific_knowledge_1_questions,
+        specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions
       })
       .select();
       

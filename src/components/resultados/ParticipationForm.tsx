@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Concurso } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
-import { Loader2 } from 'lucide-react';
+import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
+import { AnswerSheet } from './AnswerSheet';
 
 interface ParticipationFormProps {
   concurso: Concurso;
@@ -22,119 +23,165 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   userRankingId
 }) => {
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAnswerSheet, setShowAnswerSheet] = useState(false);
+  const [showScoreForm, setShowScoreForm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showScoreForm, setShowScoreForm] = useState(isAlreadyParticipating);
-  const [rankingId, setRankingId] = useState<string>(userRankingId || '');
+  const queryClient = useQueryClient();
 
   const handleParticipate = async () => {
     if (!user) {
       toast({
         title: "Login necessário",
-        description: "Você precisa estar logado para participar do ranking.",
-        variant: "destructive"
+        description: "Para participar do ranking, faça login primeiro.",
+        variant: "destructive",
       });
-      navigate('/auth');
+      navigate('/project/auth');
       return;
     }
 
-    setIsSubmitting(true);
+    setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('user_rankings')
         .insert({
           user_id: user.id,
           concurso_id: concurso.id,
-          score: 0
+          score: 0,
         })
         .select('id')
         .single();
 
       if (error) throw error;
 
-      setRankingId(data.id);
-      setShowScoreForm(true);
+      queryClient.invalidateQueries({ queryKey: ['participating', concurso.id, user.id] });
       
       toast({
-        title: "Participação confirmada!",
-        description: "Você foi adicionado ao ranking deste concurso. Agora registre suas notas.",
+        title: "Inscrição realizada!",
+        description: "Você agora está participando deste ranking.",
       });
-    } catch (error) {
-      console.error('Error participating in ranking:', error);
+      
+      // Redirect to the answer form
+      setTimeout(() => {
+        // We have the ranking ID from the INSERT operation above
+        if (data) {
+          setIsLoading(false);
+          navigate(window.location.pathname, { replace: true });
+        }
+      }, 1500);
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Error joining ranking:', error);
       toast({
         title: "Erro ao participar",
-        description: "Não foi possível registrar sua participação. Tente novamente.",
-        variant: "destructive"
+        description: error.message || "Não foi possível completar sua inscrição. Tente novamente.",
+        variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleScoreSuccess = () => {
-    navigate(`/concurso/${concurso.id}/resultados`);
-  };
+  if (!user) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
+        <p className="mb-4">Faça login para participar do ranking deste concurso.</p>
+        <Button onClick={() => navigate('/project/auth')}>Fazer Login</Button>
+      </div>
+    );
+  }
 
-  if (showScoreForm && user && rankingId) {
-    return <ScoreForm concurso={concurso} userId={user.id} rankingId={rankingId} onSuccess={handleScoreSuccess} />;
+  if (isAlreadyParticipating && !showScoreForm && !showAnswerSheet) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h2 className="text-xl font-bold mb-4">Você já está participando!</h2>
+        <p className="mb-6">Você já está inscrito neste ranking. Escolha uma opção:</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button 
+            onClick={() => setShowAnswerSheet(true)}
+            className="flex items-center justify-center gap-2"
+          >
+            <PencilLine className="h-4 w-4" />
+            Preencher Cartão de Respostas
+          </Button>
+          
+          <Button 
+            onClick={() => setShowScoreForm(true)} 
+            variant="outline"
+            className="flex items-center justify-center gap-2"
+          >
+            <CheckCircle className="h-4 w-4" />
+            Inserir Notas Diretamente
+          </Button>
+        </div>
+        
+        <div className="mt-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Você pode escolher entre preencher o cartão de respostas 
+            da prova ou inserir suas notas diretamente.
+          </p>
+          <ArrowDown className="h-4 w-4 mx-auto my-2 text-muted-foreground" />
+          <p className="text-sm font-medium">
+            O cartão de respostas é mais preciso para calcular sua pontuação!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (showAnswerSheet && userRankingId) {
+    return (
+      <AnswerSheet 
+        concurso={concurso}
+        rankingId={userRankingId}
+        onSuccess={() => {
+          setShowAnswerSheet(false);
+          queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+          toast({
+            title: "Cartão de Respostas Processado",
+            description: "Suas respostas foram processadas e seu ranking foi atualizado.",
+          });
+        }}
+      />
+    );
+  }
+
+  if (showScoreForm && userRankingId) {
+    return (
+      <ScoreForm 
+        concurso={concurso}
+        rankingId={userRankingId}
+        userId={user.id}
+        onSuccess={() => {
+          setShowScoreForm(false);
+          queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+        }}
+      />
+    );
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="text-xl">Participar do Ranking</CardTitle>
-        <CardDescription>
-          Participe do ranking para compartilhar seu desempenho e comparar com outros candidatos
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <p className="font-semibold">{concurso.titulo}</p>
-            <p className="text-sm text-muted-foreground">{concurso.orgao} • {concurso.banca}</p>
-          </div>
-          
-          {isAlreadyParticipating ? (
-            <div className="bg-green-50 p-4 rounded-md">
-              <p className="text-green-800">
-                Você já está participando deste ranking! Você pode atualizar suas notas a qualquer momento.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-blue-50 p-4 rounded-md">
-              <p className="text-blue-800">
-                Participe deste ranking para compartilhar seu desempenho e ver sua posição em relação a outros candidatos.
-              </p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-      <CardFooter>
-        {isAlreadyParticipating ? (
-          <Button 
-            className="w-full" 
-            onClick={() => setShowScoreForm(true)}
-          >
-            Registrar/Atualizar Notas
-          </Button>
+    <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
+      <p className="mb-4">
+        Participe do ranking deste concurso para comparar seu desempenho com outros candidatos.
+      </p>
+      
+      <Button 
+        onClick={handleParticipate} 
+        disabled={isLoading}
+        className="w-full"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            Processando...
+          </>
         ) : (
-          <Button 
-            className="w-full" 
-            onClick={handleParticipate} 
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              "Participar do Ranking"
-            )}
-          </Button>
+          'Participar do Ranking'
         )}
-      </CardFooter>
-    </Card>
+      </Button>
+    </div>
   );
 };
