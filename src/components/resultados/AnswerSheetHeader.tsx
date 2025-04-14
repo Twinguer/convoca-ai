@@ -22,9 +22,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
           <div className="flex items-center gap-1 text-sm">
             <span className="font-medium">Total de questões:</span> {getTotalQuestions()}
           </div>
-          <div className="flex items-center gap-1 text-sm">
-            <span className="font-medium">Tipo de prova:</span> {concurso.exam_type || 'Alternativas'}
-          </div>
+          
         </div>
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-sm">
@@ -40,7 +38,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
         </div>
       </div>
       
-      <Separator className="my-3" />
+      
       
       
     </div>;
