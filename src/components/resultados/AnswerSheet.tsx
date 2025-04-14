@@ -271,7 +271,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
   };
   
   // Create chunks of questions for better display in a grid
-  const createQuestionChunks = (questions: number[], chunkSize: number = 20) => {
+  const createQuestionChunks = (questions: number[], chunkSize: number = 10) => {
     const chunks = [];
     for (let i = 0; i < questions.length; i += chunkSize) {
       chunks.push(questions.slice(i, i + chunkSize));
@@ -325,7 +325,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
           
           <div className="flex items-center text-blue-600 text-sm">
             <HelpCircle className="h-4 w-4 mr-1" />
-            <p>Clique nos círculos abaixo de cada número para marcar sua resposta</p>
+            <p>Clique nas alternativas para selecionar sua resposta</p>
           </div>
         </div>
         
@@ -353,7 +353,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
           
           {/* Tabular answer sheet format like the example image */}
           <div className="p-2 md:p-4">
-            {createQuestionChunks(getSectionQuestions(), 20).map((questionChunk, chunkIndex) => (
+            {createQuestionChunks(getSectionQuestions()).map((questionChunk, chunkIndex) => (
               <div key={chunkIndex} className="mb-6">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
@@ -370,12 +370,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
                       <tr>
                         {questionChunk.map(questionNumber => (
                           <td key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-white">
-                            <div className="flex flex-col items-center space-y-1">
+                            <div className="flex flex-wrap gap-1 justify-center">
                               {getOptionsForQuestion(questionNumber).map((option) => (
                                 <div 
                                   key={option} 
                                   className={`
-                                    w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center cursor-pointer text-xs md:text-sm
+                                    w-6 h-6 rounded-full flex items-center justify-center cursor-pointer text-xs 
                                     ${answers[questionNumber] === option ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}
                                     transition-colors
                                   `}
