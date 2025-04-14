@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
 import { ConcursoInfoCard } from '@/components/resultados/ConcursoInfoCard';
 import { RankingTable } from '@/components/resultados/RankingTable';
@@ -11,9 +11,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/resultados/PageHeader';
 import { AuthRequiredMessage } from '@/components/resultados/AuthRequiredMessage';
+import { ParticipationForm } from '@/components/resultados/ParticipationForm';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const showAnswerSheet = searchParams.get('showAnswerSheet') === 'true';
+  
   const { 
     concurso, 
     rankings, 
@@ -22,6 +26,7 @@ const ResultadosPage = () => {
     isLoading,
     refreshData
   } = useResultadosData();
+  
   const { user } = useAuth();
   const { toast } = useToast();
   const isAuthenticated = !!user;
@@ -52,7 +57,7 @@ const ResultadosPage = () => {
 
         if (error) throw error;
 
-        // Redirect directly to answer sheet
+        // Redireciona diretamente para a página de resultados com parâmetro para mostrar o cartão de respostas
         navigate(`/concurso/${concurso.id}/resultados?showAnswerSheet=true`);
       } catch (error) {
         console.error('Erro ao participar:', error);
@@ -76,6 +81,21 @@ const ResultadosPage = () => {
 
   if (isLoading) {
     return <LoadingState />;
+  }
+
+  // Se temos um userRanking e showAnswerSheet é true, mostramos o formulário de participação
+  if (userRanking && showAnswerSheet && concurso) {
+    return (
+      <div className="container mx-auto p-2 sm:p-4">
+        <ParticipationForm 
+          concurso={concurso}
+          isAlreadyParticipating={true}
+          userRankingId={userRanking.id}
+          editCount={0}
+          showAnswerSheet={true}
+        />
+      </div>
+    );
   }
 
   return (

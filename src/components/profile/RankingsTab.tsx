@@ -102,7 +102,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
                 <Button
                   size="sm"
                   className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
+                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados?showAnswerSheet=true`)}
                 >
                   <PencilLine className="h-4 w-4" />
                   <span>Editar Respostas</span>
