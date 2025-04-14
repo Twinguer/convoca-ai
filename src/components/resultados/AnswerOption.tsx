@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface AnswerOptionProps {
   option: string;
@@ -9,19 +11,21 @@ interface AnswerOptionProps {
 
 export const AnswerOption: React.FC<AnswerOptionProps> = ({ option, isSelected, onClick }) => {
   return (
-    <button
-      type="button"
+    <div 
       className={`
-        w-8 h-8 flex items-center justify-center text-sm rounded-full 
+        w-9 h-9 flex items-center justify-center rounded-full cursor-pointer
         ${isSelected 
-          ? 'bg-blue-600 text-white font-medium border-2 border-blue-700' 
-          : 'bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-300'
+          ? 'bg-blue-600 text-white ring-2 ring-blue-300 ring-offset-2' 
+          : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-300'
         }
-        transition-colors
+        transition-all duration-150 ease-in-out text-base font-medium
       `}
       onClick={onClick}
+      role="button"
+      aria-pressed={isSelected}
+      tabIndex={0}
     >
       {option}
-    </button>
+    </div>
   );
 };

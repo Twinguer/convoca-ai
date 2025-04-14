@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,6 +109,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     return total;
   };
 
+  const getAnsweredQuestionsCount = () => {
+    return Object.keys(answers).length;
+  };
+
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
@@ -141,7 +146,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) return [];
     
-    const QUESTIONS_PER_ROW = 5;
+    const QUESTIONS_PER_ROW = 4; // Changed from 5 to 4 for better display
     const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
     
     const matrix = [];
@@ -174,6 +179,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setSavedSuccess,
     handleAnswerChange,
     getTotalQuestions,
+    getAnsweredQuestionsCount,
     getOptionsForQuestion,
     createAnswerMatrix,
     questionType

@@ -38,15 +38,25 @@ export const useSaveAnswers = ({
         
       if (answerKeyError) throw answerKeyError;
       
+      if (!answerKey || answerKey.length === 0) {
+        console.log('No answer key found for this concurso');
+        return; // Skip score calculation if no answer key is available
+      }
+      
       // Calculate score
       let basicKnowledgeScore = 0;
       let specificKnowledgeScore = 0;
+      let totalCorrect = 0;
+      let totalQuestions = 0;
       
       Object.entries(answers).forEach(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
         const officialAnswer = answerKey?.find(a => a.question_number === qNum);
+        totalQuestions++;
         
-        if (officialAnswer && officialAnswer.answer === answer.toUpperCase()) {
+        if (officialAnswer && officialAnswer.answer.toUpperCase() === answer.toUpperCase()) {
+          totalCorrect++;
+          
           if (officialAnswer.is_basic_knowledge) {
             basicKnowledgeScore++;
           } else {
@@ -57,6 +67,8 @@ export const useSaveAnswers = ({
       
       // Calculate total score
       const totalScore = basicKnowledgeScore + specificKnowledgeScore;
+      
+      console.log(`Score calculation: ${totalCorrect}/${totalQuestions} correct (${totalScore} points)`);
       
       // Update the user_rankings record with the calculated scores
       const { error: updateError } = await supabase
@@ -73,6 +85,8 @@ export const useSaveAnswers = ({
       
       // Invalidate rankings query
       queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+      
+      return { totalCorrect, totalQuestions, totalScore };
     } catch (error) {
       console.error('Error calculating score:', error);
       throw error;
@@ -85,6 +99,12 @@ export const useSaveAnswers = ({
     setSavedSuccess(false);
     
     try {
+      if (Object.keys(answers).length === 0) {
+        setError("Você ainda não respondeu nenhuma questão. Por favor, responda ao menos uma questão antes de salvar.");
+        setIsSaving(false);
+        return;
+      }
+      
       // Prepare batch data for upsert operation
       const upsertData = Object.entries(answers).map(([questionNumber, answer]) => {
         const questionNum = parseInt(questionNumber);
@@ -99,25 +119,31 @@ export const useSaveAnswers = ({
         };
       });
       
+      console.log(`Saving ${upsertData.length} answers for ranking ${rankingId}`);
+      
       // Delete existing answers first
-      await supabase
+      const { error: deleteError } = await supabase
         .from('user_answers')
         .delete()
         .eq('user_ranking_id', rankingId);
+        
+      if (deleteError) throw deleteError;
       
       // Insert new answers
-      const { error } = await supabase
+      const { error: insertError } = await supabase
         .from('user_answers')
         .insert(upsertData);
         
-      if (error) throw error;
+      if (insertError) throw insertError;
       
       // Compare with answer key to calculate the score
-      await calculateScore();
+      const scoreResult = await calculateScore();
 
       toast({
-        title: "Respostas salvas",
-        description: "Suas respostas foram salvas com sucesso.",
+        title: "Respostas salvas com sucesso",
+        description: scoreResult 
+          ? `Você acertou ${scoreResult.totalCorrect} de ${scoreResult.totalQuestions} questões.`
+          : "Suas respostas foram salvas. O gabarito ainda não está disponível para calcular sua pontuação.",
       });
       
       setSavedSuccess(true);
@@ -133,7 +159,7 @@ export const useSaveAnswers = ({
       console.error('Error saving answers:', error);
       setError(error.message || "Ocorreu um erro ao salvar suas respostas.");
       toast({
-        title: "Erro ao salvar",
+        title: "Erro ao salvar respostas",
         description: error.message || "Ocorreu um erro ao salvar suas respostas. Tente novamente.",
         variant: "destructive",
       });
