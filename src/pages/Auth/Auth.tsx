@@ -112,9 +112,7 @@ const Auth: React.FC = () => {
             <CardTitle className="text-2xl font-bold text-center">Convoca Aí</CardTitle>
             
           </div>
-          <CardDescription>
-            Entre com sua conta ou crie uma nova para participar dos rankings
-          </CardDescription>
+          
         </CardHeader>
         
         <CardContent>
