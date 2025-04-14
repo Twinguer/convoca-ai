@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -6,30 +7,62 @@ import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
+import { RefreshCw, Trophy, CheckCircle, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+
 const ResultadosPage = () => {
   const navigate = useNavigate();
-  const {
-    concurso,
-    rankings,
-    participantCount,
+  const { 
+    concurso, 
+    rankings, 
+    participantCount, 
     userRanking,
-    isLoading,
-    user,
-    refreshData
+    isLoading
   } = useResultadosData();
-  const {
-    toast
-  } = useToast();
-  const isAuthenticated = !!user;
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Force a refresh of data when component mounts
-  useEffect(() => {
-    if (concurso?.id) {
-      refreshData();
+  const handleParticipate = async () => {
+    if (!user) {
+      toast({
+        title: "Login necessário",
+        description: "Faça login para participar do ranking.",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
     }
-  }, [concurso?.id]);
+
+    if (concurso) {
+      try {
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .insert({
+            user_id: user.id,
+            concurso_id: concurso.id,
+            score: 0,
+            edit_count: 0,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+
+        // Redirect directly to answer sheet
+        navigate(`/concurso/${concurso.id}/resultados?showAnswerSheet=true`);
+      } catch (error) {
+        console.error('Erro ao participar:', error);
+        toast({
+          title: "Erro ao participar",
+          description: "Não foi possível se inscrever no ranking.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -38,13 +71,15 @@ const ResultadosPage = () => {
       duration: 2000
     });
   };
+
   if (isLoading) {
     return <LoadingState />;
   }
-  return <div className="container mx-auto p-2 sm:p-4">
+
+  return (
+    <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
-          
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
         </h1>
         
@@ -54,15 +89,28 @@ const ResultadosPage = () => {
             Atualizar
           </Button>
           
-          {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
-              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+          {concurso && !userRanking && user && (
+            <Button 
+              onClick={handleParticipate} 
+              className="flex items-center gap-2 text-xs sm:text-sm" 
+              size="sm"
+            >
+              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
-            </Button>}
+            </Button>
+          )}
           
-          {concurso && !user && <Button onClick={() => navigate(`/auth`)} variant="outline" className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+          {concurso && !user && (
+            <Button 
+              onClick={() => navigate(`/auth`)} 
+              variant="outline" 
+              className="flex items-center gap-2 text-xs sm:text-sm" 
+              size="sm"
+            >
               <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
               Fazer Login
-            </Button>}
+            </Button>
+          )}
         </div>
       </div>
       
@@ -72,13 +120,17 @@ const ResultadosPage = () => {
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
-      <RankingTable rankings={rankings} currentUserId={user?.id} isAuthenticated={isAuthenticated} />
+      <RankingTable rankings={rankings} currentUserId={user?.id} isAuthenticated={!!user} />
       
-      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+      {!user && (
+        <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
           <p className="text-center text-gray-600">
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default ResultadosPage;

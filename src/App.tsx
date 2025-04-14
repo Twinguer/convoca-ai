@@ -13,7 +13,6 @@ import Resultado from "./pages/Resultado";
 import ConcursoDetails from "./pages/ConcursoDetails";
 import ResultadosPage from "./pages/ResultadosPage";
 import NotFound from "./pages/NotFound";
-import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
@@ -72,7 +71,6 @@ const App = () => {
                     <UserFollowers />
                   </>
                 } />
-                {/* Removed the /meus-concursos route as requested */}
                 <Route path="/" element={
                   <>
                     <Menu />
@@ -113,12 +111,6 @@ const App = () => {
                   <>
                     <Menu />
                     <ResultadosPage />
-                  </>
-                } />
-                <Route path="/concurso/:id/participar" element={
-                  <>
-                    <Menu />
-                    <ConcursoParticipation />
                   </>
                 } />
                 <Route path="*" element={
