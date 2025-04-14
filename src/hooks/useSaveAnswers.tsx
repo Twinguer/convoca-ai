@@ -13,7 +13,6 @@ interface UseSaveAnswersProps {
   setError: (value: string | null) => void;
   setSavedSuccess: (value: boolean) => void;
   onSuccess: () => void;
-  discursiveScore?: number | null;
 }
 
 export const useSaveAnswers = ({
@@ -24,55 +23,10 @@ export const useSaveAnswers = ({
   setIsSaving,
   setError,
   setSavedSuccess,
-  onSuccess,
-  discursiveScore
+  onSuccess
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const validateAnswers = () => {
-    // Get total expected questions count
-    const totalQuestions = 
-      (concurso.has_basic_knowledge ? concurso.basic_knowledge_questions || 0 : 0) +
-      (concurso.has_specific_knowledge_1 ? concurso.specific_knowledge_1_questions || 0 : 0) +
-      (concurso.has_specific_knowledge_2 ? concurso.specific_knowledge_2_questions || 0 : 0);
-    
-    // For multiple choice, all questions must be answered
-    if (concurso.exam_type !== 'Certo ou Errado' && Object.keys(answers).length < totalQuestions) {
-      return {
-        valid: false,
-        message: "Todas as questões devem ser respondidas para provas de múltipla escolha."
-      };
-    }
-    
-    return { valid: true };
-  };
-
-  const checkEditLimit = async () => {
-    // Check if user has reached edit limit (3 times)
-    const { data, error } = await supabase
-      .from('user_rankings')
-      .select('edit_count')
-      .eq('id', rankingId)
-      .single();
-      
-    if (error) throw error;
-    
-    const editCount = data?.edit_count || 0;
-    
-    if (editCount >= 3) {
-      return {
-        canEdit: false,
-        message: "Você já atingiu o limite de 3 edições para este cartão de respostas."
-      };
-    }
-    
-    return { 
-      canEdit: true, 
-      editCount,
-      remaining: 3 - editCount
-    };
-  };
 
   const calculateScore = async () => {
     try {
@@ -98,12 +52,9 @@ export const useSaveAnswers = ({
       Object.entries(answers).forEach(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
         const officialAnswer = answerKey?.find(a => a.question_number === qNum);
-        
-        if (!officialAnswer) return; // Skip if no official answer found
-        
         totalQuestions++;
         
-        if (officialAnswer.answer.toUpperCase() === answer.toUpperCase()) {
+        if (officialAnswer && officialAnswer.answer.toUpperCase() === answer.toUpperCase()) {
           totalCorrect++;
           
           if (officialAnswer.is_basic_knowledge) {
@@ -115,7 +66,7 @@ export const useSaveAnswers = ({
       });
       
       // Calculate total score
-      const totalScore = basicKnowledgeScore + specificKnowledgeScore + (discursiveScore || 0);
+      const totalScore = basicKnowledgeScore + specificKnowledgeScore;
       
       console.log(`Score calculation: ${totalCorrect}/${totalQuestions} correct (${totalScore} points)`);
       
@@ -125,7 +76,6 @@ export const useSaveAnswers = ({
         .update({
           basic_knowledge_score: basicKnowledgeScore,
           specific_knowledge_score: specificKnowledgeScore,
-          discursive_score: discursiveScore || 0,
           score: totalScore,
           updated_at: new Date().toISOString()
         })
@@ -149,22 +99,6 @@ export const useSaveAnswers = ({
     setSavedSuccess(false);
     
     try {
-      // For multiple choice exams, validate all questions are answered
-      const validation = validateAnswers();
-      if (!validation.valid) {
-        setError(validation.message);
-        setIsSaving(false);
-        return;
-      }
-      
-      // Check if user has reached edit limit
-      const editCheck = await checkEditLimit();
-      if (!editCheck.canEdit) {
-        setError(editCheck.message);
-        setIsSaving(false);
-        return;
-      }
-      
       if (Object.keys(answers).length === 0) {
         setError("Você ainda não respondeu nenhuma questão. Por favor, responda ao menos uma questão antes de salvar.");
         setIsSaving(false);
@@ -202,26 +136,14 @@ export const useSaveAnswers = ({
         
       if (insertError) throw insertError;
       
-      // Update edit count
-      const newEditCount = (editCheck.editCount || 0) + 1;
-      await supabase
-        .from('user_rankings')
-        .update({ edit_count: newEditCount })
-        .eq('id', rankingId);
-      
       // Compare with answer key to calculate the score
       const scoreResult = await calculateScore();
-
-      const remainingEdits = 3 - newEditCount;
-      const editMessage = remainingEdits > 0 
-        ? `Você tem mais ${remainingEdits} edição(ões) disponível(is).` 
-        : "Esta foi sua última edição permitida.";
 
       toast({
         title: "Respostas salvas com sucesso",
         description: scoreResult 
-          ? `Você acertou ${scoreResult.totalCorrect} de ${scoreResult.totalQuestions} questões. ${editMessage}`
-          : `Suas respostas foram salvas. O gabarito ainda não está disponível para calcular sua pontuação. ${editMessage}`,
+          ? `Você acertou ${scoreResult.totalCorrect} de ${scoreResult.totalQuestions} questões.`
+          : "Suas respostas foram salvas. O gabarito ainda não está disponível para calcular sua pontuação.",
       });
       
       setSavedSuccess(true);

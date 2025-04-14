@@ -29,7 +29,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           basic_knowledge_score,
           specific_knowledge_score,
           discursive_score,
-          edit_count,
           created_at,
           concursos(id, titulo, orgao, banca)
         `)
@@ -76,75 +75,71 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
       <h3 className="text-lg font-medium">Rankings ({displayRankings.length})</h3>
       
       <div className="grid gap-4">
-        {displayRankings.map((ranking: any) => {
-          const concursoId = ranking.concursos?.id || ranking.concursoId;
-          
-          return (
-            <Card key={ranking.id || concursoId} className="overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
-                <div>
-                  <h4 className="font-bold">
-                    {ranking.concursos?.titulo || ranking.concursoTitle}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-2 self-end">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="flex items-center gap-1"
-                    onClick={() => navigate(`/concurso/${concursoId}/resultados`)}
-                  >
-                    <Trophy className="h-4 w-4" />
-                    <span>Ver Ranking</span>
-                  </Button>
-                  
-                  <Button
-                    size="sm"
-                    className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => navigate(`/concurso/${concursoId}/resultados?showAnswerSheet=true`)}
-                  >
-                    <PencilLine className="h-4 w-4" />
-                    <span>Editar Respostas</span>
-                  </Button>
-                </div>
+        {displayRankings.map((ranking: any) => (
+          <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
+              <div>
+                <h4 className="font-bold">
+                  {ranking.concursos?.titulo || ranking.concursoTitle}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
+                </p>
               </div>
               
-              <CardContent className="p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  <div className="p-3 bg-emerald-50 rounded-md text-center">
-                    <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
-                    <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
-                  </div>
-                  
-                  {(ranking.basic_knowledge_score !== null && ranking.basic_knowledge_score !== undefined) && (
-                    <div className="p-3 bg-gray-50 rounded-md text-center">
-                      <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
-                      <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
-                    </div>
-                  )}
-                  
-                  {(ranking.specific_knowledge_score !== null && ranking.specific_knowledge_score !== undefined) && (
-                    <div className="p-3 bg-gray-50 rounded-md text-center">
-                      <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
-                      <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
-                    </div>
-                  )}
-                  
-                  {(ranking.discursive_score !== null && ranking.discursive_score !== undefined) && (
-                    <div className="p-3 bg-gray-50 rounded-md text-center">
-                      <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
-                      <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>
-                    </div>
-                  )}
+              <div className="flex items-center gap-2 self-end">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex items-center gap-1"
+                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}
+                >
+                  <Trophy className="h-4 w-4" />
+                  <span>Ver Ranking</span>
+                </Button>
+                
+                <Button
+                  size="sm"
+                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
+                >
+                  <PencilLine className="h-4 w-4" />
+                  <span>Editar Respostas</span>
+                </Button>
+              </div>
+            </div>
+            
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="p-3 bg-emerald-50 rounded-md text-center">
+                  <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
+                  <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                
+                {(ranking.basic_knowledge_score !== null && ranking.basic_knowledge_score !== undefined) && (
+                  <div className="p-3 bg-gray-50 rounded-md text-center">
+                    <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
+                    <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
+                  </div>
+                )}
+                
+                {(ranking.specific_knowledge_score !== null && ranking.specific_knowledge_score !== undefined) && (
+                  <div className="p-3 bg-gray-50 rounded-md text-center">
+                    <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
+                    <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
+                  </div>
+                )}
+                
+                {(ranking.discursive_score !== null && ranking.discursive_score !== undefined) && (
+                  <div className="p-3 bg-gray-50 rounded-md text-center">
+                    <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
+                    <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );

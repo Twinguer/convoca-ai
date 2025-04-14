@@ -1,15 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save, Check, AlertTriangle, HelpCircle, RefreshCw } from 'lucide-react';
+import { Loader2, Save, Check, AlertTriangle, HelpCircle } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -23,10 +21,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' }>({});
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2'>('basic');
   const [isSaving, setIsSaving] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [enableDiscursive, setEnableDiscursive] = useState(false);
 
   // Fetch concurso details to know the structure
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -39,12 +35,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         .single();
         
       if (error) throw error;
-      
-      // Set initial discursive state based on concurso
-      if (data) {
-        setEnableDiscursive(data.has_discursive || false);
-      }
-      
       return data as Concurso;
     },
   });
@@ -155,15 +145,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         
       if (error) throw error;
       
-      // Update concurso to enable/disable discursive section
-      await supabase
-        .from('concursos')
-        .update({
-          has_discursive: enableDiscursive,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', concursoId);
-      
       toast({
         title: "Gabarito salvo",
         description: "O gabarito oficial foi salvo com sucesso.",
@@ -173,7 +154,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['answer-keys', concursoId] });
-      queryClient.invalidateQueries({ queryKey: ['concurso', concursoId] });
     } catch (error: any) {
       console.error('Error saving answer keys:', error);
       setError(error.message || "Ocorreu um erro ao salvar o gabarito.");
@@ -184,123 +164,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       });
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const recalculateAllScores = async () => {
-    setIsUpdating(true);
-    setError(null);
-    
-    try {
-      // Get all rankings for this concurso
-      const { data: rankings, error: rankingsError } = await supabase
-        .from('user_rankings')
-        .select('id, user_id')
-        .eq('concurso_id', concursoId);
-        
-      if (rankingsError) throw rankingsError;
-      
-      if (!rankings || rankings.length === 0) {
-        toast({
-          title: "Nenhum ranking encontrado",
-          description: "Não há rankings de usuários para recalcular pontuações.",
-        });
-        return;
-      }
-      
-      // Get the answer key
-      const { data: answerKey, error: answerKeyError } = await supabase
-        .from('answer_keys')
-        .select('*')
-        .eq('concurso_id', concursoId);
-        
-      if (answerKeyError) throw answerKeyError;
-      
-      if (!answerKey || answerKey.length === 0) {
-        toast({
-          title: "Gabarito não encontrado",
-          description: "É necessário salvar o gabarito antes de recalcular as pontuações.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      let updatedCount = 0;
-      
-      // Update each ranking
-      for (const ranking of rankings) {
-        try {
-          // Get user answers
-          const { data: userAnswers, error: answersError } = await supabase
-            .from('user_answers')
-            .select('*')
-            .eq('user_ranking_id', ranking.id);
-            
-          if (answersError) throw answersError;
-          
-          if (!userAnswers || userAnswers.length === 0) continue;
-          
-          // Calculate scores
-          let basicKnowledgeScore = 0;
-          let specificKnowledgeScore = 0;
-          
-          userAnswers.forEach((userAnswer) => {
-            const officialAnswer = answerKey.find(a => a.question_number === userAnswer.question_number);
-            
-            if (officialAnswer && officialAnswer.answer.toUpperCase() === userAnswer.answer.toUpperCase()) {
-              if (userAnswer.is_basic_knowledge) {
-                basicKnowledgeScore++;
-              } else {
-                specificKnowledgeScore++;
-              }
-            }
-          });
-          
-          // Get current discursive score if any
-          const { data: currentRanking } = await supabase
-            .from('user_rankings')
-            .select('discursive_score')
-            .eq('id', ranking.id)
-            .single();
-            
-          const discursiveScore = currentRanking?.discursive_score || 0;
-          
-          // Calculate total score
-          const totalScore = basicKnowledgeScore + specificKnowledgeScore + discursiveScore;
-          
-          // Update ranking
-          await supabase
-            .from('user_rankings')
-            .update({
-              basic_knowledge_score: basicKnowledgeScore,
-              specific_knowledge_score: specificKnowledgeScore,
-              score: totalScore,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', ranking.id);
-            
-          updatedCount++;
-        } catch (err) {
-          console.error(`Error updating ranking ${ranking.id}:`, err);
-          // Continue with other rankings
-        }
-      }
-      
-      toast({
-        title: "Pontuações recalculadas",
-        description: `Foram atualizadas as pontuações de ${updatedCount} usuários com base no novo gabarito.`,
-      });
-      
-    } catch (error: any) {
-      console.error('Error recalculating scores:', error);
-      setError(error.message || "Ocorreu um erro ao recalcular as pontuações.");
-      toast({
-        title: "Erro ao recalcular",
-        description: error.message || "Ocorreu um erro ao recalcular as pontuações. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -395,7 +258,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
   return (
     <Card className="shadow-lg">
-      <CardHeader className="bg-emerald-50">
+      <CardHeader className="bg-blue-50">
         <CardTitle className="text-xl md:text-2xl">Gabarito Oficial - {concurso.titulo}</CardTitle>
         <CardDescription className="text-sm md:text-base">
           Cadastre o gabarito oficial da prova. Este gabarito será usado para comparar as respostas dos participantes.
@@ -427,7 +290,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
           
           <div className="flex gap-2">
-            <div className="flex items-center text-emerald-600 text-sm">
+            <div className="flex items-center text-blue-600 text-sm">
               <HelpCircle className="h-4 w-4 mr-1" />
               <p className="hidden md:block">Clique nos círculos para marcar as respostas corretas</p>
               <p className="block md:hidden">Clique para marcar respostas</p>
@@ -435,7 +298,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
             
             <Button 
               onClick={handleSaveAnswers} 
-              className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white" 
+              className="flex items-center bg-green-600 hover:bg-green-700 text-white" 
               disabled={isSaving}
               size="sm"
             >
@@ -452,15 +315,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               )}
             </Button>
           </div>
-        </div>
-        
-        <div className="flex items-center space-x-2 bg-gray-50 p-3 rounded-md border">
-          <Switch 
-            id="enable-discursive" 
-            checked={enableDiscursive} 
-            onCheckedChange={setEnableDiscursive} 
-          />
-          <Label htmlFor="enable-discursive">Habilitar campo para Prova Discursiva / Estudo de Caso</Label>
         </div>
         
         <div className="border rounded-md">
@@ -494,7 +348,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                     <thead>
                       <tr>
                         {questionChunk.map(questionNumber => (
-                          <th key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-emerald-900 text-white text-xs md:text-sm">
+                          <th key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-blue-900 text-white text-xs md:text-sm">
                             {questionNumber}
                           </th>
                         ))}
@@ -510,7 +364,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                   key={option} 
                                   className={`
                                     w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center cursor-pointer text-xs md:text-sm
-                                    ${answers[questionNumber] === option ? 'bg-emerald-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}
+                                    ${answers[questionNumber] === option ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}
                                     transition-colors
                                   `}
                                   onClick={() => handleAnswerChange(questionNumber, option)}
@@ -528,25 +382,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               </div>
             ))}
           </div>
-        </div>
-        
-        <div className="mt-6">
-          <Button 
-            variant="outline" 
-            onClick={recalculateAllScores} 
-            disabled={isUpdating}
-            className="flex items-center gap-2"
-          >
-            {isUpdating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Recalcular pontuações de todos os usuários
-          </Button>
-          <p className="text-sm text-muted-foreground mt-1">
-            Isso atualizará as pontuações dos usuários com base no gabarito atualizado.
-          </p>
         </div>
       </CardContent>
     </Card>
