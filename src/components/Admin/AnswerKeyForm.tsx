@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,12 +6,12 @@ import { FileText, Edit } from 'lucide-react';
 
 interface AnswerKeyFormProps {
   concursoId: string;
-  hasAnswerKey: boolean;
+  hasAnswerKey?: boolean;
 }
 
-const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ 
+export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ 
   concursoId, 
-  hasAnswerKey 
+  hasAnswerKey = false
 }) => {
   const navigate = useNavigate();
   

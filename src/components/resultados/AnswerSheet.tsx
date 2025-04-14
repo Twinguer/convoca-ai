@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [discursiveScore, setDiscursiveScore] = useState<number | null>(null);
   const { toast } = useToast();
   
-  // Get answer sheet state and functions
   const {
     answers,
     selectedSection,
@@ -55,7 +53,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     getAnsweredQuestionsCount
   } = useAnswerSheet(concurso, rankingId);
 
-  // Check if answers are still loading and get edit count
   const { data: userRankingData, isLoading: isLoadingRanking } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
@@ -70,14 +67,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   });
 
-  // Set discursive score from existing data
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
     }
   }, [userRankingData]);
 
-  // Use save functionality
   const { handleSaveAnswers } = useSaveAnswers({
     rankingId,
     concurso,
@@ -91,10 +86,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     editCount: userRankingData?.edit_count || 0
   });
 
-  // Check if answers are still loading
-  const {
-    isLoading: isLoadingAnswers
-  } = useQuery({
+  const { isLoading: isLoadingAnswers } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -116,7 +108,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const numberValue = parseFloat(value);
     if (isNaN(numberValue)) return;
     
-    // Validate score range (0-100)
     if (numberValue < 0 || numberValue > 100) {
       toast({
         title: "Valor inválido",
@@ -202,7 +193,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
           <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
         </div>
-        <Progress value={progressPercentage} className="h-2 bg-gray-200" indicatorClassName="bg-emerald-600" />
+        <Progress value={progressPercentage} className="h-2 bg-gray-200" />
         
         <div className="border rounded-md overflow-hidden shadow-sm">
           <SectionToggle selectedSection={selectedSection} onSectionChange={setSelectedSection} concurso={concurso} />
