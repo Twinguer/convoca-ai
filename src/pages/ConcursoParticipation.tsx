@@ -29,13 +29,9 @@ const ConcursoParticipation = () => {
         .select('id')
         .eq('concurso_id', id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows found, user is not participating
-          return null;
-        }
         throw error;
       }
       return data;

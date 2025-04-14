@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save, Check, AlertTriangle } from 'lucide-react';
+import { Loader2, Save, Check, AlertTriangle, HelpCircle } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
@@ -257,14 +257,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gabarito Oficial - {concurso.titulo}</CardTitle>
-        <CardDescription>
+    <Card className="shadow-lg">
+      <CardHeader className="bg-blue-50">
+        <CardTitle className="text-xl md:text-2xl">Gabarito Oficial - {concurso.titulo}</CardTitle>
+        <CardDescription className="text-sm md:text-base">
           Cadastre o gabarito oficial da prova. Este gabarito será usado para comparar as respostas dos participantes.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 pt-4">
         {error && (
           <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -279,51 +279,60 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
           <div>
             <p className="text-sm font-medium">
               Total de questões: <span className="font-semibold">{getTotalQuestions()}</span>
             </p>
             <p className="text-sm text-muted-foreground">
-              Tipo de prova: <span className="font-semibold">{concurso.exam_type}</span>
+              Tipo de prova: <span className="font-semibold">{concurso.exam_type || 'Alternativas'}</span>
             </p>
           </div>
           
-          <Button 
-            onClick={handleSaveAnswers} 
-            className="flex items-center" 
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Salvar Gabarito
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <div className="flex items-center text-blue-600 text-sm">
+              <HelpCircle className="h-4 w-4 mr-1" />
+              <p className="hidden md:block">Clique nos círculos para marcar as respostas corretas</p>
+              <p className="block md:hidden">Clique para marcar respostas</p>
+            </div>
+            
+            <Button 
+              onClick={handleSaveAnswers} 
+              className="flex items-center bg-green-600 hover:bg-green-700 text-white" 
+              disabled={isSaving}
+              size="sm"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-1" />
+                  Salvar Gabarito
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         <div className="border rounded-md">
-          <div className="p-4 border-b">
+          <div className="p-4 border-b bg-gray-50">
             <p className="font-medium mb-2">Seções da Prova</p>
             <ToggleGroup type="single" value={selectedSection} onValueChange={(val) => val && setSelectedSection(val as any)}>
               {concurso.has_basic_knowledge && (
-                <ToggleGroupItem value="basic" aria-label="Básicos">
+                <ToggleGroupItem value="basic" aria-label="Básicos" className="text-sm">
                   Conhecimentos Básicos
                 </ToggleGroupItem>
               )}
               {concurso.has_specific_knowledge_1 && (
-                <ToggleGroupItem value="specific1" aria-label="Específicos 1">
+                <ToggleGroupItem value="specific1" aria-label="Específicos 1" className="text-sm">
                   Específicos 1
                 </ToggleGroupItem>
               )}
               {concurso.has_specific_knowledge_2 && (
-                <ToggleGroupItem value="specific2" aria-label="Específicos 2">
+                <ToggleGroupItem value="specific2" aria-label="Específicos 2" className="text-sm">
                   Específicos 2
                 </ToggleGroupItem>
               )}
@@ -331,15 +340,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
           
           {/* Tabular answer key format similar to the example image */}
-          <div className="p-4">
-            {createQuestionChunks(getSectionQuestions()).map((questionChunk, chunkIndex) => (
+          <div className="p-2 md:p-4">
+            {createQuestionChunks(getSectionQuestions(), 20).map((questionChunk, chunkIndex) => (
               <div key={chunkIndex} className="mb-6">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-blue-900 text-white">
+                      <tr>
                         {questionChunk.map(questionNumber => (
-                          <th key={questionNumber} className="border border-gray-300 p-2 text-center">
+                          <th key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-blue-900 text-white text-xs md:text-sm">
                             {questionNumber}
                           </th>
                         ))}
@@ -348,14 +357,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                     <tbody>
                       <tr>
                         {questionChunk.map(questionNumber => (
-                          <td key={questionNumber} className="border border-gray-300 p-2 text-center">
+                          <td key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-white">
                             <div className="flex flex-col items-center space-y-1">
                               {getOptionsForQuestion(questionNumber).map((option) => (
                                 <div 
                                   key={option} 
                                   className={`
-                                    w-6 h-6 rounded-full flex items-center justify-center cursor-pointer
-                                    ${answers[questionNumber] === option ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}
+                                    w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center cursor-pointer text-xs md:text-sm
+                                    ${answers[questionNumber] === option ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}
+                                    transition-colors
                                   `}
                                   onClick={() => handleAnswerChange(questionNumber, option)}
                                 >
