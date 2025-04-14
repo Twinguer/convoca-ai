@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,30 +7,29 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
-
 const ConcursoDetails = () => {
-  const { id } = useParams<{ id: string }>();
-  
-  const { data: concurso, isLoading } = useQuery({
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
+  const {
+    data: concurso,
+    isLoading
+  } = useQuery({
     queryKey: ['concurso', id],
-    queryFn: () => fetchConcursoById(id!),
+    queryFn: () => fetchConcursoById(id!)
   });
-  
   if (isLoading) {
     return <LoadingState />;
   }
-  
   if (!concurso) {
-    return (
-      <div className="container mx-auto p-4">
+    return <div className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4">Concurso não encontrado</h1>
         <p>O concurso que você está tentando acessar não existe ou foi removido.</p>
-      </div>
-    );
+      </div>;
   }
-  
-  return (
-    <div className="container mx-auto p-4">
+  return <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-2">{concurso.titulo}</h1>
       <div className="flex items-center gap-2 mb-6">
         <Badge variant="outline">{concurso.orgao}</Badge>
@@ -57,7 +55,7 @@ const ConcursoDetails = () => {
                 <dd>{concurso.inscritos?.toLocaleString() || 'Não informado'}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Data de Publicação</dt>
+                <dt className="text-sm font-medium text-gray-500">Data da Prova</dt>
                 <dd>{concurso.data_publicacao || 'Não informado'}</dd>
               </div>
               <div>
@@ -82,12 +80,10 @@ const ConcursoDetails = () => {
                 <dt className="text-sm font-medium text-gray-500">Quantidade de Alternativas</dt>
                 <dd>{concurso.alternatives_count || 5}</dd>
               </div>
-              {concurso.wrong_answer_penalty !== undefined && (
-                <div>
+              {concurso.wrong_answer_penalty !== undefined && <div>
                   <dt className="text-sm font-medium text-gray-500">Penalidade por Erro</dt>
                   <dd>{concurso.wrong_answer_penalty}</dd>
-                </div>
-              )}
+                </div>}
             </dl>
           </CardContent>
         </Card>
@@ -155,24 +151,18 @@ const ConcursoDetails = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            {concurso.link ? (
-              <Button asChild>
+            {concurso.link ? <Button asChild>
                 <a href={concurso.link} target="_blank" rel="noopener noreferrer" className="flex items-center">
                   <FileText className="mr-2 h-4 w-4" />
                   Acessar Edital
                 </a>
-              </Button>
-            ) : (
-              <div className="flex items-center text-gray-500">
+              </Button> : <div className="flex items-center text-gray-500">
                 <AlertCircle className="mr-2 h-4 w-4" />
                 Edital não disponível
-              </div>
-            )}
+              </div>}
           </CardFooter>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default ConcursoDetails;
