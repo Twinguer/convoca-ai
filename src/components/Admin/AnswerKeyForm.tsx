@@ -6,10 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, Check, AlertTriangle } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Input } from '@/components/ui/input';
 import { Concurso } from '@/types/concursos';
 
 interface AnswerKeyFormProps {
@@ -25,6 +22,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Fetch concurso details to know the structure
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -115,6 +113,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const handleSaveAnswers = async () => {
     setIsSaving(true);
     setError(null);
+    setSaveSuccess(false);
     
     try {
       // Prepare batch data for upsert operation
@@ -150,6 +149,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         title: "Gabarito salvo",
         description: "O gabarito oficial foi salvo com sucesso.",
       });
+      
+      setSaveSuccess(true);
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['answer-keys', concursoId] });
@@ -224,6 +225,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     const count = concurso.alternatives_count || 5;
     return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, etc.
   };
+  
+  // Create chunks of questions for better display in a grid
+  const createQuestionChunks = (questions: number[], chunkSize: number = 20) => {
+    const chunks = [];
+    for (let i = 0; i < questions.length; i += chunkSize) {
+      chunks.push(questions.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
 
   if (isLoadingConcurso || isLoadingAnswers) {
     return (
@@ -262,6 +272,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
+        {saveSuccess && (
+          <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
+            <Check className="h-4 w-4" />
+            <p>Gabarito salvo com sucesso!</p>
+          </div>
+        )}
+        
         <div className="flex justify-between items-center">
           <div>
             <p className="text-sm font-medium">
@@ -291,8 +308,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </Button>
         </div>
         
-        <div className="border p-3 rounded-md">
-          <div className="mb-4">
+        <div className="border rounded-md">
+          <div className="p-4 border-b">
             <p className="font-medium mb-2">Seções da Prova</p>
             <ToggleGroup type="single" value={selectedSection} onValueChange={(val) => val && setSelectedSection(val as any)}>
               {concurso.has_basic_knowledge && (
@@ -313,25 +330,44 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
             </ToggleGroup>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {getSectionQuestions().map((questionNumber) => (
-              <div key={questionNumber} className="border p-3 rounded-md">
-                <p className="font-semibold mb-2">Questão {questionNumber}</p>
-                <div className="flex items-center justify-start gap-4">
-                  {getOptionsForQuestion(questionNumber).map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <RadioGroup
-                        value={answers[questionNumber] || ""}
-                        onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                        className="flex items-center space-x-1"
-                      >
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value={option} id={`q${questionNumber}-${option}`} />
-                          <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  ))}
+          {/* Tabular answer key format similar to the example image */}
+          <div className="p-4">
+            {createQuestionChunks(getSectionQuestions()).map((questionChunk, chunkIndex) => (
+              <div key={chunkIndex} className="mb-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-blue-900 text-white">
+                        {questionChunk.map(questionNumber => (
+                          <th key={questionNumber} className="border border-gray-300 p-2 text-center">
+                            {questionNumber}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {questionChunk.map(questionNumber => (
+                          <td key={questionNumber} className="border border-gray-300 p-2 text-center">
+                            <div className="flex flex-col items-center space-y-1">
+                              {getOptionsForQuestion(questionNumber).map((option) => (
+                                <div 
+                                  key={option} 
+                                  className={`
+                                    w-6 h-6 rounded-full flex items-center justify-center cursor-pointer
+                                    ${answers[questionNumber] === option ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}
+                                  `}
+                                  onClick={() => handleAnswerChange(questionNumber, option)}
+                                >
+                                  {option}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             ))}

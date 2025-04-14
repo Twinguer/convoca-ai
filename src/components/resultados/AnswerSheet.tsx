@@ -264,6 +264,15 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
     const count = concurso.alternatives_count || 5;
     return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, etc.
   };
+  
+  // Create chunks of questions for better display in a grid
+  const createQuestionChunks = (questions: number[], chunkSize: number = 20) => {
+    const chunks = [];
+    for (let i = 0; i < questions.length; i += chunkSize) {
+      chunks.push(questions.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
 
   if (isLoadingAnswers) {
     return (
@@ -310,8 +319,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
           </div>
         </div>
         
-        <div className="border p-3 rounded-md">
-          <div className="mb-4">
+        <div className="border rounded-md">
+          <div className="p-4 border-b">
             <p className="font-medium mb-2">Seções da Prova</p>
             <ToggleGroup type="single" value={selectedSection} onValueChange={(val) => val && setSelectedSection(val as any)}>
               {concurso.has_basic_knowledge && (
@@ -332,25 +341,44 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
             </ToggleGroup>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {getSectionQuestions().map((questionNumber) => (
-              <div key={questionNumber} className="border p-3 rounded-md">
-                <p className="font-semibold mb-2">Questão {questionNumber}</p>
-                <div className="flex items-center justify-start gap-4">
-                  {getOptionsForQuestion(questionNumber).map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <RadioGroup
-                        value={answers[questionNumber] || ""}
-                        onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                        className="flex items-center space-x-1"
-                      >
-                        <div className="flex items-center space-x-1">
-                          <RadioGroupItem value={option} id={`q${questionNumber}-${option}`} />
-                          <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  ))}
+          {/* Tabular answer sheet format similar to the example image */}
+          <div className="p-4">
+            {createQuestionChunks(getSectionQuestions()).map((questionChunk, chunkIndex) => (
+              <div key={chunkIndex} className="mb-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-blue-900 text-white">
+                        {questionChunk.map(questionNumber => (
+                          <th key={questionNumber} className="border border-gray-300 p-2 text-center">
+                            {questionNumber}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        {questionChunk.map(questionNumber => (
+                          <td key={questionNumber} className="border border-gray-300 p-2 text-center">
+                            <div className="flex flex-col items-center space-y-1">
+                              {getOptionsForQuestion(questionNumber).map((option) => (
+                                <div 
+                                  key={option} 
+                                  className={`
+                                    w-6 h-6 rounded-full flex items-center justify-center cursor-pointer
+                                    ${answers[questionNumber] === option ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}
+                                  `}
+                                  onClick={() => handleAnswerChange(questionNumber, option)}
+                                >
+                                  {option}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             ))}
