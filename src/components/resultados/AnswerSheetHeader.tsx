@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HelpCircle, AlertCircle, Info } from 'lucide-react';
 import { Concurso } from '@/types/concursos';
@@ -16,7 +17,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-sm">
-            <Info className="h-4 w-4 text-blue-600" />
+            <Info className="h-4 w-4 text-emerald-600" />
             <span className="font-medium">Prova:</span> {concurso.titulo}
           </div>
           <div className="flex items-center gap-1 text-sm">

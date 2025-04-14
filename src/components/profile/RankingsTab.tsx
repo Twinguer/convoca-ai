@@ -28,6 +28,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           score,
           basic_knowledge_score,
           specific_knowledge_score,
+          discursive_score,
           created_at,
           concursos(id, titulo, orgao, banca)
         `)
@@ -76,7 +77,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
       <div className="grid gap-4">
         {displayRankings.map((ranking: any) => (
           <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
+            <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
               <div>
                 <h4 className="font-bold">
                   {ranking.concursos?.titulo || ranking.concursoTitle}
@@ -99,7 +100,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
                 
                 <Button
                   size="sm"
-                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
                   onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
                 >
                   <PencilLine className="h-4 w-4" />
@@ -109,23 +110,30 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
             </div>
             
             <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-3 bg-blue-50 rounded-md text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="p-3 bg-emerald-50 rounded-md text-center">
                   <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
-                  <p className="text-xl font-bold text-blue-700">{ranking.score || 0}</p>
+                  <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
                 </div>
                 
-                {ranking.basic_knowledge_score !== null && (
+                {(ranking.basic_knowledge_score !== null && ranking.basic_knowledge_score !== undefined) && (
                   <div className="p-3 bg-gray-50 rounded-md text-center">
                     <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
                     <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
                   </div>
                 )}
                 
-                {ranking.specific_knowledge_score !== null && (
+                {(ranking.specific_knowledge_score !== null && ranking.specific_knowledge_score !== undefined) && (
                   <div className="p-3 bg-gray-50 rounded-md text-center">
                     <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
                     <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
+                  </div>
+                )}
+                
+                {(ranking.discursive_score !== null && ranking.discursive_score !== undefined) && (
+                  <div className="p-3 bg-gray-50 rounded-md text-center">
+                    <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
+                    <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>
                   </div>
                 )}
               </div>

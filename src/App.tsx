@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -18,7 +19,6 @@ import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
-import UserConcursos from "./pages/UserConcursos";
 import Comunidade from "./pages/Comunidade";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -72,12 +72,7 @@ const App = () => {
                     <UserFollowers />
                   </>
                 } />
-                <Route path="/meus-concursos" element={
-                  <>
-                    <Menu />
-                    <UserConcursos />
-                  </>
-                } />
+                {/* Removed the /meus-concursos route as requested */}
                 <Route path="/" element={
                   <>
                     <Menu />
