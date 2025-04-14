@@ -7,12 +7,15 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PencilLine, Trophy, ExternalLink } from 'lucide-react';
+import { UserRankingDisplay } from '@/types/concursos';
 
 interface RankingsTabProps {
   userId: string;
+  userRankings?: UserRankingDisplay[];
+  isAuthenticated?: boolean;
 }
 
-const RankingsTab: React.FC<RankingsTabProps> = ({ userId }) => {
+const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthenticated = false }) => {
   const navigate = useNavigate();
   
   const { data: rankings, isLoading } = useQuery({
@@ -34,9 +37,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId }) => {
       if (error) throw error;
       return data || [];
     },
+    enabled: !userRankings, // Only fetch if userRankings is not provided
   });
   
-  if (isLoading) {
+  // Use provided userRankings if available, otherwise use fetched rankings
+  const displayRankings = userRankings || rankings;
+  const showSkeleton = isLoading && !userRankings;
+  
+  if (showSkeleton) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
@@ -46,7 +54,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId }) => {
     );
   }
   
-  if (!rankings || rankings.length === 0) {
+  if (!displayRankings || displayRankings.length === 0) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -63,15 +71,19 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId }) => {
   
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Rankings ({rankings.length})</h3>
+      <h3 className="text-lg font-medium">Rankings ({displayRankings.length})</h3>
       
       <div className="grid gap-4">
-        {rankings.map((ranking: any) => (
-          <Card key={ranking.id} className="overflow-hidden">
+        {displayRankings.map((ranking: any) => (
+          <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
             <div className="bg-gradient-to-r from-blue-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
               <div>
-                <h4 className="font-bold">{ranking.concursos?.titulo}</h4>
-                <p className="text-sm text-muted-foreground">{ranking.concursos?.orgao} • {ranking.concursos?.banca}</p>
+                <h4 className="font-bold">
+                  {ranking.concursos?.titulo || ranking.concursoTitle}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
+                </p>
               </div>
               
               <div className="flex items-center gap-2 self-end">
@@ -79,7 +91,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId }) => {
                   size="sm" 
                   variant="outline"
                   className="flex items-center gap-1"
-                  onClick={() => navigate(`/concurso/${ranking.concursos?.id}/resultados`)}
+                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}
                 >
                   <Trophy className="h-4 w-4" />
                   <span>Ver Ranking</span>
@@ -88,7 +100,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId }) => {
                 <Button
                   size="sm"
                   className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
-                  onClick={() => navigate(`/concurso/${ranking.concursos?.id}/participar?showAnswerSheet=true`)}
+                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
                 >
                   <PencilLine className="h-4 w-4" />
                   <span>Editar Respostas</span>
