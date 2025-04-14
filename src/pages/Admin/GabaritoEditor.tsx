@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -38,7 +37,6 @@ const GabaritoEditor = () => {
   const [selectedTab, setSelectedTab] = useState<'basic' | 'specific1' | 'specific2'>('basic');
   const [answerKey, setAnswerKey] = useState<Record<number, string>>({});
   
-  // Get concurso data
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: async () => {
@@ -53,7 +51,6 @@ const GabaritoEditor = () => {
     }
   });
   
-  // Get existing answer key
   const { data: existingAnswerKey, isLoading: isLoadingAnswerKey } = useQuery({
     queryKey: ['answer-key', id],
     queryFn: async () => {
@@ -67,7 +64,6 @@ const GabaritoEditor = () => {
     }
   });
   
-  // Initialize answer key from existing data
   useEffect(() => {
     if (existingAnswerKey?.length) {
       const keyMap: Record<number, string> = {};
@@ -78,7 +74,6 @@ const GabaritoEditor = () => {
     }
   }, [existingAnswerKey]);
   
-  // Generate question arrays for each section
   const getQuestionsBySection = (section: 'basic' | 'specific1' | 'specific2') => {
     if (!concurso) return [];
     
@@ -132,7 +127,6 @@ const GabaritoEditor = () => {
       setError(null);
       setSuccess(false);
       
-      // Validate that all questions have answers
       const allQuestions = [
         ...getQuestionsBySection('basic'),
         ...getQuestionsBySection('specific1'),
@@ -145,7 +139,6 @@ const GabaritoEditor = () => {
         return;
       }
       
-      // Delete existing answer key
       const { error: deleteError } = await supabase
         .from('answer_keys')
         .delete()
@@ -153,7 +146,6 @@ const GabaritoEditor = () => {
         
       if (deleteError) throw deleteError;
       
-      // Create answer key entries
       const entries = Object.entries(answerKey).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
         const qType = getQuestionType(qNum);
@@ -170,7 +162,6 @@ const GabaritoEditor = () => {
         };
       });
       
-      // Insert new answer key
       const { error: insertError } = await supabase
         .from('answer_keys')
         .insert(entries);
@@ -183,10 +174,8 @@ const GabaritoEditor = () => {
         description: "O gabarito oficial foi atualizado e as notas dos usuários serão recalculadas.",
       });
       
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['answer-key', id] });
       
-      // After success
       setTimeout(() => {
         navigate(`/project/admin/man/concursos/editar/${id}`);
       }, 1500);
@@ -384,7 +373,6 @@ const AnswerKeyTable: React.FC<AnswerKeyTableProps> = ({
   onChange,
   answerOptions
 }) => {
-  // Calculate number of rows and columns for best display
   const maxQuestionsPerRow = 10;
   const numRows = Math.ceil(questions.length / maxQuestionsPerRow);
   
@@ -413,14 +401,13 @@ const AnswerKeyTable: React.FC<AnswerKeyTableProps> = ({
                   {rowQuestions.map(questionNumber => (
                     <TableCell key={questionNumber} className="text-center p-2">
                       <Select 
-                        value={answerKey[questionNumber] || ''} 
+                        value={answerKey[questionNumber] || ''}
                         onValueChange={(value) => onChange(questionNumber, value)}
                       >
                         <SelectTrigger className="w-20 mx-auto">
                           <SelectValue placeholder="Resposta" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Selecione</SelectItem>
                           {answerOptions.map(option => (
                             <SelectItem key={option} value={option}>
                               {option}
