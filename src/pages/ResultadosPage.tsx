@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -8,6 +9,7 @@ import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const {
@@ -30,6 +32,7 @@ const ResultadosPage = () => {
       refreshData();
     }
   }, [concurso?.id]);
+  
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -38,13 +41,15 @@ const ResultadosPage = () => {
       duration: 2000
     });
   };
+  
   if (isLoading) {
     return <LoadingState />;
   }
+  
   return <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
-          
+          <Trophy className="mr-2 h-6 w-6 text-yellow-500" />
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
         </h1>
         
@@ -54,7 +59,7 @@ const ResultadosPage = () => {
             Atualizar
           </Button>
           
-          {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+          {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}
@@ -81,4 +86,5 @@ const ResultadosPage = () => {
         </div>}
     </div>;
 };
+
 export default ResultadosPage;

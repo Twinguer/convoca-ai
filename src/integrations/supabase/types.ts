@@ -213,10 +213,12 @@ export type Database = {
       }
       user_rankings: {
         Row: {
+          all_questions_answered: boolean | null
           basic_knowledge_score: number | null
           concurso_id: string
           created_at: string
           discursive_score: number | null
+          edit_count: number | null
           id: string
           score: number | null
           specific_knowledge_score: number | null
@@ -224,10 +226,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          all_questions_answered?: boolean | null
           basic_knowledge_score?: number | null
           concurso_id: string
           created_at?: string
           discursive_score?: number | null
+          edit_count?: number | null
           id?: string
           score?: number | null
           specific_knowledge_score?: number | null
@@ -235,10 +239,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          all_questions_answered?: boolean | null
           basic_knowledge_score?: number | null
           concurso_id?: string
           created_at?: string
           discursive_score?: number | null
+          edit_count?: number | null
           id?: string
           score?: number | null
           specific_knowledge_score?: number | null
@@ -361,6 +367,10 @@ export type Database = {
       count_user_posts: {
         Args: { user_id: string }
         Returns: number
+      }
+      delete_user_profile: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
     }
     Enums: {

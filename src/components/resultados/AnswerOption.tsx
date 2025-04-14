@@ -5,25 +5,35 @@ interface AnswerOptionProps {
   option: string;
   isSelected: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }
 
-export const AnswerOption: React.FC<AnswerOptionProps> = ({ option, isSelected, onClick }) => {
+export const AnswerOption: React.FC<AnswerOptionProps> = ({ 
+  option, 
+  isSelected, 
+  onClick,
+  disabled = false
+}) => {
   return (
     <div 
       className={`
         w-10 h-10 flex items-center justify-center rounded-full cursor-pointer shadow-sm
         ${isSelected 
-          ? 'bg-blue-600 text-white font-bold ring-2 ring-blue-300 ring-offset-2' 
-          : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 hover:border-blue-300'
+          ? 'bg-emerald-600 text-white font-bold ring-2 ring-emerald-300 ring-offset-2' 
+          : disabled 
+            ? 'bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed'
+            : 'bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 hover:border-emerald-300'
         }
-        transition-all duration-150 ease-in-out text-base font-medium
+        ${disabled ? 'opacity-70 cursor-not-allowed' : 'transition-all duration-150 ease-in-out'}
+        text-base font-medium
       `}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       role="button"
       aria-pressed={isSelected}
-      tabIndex={0}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
           onClick();
         }
       }}

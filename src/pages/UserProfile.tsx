@@ -21,11 +21,14 @@ import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
+import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
+
 interface Follower {
   id: string;
   name: string;
   avatar_url?: string | null;
 }
+
 const UserProfile = () => {
   const {
     user
@@ -45,6 +48,7 @@ const UserProfile = () => {
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
+
   const {
     data: profile,
     isLoading,
@@ -100,6 +104,7 @@ const UserProfile = () => {
     refetchInterval: false,
     staleTime: 300000
   });
+
   const {
     data: rankings
   } = useQuery({
@@ -129,6 +134,7 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
+
   const {
     data: followerData
   } = useQuery({
@@ -149,16 +155,19 @@ const UserProfile = () => {
     },
     enabled: !!user
   });
+
   useEffect(() => {
     if (followerData !== undefined) {
       setFollowersCount(followerData);
     }
   }, [followerData]);
+
   useEffect(() => {
     if (rankings && rankings.length > 0) {
       setUserRankings(rankings);
     }
   }, [rankings]);
+
   useEffect(() => {
     if (profile) {
       console.log("Setting profile state with data:", profile);
@@ -171,6 +180,7 @@ const UserProfile = () => {
       setProfileText(profile.profile_text || '');
     }
   }, [profile]);
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       if (!event.target.files || !event.target.files.length) {
@@ -229,6 +239,7 @@ const UserProfile = () => {
       setUploading(false);
     }
   };
+
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
@@ -276,30 +287,39 @@ const UserProfile = () => {
       setSaving(false);
     }
   };
+
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
   const concursosAprovadosCount = concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0;
+
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
   }
+
   if (!user) {
     useEffect(() => {
       navigate("/auth");
     }, [navigate]);
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
   }
+
   return <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
               <ProfileHeader name={name} email={user.email || ''} avatarUrl={avatarUrl} uploading={uploading} handleAvatarUpload={handleAvatarUpload} statusConcurseiro={statusConcurseiro} profileText={profileText} />
+              
+              <div className="mt-6">
+                <DeleteProfileButton userId={user.id} />
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -348,7 +368,7 @@ const UserProfile = () => {
             </Tabs>
             
             <CardFooter className="flex justify-end py-6">
-              <Button onClick={handleSaveProfile} disabled={saving} className="relative">
+              <Button onClick={handleSaveProfile} disabled={saving} className="relative bg-emerald-600 hover:bg-emerald-700">
                 {saving ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Salvando...
@@ -380,4 +400,5 @@ const UserProfile = () => {
       </footer>
     </div>;
 };
+
 export default UserProfile;

@@ -46,7 +46,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         description: "Para participar do ranking, faça login primeiro.",
         variant: "destructive",
       });
-      navigate('/project/auth');
+      navigate('/auth');
       return;
     }
 
@@ -58,6 +58,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           user_id: user.id,
           concurso_id: concurso.id,
           score: 0,
+          edit_count: 0,
+          all_questions_answered: false
         })
         .select('id')
         .single();
@@ -67,18 +69,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       queryClient.invalidateQueries({ queryKey: ['participating', concurso.id, user.id] });
       
       toast({
-        title: "Inscrição realizada!",
-        description: "Você agora está participando deste ranking.",
+        title: "Inscrição iniciada!",
+        description: "Preencha o cartão de respostas para participar oficialmente do ranking.",
       });
       
-      // Redirect to the answer form
+      // Just reload the page to show the answer sheet
       setTimeout(() => {
-        // We have the ranking ID from the INSERT operation above
         if (data) {
           setIsLoading(false);
-          navigate(window.location.pathname, { replace: true });
+          window.location.reload();
         }
-      }, 1500);
+      }, 1000);
     } catch (error: any) {
       setIsLoading(false);
       console.error('Error joining ranking:', error);
@@ -95,53 +96,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
         <p className="mb-4">Faça login para participar do ranking deste concurso.</p>
-        <Button onClick={() => navigate('/project/auth')}>Fazer Login</Button>
-      </div>
-    );
-  }
-
-  // If user is already participating and we're not showing any form yet, show options
-  if (isAlreadyParticipating && !showScoreForm && !showAnswerSheet) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <h2 className="text-xl font-bold mb-4">Você já está participando!</h2>
-        <p className="mb-6">Você já está inscrito neste ranking. Escolha uma opção:</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Button 
-            onClick={() => setShowAnswerSheet(true)}
-            className="flex items-center justify-center gap-2"
-          >
-            <PencilLine className="h-4 w-4" />
-            Preencher Cartão de Respostas
-          </Button>
-          
-          <Button 
-            onClick={() => setShowScoreForm(true)} 
-            variant="outline"
-            className="flex items-center justify-center gap-2"
-          >
-            <CheckCircle className="h-4 w-4" />
-            Inserir Notas Diretamente
-          </Button>
-        </div>
-        
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Você pode escolher entre preencher o cartão de respostas 
-            da prova ou inserir suas notas diretamente.
-          </p>
-          <ArrowDown className="h-4 w-4 mx-auto my-2 text-muted-foreground" />
-          <p className="text-sm font-medium">
-            O cartão de respostas é mais preciso para calcular sua pontuação!
-          </p>
-        </div>
+        <Button onClick={() => navigate('/auth')} className="bg-emerald-600 hover:bg-emerald-700">Fazer Login</Button>
       </div>
     );
   }
 
   // Show the answer sheet if selected and we have a ranking ID
-  if (showAnswerSheet && userRankingId) {
+  if ((showAnswerSheet || isAlreadyParticipating) && userRankingId) {
     return (
       <AnswerSheet 
         concurso={concurso}
@@ -149,25 +110,11 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         onSuccess={() => {
           setShowAnswerSheet(false);
           queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+          navigate(`/concurso/${concurso.id}/resultados`);
           toast({
             title: "Cartão de Respostas Processado",
             description: "Suas respostas foram processadas e seu ranking foi atualizado.",
           });
-        }}
-      />
-    );
-  }
-
-  // Show the score form if selected and we have a ranking ID
-  if (showScoreForm && userRankingId) {
-    return (
-      <ScoreForm 
-        concurso={concurso}
-        rankingId={userRankingId}
-        userId={user.id}
-        onSuccess={() => {
-          setShowScoreForm(false);
-          queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
         }}
       />
     );
@@ -179,12 +126,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
       <p className="mb-4">
         Participe do ranking deste concurso para comparar seu desempenho com outros candidatos.
+        Você poderá preencher seu cartão de respostas e ver sua classificação.
       </p>
       
       <Button 
         onClick={handleParticipate} 
         disabled={isLoading}
-        className="w-full"
+        className="w-full bg-emerald-600 hover:bg-emerald-700"
       >
         {isLoading ? (
           <>
@@ -198,4 +146,3 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     </div>
   );
 };
-

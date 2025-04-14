@@ -13,6 +13,8 @@ interface UseSaveAnswersProps {
   setError: (value: string | null) => void;
   setSavedSuccess: (value: boolean) => void;
   onSuccess: () => void;
+  discursiveScore?: number | null;
+  editCount?: number;
 }
 
 export const useSaveAnswers = ({
@@ -23,10 +25,35 @@ export const useSaveAnswers = ({
   setIsSaving,
   setError,
   setSavedSuccess,
-  onSuccess
+  onSuccess,
+  discursiveScore,
+  editCount = 0
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const validateAnswers = (): boolean => {
+    // If exam type is alternatives, ensure all questions are answered unless it's Certo or Errado
+    if (concurso.exam_type !== 'Certo ou Errado') {
+      const totalQuestions = (concurso.basic_knowledge_questions || 0) +
+                             (concurso.specific_knowledge_1_questions || 0) +
+                             (concurso.specific_knowledge_2_questions || 0);
+      
+      // Check if all questions have answers
+      if (Object.keys(answers).length < totalQuestions) {
+        setError("Você precisa responder a todas as questões antes de salvar.");
+        return false;
+      }
+    }
+    
+    // Check if user has reached the edit limit (3 times)
+    if (editCount >= 3) {
+      setError("Você já atingiu o limite de 3 edições para este cartão de respostas.");
+      return false;
+    }
+    
+    return true;
+  };
 
   const calculateScore = async () => {
     try {
@@ -52,23 +79,45 @@ export const useSaveAnswers = ({
       Object.entries(answers).forEach(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
         const officialAnswer = answerKey?.find(a => a.question_number === qNum);
-        totalQuestions++;
         
-        if (officialAnswer && officialAnswer.answer.toUpperCase() === answer.toUpperCase()) {
-          totalCorrect++;
+        if (officialAnswer) {
+          totalQuestions++;
           
-          if (officialAnswer.is_basic_knowledge) {
-            basicKnowledgeScore++;
-          } else {
-            specificKnowledgeScore++;
+          // Check for correct answer
+          if (officialAnswer.answer.toUpperCase() === answer.toUpperCase()) {
+            totalCorrect++;
+            
+            if (officialAnswer.is_basic_knowledge) {
+              basicKnowledgeScore++;
+            } else {
+              specificKnowledgeScore++;
+            }
+          } else if (concurso.exam_type === 'Certo ou Errado' && concurso.wrong_answer_penalty && answer) {
+            // Apply penalty for wrong answers in "Certo ou Errado" type exams
+            // Only if the answer is provided (not blank)
+            if (officialAnswer.is_basic_knowledge) {
+              basicKnowledgeScore -= concurso.wrong_answer_penalty;
+            } else {
+              specificKnowledgeScore -= concurso.wrong_answer_penalty;
+            }
           }
         }
       });
       
-      // Calculate total score
-      const totalScore = basicKnowledgeScore + specificKnowledgeScore;
+      // Calculate total score with weights
+      const weightedBasicScore = basicKnowledgeScore * (concurso.basic_knowledge_weight || 1);
+      const weightedSpecificScore = specificKnowledgeScore * (concurso.specific_knowledge_weight || 1);
+      
+      // Include discursive score if provided and the exam has discursive component
+      const weightedDiscursiveScore = concurso.has_discursive && discursiveScore !== undefined && discursiveScore !== null
+        ? discursiveScore * (concurso.discursive_weight || 1)
+        : 0;
+      
+      // Calculate final total score
+      const totalScore = weightedBasicScore + weightedSpecificScore + weightedDiscursiveScore;
       
       console.log(`Score calculation: ${totalCorrect}/${totalQuestions} correct (${totalScore} points)`);
+      console.log(`Basic: ${basicKnowledgeScore}, Specific: ${specificKnowledgeScore}, Discursive: ${discursiveScore || 0}`);
       
       // Update the user_rankings record with the calculated scores
       const { error: updateError } = await supabase
@@ -76,7 +125,9 @@ export const useSaveAnswers = ({
         .update({
           basic_knowledge_score: basicKnowledgeScore,
           specific_knowledge_score: specificKnowledgeScore,
+          discursive_score: discursiveScore || 0,
           score: totalScore,
+          all_questions_answered: concurso.exam_type === 'Certo ou Errado' ? true : Object.keys(answers).length === totalQuestions,
           updated_at: new Date().toISOString()
         })
         .eq('id', rankingId);
@@ -101,6 +152,28 @@ export const useSaveAnswers = ({
     try {
       if (Object.keys(answers).length === 0) {
         setError("Você ainda não respondeu nenhuma questão. Por favor, responda ao menos uma questão antes de salvar.");
+        setIsSaving(false);
+        return;
+      }
+      
+      // Check answer validation based on exam type
+      if (!validateAnswers()) {
+        setIsSaving(false);
+        return;
+      }
+      
+      // Get current edit count from database
+      const { data: rankingData, error: rankingError } = await supabase
+        .from('user_rankings')
+        .select('edit_count')
+        .eq('id', rankingId)
+        .single();
+        
+      if (rankingError) throw rankingError;
+      
+      // Check if user can edit more
+      if (rankingData && rankingData.edit_count >= 3) {
+        setError("Você já atingiu o limite de 3 edições para este cartão de respostas.");
         setIsSaving(false);
         return;
       }
@@ -138,12 +211,26 @@ export const useSaveAnswers = ({
       
       // Compare with answer key to calculate the score
       const scoreResult = await calculateScore();
+      
+      // Get updated edit count
+      const { data: updatedRankingData, error: updatedRankingError } = await supabase
+        .from('user_rankings')
+        .select('edit_count')
+        .eq('id', rankingId)
+        .single();
+        
+      if (updatedRankingError) throw updatedRankingError;
+      
+      const editsLeft = 3 - (updatedRankingData?.edit_count || 0);
+      const editsMessage = editsLeft > 0 
+        ? `Você ainda pode editar este cartão mais ${editsLeft} ${editsLeft === 1 ? 'vez' : 'vezes'}.` 
+        : 'Esta foi sua última edição permitida.';
 
       toast({
         title: "Respostas salvas com sucesso",
         description: scoreResult 
-          ? `Você acertou ${scoreResult.totalCorrect} de ${scoreResult.totalQuestions} questões.`
-          : "Suas respostas foram salvas. O gabarito ainda não está disponível para calcular sua pontuação.",
+          ? `Você acertou ${scoreResult.totalCorrect} de ${scoreResult.totalQuestions} questões. ${editsMessage}`
+          : `Suas respostas foram salvas. O gabarito ainda não está disponível para calcular sua pontuação. ${editsMessage}`,
       });
       
       setSavedSuccess(true);

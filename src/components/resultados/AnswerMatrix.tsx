@@ -7,13 +7,15 @@ interface AnswerMatrixProps {
   answers: { [key: number]: string };
   onAnswerChange: (questionNumber: number, answer: string) => void;
   getOptionsForQuestion: (questionNumber: number) => string[];
+  disabled?: boolean;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({ 
   matrix, 
   answers, 
   onAnswerChange,
-  getOptionsForQuestion 
+  getOptionsForQuestion,
+  disabled = false
 }) => {
   if (matrix.length === 0) {
     return (
@@ -36,6 +38,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     selectedAnswer={answers[questionNumber]}
                     onAnswerChange={onAnswerChange}
                     options={getOptionsForQuestion(questionNumber)}
+                    disabled={disabled}
                   />
                 </div>
               )
