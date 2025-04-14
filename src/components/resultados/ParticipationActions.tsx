@@ -25,6 +25,12 @@ export const ParticipationActions: React.FC<ParticipationActionsProps> = ({
 }) => {
   const navigate = useNavigate();
   
+  const handleEditAnswers = () => {
+    if (concursoId && userRanking) {
+      navigate(`/concurso/${concursoId}/resultados?showAnswerSheet=true`);
+    }
+  };
+  
   return (
     <div className="flex gap-1 sm:gap-2 flex-wrap">
       <Button 
@@ -45,6 +51,17 @@ export const ParticipationActions: React.FC<ParticipationActionsProps> = ({
         >
           <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
           Participar
+        </Button>
+      )}
+      
+      {concursoId && userRanking && user && (
+        <Button 
+          onClick={handleEditAnswers}
+          className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" 
+          size="sm"
+        >
+          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+          Editar Respostas
         </Button>
       )}
       

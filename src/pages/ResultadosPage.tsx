@@ -57,8 +57,15 @@ const ResultadosPage = () => {
 
         if (error) throw error;
 
-        // Redireciona diretamente para a página de resultados com parâmetro para mostrar o cartão de respostas
+        // Direciona o usuário para a página de resultados com o cartão de respostas aberto
         navigate(`/concurso/${concurso.id}/resultados?showAnswerSheet=true`);
+        refreshData(); // Atualiza os dados do ranking
+        
+        toast({
+          title: "Inscrição realizada!",
+          description: "Preencha o cartão de respostas para participar do ranking.",
+          duration: 3000
+        });
       } catch (error) {
         console.error('Erro ao participar:', error);
         toast({
@@ -91,7 +98,7 @@ const ResultadosPage = () => {
           concurso={concurso}
           isAlreadyParticipating={true}
           userRankingId={userRanking.id}
-          editCount={0}
+          editCount={userRanking.editCount || 0}
           showAnswerSheet={true}
         />
       </div>

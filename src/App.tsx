@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import Menu from "./components/Menu";
 import Index from "./pages/Index";
 import Editais from "./pages/Editais";
@@ -25,6 +25,12 @@ import ListarConcursos from "./pages/Admin/ListarConcursos";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
+
+// Componente auxiliar para redirecionar preservando o parâmetro :id
+const RedirectToAnswerSheet = () => {
+  const { id } = useParams();
+  return <Navigate to={`/concurso/${id}/resultados?showAnswerSheet=true`} replace />;
+};
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -114,9 +120,7 @@ const App = () => {
                   </>
                 } />
                 {/* Redirecionar a rota antiga de participação para a nova */}
-                <Route path="/concurso/:id/participar" element={
-                  <Navigate to={`/concurso/:id/resultados?showAnswerSheet=true`} replace />
-                } />
+                <Route path="/concurso/:id/participar" element={<RedirectToAnswerSheet />} />
                 <Route path="*" element={
                   <>
                     <Menu />
