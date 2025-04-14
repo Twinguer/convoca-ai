@@ -125,11 +125,9 @@ const AdminDashboard: React.FC = () => {
             <CardDescription>Acesse as principais funcionalidades</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a href="/project/admin/man/concursos/novo" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar novo ranking</a>
-            <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar rankings</a>
-            <a href="/" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">
-              Visualizar site público
-            </a>
+            <a href="/project/admin/man/concursos/novo" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
+            <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Rankings</a>
+            <a href="/" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site</a>
             <a href="/api/scrape-cebraspe" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">
               Atualizar concursos do Cebraspe
             </a>
