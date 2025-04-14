@@ -270,13 +270,31 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
     return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, etc.
   };
   
-  // Create chunks of questions for better display in a grid
-  const createQuestionChunks = (questions: number[], chunkSize: number = 10) => {
-    const chunks = [];
-    for (let i = 0; i < questions.length; i += chunkSize) {
-      chunks.push(questions.slice(i, i + chunkSize));
+  // Create matrix-style layout for answers
+  const createAnswerMatrix = () => {
+    const sectionQuestions = getSectionQuestions();
+    if (sectionQuestions.length === 0) return [];
+    
+    // Define matrix size - try to get a balanced layout
+    const COLUMNS = 6; // Fixed number of columns as requested
+    const rows = Math.ceil(sectionQuestions.length / COLUMNS);
+    
+    const matrix = [];
+    
+    for (let row = 0; row < rows; row++) {
+      const rowData = [];
+      for (let col = 0; col < COLUMNS; col++) {
+        const index = row * COLUMNS + col;
+        if (index < sectionQuestions.length) {
+          rowData.push(sectionQuestions[index]);
+        } else {
+          rowData.push(null); // Empty cell
+        }
+      }
+      matrix.push(rowData);
     }
-    return chunks;
+    
+    return matrix;
   };
 
   if (isLoadingAnswers) {
@@ -325,7 +343,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
           
           <div className="flex items-center text-blue-600 text-sm">
             <HelpCircle className="h-4 w-4 mr-1" />
-            <p>Clique nas alternativas para selecionar sua resposta</p>
+            <p>Clique na célula para marcar sua resposta</p>
           </div>
         </div>
         
@@ -351,48 +369,47 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({ concurso, rankingId, o
             </ToggleGroup>
           </div>
           
-          {/* Tabular answer sheet format like the example image */}
-          <div className="p-2 md:p-4">
-            {createQuestionChunks(getSectionQuestions()).map((questionChunk, chunkIndex) => (
-              <div key={chunkIndex} className="mb-6">
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr>
-                        {questionChunk.map(questionNumber => (
-                          <th key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-blue-900 text-white text-xs md:text-sm">
-                            {questionNumber}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        {questionChunk.map(questionNumber => (
-                          <td key={questionNumber} className="border border-gray-300 p-1 md:p-2 text-center bg-white">
-                            <div className="flex flex-wrap gap-1 justify-center">
+          {/* Matrix-style answer sheet layout */}
+          <div className="p-4">
+            <table className="w-full border-collapse">
+              <tbody>
+                {createAnswerMatrix().map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((questionNumber, colIndex) => (
+                      <td key={`${rowIndex}-${colIndex}`} className="border border-gray-300 p-0">
+                        {questionNumber !== null ? (
+                          <div className="p-2">
+                            <div className="text-center font-medium text-sm bg-blue-100 py-1 rounded-t-md">
+                              {questionNumber}
+                            </div>
+                            <div className="grid grid-cols-5 gap-1 pt-1">
                               {getOptionsForQuestion(questionNumber).map((option) => (
-                                <div 
-                                  key={option} 
+                                <button
+                                  key={option}
+                                  type="button"
                                   className={`
-                                    w-6 h-6 rounded-full flex items-center justify-center cursor-pointer text-xs 
-                                    ${answers[questionNumber] === option ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-800'}
-                                    transition-colors
+                                    h-8 flex items-center justify-center text-sm rounded
+                                    ${answers[questionNumber] === option 
+                                      ? 'bg-blue-600 text-white font-medium' 
+                                      : 'bg-gray-50 hover:bg-gray-100 text-gray-800'
+                                    }
                                   `}
                                   onClick={() => handleAnswerChange(questionNumber, option)}
                                 >
                                   {option}
-                                </div>
+                                </button>
                               ))}
                             </div>
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
+                          </div>
+                        ) : (
+                          <div className="p-2 h-full bg-gray-50"></div>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </CardContent>
