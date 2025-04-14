@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -9,7 +8,6 @@ import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const {
@@ -32,7 +30,6 @@ const ResultadosPage = () => {
       refreshData();
     }
   }, [concurso?.id]);
-  
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -41,11 +38,9 @@ const ResultadosPage = () => {
       duration: 2000
     });
   };
-  
   if (isLoading) {
     return <LoadingState />;
   }
-  
   return <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
@@ -54,20 +49,14 @@ const ResultadosPage = () => {
         </h1>
         
         <div className="flex gap-1 sm:gap-2 flex-wrap">
-          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
-            Atualizar
-          </Button>
+          
           
           {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}
           
-          {concurso && !user && <Button onClick={() => navigate(`/auth`)} variant="outline" className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
-              <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
-              Fazer Login
-            </Button>}
+          {concurso && !user}
         </div>
       </div>
       
@@ -86,5 +75,4 @@ const ResultadosPage = () => {
         </div>}
     </div>;
 };
-
 export default ResultadosPage;
