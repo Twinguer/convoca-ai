@@ -1,15 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
-import { ScoreForm } from './ScoreForm';
-import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
-import { AnswerSheet } from './AnswerSheet';
+import { Loader2, Trophy } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const formSchema = z.object({
+  reservationType: z.string().optional()
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface ParticipationFormProps {
   concurso: Concurso;
@@ -23,126 +32,210 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   userRankingId
 }) => {
   const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
-  const [showScoreForm, setShowScoreForm] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Check URL params to see if we should force display answer sheet
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('showAnswerSheet') === 'true') {
-      setShowAnswerSheet(true);
-      setShowScoreForm(false);
+  // Verifica se há vagas reservadas disponíveis
+  const hasAnyReservation = concurso.has_ppp || concurso.has_pcd || concurso.has_indigenas || 
+                            concurso.has_hipossuficientes || concurso.has_transsexuais;
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      reservationType: 'Ampla Concorrência'
     }
-  }, []);
+  });
 
-  const handleParticipate = async () => {
+  // Reset form when concurso changes
+  useEffect(() => {
+    form.reset({
+      reservationType: 'Ampla Concorrência'
+    });
+  }, [concurso, form]);
+
+  const onSubmit = async (data: FormData) => {
     if (!user) {
-      toast({
-        title: "Login necessário",
-        description: "Para participar do ranking, faça login primeiro.",
-        variant: "destructive",
-      });
-      navigate('/auth');
+      setError('Você precisa estar logado para participar deste ranking.');
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
     try {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .insert({
-          user_id: user.id,
-          concurso_id: concurso.id,
-          score: 0,
-          edit_count: 0,
-          all_questions_answered: false
-        })
-        .select('id')
-        .single();
-
-      if (error) throw error;
-
-      queryClient.invalidateQueries({ queryKey: ['participating', concurso.id, user.id] });
-      
-      toast({
-        title: "Inscrição iniciada!",
-        description: "Preencha o cartão de respostas para participar oficialmente do ranking.",
-      });
-      
-      // Just reload the page to show the answer sheet
-      setTimeout(() => {
-        if (data) {
-          setIsLoading(false);
-          window.location.reload();
+      if (isAlreadyParticipating) {
+        // Redirect to answer sheet
+        if (userRankingId) {
+          navigate(`/concurso/${concurso.id}/responder/${userRankingId}`);
+        } else {
+          setError('Houve um erro ao acessar seu gabarito. Tente novamente.');
         }
-      }, 1000);
-    } catch (error: any) {
-      setIsLoading(false);
-      console.error('Error joining ranking:', error);
-      toast({
-        title: "Erro ao participar",
-        description: error.message || "Não foi possível completar sua inscrição. Tente novamente.",
-        variant: "destructive",
-      });
+      } else {
+        // Create new participation
+        const { data: newRanking, error: createError } = await supabase
+          .from('user_rankings')
+          .insert({
+            user_id: user.id,
+            concurso_id: concurso.id,
+            reservation_type: data.reservationType || 'Ampla Concorrência'
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          throw createError;
+        }
+
+        setSuccess('Participação registrada com sucesso!');
+
+        // Redirect to the answer sheet
+        if (newRanking) {
+          setTimeout(() => {
+            navigate(`/concurso/${concurso.id}/responder/${newRanking.id}`);
+          }, 1500);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error registering participation:', err);
+      setError(err.message || 'Houve um erro ao registrar sua participação. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   if (!user) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
-        <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
-        <p className="mb-4">Faça login para participar do ranking deste concurso.</p>
-        <Button onClick={() => navigate('/auth')} className="bg-emerald-600 hover:bg-emerald-700">Fazer Login</Button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Participar do Ranking</CardTitle>
+          <CardDescription>
+            Para participar deste ranking, você precisa estar logado
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="default" className="mb-4">
+            <AlertTitle>Você não está logado</AlertTitle>
+            <AlertDescription>
+              Faça login ou cadastre-se para participar deste ranking
+            </AlertDescription>
+          </Alert>
+          <Button onClick={() => navigate('/auth')} className="w-full">
+            Fazer Login / Cadastrar
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Show the answer sheet if selected and we have a ranking ID
-  if ((showAnswerSheet || isAlreadyParticipating) && userRankingId) {
-    return (
-      <AnswerSheet 
-        concurso={concurso}
-        rankingId={userRankingId}
-        onSuccess={() => {
-          setShowAnswerSheet(false);
-          queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
-          navigate(`/concurso/${concurso.id}/resultados`);
-          toast({
-            title: "Cartão de Respostas Processado",
-            description: "Suas respostas foram processadas e seu ranking foi atualizado.",
-          });
-        }}
-      />
-    );
-  }
-
-  // Default view for non-participating users
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border">
-      <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
-      <p className="mb-4">
-        Participe do ranking deste concurso para comparar seu desempenho com outros candidatos.
-        Você poderá preencher seu cartão de respostas e ver sua classificação.
-      </p>
-      
-      <Button 
-        onClick={handleParticipate} 
-        disabled={isLoading}
-        className="w-full bg-emerald-600 hover:bg-emerald-700"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-            Processando...
-          </>
-        ) : (
-          'Participar do Ranking'
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Trophy className="h-5 w-5 mr-2 text-yellow-500" />
+          {isAlreadyParticipating ? 'Você já está participando deste ranking' : 'Participar do Ranking'}
+        </CardTitle>
+        <CardDescription>
+          {isAlreadyParticipating 
+            ? 'Você já está participando deste ranking. Clique abaixo para editar suas respostas.'
+            : 'Preencha o gabarito para participar deste ranking'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Erro</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-      </Button>
-    </div>
+        
+        {success && (
+          <Alert variant="success" className="mb-4">
+            <AlertTitle>Sucesso</AlertTitle>
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
+
+        {!isAlreadyParticipating && hasAnyReservation && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="reservationType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de vaga</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo de vaga" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Ampla Concorrência">Ampla Concorrência</SelectItem>
+                        {concurso.has_ppp && (
+                          <SelectItem value="PPP">PPP (Pretos, Pardos ou Indígenas)</SelectItem>
+                        )}
+                        {concurso.has_pcd && (
+                          <SelectItem value="PCD">PCD (Pessoas com Deficiência)</SelectItem>
+                        )}
+                        {concurso.has_indigenas && (
+                          <SelectItem value="Indígenas">Indígenas</SelectItem>
+                        )}
+                        {concurso.has_hipossuficientes && (
+                          <SelectItem value="Hipossuficientes">Hipossuficientes</SelectItem>
+                        )}
+                        {concurso.has_transsexuais && (
+                          <SelectItem value="Transsexuais">Pessoas Transsexuais</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  'Preencher Gabarito'
+                )}
+              </Button>
+            </form>
+          </Form>
+        )}
+      </CardContent>
+      
+      {(isAlreadyParticipating || !hasAnyReservation) && (
+        <CardFooter>
+          <Button 
+            onClick={() => form.handleSubmit(onSubmit)()} 
+            className="w-full" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              isAlreadyParticipating ? 
+                'Acessar Meu Gabarito' : 
+                'Preencher Gabarito'
+            )}
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
   );
 };

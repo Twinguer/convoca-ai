@@ -60,14 +60,20 @@ export type Database = {
           basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
           created_at: string
+          custom_job_title: string | null
           data_publicacao: string | null
           discursive_weight: number | null
           etapa_atual: string | null
           exam_type: string | null
           has_basic_knowledge: boolean | null
           has_discursive: boolean | null
+          has_hipossuficientes: boolean | null
+          has_indigenas: boolean | null
+          has_pcd: boolean | null
+          has_ppp: boolean | null
           has_specific_knowledge_1: boolean | null
           has_specific_knowledge_2: boolean | null
+          has_transsexuais: boolean | null
           id: string
           inscritos: number | null
           link: string | null
@@ -87,14 +93,20 @@ export type Database = {
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
           created_at?: string
+          custom_job_title?: string | null
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
           has_basic_knowledge?: boolean | null
           has_discursive?: boolean | null
+          has_hipossuficientes?: boolean | null
+          has_indigenas?: boolean | null
+          has_pcd?: boolean | null
+          has_ppp?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
+          has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
           link?: string | null
@@ -114,14 +126,20 @@ export type Database = {
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
           created_at?: string
+          custom_job_title?: string | null
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
           has_basic_knowledge?: boolean | null
           has_discursive?: boolean | null
+          has_hipossuficientes?: boolean | null
+          has_indigenas?: boolean | null
+          has_pcd?: boolean | null
+          has_ppp?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
+          has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
           link?: string | null
@@ -149,6 +167,27 @@ export type Database = {
         Update: {
           created_at?: string
           id?: number
+        }
+        Relationships: []
+      }
+      job_titles: {
+        Row: {
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -220,6 +259,7 @@ export type Database = {
           discursive_score: number | null
           edit_count: number | null
           id: string
+          reservation_type: string | null
           score: number | null
           specific_knowledge_score: number | null
           updated_at: string
@@ -233,6 +273,7 @@ export type Database = {
           discursive_score?: number | null
           edit_count?: number | null
           id?: string
+          reservation_type?: string | null
           score?: number | null
           specific_knowledge_score?: number | null
           updated_at?: string
@@ -246,6 +287,7 @@ export type Database = {
           discursive_score?: number | null
           edit_count?: number | null
           id?: string
+          reservation_type?: string | null
           score?: number | null
           specific_knowledge_score?: number | null
           updated_at?: string

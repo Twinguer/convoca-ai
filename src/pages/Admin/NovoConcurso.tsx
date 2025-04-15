@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,10 +28,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 
+// Define o schema de validação do formulário com as novas opções
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
   orgao: z.string().min(1, 'O órgão é obrigatório'),
   banca: z.string().min(1, 'A banca é obrigatória'),
+  cargo: z.string().min(1, 'O cargo é obrigatório'),
+  custom_job_title: z.string().optional(),
   vagas: z.coerce.number().optional(),
   inscritos: z.coerce.number().optional(),
   data_publicacao: z.string().optional(),
@@ -51,6 +54,12 @@ const formSchema = z.object({
   basic_knowledge_questions: z.coerce.number().optional(),
   specific_knowledge_1_questions: z.coerce.number().optional(),
   specific_knowledge_2_questions: z.coerce.number().optional(),
+  // Novas opções para vagas reservadas
+  has_ppp: z.boolean().default(false),
+  has_pcd: z.boolean().default(false),
+  has_indigenas: z.boolean().default(false),
+  has_hipossuficientes: z.boolean().default(false),
+  has_transsexuais: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -61,9 +70,24 @@ const NovoConcurso = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isEditing = !!id;
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("informacoes");
+  const [showCustomJobTitle, setShowCustomJobTitle] = useState(false);
+  
+  // Busca os cargos predefinidos
+  const { data: jobTitles, isLoading: jobTitlesLoading } = useQuery({
+    queryKey: ['job-titles'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('job_titles')
+        .select('*')
+        .order('title', { ascending: true });
+        
+      if (error) throw error;
+      return data;
+    },
+  });
   
   // Fetch existing concurso for editing
   const { data: existingConcurso, isLoading } = useQuery({
@@ -89,6 +113,8 @@ const NovoConcurso = () => {
       titulo: '',
       orgao: '',
       banca: 'Cebraspe',
+      cargo: '',
+      custom_job_title: '',
       vagas: undefined,
       inscritos: undefined,
       data_publicacao: new Date().toISOString().split('T')[0],
@@ -108,16 +134,42 @@ const NovoConcurso = () => {
       basic_knowledge_questions: 40,
       specific_knowledge_1_questions: 60,
       specific_knowledge_2_questions: 0,
+      // Inicializa campos de vagas reservadas
+      has_ppp: false,
+      has_pcd: false,
+      has_indigenas: false,
+      has_hipossuficientes: false,
+      has_transsexuais: false,
     },
   });
   
+  // Observa mudanças no campo cargo para mostrar/esconder campo de cargo personalizado
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'cargo' && value.cargo === 'OUTRO') {
+        setShowCustomJobTitle(true);
+      } else if (name === 'cargo' && value.cargo !== 'OUTRO') {
+        setShowCustomJobTitle(false);
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+  
   // Update form values when editing an existing concurso
-  React.useEffect(() => {
+  useEffect(() => {
     if (existingConcurso) {
+      const initialCargo = existingConcurso.custom_job_title ? 'OUTRO' : existingConcurso.titulo;
+      const shouldShowCustomTitle = !!existingConcurso.custom_job_title;
+      
+      setShowCustomJobTitle(shouldShowCustomTitle);
+      
       form.reset({
         titulo: existingConcurso.titulo,
         orgao: existingConcurso.orgao,
         banca: existingConcurso.banca,
+        cargo: initialCargo,
+        custom_job_title: existingConcurso.custom_job_title || '',
         vagas: existingConcurso.vagas,
         inscritos: existingConcurso.inscritos,
         data_publicacao: existingConcurso.data_publicacao ? new Date(existingConcurso.data_publicacao).toISOString().split('T')[0] : undefined,
@@ -137,6 +189,12 @@ const NovoConcurso = () => {
         basic_knowledge_questions: existingConcurso.basic_knowledge_questions,
         specific_knowledge_1_questions: existingConcurso.specific_knowledge_1_questions,
         specific_knowledge_2_questions: existingConcurso.specific_knowledge_2_questions,
+        // Campos de vagas reservadas
+        has_ppp: existingConcurso.has_ppp ?? false,
+        has_pcd: existingConcurso.has_pcd ?? false,
+        has_indigenas: existingConcurso.has_indigenas ?? false,
+        has_hipossuficientes: existingConcurso.has_hipossuficientes ?? false,
+        has_transsexuais: existingConcurso.has_transsexuais ?? false,
       });
     }
   }, [existingConcurso, form]);
@@ -146,11 +204,21 @@ const NovoConcurso = () => {
       setIsSubmitting(true);
       setErrorMessage(null);
       
+      // Prepara os dados para salvar
+      const saveData: any = {
+        ...data,
+        titulo: data.cargo === 'OUTRO' ? data.custom_job_title : data.cargo,
+        custom_job_title: data.cargo === 'OUTRO' ? data.custom_job_title : null
+      };
+      
+      // Remove campos que não precisam ser enviados para o banco
+      delete saveData.cargo;
+      
       if (isEditing) {
         // Update existing concurso
         const { error } = await supabase
           .from('concursos')
-          .update(data)
+          .update(saveData)
           .eq('id', id);
           
         if (error) throw error;
@@ -162,7 +230,7 @@ const NovoConcurso = () => {
       } else {
         // Create new concurso using the createRanking function
         try {
-          const result = await createRanking(data);
+          const result = await createRanking(saveData);
           
           if (!result) {
             throw new Error('Erro ao criar ranking: Nenhum dado retornado');
@@ -204,7 +272,7 @@ const NovoConcurso = () => {
   };
   
   // Check the URL state for showing answer key tab
-  React.useEffect(() => {
+  useEffect(() => {
     // Fix: Using type assertion to access the state property
     const locationState = location.state as { showAnswerKeyTab?: boolean } | null;
     
@@ -271,22 +339,62 @@ const NovoConcurso = () => {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Seleção de Cargo */}
                     <FormField
                       control={form.control}
-                      name="titulo"
+                      name="cargo"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Cargo</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Ex: Analista Judiciário - Área Administrativa
-                          </FormDescription>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um cargo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="max-h-80">
+                              {jobTitlesLoading ? (
+                                <div className="flex items-center justify-center p-4">
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  <span>Carregando cargos...</span>
+                                </div>
+                              ) : (
+                                <>
+                                  {jobTitles?.map(job => (
+                                    <SelectItem key={job.id} value={job.title}>
+                                      {job.title}
+                                    </SelectItem>
+                                  ))}
+                                  <SelectItem value="OUTRO">OUTRO</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Campo para cargo personalizado */}
+                    {showCustomJobTitle && (
+                      <FormField
+                        control={form.control}
+                        name="custom_job_title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome do Cargo Personalizado</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Digite o nome do cargo" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     
                     <FormField
                       control={form.control}
@@ -364,6 +472,131 @@ const NovoConcurso = () => {
                         </FormItem>
                       )}
                     />
+                  </div>
+                  
+                  {/* Vagas Reservadas - Nova Seção */}
+                  <div className="space-y-4 border p-4 rounded-md">
+                    <h3 className="text-lg font-medium">Vagas Reservadas</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Selecione os tipos de vagas reservadas disponíveis para este concurso.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="has_ppp"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                PPP (Pretos, Pardos ou Indígenas)
+                              </FormLabel>
+                              <FormDescription>
+                                Vagas reservadas para negros e pardos
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_pcd"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                PCD (Pessoas com Deficiência)
+                              </FormLabel>
+                              <FormDescription>
+                                Vagas reservadas para pessoas com deficiência
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_indigenas"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                Indígenas
+                              </FormLabel>
+                              <FormDescription>
+                                Vagas reservadas para povos indígenas
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_hipossuficientes"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                Hipossuficientes
+                              </FormLabel>
+                              <FormDescription>
+                                Vagas reservadas para pessoas de baixa renda
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="has_transsexuais"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                Pessoas Transsexuais
+                              </FormLabel>
+                              <FormDescription>
+                                Vagas reservadas para pessoas transsexuais
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
