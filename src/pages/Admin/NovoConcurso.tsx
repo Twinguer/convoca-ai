@@ -544,11 +544,11 @@ const NovoConcurso = () => {
                                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Conhecimentos Específicos-2</FormLabel>
+                                <FormLabel>Qtd. C. Específicos-2</FormLabel>
                                 {field.value && <FormField control={form.control} name="specific_knowledge_2_questions" render={({
                             field: questionsField
                           }) => <FormItem className="mt-2">
-                                        <FormLabel>Número de questões</FormLabel>
+                                        
                                         <FormControl>
                                           <Input type="number" {...questionsField} />
                                         </FormControl>
