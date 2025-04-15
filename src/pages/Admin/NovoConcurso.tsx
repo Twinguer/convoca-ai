@@ -500,11 +500,11 @@ const NovoConcurso = () => {
                                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Conhecimentos Básicos</FormLabel>
+                                <FormLabel>Qtd. Questões C. Básicos</FormLabel>
                                 {field.value && <FormField control={form.control} name="basic_knowledge_questions" render={({
                             field: questionsField
                           }) => <FormItem className="mt-2">
-                                        <FormLabel>Número de questões</FormLabel>
+                                        
                                         <FormControl>
                                           <Input type="number" {...questionsField} />
                                         </FormControl>
@@ -522,11 +522,11 @@ const NovoConcurso = () => {
                                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Conhecimentos Específicos-1</FormLabel>
+                                <FormLabel>Qtd. C. Específicos-1</FormLabel>
                                 {field.value && <FormField control={form.control} name="specific_knowledge_1_questions" render={({
                             field: questionsField
                           }) => <FormItem className="mt-2">
-                                        <FormLabel>Número de questões</FormLabel>
+                                        
                                         <FormControl>
                                           <Input type="number" {...questionsField} />
                                         </FormControl>
