@@ -370,7 +370,7 @@ const NovoConcurso = () => {
                     <FormField control={form.control} name="banca" render={({
                     field
                   }) => <FormItem>
-                          <FormLabel>Banca Organizadora</FormLabel>
+                          <FormLabel>Banca</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -392,7 +392,7 @@ const NovoConcurso = () => {
                     <FormField control={form.control} name="vagas" render={({
                     field
                   }) => <FormItem>
-                          <FormLabel>Número de Vagas</FormLabel>
+                          <FormLabel>Vagas</FormLabel>
                           <FormControl>
                             <Input type="number" {...field} />
                           </FormControl>
@@ -402,7 +402,7 @@ const NovoConcurso = () => {
                     <FormField control={form.control} name="inscritos" render={({
                     field
                   }) => <FormItem>
-                          <FormLabel>Número de Inscritos</FormLabel>
+                          <FormLabel>Inscritos</FormLabel>
                           <FormControl>
                             <Input type="number" {...field} />
                           </FormControl>
