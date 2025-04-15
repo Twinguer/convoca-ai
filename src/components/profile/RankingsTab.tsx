@@ -63,13 +63,20 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
   const leaveRankingMutation = useMutation({
     mutationFn: async (rankingId: string) => {
       try {
+        console.log('Removendo ranking:', rankingId);
+        
         // Primeiro exclui as respostas do usuário
         const { error: answersError } = await supabase
           .from('user_answers')
           .delete()
           .eq('user_ranking_id', rankingId);
         
-        if (answersError) throw answersError;
+        if (answersError) {
+          console.error('Erro ao excluir respostas:', answersError);
+          throw answersError;
+        }
+        
+        console.log('Respostas excluídas, removendo ranking');
         
         // Depois exclui o ranking do usuário
         const { error: rankingError } = await supabase
@@ -78,21 +85,35 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           .eq('id', rankingId)
           .eq('user_id', userId);
         
-        if (rankingError) throw rankingError;
+        if (rankingError) {
+          console.error('Erro ao excluir ranking:', rankingError);
+          throw rankingError;
+        }
         
+        console.log('Ranking removido com sucesso');
         return rankingId;
       } catch (error) {
         console.error('Error in leaveRankingMutation:', error);
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (deletedRankingId) => {
+      console.log('onSuccess called, invalidating queries');
+      // Atualizar o cache para remover o ranking excluído
+      queryClient.setQueryData(['user-rankings', userId], (oldData: any[]) => {
+        if (!oldData) return [];
+        return oldData.filter(ranking => ranking.id !== deletedRankingId);
+      });
+      
+      // Invalidar a query para forçar um refetch
       queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
+      
       toast({
         title: "Ranking removido",
         description: "Você saiu deste ranking com sucesso.",
-        duration: 3000, // Reduzir tempo de exibição do toast
+        duration: 3000,
       });
+      
       setRankingToDelete(null);
     },
     onError: (error) => {
@@ -101,7 +122,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
         title: "Erro ao sair do ranking",
         description: "Ocorreu um erro ao tentar sair do ranking. Tente novamente.",
         variant: "destructive",
-        duration: 3000, // Reduzir tempo de exibição do toast
+        duration: 3000,
       });
     }
   });
@@ -112,7 +133,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
         title: "Operação não permitida",
         description: "Você só pode remover seus próprios rankings.",
         variant: "destructive",
-        duration: 3000, // Reduzir tempo de exibição do toast
+        duration: 3000,
       });
       return;
     }

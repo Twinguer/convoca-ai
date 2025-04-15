@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -7,23 +8,26 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
   };
+  
   const isAdmin = () => {
     return user?.email?.includes('admin');
   };
-  return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between sm:px-4 mx-[10px] py-0 px-[30px] my-[9px]">
+  
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
         {/* User login button - Now on the left */}
         <div className="flex items-center">
           <UserMenu />
@@ -137,6 +141,8 @@ const Menu = () => {
           </Sheet>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Menu;
