@@ -14,7 +14,7 @@ interface UseSaveAnswersProps {
   setError: (error: string | null) => void;
   setSavedSuccess: (success: boolean) => void;
   onSuccess: () => void;
-  sectionScores: Record<string, number>; // Custom scores for evaluation sections like discursive
+  sectionScores: Record<string, number>; // Custom scores for evaluation sections
   editCount: number;
 }
 
@@ -167,7 +167,17 @@ export const useSaveAnswers = ({
 
       if (error) throw error;
 
-      await saveUserAnswers(rankingId, concurso.id, answersArray);
+      // Map question types to sections for backward compatibility
+      const answersWithSections = answersArray.map(answer => {
+        // Determine if this question is in basic knowledge or other sections
+        // This is a temporary solution until we fully migrate to the new structure
+        return {
+          ...answer,
+          isBasicKnowledge: true // Default to basic knowledge for compatibility
+        };
+      });
+
+      await saveUserAnswers(rankingId, concurso.id, answersWithSections);
 
       setSavedSuccess(true);
       toast({

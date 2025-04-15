@@ -105,6 +105,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData]);
 
+  // Prepare section scores for the useSaveAnswers hook
+  const sectionScores: Record<string, number> = {};
+  
+  if (discursiveScore !== null) {
+    sectionScores['Discursiva'] = discursiveScore;
+  }
+  if (caseStudy1Score !== null) {
+    sectionScores['Estudo de Caso 1'] = caseStudy1Score;
+  }
+  if (caseStudy2Score !== null) {
+    sectionScores['Estudo de Caso 2'] = caseStudy2Score;
+  }
+  if (caseStudy3Score !== null) {
+    sectionScores['Estudo de Caso 3'] = caseStudy3Score;
+  }
+
   const {
     handleSaveAnswers
   } = useSaveAnswers({
@@ -116,10 +132,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setError,
     setSavedSuccess,
     onSuccess,
-    discursiveScore,
-    caseStudy1Score,
-    caseStudy2Score,
-    caseStudy3Score,
+    sectionScores,
     editCount: userRankingData?.edit_count || 0
   });
   

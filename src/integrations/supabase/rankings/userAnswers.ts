@@ -41,48 +41,14 @@ export const saveUserAnswers = async (
       throw new Error('Gabarito oficial não encontrado para este concurso');
     }
     
-    // Calculate score by comparing user answers with official answers
-    let basicKnowledgeScore = 0;
-    let specificKnowledgeScore = 0;
-    
-    answers.forEach(userAnswer => {
-      const officialAnswer = answerKey.find(
-        a => a.question_number === userAnswer.questionNumber
-      );
-      
-      if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
-        if (userAnswer.isBasicKnowledge) {
-          basicKnowledgeScore += 1;
-        } else {
-          specificKnowledgeScore += 1;
-        }
-      }
-    });
-    
-    // Calculate total score
-    const totalScore = basicKnowledgeScore + specificKnowledgeScore;
-    
-    // Update user ranking with scores
-    const { error: updateError } = await supabase
-      .from('user_rankings')
-      .update({
-        basic_knowledge_score: basicKnowledgeScore,
-        specific_knowledge_score: specificKnowledgeScore,
-        score: totalScore,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', rankingId);
-      
-    if (updateError) throw updateError;
+    // Note: We no longer calculate scores here since that's now handled
+    // in the useSaveAnswers hook using the more flexible exam section system
     
     return { 
-      success: true, 
-      basicKnowledgeScore, 
-      specificKnowledgeScore, 
-      totalScore 
+      success: true
     };
   } catch (error: any) {
-    console.error('Error saving answers and calculating score:', error);
+    console.error('Error saving answers:', error);
     throw error;
   }
 };
