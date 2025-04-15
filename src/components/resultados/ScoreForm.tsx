@@ -51,7 +51,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Calculate total score as sum of the component scores
+      // Calculate total score as sum of all component scores
       const totalScore = values.basicKnowledgeScore + values.specificKnowledgeScore + values.discursiveScore;
       
       console.log('Updating scores:', {
@@ -83,6 +83,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       // Invalidate related queries to force a refresh
       queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
       
       toast({
         title: 'Notas registradas com sucesso!',

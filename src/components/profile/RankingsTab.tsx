@@ -1,25 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ChevronDown, ChevronUp, XCircle } from 'lucide-react';
+import { PencilLine, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from '@/hooks/useAuth';
 
 interface RankingsTabProps {
@@ -31,10 +19,7 @@ interface RankingsTabProps {
 const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthenticated = false }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [showAllRankings, setShowAllRankings] = useState(false);
-  const [rankingToDelete, setRankingToDelete] = useState<string | null>(null);
   
   const { data: rankings, isLoading } = useQuery({
     queryKey: ['user-rankings', userId],
@@ -58,88 +43,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
     },
     enabled: !userRankings && !!userId, // Only fetch if userRankings is not provided and userId exists
   });
-  
-  // Mutation para sair do ranking
-  const leaveRankingMutation = useMutation({
-    mutationFn: async (rankingId: string) => {
-      try {
-        console.log('Removendo ranking:', rankingId);
-        
-        // Primeiro exclui as respostas do usuário
-        const { error: answersError } = await supabase
-          .from('user_answers')
-          .delete()
-          .eq('user_ranking_id', rankingId);
-        
-        if (answersError) {
-          console.error('Erro ao excluir respostas:', answersError);
-          throw answersError;
-        }
-        
-        console.log('Respostas excluídas, removendo ranking');
-        
-        // Depois exclui o ranking do usuário
-        const { error: rankingError } = await supabase
-          .from('user_rankings')
-          .delete()
-          .eq('id', rankingId)
-          .eq('user_id', userId);
-        
-        if (rankingError) {
-          console.error('Erro ao excluir ranking:', rankingError);
-          throw rankingError;
-        }
-        
-        console.log('Ranking removido com sucesso');
-        return rankingId;
-      } catch (error) {
-        console.error('Error in leaveRankingMutation:', error);
-        throw error;
-      }
-    },
-    onSuccess: (deletedRankingId) => {
-      console.log('onSuccess called, invalidating queries');
-      // Atualizar o cache para remover o ranking excluído
-      queryClient.setQueryData(['user-rankings', userId], (oldData: any[]) => {
-        if (!oldData) return [];
-        return oldData.filter(ranking => ranking.id !== deletedRankingId);
-      });
-      
-      // Invalidar a query para forçar um refetch
-      queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
-      
-      toast({
-        title: "Ranking removido",
-        description: "Você saiu deste ranking com sucesso.",
-        duration: 3000,
-      });
-      
-      setRankingToDelete(null);
-    },
-    onError: (error) => {
-      console.error('Erro ao sair do ranking:', error);
-      toast({
-        title: "Erro ao sair do ranking",
-        description: "Ocorreu um erro ao tentar sair do ranking. Tente novamente.",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  });
-  
-  const handleLeaveRanking = (rankingId: string) => {
-    if (user?.id !== userId) {
-      toast({
-        title: "Operação não permitida",
-        description: "Você só pode remover seus próprios rankings.",
-        variant: "destructive",
-        duration: 3000,
-      });
-      return;
-    }
-    
-    leaveRankingMutation.mutate(rankingId);
-  };
   
   // Use provided userRankings if available, otherwise use fetched rankings
   const allRankings = userRankings || rankings;
@@ -200,39 +103,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
               </div>
               
               <div className="flex items-center gap-2 self-end">
-                {isOwnProfile && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                        onClick={() => setRankingToDelete(ranking.id || ranking.concursoId)}
-                      >
-                        <XCircle className="h-4 w-4" />
-                        <span>Sair</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Sair do Ranking</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tem certeza que deseja sair deste ranking? Todas as suas respostas serão excluídas e você perderá sua posição atual.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleLeaveRanking(ranking.id || ranking.concursoId)}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          {leaveRankingMutation.isPending ? 'Saindo...' : 'Sair do Ranking'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-                
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -263,26 +133,20 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
                   <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
                 </div>
                 
-                {(ranking.basic_knowledge_score !== undefined) && (
-                  <div className="p-3 bg-gray-50 rounded-md text-center">
-                    <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
-                    <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
-                  </div>
-                )}
+                <div className="p-3 bg-gray-50 rounded-md text-center">
+                  <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
+                  <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
+                </div>
                 
-                {(ranking.specific_knowledge_score !== undefined) && (
-                  <div className="p-3 bg-gray-50 rounded-md text-center">
-                    <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
-                    <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
-                  </div>
-                )}
+                <div className="p-3 bg-gray-50 rounded-md text-center">
+                  <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
+                  <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
+                </div>
                 
-                {(ranking.discursive_score !== undefined) && (
-                  <div className="p-3 bg-gray-50 rounded-md text-center">
-                    <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
-                    <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>
-                  </div>
-                )}
+                <div className="p-3 bg-gray-50 rounded-md text-center">
+                  <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
+                  <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

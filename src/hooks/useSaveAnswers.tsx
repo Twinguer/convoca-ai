@@ -71,8 +71,10 @@ export const useSaveAnswers = ({
       }
       
       // Calculate score
-      let basicKnowledgeScore = 0;
-      let specificKnowledgeScore = 0;
+      let basicKnowledgeCorrect = 0;
+      let specificKnowledgeCorrect = 0;
+      let basicKnowledgeWrong = 0;
+      let specificKnowledgeWrong = 0;
       let totalCorrect = 0;
       let totalQuestions = 0;
       
@@ -96,20 +98,27 @@ export const useSaveAnswers = ({
           totalCorrect++;
           
           if (officialAnswer.is_basic_knowledge) {
-            basicKnowledgeScore++;
+            basicKnowledgeCorrect++;
           } else {
-            specificKnowledgeScore++;
+            specificKnowledgeCorrect++;
           }
-        } else if (concurso.exam_type === 'Certo ou Errado' && userAnswer && concurso.wrong_answer_penalty) {
-          // Apply penalty for wrong answers in "Certo ou Errado" type exams
-          // Only if the answer is provided (not blank)
+        } else if (concurso.exam_type === 'Certo ou Errado' && userAnswer) {
+          // For wrong answers in "Certo ou Errado" type, subtract one point
           if (officialAnswer.is_basic_knowledge) {
-            basicKnowledgeScore -= concurso.wrong_answer_penalty;
+            basicKnowledgeWrong++;
           } else {
-            specificKnowledgeScore -= concurso.wrong_answer_penalty;
+            specificKnowledgeWrong++;
           }
         }
       });
+
+      // Calculate the final scores with penalties for wrong answers
+      let basicKnowledgeScore = basicKnowledgeCorrect - basicKnowledgeWrong;
+      let specificKnowledgeScore = specificKnowledgeCorrect - specificKnowledgeWrong;
+      
+      // Ensure scores don't go below zero
+      basicKnowledgeScore = Math.max(0, basicKnowledgeScore);
+      specificKnowledgeScore = Math.max(0, specificKnowledgeScore);
       
       // Calculate total score with weights
       const weightedBasicScore = basicKnowledgeScore * (concurso.basic_knowledge_weight || 1);
@@ -120,11 +129,14 @@ export const useSaveAnswers = ({
         ? discursiveScore * (concurso.discursive_weight || 1)
         : 0;
       
-      // Calculate final total score
+      // Calculate final total score (sum of objective score plus discursive score)
       const totalScore = weightedBasicScore + weightedSpecificScore + weightedDiscursiveScore;
       
-      console.log(`Score calculation: ${totalCorrect}/${totalQuestions} correct (${totalScore} points)`);
-      console.log(`Basic: ${basicKnowledgeScore}, Specific: ${specificKnowledgeScore}, Discursive: ${discursiveScore || 0}`);
+      console.log(`Score calculation: ${totalCorrect}/${totalQuestions} correct`);
+      console.log(`Basic Knowledge: Correct=${basicKnowledgeCorrect}, Wrong=${basicKnowledgeWrong}, Final=${basicKnowledgeScore}`);
+      console.log(`Specific Knowledge: Correct=${specificKnowledgeCorrect}, Wrong=${specificKnowledgeWrong}, Final=${specificKnowledgeScore}`);
+      console.log(`Discursive: ${discursiveScore || 0}`);
+      console.log(`Total Score: ${totalScore}`);
       
       // Update the user_rankings record with the calculated scores
       const { error: updateError } = await supabase
