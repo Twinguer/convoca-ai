@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -74,6 +75,21 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   });
   
+  // Fetch user answers
+  const {
+    isLoading: isLoadingAnswers
+  } = useQuery({
+    queryKey: ['user-answers', rankingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_answers')
+        .select('*')
+        .eq('user_ranking_id', rankingId);
+      if (error) throw error;
+      return data || [];
+    }
+  });
+  
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
@@ -95,7 +111,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     rankingId,
     concurso,
     answers,
-    questionType,
+    questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
     setIsSaving,
     setError,
     setSavedSuccess,
@@ -105,20 +121,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0
-  });
-  
-  const {
-    isLoading: isLoadingAnswers
-  } = useQuery({
-    queryKey: ['user-answers', rankingId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_answers')
-        .select('*')
-        .eq('user_ranking_id', rankingId);
-      if (error) throw error;
-      return data || [];
-    }
   });
   
   const handleScoreChange = (
@@ -366,7 +368,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         )}
         
         <div className="border rounded-md overflow-hidden shadow-sm">
-          <Tabs value={selectedSection} onValueChange={setSelectedSection} className="w-full">
+          <Tabs 
+            value={selectedSection} 
+            onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3')}
+            className="w-full"
+          >
             <TabsList className={`grid w-full grid-cols-${getSectionList().length}`}>
               {getSectionList().map(section => (
                 <TabsTrigger key={section.key} value={section.key}>
