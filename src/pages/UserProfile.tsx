@@ -1,404 +1,291 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
-import { fetchUserRankings } from '@/services/concursoService';
-import { UserRankingDisplay } from '@/types/concursos';
-import { FollowersColumn } from '@/components/profile/FollowersColumn';
-import Logo from '@/assets/logo';
-import StatusSelect from '@/components/profile/StatusSelect';
-import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import RankingsTab from '@/components/profile/RankingsTab';
-import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { ProfileInfoTab } from '@/components/profile/ProfileInfoTab';
+import { ConcursosTab } from '@/components/profile/ConcursosTab';
+import { RankingsTab } from '@/components/profile/RankingsTab';
+import { useAuth } from '@/hooks/useAuth';
+import { LogOut, Loader2, X } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-interface Follower {
-  id: string;
-  name: string;
-  avatar_url?: string | null;
-}
-
-const UserProfile = () => {
-  const {
-    user
-  } = useAuth();
+const UserProfile: React.FC = () => {
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [concursosAprovados, setConcursosAprovados] = useState('');
-  const [concursosParticipando, setConcursosParticipando] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
-  const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
-  const [profileText, setProfileText] = useState('');
-
-  const {
-    data: profile,
-    isLoading,
-    refetch
-  } = useQuery({
-    queryKey: ['user-profile', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      try {
-        console.log('Fetching user profile for ID:', user.id);
-        const {
-          data,
-          error
-        } = await supabase.from('users_profiles').select('*').eq('id', user.id).single();
-        if (error) {
-          console.error('Error fetching profile:', error);
-          if (error.code === 'PGRST116') {
-            console.log('Profile not found, creating new profile');
-            const {
-              data: newProfile,
-              error: createError
-            } = await supabase.from('users_profiles').insert({
-              id: user.id,
-              email: user.email,
-              name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              status_concurseiro: 'Na Ativa',
-              profile_text: ''
-            }).select('*').single();
-            if (createError) {
-              console.error('Error creating profile:', createError);
-              throw createError;
-            }
-            return newProfile;
-          }
-          throw error;
-        }
-        console.log('Profile fetched successfully:', data);
-        return data;
-      } catch (err) {
-        console.error('Error in profile query:', err);
-        toast({
-          title: 'Erro ao carregar perfil',
-          description: 'Não foi possível carregar os dados do perfil. Tente novamente.',
-          variant: 'destructive'
-        });
-        throw err;
-      }
-    },
-    enabled: !!user,
-    refetchOnWindowFocus: false,
-    refetchInterval: false,
-    staleTime: 300000
-  });
-
-  const {
-    data: rankings
-  } = useQuery({
-    queryKey: ['user-rankings', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const {
-        data,
-        error
-      } = await supabase.from('user_rankings').select(`
-          id,
-          concurso_id,
-          score,
-          concursos(titulo)
-        `).eq('user_id', user.id);
-      if (error) throw error;
-      return data.map(item => {
-        const concursoData = item.concursos || {};
-        const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
-        return {
-          concursoId: item.concurso_id,
-          concursoTitle: titulo,
-          position: 0,
-          score: item.score
-        };
-      }) as UserRankingDisplay[];
-    },
-    enabled: !!user
-  });
-
-  const {
-    data: followerData
-  } = useQuery({
-    queryKey: ['user-followers-count', user?.id],
-    queryFn: async () => {
-      if (!user) return 0;
-      const {
-        data,
-        error
-      } = await supabase.rpc('count_user_followers', {
-        user_id: user.id
-      });
-      if (error) {
-        console.error('Error fetching follower count:', error);
-        return 0;
-      }
-      return data || 0;
-    },
-    enabled: !!user
-  });
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userRankings, setUserRankings] = useState<any[]>([]);
+  const [loadingRankings, setLoadingRankings] = useState(false);
+  const [isExitingRanking, setIsExitingRanking] = useState(false);
+  const [exitRankingId, setExitRankingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (followerData !== undefined) {
-      setFollowersCount(followerData);
-    }
-  }, [followerData]);
-
-  useEffect(() => {
-    if (rankings && rankings.length > 0) {
-      setUserRankings(rankings);
-    }
-  }, [rankings]);
-
-  useEffect(() => {
-    if (profile) {
-      console.log("Setting profile state with data:", profile);
-      setName(profile.name || '');
-      setBio(profile.bio || '');
-      setConcursosAprovados(profile.concursos_aprovados || '');
-      setConcursosParticipando(profile.concursos_participando || '');
-      setAvatarUrl(profile.avatar_url);
-      setStatusConcurseiro(profile.status_concurseiro || 'Na Ativa');
-      setProfileText(profile.profile_text || '');
-    }
-  }, [profile]);
-
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    try {
-      if (!event.target.files || !event.target.files.length) {
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setIsLoading(false);
         return;
       }
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-      setUploading(true);
-      console.log("Uploading file to path:", filePath);
-      const {
-        data,
-        error: uploadError
-      } = await supabase.storage.from('profiles').upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
-      }
-      console.log("Upload data:", data);
-      const {
-        data: {
-          publicUrl
-        }
-      } = supabase.storage.from('profiles').getPublicUrl(filePath);
-      console.log("Generated public URL:", publicUrl);
-      const {
-        data: profileData,
-        error: updateError
-      } = await supabase.from('users_profiles').update({
-        avatar_url: publicUrl,
-        updated_at: new Date().toISOString()
-      }).eq('id', user!.id).select().single();
-      if (updateError) {
-        console.error("Update profile error:", updateError);
-        throw updateError;
-      }
-      console.log("Updated profile data:", profileData);
-      setAvatarUrl(publicUrl);
-      toast({
-        title: 'Foto de perfil atualizada',
-        description: 'Sua foto de perfil foi atualizada com sucesso.'
-      });
-      await refetch();
-    } catch (error: any) {
-      console.error("Avatar upload error:", error);
-      toast({
-        title: 'Erro ao fazer upload',
-        description: error.message || 'Ocorreu um erro ao enviar a imagem. Tente novamente.',
-        variant: 'destructive'
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
 
-  const handleSaveProfile = async () => {
+      try {
+        console.log('Fetching user profile for ID:', user.id);
+        const { data, error } = await supabase
+          .from('users_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        console.log('Profile fetched successfully:', data);
+        setProfile(data);
+      } catch (error: any) {
+        console.error('Error fetching user profile:', error.message);
+        toast({
+          title: 'Erro ao carregar perfil',
+          description: 'Não foi possível carregar seus dados.',
+          variant: 'destructive',
+        });
+      } finally {
+        console.log('Setting profile state with data:', profile);
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user, toast]);
+
+  useEffect(() => {
+    const fetchUserRankings = async () => {
+      if (!user) return;
+      
+      setLoadingRankings(true);
+      try {
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select(`
+            id, 
+            score,
+            reservation_type,
+            created_at,
+            concursos(id, titulo, orgao, banca)
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        setUserRankings(data || []);
+      } catch (error) {
+        console.error('Error fetching user rankings:', error);
+      } finally {
+        setLoadingRankings(false);
+      }
+    };
+    
+    fetchUserRankings();
+  }, [user]);
+
+  const handleLogout = async () => {
     try {
-      setSaving(true);
-      console.log("Saving profile with data:", {
-        name,
-        bio,
-        concursosAprovados,
-        concursosParticipando,
-        avatarUrl,
-        statusConcurseiro,
-        profileText
-      });
-      const currentAvatarUrl = avatarUrl;
-      const {
-        data,
-        error
-      } = await supabase.from('users_profiles').update({
-        name,
-        bio,
-        concursos_aprovados: concursosAprovados,
-        concursos_participando: concursosParticipando,
-        avatar_url: currentAvatarUrl,
-        status_concurseiro: statusConcurseiro,
-        profile_text: profileText,
-        updated_at: new Date().toISOString()
-      }).eq('id', user!.id).select().single();
-      if (error) {
-        console.error("Error saving profile:", error);
-        throw error;
-      }
-      console.log("Profile saved successfully:", data);
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error logging out:', error);
       toast({
-        title: 'Perfil atualizado',
-        description: 'Seu perfil foi atualizado com sucesso.'
+        title: 'Erro ao sair',
+        description: 'Houve um problema ao tentar sair. Tente novamente.',
+        variant: 'destructive',
       });
-      await refetch();
-    } catch (error: any) {
-      console.error("Save profile error:", error);
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message || 'Ocorreu um erro ao salvar o perfil. Tente novamente.',
-        variant: 'destructive'
-      });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  const handleExitRanking = async (rankingId: string) => {
+    setExitRankingId(rankingId);
+    setIsExitingRanking(false);
   };
 
-  const concursosAprovadosCount = concursosAprovados ? concursosAprovados.split('\n').filter(Boolean).length : 0;
-
-  if (isLoading) {
-    return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
-      </div>;
-  }
+  const confirmExitRanking = async () => {
+    if (!exitRankingId) return;
+    
+    setIsExitingRanking(true);
+    try {
+      // Delete user answers first
+      const { error: answersError } = await supabase
+        .from('user_answers')
+        .delete()
+        .eq('user_ranking_id', exitRankingId);
+      
+      if (answersError) throw answersError;
+      
+      // Then delete the ranking participation
+      const { error: rankingError } = await supabase
+        .from('user_rankings')
+        .delete()
+        .eq('id', exitRankingId);
+      
+      if (rankingError) throw rankingError;
+      
+      // Update local state
+      setUserRankings(userRankings.filter(r => r.id !== exitRankingId));
+      
+      toast({
+        title: 'Saiu do ranking',
+        description: 'Você saiu deste ranking com sucesso.',
+      });
+    } catch (error: any) {
+      console.error('Error exiting ranking:', error);
+      toast({
+        title: 'Erro ao sair do ranking',
+        description: error.message || 'Houve um problema ao tentar sair deste ranking.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExitingRanking(false);
+      setExitRankingId(null);
+    }
+  };
 
   if (!user) {
-    useEffect(() => {
-      navigate("/auth");
-    }, [navigate]);
-    return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
-      </div>;
+    navigate('/auth');
+    return null;
   }
 
-  return <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-3">
-          <Card>
-            <CardContent className="pt-6">
-              <ProfileHeader name={name} email={user.email || ''} avatarUrl={avatarUrl} uploading={uploading} handleAvatarUpload={handleAvatarUpload} statusConcurseiro={statusConcurseiro} profileText={profileText} />
-              
-              <div className="mt-6">
-                <DeleteProfileButton userId={user.id} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="md:col-span-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Meu Perfil</CardTitle>
-              
-            </CardHeader>
-            
-            <Tabs defaultValue="profile">
-              <div className="px-6">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="profile">Perfil</TabsTrigger>
-                  <TabsTrigger value="concursos">Concursos</TabsTrigger>
-                  <TabsTrigger value="rankings">Rankings</TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="profile">
-                <CardContent className="pt-6 space-y-4">
-                  <ProfileInfoTab name={name} setName={setName} email={user.email || ''} bio={bio} setBio={setBio} statusConcurseiro={statusConcurseiro} setStatusConcurseiro={setStatusConcurseiro} profileText={profileText} setProfileText={setProfileText} />
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="concursos">
-                <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="concursos-aprovados">Aprovações:</Label>
-                    <Textarea id="concursos-aprovados" value={concursosAprovados} onChange={e => setConcursosAprovados(e.target.value)} placeholder="Liste os concursos em que você foi aprovado (um por linha)" rows={5} />
-                    <p className="text-sm text-muted-foreground">
-                      Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
-                    </p>
-                  </div>
-                  
-                  
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="rankings">
-                <CardContent className="pt-6">
-                  <RankingsTab userId={user?.id || ''} userRankings={userRankings} isAuthenticated={!!user} />
-                </CardContent>
-              </TabsContent>
-            </Tabs>
-            
-            <CardFooter className="flex justify-end py-6">
-              <Button onClick={handleSaveProfile} disabled={saving} className="relative bg-emerald-600 hover:bg-emerald-700">
-                {saving ? <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Salvando...
-                  </> : <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Salvar alterações
-                  </>}
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
+  if (isLoading) {
+    return (
+      <div className="container py-10 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-lg">Carregando seu perfil...</span>
+      </div>
+    );
+  }
 
-        <div className="md:col-span-3">
-          {user && <FollowersColumn userId={user.id} />}
-        </div>
+  return (
+    <div className="container py-10">
+      {profile && <ProfileHeader profile={profile} />}
+
+      <div className="mt-8">
+        <Tabs defaultValue="info">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="concursos">Concursos</TabsTrigger>
+            <TabsTrigger value="rankings">Rankings</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="info">
+            {profile && <ProfileInfoTab profile={profile} />}
+          </TabsContent>
+
+          <TabsContent value="concursos">
+            <ConcursosTab userId={user.id} />
+          </TabsContent>
+
+          <TabsContent value="rankings">
+            <Card>
+              <CardContent className="pt-6">
+                <h3 className="text-lg font-medium mb-4">Meus Rankings</h3>
+                
+                {loadingRankings ? (
+                  <div className="flex justify-center p-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : userRankings.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-4">
+                    Você ainda não está participando de nenhum ranking.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {userRankings.map((ranking) => (
+                      <div key={ranking.id} className="flex items-center justify-between p-4 border rounded-md">
+                        <div>
+                          <h4 className="font-medium">{ranking.concursos?.titulo || 'Ranking'}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {ranking.concursos?.orgao} • {ranking.concursos?.banca}
+                          </p>
+                          {ranking.reservation_type && ranking.reservation_type !== 'Ampla Concorrência' && (
+                            <span className="inline-block px-2 py-1 mt-1 text-xs bg-muted rounded-full">
+                              {ranking.reservation_type}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/concurso/${ranking.concursos?.id}/responder/${ranking.id}`)}
+                          >
+                            Editar Gabarito
+                          </Button>
+                          
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleExitRanking(ranking.id)}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Sair
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Sair do Ranking</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja sair deste ranking? Essa ação excluirá seu gabarito e 
+                                  sua participação neste concurso. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={confirmExitRanking}
+                                  disabled={isExitingRanking}
+                                >
+                                  {isExitingRanking ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Processando...
+                                    </>
+                                  ) : (
+                                    'Sim, sair do ranking'
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      <footer className="mt-12 text-center">
-        <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="mb-4 md:mb-0">
-              <Logo className="h-16 w-auto" />
-            </div>
-            <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} Convoca Aí - Todos os direitos reservados
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div>;
+      <div className="mt-10 flex justify-center">
+        <Button variant="destructive" onClick={handleLogout}>
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair da Conta
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export default UserProfile;

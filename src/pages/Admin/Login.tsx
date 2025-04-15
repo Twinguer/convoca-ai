@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { LockKeyhole, User } from 'lucide-react';
+import { ArrowLeft, LockKeyhole, User } from 'lucide-react';
 
 // Form validation schema
 const formSchema = z.object({
@@ -122,10 +122,16 @@ const AdminLogin: React.FC = () => {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <p className="text-xs text-gray-500">
+        <CardFooter className="flex flex-col space-y-3">
+          <p className="text-xs text-gray-500 text-center">
             Painel administrativo exclusivo para gerenciamento de concursos
           </p>
+          <Button variant="ghost" size="sm" asChild className="w-full">
+            <Link to="/auth">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para a página de login
+            </Link>
+          </Button>
         </CardFooter>
       </Card>
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,15 +9,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LockKeyhole } from 'lucide-react';
+
 const Auth: React.FC = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form states
@@ -36,14 +34,17 @@ const Auth: React.FC = () => {
     navigate('/');
   };
 
+  // Handle navigation to admin login
+  const handleAdminLogin = () => {
+    navigate('/project/admin/login');
+  };
+
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const {
-        error
-      } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword
       });
@@ -70,10 +71,7 @@ const Auth: React.FC = () => {
     setIsLoading(true);
     try {
       // Register user
-      const {
-        data: authData,
-        error: authError
-      } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
@@ -105,21 +103,22 @@ const Auth: React.FC = () => {
       setIsLoading(false);
     }
   };
-  return <div className="container flex h-screen items-center justify-center">
+
+  return (
+    <div className="container flex h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold text-center">Convoca Aí</CardTitle>
-            
           </div>
-          
         </CardHeader>
         
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Cadastro</TabsTrigger>
+              <TabsTrigger value="admin">Admin</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -164,6 +163,30 @@ const Auth: React.FC = () => {
                 </Button>
               </form>
             </TabsContent>
+
+            <TabsContent value="admin">
+              <div className="space-y-4 py-2">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                  <div className="rounded-full bg-primary/10 p-6">
+                    <LockKeyhole className="h-10 w-10 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Acesso Administrativo</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Área restrita para administradores do sistema
+                    </p>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleAdminLogin} 
+                  className="w-full" 
+                  variant="outline"
+                >
+                  Acessar Painel Administrativo
+                </Button>
+              </div>
+            </TabsContent>
           </Tabs>
         </CardContent>
         
@@ -176,6 +199,8 @@ const Auth: React.FC = () => {
           </Button>
         </CardFooter>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;
