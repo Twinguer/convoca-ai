@@ -327,9 +327,7 @@ const NovoConcurso = () => {
                                 </SelectItem>)}
                             </SelectContent>
                           </Select>
-                          <FormDescription>
-                            Selecione o cargo ou função do concurso
-                          </FormDescription>
+                          
                           <FormMessage />
                         </FormItem>} />
                     
@@ -357,9 +355,7 @@ const NovoConcurso = () => {
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
-                          <FormDescription>
-                            Ex: Tribunal Regional Federal da 1ª Região
-                          </FormDescription>
+                          
                           <FormMessage />
                         </FormItem>} />
                   </div>
