@@ -13,7 +13,6 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
         specific_knowledge_score,
         discursive_score,
         user_id,
-        reservation_type,
         users_profiles!inner(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
@@ -47,8 +46,7 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
         avatarUrl: avatarUrl,
         basicKnowledgeScore: item.basic_knowledge_score,
         specificKnowledgeScore: item.specific_knowledge_score,
-        discursiveScore: item.discursive_score,
-        reservationType: item.reservation_type || 'Ampla Concorrência'
+        discursiveScore: item.discursive_score
       };
     });
     
@@ -57,4 +55,3 @@ export const getRankingsWithUserInfo = async (concursoId: string) => {
     return [];
   }
 };
-
