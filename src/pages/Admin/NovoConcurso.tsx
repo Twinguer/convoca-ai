@@ -301,9 +301,7 @@ const NovoConcurso = () => {
           <Card>
             <CardHeader>
               <CardTitle>{isEditing ? 'Editar Ranking' : 'Cadastrar Novo Ranking'}</CardTitle>
-              <CardDescription>
-                Preencha os campos abaixo para {isEditing ? 'atualizar' : 'cadastrar'} um ranking no sistema.
-              </CardDescription>
+              
             </CardHeader>
             <CardContent>
               <Form {...form}>
