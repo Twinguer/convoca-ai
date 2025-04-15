@@ -5,26 +5,31 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2'>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [discursiveScore, setDiscursiveScore] = useState<number | null>(null);
+  const [caseStudy1Score, setCaseStudy1Score] = useState<number | null>(null);
+  const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
+  const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
 
   const fetchExistingAnswers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch answers
+      const { data: answersData, error: answersError } = await supabase
         .from('user_answers')
         .select('*')
         .eq('user_ranking_id', rankingId);
         
-      if (error) throw error;
+      if (answersError) throw answersError;
       
-      if (data?.length) {
+      if (answersData?.length) {
         const answersMap: { [key: number]: string } = {};
-        const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' } = {};
+        const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
         
-        data.forEach((item: any) => {
+        answersData.forEach((item: any) => {
           answersMap[item.question_number] = item.answer;
           
           if (item.is_basic_knowledge) {
@@ -33,11 +38,42 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
             typesMap[item.question_number] = 'specific1';
           } else if (concurso.has_specific_knowledge_2) {
             typesMap[item.question_number] = 'specific2';
+          } else if (concurso.has_specific_knowledge_3) {
+            typesMap[item.question_number] = 'specific3';
           }
         });
         
         setAnswers(answersMap);
         setQuestionType(typesMap);
+      }
+      
+      // Fetch user ranking for scores
+      const { data: rankingData, error: rankingError } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+        
+      if (rankingError) throw rankingError;
+      
+      if (rankingData) {
+        if (rankingData.discursive_score !== null && rankingData.discursive_score !== undefined) {
+          setDiscursiveScore(rankingData.discursive_score);
+        }
+        
+        // Case study scores would be in separate fields in a real implementation
+        // For now, we'll assume they're in the ranking data
+        if (rankingData.case_study_1_score !== undefined) {
+          setCaseStudy1Score(rankingData.case_study_1_score);
+        }
+        
+        if (rankingData.case_study_2_score !== undefined) {
+          setCaseStudy2Score(rankingData.case_study_2_score);
+        }
+        
+        if (rankingData.case_study_3_score !== undefined) {
+          setCaseStudy3Score(rankingData.case_study_3_score);
+        }
       }
     } catch (error) {
       console.error('Error fetching answers:', error);
@@ -46,7 +82,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const initializeQuestionTypes = () => {
     if (concurso && Object.keys(questionType).length === 0) {
-      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' } = {};
+      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
       let questionNumber = 1;
       
       if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
@@ -66,6 +102,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
         for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
           typesMap[questionNumber] = 'specific2';
+          questionNumber++;
+        }
+      }
+      
+      if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+          typesMap[questionNumber] = 'specific3';
           questionNumber++;
         }
       }
@@ -114,6 +157,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       total += concurso.specific_knowledge_2_questions;
     }
     
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      total += concurso.specific_knowledge_3_questions;
+    }
+    
     return total;
   };
 
@@ -130,7 +177,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       if (
         (selectedSection === 'basic' && type === 'basic') ||
         (selectedSection === 'specific1' && type === 'specific1') ||
-        (selectedSection === 'specific2' && type === 'specific2')
+        (selectedSection === 'specific2' && type === 'specific2') ||
+        (selectedSection === 'specific3' && type === 'specific3')
       ) {
         questions.push(parseInt(num));
       }
@@ -191,6 +239,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     getAnsweredQuestionsCount,
     getOptionsForQuestion,
     createAnswerMatrix,
-    questionType
+    questionType,
+    discursiveScore,
+    setDiscursiveScore,
+    caseStudy1Score,
+    setCaseStudy1Score,
+    caseStudy2Score,
+    setCaseStudy2Score,
+    caseStudy3Score, 
+    setCaseStudy3Score
   };
 };

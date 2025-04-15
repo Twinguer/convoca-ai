@@ -1,11 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form } from '@/components/ui/form';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { createRanking } from '@/integrations/supabase/rankings';
@@ -16,9 +14,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
+import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
+import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
 
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
@@ -46,11 +45,13 @@ const formSchema = z.object({
   specific_knowledge_2_questions: z.coerce.number().optional(),
   specific_knowledge_3_questions: z.coerce.number().optional(),
   
-  // Combine weights into a single definition
+  // Weight fields (for basic and specific knowledge)
   basic_knowledge_weight: z.coerce.number().default(1),
   specific_knowledge_1_weight: z.coerce.number().default(1),
   specific_knowledge_2_weight: z.coerce.number().default(1),
   specific_knowledge_3_weight: z.coerce.number().default(1),
+  
+  // Maximum score fields (for discursive and case studies)
   discursive_weight: z.coerce.number().default(1),
   case_study_1_weight: z.coerce.number().default(1),
   case_study_2_weight: z.coerce.number().default(1),
@@ -126,7 +127,6 @@ const NovoConcurso = () => {
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       basic_knowledge_weight: 1,
-      specific_knowledge_weight: 1,
       specific_knowledge_1_weight: 1,
       specific_knowledge_2_weight: 1,
       specific_knowledge_3_weight: 1,
@@ -171,7 +171,6 @@ const NovoConcurso = () => {
         alternatives_count: existingConcurso.alternatives_count,
         wrong_answer_penalty: existingConcurso.wrong_answer_penalty,
         basic_knowledge_weight: existingConcurso.basic_knowledge_weight || 1,
-        specific_knowledge_weight: existingConcurso.specific_knowledge_weight || 1,
         specific_knowledge_1_weight: existingConcurso.specific_knowledge_1_weight || 1,
         specific_knowledge_2_weight: existingConcurso.specific_knowledge_2_weight || 1,
         specific_knowledge_3_weight: existingConcurso.specific_knowledge_3_weight || 1,
@@ -309,61 +308,6 @@ const NovoConcurso = () => {
     );
   }
 
-  const getTotalQuestions = () => {
-    const values = form.getValues();
-    let total = 0;
-    
-    if (values.has_basic_knowledge && values.basic_knowledge_questions) {
-      total += Number(values.basic_knowledge_questions);
-    }
-    
-    if (values.has_specific_knowledge_1 && values.specific_knowledge_1_questions) {
-      total += Number(values.specific_knowledge_1_questions);
-    }
-    
-    if (values.has_specific_knowledge_2 && values.specific_knowledge_2_questions) {
-      total += Number(values.specific_knowledge_2_questions);
-    }
-    
-    if (values.has_specific_knowledge_3 && values.specific_knowledge_3_questions) {
-      total += Number(values.specific_knowledge_3_questions);
-    }
-    
-    return total;
-  };
-
-  // Helper function to create a weight select component
-  const renderWeightSelect = (name: any) => (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem className="mt-2">
-          <FormLabel>Peso</FormLabel>
-          <Select 
-            onValueChange={(value) => field.onChange(parseInt(value))} 
-            value={field.value.toString()}
-          >
-            <FormControl>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione o peso" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="1">1</SelectItem>
-              <SelectItem value="2">2</SelectItem>
-              <SelectItem value="3">3</SelectItem>
-            </SelectContent>
-          </Select>
-          <FormDescription>
-            Multiplicador da pontuação
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
-
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">{isEditing ? 'Editar Ranking' : 'Novo Ranking'}</h1>
@@ -390,482 +334,15 @@ const NovoConcurso = () => {
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Cargo Predefinido */}
-                    <FormField 
-                      control={form.control} 
-                      name="predefined_job_title" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cargo</FormLabel>
-                          <Select 
-                            onValueChange={value => {
-                              field.onChange(value);
-                              handleJobTitleChange(value);
-                            }} 
-                            defaultValue={field.value} 
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um cargo" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="max-h-80">
-                              {jobTitles.map(jobTitle => (
-                                <SelectItem key={jobTitle.id} value={jobTitle.title}>
-                                  {jobTitle.title}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} 
-                    />
-                    
-                    {/* Cargo Personalizado (aparece somente se "OUTRO" for selecionado) */}
-                    {isCustomTitle && (
-                      <FormField 
-                        control={form.control} 
-                        name="custom_job_title" 
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Especifique o cargo</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                onChange={e => {
-                                  field.onChange(e);
-                                  handleCustomTitleChange(e);
-                                }} 
-                              />
-                            </FormControl>
-                            <FormDescription>
-                              Digite o nome completo do cargo
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )} 
-                      />
-                    )}
-                    
-                    <FormField 
-                      control={form.control} 
-                      name="orgao" 
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Orgão</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} 
-                    />
-                  </div>
+                  <GeneralInfoSection 
+                    form={form} 
+                    jobTitles={jobTitles}
+                    isCustomTitle={isCustomTitle}
+                    handleJobTitleChange={handleJobTitleChange}
+                    handleCustomTitleChange={handleCustomTitleChange}
+                  />
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="banca" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Banca</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma banca" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Cebraspe">Cebraspe</SelectItem>
-                            <SelectItem value="FGV">FGV</SelectItem>
-                            <SelectItem value="FCC">FCC</SelectItem>
-                            <SelectItem value="IBFC">IBFC</SelectItem>
-                            <SelectItem value="Vunesp">Vunesp</SelectItem>
-                            <SelectItem value="Outra">Outra</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    
-                    <FormField control={form.control} name="vagas" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Vagas</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    
-                    <FormField control={form.control} name="inscritos" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Inscritos</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="data_publicacao" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Data da Prova</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    
-                    <FormField control={form.control} name="etapa_atual" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Etapa Atual</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Ex: Edital publicado, Inscrições abertas
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    
-                    <FormField control={form.control} name="status" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Em andamento">Em andamento</SelectItem>
-                            <SelectItem value="Concluído">Concluído</SelectItem>
-                            <SelectItem value="Cancelado">Cancelado</SelectItem>
-                            <SelectItem value="Suspenso">Suspenso</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="exam_type" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Tipo de Prova</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um tipo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
-                            <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
-                            <SelectItem value="Dissertativa">Dissertativa</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                    
-                    <FormField control={form.control} name="alternatives_count" render={({field}) => (
-                      <FormItem>
-                        <FormLabel>Quantidade de Alternativas</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Para provas de Certo ou Errado, considere 2
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-                  </div>
-                  
-                  {/* Estrutura da Prova - Nova Seção */}
-                  <div className="space-y-4 border p-4 rounded-md">
-                    <h3 className="text-lg font-medium">Estrutura da Prova</h3>
-                    
-                    <div className="space-y-4">
-                      {/* Conhecimentos Básicos */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_basic_knowledge" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Qtd. Questões C. Básicos</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <FormField 
-                                      control={form.control} 
-                                      name="basic_knowledge_questions" 
-                                      render={({ field: questionsField }) => (
-                                        <FormItem className="mt-2">
-                                          <FormControl>
-                                            <Input type="number" {...questionsField} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
-                                    
-                                    {renderWeightSelect("basic_knowledge_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* C. Específicos-1 */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_specific_knowledge_1" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Qtd. C. Específicos-1</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <FormField 
-                                      control={form.control} 
-                                      name="specific_knowledge_1_questions" 
-                                      render={({ field: questionsField }) => (
-                                        <FormItem className="mt-2">
-                                          <FormControl>
-                                            <Input type="number" {...questionsField} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
-                                    
-                                    {renderWeightSelect("specific_knowledge_1_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* C. Específicos-2 */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_specific_knowledge_2" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Qtd. C. Específicos-2</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <FormField 
-                                      control={form.control} 
-                                      name="specific_knowledge_2_questions" 
-                                      render={({ field: questionsField }) => (
-                                        <FormItem className="mt-2">
-                                          <FormControl>
-                                            <Input type="number" {...questionsField} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
-                                    
-                                    {renderWeightSelect("specific_knowledge_2_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* C. Específicos-3 */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_specific_knowledge_3" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Qtd. C. Específicos-3</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <FormField 
-                                      control={form.control} 
-                                      name="specific_knowledge_3_questions" 
-                                      render={({ field: questionsField }) => (
-                                        <FormItem className="mt-2">
-                                          <FormControl>
-                                            <Input type="number" {...questionsField} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
-                                    
-                                    {renderWeightSelect("specific_knowledge_3_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* Discursiva */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_discursive" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Discursiva</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    <FormField 
-                                      control={form.control} 
-                                      name="discursive_weight" 
-                                      render={({ field: weightField }) => (
-                                        <FormItem className="mt-2">
-                                          <FormLabel>Valor máximo</FormLabel>
-                                          <FormControl>
-                                            <Input type="number" step="0.1" {...weightField} />
-                                          </FormControl>
-                                          <FormMessage />
-                                        </FormItem>
-                                      )} 
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* Estudo de Caso 1 */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_case_study_1" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Est. Caso 1</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {renderWeightSelect("case_study_1_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* Estudo de Caso 2 */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_case_study_2" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Est. Caso 2</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {renderWeightSelect("case_study_2_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                      
-                      {/* Estudo de Caso 3 */}
-                      <FormField 
-                        control={form.control} 
-                        name="has_case_study_3" 
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
-                            <div className="flex items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none w-full">
-                                <FormLabel>Est. Caso 3</FormLabel>
-                                {field.value && (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {renderWeightSelect("case_study_3_weight")}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </FormItem>
-                        )} 
-                      />
-                    </div>
-                  </div>
+                  <ExamStructureSection form={form} />
                   
                   <div className="flex justify-end space-x-4">
                     <Button 

@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -14,7 +13,6 @@ export interface Concurso {
   wrong_answer_penalty?: number;
   alternatives_count?: number;
   basic_knowledge_weight?: number;
-  specific_knowledge_weight?: number;
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;
@@ -57,7 +55,6 @@ export interface UserRanking {
   updated_at: string;
 }
 
-// Add this interface for the UserProfile component
 export interface UserRankingDisplay {
   concursoId: string;
   concursoTitle: string;

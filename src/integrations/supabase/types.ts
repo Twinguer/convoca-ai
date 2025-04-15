@@ -59,6 +59,9 @@ export type Database = {
           banca: string
           basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
+          case_study_1_weight: number | null
+          case_study_2_weight: number | null
+          case_study_3_weight: number | null
           created_at: string
           custom_job_title: string | null
           data_publicacao: string | null
@@ -81,6 +84,7 @@ export type Database = {
           predefined_job_title: string | null
           specific_knowledge_1_questions: number | null
           specific_knowledge_2_questions: number | null
+          specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
           status: string
           titulo: string
@@ -93,6 +97,9 @@ export type Database = {
           banca?: string
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
+          case_study_1_weight?: number | null
+          case_study_2_weight?: number | null
+          case_study_3_weight?: number | null
           created_at?: string
           custom_job_title?: string | null
           data_publicacao?: string | null
@@ -115,6 +122,7 @@ export type Database = {
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_2_questions?: number | null
+          specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo: string
@@ -127,6 +135,9 @@ export type Database = {
           banca?: string
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
+          case_study_1_weight?: number | null
+          case_study_2_weight?: number | null
+          case_study_3_weight?: number | null
           created_at?: string
           custom_job_title?: string | null
           data_publicacao?: string | null
@@ -149,6 +160,7 @@ export type Database = {
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_2_questions?: number | null
+          specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo?: string
