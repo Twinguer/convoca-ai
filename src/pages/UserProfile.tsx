@@ -6,10 +6,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ProfileHeader } from '@/components/profile/ProfileHeader';
-import { ProfileInfoTab } from '@/components/profile/ProfileInfoTab';
-import { ConcursosTab } from '@/components/profile/ConcursosTab';
-import { RankingsTab } from '@/components/profile/RankingsTab';
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
+import ConcursosTab from '@/components/profile/ConcursosTab';
+import RankingsTab from '@/components/profile/RankingsTab';
 import { useAuth } from '@/hooks/useAuth';
 import { LogOut, Loader2, X } from 'lucide-react';
 import {
