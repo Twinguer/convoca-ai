@@ -4,15 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Calendar, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Concurso } from '@/types/concursos';
 
 interface ConcursoHeaderProps {
-  concurso: {
-    id: string;
-    name: string;
-    organization: string;
-    date?: string | null;
-    status?: string;
-  };
+  concurso: Concurso;
   userScore?: number;
 }
 
@@ -33,13 +28,13 @@ export const ConcursoHeader: React.FC<ConcursoHeaderProps> = ({
       
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{concurso.name}</h1>
+          <h1 className="text-2xl font-bold">{concurso.titulo}</h1>
           <div className="flex items-center mt-1 text-gray-600">
-            <span>{concurso.organization}</span>
-            {concurso.date && (
+            <span>{concurso.orgao}</span>
+            {concurso.data_publicacao && (
               <div className="flex items-center ml-4">
                 <Calendar className="h-4 w-4 mr-1" />
-                <span>{concurso.date}</span>
+                <span>{new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')}</span>
               </div>
             )}
           </div>
