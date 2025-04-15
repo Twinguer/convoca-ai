@@ -1,18 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,7 +18,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
-
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
   orgao: z.string().min(1, 'O órgão é obrigatório'),
@@ -52,60 +42,63 @@ const formSchema = z.object({
   specific_knowledge_1_questions: z.coerce.number().optional(),
   specific_knowledge_2_questions: z.coerce.number().optional(),
   predefined_job_title: z.string().optional(),
-  custom_job_title: z.string().optional(),
+  custom_job_title: z.string().optional()
 });
-
 type FormData = z.infer<typeof formSchema>;
-
 const NovoConcurso = () => {
-  const { id } = useParams();
-  const { toast } = useToast();
+  const {
+    id
+  } = useParams();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const isEditing = !!id;
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [activeTab, setActiveTab] = useState<string>("informacoes");
-  const [jobTitles, setJobTitles] = useState<{id: string, title: string}[]>([]);
+  const [jobTitles, setJobTitles] = useState<{
+    id: string;
+    title: string;
+  }[]>([]);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
-  
+
   // Buscar cargos disponíveis
   useEffect(() => {
     const fetchJobTitles = async () => {
-      const { data, error } = await supabase
-        .from('job_titles')
-        .select('id, title')
-        .order('title', { ascending: true });
-        
+      const {
+        data,
+        error
+      } = await supabase.from('job_titles').select('id, title').order('title', {
+        ascending: true
+      });
       if (error) {
         console.error('Erro ao buscar cargos:', error);
         return;
       }
-      
       setJobTitles(data || []);
     };
-    
     fetchJobTitles();
   }, []);
-  
+
   // Fetch existing concurso for editing
-  const { data: existingConcurso, isLoading } = useQuery({
+  const {
+    data: existingConcurso,
+    isLoading
+  } = useQuery({
     queryKey: ['concurso', id],
     queryFn: async () => {
       if (!id) return null;
-      
-      const { data, error } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
+      const {
+        data,
+        error
+      } = await supabase.from('concursos').select('*').eq('id', id).single();
       if (error) throw error;
       return data as Concurso;
     },
-    enabled: isEditing,
+    enabled: isEditing
   });
-  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -132,16 +125,15 @@ const NovoConcurso = () => {
       specific_knowledge_1_questions: 60,
       specific_knowledge_2_questions: 0,
       predefined_job_title: '',
-      custom_job_title: '',
-    },
+      custom_job_title: ''
+    }
   });
-  
+
   // Update form values when editing an existing concurso
   React.useEffect(() => {
     if (existingConcurso) {
       const isOtherTitle = !jobTitles.find(jt => jt.title === existingConcurso.titulo);
       setIsCustomTitle(isOtherTitle);
-      
       form.reset({
         titulo: existingConcurso.titulo,
         orgao: existingConcurso.orgao,
@@ -166,73 +158,73 @@ const NovoConcurso = () => {
         specific_knowledge_1_questions: existingConcurso.specific_knowledge_1_questions,
         specific_knowledge_2_questions: existingConcurso.specific_knowledge_2_questions,
         predefined_job_title: isOtherTitle ? 'OUTRO' : existingConcurso.titulo,
-        custom_job_title: isOtherTitle ? existingConcurso.titulo : '',
+        custom_job_title: isOtherTitle ? existingConcurso.titulo : ''
       });
     }
   }, [existingConcurso, form, jobTitles]);
-  
+
   // Atualizar o título com base na seleção de cargo predefinido
   const handleJobTitleChange = (value: string) => {
     const isOther = value === 'OUTRO';
     setIsCustomTitle(isOther);
-    
     if (!isOther) {
       form.setValue('titulo', value);
       form.setValue('custom_job_title', '');
     }
   };
-  
+
   // Atualizar o título quando o cargo personalizado for alterado
   const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('titulo', e.target.value);
     form.setValue('custom_job_title', e.target.value);
   };
-  
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
-      
+
       // Se for "OUTRO", usar o cargo personalizado
       if (data.predefined_job_title === 'OUTRO' && data.custom_job_title) {
         data.titulo = data.custom_job_title;
       } else if (data.predefined_job_title && data.predefined_job_title !== 'OUTRO') {
         data.titulo = data.predefined_job_title;
       }
-      
+
       // Remover campos não necessários para o envio
-      const { custom_job_title, predefined_job_title, ...dataToSubmit } = data;
-      
+      const {
+        custom_job_title,
+        predefined_job_title,
+        ...dataToSubmit
+      } = data;
       if (isEditing) {
         // Update existing concurso
-        const { error } = await supabase
-          .from('concursos')
-          .update(dataToSubmit)
-          .eq('id', id);
-          
+        const {
+          error
+        } = await supabase.from('concursos').update(dataToSubmit).eq('id', id);
         if (error) throw error;
-        
         toast({
           title: "Ranking atualizado",
-          description: "As informações do ranking foram atualizadas com sucesso.",
+          description: "As informações do ranking foram atualizadas com sucesso."
         });
       } else {
         // Create new concurso using the createRanking function
         try {
           const result = await createRanking(dataToSubmit);
-          
           if (!result) {
             throw new Error('Erro ao criar ranking: Nenhum dado retornado');
           }
-          
           toast({
             title: "Ranking criado",
-            description: "O novo ranking foi criado com sucesso.",
+            description: "O novo ranking foi criado com sucesso."
           });
-          
+
           // Redirect to the answer key tab if it's a new concurso
           if (result[0] && result[0].id) {
-            navigate(`/project/admin/man/concursos/editar/${result[0].id}`, { state: { showAnswerKeyTab: true } });
+            navigate(`/project/admin/man/concursos/editar/${result[0].id}`, {
+              state: {
+                showAnswerKeyTab: true
+              }
+            });
             return;
           }
         } catch (error: any) {
@@ -240,7 +232,7 @@ const NovoConcurso = () => {
           throw new Error(`Erro ao criar ranking: ${error.message || 'Erro desconhecido'}`);
         }
       }
-      
+
       // If we're in edit mode and on the informacoes tab, switch to the gabarito tab
       if (isEditing && activeTab === "informacoes") {
         setActiveTab("gabarito");
@@ -253,62 +245,51 @@ const NovoConcurso = () => {
       toast({
         title: "Erro ao salvar",
         description: error.message || "Ocorreu um erro ao salvar o ranking. Por favor, tente novamente.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   // Check the URL state for showing answer key tab
   React.useEffect(() => {
     // Fix: Using type assertion to access the state property
-    const locationState = location.state as { showAnswerKeyTab?: boolean } | null;
-    
+    const locationState = location.state as {
+      showAnswerKeyTab?: boolean;
+    } | null;
     if (locationState && locationState.showAnswerKeyTab) {
       setActiveTab("gabarito");
     }
   }, [location]);
-  
   if (isEditing && isLoading) {
-    return (
-      <div className="flex justify-center items-center">
+    return <div className="flex justify-center items-center">
         <Loader2 className="h-8 w-8 animate-spin" />
         <p className="ml-2">Carregando ranking...</p>
-      </div>
-    );
+      </div>;
   }
-  
   const getTotalQuestions = () => {
     const values = form.getValues();
     let total = 0;
-    
     if (values.has_basic_knowledge && values.basic_knowledge_questions) {
       total += Number(values.basic_knowledge_questions);
     }
-    
     if (values.has_specific_knowledge_1 && values.specific_knowledge_1_questions) {
       total += Number(values.specific_knowledge_1_questions);
     }
-    
     if (values.has_specific_knowledge_2 && values.specific_knowledge_2_questions) {
       total += Number(values.specific_knowledge_2_questions);
     }
-    
     return total;
   };
-  
-  return (
-    <div>
+  return <div>
       <h1 className="text-2xl font-bold mb-6">{isEditing ? 'Editar Ranking' : 'Novo Ranking'}</h1>
       
-      {errorMessage && (
-        <Alert variant="destructive" className="mb-6">
+      {errorMessage && <Alert variant="destructive" className="mb-6">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Erro</AlertTitle>
           <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
-      )}
+        </Alert>}
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -329,73 +310,52 @@ const NovoConcurso = () => {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Cargo Predefinido */}
-                    <FormField
-                      control={form.control}
-                      name="predefined_job_title"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="predefined_job_title" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Cargo</FormLabel>
-                          <Select 
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              handleJobTitleChange(value);
-                            }}
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
+                          <Select onValueChange={value => {
+                      field.onChange(value);
+                      handleJobTitleChange(value);
+                    }} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione um cargo" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="max-h-80">
-                              {jobTitles.map((jobTitle) => (
-                                <SelectItem key={jobTitle.id} value={jobTitle.title}>
+                              {jobTitles.map(jobTitle => <SelectItem key={jobTitle.id} value={jobTitle.title}>
                                   {jobTitle.title}
-                                </SelectItem>
-                              ))}
+                                </SelectItem>)}
                             </SelectContent>
                           </Select>
                           <FormDescription>
                             Selecione o cargo ou função do concurso
                           </FormDescription>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
                     {/* Cargo Personalizado (aparece somente se "OUTRO" for selecionado) */}
-                    {isCustomTitle && (
-                      <FormField
-                        control={form.control}
-                        name="custom_job_title"
-                        render={({ field }) => (
-                          <FormItem>
+                    {isCustomTitle && <FormField control={form.control} name="custom_job_title" render={({
+                    field
+                  }) => <FormItem>
                             <FormLabel>Especifique o cargo</FormLabel>
                             <FormControl>
-                              <Input 
-                                {...field} 
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  handleCustomTitleChange(e);
-                                }}
-                              />
+                              <Input {...field} onChange={e => {
+                        field.onChange(e);
+                        handleCustomTitleChange(e);
+                      }} />
                             </FormControl>
                             <FormDescription>
                               Digite o nome completo do cargo
                             </FormDescription>
                             <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
+                          </FormItem>} />}
                     
-                    <FormField
-                      control={form.control}
-                      name="orgao"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Concurso</FormLabel>
+                    <FormField control={form.control} name="orgao" render={({
+                    field
+                  }) => <FormItem>
+                          <FormLabel>Orgão</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -403,23 +363,15 @@ const NovoConcurso = () => {
                             Ex: Tribunal Regional Federal da 1ª Região
                           </FormDescription>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="banca"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="banca" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Banca Organizadora</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
+                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione uma banca" />
@@ -435,59 +387,43 @@ const NovoConcurso = () => {
                             </SelectContent>
                           </Select>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={form.control}
-                      name="vagas"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="vagas" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Número de Vagas</FormLabel>
                           <FormControl>
                             <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={form.control}
-                      name="inscritos"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="inscritos" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Número de Inscritos</FormLabel>
                           <FormControl>
                             <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="data_publicacao"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="data_publicacao" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Data da Prova</FormLabel>
                           <FormControl>
                             <Input type="date" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={form.control}
-                      name="etapa_atual"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="etapa_atual" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Etapa Atual</FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -496,21 +432,13 @@ const NovoConcurso = () => {
                             Ex: Edital publicado, Inscrições abertas
                           </FormDescription>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="status" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Status</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
+                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione um status" />
@@ -524,23 +452,15 @@ const NovoConcurso = () => {
                             </SelectContent>
                           </Select>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="exam_type"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="exam_type" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Tipo de Prova</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            value={field.value}
-                          >
+                          <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione um tipo" />
@@ -553,15 +473,11 @@ const NovoConcurso = () => {
                             </SelectContent>
                           </Select>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={form.control}
-                      name="alternatives_count"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="alternatives_count" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Quantidade de Alternativas</FormLabel>
                           <FormControl>
                             <Input type="number" {...field} />
@@ -570,9 +486,7 @@ const NovoConcurso = () => {
                             Para provas de Certo ou Errado, considere 2
                           </FormDescription>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
                   
                   {/* Estrutura da Prova - Nova Seção */}
@@ -580,145 +494,93 @@ const NovoConcurso = () => {
                     <h3 className="text-lg font-medium">Estrutura da Prova</h3>
                     
                     <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="has_basic_knowledge"
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                      <FormField control={form.control} name="has_basic_knowledge" render={({
+                      field
+                    }) => <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
                             <div className="flex items-start space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
                                 <FormLabel>Conhecimentos Básicos</FormLabel>
-                                {field.value && (
-                                  <FormField
-                                    control={form.control}
-                                    name="basic_knowledge_questions"
-                                    render={({ field: questionsField }) => (
-                                      <FormItem className="mt-2">
+                                {field.value && <FormField control={form.control} name="basic_knowledge_questions" render={({
+                            field: questionsField
+                          }) => <FormItem className="mt-2">
                                         <FormLabel>Número de questões</FormLabel>
                                         <FormControl>
                                           <Input type="number" {...questionsField} />
                                         </FormControl>
                                         <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                )}
+                                      </FormItem>} />}
                               </div>
                             </div>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="has_specific_knowledge_1"
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                      <FormField control={form.control} name="has_specific_knowledge_1" render={({
+                      field
+                    }) => <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
                             <div className="flex items-start space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
                                 <FormLabel>Conhecimentos Específicos-1</FormLabel>
-                                {field.value && (
-                                  <FormField
-                                    control={form.control}
-                                    name="specific_knowledge_1_questions"
-                                    render={({ field: questionsField }) => (
-                                      <FormItem className="mt-2">
+                                {field.value && <FormField control={form.control} name="specific_knowledge_1_questions" render={({
+                            field: questionsField
+                          }) => <FormItem className="mt-2">
                                         <FormLabel>Número de questões</FormLabel>
                                         <FormControl>
                                           <Input type="number" {...questionsField} />
                                         </FormControl>
                                         <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                )}
+                                      </FormItem>} />}
                               </div>
                             </div>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="has_specific_knowledge_2"
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                      <FormField control={form.control} name="has_specific_knowledge_2" render={({
+                      field
+                    }) => <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
                             <div className="flex items-start space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
                                 <FormLabel>Conhecimentos Específicos-2</FormLabel>
-                                {field.value && (
-                                  <FormField
-                                    control={form.control}
-                                    name="specific_knowledge_2_questions"
-                                    render={({ field: questionsField }) => (
-                                      <FormItem className="mt-2">
+                                {field.value && <FormField control={form.control} name="specific_knowledge_2_questions" render={({
+                            field: questionsField
+                          }) => <FormItem className="mt-2">
                                         <FormLabel>Número de questões</FormLabel>
                                         <FormControl>
                                           <Input type="number" {...questionsField} />
                                         </FormControl>
                                         <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                )}
+                                      </FormItem>} />}
                               </div>
                             </div>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                       
-                      <FormField
-                        control={form.control}
-                        name="has_discursive"
-                        render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                      <FormField control={form.control} name="has_discursive" render={({
+                      field
+                    }) => <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
                             <div className="flex items-start space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox 
-                                  checked={field.value} 
-                                  onCheckedChange={field.onChange} 
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <div className="space-y-1 leading-none w-full">
                                 <FormLabel>Discursiva</FormLabel>
-                                {field.value && (
-                                  <FormField
-                                    control={form.control}
-                                    name="discursive_weight"
-                                    render={({ field: weightField }) => (
-                                      <FormItem className="mt-2">
+                                {field.value && <FormField control={form.control} name="discursive_weight" render={({
+                            field: weightField
+                          }) => <FormItem className="mt-2">
                                         <FormLabel>Valor máximo</FormLabel>
                                         <FormControl>
                                           <Input type="number" step="0.1" {...weightField} />
                                         </FormControl>
                                         <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                )}
+                                      </FormItem>} />}
                               </div>
                             </div>
-                          </FormItem>
-                        )}
-                      />
+                          </FormItem>} />
                     </div>
                     
                     <div className="text-sm text-muted-foreground">
@@ -727,11 +589,9 @@ const NovoConcurso = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="wrong_answer_penalty"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="wrong_answer_penalty" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Penalidade por Erro</FormLabel>
                           <FormControl>
                             <Input type="number" step="0.1" {...field} />
@@ -740,15 +600,11 @@ const NovoConcurso = () => {
                             Para Cebraspe, geralmente é 1 (perde um ponto por erro)
                           </FormDescription>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={form.control}
-                      name="link"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={form.control} name="link" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Link do Edital</FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -757,31 +613,18 @@ const NovoConcurso = () => {
                             URL completa para o edital do concurso
                           </FormDescription>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                   </div>
                   
                   <div className="flex justify-end space-x-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => navigate('/project/admin/man/concursos')}
-                    >
+                    <Button type="button" variant="outline" onClick={() => navigate('/project/admin/man/concursos')}>
                       Cancelar
                     </Button>
-                    <Button 
-                      type="submit"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Processando...
-                        </>
-                      ) : (
-                        isEditing ? 'Atualizar Ranking' : 'Cadastrar Ranking'
-                      )}
+                        </> : isEditing ? 'Atualizar Ranking' : 'Cadastrar Ranking'}
                     </Button>
                   </div>
                 </form>
@@ -791,21 +634,15 @@ const NovoConcurso = () => {
         </TabsContent>
         
         <TabsContent value="gabarito">
-          {isEditing && id ? (
-            <AnswerKeyForm concursoId={id} />
-          ) : (
-            <Card>
+          {isEditing && id ? <AnswerKeyForm concursoId={id} /> : <Card>
               <CardContent className="flex items-center justify-center p-6">
                 <p className="text-muted-foreground">
                   Salve as informações do ranking primeiro para cadastrar o gabarito.
                 </p>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
-
 export default NovoConcurso;
