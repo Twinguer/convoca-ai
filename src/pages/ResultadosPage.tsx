@@ -1,115 +1,84 @@
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Pencil, RefreshCw, Trophy } from 'lucide-react';
-import { RankingTable } from '@/components/resultados/RankingTable';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
-import { ConcursoHeader } from '@/components/resultados/ConcursoHeader';
-import { useAuth } from '@/hooks/useAuth';
-import { useResultadosData } from '@/hooks/useResultadosData';
+import { ConcursoInfoCard } from '@/components/resultados/ConcursoInfoCard';
+import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
+import { useResultadosData } from '@/hooks/useResultadosData';
+import { Button } from '@/components/ui/button';
+import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
-const ResultadosPage: React.FC = () => {
-  const { 
-    concurso, 
-    rankings, 
-    participantCount, 
-    userRanking, 
+const ResultadosPage = () => {
+  const navigate = useNavigate();
+  const {
+    concurso,
+    rankings,
+    participantCount,
+    userRanking,
     isLoading,
     user,
     refreshData
   } = useResultadosData();
-  
-  const { isAuthenticated } = useAuth();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  
+  const {
+    toast
+  } = useToast();
+  const isAuthenticated = !!user;
+
+  // Force a refresh of data when component mounts
+  useEffect(() => {
+    if (concurso?.id) {
+      refreshData();
+    }
+  }, [concurso?.id]);
+
   const handleRefresh = () => {
-    setIsRefreshing(true);
     refreshData();
-    setTimeout(() => setIsRefreshing(false), 1000);
+    toast({
+      title: "Atualizando ranking",
+      description: "Os dados estão sendo atualizados...",
+      duration: 2000
+    });
   };
-  
+
   if (isLoading) {
     return <LoadingState />;
   }
-  
-  if (!concurso) {
-    return (
-      <div className="container mx-auto p-4 max-w-4xl">
-        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-          <h1 className="text-2xl font-bold mb-4">Ranking não encontrado</h1>
-          <p>O ranking que você está tentando acessar não existe ou foi removido.</p>
-          <Button asChild className="mt-4">
-            <Link to="/rankings">Voltar para os Rankings</Link>
-          </Button>
+
+  return <div className="container mx-auto p-2 sm:p-4">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
+          <Trophy className="mr-2 h-6 w-6 text-yellow-500" />
+          {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
+        </h1>
+        
+        <div className="flex gap-1 sm:gap-2 flex-wrap">
+          
+          
+          {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
+              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+              Participar
+            </Button>}
+          
+          {concurso && !user}
         </div>
       </div>
-    );
-  }
-  
-  return (
-    <div className="container mx-auto p-4 max-w-6xl">
-      <ConcursoHeader concurso={concurso} userScore={userRanking?.score} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        <div className="lg:col-span-3 flex items-center justify-end gap-2">
-          <Button 
-            variant="ghost"
-            size="sm"
-            className="text-gray-600 gap-1"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Atualizando...' : 'Atualizar ranking'}
-          </Button>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mb-1 sm:mb-2">
+        <RankingCard participantCount={participantCount} userRanking={userRanking} />
         
-        <div className="lg:col-span-2">
-          <RankingTable 
-            rankings={rankings} 
-            currentUserId={user?.id}
-            isAuthenticated={isAuthenticated}
-            concurso={concurso}
-          />
-        </div>
-        
-        <div className="lg:col-span-1">
-          <div className="space-y-6">
-            <RankingCard 
-              participantCount={participantCount}
-              userRanking={userRanking ? {
-                position: userRanking.position,
-                score: userRanking.score
-              } : null}
-            />
-            
-            {isAuthenticated && (
-              <Button 
-                asChild 
-                className="w-full"
-              >
-                <Link to={`/rankings/participar/${concurso.id}`}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  {userRanking ? 'Editar meu cartão' : 'Participar do ranking'}
-                </Link>
-              </Button>
-            )}
-            
-            {!isAuthenticated && (
-              <Button asChild className="w-full">
-                <Link to="/auth" className="flex items-center justify-center">
-                  <Trophy className="mr-2 h-4 w-4" />
-                  Cadastre-se para participar
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
+        {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
-    </div>
-  );
+      
+      <RankingTable rankings={rankings} currentUserId={user?.id} isAuthenticated={isAuthenticated} />
+      
+      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+          <p className="text-center text-gray-600">
+            Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
+          </p>
+        </div>}
+    </div>;
 };
 
 export default ResultadosPage;

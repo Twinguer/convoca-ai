@@ -131,9 +131,9 @@ export const useSaveAnswers = ({
       // Calculate total score using the formula:
       // (C.Bas x Peso) + (C.Esp1 x Peso) + (C.Esp2 x Peso) + (C.Esp3 x Peso) + Discursiva + Est. Caso1 + Est. Caso2 + Est. Caso3
       const totalScore = weightedBasicScore + weightedSpecific1Score + 
-                        weightedSpecific2Score + weightedSpecific3Score +
-                        discursiveValue + caseStudy1Value +
-                        caseStudy2Value + caseStudy3Value;
+                         weightedSpecific2Score + weightedSpecific3Score +
+                         discursiveValue + caseStudy1Value +
+                         caseStudy2Value + caseStudy3Value;
 
       console.log("Final total score:", totalScore);
 

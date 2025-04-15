@@ -7,7 +7,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  isAuthenticated: boolean; // Added this property
   signOut: () => Promise<void>;
 }
 
@@ -15,7 +14,6 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   isLoading: true,
-  isAuthenticated: false, // Added this property
   signOut: async () => {},
 });
 
@@ -23,7 +21,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isAuthenticated = !!user; // Add this computed property
 
   useEffect(() => {
     // Set up auth state listener
@@ -50,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, isAuthenticated, signOut }}>
+    <AuthContext.Provider value={{ user, session, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

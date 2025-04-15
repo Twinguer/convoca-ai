@@ -8,13 +8,8 @@ export interface Ranking {
   userId: string;
   avatarUrl?: string | null;
   basicKnowledgeScore?: number;
-  specific1Score?: number;
-  specific2Score?: number;
-  specific3Score?: number;
+  specificKnowledgeScore?: number; 
   discursiveScore?: number;
-  caseStudy1Score?: number;
-  caseStudy2Score?: number;
-  caseStudy3Score?: number;
 }
 
 export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
@@ -29,13 +24,8 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         user_id,
         score,
         basic_knowledge_score,
-        specific_knowledge_1_score,
-        specific_knowledge_2_score,
-        specific_knowledge_3_score,
-        discursive_score,
-        case_study_1_score,
-        case_study_2_score,
-        case_study_3_score
+        specific_knowledge_score,
+        discursive_score
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -76,13 +66,8 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specific1Score: ranking.specific_knowledge_1_score || 0,
-        specific2Score: ranking.specific_knowledge_2_score || 0,
-        specific3Score: ranking.specific_knowledge_3_score || 0,
-        discursiveScore: ranking.discursive_score || 0,
-        caseStudy1Score: ranking.case_study_1_score || 0,
-        caseStudy2Score: ranking.case_study_2_score || 0,
-        caseStudy3Score: ranking.case_study_3_score || 0
+        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
+        discursiveScore: ranking.discursive_score || 0
       };
     });
     
