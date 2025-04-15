@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,20 +16,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 interface AnswerSheetProps {
   concurso: Concurso;
   rankingId: string;
   onSuccess: () => void;
 }
+
 export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   concurso,
   rankingId,
   onSuccess
 }) => {
-  const [discursiveScore, setDiscursiveScore] = useState<number | null>(null);
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
   const {
     answers,
     selectedSection,
@@ -45,27 +46,49 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     getOptionsForQuestion,
     createAnswerMatrix,
     questionType,
-    getAnsweredQuestionsCount
+    getAnsweredQuestionsCount,
+    discursiveScore,
+    setDiscursiveScore,
+    caseStudy1Score,
+    setCaseStudy1Score,
+    caseStudy2Score,
+    setCaseStudy2Score,
+    caseStudy3Score,
+    setCaseStudy3Score,
+    isDiscursiveSection
   } = useAnswerSheet(concurso, rankingId);
+  
   const {
     data: userRankingData,
     isLoading: isLoadingRanking
   } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from('user_rankings').select('*').eq('id', rankingId).single();
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
       if (error) throw error;
       return data || {};
     }
   });
+  
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
     }
+    if (userRankingData?.case_study_1_score !== undefined && userRankingData?.case_study_1_score !== null) {
+      setCaseStudy1Score(userRankingData.case_study_1_score);
+    }
+    if (userRankingData?.case_study_2_score !== undefined && userRankingData?.case_study_2_score !== null) {
+      setCaseStudy2Score(userRankingData.case_study_2_score);
+    }
+    if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
+      setCaseStudy3Score(userRankingData.case_study_3_score);
+    }
   }, [userRankingData]);
+
   const {
     handleSaveAnswers
   } = useSaveAnswers({
@@ -78,39 +101,179 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setSavedSuccess,
     onSuccess,
     discursiveScore,
+    caseStudy1Score,
+    caseStudy2Score,
+    caseStudy3Score,
     editCount: userRankingData?.edit_count || 0
   });
+  
   const {
     isLoading: isLoadingAnswers
   } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from('user_answers').select('*').eq('user_ranking_id', rankingId);
+      const { data, error } = await supabase
+        .from('user_answers')
+        .select('*')
+        .eq('user_ranking_id', rankingId);
       if (error) throw error;
       return data || [];
     }
   });
-  const handleDiscursiveScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  
+  const handleScoreChange = (
+    value: string, 
+    setter: React.Dispatch<React.SetStateAction<number | null>>,
+    scoreName: string
+  ) => {
     if (value === '') {
-      setDiscursiveScore(null);
+      setter(null);
       return;
     }
+    
     const numberValue = parseFloat(value);
     if (isNaN(numberValue)) return;
+    
     if (numberValue < 0 || numberValue > 100) {
       toast({
         title: "Valor inválido",
-        description: "A nota da discursiva deve estar entre 0 e 100.",
+        description: `A nota da ${scoreName} deve estar entre 0 e 100.`,
         variant: "destructive"
       });
       return;
     }
-    setDiscursiveScore(numberValue);
+    
+    setter(numberValue);
   };
+  
+  const renderDiscursiveScores = () => {
+    if (!isDiscursiveSection()) return null;
+    
+    if (selectedSection === 'discursive' && concurso.has_discursive) {
+      return (
+        <div className="space-y-6 p-6 bg-gray-50">
+          <div className="space-y-3">
+            <Label htmlFor="discursive-score" className="text-lg font-medium">
+              Nota da Prova Discursiva
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="discursive-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={discursiveScore === null ? '' : discursiveScore}
+                onChange={(e) => handleScoreChange(e.target.value, setDiscursiveScore, 'discursiva')}
+                className="w-64"
+                disabled={!canEdit && userRankingData?.edit_count !== undefined}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+            <p className="text-sm text-gray-500">
+              Informe sua nota na prova discursiva (0-100). 
+              {concurso.discursive_weight && concurso.discursive_weight > 1 && 
+                ` Peso: ${concurso.discursive_weight}`}
+            </p>
+          </div>
+        </div>
+      );
+    } else if (selectedSection === 'case_study1' && concurso.has_case_study_1) {
+      return (
+        <div className="space-y-6 p-6 bg-gray-50">
+          <div className="space-y-3">
+            <Label htmlFor="case-study-1-score" className="text-lg font-medium">
+              Nota do Estudo de Caso 1
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-1-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy1Score === null ? '' : caseStudy1Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy1Score, 'estudo de caso 1')}
+                className="w-64"
+                disabled={!canEdit && userRankingData?.edit_count !== undefined}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+            <p className="text-sm text-gray-500">
+              Informe sua nota no estudo de caso 1 (0-100).
+              {concurso.case_study_1_weight && concurso.case_study_1_weight > 1 && 
+                ` Peso: ${concurso.case_study_1_weight}`}
+            </p>
+          </div>
+        </div>
+      );
+    } else if (selectedSection === 'case_study2' && concurso.has_case_study_2) {
+      return (
+        <div className="space-y-6 p-6 bg-gray-50">
+          <div className="space-y-3">
+            <Label htmlFor="case-study-2-score" className="text-lg font-medium">
+              Nota do Estudo de Caso 2
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-2-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy2Score === null ? '' : caseStudy2Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy2Score, 'estudo de caso 2')}
+                className="w-64"
+                disabled={!canEdit && userRankingData?.edit_count !== undefined}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+            <p className="text-sm text-gray-500">
+              Informe sua nota no estudo de caso 2 (0-100).
+              {concurso.case_study_2_weight && concurso.case_study_2_weight > 1 && 
+                ` Peso: ${concurso.case_study_2_weight}`}
+            </p>
+          </div>
+        </div>
+      );
+    } else if (selectedSection === 'case_study3' && concurso.has_case_study_3) {
+      return (
+        <div className="space-y-6 p-6 bg-gray-50">
+          <div className="space-y-3">
+            <Label htmlFor="case-study-3-score" className="text-lg font-medium">
+              Nota do Estudo de Caso 3
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-3-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy3Score === null ? '' : caseStudy3Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy3Score, 'estudo de caso 3')}
+                className="w-64"
+                disabled={!canEdit && userRankingData?.edit_count !== undefined}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+            <p className="text-sm text-gray-500">
+              Informe sua nota no estudo de caso 3 (0-100).
+              {concurso.case_study_3_weight && concurso.case_study_3_weight > 1 && 
+                ` Peso: ${concurso.case_study_3_weight}`}
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return null;
+  };
+  
   if (isLoadingAnswers || isLoadingRanking) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -119,92 +282,124 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         </CardContent>
       </Card>;
   }
+  
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
-  return <Card className="shadow-lg">
+  
+  return (
+    <Card className="shadow-lg">
       <CardHeader className="bg-emerald-50 border-b">
         <CardTitle className="text-xl md:text-2xl">Cartão de Respostas - {concurso.titulo}</CardTitle>
         <CardDescription>
-          {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && <div className="text-sm font-medium text-emerald-700 mt-2">
+          {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
+            <div className="text-sm font-medium text-emerald-700 mt-2">
               Edições disponíveis: {editsLeft} de 3
-              {!canEdit && <span className="text-destructive ml-2">
+              {!canEdit && (
+                <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)
-                </span>}
-            </div>}
+                </span>
+              )}
+            </div>
+          )}
         </CardDescription>
       </CardHeader>
+      
       <CardContent className="space-y-6 pt-6">
-        {error && <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
+        {error && (
+          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
             <p>{error}</p>
-          </div>}
+          </div>
+        )}
         
-        {savedSuccess && <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
+        {savedSuccess && (
+          <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <Check className="h-4 w-4" />
             <p>Respostas salvas com sucesso! Calculando pontuação...</p>
-          </div>}
+          </div>
+        )}
         
         <AnswerSheetHeader concurso={concurso} getTotalQuestions={getTotalQuestions} />
         
-        {concurso.exam_type === 'Alternativas' && <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+        {concurso.exam_type === 'Alternativas' && !isDiscursiveSection() && (
+          <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
             <p className="text-sm text-amber-800">
               <strong>Importante:</strong> Neste tipo de prova, você deve responder a todas as questões antes de salvar o cartão.
             </p>
-          </div>}
+          </div>
+        )}
         
-        {concurso.exam_type === 'Certo ou Errado'}
+        {concurso.exam_type === 'Certo ou Errado' && !isDiscursiveSection() && (
+          <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <p className="text-sm text-amber-800">
+              <strong>Atenção:</strong> Em provas Certo ou Errado, questões em branco não recebem pontuação nem penalidade.
+            </p>
+          </div>
+        )}
         
-        <div className="flex items-center justify-between">
-          <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
-          <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
-        </div>
-        <Progress value={progressPercentage} className="h-2 bg-gray-200" />
+        {!isDiscursiveSection() && (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
+              <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
+            </div>
+            <Progress value={progressPercentage} className="h-2 bg-gray-200" />
+          </>
+        )}
         
         <div className="border rounded-md overflow-hidden shadow-sm">
-          <SectionToggle selectedSection={selectedSection} onSectionChange={setSelectedSection} concurso={concurso} />
+          <SectionToggle 
+            selectedSection={selectedSection} 
+            onSectionChange={setSelectedSection} 
+            concurso={concurso} 
+          />
           
-          <AnswerMatrix matrix={createAnswerMatrix()} answers={answers} onAnswerChange={handleAnswerChange} onClearAnswer={handleClearAnswer} getOptionsForQuestion={getOptionsForQuestion} disabled={!canEdit && userRankingData?.edit_count !== undefined} examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
+          {!isDiscursiveSection() ? (
+            <AnswerMatrix 
+              matrix={createAnswerMatrix()} 
+              answers={answers} 
+              onAnswerChange={handleAnswerChange} 
+              onClearAnswer={handleClearAnswer} 
+              getOptionsForQuestion={getOptionsForQuestion} 
+              disabled={!canEdit && userRankingData?.edit_count !== undefined} 
+              examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} 
+            />
+          ) : (
+            renderDiscursiveScores()
+          )}
         </div>
-        
-        {concurso.has_discursive && <div className="border p-4 rounded-md shadow-sm space-y-3 bg-gray-50">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="discursive-score" className="text-base font-medium">
-                Nota da Prova Discursiva / Estudo de Caso
-              </Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="h-4 w-4 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">Informe sua nota na prova discursiva (0-100). Este campo é opcional.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex items-center">
-              <Input id="discursive-score" type="number" min="0" max="100" step="0.01" placeholder="Informe sua nota (opcional)" value={discursiveScore === null ? '' : discursiveScore} onChange={handleDiscursiveScoreChange} className="w-64" disabled={!canEdit && userRankingData?.edit_count !== undefined} />
-              <span className="ml-2 text-gray-500">/ 100</span>
-            </div>
-          </div>}
       </CardContent>
+      
       <CardFooter className="p-4 bg-gray-50 border-t">
-        <Button onClick={handleSaveAnswers} className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSaving || !canEdit && userRankingData?.edit_count !== undefined} size="lg">
-          {isSaving ? <>
+        <Button 
+          onClick={handleSaveAnswers} 
+          className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
+          disabled={isSaving || (!canEdit && userRankingData?.edit_count !== undefined)} 
+          size="lg"
+        >
+          {isSaving ? (
+            <>
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
               Salvando respostas...
-            </> : !canEdit && userRankingData?.edit_count !== undefined ? <>
+            </>
+          ) : !canEdit && userRankingData?.edit_count !== undefined ? (
+            <>
               <AlertTriangle className="h-5 w-5 mr-2" />
               Limite de edições atingido
-            </> : <>
+            </>
+          ) : (
+            <>
               <Save className="h-5 w-5 mr-2" />
               Salvar Cartão de Respostas
-            </>}
+            </>
+          )}
         </Button>
       </CardFooter>
-    </Card>;
+    </Card>
+  );
 };

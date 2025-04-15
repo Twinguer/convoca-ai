@@ -72,61 +72,90 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
     setIsSubmitting(true);
     try {
       // Apply weights to each component
-      const weightedBasicScore = values.basicKnowledgeScore * (concurso.basic_knowledge_weight || 1);
-      const weightedSpecific1Score = values.specificKnowledge1Score * (concurso.specific_knowledge_1_weight || 1);
-      const weightedSpecific2Score = values.specificKnowledge2Score * (concurso.specific_knowledge_2_weight || 1);
-      const weightedSpecific3Score = values.specificKnowledge3Score * (concurso.specific_knowledge_3_weight || 1);
-      const weightedDiscursiveScore = values.discursiveScore * (concurso.discursive_weight || 1);
-      const weightedCaseStudy1Score = values.caseStudy1Score * (concurso.case_study_1_weight || 1);
-      const weightedCaseStudy2Score = values.caseStudy2Score * (concurso.case_study_2_weight || 1);
-      const weightedCaseStudy3Score = values.caseStudy3Score * (concurso.case_study_3_weight || 1);
+      const basicWeight = concurso.basic_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+      
+      // Calculate weighted scores for objective tests
+      const weightedBasicScore = values.basicKnowledgeScore * basicWeight;
+      const weightedSpecific1Score = values.specificKnowledge1Score * specific1Weight;
+      const weightedSpecific2Score = values.specificKnowledge2Score * specific2Weight;
+      const weightedSpecific3Score = values.specificKnowledge3Score * specific3Weight;
+      
+      // Add discursive and case study scores (without weights)
+      const discursiveScore = values.discursiveScore;
+      const caseStudy1Score = values.caseStudy1Score;
+      const caseStudy2Score = values.caseStudy2Score;
+      const caseStudy3Score = values.caseStudy3Score;
       
       // Combined specific knowledge score
       const specificKnowledgeScore = 
-        values.specificKnowledge1Score + 
-        values.specificKnowledge2Score + 
-        values.specificKnowledge3Score;
+        (concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0) + 
+        (concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0) + 
+        (concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0);
       
       // Combined discursive/case study score
       const combinedDiscursiveScore = 
-        values.discursiveScore + 
-        values.caseStudy1Score + 
-        values.caseStudy2Score + 
-        values.caseStudy3Score;
+        (concurso.has_discursive ? values.discursiveScore : 0) + 
+        (concurso.has_case_study_1 ? values.caseStudy1Score : 0) + 
+        (concurso.has_case_study_2 ? values.caseStudy2Score : 0) + 
+        (concurso.has_case_study_3 ? values.caseStudy3Score : 0);
         
-      // Calculate total weighted score - numerical sum, not string concatenation
+      // Calculate total weighted score using the formula:
+      // (C.Bas x Peso) + (C.Esp1 x Peso) + (C.Esp2 x Peso) + (C.Esp3 x Peso) + Discursiva + Est. Caso1 + Est. Caso2 + Est. Caso3
       const totalScore = 
-        weightedBasicScore + 
-        weightedSpecific1Score + 
-        weightedSpecific2Score + 
-        weightedSpecific3Score + 
-        weightedDiscursiveScore + 
-        weightedCaseStudy1Score + 
-        weightedCaseStudy2Score + 
-        weightedCaseStudy3Score;
+        (concurso.has_basic_knowledge ? weightedBasicScore : 0) + 
+        (concurso.has_specific_knowledge_1 ? weightedSpecific1Score : 0) + 
+        (concurso.has_specific_knowledge_2 ? weightedSpecific2Score : 0) + 
+        (concurso.has_specific_knowledge_3 ? weightedSpecific3Score : 0) + 
+        (concurso.has_discursive ? discursiveScore : 0) + 
+        (concurso.has_case_study_1 ? caseStudy1Score : 0) + 
+        (concurso.has_case_study_2 ? caseStudy2Score : 0) + 
+        (concurso.has_case_study_3 ? caseStudy3Score : 0);
       
-      console.log('Updating scores:', {
+      console.log('Calculando pontuação total:', {
         rankingId,
         userId,
         basicKnowledge: values.basicKnowledgeScore,
-        specificKnowledge: specificKnowledgeScore,
-        discursive: combinedDiscursiveScore,
+        basicWeight,
         weightedBasic: weightedBasicScore,
-        weightedSpecific: weightedSpecific1Score + weightedSpecific2Score + weightedSpecific3Score,
-        weightedDiscursive: weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score,
+        specificKnowledge1: values.specificKnowledge1Score,
+        specific1Weight,
+        weightedSpecific1: weightedSpecific1Score,
+        specificKnowledge2: values.specificKnowledge2Score,
+        specific2Weight,
+        weightedSpecific2: weightedSpecific2Score,
+        specificKnowledge3: values.specificKnowledge3Score,
+        specific3Weight,
+        weightedSpecific3: weightedSpecific3Score,
+        discursive: discursiveScore,
+        caseStudy1: caseStudy1Score,
+        caseStudy2: caseStudy2Score,
+        caseStudy3: caseStudy3Score,
         total: totalScore
       });
+      
+      // Prepare the scores to update
+      const scoreData = {
+        basic_knowledge_score: concurso.has_basic_knowledge ? values.basicKnowledgeScore : 0,
+        specific_knowledge_1_score: concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0,
+        specific_knowledge_2_score: concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0,
+        specific_knowledge_3_score: concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0,
+        specific_knowledge_score: specificKnowledgeScore,
+        discursive_score: concurso.has_discursive ? values.discursiveScore : 0,
+        case_study_1_score: concurso.has_case_study_1 ? values.caseStudy1Score : 0,
+        case_study_2_score: concurso.has_case_study_2 ? values.caseStudy2Score : 0,
+        case_study_3_score: concurso.has_case_study_3 ? values.caseStudy3Score : 0,
+        score: totalScore,
+        all_questions_answered: true, // Since user is manually entering scores
+        updated_at: new Date().toISOString()
+      };
       
       // Update the user ranking directly
       const { error } = await supabase
         .from('user_rankings')
-        .update({
-          basic_knowledge_score: values.basicKnowledgeScore,
-          specific_knowledge_score: specificKnowledgeScore,
-          discursive_score: combinedDiscursiveScore,
-          score: totalScore,
-          updated_at: new Date().toISOString()
-        })
+        .update(scoreData)
         .eq('id', rankingId);
 
       if (error) {
@@ -295,8 +324,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota na parte discursiva (0-100)
-                      {concurso.discursive_weight && concurso.discursive_weight > 1 && 
-                        ` - Peso ${concurso.discursive_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -322,8 +349,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota no estudo de caso 1 (0-100)
-                      {concurso.case_study_1_weight && concurso.case_study_1_weight > 1 && 
-                        ` - Peso ${concurso.case_study_1_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -349,8 +374,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota no estudo de caso 2 (0-100)
-                      {concurso.case_study_2_weight && concurso.case_study_2_weight > 1 && 
-                        ` - Peso ${concurso.case_study_2_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -376,8 +399,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota no estudo de caso 3 (0-100)
-                      {concurso.case_study_3_weight && concurso.case_study_3_weight > 1 && 
-                        ` - Peso ${concurso.case_study_3_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

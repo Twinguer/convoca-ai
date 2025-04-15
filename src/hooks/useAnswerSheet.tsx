@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study'>('basic');
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -14,6 +14,29 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [caseStudy1Score, setCaseStudy1Score] = useState<number | null>(null);
   const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
   const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
+
+  // Initialize with the first available section
+  useEffect(() => {
+    if (concurso) {
+      if (concurso.has_basic_knowledge) {
+        setSelectedSection('basic');
+      } else if (concurso.has_specific_knowledge_1) {
+        setSelectedSection('specific1');
+      } else if (concurso.has_specific_knowledge_2) {
+        setSelectedSection('specific2');
+      } else if (concurso.has_specific_knowledge_3) {
+        setSelectedSection('specific3');
+      } else if (concurso.has_discursive) {
+        setSelectedSection('discursive');
+      } else if (concurso.has_case_study_1) {
+        setSelectedSection('case_study1');
+      } else if (concurso.has_case_study_2) {
+        setSelectedSection('case_study2');
+      } else if (concurso.has_case_study_3) {
+        setSelectedSection('case_study3');
+      }
+    }
+  }, [concurso]);
 
   const fetchExistingAnswers = async () => {
     try {
@@ -34,11 +57,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           
           if (item.is_basic_knowledge) {
             typesMap[item.question_number] = 'basic';
-          } else if (concurso.has_specific_knowledge_1) {
+          } else if (item.is_specific_1) {
             typesMap[item.question_number] = 'specific1';
-          } else if (concurso.has_specific_knowledge_2) {
+          } else if (item.is_specific_2) {
             typesMap[item.question_number] = 'specific2';
-          } else if (concurso.has_specific_knowledge_3) {
+          } else {
             typesMap[item.question_number] = 'specific3';
           }
         });
@@ -61,8 +84,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           setDiscursiveScore(rankingData.discursive_score);
         }
         
-        // Case study scores would be in separate fields in a real implementation
-        // For now, we'll assume they're in the ranking data
         if (rankingData.case_study_1_score !== undefined) {
           setCaseStudy1Score(rankingData.case_study_1_score);
         }
@@ -168,10 +189,21 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     return Object.keys(answers).length;
   };
 
+  const isDiscursiveSection = () => {
+    return selectedSection === 'discursive' || 
+           selectedSection === 'case_study1' || 
+           selectedSection === 'case_study2' || 
+           selectedSection === 'case_study3';
+  };
+
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
     const questions: number[] = [];
+    
+    if (isDiscursiveSection()) {
+      return []; // No questions for discursive sections
+    }
     
     Object.entries(questionType).forEach(([num, type]) => {
       if (
@@ -247,6 +279,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score, 
-    setCaseStudy3Score
+    setCaseStudy3Score,
+    isDiscursiveSection
   };
 };
