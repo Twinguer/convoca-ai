@@ -20,7 +20,7 @@ export const createRanking = async (rankingData: any) => {
       
     if (error) {
       console.error('Error creating concurso:', error);
-      throw error;
+      throw new Error(`Failed to create concurso: ${error.message}`);
     }
     
     if (!concurso || concurso.length === 0) {
@@ -45,7 +45,7 @@ export const createRanking = async (rankingData: any) => {
         
       if (examSectionError) {
         console.error('Error creating exam sections:', examSectionError);
-        throw examSectionError;
+        throw new Error(`Failed to create exam sections: ${examSectionError.message}`);
       }
     }
     
@@ -64,15 +64,16 @@ export const createRanking = async (rankingData: any) => {
         
       if (evalSectionError) {
         console.error('Error creating evaluation sections:', evalSectionError);
-        throw evalSectionError;
+        throw new Error(`Failed to create evaluation sections: ${evalSectionError.message}`);
       }
     }
     
     console.log('Successfully created ranking with all sections');
     return concurso;
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating ranking:', error);
-    throw error;
+    // Rethrow to propagate the error details
+    throw error.message ? error : new Error(String(error));
   }
 };

@@ -2,7 +2,6 @@
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
-import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface UseSaveAnswersProps {
@@ -80,8 +79,6 @@ export const useSaveAnswers = ({
         });
         startQuestion = endQuestion + 1;
       });
-
-      console.log('Question ranges:', questionRanges);
       
       // Calculate scores for each section
       const sectionRawScores: Record<string, number> = {};
@@ -96,7 +93,7 @@ export const useSaveAnswers = ({
         
         if (section) {
           // Check if answer is correct
-          const officialAnswer = answerKey.find(
+          const officialAnswer = answerKey?.find(
             a => a.question_number === qNum
           );
           
@@ -108,8 +105,6 @@ export const useSaveAnswers = ({
         }
       });
       
-      console.log('Raw section scores:', sectionRawScores);
-      
       // Apply weights to sections
       const weightedSectionScores: Record<string, number> = {};
       questionRanges.forEach(section => {
@@ -117,22 +112,16 @@ export const useSaveAnswers = ({
         weightedSectionScores[section.sectionName] = rawScore * section.weight;
       });
       
-      console.log('Weighted section scores:', weightedSectionScores);
-      
       // Add evaluation section scores (from form input)
       const finalSectionScores = {
         ...weightedSectionScores,
         ...sectionScores
       };
       
-      console.log('Final section scores:', finalSectionScores);
-      
       // Calculate total score as sum of all section scores
       const totalScore = Object.values(finalSectionScores).reduce(
-        (sum, score) => sum + score, 0
+        (sum, score) => sum + (score || 0), 0
       );
-      
-      console.log('Total score:', totalScore);
       
       return {
         score: totalScore,
@@ -150,13 +139,19 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
-        questionNumber: parseInt(questionNumber),
-        answer
-      }));
+      // Convert answers object to array format
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        const qNum = parseInt(questionNumber);
+        return {
+          questionNumber: qNum,
+          answer,
+          isBasicKnowledge: true // Default to true for backward compatibility
+        };
+      });
 
       const scoreDetails = await calculateScore();
 
+      // Update the user_rankings record with the new score details
       const { error } = await supabase
         .from('user_rankings')
         .update({
@@ -167,17 +162,8 @@ export const useSaveAnswers = ({
 
       if (error) throw error;
 
-      // Map question types to sections for backward compatibility
-      const answersWithSections = answersArray.map(answer => {
-        // Determine if this question is in basic knowledge or other sections
-        // This is a temporary solution until we fully migrate to the new structure
-        return {
-          ...answer,
-          isBasicKnowledge: true // Default to basic knowledge for compatibility
-        };
-      });
-
-      await saveUserAnswers(rankingId, concurso.id, answersWithSections);
+      // Save user answers
+      await saveUserAnswers(rankingId, concurso.id, answersArray);
 
       setSavedSuccess(true);
       toast({

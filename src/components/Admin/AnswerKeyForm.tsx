@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Concurso, ExamSection } from '@/types/concursos';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -32,7 +31,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         .single();
         
       if (error) throw error;
-      return data as Concurso & { exam_sections: ExamSection[] };
+      return data;
     },
   });
 
@@ -286,7 +285,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               onValueChange={setSelectedSectionId}
               className="w-full"
             >
-              <TabsList className={`grid w-full grid-cols-${Math.min(objectiveSections.length, 4)}`}>
+              <TabsList className="grid w-full grid-cols-4">
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.id} value={section.id}>
                     {section.name}
