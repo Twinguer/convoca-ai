@@ -32,9 +32,6 @@ const formSchema = z.object({
   exam_type: z.string().default('Alternativas'),
   alternatives_count: z.coerce.number().default(5),
   wrong_answer_penalty: z.coerce.number().default(0),
-  basic_knowledge_weight: z.coerce.number().default(1),
-  specific_knowledge_weight: z.coerce.number().default(1),
-  discursive_weight: z.coerce.number().default(1),
   link: z.string().optional(),
   has_basic_knowledge: z.boolean().default(true),
   has_specific_knowledge_1: z.boolean().default(true),
@@ -48,6 +45,8 @@ const formSchema = z.object({
   specific_knowledge_1_questions: z.coerce.number().optional(),
   specific_knowledge_2_questions: z.coerce.number().optional(),
   specific_knowledge_3_questions: z.coerce.number().optional(),
+  
+  // Combine weights into a single definition
   basic_knowledge_weight: z.coerce.number().default(1),
   specific_knowledge_1_weight: z.coerce.number().default(1),
   specific_knowledge_2_weight: z.coerce.number().default(1),
@@ -56,6 +55,7 @@ const formSchema = z.object({
   case_study_1_weight: z.coerce.number().default(1),
   case_study_2_weight: z.coerce.number().default(1),
   case_study_3_weight: z.coerce.number().default(1),
+  
   predefined_job_title: z.string().optional(),
   custom_job_title: z.string().optional()
 });
