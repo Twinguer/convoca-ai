@@ -12,12 +12,20 @@ export interface Concurso {
   exam_type?: string;
   wrong_answer_penalty?: number;
   alternatives_count?: number;
+  basic_knowledge_weight?: number;
+  specific_knowledge_1_weight?: number;
+  specific_knowledge_2_weight?: number;
+  specific_knowledge_3_weight?: number;
+  discursive_weight?: number;
+  case_study_1_weight?: number;
+  case_study_2_weight?: number;
+  case_study_3_weight?: number;
   created_at?: string;
   updated_at?: string;
   predefined_job_title?: string;
   custom_job_title?: string;
   
-  // Legacy exam structure fields (for backward compatibility)
+  // Exam structure fields
   has_basic_knowledge?: boolean;
   has_specific_knowledge_1?: boolean;
   has_specific_knowledge_2?: boolean;
@@ -30,39 +38,6 @@ export interface Concurso {
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
-  basic_knowledge_weight?: number;
-  specific_knowledge_1_weight?: number;
-  specific_knowledge_2_weight?: number;
-  specific_knowledge_3_weight?: number;
-  discursive_weight?: number;
-  case_study_1_weight?: number;
-  case_study_2_weight?: number;
-  case_study_3_weight?: number;
-  
-  // New dynamic structure 
-  exam_sections?: ExamSection[];
-  evaluation_sections?: EvaluationSection[];
-}
-
-export interface ExamSection {
-  id: string;
-  concurso_id: string;
-  type: string;
-  name: string;
-  questions: number;
-  weight: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface EvaluationSection {
-  id: string;
-  concurso_id: string;
-  type: string;
-  name: string;
-  max_score: number;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface ConcursoFilter {

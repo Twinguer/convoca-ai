@@ -7,35 +7,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Concurso } from '@/types/concursos';
 
 interface AnswerKeyFormProps {
   concursoId: string;
 }
 
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
-  const [selectedSectionId, setSelectedSectionId] = useState<string>('');
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const { toast } = useToast();
 
-  // Fetch concurso with exam sections
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
-    queryKey: ['concurso-details-with-sections', concursoId],
+    queryKey: ['concurso-details', concursoId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('concursos')
-        .select('*, exam_sections(*)')
+        .select('*')
         .eq('id', concursoId)
         .single();
         
       if (error) throw error;
-      return data;
+      return data as Concurso;
     },
   });
 
-  // Fetch existing answer keys
   const { data: existingAnswers, isLoading: isLoadingAnswers } = useQuery({
     queryKey: ['answer-keys', concursoId],
     queryFn: async () => {
@@ -62,13 +61,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }
   }, [existingAnswers]);
 
-  // Set default selected section when data loads
-  useEffect(() => {
-    if (concurso?.exam_sections && concurso.exam_sections.length > 0 && !selectedSectionId) {
-      setSelectedSectionId(concurso.exam_sections[0].id);
-    }
-  }, [concurso, selectedSectionId]);
-
   if (isLoadingConcurso || isLoadingAnswers) {
     return (
       <Card>
@@ -93,43 +85,40 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     );
   }
 
-  // Get only the objective sections
-  const objectiveSections = concurso.exam_sections || [];
-
-  // If no sections defined yet
-  if (objectiveSections.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center text-amber-600 space-x-2">
-            <AlertTriangle className="h-5 w-5" />
-            <p>Você precisa definir a estrutura da prova antes de cadastrar o gabarito oficial.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Get currently selected section
-  const currentSection = objectiveSections.find(s => s.id === selectedSectionId);
-  
-  // Calculate question range for the current section
-  const getQuestionsRange = () => {
-    if (!currentSection) return [];
-    
-    // Find all sections that come before the current one to calculate question offset
-    let questionOffset = 1; // Start from question 1
-    
-    for (const section of objectiveSections) {
-      if (section.id === currentSection.id) break;
-      questionOffset += section.questions;
+  const getQuestionsCount = (section: 'basic' | 'specific1' | 'specific2' | 'specific3') => {
+    if (section === 'basic' && concurso.has_basic_knowledge) {
+      return concurso.basic_knowledge_questions || 0;
+    } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
+      return concurso.specific_knowledge_1_questions || 0;
+    } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
+      return concurso.specific_knowledge_2_questions || 0;
+    } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
+      return concurso.specific_knowledge_3_questions || 0;
     }
-    
-    // Generate the question numbers for this section
-    return Array.from(
-      { length: currentSection.questions }, 
-      (_, i) => questionOffset + i
-    );
+    return 0;
+  };
+
+  const getQuestionsRange = () => {
+    if (selectedSection === 'basic') {
+      return Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1);
+    } else {
+      let startNumber = 1;
+      
+      if (concurso.has_basic_knowledge) {
+        startNumber += (concurso.basic_knowledge_questions || 0);
+      }
+      
+      if (selectedSection === 'specific1') {
+        return Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i);
+      } else if (selectedSection === 'specific2') {
+        startNumber += (concurso.specific_knowledge_1_questions || 0);
+        return Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i);
+      } else if (selectedSection === 'specific3') {
+        startNumber += (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0);
+        return Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i);
+      }
+    }
+    return [];
   };
 
   const getOptionsForQuestion = () => {
@@ -181,35 +170,30 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
+        let isBasic = false;
+        let isSpecific1 = false;
+        let isSpecific2 = false;
+        let isSpecific3 = false;
         
-        // Find which section this question belongs to
-        // We need to calculate question ranges based on all section lengths
-        let currentStartQuestion = 1;
-        let questionSection = null;
+        const basicCount = concurso.basic_knowledge_questions || 0;
+        const specific1Count = concurso.specific_knowledge_1_questions || 0;
+        const specific2Count = concurso.specific_knowledge_2_questions || 0;
         
-        for (const section of objectiveSections) {
-          const sectionEndQuestion = currentStartQuestion + section.questions - 1;
-          
-          if (qNum >= currentStartQuestion && qNum <= sectionEndQuestion) {
-            questionSection = section;
-            break;
-          }
-          
-          currentStartQuestion = sectionEndQuestion + 1;
+        if (qNum <= basicCount) {
+          isBasic = true;
+        } else if (qNum <= basicCount + specific1Count) {
+          isSpecific1 = true;
+        } else if (qNum <= basicCount + specific1Count + specific2Count) {
+          isSpecific2 = true;
+        } else {
+          isSpecific3 = true;
         }
-        
-        // For backward compatibility
-        const isBasicKnowledge = questionSection?.type === 'basic';
-        const isSpecific1 = questionSection?.type === 'specific' && 
-                          questionSection === objectiveSections.find(s => s.type === 'specific');
-        const isSpecific2 = questionSection?.type === 'specific' && 
-                          questionSection !== objectiveSections.find(s => s.type === 'specific');
         
         return {
           concurso_id: concursoId,
           question_number: qNum,
           answer: answer.toUpperCase(),
-          is_basic_knowledge: isBasicKnowledge,
+          is_basic_knowledge: isBasic,
           is_specific_1: isSpecific1,
           is_specific_2: isSpecific2
         };
@@ -238,7 +222,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado com sucesso.",
       });
       
-      // Reset success state after a delay
+      // Reload data
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);
@@ -256,6 +240,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setIsSaving(false);
     }
   };
+
+  // Get only the objective sections for tabs (basic and specific knowledge)
+  const getObjectiveSectionList = () => {
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    return sections;
+  };
+
+  const objectiveSections = getObjectiveSectionList();
 
   return (
     <Card>
@@ -277,24 +273,24 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
-        {/* Objective questions tabs based on exam_sections */}
+        {/* Objective questions tabs (only for basic and specific knowledge) */}
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
-              value={selectedSectionId} 
-              onValueChange={setSelectedSectionId}
+              value={selectedSection} 
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
                 {objectiveSections.map(section => (
-                  <TabsTrigger key={section.id} value={section.id}>
-                    {section.name}
+                  <TabsTrigger key={section.key} value={section.key}>
+                    {section.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
               
               {objectiveSections.map(section => (
-                <TabsContent key={section.id} value={section.id}>
+                <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => (
@@ -307,7 +303,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                   {getOptionsForQuestion().map((option) => (
                                     <button
                                       key={option}
-                                      type="button"
                                       className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
                                         ${answers[questionNumber] === option 
                                           ? 'bg-emerald-600 text-white'

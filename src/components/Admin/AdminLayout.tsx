@@ -1,12 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Plus, List, LogOut, Clipboard } from 'lucide-react';
-
+import { Home, Plus, ListChecks, LogOut } from 'lucide-react';
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  
   useEffect(() => {
     // Check if the user is authenticated
     const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
@@ -14,14 +11,11 @@ const AdminLayout: React.FC = () => {
       navigate('/project/admin/man/login');
     }
   }, [navigate]);
-  
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     navigate('/project/admin/man/login');
   };
-  
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+  return <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -53,16 +47,7 @@ const AdminLayout: React.FC = () => {
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full justify-start">
-              <Link to="/project/admin/man/concursos" className="flex items-center gap-2">
-                <List className="h-4 w-4" />
-                Listar Rankings
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" className="w-full justify-start">
-              <Link to="/" className="flex items-center gap-2">
-                <Clipboard className="h-4 w-4" />
-                Ver Site
-              </Link>
+              
             </Button>
           </nav>
         </aside>
@@ -72,8 +57,6 @@ const AdminLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminLayout;

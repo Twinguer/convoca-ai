@@ -19,23 +19,6 @@ import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
 import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
 
-// Define a schema for knowledge sections
-const knowledgeSectionSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  name: z.string(),
-  questions: z.coerce.number().min(0),
-  weight: z.coerce.number().min(1).max(3)
-});
-
-// Define a schema for evaluation sections
-const evaluationSectionSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  name: z.string(),
-  maxScore: z.coerce.number().min(0).max(100)
-});
-
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
   orgao: z.string().min(1, 'O órgão é obrigatório'),
@@ -49,12 +32,33 @@ const formSchema = z.object({
   alternatives_count: z.coerce.number().default(5),
   wrong_answer_penalty: z.coerce.number().default(0),
   link: z.string().optional(),
-  predefined_job_title: z.string().optional(),
-  custom_job_title: z.string().optional(),
+  has_basic_knowledge: z.boolean().default(true),
+  has_specific_knowledge_1: z.boolean().default(true),
+  has_specific_knowledge_2: z.boolean().default(false),
+  has_specific_knowledge_3: z.boolean().default(false),
+  has_discursive: z.boolean().default(false),
+  has_case_study_1: z.boolean().default(false),
+  has_case_study_2: z.boolean().default(false),
+  has_case_study_3: z.boolean().default(false),
+  basic_knowledge_questions: z.coerce.number().optional(),
+  specific_knowledge_1_questions: z.coerce.number().optional(),
+  specific_knowledge_2_questions: z.coerce.number().optional(),
+  specific_knowledge_3_questions: z.coerce.number().optional(),
   
-  // New dynamic sections
-  knowledgeSections: z.array(knowledgeSectionSchema).default([]),
-  evaluationSections: z.array(evaluationSectionSchema).default([])
+  // Weight fields (for basic and specific knowledge)
+  basic_knowledge_weight: z.coerce.number().default(1),
+  specific_knowledge_1_weight: z.coerce.number().default(1),
+  specific_knowledge_2_weight: z.coerce.number().default(1),
+  specific_knowledge_3_weight: z.coerce.number().default(1),
+  
+  // Maximum score fields (for discursive and case studies)
+  discursive_weight: z.coerce.number().default(1),
+  case_study_1_weight: z.coerce.number().default(1),
+  case_study_2_weight: z.coerce.number().default(1),
+  case_study_3_weight: z.coerce.number().default(1),
+  
+  predefined_job_title: z.string().optional(),
+  custom_job_title: z.string().optional()
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -65,8 +69,8 @@ const NovoConcurso = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isEditing = !!id;
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [activeTab, setActiveTab] = useState<string>("informacoes");
   const [jobTitles, setJobTitles] = useState<{ id: string; title: string; }[]>([]);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
@@ -98,26 +102,12 @@ const NovoConcurso = () => {
       
       const { data, error } = await supabase
         .from('concursos')
-        .select('*, exam_sections(*), evaluation_sections(*)')
+        .select('*')
         .eq('id', id)
         .single();
         
       if (error) throw error;
-      return data as Concurso & { 
-        exam_sections: Array<{
-          id: string;
-          type: string;
-          name: string;
-          questions: number;
-          weight: number;
-        }>,
-        evaluation_sections: Array<{
-          id: string;
-          type: string;
-          name: string;
-          max_score: number;
-        }> 
-      };
+      return data as Concurso;
     },
     enabled: isEditing
   });
@@ -136,131 +126,37 @@ const NovoConcurso = () => {
       exam_type: 'Alternativas',
       alternatives_count: 5,
       wrong_answer_penalty: 0,
+      basic_knowledge_weight: 1,
+      specific_knowledge_1_weight: 1,
+      specific_knowledge_2_weight: 1,
+      specific_knowledge_3_weight: 1,
+      discursive_weight: 1,
+      case_study_1_weight: 1,
+      case_study_2_weight: 1,
+      case_study_3_weight: 1,
       link: '',
+      has_basic_knowledge: true,
+      has_specific_knowledge_1: true,
+      has_specific_knowledge_2: false,
+      has_specific_knowledge_3: false,
+      has_discursive: false,
+      has_case_study_1: false,
+      has_case_study_2: false,
+      has_case_study_3: false,
+      basic_knowledge_questions: 40,
+      specific_knowledge_1_questions: 60,
+      specific_knowledge_2_questions: 0,
+      specific_knowledge_3_questions: 0,
       predefined_job_title: '',
-      custom_job_title: '',
-      knowledgeSections: [],
-      evaluationSections: []
+      custom_job_title: ''
     }
   });
-
-  // Map legacy data structure to new dynamic structure
-  const mapLegacyToNewStructure = (concurso: any) => {
-    // Check if we have the new structure data
-    if (concurso.exam_sections && concurso.exam_sections.length > 0) {
-      return {
-        knowledgeSections: concurso.exam_sections.map((section: any) => ({
-          id: section.id,
-          type: section.type,
-          name: section.name,
-          questions: section.questions,
-          weight: section.weight
-        })),
-        evaluationSections: concurso.evaluation_sections?.map((section: any) => ({
-          id: section.id,
-          type: section.type,
-          name: section.name,
-          maxScore: section.max_score
-        })) || []
-      };
-    }
-
-    // Map old structure to new
-    const knowledgeSections = [];
-    const evaluationSections = [];
-
-    // Add basic knowledge if it exists
-    if (concurso.has_basic_knowledge) {
-      knowledgeSections.push({
-        id: `legacy-basic-${Date.now()}`,
-        type: 'basic',
-        name: 'Conhecimentos Básicos',
-        questions: concurso.basic_knowledge_questions || 0,
-        weight: concurso.basic_knowledge_weight || 1
-      });
-    }
-
-    // Add specific knowledge sections
-    if (concurso.has_specific_knowledge_1) {
-      knowledgeSections.push({
-        id: `legacy-specific1-${Date.now()}`,
-        type: 'specific',
-        name: 'Conhecimentos Específicos',
-        questions: concurso.specific_knowledge_1_questions || 0,
-        weight: concurso.specific_knowledge_1_weight || 1
-      });
-    }
-
-    if (concurso.has_specific_knowledge_2) {
-      knowledgeSections.push({
-        id: `legacy-specific2-${Date.now()}`,
-        type: 'specific',
-        name: 'Conhecimentos Específicos 2',
-        questions: concurso.specific_knowledge_2_questions || 0,
-        weight: concurso.specific_knowledge_2_weight || 1
-      });
-    }
-
-    if (concurso.has_specific_knowledge_3) {
-      knowledgeSections.push({
-        id: `legacy-specific3-${Date.now()}`,
-        type: 'specific',
-        name: 'Conhecimentos Específicos 3',
-        questions: concurso.specific_knowledge_3_questions || 0,
-        weight: concurso.specific_knowledge_3_weight || 1
-      });
-    }
-
-    // Add evaluation sections
-    if (concurso.has_discursive) {
-      evaluationSections.push({
-        id: `legacy-discursive-${Date.now()}`,
-        type: 'discursive',
-        name: 'Discursiva',
-        maxScore: concurso.discursive_weight || 100
-      });
-    }
-
-    if (concurso.has_case_study_1) {
-      evaluationSections.push({
-        id: `legacy-case1-${Date.now()}`,
-        type: 'casestudy',
-        name: 'Estudo de Caso 1',
-        maxScore: concurso.case_study_1_weight || 100
-      });
-    }
-
-    if (concurso.has_case_study_2) {
-      evaluationSections.push({
-        id: `legacy-case2-${Date.now()}`,
-        type: 'casestudy',
-        name: 'Estudo de Caso 2',
-        maxScore: concurso.case_study_2_weight || 100
-      });
-    }
-
-    if (concurso.has_case_study_3) {
-      evaluationSections.push({
-        id: `legacy-case3-${Date.now()}`,
-        type: 'casestudy',
-        name: 'Estudo de Caso 3',
-        maxScore: concurso.case_study_3_weight || 100
-      });
-    }
-
-    return { knowledgeSections, evaluationSections };
-  };
 
   // Update form values when editing an existing concurso
   React.useEffect(() => {
     if (existingConcurso) {
-      // Find if the title exists in job titles
-      const existingJobTitle = jobTitles.find(jt => jt.title === existingConcurso.titulo);
-      const shouldUseCustomTitle = !existingJobTitle;
-      setIsCustomTitle(shouldUseCustomTitle);
-      
-      // Map the new dynamic sections structure
-      const { knowledgeSections, evaluationSections } = mapLegacyToNewStructure(existingConcurso);
+      const isOtherTitle = !jobTitles.find(jt => jt.title === existingConcurso.titulo);
+      setIsCustomTitle(isOtherTitle);
       
       form.reset({
         titulo: existingConcurso.titulo,
@@ -274,11 +170,29 @@ const NovoConcurso = () => {
         exam_type: existingConcurso.exam_type,
         alternatives_count: existingConcurso.alternatives_count,
         wrong_answer_penalty: existingConcurso.wrong_answer_penalty,
+        basic_knowledge_weight: existingConcurso.basic_knowledge_weight || 1,
+        specific_knowledge_1_weight: existingConcurso.specific_knowledge_1_weight || 1,
+        specific_knowledge_2_weight: existingConcurso.specific_knowledge_2_weight || 1,
+        specific_knowledge_3_weight: existingConcurso.specific_knowledge_3_weight || 1,
+        discursive_weight: existingConcurso.discursive_weight || 1,
+        case_study_1_weight: existingConcurso.case_study_1_weight || 1,
+        case_study_2_weight: existingConcurso.case_study_2_weight || 1,
+        case_study_3_weight: existingConcurso.case_study_3_weight || 1,
         link: existingConcurso.link,
-        predefined_job_title: shouldUseCustomTitle ? 'OUTRO' : existingConcurso.titulo,
-        custom_job_title: shouldUseCustomTitle ? existingConcurso.titulo : '',
-        knowledgeSections,
-        evaluationSections
+        has_basic_knowledge: existingConcurso.has_basic_knowledge ?? true,
+        has_specific_knowledge_1: existingConcurso.has_specific_knowledge_1 ?? true,
+        has_specific_knowledge_2: existingConcurso.has_specific_knowledge_2 ?? false,
+        has_specific_knowledge_3: existingConcurso.has_specific_knowledge_3 ?? false,
+        has_discursive: existingConcurso.has_discursive ?? false,
+        has_case_study_1: existingConcurso.has_case_study_1 ?? false,
+        has_case_study_2: existingConcurso.has_case_study_2 ?? false,
+        has_case_study_3: existingConcurso.has_case_study_3 ?? false,
+        basic_knowledge_questions: existingConcurso.basic_knowledge_questions,
+        specific_knowledge_1_questions: existingConcurso.specific_knowledge_1_questions,
+        specific_knowledge_2_questions: existingConcurso.specific_knowledge_2_questions,
+        specific_knowledge_3_questions: existingConcurso.specific_knowledge_3_questions,
+        predefined_job_title: isOtherTitle ? 'OUTRO' : existingConcurso.titulo,
+        custom_job_title: isOtherTitle ? existingConcurso.titulo : ''
       });
     }
   }, [existingConcurso, form, jobTitles]);
@@ -300,24 +214,6 @@ const NovoConcurso = () => {
     form.setValue('custom_job_title', e.target.value);
   };
 
-  // Transform dynamic structure to database format
-  const prepareSectionsForDatabase = (data: FormData) => {
-    const examSections = data.knowledgeSections.map(section => ({
-      type: section.type,
-      name: section.name,
-      questions: section.questions,
-      weight: section.weight
-    }));
-
-    const evaluationSections = data.evaluationSections.map(section => ({
-      type: section.type,
-      name: section.name,
-      max_score: section.maxScore
-    }));
-
-    return { examSections, evaluationSections };
-  };
-
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
@@ -330,11 +226,8 @@ const NovoConcurso = () => {
         data.titulo = data.predefined_job_title;
       }
 
-      // Prepare sections data
-      const { examSections, evaluationSections } = prepareSectionsForDatabase(data);
-
       // Remover campos não necessários para o envio
-      const { custom_job_title, predefined_job_title, knowledgeSections, evaluationSections: evalSections, ...dataToSubmit } = data;
+      const { custom_job_title, predefined_job_title, ...dataToSubmit } = data;
       
       if (isEditing) {
         // Update existing concurso
@@ -345,34 +238,6 @@ const NovoConcurso = () => {
           
         if (error) throw error;
         
-        // Delete existing sections first
-        await supabase.from('exam_sections').delete().eq('concurso_id', id);
-        await supabase.from('evaluation_sections').delete().eq('concurso_id', id);
-        
-        // Add exam sections
-        if (examSections.length > 0) {
-          const { error: examSectionError } = await supabase
-            .from('exam_sections')
-            .insert(examSections.map(section => ({
-              ...section,
-              concurso_id: id
-            })));
-            
-          if (examSectionError) throw examSectionError;
-        }
-        
-        // Add evaluation sections
-        if (evaluationSections.length > 0) {
-          const { error: evalSectionError } = await supabase
-            .from('evaluation_sections')
-            .insert(evaluationSections.map(section => ({
-              ...section,
-              concurso_id: id
-            })));
-            
-          if (evalSectionError) throw evalSectionError;
-        }
-        
         toast({
           title: "Ranking atualizado",
           description: "As informações do ranking foram atualizadas com sucesso."
@@ -380,11 +245,7 @@ const NovoConcurso = () => {
       } else {
         // Create new concurso using the createRanking function
         try {
-          const result = await createRanking({
-            ...dataToSubmit,
-            examSections,
-            evaluationSections
-          });
+          const result = await createRanking(dataToSubmit);
           
           if (!result) {
             throw new Error('Erro ao criar ranking: Nenhum dado retornado');

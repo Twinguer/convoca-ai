@@ -2,6 +2,7 @@
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
+import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface UseSaveAnswersProps {
@@ -13,7 +14,10 @@ interface UseSaveAnswersProps {
   setError: (error: string | null) => void;
   setSavedSuccess: (success: boolean) => void;
   onSuccess: () => void;
-  sectionScores: Record<string, number>; // Custom scores for evaluation sections
+  discursiveScore?: number | null;
+  caseStudy1Score?: number | null;
+  caseStudy2Score?: number | null;
+  caseStudy3Score?: number | null;
   editCount: number;
 }
 
@@ -26,106 +30,124 @@ export const useSaveAnswers = ({
   setError,
   setSavedSuccess,
   onSuccess,
-  sectionScores,
+  discursiveScore,
+  caseStudy1Score,
+  caseStudy2Score,
+  caseStudy3Score,
   editCount
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
 
   const calculateScore = async () => {
     try {
-      // We'll need both the exam sections and evaluation sections
-      const { data: concursoData, error: concursoError } = await supabase
-        .from('concursos')
-        .select(`
-          exam_sections (id, name, type, questions, weight),
-          evaluation_sections (id, name, type, max_score)
-        `)
-        .eq('id', concurso.id)
-        .single();
-        
-      if (concursoError) throw concursoError;
-      
-      const examSections = concursoData?.exam_sections || [];
-      
-      // Get answer key
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        const qNum = parseInt(questionNumber);
+        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+        const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
+        const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
+
+        return {
+          questionNumber: qNum,
+          answer,
+          isBasicKnowledge: qNum <= basicQuestionsCount,
+          isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
+          isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && 
+                       qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
+          isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
+        };
+      });
+
       const { data: answerKey, error: keyError } = await supabase
         .from('answer_keys')
         .select('*')
         .eq('concurso_id', concurso.id);
 
       if (keyError) throw keyError;
-      
-      // Determine which answer belongs to which section
-      // We'll assign each answer to a section based on question number
-      // First, sort sections by order and calculate question ranges
-      let questionRanges: Array<{
-        sectionId: string;
-        sectionName: string;
-        start: number;
-        end: number;
-        weight: number;
-      }> = [];
-      
-      let startQuestion = 1;
-      
-      examSections.forEach(section => {
-        const endQuestion = startQuestion + (section.questions - 1);
-        questionRanges.push({
-          sectionId: section.id,
-          sectionName: section.name,
-          start: startQuestion,
-          end: endQuestion,
-          weight: section.weight
-        });
-        startQuestion = endQuestion + 1;
-      });
-      
-      // Calculate scores for each section
-      const sectionRawScores: Record<string, number> = {};
-      
-      Object.entries(answers).forEach(([questionNumber, answer]) => {
-        const qNum = parseInt(questionNumber);
-        
-        // Find which section this question belongs to
-        const section = questionRanges.find(
-          range => qNum >= range.start && qNum <= range.end
+
+      // Raw score (number of correct answers)
+      let basicScore = 0;
+      let specific1Score = 0;
+      let specific2Score = 0;
+      let specific3Score = 0;
+
+      // Count correctly answered questions
+      answersArray.forEach(userAnswer => {
+        const officialAnswer = answerKey.find(
+          a => a.question_number === userAnswer.questionNumber
         );
-        
-        if (section) {
-          // Check if answer is correct
-          const officialAnswer = answerKey?.find(
-            a => a.question_number === qNum
-          );
-          
-          if (officialAnswer && officialAnswer.answer === answer) {
-            // If correct, increment section score
-            sectionRawScores[section.sectionName] = 
-              (sectionRawScores[section.sectionName] || 0) + 1;
+
+        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+          if (userAnswer.isBasicKnowledge) {
+            basicScore += 1;
+          } else if (userAnswer.isSpecific1) {
+            specific1Score += 1;
+          } else if (userAnswer.isSpecific2) {
+            specific2Score += 1;
+          } else if (userAnswer.isSpecific3) {
+            specific3Score += 1;
           }
         }
       });
-      
-      // Apply weights to sections
-      const weightedSectionScores: Record<string, number> = {};
-      questionRanges.forEach(section => {
-        const rawScore = sectionRawScores[section.sectionName] || 0;
-        weightedSectionScores[section.sectionName] = rawScore * section.weight;
+
+      console.log("Scores before applying weights:", {
+        basicScore,
+        specific1Score,
+        specific2Score,
+        specific3Score
       });
-      
-      // Add evaluation section scores (from form input)
-      const finalSectionScores = {
-        ...weightedSectionScores,
-        ...sectionScores
-      };
-      
-      // Calculate total score as sum of all section scores
-      const totalScore = Object.values(finalSectionScores).reduce(
-        (sum, score) => sum + (score || 0), 0
-      );
-      
+
+      // Apply weights to raw scores (this is the key change)
+      const basicWeight = concurso.basic_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+
+      // Calculate weighted scores for objective sections
+      const weightedBasicScore = basicScore * basicWeight;
+      const weightedSpecific1Score = specific1Score * specific1Weight;
+      const weightedSpecific2Score = specific2Score * specific2Weight;
+      const weightedSpecific3Score = specific3Score * specific3Weight;
+
+      console.log("Weights applied:", {
+        basicWeight,
+        specific1Weight,
+        specific2Weight,
+        specific3Weight
+      });
+
+      console.log("Weighted scores:", {
+        weightedBasicScore,
+        weightedSpecific1Score,
+        weightedSpecific2Score,
+        weightedSpecific3Score
+      });
+
+      // Discursive and case study scores (these do not have weights)
+      const discursiveValue = discursiveScore || 0;
+      const caseStudy1Value = caseStudy1Score || 0;
+      const caseStudy2Value = caseStudy2Score || 0;
+      const caseStudy3Value = caseStudy3Score || 0;
+
+      // Calculate total score using the formula:
+      // (C.Bas x Peso) + (C.Esp1 x Peso) + (C.Esp2 x Peso) + (C.Esp3 x Peso) + Discursiva + Est. Caso1 + Est. Caso2 + Est. Caso3
+      const totalScore = weightedBasicScore + weightedSpecific1Score + 
+                         weightedSpecific2Score + weightedSpecific3Score +
+                         discursiveValue + caseStudy1Value +
+                         caseStudy2Value + caseStudy3Value;
+
+      console.log("Final total score:", totalScore);
+
       return {
-        score: totalScore,
-        section_scores: finalSectionScores
+        basic_knowledge_score: basicScore,
+        specific_knowledge_1_score: specific1Score,
+        specific_knowledge_2_score: specific2Score,
+        specific_knowledge_3_score: specific3Score,
+        discursive_score: discursiveValue,
+        case_study_1_score: caseStudy1Value,
+        case_study_2_score: caseStudy2Value,
+        case_study_3_score: caseStudy3Value,
+        // Store the total weighted score
+        score: totalScore
       };
     } catch (error) {
       console.error('Error calculating score:', error);
@@ -139,19 +161,14 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Convert answers object to array format
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-        const qNum = parseInt(questionNumber);
-        return {
-          questionNumber: qNum,
-          answer,
-          isBasicKnowledge: true // Default to true for backward compatibility
-        };
-      });
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
+        questionNumber: parseInt(questionNumber),
+        answer,
+        isBasicKnowledge: true  // Default, will be refined in calculation
+      }));
 
       const scoreDetails = await calculateScore();
 
-      // Update the user_rankings record with the new score details
       const { error } = await supabase
         .from('user_rankings')
         .update({
@@ -162,7 +179,6 @@ export const useSaveAnswers = ({
 
       if (error) throw error;
 
-      // Save user answers
       await saveUserAnswers(rankingId, concurso.id, answersArray);
 
       setSavedSuccess(true);
