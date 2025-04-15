@@ -212,6 +212,9 @@ export type Database = {
           created_at: string
           id: string
           is_basic_knowledge: boolean
+          is_specific_1: boolean | null
+          is_specific_2: boolean | null
+          is_specific_3: boolean | null
           question_number: number
           updated_at: string
           user_ranking_id: string
@@ -221,6 +224,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
           question_number: number
           updated_at?: string
           user_ranking_id: string
@@ -230,6 +236,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
           question_number?: number
           updated_at?: string
           user_ranking_id?: string
@@ -269,6 +278,9 @@ export type Database = {
         Row: {
           all_questions_answered: boolean | null
           basic_knowledge_score: number | null
+          case_study_1_score: number | null
+          case_study_2_score: number | null
+          case_study_3_score: number | null
           concurso_id: string
           created_at: string
           discursive_score: number | null
@@ -276,6 +288,9 @@ export type Database = {
           id: string
           reservation_type: string | null
           score: number | null
+          specific_knowledge_1_score: number | null
+          specific_knowledge_2_score: number | null
+          specific_knowledge_3_score: number | null
           specific_knowledge_score: number | null
           updated_at: string
           user_id: string
@@ -283,6 +298,9 @@ export type Database = {
         Insert: {
           all_questions_answered?: boolean | null
           basic_knowledge_score?: number | null
+          case_study_1_score?: number | null
+          case_study_2_score?: number | null
+          case_study_3_score?: number | null
           concurso_id: string
           created_at?: string
           discursive_score?: number | null
@@ -290,6 +308,9 @@ export type Database = {
           id?: string
           reservation_type?: string | null
           score?: number | null
+          specific_knowledge_1_score?: number | null
+          specific_knowledge_2_score?: number | null
+          specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id: string
@@ -297,6 +318,9 @@ export type Database = {
         Update: {
           all_questions_answered?: boolean | null
           basic_knowledge_score?: number | null
+          case_study_1_score?: number | null
+          case_study_2_score?: number | null
+          case_study_3_score?: number | null
           concurso_id?: string
           created_at?: string
           discursive_score?: number | null
@@ -304,6 +328,9 @@ export type Database = {
           id?: string
           reservation_type?: string | null
           score?: number | null
+          specific_knowledge_1_score?: number | null
+          specific_knowledge_2_score?: number | null
+          specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id?: string

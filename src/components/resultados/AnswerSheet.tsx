@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -288,6 +288,19 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
+
+  const getSectionList = () => {
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    if (concurso.has_discursive) sections.push({ key: 'discursive', label: 'Discursiva' });
+    if (concurso.has_case_study_1) sections.push({ key: 'case_study1', label: 'Estudo de Caso 1' });
+    if (concurso.has_case_study_2) sections.push({ key: 'case_study2', label: 'Estudo de Caso 2' });
+    if (concurso.has_case_study_3) sections.push({ key: 'case_study3', label: 'Estudo de Caso 3' });
+    return sections;
+  };
   
   return (
     <Card className="shadow-lg">
@@ -353,25 +366,32 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         )}
         
         <div className="border rounded-md overflow-hidden shadow-sm">
-          <SectionToggle 
-            selectedSection={selectedSection} 
-            onSectionChange={setSelectedSection} 
-            concurso={concurso} 
-          />
-          
-          {!isDiscursiveSection() ? (
-            <AnswerMatrix 
-              matrix={createAnswerMatrix()} 
-              answers={answers} 
-              onAnswerChange={handleAnswerChange} 
-              onClearAnswer={handleClearAnswer} 
-              getOptionsForQuestion={getOptionsForQuestion} 
-              disabled={!canEdit && userRankingData?.edit_count !== undefined} 
-              examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} 
-            />
-          ) : (
-            renderDiscursiveScores()
-          )}
+          <Tabs value={selectedSection} onValueChange={setSelectedSection} className="w-full">
+            <TabsList className={`grid w-full grid-cols-${getSectionList().length}`}>
+              {getSectionList().map(section => (
+                <TabsTrigger key={section.key} value={section.key}>
+                  {section.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {getSectionList().map(section => (
+              <TabsContent key={section.key} value={section.key}>
+                {!isDiscursiveSection() ? (
+                  <AnswerMatrix
+                    matrix={createAnswerMatrix()}
+                    answers={answers}
+                    onAnswerChange={handleAnswerChange}
+                    onClearAnswer={handleClearAnswer}
+                    getOptionsForQuestion={getOptionsForQuestion}
+                    disabled={!canEdit && userRankingData?.edit_count !== undefined}
+                    examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
+                  />
+                ) : (
+                  renderDiscursiveScores()
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
         </div>
       </CardContent>
       
