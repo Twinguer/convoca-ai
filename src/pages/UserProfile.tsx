@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -123,7 +122,6 @@ const UserProfile: React.FC = () => {
     
     setIsExitingRanking(true);
     try {
-      // Delete user answers first
       const { error: answersError } = await supabase
         .from('user_answers')
         .delete()
@@ -131,7 +129,6 @@ const UserProfile: React.FC = () => {
       
       if (answersError) throw answersError;
       
-      // Then delete the ranking participation
       const { error: rankingError } = await supabase
         .from('user_rankings')
         .delete()
@@ -139,7 +136,6 @@ const UserProfile: React.FC = () => {
       
       if (rankingError) throw rankingError;
       
-      // Update local state
       setUserRankings(userRankings.filter(r => r.id !== exitRankingId));
       
       toast({
@@ -190,7 +186,7 @@ const UserProfile: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="concursos">
-            <ConcursosTab userId={user.id} />
+            {user && <ConcursosTab userId={user.id} />}
           </TabsContent>
 
           <TabsContent value="rankings">

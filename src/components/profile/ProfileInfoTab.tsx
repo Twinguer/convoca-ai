@@ -1,33 +1,60 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import StatusSelect from './StatusSelect';
+import { Loader2 } from 'lucide-react';
 
 interface ProfileInfoTabProps {
-  name: string;
-  setName: (name: string) => void;
-  email: string;
-  bio: string;
-  setBio: (bio: string) => void;
-  statusConcurseiro: string;
-  setStatusConcurseiro: (status: string) => void;
-  profileText: string;
-  setProfileText: (text: string) => void;
+  profile: any;
 }
 
 const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
-  name,
-  setName,
-  email,
-  bio,
-  setBio,
-  statusConcurseiro,
-  setStatusConcurseiro,
-  profileText,
-  setProfileText
+  profile
 }) => {
+  const { toast } = useToast();
+  const [name, setName] = useState(profile?.name || '');
+  const [bio, setBio] = useState(profile?.bio || '');
+  const [statusConcurseiro, setStatusConcurseiro] = useState(profile?.status_concurseiro || 'Estudante');
+  const [profileText, setProfileText] = useState(profile?.profile_text || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveProfile = async () => {
+    if (!profile?.id) return;
+    
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('users_profiles')
+        .update({
+          name,
+          bio,
+          status_concurseiro: statusConcurseiro,
+          profile_text: profileText
+        })
+        .eq('id', profile.id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Perfil atualizado",
+        description: "Suas informações foram atualizadas com sucesso!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message || "Ocorreu um erro ao salvar suas informações.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -44,7 +71,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
         <Label htmlFor="email">Email</Label>
         <Input 
           id="email" 
-          value={email} 
+          value={profile?.email} 
           disabled 
           className="bg-muted"
         />
@@ -79,6 +106,21 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           rows={4}
         />
       </div>
+
+      <Button 
+        onClick={handleSaveProfile} 
+        className="w-full" 
+        disabled={isSaving}
+      >
+        {isSaving ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Salvando...
+          </>
+        ) : (
+          'Salvar alterações'
+        )}
+      </Button>
     </div>
   );
 };
