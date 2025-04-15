@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,14 +10,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft } from 'lucide-react';
+
 const Auth: React.FC = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form states
@@ -25,6 +23,8 @@ const Auth: React.FC = () => {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
+  const [adminUsername, setAdminUsername] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
   // If already logged in, redirect to home
   if (user) {
@@ -41,9 +41,7 @@ const Auth: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const {
-        error
-      } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: loginPassword
       });
@@ -70,10 +68,7 @@ const Auth: React.FC = () => {
     setIsLoading(true);
     try {
       // Register user
-      const {
-        data: authData,
-        error: authError
-      } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
@@ -105,21 +100,51 @@ const Auth: React.FC = () => {
       setIsLoading(false);
     }
   };
-  return <div className="container flex h-screen items-center justify-center">
+
+  // Admin login handler
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // Check for the admin credentials
+    setTimeout(() => {
+      if (adminUsername === 'RlimaAdmin' && adminPassword === '#Tijolo14@') {
+        // Store auth status in localStorage
+        localStorage.setItem('adminAuth', 'true');
+        
+        toast({
+          title: 'Login administrativo bem-sucedido',
+          description: 'Bem-vindo ao painel administrativo',
+          variant: 'default',
+        });
+        
+        navigate('/project/admin/man/dashboard');
+      } else {
+        toast({
+          title: 'Falha no login administrativo',
+          description: 'Usuário ou senha inválidos',
+          variant: 'destructive',
+        });
+      }
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="container flex h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold text-center">Convoca Aí</CardTitle>
-            
           </div>
-          
         </CardHeader>
         
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Cadastro</TabsTrigger>
+              <TabsTrigger value="admin">Admin</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -164,6 +189,37 @@ const Auth: React.FC = () => {
                 </Button>
               </form>
             </TabsContent>
+            
+            <TabsContent value="admin">
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-username">Usuário Administrativo</Label>
+                  <Input 
+                    id="admin-username" 
+                    type="text" 
+                    placeholder="Usuário Admin" 
+                    value={adminUsername} 
+                    onChange={e => setAdminUsername(e.target.value)} 
+                    required 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Senha Administrativa</Label>
+                  <Input 
+                    id="admin-password" 
+                    type="password" 
+                    value={adminPassword} 
+                    onChange={e => setAdminPassword(e.target.value)} 
+                    required 
+                  />
+                </div>
+                
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Entrando...' : 'Acessar Painel Admin'}
+                </Button>
+              </form>
+            </TabsContent>
           </Tabs>
         </CardContent>
         
@@ -176,6 +232,8 @@ const Auth: React.FC = () => {
           </Button>
         </CardFooter>
       </Card>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;

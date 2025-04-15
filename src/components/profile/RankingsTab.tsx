@@ -1,13 +1,26 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { PencilLine, Trophy, ExternalLink, ChevronDown, ChevronUp, XCircle } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from '@/hooks/useAuth';
 
 interface RankingsTabProps {
   userId: string;
@@ -16,8 +29,12 @@ interface RankingsTabProps {
 }
 
 const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthenticated = false }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [showAllRankings, setShowAllRankings] = useState(false);
+  const [rankingToDelete, setRankingToDelete] = useState<string | null>(null);
   
   const { data: rankings, isLoading } = useQuery({
     queryKey: ['user-rankings', userId],
@@ -42,6 +59,57 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
     enabled: !userRankings && !!userId, // Only fetch if userRankings is not provided and userId exists
   });
   
+  // Mutation para sair do ranking
+  const leaveRankingMutation = useMutation({
+    mutationFn: async (rankingId: string) => {
+      // Primeiro exclui as respostas do usuário
+      await supabase
+        .from('user_answers')
+        .delete()
+        .eq('user_ranking_id', rankingId);
+      
+      // Depois exclui o ranking do usuário
+      const { error } = await supabase
+        .from('user_rankings')
+        .delete()
+        .eq('id', rankingId)
+        .eq('user_id', userId);
+      
+      if (error) throw error;
+      
+      return rankingId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
+      toast({
+        title: "Ranking removido",
+        description: "Você saiu deste ranking com sucesso.",
+      });
+      setRankingToDelete(null);
+    },
+    onError: (error) => {
+      console.error('Erro ao sair do ranking:', error);
+      toast({
+        title: "Erro ao sair do ranking",
+        description: "Ocorreu um erro ao tentar sair do ranking. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleLeaveRanking = (rankingId: string) => {
+    if (user?.id !== userId) {
+      toast({
+        title: "Operação não permitida",
+        description: "Você só pode remover seus próprios rankings.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    leaveRankingMutation.mutate(rankingId);
+  };
+  
   // Use provided userRankings if available, otherwise use fetched rankings
   const allRankings = userRankings || rankings;
   const showSkeleton = isLoading && !userRankings;
@@ -54,6 +122,9 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
   // Display only top 2 if not showing all
   const displayRankings = showAllRankings ? sortedRankings : sortedRankings?.slice(0, 2);
   const hasMoreRankings = sortedRankings?.length > 2;
+  
+  // Verifica se o usuário atual é o dono do perfil
+  const isOwnProfile = user?.id === userId;
   
   if (showSkeleton) {
     return (
@@ -98,6 +169,39 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
               </div>
               
               <div className="flex items-center gap-2 self-end">
+                {isOwnProfile && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        onClick={() => setRankingToDelete(ranking.id || ranking.concursoId)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                        <span>Sair</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Sair do Ranking</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja sair deste ranking? Todas as suas respostas serão excluídas e você perderá sua posição atual.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleLeaveRanking(ranking.id || ranking.concursoId)}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          {leaveRankingMutation.isPending ? 'Saindo...' : 'Sair do Ranking'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                
                 <Button 
                   size="sm" 
                   variant="outline"
@@ -108,14 +212,16 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
                   <span>Ver Ranking</span>
                 </Button>
                 
-                <Button
-                  size="sm"
-                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
-                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
-                >
-                  <PencilLine className="h-4 w-4" />
-                  <span>Editar Respostas</span>
-                </Button>
+                {isOwnProfile && (
+                  <Button
+                    size="sm"
+                    className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
+                  >
+                    <PencilLine className="h-4 w-4" />
+                    <span>Editar Respostas</span>
+                  </Button>
+                )}
               </div>
             </div>
             

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,8 @@ const formSchema = z.object({
   basic_knowledge_questions: z.coerce.number().optional(),
   specific_knowledge_1_questions: z.coerce.number().optional(),
   specific_knowledge_2_questions: z.coerce.number().optional(),
+  predefined_job_title: z.string().optional(),
+  custom_job_title: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -64,6 +66,27 @@ const NovoConcurso = () => {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [activeTab, setActiveTab] = useState<string>("informacoes");
+  const [jobTitles, setJobTitles] = useState<{id: string, title: string}[]>([]);
+  const [isCustomTitle, setIsCustomTitle] = useState(false);
+  
+  // Buscar cargos disponíveis
+  useEffect(() => {
+    const fetchJobTitles = async () => {
+      const { data, error } = await supabase
+        .from('job_titles')
+        .select('id, title')
+        .order('title', { ascending: true });
+        
+      if (error) {
+        console.error('Erro ao buscar cargos:', error);
+        return;
+      }
+      
+      setJobTitles(data || []);
+    };
+    
+    fetchJobTitles();
+  }, []);
   
   // Fetch existing concurso for editing
   const { data: existingConcurso, isLoading } = useQuery({
@@ -108,12 +131,17 @@ const NovoConcurso = () => {
       basic_knowledge_questions: 40,
       specific_knowledge_1_questions: 60,
       specific_knowledge_2_questions: 0,
+      predefined_job_title: '',
+      custom_job_title: '',
     },
   });
   
   // Update form values when editing an existing concurso
   React.useEffect(() => {
     if (existingConcurso) {
+      const isOtherTitle = !jobTitles.find(jt => jt.title === existingConcurso.titulo);
+      setIsCustomTitle(isOtherTitle);
+      
       form.reset({
         titulo: existingConcurso.titulo,
         orgao: existingConcurso.orgao,
@@ -137,20 +165,49 @@ const NovoConcurso = () => {
         basic_knowledge_questions: existingConcurso.basic_knowledge_questions,
         specific_knowledge_1_questions: existingConcurso.specific_knowledge_1_questions,
         specific_knowledge_2_questions: existingConcurso.specific_knowledge_2_questions,
+        predefined_job_title: isOtherTitle ? 'OUTRO' : existingConcurso.titulo,
+        custom_job_title: isOtherTitle ? existingConcurso.titulo : '',
       });
     }
-  }, [existingConcurso, form]);
+  }, [existingConcurso, form, jobTitles]);
+  
+  // Atualizar o título com base na seleção de cargo predefinido
+  const handleJobTitleChange = (value: string) => {
+    const isOther = value === 'OUTRO';
+    setIsCustomTitle(isOther);
+    
+    if (!isOther) {
+      form.setValue('titulo', value);
+      form.setValue('custom_job_title', '');
+    }
+  };
+  
+  // Atualizar o título quando o cargo personalizado for alterado
+  const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    form.setValue('titulo', e.target.value);
+    form.setValue('custom_job_title', e.target.value);
+  };
   
   const onSubmit = async (data: FormData) => {
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
       
+      // Se for "OUTRO", usar o cargo personalizado
+      if (data.predefined_job_title === 'OUTRO' && data.custom_job_title) {
+        data.titulo = data.custom_job_title;
+      } else if (data.predefined_job_title && data.predefined_job_title !== 'OUTRO') {
+        data.titulo = data.predefined_job_title;
+      }
+      
+      // Remover campos não necessários para o envio
+      const { custom_job_title, predefined_job_title, ...dataToSubmit } = data;
+      
       if (isEditing) {
         // Update existing concurso
         const { error } = await supabase
           .from('concursos')
-          .update(data)
+          .update(dataToSubmit)
           .eq('id', id);
           
         if (error) throw error;
@@ -162,7 +219,7 @@ const NovoConcurso = () => {
       } else {
         // Create new concurso using the createRanking function
         try {
-          const result = await createRanking(data);
+          const result = await createRanking(dataToSubmit);
           
           if (!result) {
             throw new Error('Erro ao criar ranking: Nenhum dado retornado');
@@ -271,22 +328,67 @@ const NovoConcurso = () => {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Cargo Predefinido */}
                     <FormField
                       control={form.control}
-                      name="titulo"
+                      name="predefined_job_title"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Cargo</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
+                          <Select 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              handleJobTitleChange(value);
+                            }}
+                            defaultValue={field.value}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um cargo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="max-h-80">
+                              {jobTitles.map((jobTitle) => (
+                                <SelectItem key={jobTitle.id} value={jobTitle.title}>
+                                  {jobTitle.title}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormDescription>
-                            Ex: Analista Judiciário - Área Administrativa
+                            Selecione o cargo ou função do concurso
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Cargo Personalizado (aparece somente se "OUTRO" for selecionado) */}
+                    {isCustomTitle && (
+                      <FormField
+                        control={form.control}
+                        name="custom_job_title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Especifique o cargo</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  handleCustomTitleChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Digite o nome completo do cargo
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     
                     <FormField
                       control={form.control}

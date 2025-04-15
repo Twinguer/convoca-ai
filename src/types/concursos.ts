@@ -18,6 +18,8 @@ export interface Concurso {
   discursive_weight?: number;
   created_at?: string;
   updated_at?: string;
+  predefined_job_title?: string;
+  custom_job_title?: string;
   
   // New exam structure fields
   has_basic_knowledge?: boolean;
