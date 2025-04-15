@@ -311,15 +311,11 @@ const UserProfile = () => {
   }
 
   return <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
               <ProfileHeader name={name} email={user.email || ''} avatarUrl={avatarUrl} uploading={uploading} handleAvatarUpload={handleAvatarUpload} statusConcurseiro={statusConcurseiro} profileText={profileText} />
-              
-              <div className="mt-6">
-                <DeleteProfileButton userId={user.id} />
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -328,7 +324,6 @@ const UserProfile = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Meu Perfil</CardTitle>
-              
             </CardHeader>
             
             <Tabs defaultValue="profile">
@@ -355,8 +350,6 @@ const UserProfile = () => {
                       Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
                     </p>
                   </div>
-                  
-                  
                 </CardContent>
               </TabsContent>
               
@@ -367,7 +360,9 @@ const UserProfile = () => {
               </TabsContent>
             </Tabs>
             
-            <CardFooter className="flex justify-end py-6">
+            <CardFooter className="flex justify-between py-6 border-t">
+              <DeleteProfileButton userId={user.id} />
+              
               <Button onClick={handleSaveProfile} disabled={saving} className="relative bg-emerald-600 hover:bg-emerald-700">
                 {saving ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

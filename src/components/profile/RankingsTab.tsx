@@ -62,22 +62,29 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
   // Mutation para sair do ranking
   const leaveRankingMutation = useMutation({
     mutationFn: async (rankingId: string) => {
-      // Primeiro exclui as respostas do usuário
-      await supabase
-        .from('user_answers')
-        .delete()
-        .eq('user_ranking_id', rankingId);
-      
-      // Depois exclui o ranking do usuário
-      const { error } = await supabase
-        .from('user_rankings')
-        .delete()
-        .eq('id', rankingId)
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-      
-      return rankingId;
+      try {
+        // Primeiro exclui as respostas do usuário
+        const { error: answersError } = await supabase
+          .from('user_answers')
+          .delete()
+          .eq('user_ranking_id', rankingId);
+        
+        if (answersError) throw answersError;
+        
+        // Depois exclui o ranking do usuário
+        const { error: rankingError } = await supabase
+          .from('user_rankings')
+          .delete()
+          .eq('id', rankingId)
+          .eq('user_id', userId);
+        
+        if (rankingError) throw rankingError;
+        
+        return rankingId;
+      } catch (error) {
+        console.error('Error in leaveRankingMutation:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
@@ -232,21 +239,21 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
                   <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
                 </div>
                 
-                {(ranking.basic_knowledge_score !== null && ranking.basic_knowledge_score !== undefined) && (
+                {(ranking.basic_knowledge_score !== undefined) && (
                   <div className="p-3 bg-gray-50 rounded-md text-center">
                     <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
                     <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
                   </div>
                 )}
                 
-                {(ranking.specific_knowledge_score !== null && ranking.specific_knowledge_score !== undefined) && (
+                {(ranking.specific_knowledge_score !== undefined) && (
                   <div className="p-3 bg-gray-50 rounded-md text-center">
                     <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
                     <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
                   </div>
                 )}
                 
-                {(ranking.discursive_score !== null && ranking.discursive_score !== undefined) && (
+                {(ranking.discursive_score !== undefined) && (
                   <div className="p-3 bg-gray-50 rounded-md text-center">
                     <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
                     <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>

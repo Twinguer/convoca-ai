@@ -47,9 +47,13 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
     navigate(`/usuario/${id}`);
   };
 
+  // Limit to 6 users for display
+  const displayFollowers = followers.slice(0, 6);
+  const displayFollowing = following.slice(0, 6);
+
   return (
-    <>
-      <Card className="mb-1">
+    <div className="space-y-1">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center">
             <Users className="h-4 w-4 mr-2 text-blue-500" />
@@ -59,7 +63,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
         <CardContent>
           <UsersList
             title=""
-            users={followers}
+            users={displayFollowers}
             isLoading={isLoading}
             emptyMessage="Nenhum seguidor ainda"
             icon={<></>}
@@ -79,7 +83,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
         <CardContent>
           <UsersList
             title=""
-            users={following}
+            users={displayFollowing}
             isLoading={isLoading}
             emptyMessage="Não seguindo ninguém ainda"
             icon={<></>}
@@ -88,6 +92,6 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
           />
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 };
