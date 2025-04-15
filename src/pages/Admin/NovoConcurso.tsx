@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -817,4 +818,88 @@ const NovoConcurso = () => {
                         control={form.control} 
                         name="has_case_study_2" 
                         render={({ field }) => (
-                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''
+                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange} 
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none w-full">
+                                <FormLabel>Est. Caso 2</FormLabel>
+                                {field.value && (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {renderWeightSelect("case_study_2_weight")}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )} 
+                      />
+                      
+                      {/* Estudo de Caso 3 */}
+                      <FormField 
+                        control={form.control} 
+                        name="has_case_study_3" 
+                        render={({ field }) => (
+                          <FormItem className={`border p-3 rounded-md ${field.value ? 'bg-muted/50' : ''}`}>
+                            <div className="flex items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox 
+                                  checked={field.value} 
+                                  onCheckedChange={field.onChange} 
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none w-full">
+                                <FormLabel>Est. Caso 3</FormLabel>
+                                {field.value && (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {renderWeightSelect("case_study_3_weight")}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </FormItem>
+                        )} 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-4">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => navigate('/project/admin/man/concursos')}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : isEditing ? 'Salvar alterações' : 'Criar ranking'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="gabarito">
+          {isEditing && id && <AnswerKeyForm concursoId={id} />}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default NovoConcurso;
