@@ -105,7 +105,7 @@ const ConcursoDetails = () => {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Conhecimentos Específicos</dt>
-                <dd>{concurso.specific_knowledge_weight || 1}</dd>
+                <dd>{concurso.specific_knowledge_1_weight || 1}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Discursiva</dt>
