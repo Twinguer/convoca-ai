@@ -28,6 +28,14 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
   profileText,
   setProfileText
 }) => {
+  // Limitar o tamanho do texto de perfil
+  const handleProfileTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Limitar a 100 caracteres
+    if (e.target.value.length <= 100) {
+      setProfileText(e.target.value);
+    }
+  };
+  
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -60,12 +68,14 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
         <Textarea 
           id="profileText" 
           value={profileText} 
-          onChange={(e) => setProfileText(e.target.value)}
+          onChange={handleProfileTextChange}
           placeholder="Digite uma frase ou mensagem para mostrar em seu perfil"
           rows={2}
+          maxLength={100}
         />
         <p className="text-xs text-muted-foreground">
-          Este texto será exibido no seu cartão de perfil para outros usuários
+          Este texto será exibido no seu cartão de perfil para outros usuários (máximo 100 caracteres)
+          <span className="ml-1 font-medium">{profileText.length}/100</span>
         </p>
       </div>
       

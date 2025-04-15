@@ -47,7 +47,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
     navigate(`/usuario/${id}`);
   };
 
-  // Limit to 6 users for display
+  // Limitar para exatamente 6 usuários para exibição
   const displayFollowers = followers.slice(0, 6);
   const displayFollowing = following.slice(0, 6);
 

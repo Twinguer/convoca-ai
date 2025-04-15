@@ -1,14 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ExternalLink, ChevronDown, ChevronUp, XCircle } from 'lucide-react';
+import { PencilLine, Trophy, ChevronDown, ChevronUp, XCircle } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -91,6 +91,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
       toast({
         title: "Ranking removido",
         description: "Você saiu deste ranking com sucesso.",
+        duration: 3000, // Reduzir tempo de exibição do toast
       });
       setRankingToDelete(null);
     },
@@ -100,6 +101,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
         title: "Erro ao sair do ranking",
         description: "Ocorreu um erro ao tentar sair do ranking. Tente novamente.",
         variant: "destructive",
+        duration: 3000, // Reduzir tempo de exibição do toast
       });
     }
   });
@@ -110,6 +112,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
         title: "Operação não permitida",
         description: "Você só pode remover seus próprios rankings.",
         variant: "destructive",
+        duration: 3000, // Reduzir tempo de exibição do toast
       });
       return;
     }
