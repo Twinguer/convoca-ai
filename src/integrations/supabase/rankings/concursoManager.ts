@@ -4,6 +4,8 @@ import { supabase } from '../client';
 // Helper function to create a new ranking
 export const createRanking = async (rankingData: any) => {
   try {
+    console.log('Creating new ranking with data:', rankingData);
+    
     const { 
       examSections, 
       evaluationSections, 
@@ -16,41 +18,57 @@ export const createRanking = async (rankingData: any) => {
       .insert([concursoData])
       .select();
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error creating concurso:', error);
+      throw error;
+    }
+    
     if (!concurso || concurso.length === 0) {
       throw new Error("Failed to create concurso record");
     }
     
     const concursoId = concurso[0].id;
+    console.log('Created concurso with ID:', concursoId);
     
     // Then create the exam sections if provided
     if (examSections && examSections.length > 0) {
+      const sectionsWithConcursoId = examSections.map((section: any) => ({
+        ...section,
+        concurso_id: concursoId
+      }));
+      
+      console.log('Creating exam sections:', sectionsWithConcursoId);
+      
       const { error: examSectionError } = await supabase
         .from('exam_sections')
-        .insert(
-          examSections.map((section: any) => ({
-            ...section,
-            concurso_id: concursoId
-          }))
-        );
+        .insert(sectionsWithConcursoId);
         
-      if (examSectionError) throw examSectionError;
+      if (examSectionError) {
+        console.error('Error creating exam sections:', examSectionError);
+        throw examSectionError;
+      }
     }
     
     // Then create the evaluation sections if provided
     if (evaluationSections && evaluationSections.length > 0) {
+      const evalSectionsWithConcursoId = evaluationSections.map((section: any) => ({
+        ...section,
+        concurso_id: concursoId
+      }));
+      
+      console.log('Creating evaluation sections:', evalSectionsWithConcursoId);
+      
       const { error: evalSectionError } = await supabase
         .from('evaluation_sections')
-        .insert(
-          evaluationSections.map((section: any) => ({
-            ...section,
-            concurso_id: concursoId
-          }))
-        );
+        .insert(evalSectionsWithConcursoId);
         
-      if (evalSectionError) throw evalSectionError;
+      if (evalSectionError) {
+        console.error('Error creating evaluation sections:', evalSectionError);
+        throw evalSectionError;
+      }
     }
     
+    console.log('Successfully created ranking with all sections');
     return concurso;
     
   } catch (error) {

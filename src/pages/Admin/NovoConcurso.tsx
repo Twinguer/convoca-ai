@@ -65,8 +65,8 @@ const NovoConcurso = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isEditing = !!id;
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("informacoes");
   const [jobTitles, setJobTitles] = useState<{ id: string; title: string; }[]>([]);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
@@ -254,8 +254,10 @@ const NovoConcurso = () => {
   // Update form values when editing an existing concurso
   React.useEffect(() => {
     if (existingConcurso) {
-      const isOtherTitle = !jobTitles.find(jt => jt.title === existingConcurso.titulo);
-      setIsCustomTitle(isOtherTitle);
+      // Find if the title exists in job titles
+      const existingJobTitle = jobTitles.find(jt => jt.title === existingConcurso.titulo);
+      const shouldUseCustomTitle = !existingJobTitle;
+      setIsCustomTitle(shouldUseCustomTitle);
       
       // Map the new dynamic sections structure
       const { knowledgeSections, evaluationSections } = mapLegacyToNewStructure(existingConcurso);
@@ -273,8 +275,8 @@ const NovoConcurso = () => {
         alternatives_count: existingConcurso.alternatives_count,
         wrong_answer_penalty: existingConcurso.wrong_answer_penalty,
         link: existingConcurso.link,
-        predefined_job_title: isOtherTitle ? 'OUTRO' : existingConcurso.titulo,
-        custom_job_title: isOtherTitle ? existingConcurso.titulo : '',
+        predefined_job_title: shouldUseCustomTitle ? 'OUTRO' : existingConcurso.titulo,
+        custom_job_title: shouldUseCustomTitle ? existingConcurso.titulo : '',
         knowledgeSections,
         evaluationSections
       });
