@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,6 +37,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Verifica se há vagas reservadas disponíveis
   const hasAnyReservation = concurso.has_ppp || concurso.has_pcd || concurso.has_indigenas || 
                             concurso.has_hipossuficientes || concurso.has_transsexuais;
 
@@ -46,6 +48,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     }
   });
 
+  // Reset form when concurso changes
   useEffect(() => {
     form.reset({
       reservationType: 'Ampla Concorrência'
@@ -64,12 +67,14 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
     try {
       if (isAlreadyParticipating) {
+        // Redirect to answer sheet
         if (userRankingId) {
           navigate(`/concurso/${concurso.id}/responder/${userRankingId}`);
         } else {
           setError('Houve um erro ao acessar seu gabarito. Tente novamente.');
         }
       } else {
+        // Create new participation
         const { data: newRanking, error: createError } = await supabase
           .from('user_rankings')
           .insert({
@@ -86,6 +91,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
         setSuccess('Participação registrada com sucesso!');
 
+        // Redirect to the answer sheet
         if (newRanking) {
           setTimeout(() => {
             navigate(`/concurso/${concurso.id}/responder/${newRanking.id}`);
@@ -146,7 +152,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         )}
         
         {success && (
-          <Alert variant="default" className="mb-4">
+          <Alert variant="success" className="mb-4">
             <AlertTitle>Sucesso</AlertTitle>
             <AlertDescription>{success}</AlertDescription>
           </Alert>
