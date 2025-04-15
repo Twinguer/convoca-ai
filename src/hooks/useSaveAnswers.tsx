@@ -8,12 +8,15 @@ interface UseSaveAnswersProps {
   rankingId: string;
   concurso: Concurso;
   answers: { [key: number]: string };
-  questionType: { [key: number]: 'basic' | 'specific1' | 'specific2' };
+  questionType: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' };
   setIsSaving: (value: boolean) => void;
   setError: (value: string | null) => void;
   setSavedSuccess: (value: boolean) => void;
   onSuccess: () => void;
   discursiveScore?: number | null;
+  caseStudy1Score?: number | null;
+  caseStudy2Score?: number | null;
+  caseStudy3Score?: number | null;
   editCount?: number;
 }
 
@@ -27,6 +30,9 @@ export const useSaveAnswers = ({
   setSavedSuccess,
   onSuccess,
   discursiveScore,
+  caseStudy1Score,
+  caseStudy2Score,
+  caseStudy3Score,
   editCount = 0
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
@@ -37,7 +43,8 @@ export const useSaveAnswers = ({
     if (concurso.exam_type !== 'Certo ou Errado') {
       const totalQuestions = (concurso.basic_knowledge_questions || 0) +
                              (concurso.specific_knowledge_1_questions || 0) +
-                             (concurso.specific_knowledge_2_questions || 0);
+                             (concurso.specific_knowledge_2_questions || 0) +
+                             (concurso.specific_knowledge_3_questions || 0);
       
       // Check if all questions have answers
       if (Object.keys(answers).length < totalQuestions) {
@@ -72,9 +79,15 @@ export const useSaveAnswers = ({
       
       // Calculate score
       let basicKnowledgeCorrect = 0;
-      let specificKnowledgeCorrect = 0;
+      let specificKnowledge1Correct = 0;
+      let specificKnowledge2Correct = 0;
+      let specificKnowledge3Correct = 0;
+      
       let basicKnowledgeWrong = 0;
-      let specificKnowledgeWrong = 0;
+      let specificKnowledge1Wrong = 0;
+      let specificKnowledge2Wrong = 0;
+      let specificKnowledge3Wrong = 0;
+      
       let totalCorrect = 0;
       let totalQuestions = 0;
       
@@ -93,49 +106,103 @@ export const useSaveAnswers = ({
           return;
         }
         
+        // Determine the question type
+        const isBasicKnowledge = officialAnswer.is_basic_knowledge;
+        const isSpecific1 = officialAnswer.is_specific_1;
+        const isSpecific2 = officialAnswer.is_specific_2;
+        const isSpecific3 = !isBasicKnowledge && !isSpecific1 && !isSpecific2; // Assuming specific3 if not others
+        
         // Check for correct answer
         if (userAnswer && officialAnswer.answer.toUpperCase() === userAnswer.toUpperCase()) {
           totalCorrect++;
           
-          if (officialAnswer.is_basic_knowledge) {
+          if (isBasicKnowledge) {
             basicKnowledgeCorrect++;
-          } else {
-            specificKnowledgeCorrect++;
+          } else if (isSpecific1) {
+            specificKnowledge1Correct++;
+          } else if (isSpecific2) {
+            specificKnowledge2Correct++;
+          } else if (isSpecific3) {
+            specificKnowledge3Correct++;
           }
         } else if (concurso.exam_type === 'Certo ou Errado' && userAnswer) {
           // For wrong answers in "Certo ou Errado" type, subtract one point
-          if (officialAnswer.is_basic_knowledge) {
+          if (isBasicKnowledge) {
             basicKnowledgeWrong++;
-          } else {
-            specificKnowledgeWrong++;
+          } else if (isSpecific1) {
+            specificKnowledge1Wrong++;
+          } else if (isSpecific2) {
+            specificKnowledge2Wrong++;
+          } else if (isSpecific3) {
+            specificKnowledge3Wrong++;
           }
         }
       });
 
       // Calculate the final scores with penalties for wrong answers
       let basicKnowledgeScore = basicKnowledgeCorrect - basicKnowledgeWrong;
-      let specificKnowledgeScore = specificKnowledgeCorrect - specificKnowledgeWrong;
+      let specificKnowledge1Score = specificKnowledge1Correct - specificKnowledge1Wrong;
+      let specificKnowledge2Score = specificKnowledge2Correct - specificKnowledge2Wrong;
+      let specificKnowledge3Score = specificKnowledge3Correct - specificKnowledge3Wrong;
       
       // Ensure scores don't go below zero
       basicKnowledgeScore = Math.max(0, basicKnowledgeScore);
-      specificKnowledgeScore = Math.max(0, specificKnowledgeScore);
+      specificKnowledge1Score = Math.max(0, specificKnowledge1Score);
+      specificKnowledge2Score = Math.max(0, specificKnowledge2Score);
+      specificKnowledge3Score = Math.max(0, specificKnowledge3Score);
       
-      // Calculate total score with weights
+      // Apply weights to each score component
       const weightedBasicScore = basicKnowledgeScore * (concurso.basic_knowledge_weight || 1);
-      const weightedSpecificScore = specificKnowledgeScore * (concurso.specific_knowledge_weight || 1);
+      const weightedSpecific1Score = specificKnowledge1Score * (concurso.specific_knowledge_1_weight || 1);
+      const weightedSpecific2Score = specificKnowledge2Score * (concurso.specific_knowledge_2_weight || 1);
+      const weightedSpecific3Score = specificKnowledge3Score * (concurso.specific_knowledge_3_weight || 1);
       
-      // Include discursive score if provided and the exam has discursive component
+      // Total specific knowledge score is the sum of all specific components
+      const specificKnowledgeScore = specificKnowledge1Score + specificKnowledge2Score + specificKnowledge3Score;
+      const weightedSpecificScore = weightedSpecific1Score + weightedSpecific2Score + weightedSpecific3Score;
+      
+      // Include discursive and case study scores if provided and the exam has those components
       const weightedDiscursiveScore = concurso.has_discursive && discursiveScore !== undefined && discursiveScore !== null
-        ? discursiveScore * (concurso.discursive_weight || 1)
+        ? Number(discursiveScore) * (concurso.discursive_weight || 1)
+        : 0;
+        
+      const weightedCaseStudy1Score = concurso.has_case_study_1 && caseStudy1Score !== undefined && caseStudy1Score !== null
+        ? Number(caseStudy1Score) * (concurso.case_study_1_weight || 1)
+        : 0;
+        
+      const weightedCaseStudy2Score = concurso.has_case_study_2 && caseStudy2Score !== undefined && caseStudy2Score !== null
+        ? Number(caseStudy2Score) * (concurso.case_study_2_weight || 1)
+        : 0;
+        
+      const weightedCaseStudy3Score = concurso.has_case_study_3 && caseStudy3Score !== undefined && caseStudy3Score !== null
+        ? Number(caseStudy3Score) * (concurso.case_study_3_weight || 1)
         : 0;
       
-      // Calculate final total score (sum of objective score plus discursive score)
-      const totalScore = weightedBasicScore + weightedSpecificScore + weightedDiscursiveScore;
+      // Combine all case study scores for the discursive total
+      const combinedDiscursiveScore = 
+        (discursiveScore !== undefined && discursiveScore !== null ? Number(discursiveScore) : 0) +
+        (caseStudy1Score !== undefined && caseStudy1Score !== null ? Number(caseStudy1Score) : 0) +
+        (caseStudy2Score !== undefined && caseStudy2Score !== null ? Number(caseStudy2Score) : 0) +
+        (caseStudy3Score !== undefined && caseStudy3Score !== null ? Number(caseStudy3Score) : 0);
+      
+      // Calculate final total score (sum of weighted components)
+      const totalScore = 
+        weightedBasicScore + 
+        weightedSpecificScore + 
+        weightedDiscursiveScore +
+        weightedCaseStudy1Score +
+        weightedCaseStudy2Score +
+        weightedCaseStudy3Score;
       
       console.log(`Score calculation: ${totalCorrect}/${totalQuestions} correct`);
-      console.log(`Basic Knowledge: Correct=${basicKnowledgeCorrect}, Wrong=${basicKnowledgeWrong}, Final=${basicKnowledgeScore}`);
-      console.log(`Specific Knowledge: Correct=${specificKnowledgeCorrect}, Wrong=${specificKnowledgeWrong}, Final=${specificKnowledgeScore}`);
-      console.log(`Discursive: ${discursiveScore || 0}`);
+      console.log(`Basic Knowledge: Correct=${basicKnowledgeCorrect}, Wrong=${basicKnowledgeWrong}, Final=${basicKnowledgeScore}, Weighted=${weightedBasicScore}`);
+      console.log(`Specific Knowledge 1: Correct=${specificKnowledge1Correct}, Wrong=${specificKnowledge1Wrong}, Final=${specificKnowledge1Score}, Weighted=${weightedSpecific1Score}`);
+      console.log(`Specific Knowledge 2: Correct=${specificKnowledge2Correct}, Wrong=${specificKnowledge2Wrong}, Final=${specificKnowledge2Score}, Weighted=${weightedSpecific2Score}`);
+      console.log(`Specific Knowledge 3: Correct=${specificKnowledge3Correct}, Wrong=${specificKnowledge3Wrong}, Final=${specificKnowledge3Score}, Weighted=${weightedSpecific3Score}`);
+      console.log(`Discursive: ${discursiveScore || 0}, Weighted=${weightedDiscursiveScore}`);
+      console.log(`Case Study 1: ${caseStudy1Score || 0}, Weighted=${weightedCaseStudy1Score}`);
+      console.log(`Case Study 2: ${caseStudy2Score || 0}, Weighted=${weightedCaseStudy2Score}`);
+      console.log(`Case Study 3: ${caseStudy3Score || 0}, Weighted=${weightedCaseStudy3Score}`);
       console.log(`Total Score: ${totalScore}`);
       
       // Update the user_rankings record with the calculated scores
@@ -144,7 +211,7 @@ export const useSaveAnswers = ({
         .update({
           basic_knowledge_score: basicKnowledgeScore,
           specific_knowledge_score: specificKnowledgeScore,
-          discursive_score: discursiveScore || 0,
+          discursive_score: combinedDiscursiveScore,
           score: totalScore,
           all_questions_answered: concurso.exam_type === 'Certo ou Errado' ? true : Object.keys(answers).length === totalQuestionsInAnswerKey,
           updated_at: new Date().toISOString()
@@ -259,6 +326,7 @@ export const useSaveAnswers = ({
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['user-answers', rankingId] });
+      queryClient.invalidateQueries({ queryKey: ['user-rankings', rankingId] });
       
       // Navigate after 2 seconds
       setTimeout(() => {

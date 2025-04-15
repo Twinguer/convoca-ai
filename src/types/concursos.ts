@@ -15,20 +15,31 @@ export interface Concurso {
   alternatives_count?: number;
   basic_knowledge_weight?: number;
   specific_knowledge_weight?: number;
+  specific_knowledge_1_weight?: number;
+  specific_knowledge_2_weight?: number;
+  specific_knowledge_3_weight?: number;
   discursive_weight?: number;
+  case_study_1_weight?: number;
+  case_study_2_weight?: number;
+  case_study_3_weight?: number;
   created_at?: string;
   updated_at?: string;
   predefined_job_title?: string;
   custom_job_title?: string;
   
-  // New exam structure fields
+  // Exam structure fields
   has_basic_knowledge?: boolean;
   has_specific_knowledge_1?: boolean;
   has_specific_knowledge_2?: boolean;
+  has_specific_knowledge_3?: boolean;
   has_discursive?: boolean;
+  has_case_study_1?: boolean;
+  has_case_study_2?: boolean;
+  has_case_study_3?: boolean;
   basic_knowledge_questions?: number;
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
+  specific_knowledge_3_questions?: number;
 }
 
 export interface ConcursoFilter {

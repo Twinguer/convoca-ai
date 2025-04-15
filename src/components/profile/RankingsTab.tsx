@@ -33,7 +33,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           specific_knowledge_score,
           discursive_score,
           created_at,
-          concursos(id, titulo, orgao, banca)
+          concursos (id, titulo, orgao, banca)
         `)
         .eq('user_id', userId)
         .order('score', { ascending: false });
@@ -130,22 +130,22 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-1">
                 <div className="p-3 bg-emerald-50 rounded-md text-center">
                   <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
-                  <p className="text-xl font-bold text-emerald-700">{ranking.score || 0}</p>
+                  <p className="text-xl font-bold text-emerald-700">{Number(ranking.score || 0).toFixed(1)}</p>
                 </div>
                 
                 <div className="p-3 bg-gray-50 rounded-md text-center">
                   <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
-                  <p className="text-lg font-bold text-gray-700">{ranking.basic_knowledge_score || 0}</p>
+                  <p className="text-lg font-bold text-gray-700">{Number(ranking.basic_knowledge_score || 0).toFixed(1)}</p>
                 </div>
                 
                 <div className="p-3 bg-gray-50 rounded-md text-center">
                   <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
-                  <p className="text-lg font-bold text-gray-700">{ranking.specific_knowledge_score || 0}</p>
+                  <p className="text-lg font-bold text-gray-700">{Number(ranking.specific_knowledge_score || 0).toFixed(1)}</p>
                 </div>
                 
                 <div className="p-3 bg-gray-50 rounded-md text-center">
                   <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
-                  <p className="text-lg font-bold text-gray-700">{ranking.discursive_score || 0}</p>
+                  <p className="text-lg font-bold text-gray-700">{Number(ranking.discursive_score || 0).toFixed(1)}</p>
                 </div>
               </div>
             </CardContent>
