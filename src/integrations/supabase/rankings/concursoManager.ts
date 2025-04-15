@@ -32,12 +32,12 @@ export const createRanking = async (rankingData: any) => {
     
     // Then create the exam sections if provided
     if (examSections && examSections.length > 0) {
+      console.log('Creating exam sections:', examSections);
+      
       const sectionsWithConcursoId = examSections.map((section: any) => ({
         ...section,
         concurso_id: concursoId
       }));
-      
-      console.log('Creating exam sections:', sectionsWithConcursoId);
       
       const { error: examSectionError } = await supabase
         .from('exam_sections')
@@ -51,12 +51,12 @@ export const createRanking = async (rankingData: any) => {
     
     // Then create the evaluation sections if provided
     if (evaluationSections && evaluationSections.length > 0) {
+      console.log('Creating evaluation sections:', evaluationSections);
+      
       const evalSectionsWithConcursoId = evaluationSections.map((section: any) => ({
         ...section,
         concurso_id: concursoId
       }));
-      
-      console.log('Creating evaluation sections:', evalSectionsWithConcursoId);
       
       const { error: evalSectionError } = await supabase
         .from('evaluation_sections')
