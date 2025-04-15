@@ -18,9 +18,8 @@ export interface Concurso {
   discursive_weight?: number;
   created_at?: string;
   updated_at?: string;
-  custom_job_title?: string;
   
-  // Exam structure fields
+  // New exam structure fields
   has_basic_knowledge?: boolean;
   has_specific_knowledge_1?: boolean;
   has_specific_knowledge_2?: boolean;
@@ -28,13 +27,6 @@ export interface Concurso {
   basic_knowledge_questions?: number;
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
-  
-  // Reservation fields
-  has_ppp?: boolean;
-  has_pcd?: boolean;
-  has_indigenas?: boolean;
-  has_hipossuficientes?: boolean;
-  has_transsexuais?: boolean;
 }
 
 export interface ConcursoFilter {
@@ -50,7 +42,6 @@ export interface UserRanking {
   score: number;
   created_at: string;
   updated_at: string;
-  reservation_type?: string;
 }
 
 // Add this interface for the UserProfile component

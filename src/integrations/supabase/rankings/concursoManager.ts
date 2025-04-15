@@ -44,23 +44,15 @@ export const createRanking = async (rankingData: any) => {
         specific_knowledge_weight: rankingData.specific_knowledge_weight,
         discursive_weight: rankingData.discursive_weight,
         link: rankingData.link,
-        custom_job_title: rankingData.custom_job_title,
         
-        // Exam structure fields
+        // Add new exam structure fields
         has_basic_knowledge: rankingData.has_basic_knowledge,
         has_specific_knowledge_1: rankingData.has_specific_knowledge_1,
         has_specific_knowledge_2: rankingData.has_specific_knowledge_2,
         has_discursive: rankingData.has_discursive,
         basic_knowledge_questions: rankingData.basic_knowledge_questions,
         specific_knowledge_1_questions: rankingData.specific_knowledge_1_questions,
-        specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions,
-        
-        // Reservation fields
-        has_ppp: rankingData.has_ppp,
-        has_pcd: rankingData.has_pcd,
-        has_indigenas: rankingData.has_indigenas,
-        has_hipossuficientes: rankingData.has_hipossuficientes,
-        has_transsexuais: rankingData.has_transsexuais
+        specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions
       })
       .select();
       
