@@ -173,6 +173,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         let isBasic = false;
         let isSpecific1 = false;
         let isSpecific2 = false;
+        let isSpecific3 = false;
         
         const basicCount = concurso.basic_knowledge_questions || 0;
         const specific1Count = concurso.specific_knowledge_1_questions || 0;
@@ -184,6 +185,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           isSpecific1 = true;
         } else if (qNum <= basicCount + specific1Count + specific2Count) {
           isSpecific2 = true;
+        } else {
+          isSpecific3 = true;
         }
         
         return {
@@ -238,6 +241,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }
   };
 
+  // Get only the objective sections for tabs (basic and specific knowledge)
+  const getObjectiveSectionList = () => {
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    return sections;
+  };
+
+  const objectiveSections = getObjectiveSectionList();
+
   return (
     <Card>
       <CardHeader>
@@ -258,50 +273,58 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
-        <Tabs value={selectedSection} onValueChange={(value) => setSelectedSection(value as any)} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            {concurso.has_basic_knowledge && <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>}
-            {concurso.has_specific_knowledge_1 && <TabsTrigger value="specific1">C. Específicos 1</TabsTrigger>}
-            {concurso.has_specific_knowledge_2 && <TabsTrigger value="specific2">C. Específicos 2</TabsTrigger>}
-            {concurso.has_specific_knowledge_3 && <TabsTrigger value="specific3">C. Específicos 3</TabsTrigger>}
-          </TabsList>
-          
-          {['basic', 'specific1', 'specific2', 'specific3'].map((section) => (
-            <TabsContent key={section} value={section}>
-              <div className="border rounded-md overflow-hidden shadow-sm">
-                <div className="p-4 bg-gray-50">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {createAnswerMatrix().map((row, rowIndex) => (
-                      <React.Fragment key={rowIndex}>
-                        {row.map((questionNumber, colIndex) => (
-                          questionNumber !== null && (
-                            <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
-                              <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
-                              <div className="flex flex-wrap gap-2">
-                                {getOptionsForQuestion().map((option) => (
-                                  <button
-                                    key={option}
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
-                                      ${answers[questionNumber] === option 
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                                    onClick={() => handleAnswerChange(questionNumber, option)}
-                                  >
-                                    {option}
-                                  </button>
-                                ))}
+        {/* Objective questions tabs (only for basic and specific knowledge) */}
+        {objectiveSections.length > 0 && (
+          <div className="border rounded-md overflow-hidden shadow-sm">
+            <Tabs 
+              value={selectedSection} 
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              className="w-full"
+            >
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
+                {objectiveSections.map(section => (
+                  <TabsTrigger key={section.key} value={section.key}>
+                    {section.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {objectiveSections.map(section => (
+                <TabsContent key={section.key} value={section.key}>
+                  <div className="p-4 bg-gray-50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {createAnswerMatrix().map((row, rowIndex) => (
+                        <React.Fragment key={rowIndex}>
+                          {row.map((questionNumber, colIndex) => (
+                            questionNumber !== null && (
+                              <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
+                                <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {getOptionsForQuestion().map((option) => (
+                                    <button
+                                      key={option}
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
+                                        ${answers[questionNumber] === option 
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                      onClick={() => handleAnswerChange(questionNumber, option)}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        ))}
-                      </React.Fragment>
-                    ))}
+                            )
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        )}
         
         <div className="flex justify-end mt-4">
           <Button 

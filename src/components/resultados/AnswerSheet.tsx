@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -55,8 +56,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score,
-    isDiscursiveSection
+    setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
   
   const {
@@ -148,134 +148,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  const renderDiscursiveScores = () => {
-    if (!isDiscursiveSection()) return null;
-    
-    if (selectedSection === 'discursive' && concurso.has_discursive) {
-      return (
-        <div className="space-y-6 p-6 bg-gray-50">
-          <div className="space-y-3">
-            <Label htmlFor="discursive-score" className="text-lg font-medium">
-              Nota da Prova Discursiva
-            </Label>
-            <div className="flex items-center">
-              <Input
-                id="discursive-score"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                placeholder="Informe sua nota (0-100)"
-                value={discursiveScore === null ? '' : discursiveScore}
-                onChange={(e) => handleScoreChange(e.target.value, setDiscursiveScore, 'discursiva')}
-                className="w-64"
-                disabled={!canEdit && userRankingData?.edit_count !== undefined}
-              />
-              <span className="ml-2 text-gray-500">/ 100</span>
-            </div>
-            <p className="text-sm text-gray-500">
-              Informe sua nota na prova discursiva (0-100). 
-              {concurso.discursive_weight && concurso.discursive_weight > 1 && 
-                ` Peso: ${concurso.discursive_weight}`}
-            </p>
-          </div>
-        </div>
-      );
-    } else if (selectedSection === 'case_study1' && concurso.has_case_study_1) {
-      return (
-        <div className="space-y-6 p-6 bg-gray-50">
-          <div className="space-y-3">
-            <Label htmlFor="case-study-1-score" className="text-lg font-medium">
-              Nota do Estudo de Caso 1
-            </Label>
-            <div className="flex items-center">
-              <Input
-                id="case-study-1-score"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                placeholder="Informe sua nota (0-100)"
-                value={caseStudy1Score === null ? '' : caseStudy1Score}
-                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy1Score, 'estudo de caso 1')}
-                className="w-64"
-                disabled={!canEdit && userRankingData?.edit_count !== undefined}
-              />
-              <span className="ml-2 text-gray-500">/ 100</span>
-            </div>
-            <p className="text-sm text-gray-500">
-              Informe sua nota no estudo de caso 1 (0-100).
-              {concurso.case_study_1_weight && concurso.case_study_1_weight > 1 && 
-                ` Peso: ${concurso.case_study_1_weight}`}
-            </p>
-          </div>
-        </div>
-      );
-    } else if (selectedSection === 'case_study2' && concurso.has_case_study_2) {
-      return (
-        <div className="space-y-6 p-6 bg-gray-50">
-          <div className="space-y-3">
-            <Label htmlFor="case-study-2-score" className="text-lg font-medium">
-              Nota do Estudo de Caso 2
-            </Label>
-            <div className="flex items-center">
-              <Input
-                id="case-study-2-score"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                placeholder="Informe sua nota (0-100)"
-                value={caseStudy2Score === null ? '' : caseStudy2Score}
-                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy2Score, 'estudo de caso 2')}
-                className="w-64"
-                disabled={!canEdit && userRankingData?.edit_count !== undefined}
-              />
-              <span className="ml-2 text-gray-500">/ 100</span>
-            </div>
-            <p className="text-sm text-gray-500">
-              Informe sua nota no estudo de caso 2 (0-100).
-              {concurso.case_study_2_weight && concurso.case_study_2_weight > 1 && 
-                ` Peso: ${concurso.case_study_2_weight}`}
-            </p>
-          </div>
-        </div>
-      );
-    } else if (selectedSection === 'case_study3' && concurso.has_case_study_3) {
-      return (
-        <div className="space-y-6 p-6 bg-gray-50">
-          <div className="space-y-3">
-            <Label htmlFor="case-study-3-score" className="text-lg font-medium">
-              Nota do Estudo de Caso 3
-            </Label>
-            <div className="flex items-center">
-              <Input
-                id="case-study-3-score"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                placeholder="Informe sua nota (0-100)"
-                value={caseStudy3Score === null ? '' : caseStudy3Score}
-                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy3Score, 'estudo de caso 3')}
-                className="w-64"
-                disabled={!canEdit && userRankingData?.edit_count !== undefined}
-              />
-              <span className="ml-2 text-gray-500">/ 100</span>
-            </div>
-            <p className="text-sm text-gray-500">
-              Informe sua nota no estudo de caso 3 (0-100).
-              {concurso.case_study_3_weight && concurso.case_study_3_weight > 1 && 
-                ` Peso: ${concurso.case_study_3_weight}`}
-            </p>
-          </div>
-        </div>
-      );
-    }
-    
-    return null;
-  };
-  
   if (isLoadingAnswers || isLoadingRanking) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -291,18 +163,118 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
 
-  const getSectionList = () => {
+  // Get only the objective sections for tabs (basic and specific knowledge)
+  const getObjectiveSectionList = () => {
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
     if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
     if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
     if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
-    if (concurso.has_discursive) sections.push({ key: 'discursive', label: 'Discursiva' });
-    if (concurso.has_case_study_1) sections.push({ key: 'case_study1', label: 'Estudo de Caso 1' });
-    if (concurso.has_case_study_2) sections.push({ key: 'case_study2', label: 'Estudo de Caso 2' });
-    if (concurso.has_case_study_3) sections.push({ key: 'case_study3', label: 'Estudo de Caso 3' });
     return sections;
   };
+  
+  // Render discursive/case study score inputs
+  const renderDiscursiveScores = () => {
+    return (
+      <div className="space-y-4 p-6 bg-gray-50 border rounded-md mt-6">
+        <h3 className="text-lg font-medium mb-4">Notas Subjetivas</h3>
+        
+        {concurso.has_discursive && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="discursive-score" className="font-medium">
+              Nota da Prova Discursiva:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="discursive-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={discursiveScore === null ? '' : discursiveScore}
+                onChange={(e) => handleScoreChange(e.target.value, setDiscursiveScore, 'discursiva')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+        
+        {concurso.has_case_study_1 && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="case-study-1-score" className="font-medium">
+              Nota do Estudo de Caso 1:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-1-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy1Score === null ? '' : caseStudy1Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy1Score, 'estudo de caso 1')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+        
+        {concurso.has_case_study_2 && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="case-study-2-score" className="font-medium">
+              Nota do Estudo de Caso 2:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-2-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy2Score === null ? '' : caseStudy2Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy2Score, 'estudo de caso 2')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+        
+        {concurso.has_case_study_3 && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="case-study-3-score" className="font-medium">
+              Nota do Estudo de Caso 3:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-3-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy3Score === null ? '' : caseStudy3Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy3Score, 'estudo de caso 3')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  const objectiveSections = getObjectiveSectionList();
   
   return (
     <Card className="shadow-lg">
@@ -339,7 +311,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         
         <AnswerSheetHeader concurso={concurso} getTotalQuestions={getTotalQuestions} />
         
-        {concurso.exam_type === 'Alternativas' && !isDiscursiveSection() && (
+        {concurso.exam_type === 'Alternativas' && (
           <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
             <p className="text-sm text-amber-800">
@@ -348,7 +320,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           </div>
         )}
         
-        {concurso.exam_type === 'Certo ou Errado' && !isDiscursiveSection() && (
+        {concurso.exam_type === 'Certo ou Errado' && (
           <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
             <p className="text-sm text-amber-800">
@@ -357,48 +329,49 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           </div>
         )}
         
-        {!isDiscursiveSection() && (
-          <>
-            <div className="flex items-center justify-between">
-              <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
-              <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
-            </div>
-            <Progress value={progressPercentage} className="h-2 bg-gray-200" />
-          </>
-        )}
+        <div className="flex items-center justify-between">
+          <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
+          <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
+        </div>
+        <Progress value={progressPercentage} className="h-2 bg-gray-200" />
         
-        <div className="border rounded-md overflow-hidden shadow-sm">
-          <Tabs 
-            value={selectedSection} 
-            onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3')}
-            className="w-full"
-          >
-            <TabsList className={`grid w-full grid-cols-${getSectionList().length}`}>
-              {getSectionList().map(section => (
-                <TabsTrigger key={section.key} value={section.key}>
-                  {section.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            {getSectionList().map(section => (
-              <TabsContent key={section.key} value={section.key}>
-                {!isDiscursiveSection() ? (
+        {/* Objective questions tabs (only for basic and specific knowledge) */}
+        {objectiveSections.length > 0 && (
+          <div className="border rounded-md overflow-hidden shadow-sm">
+            <Tabs 
+              value={selectedSection} 
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              className="w-full"
+            >
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
+                {objectiveSections.map(section => (
+                  <TabsTrigger key={section.key} value={section.key}>
+                    {section.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {objectiveSections.map(section => (
+                <TabsContent key={section.key} value={section.key}>
                   <AnswerMatrix
                     matrix={createAnswerMatrix()}
                     answers={answers}
                     onAnswerChange={handleAnswerChange}
                     onClearAnswer={handleClearAnswer}
                     getOptionsForQuestion={getOptionsForQuestion}
-                    disabled={!canEdit && userRankingData?.edit_count !== undefined}
+                    disabled={!canEdit}
                     examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
                   />
-                ) : (
-                  renderDiscursiveScores()
-                )}
-              </TabsContent>
-            ))}
-          </Tabs>
-        </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        )}
+        
+        {/* Discursive and case study scores stacked at the bottom */}
+        {(concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3) && (
+          renderDiscursiveScores()
+        )}
       </CardContent>
       
       <CardFooter className="p-4 bg-gray-50 border-t">

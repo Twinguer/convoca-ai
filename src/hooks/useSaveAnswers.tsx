@@ -52,7 +52,8 @@ export const useSaveAnswers = ({
           isBasicKnowledge: qNum <= basicQuestionsCount,
           isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
           isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && 
-                       qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
+                       qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
+          isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
         };
       });
 
@@ -63,11 +64,13 @@ export const useSaveAnswers = ({
 
       if (keyError) throw keyError;
 
+      // Raw score (number of correct answers)
       let basicScore = 0;
       let specific1Score = 0;
       let specific2Score = 0;
       let specific3Score = 0;
 
+      // Count correctly answered questions
       answersArray.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
           a => a.question_number === userAnswer.questionNumber
@@ -80,46 +83,70 @@ export const useSaveAnswers = ({
             specific1Score += 1;
           } else if (userAnswer.isSpecific2) {
             specific2Score += 1;
+          } else if (userAnswer.isSpecific3) {
+            specific3Score += 1;
           }
         }
       });
 
-      // Apply weights to section scores
-      const weightedBasicScore = (basicScore * (concurso.basic_knowledge_weight || 1));
-      const weightedSpecific1Score = (specific1Score * (concurso.specific_knowledge_1_weight || 1));
-      const weightedSpecific2Score = (specific2Score * (concurso.specific_knowledge_2_weight || 1));
-      const weightedSpecific3Score = (specific3Score * (concurso.specific_knowledge_3_weight || 1));
+      console.log("Scores before applying weights:", {
+        basicScore,
+        specific1Score,
+        specific2Score,
+        specific3Score
+      });
 
-      const discursiveWeightedScore = discursiveScore 
-        ? (discursiveScore * (concurso.discursive_weight || 1)) 
-        : 0;
+      // Apply weights to raw scores (this is the key change)
+      const basicWeight = concurso.basic_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
 
-      const caseStudy1WeightedScore = caseStudy1Score 
-        ? (caseStudy1Score * (concurso.case_study_1_weight || 1)) 
-        : 0;
+      // Calculate weighted scores for objective sections
+      const weightedBasicScore = basicScore * basicWeight;
+      const weightedSpecific1Score = specific1Score * specific1Weight;
+      const weightedSpecific2Score = specific2Score * specific2Weight;
+      const weightedSpecific3Score = specific3Score * specific3Weight;
 
-      const caseStudy2WeightedScore = caseStudy2Score 
-        ? (caseStudy2Score * (concurso.case_study_2_weight || 1)) 
-        : 0;
+      console.log("Weights applied:", {
+        basicWeight,
+        specific1Weight,
+        specific2Weight,
+        specific3Weight
+      });
 
-      const caseStudy3WeightedScore = caseStudy3Score 
-        ? (caseStudy3Score * (concurso.case_study_3_weight || 1)) 
-        : 0;
+      console.log("Weighted scores:", {
+        weightedBasicScore,
+        weightedSpecific1Score,
+        weightedSpecific2Score,
+        weightedSpecific3Score
+      });
 
+      // Discursive and case study scores (these do not have weights)
+      const discursiveValue = discursiveScore || 0;
+      const caseStudy1Value = caseStudy1Score || 0;
+      const caseStudy2Value = caseStudy2Score || 0;
+      const caseStudy3Value = caseStudy3Score || 0;
+
+      // Calculate total score using the formula:
+      // (C.Bas x Peso) + (C.Esp1 x Peso) + (C.Esp2 x Peso) + (C.Esp3 x Peso) + Discursiva + Est. Caso1 + Est. Caso2 + Est. Caso3
       const totalScore = weightedBasicScore + weightedSpecific1Score + 
                          weightedSpecific2Score + weightedSpecific3Score +
-                         discursiveWeightedScore + caseStudy1WeightedScore +
-                         caseStudy2WeightedScore + caseStudy3WeightedScore;
+                         discursiveValue + caseStudy1Value +
+                         caseStudy2Value + caseStudy3Value;
+
+      console.log("Final total score:", totalScore);
 
       return {
         basic_knowledge_score: basicScore,
         specific_knowledge_1_score: specific1Score,
         specific_knowledge_2_score: specific2Score,
         specific_knowledge_3_score: specific3Score,
-        discursive_score: discursiveScore || 0,
-        case_study_1_score: caseStudy1Score || 0,
-        case_study_2_score: caseStudy2Score || 0,
-        case_study_3_score: caseStudy3Score || 0,
+        discursive_score: discursiveValue,
+        case_study_1_score: caseStudy1Value,
+        case_study_2_score: caseStudy2Value,
+        case_study_3_score: caseStudy3Value,
+        // Store the total weighted score
         score: totalScore
       };
     } catch (error) {

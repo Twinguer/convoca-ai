@@ -26,14 +26,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setSelectedSection('specific2');
       } else if (concurso.has_specific_knowledge_3) {
         setSelectedSection('specific3');
-      } else if (concurso.has_discursive) {
-        setSelectedSection('discursive');
-      } else if (concurso.has_case_study_1) {
-        setSelectedSection('case_study1');
-      } else if (concurso.has_case_study_2) {
-        setSelectedSection('case_study2');
-      } else if (concurso.has_case_study_3) {
-        setSelectedSection('case_study3');
       }
     }
   }, [concurso]);
@@ -200,10 +192,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (!concurso) return [];
     
     const questions: number[] = [];
-    
-    if (isDiscursiveSection()) {
-      return []; // No questions for discursive sections
-    }
     
     Object.entries(questionType).forEach(([num, type]) => {
       if (
