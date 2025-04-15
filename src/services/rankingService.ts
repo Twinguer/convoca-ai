@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Concurso, ExamSection, EvaluationSection } from '@/types/concursos';
 
 export interface Ranking {
   position: number;
@@ -7,25 +8,37 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
-  basicKnowledgeScore?: number;
-  specificKnowledgeScore?: number; 
-  discursiveScore?: number;
+  sectionScores: Record<string, number>; // Dynamic scores keyed by section name
 }
 
 export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
   try {
     console.log('Fetching rankings for concurso:', concursoId);
     
-    // First, get all rankings for the concurso
+    // Get the concurso first to understand its structure
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        id,
+        exam_sections (*),
+        evaluation_sections (*)
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) {
+      console.error('Error fetching concurso structure:', concursoError);
+      throw concursoError;
+    }
+    
+    // Get all rankings for the concurso
     const { data: rankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select(`
         id,
         user_id,
         score,
-        basic_knowledge_score,
-        specific_knowledge_score,
-        discursive_score
+        section_scores
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -65,9 +78,7 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
-        discursiveScore: ranking.discursive_score || 0
+        sectionScores: ranking.section_scores || {} // Dynamic section scores
       };
     });
     
@@ -75,6 +86,33 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     return formattedRankings;
   } catch (error) {
     console.error('Error fetching rankings:', error);
+    return [];
+  }
+};
+
+// Helper function to get section names from a concurso
+export const getConcursoSectionNames = async (concursoId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('concursos')
+      .select(`
+        exam_sections (name),
+        evaluation_sections (name)
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching concurso sections:', error);
+      return [];
+    }
+    
+    const examSectionNames = (data?.exam_sections || []).map((section: any) => section.name);
+    const evalSectionNames = (data?.evaluation_sections || []).map((section: any) => section.name);
+    
+    return [...examSectionNames, ...evalSectionNames];
+  } catch (error) {
+    console.error('Error in getConcursoSectionNames:', error);
     return [];
   }
 };
