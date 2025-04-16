@@ -89,7 +89,9 @@ export type Database = {
           orgao: string
           predefined_job_title: string | null
           specific_knowledge_1_questions: number | null
+          specific_knowledge_1_weight: number | null
           specific_knowledge_2_questions: number | null
+          specific_knowledge_2_weight: number | null
           specific_knowledge_3_questions: number | null
           specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
@@ -134,7 +136,9 @@ export type Database = {
           orgao: string
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
@@ -179,7 +183,9 @@ export type Database = {
           orgao?: string
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null

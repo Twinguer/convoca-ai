@@ -26,7 +26,7 @@ const getReservationAbbreviation = (reservationType: string): string => {
   
   // Get first three letters as abbreviation
   const abbr = reservationType.substring(0, 3).toUpperCase();
-  return `(${abbr})`;
+  return abbr;
 };
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
@@ -141,12 +141,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       
       // Get reservation type and create display name with abbreviation if needed
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
-      const reservationAbbr = userReservationType !== 'Ampla Concorrência' ? 
-                           getReservationAbbreviation(userReservationType) : '';
+      const reservationAbbr = getReservationAbbreviation(userReservationType);
       
       // For Ampla Concorrência view, show reservation badge only for those in quota
       const displayName = (profile?.name || 'Usuário Anônimo') + 
-                         (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` ${reservationAbbr}` : '');
+                       (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
       
       return {
         position: index + 1,
