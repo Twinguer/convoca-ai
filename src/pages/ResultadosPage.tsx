@@ -26,6 +26,26 @@ const ResultadosPage = () => {
   } = useToast();
   const isAuthenticated = !!user;
 
+  useEffect(() => {
+    if (concurso) {
+      console.log('Concurso data:', concurso);
+      console.log('Available quotas:', {
+        ampla: concurso.has_ampla_concorrencia,
+        ppp: concurso.has_ppp,
+        pcd: concurso.has_pcd,
+        hipossuficientes: concurso.has_hipossuficientes,
+        indigenas: concurso.has_indigenas,
+        transsexuais: concurso.has_transsexuais
+      });
+    }
+    
+    if (rankings?.length > 0) {
+      console.log('Rankings data:', rankings);
+      console.log('Reservation types in rankings:', 
+        [...new Set(rankings.map(r => r.reservationType))]);
+    }
+  }, [concurso, rankings]);
+
   // Force a refresh of data when component mounts
   useEffect(() => {
     if (concurso?.id) {
@@ -54,14 +74,20 @@ const ResultadosPage = () => {
         </h1>
         
         <div className="flex gap-1 sm:gap-2 flex-wrap">
-          
+          <Button onClick={handleRefresh} variant="outline" size="sm" className="flex items-center gap-1 text-xs sm:text-sm">
+            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+            Atualizar
+          </Button>
           
           {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}
           
-          {concurso && !user}
+          {concurso && !user && <Button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+              <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
+              Login
+            </Button>}
         </div>
       </div>
       

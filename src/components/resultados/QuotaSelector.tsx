@@ -17,7 +17,7 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
 }) => {
   // Build available quotas based on concurso settings
   const availableQuotas = [
-    { value: 'Ampla Concorrência', label: 'Ampla Concorrência', enabled: concurso.has_ampla_concorrencia !== false },
+    { value: 'Ampla Concorrência', label: 'Ampla Concorrência', enabled: true }, // Ampla is always enabled
     { value: 'PPP', label: 'Pessoas Pretas e Pardas (PPP)', enabled: concurso.has_ppp === true },
     { value: 'PCD', label: 'Pessoas com Deficiência (PCD)', enabled: concurso.has_pcd === true },
     { value: 'Hipossuficientes', label: 'Hipossuficientes', enabled: concurso.has_hipossuficientes === true },
@@ -40,7 +40,7 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
       <RadioGroup 
         value={selectedQuota} 
         onValueChange={onQuotaChange}
-        className="grid grid-cols-1 md:grid-cols-2 gap-2"
+        className="flex flex-col space-y-2"
       >
         {availableQuotas.map((quota) => (
           <div key={quota.value} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-gray-50">

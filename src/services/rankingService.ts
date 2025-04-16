@@ -55,6 +55,7 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
     }
     
     console.log('User profiles data:', profiles);
+    console.log('Raw rankings data:', rankings);
     
     // Map the rankings with profile information
     const formattedRankings = rankings.map((ranking, index) => {

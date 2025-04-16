@@ -30,11 +30,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     
-    const quotas = [];
-    
-    if (concurso.has_ampla_concorrencia !== false) {
-      quotas.push("Ampla Concorrência");
-    }
+    const quotas = ["Ampla Concorrência"]; // Ampla is always available
     
     if (concurso.has_ppp) {
       quotas.push("PPP");
@@ -102,8 +98,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       </CardHeader>
       <CardContent>
         {availableQuotas.length > 1 ? (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4 flex flex-wrap gap-1">
+          <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-4 flex flex-wrap h-auto">
               {availableQuotas.map(quota => (
                 <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>
               ))}
