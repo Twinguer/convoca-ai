@@ -9,16 +9,20 @@ interface GeneralInfoSectionProps {
   form: UseFormReturn<any>;
   jobTitles: { id: string; title: string; }[];
   isCustomTitle: boolean;
+  isCustomBanca: boolean;
   handleJobTitleChange: (value: string) => void;
   handleCustomTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleBancaChange: (value: string) => void;
 }
 
 export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({ 
   form, 
   jobTitles, 
   isCustomTitle, 
+  isCustomBanca,
   handleJobTitleChange, 
-  handleCustomTitleChange 
+  handleCustomTitleChange,
+  handleBancaChange
 }) => {
   return (
     <>
@@ -102,7 +106,10 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
         <FormField control={form.control} name="banca" render={({field}) => (
           <FormItem>
             <FormLabel>Banca</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+            <Select onValueChange={value => {
+              field.onChange(value);
+              handleBancaChange(value);
+            }} defaultValue={field.value} value={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma banca" />
@@ -114,12 +121,32 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
                 <SelectItem value="FCC">FCC</SelectItem>
                 <SelectItem value="IBFC">IBFC</SelectItem>
                 <SelectItem value="Vunesp">Vunesp</SelectItem>
-                <SelectItem value="Outra">Outra</SelectItem>
+                <SelectItem value="OUTRO">Outra</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
           </FormItem>
         )} />
+        
+        {/* Custom Banca field - only shown when OUTRO is selected */}
+        {isCustomBanca && (
+          <FormField 
+            control={form.control} 
+            name="custom_banca" 
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Especifique a banca</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormDescription>
+                  Digite o nome da banca examinadora
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )} 
+          />
+        )}
         
         <FormField control={form.control} name="vagas" render={({field}) => (
           <FormItem>
@@ -149,19 +176,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <FormControl>
               <Input type="date" {...field} />
             </FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        
-        <FormField control={form.control} name="etapa_atual" render={({field}) => (
-          <FormItem>
-            <FormLabel>Etapa Atual</FormLabel>
-            <FormControl>
-              <Input {...field} />
-            </FormControl>
-            <FormDescription>
-              Ex: Edital publicado, Inscrições abertas
-            </FormDescription>
             <FormMessage />
           </FormItem>
         )} />

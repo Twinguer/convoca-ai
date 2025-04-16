@@ -63,12 +63,17 @@ export type Database = {
           case_study_2_weight: number | null
           case_study_3_weight: number | null
           created_at: string
+          custom_banca: string | null
           custom_job_title: string | null
           data_publicacao: string | null
           discursive_weight: number | null
           etapa_atual: string | null
           exam_type: string | null
+          has_ampla_concorrencia: boolean | null
           has_basic_knowledge: boolean | null
+          has_case_study_1: boolean | null
+          has_case_study_2: boolean | null
+          has_case_study_3: boolean | null
           has_discursive: boolean | null
           has_hipossuficientes: boolean | null
           has_indigenas: boolean | null
@@ -76,6 +81,7 @@ export type Database = {
           has_ppp: boolean | null
           has_specific_knowledge_1: boolean | null
           has_specific_knowledge_2: boolean | null
+          has_specific_knowledge_3: boolean | null
           has_transsexuais: boolean | null
           id: string
           inscritos: number | null
@@ -84,6 +90,7 @@ export type Database = {
           predefined_job_title: string | null
           specific_knowledge_1_questions: number | null
           specific_knowledge_2_questions: number | null
+          specific_knowledge_3_questions: number | null
           specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
           status: string
@@ -101,12 +108,17 @@ export type Database = {
           case_study_2_weight?: number | null
           case_study_3_weight?: number | null
           created_at?: string
+          custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
+          has_ampla_concorrencia?: boolean | null
           has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
           has_discursive?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
@@ -114,6 +126,7 @@ export type Database = {
           has_ppp?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
           has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
@@ -122,6 +135,7 @@ export type Database = {
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_2_questions?: number | null
+          specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
@@ -139,12 +153,17 @@ export type Database = {
           case_study_2_weight?: number | null
           case_study_3_weight?: number | null
           created_at?: string
+          custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
+          has_ampla_concorrencia?: boolean | null
           has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
           has_discursive?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
@@ -152,6 +171,7 @@ export type Database = {
           has_ppp?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
           has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
@@ -160,6 +180,7 @@ export type Database = {
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_2_questions?: number | null
+          specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string

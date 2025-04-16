@@ -18,20 +18,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
 import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
+import { ReservationQuotasSection } from '@/components/Admin/FormSections/ReservationQuotasSection';
 
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
   orgao: z.string().min(1, 'O órgão é obrigatório'),
   banca: z.string().min(1, 'A banca é obrigatória'),
+  custom_banca: z.string().optional(),
   vagas: z.coerce.number().optional(),
   inscritos: z.coerce.number().optional(),
   data_publicacao: z.string().optional(),
-  etapa_atual: z.string().optional(),
   status: z.string().default('Em andamento'),
   exam_type: z.string().default('Alternativas'),
   alternatives_count: z.coerce.number().default(5),
   wrong_answer_penalty: z.coerce.number().default(0),
   link: z.string().optional(),
+  
+  // Exam structure fields
   has_basic_knowledge: z.boolean().default(true),
   has_specific_knowledge_1: z.boolean().default(true),
   has_specific_knowledge_2: z.boolean().default(false),
@@ -57,8 +60,17 @@ const formSchema = z.object({
   case_study_2_weight: z.coerce.number().default(1),
   case_study_3_weight: z.coerce.number().default(1),
   
+  // Job title fields
   predefined_job_title: z.string().optional(),
-  custom_job_title: z.string().optional()
+  custom_job_title: z.string().optional(),
+  
+  // Reservation quota fields
+  has_ampla_concorrencia: z.boolean().default(true),
+  has_ppp: z.boolean().default(false),
+  has_pcd: z.boolean().default(false),
+  has_hipossuficientes: z.boolean().default(false),
+  has_indigenas: z.boolean().default(false),
+  has_transsexuais: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -74,6 +86,7 @@ const NovoConcurso = () => {
   const [activeTab, setActiveTab] = useState<string>("informacoes");
   const [jobTitles, setJobTitles] = useState<{ id: string; title: string; }[]>([]);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
+  const [isCustomBanca, setIsCustomBanca] = useState(false);
 
   // Buscar cargos disponíveis
   useEffect(() => {
@@ -118,10 +131,10 @@ const NovoConcurso = () => {
       titulo: '',
       orgao: '',
       banca: 'Cebraspe',
+      custom_banca: '',
       vagas: undefined,
       inscritos: undefined,
       data_publicacao: new Date().toISOString().split('T')[0],
-      etapa_atual: 'Edital publicado',
       status: 'Em andamento',
       exam_type: 'Alternativas',
       alternatives_count: 5,
@@ -148,7 +161,13 @@ const NovoConcurso = () => {
       specific_knowledge_2_questions: 0,
       specific_knowledge_3_questions: 0,
       predefined_job_title: '',
-      custom_job_title: ''
+      custom_job_title: '',
+      has_ampla_concorrencia: true,
+      has_ppp: false,
+      has_pcd: false,
+      has_hipossuficientes: false,
+      has_indigenas: false,
+      has_transsexuais: false,
     }
   });
 
@@ -158,14 +177,17 @@ const NovoConcurso = () => {
       const isOtherTitle = !jobTitles.find(jt => jt.title === existingConcurso.titulo);
       setIsCustomTitle(isOtherTitle);
       
+      const isOtherBanca = existingConcurso.banca === 'OUTRO';
+      setIsCustomBanca(isOtherBanca);
+      
       form.reset({
         titulo: existingConcurso.titulo,
         orgao: existingConcurso.orgao,
-        banca: existingConcurso.banca,
+        banca: isOtherBanca ? 'OUTRO' : existingConcurso.banca,
+        custom_banca: existingConcurso.custom_banca,
         vagas: existingConcurso.vagas,
         inscritos: existingConcurso.inscritos,
         data_publicacao: existingConcurso.data_publicacao ? new Date(existingConcurso.data_publicacao).toISOString().split('T')[0] : undefined,
-        etapa_atual: existingConcurso.etapa_atual,
         status: existingConcurso.status,
         exam_type: existingConcurso.exam_type,
         alternatives_count: existingConcurso.alternatives_count,
@@ -192,7 +214,13 @@ const NovoConcurso = () => {
         specific_knowledge_2_questions: existingConcurso.specific_knowledge_2_questions,
         specific_knowledge_3_questions: existingConcurso.specific_knowledge_3_questions,
         predefined_job_title: isOtherTitle ? 'OUTRO' : existingConcurso.titulo,
-        custom_job_title: isOtherTitle ? existingConcurso.titulo : ''
+        custom_job_title: isOtherTitle ? existingConcurso.titulo : '',
+        has_ampla_concorrencia: existingConcurso.has_ampla_concorrencia ?? true,
+        has_ppp: existingConcurso.has_ppp ?? false,
+        has_pcd: existingConcurso.has_pcd ?? false,
+        has_hipossuficientes: existingConcurso.has_hipossuficientes ?? false,
+        has_indigenas: existingConcurso.has_indigenas ?? false,
+        has_transsexuais: existingConcurso.has_transsexuais ?? false,
       });
     }
   }, [existingConcurso, form, jobTitles]);
@@ -213,6 +241,16 @@ const NovoConcurso = () => {
     form.setValue('titulo', e.target.value);
     form.setValue('custom_job_title', e.target.value);
   };
+  
+  // Atualizar banca quando o valor selecionado mudar
+  const handleBancaChange = (value: string) => {
+    const isOther = value === 'OUTRO';
+    setIsCustomBanca(isOther);
+    
+    if (!isOther) {
+      form.setValue('custom_banca', '');
+    }
+  };
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -226,14 +264,18 @@ const NovoConcurso = () => {
         data.titulo = data.predefined_job_title;
       }
 
-      // Remover campos não necessários para o envio
-      const { custom_job_title, predefined_job_title, ...dataToSubmit } = data;
+      // Se a banca for "OUTRO", precisamos definir a banca correta
+      const finalData = { ...data };
+      if (data.banca === 'OUTRO') {
+        // Na interface ao usuário mostramos "OUTRO", mas no banco precisamos gravar o nome da banca customizada
+        finalData.banca = data.custom_banca || 'Outra';
+      }
       
       if (isEditing) {
         // Update existing concurso
         const { error } = await supabase
           .from('concursos')
-          .update(dataToSubmit)
+          .update(finalData)
           .eq('id', id);
           
         if (error) throw error;
@@ -245,7 +287,7 @@ const NovoConcurso = () => {
       } else {
         // Create new concurso using the createRanking function
         try {
-          const result = await createRanking(dataToSubmit);
+          const result = await createRanking(finalData);
           
           if (!result) {
             throw new Error('Erro ao criar ranking: Nenhum dado retornado');
@@ -338,9 +380,13 @@ const NovoConcurso = () => {
                     form={form} 
                     jobTitles={jobTitles}
                     isCustomTitle={isCustomTitle}
+                    isCustomBanca={isCustomBanca}
                     handleJobTitleChange={handleJobTitleChange}
                     handleCustomTitleChange={handleCustomTitleChange}
+                    handleBancaChange={handleBancaChange}
                   />
+                  
+                  <ReservationQuotasSection form={form} />
                   
                   <ExamStructureSection form={form} />
                   

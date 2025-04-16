@@ -1,11 +1,13 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
   orgao: string;
   banca: string;
+  custom_banca?: string;
   vagas: number;
   inscritos: number;
-  etapa_atual: string;
+  etapa_atual?: string;
   link: string;
   status: string;
   data_publicacao: string;
@@ -38,6 +40,14 @@ export interface Concurso {
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
+  
+  // New reservation quota types
+  has_ampla_concorrencia?: boolean;
+  has_ppp?: boolean;
+  has_pcd?: boolean;
+  has_hipossuficientes?: boolean;
+  has_indigenas?: boolean;
+  has_transsexuais?: boolean;
 }
 
 export interface ConcursoFilter {

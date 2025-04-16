@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,10 @@ const AdminLayout: React.FC = () => {
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full justify-start">
-              
+              <Link to="/project/admin/man/concursos" className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4" />
+                Listar Rankings
+              </Link>
             </Button>
           </nav>
         </aside>
