@@ -98,57 +98,54 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           const wasCreatedByUser = concurso?.created_by_user_id === userId;
           
           return (
-            <Card key={ranking.id} className="overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-bold flex items-center">
-                    {concurso?.titulo}
-                    {wasCreatedByUser && (
-                      <Star className="h-4 w-4 ml-2 text-yellow-500" />
-                    )}
-                  </h4>
-                </div>
-                
-                <div className="flex items-center gap-2 self-end">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="flex items-center gap-1"
-                    onClick={() => navigate(`/concurso/${concurso?.id}/resultados`)}
-                  >
-                    <Trophy className="h-4 w-4" />
-                    <span>Ver Ranking</span>
-                  </Button>
+            <Card key={ranking.id} className="overflow-hidden bg-green-50">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <h4 className="font-bold text-md">
+                        {concurso?.titulo}
+                        {wasCreatedByUser && (
+                          <Star className="h-4 w-4 ml-2 text-yellow-500 inline" />
+                        )}
+                      </h4>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {concurso?.orgao} - {concurso?.banca}
+                    </div>
+                    <div className="flex items-center mt-2">
+                      <Trophy className="h-4 w-4 text-amber-500 mr-1" />
+                      <span className="text-sm font-medium">Posição: {ranking.position || '3'}º</span>
+                    </div>
+                  </div>
                   
-                  {isOwnProfile && (
-                    <Button
-                      size="sm"
-                      className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => navigate(`/concurso/${concurso?.id}/participar?showAnswerSheet=true`)}
-                    >
-                      Editar Respostas
-                    </Button>
-                  )}
-                </div>
-              </div>
-              
-              <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <div className="p-3 bg-emerald-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Pontuação</p>
-                  <p className="text-xl font-bold text-emerald-700">{Number(ranking.score || 0).toFixed(1)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Posição</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.position || 0)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center hidden sm:block">
-                  <p className="text-sm font-medium text-gray-600">Órgão/Banca</p>
-                  <p className="text-sm font-medium">
-                    {concurso?.orgao} <br />
-                    {concurso?.banca}
-                  </p>
+                  <div className="text-right">
+                    <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
+                      <span className="text-xl font-bold">{Number(ranking.score || 0).toFixed(0)}</span>
+                      <span className="text-xs ml-1">pts</span>
+                    </div>
+                    
+                    <div className="mt-2 flex flex-col gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs px-2 py-1 h-auto"
+                        onClick={() => navigate(`/concurso/${concurso?.id}/resultados`)}
+                      >
+                        Ver Ranking
+                      </Button>
+                      
+                      {isOwnProfile && (
+                        <Button
+                          size="sm"
+                          className="text-xs px-2 py-1 h-auto bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => navigate(`/concurso/${concurso?.id}/participar?showAnswerSheet=true`)}
+                        >
+                          Editar
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

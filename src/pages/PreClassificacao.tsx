@@ -18,7 +18,7 @@ const PreClassificacao = () => {
   
   const handleCreateRanking = () => {
     if (user) {
-      navigate('/project/admin/man/concursos/novo');
+      navigate('/concurso/novo');
     }
   };
   
