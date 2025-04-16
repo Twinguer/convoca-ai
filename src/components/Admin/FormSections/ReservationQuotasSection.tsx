@@ -77,9 +77,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormLabel>
                   Indígenas
                 </FormLabel>
-                <FormDescription>
-                  Povos originários
-                </FormDescription>
+                
               </div>
             </FormItem>} />
         
@@ -93,9 +91,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormLabel>
                   Pessoas Trans
                 </FormLabel>
-                <FormDescription>
-                  Transexuais e Transgêneros
-                </FormDescription>
+                
               </div>
             </FormItem>} />
       </div>
