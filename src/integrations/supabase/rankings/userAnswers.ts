@@ -73,17 +73,33 @@ export const saveUserAnswers = async (
       .from('concursos')
       .select(`
         basic_knowledge_weight,
-        specific_knowledge_weight
+        specific_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight,
+        discursive_weight,
+        case_study_1_weight,
+        case_study_2_weight,
+        case_study_3_weight
       `)
       .eq('id', concursoId)
       .single();
       
     if (concursoError) {
       console.error('Error fetching concurso weights:', concursoError);
+      throw concursoError;
     }
     
+    // Get the correct weights, using either the specific numbered weights or the legacy weight
     const basicWeight = concurso?.basic_knowledge_weight || 1;
-    const specificWeight = concurso?.specific_knowledge_weight || 1;
+    const specificWeight = concurso?.specific_knowledge_1_weight || 
+                          concurso?.specific_knowledge_weight || 1;
+    
+    console.log('Retrieved weights from database:', {
+      basicWeight,
+      specificWeight,
+      fullConcursoData: concurso
+    });
     
     // Calculate weighted scores
     const weightedBasicScore = basicKnowledgeScore * basicWeight;
@@ -95,7 +111,11 @@ export const saveUserAnswers = async (
     console.log('Weighted scores:', {
       weightedBasicScore,
       weightedSpecificScore,
-      totalScore
+      totalScore,
+      weights: {
+        basic: basicWeight,
+        specific: specificWeight
+      }
     });
     
     // Update user ranking with scores

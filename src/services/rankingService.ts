@@ -17,7 +17,17 @@ export interface Ranking {
   caseStudy2Score?: number;
   caseStudy3Score?: number;
   reservationType?: string;
+  displayReservation?: string;
 }
+
+// Helper function to get abbreviation for reservation type
+const getReservationAbbreviation = (reservationType: string): string => {
+  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
+  
+  // Get first three letters as abbreviation
+  const abbr = reservationType.substring(0, 3).toUpperCase();
+  return `(${abbr})`;
+};
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
@@ -111,6 +121,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       caseStudy3: concurso?.case_study_3_weight || 1
     };
     
+    console.log('Applied weights:', weights);
+    
     // Map the rankings with profile information
     const formattedRankings = rankings.map((ranking, index) => {
       // Find the matching profile
@@ -127,9 +139,18 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const caseStudy2Score = ranking.case_study_2_score || 0;
       const caseStudy3Score = ranking.case_study_3_score || 0;
       
+      // Get reservation type and create display name with abbreviation if needed
+      const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
+      const reservationAbbr = userReservationType !== 'Ampla Concorrência' ? 
+                           getReservationAbbreviation(userReservationType) : '';
+      
+      // For Ampla Concorrência view, show reservation badge only for those in quota
+      const displayName = (profile?.name || 'Usuário Anônimo') + 
+                         (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` ${reservationAbbr}` : '');
+      
       return {
         position: index + 1,
-        name: profile?.name || 'Usuário Anônimo',
+        name: displayName,
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
@@ -142,7 +163,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy1Score,
         caseStudy2Score,
         caseStudy3Score,
-        reservationType: ranking.reservation_type || 'Ampla Concorrência'
+        reservationType: userReservationType,
+        displayReservation: reservationAbbr
       };
     });
     
