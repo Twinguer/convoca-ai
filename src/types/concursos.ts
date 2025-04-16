@@ -114,3 +114,62 @@ export interface Follower {
   followed_id: string;
   created_at: string;
 }
+
+// Helper to determine which specific knowledge sections are enabled
+export const getEnabledKnowledgeSections = (concurso: Concurso) => {
+  return {
+    basicKnowledge: concurso.has_basic_knowledge !== false, // Basic knowledge is enabled by default
+    specificKnowledge1: concurso.has_specific_knowledge_1 !== false, // Specific knowledge 1 is enabled by default
+    specificKnowledge2: concurso.has_specific_knowledge_2 === true,
+    specificKnowledge3: concurso.has_specific_knowledge_3 === true,
+    discursive: concurso.has_discursive === true,
+    caseStudy1: concurso.has_case_study_1 === true,
+    caseStudy2: concurso.has_case_study_2 === true,
+    caseStudy3: concurso.has_case_study_3 === true
+  };
+};
+
+// Helper to get column configuration for ranking table
+export const getRankingTableColumns = (concurso: Concurso) => {
+  const sections = getEnabledKnowledgeSections(concurso);
+  
+  const columns = [
+    { id: 'position', label: '#', align: 'center', width: '16px' },
+    { id: 'name', label: 'Candidato', align: 'left' },
+    { id: 'score', label: 'Total', align: 'right' }
+  ];
+  
+  if (sections.basicKnowledge) {
+    columns.push({ id: 'basicKnowledgeScore', label: 'C.B.', align: 'right' });
+  }
+  
+  if (sections.specificKnowledge1) {
+    columns.push({ id: 'specificKnowledge1Score', label: 'C.E.', align: 'right' });
+  }
+  
+  if (sections.specificKnowledge2) {
+    columns.push({ id: 'specificKnowledge2Score', label: 'C.E.2', align: 'right' });
+  }
+  
+  if (sections.specificKnowledge3) {
+    columns.push({ id: 'specificKnowledge3Score', label: 'C.E.3', align: 'right' });
+  }
+  
+  if (sections.discursive) {
+    columns.push({ id: 'discursiveScore', label: 'Dis.', align: 'right' });
+  }
+  
+  if (sections.caseStudy1) {
+    columns.push({ id: 'caseStudy1Score', label: 'Est.Cas.', align: 'right' });
+  }
+  
+  if (sections.caseStudy2) {
+    columns.push({ id: 'caseStudy2Score', label: 'Est.Cas.2', align: 'right' });
+  }
+  
+  if (sections.caseStudy3) {
+    columns.push({ id: 'caseStudy3Score', label: 'Est.Cas.3', align: 'right' });
+  }
+  
+  return columns;
+};

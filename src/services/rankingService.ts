@@ -8,8 +8,14 @@ export interface Ranking {
   userId: string;
   avatarUrl?: string | null;
   basicKnowledgeScore?: number;
-  specificKnowledgeScore?: number; 
+  specificKnowledge1Score?: number;
+  specificKnowledge2Score?: number;
+  specificKnowledge3Score?: number;
+  specificKnowledgeScore?: number; // For backward compatibility
   discursiveScore?: number;
+  caseStudy1Score?: number;
+  caseStudy2Score?: number;
+  caseStudy3Score?: number;
   reservationType?: string;
 }
 
@@ -25,8 +31,14 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         user_id,
         score,
         basic_knowledge_score,
+        specific_knowledge_1_score,
+        specific_knowledge_2_score,
+        specific_knowledge_3_score,
         specific_knowledge_score,
         discursive_score,
+        case_study_1_score,
+        case_study_2_score,
+        case_study_3_score,
         reservation_type
       `)
       .eq('concurso_id', concursoId);
@@ -78,8 +90,14 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
+        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
+        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
+        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
+        specificKnowledgeScore: ranking.specific_knowledge_score || 0, // For backward compatibility
         discursiveScore: ranking.discursive_score || 0,
+        caseStudy1Score: ranking.case_study_1_score || 0,
+        caseStudy2Score: ranking.case_study_2_score || 0,
+        caseStudy3Score: ranking.case_study_3_score || 0,
         reservationType: ranking.reservation_type || 'Ampla Concorrência'
       };
     });

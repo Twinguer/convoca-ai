@@ -8,7 +8,7 @@ import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Ranking } from '@/services/rankingService';
-import { Concurso } from '@/types/concursos';
+import { Concurso, getRankingTableColumns } from '@/types/concursos';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -36,6 +36,17 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         hipossuficientes: concurso.has_hipossuficientes,
         indigenas: concurso.has_indigenas,
         transsexuais: concurso.has_transsexuais
+      });
+      
+      console.log('Exam structure in concurso:', {
+        hasBasic: concurso.has_basic_knowledge,
+        hasSpecific1: concurso.has_specific_knowledge_1,
+        hasSpecific2: concurso.has_specific_knowledge_2,
+        hasSpecific3: concurso.has_specific_knowledge_3,
+        hasDiscursive: concurso.has_discursive,
+        hasCaseStudy1: concurso.has_case_study_1,
+        hasCaseStudy2: concurso.has_case_study_2,
+        hasCaseStudy3: concurso.has_case_study_3
       });
     }
     
@@ -131,6 +142,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   rankings={filterRankingsByQuota(quota)} 
                   currentUserId={currentUserId} 
                   handleUserClick={handleUserClick}
+                  concurso={concurso}
                 />
               </TabsContent>
             ))}
@@ -140,6 +152,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             rankings={rankings || []} 
             currentUserId={currentUserId} 
             handleUserClick={handleUserClick}
+            concurso={concurso}
           />
         )}
       </CardContent>
@@ -151,35 +164,73 @@ const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
   handleUserClick: (userId: string) => void;
+  concurso?: Concurso;
 }> = ({
   rankings,
   currentUserId,
-  handleUserClick
+  handleUserClick,
+  concurso
 }) => {
+  // If no concurso data, render a basic table with default columns
+  if (!concurso) {
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-center w-16">#</TableHead>
+            <TableHead>Candidato</TableHead>
+            <TableHead className="text-right">Total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rankings.length > 0 ? rankings.map(ranking => (
+            <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
+              <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
+              <TableCell>
+                <div 
+                  className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" 
+                  onClick={() => handleUserClick(ranking.userId)}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
+                    <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span>{ranking.name}</span>
+                </div>
+              </TableCell>
+              <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
+            </TableRow>
+          )) : (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center py-4">
+                Nenhum participante registrado nesta lista ainda
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    );
+  }
+  
+  // Get dynamic columns configuration based on the concurso
+  const columns = getRankingTableColumns(concurso);
+  
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-center w-16">
-            # 
-          </TableHead>
-          <TableHead>Candidato</TableHead>
-          <TableHead className="text-right">
-            Total 
-          </TableHead>
-          <TableHead className="text-right">
-            C.B. 
-          </TableHead>
-          <TableHead className="text-right">
-            C.E. 
-          </TableHead>
-          <TableHead className="text-right">
-            Dis. 
-          </TableHead>
+          {columns.map(column => (
+            <TableHead 
+              key={column.id} 
+              className={`${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''} ${column.width ? `w-${column.width}` : ''}`}
+            >
+              {column.label}
+            </TableHead>
+          ))}
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rankings && rankings.length > 0 ? rankings.map(ranking => (
+        {rankings.length > 0 ? rankings.map(ranking => (
           <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
             <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
             <TableCell>
@@ -195,13 +246,42 @@ const RankingTableContent: React.FC<{
               </div>
             </TableCell>
             <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-            <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
-            <TableCell className="text-right">{ranking.specificKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
-            <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+            
+            {concurso.has_basic_knowledge !== false && (
+              <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_specific_knowledge_1 !== false && (
+              <TableCell className="text-right">{(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore)?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_specific_knowledge_2 === true && (
+              <TableCell className="text-right">{ranking.specificKnowledge2Score?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_specific_knowledge_3 === true && (
+              <TableCell className="text-right">{ranking.specificKnowledge3Score?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_discursive === true && (
+              <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_case_study_1 === true && (
+              <TableCell className="text-right">{ranking.caseStudy1Score?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_case_study_2 === true && (
+              <TableCell className="text-right">{ranking.caseStudy2Score?.toFixed(2) || '0.00'}</TableCell>
+            )}
+            
+            {concurso.has_case_study_3 === true && (
+              <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
+            )}
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center py-4">
+            <TableCell colSpan={columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>

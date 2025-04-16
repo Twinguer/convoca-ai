@@ -34,7 +34,17 @@ export const createRanking = async (rankingData: any) => {
     console.log('has_indigenas:', rankingData.has_indigenas);
     console.log('has_transsexuais:', rankingData.has_transsexuais);
     
-    // Insert directly into concursos table instead of using RPC
+    console.log('Exam structure being sent to database:');
+    console.log('has_basic_knowledge:', rankingData.has_basic_knowledge);
+    console.log('has_specific_knowledge_1:', rankingData.has_specific_knowledge_1);
+    console.log('has_specific_knowledge_2:', rankingData.has_specific_knowledge_2);
+    console.log('has_specific_knowledge_3:', rankingData.has_specific_knowledge_3);
+    console.log('has_discursive:', rankingData.has_discursive);
+    console.log('has_case_study_1:', rankingData.has_case_study_1);
+    console.log('has_case_study_2:', rankingData.has_case_study_2);
+    console.log('has_case_study_3:', rankingData.has_case_study_3);
+    
+    // Insert directly into concursos table
     const { data, error } = await supabase
       .from('concursos')
       .insert({
@@ -50,14 +60,16 @@ export const createRanking = async (rankingData: any) => {
         alternatives_count: rankingData.alternatives_count,
         wrong_answer_penalty: rankingData.wrong_answer_penalty,
         
-        // Weight fields - using the correct field names from the database
+        // Weight fields for all sections
         basic_knowledge_weight: rankingData.basic_knowledge_weight,
+        specific_knowledge_1_weight: rankingData.specific_knowledge_1_weight,
+        specific_knowledge_2_weight: rankingData.specific_knowledge_2_weight,
+        specific_knowledge_3_weight: rankingData.specific_knowledge_3_weight,
         specific_knowledge_weight: rankingData.specific_knowledge_weight || rankingData.specific_knowledge_1_weight,
         discursive_weight: rankingData.discursive_weight,
         case_study_1_weight: rankingData.case_study_1_weight,
         case_study_2_weight: rankingData.case_study_2_weight,
         case_study_3_weight: rankingData.case_study_3_weight,
-        specific_knowledge_3_weight: rankingData.specific_knowledge_3_weight,
         
         link: rankingData.link,
         
