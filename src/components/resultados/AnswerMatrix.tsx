@@ -21,7 +21,20 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   examType = 'Alternativas',
   onClearAnswer
 }) => {
-  if (matrix.length === 0) {
+  console.log('Rendering AnswerMatrix with matrix:', matrix);
+  
+  if (!matrix || matrix.length === 0) {
+    return (
+      <div className="p-6 text-center text-gray-500">
+        Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.
+      </div>
+    );
+  }
+
+  // Check if there are any non-null question numbers in the matrix
+  const hasQuestions = matrix.some(row => row.some(cell => cell !== null));
+  
+  if (!hasQuestions) {
     return (
       <div className="p-6 text-center text-gray-500">
         Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.

@@ -9,12 +9,20 @@ export const saveUserAnswers = async (
 ) => {
   try {
     // First, save the user's answers
-    const answersData = answers.map(a => ({
-      user_ranking_id: rankingId,
-      question_number: a.questionNumber,
-      answer: a.answer,
-      is_basic_knowledge: a.isBasicKnowledge
-    }));
+    const answersData = answers.map(a => {
+      // Determine the knowledge section based on question number
+      const qNum = a.questionNumber;
+
+      return {
+        user_ranking_id: rankingId,
+        question_number: qNum,
+        answer: a.answer,
+        is_basic_knowledge: a.isBasicKnowledge,
+        is_specific_1: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
+        is_specific_2: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
+        is_specific_3: !a.isBasicKnowledge && a.questionNumber <= 0  // Will be set correctly below
+      };
+    });
     
     console.log('Saving user answers:', answersData);
     
@@ -23,6 +31,54 @@ export const saveUserAnswers = async (
       .from('user_answers')
       .delete()
       .eq('user_ranking_id', rankingId);
+    
+    // Get concurso data to determine question ranges
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) throw concursoError;
+    
+    // Calculate question ranges
+    const basicEnd = concurso.basic_knowledge_questions || 0;
+    const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+    const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+    
+    // Set correct section flags
+    answersData.forEach(item => {
+      const qNum = item.question_number;
+      
+      if (qNum <= basicEnd) {
+        item.is_basic_knowledge = true;
+        item.is_specific_1 = false;
+        item.is_specific_2 = false;
+        item.is_specific_3 = false;
+      } else if (qNum <= specific1End) {
+        item.is_basic_knowledge = false;
+        item.is_specific_1 = true;
+        item.is_specific_2 = false;
+        item.is_specific_3 = false;
+      } else if (qNum <= specific2End) {
+        item.is_basic_knowledge = false;
+        item.is_specific_1 = false;
+        item.is_specific_2 = true;
+        item.is_specific_3 = false;
+      } else {
+        item.is_basic_knowledge = false;
+        item.is_specific_1 = false;
+        item.is_specific_2 = false;
+        item.is_specific_3 = true;
+      }
+    });
+    
+    console.log('Updated answers with correct section flags:', answersData);
     
     // Insert new answers
     const { error: insertError } = await supabase
@@ -63,12 +119,14 @@ export const saveUserAnswers = async (
         } else {
           specificKnowledgeScore += 1;
           
-          // Additionally, track specific knowledge sections
-          if (officialAnswer.is_specific_1) {
+          // Compare question number with ranges to determine section
+          const qNum = userAnswer.questionNumber;
+          
+          if (qNum > basicEnd && qNum <= specific1End) {
             specific1Score += 1;
-          } else if (officialAnswer.is_specific_2) {
+          } else if (qNum > specific1End && qNum <= specific2End) {
             specific2Score += 1;
-          } else if (officialAnswer.is_specific_3) {
+          } else if (qNum > specific2End) {
             specific3Score += 1;
           }
         }
@@ -84,7 +142,7 @@ export const saveUserAnswers = async (
     });
     
     // Get concurso weights
-    const { data: concurso, error: concursoError } = await supabase
+    const { data: concursoWithWeights, error: concursoWeightsError } = await supabase
       .from('concursos')
       .select(`
         basic_knowledge_weight,
@@ -100,24 +158,24 @@ export const saveUserAnswers = async (
       .eq('id', concursoId)
       .single();
       
-    if (concursoError) {
-      console.error('Error fetching concurso weights:', concursoError);
-      throw concursoError;
+    if (concursoWeightsError) {
+      console.error('Error fetching concurso weights:', concursoWeightsError);
+      throw concursoWeightsError;
     }
     
     // Get the correct weights
-    const basicWeight = concurso?.basic_knowledge_weight || 1;
-    const specific1Weight = concurso?.specific_knowledge_1_weight || 
-                           concurso?.specific_knowledge_weight || 1;
-    const specific2Weight = concurso?.specific_knowledge_2_weight || 1;
-    const specific3Weight = concurso?.specific_knowledge_3_weight || 1;
+    const basicWeight = concursoWithWeights?.basic_knowledge_weight || 1;
+    const specific1Weight = concursoWithWeights?.specific_knowledge_1_weight || 
+                           concursoWithWeights?.specific_knowledge_weight || 1;
+    const specific2Weight = concursoWithWeights?.specific_knowledge_2_weight || 1;
+    const specific3Weight = concursoWithWeights?.specific_knowledge_3_weight || 1;
     
     console.log('Retrieved weights from database:', {
       basicWeight,
       specific1Weight,
       specific2Weight,
       specific3Weight,
-      fullConcursoData: concurso
+      fullConcursoData: concursoWithWeights
     });
     
     // Calculate weighted scores
@@ -148,10 +206,10 @@ export const saveUserAnswers = async (
     const caseStudy2Score = (rankingData?.case_study_2_score || 0);
     const caseStudy3Score = (rankingData?.case_study_3_score || 0);
     
-    const weightedDiscursiveScore = discursiveScore * (concurso?.discursive_weight || 1);
-    const weightedCaseStudy1Score = caseStudy1Score * (concurso?.case_study_1_weight || 1);
-    const weightedCaseStudy2Score = caseStudy2Score * (concurso?.case_study_2_weight || 1);
-    const weightedCaseStudy3Score = caseStudy3Score * (concurso?.case_study_3_weight || 1);
+    const weightedDiscursiveScore = discursiveScore * (concursoWithWeights?.discursive_weight || 1);
+    const weightedCaseStudy1Score = caseStudy1Score * (concursoWithWeights?.case_study_1_weight || 1);
+    const weightedCaseStudy2Score = caseStudy2Score * (concursoWithWeights?.case_study_2_weight || 1);
+    const weightedCaseStudy3Score = caseStudy3Score * (concursoWithWeights?.case_study_3_weight || 1);
     
     console.log('Subjective scores:', {
       discursiveScore,
@@ -187,10 +245,10 @@ export const saveUserAnswers = async (
         specific1: specific1Weight,
         specific2: specific2Weight,
         specific3: specific3Weight,
-        discursive: concurso?.discursive_weight || 1,
-        caseStudy1: concurso?.case_study_1_weight || 1,
-        caseStudy2: concurso?.case_study_2_weight || 1,
-        caseStudy3: concurso?.case_study_3_weight || 1
+        discursive: concursoWithWeights?.discursive_weight || 1,
+        caseStudy1: concursoWithWeights?.case_study_1_weight || 1,
+        caseStudy2: concursoWithWeights?.case_study_2_weight || 1,
+        caseStudy3: concursoWithWeights?.case_study_3_weight || 1
       }
     });
     
