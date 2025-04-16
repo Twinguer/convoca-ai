@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -9,7 +8,6 @@ import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const {
@@ -25,7 +23,6 @@ const ResultadosPage = () => {
     toast
   } = useToast();
   const isAuthenticated = !!user;
-
   useEffect(() => {
     if (concurso) {
       console.log('Concurso data:', concurso);
@@ -38,11 +35,9 @@ const ResultadosPage = () => {
         transsexuais: concurso.has_transsexuais
       });
     }
-    
     if (rankings?.length > 0) {
       console.log('Rankings data:', rankings);
-      console.log('Reservation types in rankings:', 
-        [...new Set(rankings.map(r => r.reservationType))]);
+      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
 
@@ -52,7 +47,6 @@ const ResultadosPage = () => {
       refreshData();
     }
   }, [concurso?.id]);
-
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -61,15 +55,13 @@ const ResultadosPage = () => {
       duration: 2000
     });
   };
-
   if (isLoading) {
     return <LoadingState />;
   }
-
   return <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
-          <Trophy className="mr-2 h-6 w-6 text-yellow-500" />
+          
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
         </h1>
         
@@ -97,12 +89,7 @@ const ResultadosPage = () => {
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
-      <RankingTable 
-        rankings={rankings} 
-        concurso={concurso} 
-        currentUserId={user?.id} 
-        isAuthenticated={isAuthenticated} 
-      />
+      <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={isAuthenticated} />
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
           <p className="text-center text-gray-600">
@@ -111,5 +98,4 @@ const ResultadosPage = () => {
         </div>}
     </div>;
 };
-
 export default ResultadosPage;
