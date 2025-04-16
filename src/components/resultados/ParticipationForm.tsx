@@ -10,6 +10,7 @@ import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
+import { QuotaSelector } from './QuotaSelector';
 
 interface ParticipationFormProps {
   concurso: Concurso;
@@ -26,6 +27,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
   const [showScoreForm, setShowScoreForm] = useState(false);
+  const [selectedQuota, setSelectedQuota] = useState<string>('Ampla Concorrência');
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -59,7 +61,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           concurso_id: concurso.id,
           score: 0,
           edit_count: 0,
-          all_questions_answered: false
+          all_questions_answered: false,
+          reservation_type: selectedQuota
         })
         .select('id')
         .single();
@@ -129,10 +132,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         Você poderá preencher seu cartão de respostas e ver sua classificação.
       </p>
       
+      {/* Quota selection component */}
+      <QuotaSelector 
+        concurso={concurso} 
+        selectedQuota={selectedQuota} 
+        onQuotaChange={setSelectedQuota} 
+      />
+      
       <Button 
         onClick={handleParticipate} 
         disabled={isLoading}
-        className="w-full bg-emerald-600 hover:bg-emerald-700"
+        className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700"
       >
         {isLoading ? (
           <>

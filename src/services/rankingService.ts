@@ -10,6 +10,7 @@ export interface Ranking {
   basicKnowledgeScore?: number;
   specificKnowledgeScore?: number; 
   discursiveScore?: number;
+  reservationType?: string;
 }
 
 export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
@@ -25,7 +26,8 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         score,
         basic_knowledge_score,
         specific_knowledge_score,
-        discursive_score
+        discursive_score,
+        reservation_type
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -67,7 +69,8 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
-        discursiveScore: ranking.discursive_score || 0
+        discursiveScore: ranking.discursive_score || 0,
+        reservationType: ranking.reservation_type || 'Ampla Concorrência'
       };
     });
     
