@@ -16,6 +16,8 @@ export const saveUserAnswers = async (
       is_basic_knowledge: a.isBasicKnowledge
     }));
     
+    console.log('Saving user answers:', answersData);
+    
     // Delete existing answers first
     await supabase
       .from('user_answers')
@@ -40,6 +42,8 @@ export const saveUserAnswers = async (
     if (!answerKey || answerKey.length === 0) {
       throw new Error('Gabarito oficial não encontrado para este concurso');
     }
+
+    console.log('Official answer key:', answerKey);
     
     // Calculate score by comparing user answers with official answers
     let basicKnowledgeScore = 0;
@@ -59,8 +63,40 @@ export const saveUserAnswers = async (
       }
     });
     
+    console.log('Calculated scores:', {
+      basicKnowledgeScore,
+      specificKnowledgeScore
+    });
+    
+    // Get concurso weights
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_weight,
+        specific_knowledge_weight
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) {
+      console.error('Error fetching concurso weights:', concursoError);
+    }
+    
+    const basicWeight = concurso?.basic_knowledge_weight || 1;
+    const specificWeight = concurso?.specific_knowledge_weight || 1;
+    
+    // Calculate weighted scores
+    const weightedBasicScore = basicKnowledgeScore * basicWeight;
+    const weightedSpecificScore = specificKnowledgeScore * specificWeight;
+    
     // Calculate total score
-    const totalScore = basicKnowledgeScore + specificKnowledgeScore;
+    const totalScore = weightedBasicScore + weightedSpecificScore;
+    
+    console.log('Weighted scores:', {
+      weightedBasicScore,
+      weightedSpecificScore,
+      totalScore
+    });
     
     // Update user ranking with scores
     const { error: updateError } = await supabase
