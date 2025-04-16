@@ -14,6 +14,8 @@ export interface Concurso {
   exam_type?: string;
   wrong_answer_penalty?: number;
   alternatives_count?: number;
+  
+  // Weight fields for all sections
   basic_knowledge_weight?: number;
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
@@ -23,6 +25,7 @@ export interface Concurso {
   case_study_1_weight?: number;
   case_study_2_weight?: number;
   case_study_3_weight?: number;
+  
   created_at?: string;
   updated_at?: string;
   predefined_job_title?: string;
