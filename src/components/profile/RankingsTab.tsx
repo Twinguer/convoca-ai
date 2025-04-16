@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -16,7 +16,11 @@ interface RankingsTabProps {
   isAuthenticated?: boolean;
 }
 
-const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthenticated = false }) => {
+const RankingsTab: React.FC<RankingsTabProps> = ({ 
+  userId, 
+  userRankings, 
+  isAuthenticated = false 
+}) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showAllRankings, setShowAllRankings] = useState(false);
@@ -29,11 +33,15 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
         .select(`
           id, 
           score,
-          basic_knowledge_score,
-          specific_knowledge_score,
-          discursive_score,
           created_at,
-          concursos (id, titulo, orgao, banca)
+          concursos (
+            id, 
+            titulo, 
+            orgao, 
+            banca,
+            is_admin_created,
+            created_by_user_id
+          )
         `)
         .eq('user_id', userId)
         .order('score', { ascending: false });
@@ -41,29 +49,24 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
       if (error) throw error;
       return data || [];
     },
-    enabled: !userRankings && !!userId, // Only fetch if userRankings is not provided and userId exists
+    enabled: !userRankings && !!userId,
   });
   
-  // Use provided userRankings if available, otherwise use fetched rankings
   const allRankings = userRankings || rankings;
   const showSkeleton = isLoading && !userRankings;
   
-  // Sort rankings by score (highest first)
   const sortedRankings = [...(allRankings || [])].sort((a, b) => 
     (typeof b.score === 'number' ? b.score : 0) - (typeof a.score === 'number' ? a.score : 0)
   );
   
-  // Display only top 2 if not showing all
   const displayRankings = showAllRankings ? sortedRankings : sortedRankings?.slice(0, 2);
   const hasMoreRankings = sortedRankings?.length > 2;
   
-  // Verifica se o usuário atual é o dono do perfil
   const isOwnProfile = user?.id === userId;
   
   if (showSkeleton) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-12 w-full" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-24 w-full" />
       </div>
@@ -89,68 +92,68 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Rankings ({allRankings.length})</h3>
       
-      <div className="grid gap-1">
-        {displayRankings.map((ranking: any) => (
-          <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
-              <div>
-                <h4 className="font-bold">
-                  {ranking.concursos?.titulo || ranking.concursoTitle}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
-                </p>
+      <div className="grid gap-2">
+        {displayRankings.map((ranking: any) => {
+          const concurso = ranking.concursos;
+          const wasCreatedByUser = concurso?.created_by_user_id === userId;
+          
+          return (
+            <Card key={ranking.id} className="overflow-hidden">
+              <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold flex items-center">
+                    {concurso?.titulo}
+                    {wasCreatedByUser && (
+                      <Star className="h-4 w-4 ml-2 text-yellow-500" />
+                    )}
+                  </h4>
+                </div>
+                
+                <div className="flex items-center gap-2 self-end">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="flex items-center gap-1"
+                    onClick={() => navigate(`/concurso/${concurso?.id}/resultados`)}
+                  >
+                    <Trophy className="h-4 w-4" />
+                    <span>Ver Ranking</span>
+                  </Button>
+                  
+                  {isOwnProfile && (
+                    <Button
+                      size="sm"
+                      className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => navigate(`/concurso/${concurso?.id}/participar?showAnswerSheet=true`)}
+                    >
+                      Editar Respostas
+                    </Button>
+                  )}
+                </div>
               </div>
               
-              <div className="flex items-center gap-2 self-end">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="flex items-center gap-1"
-                  onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}
-                >
-                  <Trophy className="h-4 w-4" />
-                  <span>Ver Ranking</span>
-                </Button>
-                
-                {isOwnProfile && (
-                  <Button
-                    size="sm"
-                    className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}
-                  >
-                    <PencilLine className="h-4 w-4" />
-                    <span>Editar Respostas</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-1">
+              <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div className="p-3 bg-emerald-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
+                  <p className="text-sm font-medium text-gray-600">Pontuação</p>
                   <p className="text-xl font-bold text-emerald-700">{Number(ranking.score || 0).toFixed(1)}</p>
                 </div>
                 
                 <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.basic_knowledge_score || 0).toFixed(1)}</p>
+                  <p className="text-sm font-medium text-gray-600">Posição</p>
+                  <p className="text-lg font-bold text-gray-700">{Number(ranking.position || 0)}</p>
                 </div>
                 
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.specific_knowledge_score || 0).toFixed(1)}</p>
+                <div className="p-3 bg-gray-50 rounded-md text-center hidden sm:block">
+                  <p className="text-sm font-medium text-gray-600">Órgão/Banca</p>
+                  <p className="text-sm font-medium">
+                    {concurso?.orgao} <br />
+                    {concurso?.banca}
+                  </p>
                 </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.discursive_score || 0).toFixed(1)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
         
         {hasMoreRankings && (
           <Button 

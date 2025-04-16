@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Check if the user is authenticated
     const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
     if (!isAuthenticated) {
       navigate('/project/admin/man/login');
@@ -21,7 +19,6 @@ const AdminLayout: React.FC = () => {
   };
   
   return <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
@@ -29,7 +26,7 @@ const AdminLayout: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild className="flex items-center gap-2">
-              <Link to="/project" className="flex items-center gap-2">
+              <Link to="/" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Voltar para o site
               </Link>
