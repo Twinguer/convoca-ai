@@ -27,8 +27,6 @@ import NovoConcurso from "./pages/Admin/NovoConcurso";
 import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
-import ConcursoNovo from "./pages/ConcursoNovo";
-import UserConcursos from "./pages/UserConcursos";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -122,18 +120,6 @@ const App = () => {
                   <>
                     <Menu />
                     <ConcursoParticipation />
-                  </>
-                } />
-                <Route path="/concurso/novo" element={
-                  <>
-                    <Menu />
-                    <ConcursoNovo />
-                  </>
-                } />
-                <Route path="/meus-concursos" element={
-                  <>
-                    <Menu />
-                    <UserConcursos />
                   </>
                 } />
                 <Route path="*" element={
