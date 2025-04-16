@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,7 +87,6 @@ const NovoConcurso = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
 
-  // Buscar cargos disponíveis
   useEffect(() => {
     const fetchJobTitles = async () => {
       const { data, error } = await supabase
@@ -107,7 +105,6 @@ const NovoConcurso = () => {
     fetchJobTitles();
   }, []);
 
-  // Fetch existing concurso for editing
   const { data: existingConcurso, isLoading } = useQuery({
     queryKey: ['concurso', id],
     queryFn: async () => {
@@ -171,7 +168,6 @@ const NovoConcurso = () => {
     }
   });
 
-  // Update form values when editing an existing concurso
   React.useEffect(() => {
     if (existingConcurso) {
       const isOtherTitle = !jobTitles.find(jt => jt.title === existingConcurso.titulo);
@@ -225,7 +221,6 @@ const NovoConcurso = () => {
     }
   }, [existingConcurso, form, jobTitles]);
 
-  // Atualizar o título com base na seleção de cargo predefinido
   const handleJobTitleChange = (value: string) => {
     const isOther = value === 'OUTRO';
     setIsCustomTitle(isOther);
@@ -236,13 +231,11 @@ const NovoConcurso = () => {
     }
   };
 
-  // Atualizar o título quando o cargo personalizado for alterado
   const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('titulo', e.target.value);
     form.setValue('custom_job_title', e.target.value);
   };
   
-  // Atualizar banca quando o valor selecionado mudar
   const handleBancaChange = (value: string) => {
     const isOther = value === 'OUTRO';
     setIsCustomBanca(isOther);
@@ -256,36 +249,81 @@ const NovoConcurso = () => {
     try {
       setIsSubmitting(true);
       setErrorMessage(null);
+      
+      console.log('Form data before submission:', data);
 
-      // Se for "OUTRO", usar o cargo personalizado
       if (data.predefined_job_title === 'OUTRO' && data.custom_job_title) {
         data.titulo = data.custom_job_title;
       } else if (data.predefined_job_title && data.predefined_job_title !== 'OUTRO') {
         data.titulo = data.predefined_job_title;
       }
 
-      // Se a banca for "OUTRO", precisamos definir a banca correta
       const finalData = { ...data };
       if (data.banca === 'OUTRO') {
-        // Na interface ao usuário mostramos "OUTRO", mas no banco precisamos gravar o nome da banca customizada
         finalData.banca = data.custom_banca || 'Outra';
       }
       
+      console.log('Final data for submission:', finalData);
+      
       if (isEditing) {
-        // Update existing concurso
         const { error } = await supabase
           .from('concursos')
-          .update(finalData)
+          .update({
+            titulo: finalData.titulo,
+            orgao: finalData.orgao,
+            banca: finalData.banca,
+            custom_banca: finalData.custom_banca,
+            data_publicacao: finalData.data_publicacao,
+            vagas: finalData.vagas,
+            inscritos: finalData.inscritos,
+            status: finalData.status,
+            exam_type: finalData.exam_type,
+            alternatives_count: finalData.alternatives_count,
+            wrong_answer_penalty: finalData.wrong_answer_penalty,
+            basic_knowledge_weight: finalData.basic_knowledge_weight,
+            specific_knowledge_1_weight: finalData.specific_knowledge_1_weight,
+            specific_knowledge_2_weight: finalData.specific_knowledge_2_weight,
+            specific_knowledge_3_weight: finalData.specific_knowledge_3_weight,
+            discursive_weight: finalData.discursive_weight,
+            case_study_1_weight: finalData.case_study_1_weight,
+            case_study_2_weight: finalData.case_study_2_weight,
+            case_study_3_weight: finalData.case_study_3_weight,
+            link: finalData.link,
+            
+            has_basic_knowledge: finalData.has_basic_knowledge,
+            has_specific_knowledge_1: finalData.has_specific_knowledge_1,
+            has_specific_knowledge_2: finalData.has_specific_knowledge_2,
+            has_specific_knowledge_3: finalData.has_specific_knowledge_3,
+            has_discursive: finalData.has_discursive,
+            has_case_study_1: finalData.has_case_study_1,
+            has_case_study_2: finalData.has_case_study_2,
+            has_case_study_3: finalData.has_case_study_3,
+            basic_knowledge_questions: finalData.basic_knowledge_questions,
+            specific_knowledge_1_questions: finalData.specific_knowledge_1_questions,
+            specific_knowledge_2_questions: finalData.specific_knowledge_2_questions,
+            specific_knowledge_3_questions: finalData.specific_knowledge_3_questions,
+            
+            has_ampla_concorrencia: finalData.has_ampla_concorrencia,
+            has_ppp: finalData.has_ppp,
+            has_pcd: finalData.has_pcd,
+            has_hipossuficientes: finalData.has_hipossuficientes,
+            has_indigenas: finalData.has_indigenas,
+            has_transsexuais: finalData.has_transsexuais,
+            
+            predefined_job_title: finalData.predefined_job_title,
+            custom_job_title: finalData.custom_job_title
+          })
           .eq('id', id);
           
         if (error) throw error;
+        
+        console.log('Ranking updated successfully');
         
         toast({
           title: "Ranking atualizado",
           description: "As informações do ranking foram atualizadas com sucesso."
         });
       } else {
-        // Create new concurso using the createRanking function
         try {
           const result = await createRanking(finalData);
           
@@ -293,12 +331,13 @@ const NovoConcurso = () => {
             throw new Error('Erro ao criar ranking: Nenhum dado retornado');
           }
           
+          console.log('Ranking created successfully:', result);
+          
           toast({
             title: "Ranking criado",
             description: "O novo ranking foi criado com sucesso."
           });
 
-          // Redirect to the answer key tab if it's a new concurso
           if (result[0] && result[0].id) {
             navigate(`/project/admin/man/concursos/editar/${result[0].id}`, {
               state: { showAnswerKeyTab: true }
@@ -311,7 +350,6 @@ const NovoConcurso = () => {
         }
       }
 
-      // If we're in edit mode and on the informacoes tab, switch to the gabarito tab
       if (isEditing && activeTab === "informacoes") {
         setActiveTab("gabarito");
       } else {
@@ -331,9 +369,7 @@ const NovoConcurso = () => {
     }
   };
 
-  // Check the URL state for showing answer key tab
   React.useEffect(() => {
-    // Fix: Using type assertion to access the state property
     const locationState = location.state as { showAnswerKeyTab?: boolean; } | null;
     
     if (locationState && locationState.showAnswerKeyTab) {

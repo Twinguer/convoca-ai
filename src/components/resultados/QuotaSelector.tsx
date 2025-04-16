@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -15,6 +15,18 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
   selectedQuota, 
   onQuotaChange 
 }) => {
+  // Log for debugging
+  useEffect(() => {
+    console.log('QuotaSelector rendered with concurso:', {
+      hasAmpla: concurso.has_ampla_concorrencia,
+      hasPPP: concurso.has_ppp,
+      hasPCD: concurso.has_pcd,
+      hasHipossuficientes: concurso.has_hipossuficientes,
+      hasIndigenas: concurso.has_indigenas,
+      hasTranssexuais: concurso.has_transsexuais
+    });
+  }, [concurso]);
+
   // Build available quotas based on concurso settings
   const availableQuotas = [
     { value: 'Ampla Concorrência', label: 'Ampla Concorrência', enabled: true }, // Ampla is always enabled
@@ -24,6 +36,11 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
     { value: 'Indígenas', label: 'Indígenas', enabled: concurso.has_indigenas === true },
     { value: 'Pessoas Trans', label: 'Pessoas Trans', enabled: concurso.has_transsexuais === true },
   ].filter(quota => quota.enabled);
+
+  // Log filtered quotas for debugging
+  useEffect(() => {
+    console.log('Available quotas for selection:', availableQuotas);
+  }, [availableQuotas]);
 
   // If there's only Ampla Concorrência, don't show the selector
   if (availableQuotas.length <= 1) {
@@ -39,7 +56,10 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
       
       <RadioGroup 
         value={selectedQuota} 
-        onValueChange={onQuotaChange}
+        onValueChange={(value) => {
+          console.log('Selected quota changed to:', value);
+          onQuotaChange(value);
+        }}
         className="flex flex-col space-y-2"
       >
         {availableQuotas.map((quota) => (

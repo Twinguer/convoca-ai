@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,25 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  
+  // Use effect to log available quotas for debugging
+  useEffect(() => {
+    if (concurso) {
+      console.log('Available quotas in concurso:', {
+        ampla: concurso.has_ampla_concorrencia,
+        ppp: concurso.has_ppp,
+        pcd: concurso.has_pcd,
+        hipossuficientes: concurso.has_hipossuficientes,
+        indigenas: concurso.has_indigenas,
+        transsexuais: concurso.has_transsexuais
+      });
+    }
+    
+    if (rankings && rankings.length > 0) {
+      console.log('Reservation types in rankings:', 
+        [...new Set(rankings.map(r => r.reservationType))]);
+    }
+  }, [concurso, rankings]);
   
   // Get available quota types from concurso object
   const getAvailableQuotas = () => {
@@ -52,6 +71,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       quotas.push("Pessoas Trans");
     }
     
+    console.log('Available quotas for display:', quotas);
     return quotas;
   };
   

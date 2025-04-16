@@ -41,18 +41,41 @@ export const createRanking = async (rankingData: any) => {
         alternatives_count: rankingData.alternatives_count,
         wrong_answer_penalty: rankingData.wrong_answer_penalty,
         basic_knowledge_weight: rankingData.basic_knowledge_weight,
-        specific_knowledge_weight: rankingData.specific_knowledge_weight,
+        specific_knowledge_1_weight: rankingData.specific_knowledge_1_weight,
+        specific_knowledge_2_weight: rankingData.specific_knowledge_2_weight,
+        specific_knowledge_3_weight: rankingData.specific_knowledge_3_weight,
         discursive_weight: rankingData.discursive_weight,
+        case_study_1_weight: rankingData.case_study_1_weight,
+        case_study_2_weight: rankingData.case_study_2_weight,
+        case_study_3_weight: rankingData.case_study_3_weight,
         link: rankingData.link,
         
-        // Add new exam structure fields
+        // Add exam structure fields
         has_basic_knowledge: rankingData.has_basic_knowledge,
         has_specific_knowledge_1: rankingData.has_specific_knowledge_1,
         has_specific_knowledge_2: rankingData.has_specific_knowledge_2,
+        has_specific_knowledge_3: rankingData.has_specific_knowledge_3,
         has_discursive: rankingData.has_discursive,
+        has_case_study_1: rankingData.has_case_study_1,
+        has_case_study_2: rankingData.has_case_study_2,
+        has_case_study_3: rankingData.has_case_study_3,
         basic_knowledge_questions: rankingData.basic_knowledge_questions,
         specific_knowledge_1_questions: rankingData.specific_knowledge_1_questions,
-        specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions
+        specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions,
+        specific_knowledge_3_questions: rankingData.specific_knowledge_3_questions,
+        
+        // Add reservation quota fields
+        has_ampla_concorrencia: rankingData.has_ampla_concorrencia,
+        has_ppp: rankingData.has_ppp,
+        has_pcd: rankingData.has_pcd,
+        has_hipossuficientes: rankingData.has_hipossuficientes,
+        has_indigenas: rankingData.has_indigenas,
+        has_transsexuais: rankingData.has_transsexuais,
+        
+        // Add custom fields
+        custom_banca: rankingData.custom_banca,
+        predefined_job_title: rankingData.predefined_job_title,
+        custom_job_title: rankingData.custom_job_title
       })
       .select();
       
