@@ -18,6 +18,8 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
   // Log for debugging
   useEffect(() => {
     console.log('QuotaSelector rendered with concurso:', {
+      id: concurso.id,
+      title: concurso.titulo,
       hasAmpla: concurso.has_ampla_concorrencia,
       hasPPP: concurso.has_ppp,
       hasPCD: concurso.has_pcd,
@@ -29,7 +31,7 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
 
   // Build available quotas based on concurso settings
   const availableQuotas = [
-    { value: 'Ampla Concorrência', label: 'Ampla Concorrência', enabled: true }, // Ampla is always enabled
+    { value: 'Ampla Concorrência', label: 'Ampla Concorrência', enabled: concurso.has_ampla_concorrencia !== false }, // Ampla is default
     { value: 'PPP', label: 'Pessoas Pretas e Pardas (PPP)', enabled: concurso.has_ppp === true },
     { value: 'PCD', label: 'Pessoas com Deficiência (PCD)', enabled: concurso.has_pcd === true },
     { value: 'Hipossuficientes', label: 'Hipossuficientes', enabled: concurso.has_hipossuficientes === true },
@@ -42,8 +44,9 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
     console.log('Available quotas for selection:', availableQuotas);
   }, [availableQuotas]);
 
-  // If there's only Ampla Concorrência, don't show the selector
+  // If there are no quotas available, default to Ampla Concorrência only
   if (availableQuotas.length <= 1) {
+    console.log('No additional quotas available, defaulting to Ampla Concorrência only');
     return null;
   }
 

@@ -13,12 +13,12 @@ export interface Ranking {
   reservationType?: string;
 }
 
-export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
+export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
-    console.log('Fetching rankings for concurso:', concursoId);
+    console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
-    // First, get all rankings for the concurso
-    const { data: rankings, error: rankingsError } = await supabase
+    // Build query depending on whether we want a specific reservation type
+    let query = supabase
       .from('user_rankings')
       .select(`
         id,
@@ -29,8 +29,17 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
         discursive_score,
         reservation_type
       `)
-      .eq('concurso_id', concursoId)
-      .order('score', { ascending: false });
+      .eq('concurso_id', concursoId);
+    
+    // If a specific reservation type is requested, filter by it
+    if (reservationType && reservationType !== 'Ampla Concorrência') {
+      query = query.eq('reservation_type', reservationType);
+    } else if (reservationType === 'Ampla Concorrência') {
+      // For Ampla Concorrência, include all users, as they all participate in this list
+      // No additional filter needed
+    }
+      
+    const { data: rankings, error: rankingsError } = await query.order('score', { ascending: false });
       
     if (rankingsError) {
       console.error('Error in fetchUserRankings query:', rankingsError);
@@ -80,5 +89,45 @@ export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> 
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
+  }
+};
+
+// Get the available reservation types for a concurso
+export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('concursos')
+      .select(`
+        has_ampla_concorrencia,
+        has_ppp,
+        has_pcd,
+        has_hipossuficientes,
+        has_indigenas,
+        has_transsexuais
+      `)
+      .eq('id', concursoId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching concurso reservation types:', error);
+      return ['Ampla Concorrência'];
+    }
+    
+    const types = [];
+    
+    // Ampla Concorrência is always available
+    types.push('Ampla Concorrência');
+    
+    if (data.has_ppp) types.push('PPP');
+    if (data.has_pcd) types.push('PCD');
+    if (data.has_hipossuficientes) types.push('Hipossuficientes');
+    if (data.has_indigenas) types.push('Indígenas');
+    if (data.has_transsexuais) types.push('Pessoas Trans');
+    
+    console.log('Available reservation types for concurso', concursoId, ':', types);
+    return types;
+  } catch (error) {
+    console.error('Error determining available reservation types:', error);
+    return ['Ampla Concorrência'];
   }
 };

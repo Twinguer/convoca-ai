@@ -18,6 +18,7 @@ export interface Concurso {
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;
+  specific_knowledge_weight?: number; // For backward compatibility
   discursive_weight?: number;
   case_study_1_weight?: number;
   case_study_2_weight?: number;
@@ -41,7 +42,7 @@ export interface Concurso {
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
   
-  // New reservation quota types
+  // Reservation quota types
   has_ampla_concorrencia?: boolean;
   has_ppp?: boolean;
   has_pcd?: boolean;
