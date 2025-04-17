@@ -1,61 +1,114 @@
 
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
-import { fetchUserRankings } from '@/services/rankingService';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import type { Ranking } from '@/services/rankingService';
+import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
 
-export function useResultadosData() {
-  const { id } = useParams() as { id: string };
+export const useResultadosData = (concursoId: string) => {
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const isAuthenticated = !!user;
+  const [userCanEdit, setUserCanEdit] = useState(false);
   
-  // Fetch concurso details
-  const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
-    queryKey: ['concurso', id],
-    queryFn: () => fetchConcursoById(id),
+  // Get concurso details
+  const { 
+    data: concurso, 
+    isLoading: loadingConcurso,
+    isError: isErrorConcurso,
+    error: concursoError
+  } = useQuery({
+    queryKey: ['concurso', concursoId],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('concursos')
+          .select(`
+            *,
+            created_by_user_id,
+            is_admin_created
+          `)
+          .eq('id', concursoId)
+          .single();
+        
+        if (error) throw error;
+        
+        // Get creator name if it's not admin-created
+        if (data.created_by_user_id && !data.is_admin_created) {
+          const { data: userData, error: userError } = await supabase
+            .from('users_profiles')
+            .select('name')
+            .eq('id', data.created_by_user_id)
+            .maybeSingle();
+            
+          if (!userError && userData) {
+            data.creatorName = userData.name;
+          }
+        }
+        
+        return data;
+      } catch (err: any) {
+        setError(err.message || 'Erro ao carregar o concurso');
+        throw err;
+      }
+    },
+    enabled: !!concursoId
   });
-  
-  // Fetch rankings with more frequent refetching - only if user is authenticated
-  const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
-    queryKey: ['rankings', id],
-    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    refetchInterval: 5000, // Refetch every 5 seconds
-    refetchOnWindowFocus: true,
-    staleTime: 2000, // Consider data stale after 2 seconds
-    enabled: isAuthenticated,
+
+  // Get all user rankings for this concurso
+  const { 
+    data: rankings = [], 
+    isLoading: loadingRankings 
+  } = useQuery({
+    queryKey: ['rankings', concursoId],
+    queryFn: () => getRankingsWithUserInfo(concursoId),
+    enabled: !!concursoId
   });
-  
-  // Fetch participant count - for all users (authenticated or not)
-  const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
-    queryKey: ['participant-count', id],
-    queryFn: () => getParticipantCount(id),
-    refetchInterval: 5000,
-    refetchOnWindowFocus: true,
-    staleTime: 2000, // Make this more responsive for all users
+
+  // Get current user's participation in this concurso
+  const { 
+    data: userParticipation, 
+    isLoading: loadingUserParticipation 
+  } = useQuery({
+    queryKey: ['user-participation', concursoId, user?.id],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select('*')
+          .eq('concurso_id', concursoId)
+          .eq('user_id', user?.id)
+          .maybeSingle();
+          
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.error("Error fetching user participation:", err);
+        return null;
+      }
+    },
+    enabled: !!concursoId && !!user
   });
-  
-  // Find user's ranking - only if user is authenticated
-  const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
-  
-  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount;
-  
-  // Function to manually refresh all data
-  const refreshData = () => {
-    if (isAuthenticated) {
-      refetchRankings();
+
+  // Check if current user can edit this concurso (is creator or admin)
+  useEffect(() => {
+    if (user && concurso) {
+      const isCreator = concurso.created_by_user_id === user.id;
+      const isAdmin = user.user_metadata?.is_admin === true;
+      setUserCanEdit(isCreator || isAdmin);
+    } else {
+      setUserCanEdit(false);
     }
-    refetchCount();
-  };
-  
+  }, [user, concurso]);
+
+  // Combine all loading states
+  const loading = loadingConcurso || loadingRankings || loadingUserParticipation;
+
   return {
     concurso,
     rankings,
-    participantCount,
-    userRanking,
-    isLoading,
-    user,
-    refreshData
+    userParticipation,
+    loading,
+    error,
+    userCanEdit
   };
-}
+};
