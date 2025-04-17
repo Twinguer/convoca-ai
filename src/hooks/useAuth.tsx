@@ -24,38 +24,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Function to refresh the session
   const refreshSession = async () => {
     try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error('Error refreshing session:', error);
-        return;
-      }
-      
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-      }
+      const { data: { session: newSession }, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      setSession(newSession);
+      setUser(newSession?.user ?? null);
     } catch (error) {
       console.error('Failed to refresh session:', error);
-    }
-  };
-
-  // Function to check admin session validity
-  const checkAdminSession = () => {
-    const adminAuth = localStorage.getItem('adminAuth');
-    const adminAuthExpiry = localStorage.getItem('adminAuthExpiry');
-    
-    if (adminAuth && adminAuthExpiry) {
-      const expiryTime = parseInt(adminAuthExpiry, 10);
-      
-      // If expired, clear admin auth data
-      if (Date.now() > expiryTime) {
-        localStorage.removeItem('adminAuth');
-        localStorage.removeItem('adminAuthExpiry');
-        localStorage.removeItem('adminAuthToken');
-      }
     }
   };
 
@@ -63,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
-        // Make sure we're not in an infinite loop by checking if the session has actually changed
+        // Only update if the session has actually changed
         if (JSON.stringify(newSession) !== JSON.stringify(session)) {
           setSession(newSession);
           setUser(newSession?.user ?? null);
@@ -73,46 +49,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // Initial session check
-    const initializeAuth = async () => {
-      try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        setSession(initialSession);
-        setUser(initialSession?.user ?? null);
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeAuth();
-    checkAdminSession();
-    
-    // Setup session refresh interval
-    const refreshInterval = setInterval(() => {
-      if (session) {
-        refreshSession();
-      }
-      
-      // Also check admin session validity
-      checkAdminSession();
-    }, 10 * 60 * 1000); // Refresh every 10 minutes
+    refreshSession();
 
     return () => {
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
     };
   }, []);
 
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      // Clear any local storage items that might contain sensitive data
-      localStorage.removeItem('adminAuth');
-      localStorage.removeItem('adminAuthExpiry');
-      localStorage.removeItem('adminAuthToken');
+      setUser(null);
+      setSession(null);
     } catch (error) {
       console.error('Error signing out:', error);
+      throw error;
     }
   };
 

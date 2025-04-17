@@ -88,6 +88,7 @@ export type Database = {
           inscritos: number | null
           is_admin_created: boolean | null
           link: string | null
+          localidades: string[] | null
           orgao: string
           predefined_job_title: string | null
           specific_knowledge_1_questions: number | null
@@ -137,6 +138,7 @@ export type Database = {
           inscritos?: number | null
           is_admin_created?: boolean | null
           link?: string | null
+          localidades?: string[] | null
           orgao: string
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null
@@ -186,6 +188,7 @@ export type Database = {
           inscritos?: number | null
           is_admin_created?: boolean | null
           link?: string | null
+          localidades?: string[] | null
           orgao?: string
           predefined_job_title?: string | null
           specific_knowledge_1_questions?: number | null

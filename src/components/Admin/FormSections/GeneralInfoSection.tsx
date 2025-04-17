@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StateSelector } from './StateSelector';
 
 interface GeneralInfoSectionProps {
   form: UseFormReturn<any>;
@@ -27,7 +27,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Cargo Predefinido */}
         <FormField 
           control={form.control} 
           name="predefined_job_title" 
@@ -61,7 +60,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           )} 
         />
         
-        {/* Cargo Personalizado (aparece somente se "OUTRO" for selecionado) */}
         {isCustomTitle && (
           <FormField 
             control={form.control} 
@@ -109,7 +107,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <Select onValueChange={value => {
               field.onChange(value);
               handleBancaChange(value);
-            }} defaultValue={field.value} value={field.value}>
+            }} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma banca" />
@@ -128,7 +126,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           </FormItem>
         )} />
         
-        {/* Custom Banca field - only shown when OUTRO is selected */}
         {isCustomBanca && (
           <FormField 
             control={form.control} 
@@ -167,6 +164,20 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <FormMessage />
           </FormItem>
         )} />
+        
+        <FormField
+          control={form.control}
+          name="localidades"
+          render={({ field }) => (
+            <FormItem>
+              <StateSelector
+                selectedStates={field.value || []}
+                onStateChange={(states) => field.onChange(states)}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
