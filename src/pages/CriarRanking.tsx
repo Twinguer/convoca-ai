@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
 import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
 import { ReservationQuotasSection } from '@/components/Admin/FormSections/ReservationQuotasSection';
+import { AnswerKeySection } from '@/components/Admin/FormSections/AnswerKeySection';
 import { createRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ const CriarRanking = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
+  const [createdRankingId, setCreatedRankingId] = useState<string | null>(null);
   
   // Job titles for dropdown
   const [jobTitles] = useState([
@@ -139,13 +141,20 @@ const CriarRanking = () => {
       if (result) {
         toast.success("Ranking criado com sucesso!");
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        navigate(`/concurso/${result[0].id}/resultados`);
+        setCreatedRankingId(result[0].id);
+        setActiveTab('answer-key');
       }
     } catch (error) {
       console.error("Erro ao criar ranking:", error);
       toast.error("Erro ao criar ranking: " + (error as Error).message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  
+  const handleViewResults = () => {
+    if (createdRankingId) {
+      navigate(`/concurso/${createdRankingId}/resultados`);
     }
   };
   
@@ -203,6 +212,7 @@ const CriarRanking = () => {
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
                   <TabsTrigger value="exam-structure">Estrutura da Prova</TabsTrigger>
                   <TabsTrigger value="quotas">Cotas</TabsTrigger>
+                  <TabsTrigger value="answer-key" disabled={!createdRankingId}>Gabarito Oficial</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="general-info">
@@ -245,6 +255,16 @@ const CriarRanking = () => {
                     </Button>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Criando..." : "Criar Ranking"}
+                    </Button>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="answer-key">
+                  <AnswerKeySection form={form} concursoId={createdRankingId || undefined} />
+                  
+                  <div className="flex justify-end mt-6">
+                    <Button type="button" onClick={handleViewResults}>
+                      Ver resultados
                     </Button>
                   </div>
                 </TabsContent>
