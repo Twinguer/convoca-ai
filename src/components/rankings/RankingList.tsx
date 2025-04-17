@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDate } from '@/lib/utils';
-import { Trophy } from 'lucide-react';
+import { Trophy, User, Star } from 'lucide-react';
 
 export interface RankingItemProps {
   id: string;
@@ -12,6 +12,9 @@ export interface RankingItemProps {
   concursoTitle: string;
   cargoTitle: string;
   participantCount: number;
+  createdByUserId?: string;
+  creatorName?: string;
+  isAdminCreated?: boolean;
 }
 
 export const RankingItem: React.FC<RankingItemProps> = ({
@@ -21,6 +24,8 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   concursoTitle,
   cargoTitle,
   participantCount,
+  creatorName,
+  isAdminCreated
 }) => {
   return (
     <Link to={`/concurso/${id}/resultados`}>
@@ -32,10 +37,20 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               <p className="text-sm font-medium text-gray-600">{banca} • {concursoTitle}</p>
             </div>
             <h3 className="text-lg font-bold">{cargoTitle}</h3>
-            <p className="text-sm mt-2">
-              <Trophy className="inline-block mr-1 h-4 w-4 text-yellow-500" />
-              {participantCount.toLocaleString()} participantes
-            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-sm">
+                <Trophy className="inline-block mr-1 h-4 w-4 text-yellow-500" />
+                {participantCount.toLocaleString()} participantes
+              </p>
+              
+              {(creatorName || isAdminCreated) && (
+                <div className="flex items-center text-xs text-gray-500">
+                  <User className="h-3 w-3 mr-1" />
+                  <span>Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  {!isAdminCreated && <Star className="h-3 w-3 ml-1 text-yellow-400" />}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

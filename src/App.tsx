@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -27,6 +26,7 @@ import NovoConcurso from "./pages/Admin/NovoConcurso";
 import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
+import CriarRanking from "./pages/CriarRanking";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -96,6 +96,12 @@ const App = () => {
                   <>
                     <Menu />
                     <PreClassificacao />
+                  </>
+                } />
+                <Route path="/criar-ranking" element={
+                  <>
+                    <Menu />
+                    <CriarRanking />
                   </>
                 } />
                 <Route path="/resultado" element={

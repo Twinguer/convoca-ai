@@ -63,6 +63,7 @@ export type Database = {
           case_study_2_weight: number | null
           case_study_3_weight: number | null
           created_at: string
+          created_by_user_id: string | null
           custom_banca: string | null
           custom_job_title: string | null
           data_publicacao: string | null
@@ -85,6 +86,7 @@ export type Database = {
           has_transsexuais: boolean | null
           id: string
           inscritos: number | null
+          is_admin_created: boolean | null
           link: string | null
           orgao: string
           predefined_job_title: string | null
@@ -110,6 +112,7 @@ export type Database = {
           case_study_2_weight?: number | null
           case_study_3_weight?: number | null
           created_at?: string
+          created_by_user_id?: string | null
           custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
@@ -132,6 +135,7 @@ export type Database = {
           has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
+          is_admin_created?: boolean | null
           link?: string | null
           orgao: string
           predefined_job_title?: string | null
@@ -157,6 +161,7 @@ export type Database = {
           case_study_2_weight?: number | null
           case_study_3_weight?: number | null
           created_at?: string
+          created_by_user_id?: string | null
           custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
@@ -179,6 +184,7 @@ export type Database = {
           has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
+          is_admin_created?: boolean | null
           link?: string | null
           orgao?: string
           predefined_job_title?: string | null
