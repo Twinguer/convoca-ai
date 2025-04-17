@@ -1,9 +1,10 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
+import { Ranking } from '@/services/rankingService';
 
 export const useResultadosData = (concursoId: string) => {
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,8 @@ export const useResultadosData = (concursoId: string) => {
     data: concurso, 
     isLoading: loadingConcurso,
     isError: isErrorConcurso,
-    error: concursoError
+    error: concursoError,
+    refetch: refetchConcurso
   } = useQuery({
     queryKey: ['concurso', concursoId],
     queryFn: async () => {
@@ -56,18 +58,40 @@ export const useResultadosData = (concursoId: string) => {
 
   // Get all user rankings for this concurso
   const { 
-    data: rankings = [], 
-    isLoading: loadingRankings 
+    data: rawRankings = [], 
+    isLoading: loadingRankings,
+    refetch: refetchRankings
   } = useQuery({
     queryKey: ['rankings', concursoId],
     queryFn: () => getRankingsWithUserInfo(concursoId),
     enabled: !!concursoId
   });
 
+  // Convert raw rankings to typed Ranking array
+  const rankings: Ranking[] = rawRankings.map(r => ({
+    position: r.position,
+    name: r.name as string, // Ensure name is treated as string
+    score: r.score,
+    userId: r.userId,
+    avatarUrl: r.avatarUrl,
+    basicKnowledgeScore: r.basicKnowledgeScore,
+    specificKnowledge1Score: r.specificKnowledge1Score,
+    specificKnowledge2Score: r.specificKnowledge2Score,
+    specificKnowledge3Score: r.specificKnowledge3Score,
+    specificKnowledgeScore: r.specificKnowledgeScore,
+    discursiveScore: r.discursiveScore,
+    caseStudy1Score: r.caseStudy1Score,
+    caseStudy2Score: r.caseStudy2Score,
+    caseStudy3Score: r.caseStudy3Score,
+    reservationType: r.reservationType || 'Ampla Concorrência',
+    displayReservation: r.displayReservation
+  }));
+
   // Get current user's participation in this concurso
   const { 
     data: userParticipation, 
-    isLoading: loadingUserParticipation 
+    isLoading: loadingUserParticipation,
+    refetch: refetchUserParticipation 
   } = useQuery({
     queryKey: ['user-participation', concursoId, user?.id],
     queryFn: async () => {
@@ -89,6 +113,13 @@ export const useResultadosData = (concursoId: string) => {
     enabled: !!concursoId && !!user
   });
 
+  // Get user ranking if the user is participating
+  const userRanking = user && userParticipation ? 
+    rankings.find(r => r.userId === user.id) : null;
+
+  // Calculate participant count
+  const participantCount = rankings.length;
+
   // Check if current user can edit this concurso (is creator or admin)
   useEffect(() => {
     if (user && concurso) {
@@ -100,15 +131,30 @@ export const useResultadosData = (concursoId: string) => {
     }
   }, [user, concurso]);
 
+  // Function to refresh all data
+  const refreshData = useCallback(() => {
+    refetchConcurso();
+    refetchRankings();
+    if (user) {
+      refetchUserParticipation();
+    }
+  }, [refetchConcurso, refetchRankings, refetchUserParticipation, user]);
+
   // Combine all loading states
   const loading = loadingConcurso || loadingRankings || loadingUserParticipation;
+  const isLoading = loading;
 
   return {
     concurso,
     rankings,
     userParticipation,
+    userRanking,
+    participantCount,
     loading,
+    isLoading,
     error,
-    userCanEdit
+    userCanEdit,
+    user,
+    refreshData
   };
 };

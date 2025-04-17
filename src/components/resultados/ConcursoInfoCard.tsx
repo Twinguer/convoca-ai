@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, Calendar, Building, Award, User, Star } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { Concurso } from '@/types/concursos';
 
 interface ConcursoInfoCardProps {
   concursoTitle: string;
@@ -13,14 +14,42 @@ interface ConcursoInfoCardProps {
   isAdminCreated?: boolean;
 }
 
-export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
-  concursoTitle,
-  cargoTitle,
-  banca,
-  data,
-  creatorName,
-  isAdminCreated
-}) => {
+// Alternative props interface to support passing a concurso object
+interface ConcursoObjectProps {
+  concurso: Concurso;
+}
+
+// Type guard to check which props are being passed
+function isConcursoObject(props: ConcursoInfoCardProps | ConcursoObjectProps): props is ConcursoObjectProps {
+  return 'concurso' in props;
+}
+
+export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps | ConcursoObjectProps> = (props) => {
+  // Extract props based on what was passed
+  let concursoTitle: string;
+  let cargoTitle: string;
+  let banca: string;
+  let data: string;
+  let creatorName: string | undefined;
+  let isAdminCreated: boolean | undefined;
+
+  if (isConcursoObject(props)) {
+    const { concurso } = props;
+    concursoTitle = concurso.orgao;
+    cargoTitle = concurso.titulo;
+    banca = concurso.banca;
+    data = concurso.data_publicacao;
+    creatorName = concurso.creatorName;
+    isAdminCreated = concurso.is_admin_created;
+  } else {
+    concursoTitle = props.concursoTitle;
+    cargoTitle = props.cargoTitle;
+    banca = props.banca;
+    data = props.data;
+    creatorName = props.creatorName;
+    isAdminCreated = props.isAdminCreated;
+  }
+
   return (
     <Card>
       <CardContent className="p-6">

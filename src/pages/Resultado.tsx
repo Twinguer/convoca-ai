@@ -132,15 +132,15 @@ const Resultado = () => {
         </TabsList>
 
         <TabsContent value="ranking" className="mt-6">
-          <RankingTable rankings={rankings} currentUserId={user?.id} />
+          <RankingTable rankings={rankings} currentUserId={user?.id} isAuthenticated={!!user} />
         </TabsContent>
 
         <TabsContent value="participate" className="mt-6">
           {user ? (
             <ParticipationForm 
               concurso={concurso} 
-              userRanking={userParticipation} 
-              userId={user.id}
+              isAlreadyParticipating={!!userParticipation}
+              userRankingId={userParticipation?.id}
             />
           ) : (
             <div className="text-center p-8 border rounded-lg">
