@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,7 @@ import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
+import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 
 interface Follower {
@@ -328,10 +330,11 @@ const UserProfile = () => {
             
             <Tabs defaultValue="profile">
               <div className="px-6">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="profile">Perfil</TabsTrigger>
                   <TabsTrigger value="concursos">Concursos</TabsTrigger>
                   <TabsTrigger value="rankings">Rankings</TabsTrigger>
+                  <TabsTrigger value="created-rankings">Meus Rankings</TabsTrigger>
                 </TabsList>
               </div>
               
@@ -356,6 +359,12 @@ const UserProfile = () => {
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
                   <RankingsTab userId={user?.id || ''} userRankings={userRankings} isAuthenticated={!!user} />
+                </CardContent>
+              </TabsContent>
+              
+              <TabsContent value="created-rankings">
+                <CardContent className="pt-6">
+                  <CreatedRankingsTab userId={user?.id || ''} />
                 </CardContent>
               </TabsContent>
             </Tabs>
