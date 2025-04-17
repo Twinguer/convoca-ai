@@ -102,9 +102,9 @@ const ResultadosPage = () => {
       
       <RankingTable 
         rankings={rankings} 
-        concurso={concurso} 
-        currentUserId={user?.id} 
-        isAuthenticated={isAuthenticated} 
+        currentUserId={user?.id}
+        isAuthenticated={isAuthenticated}
+        showReservationType={true}
       />
       
       {!isAuthenticated && (

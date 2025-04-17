@@ -16,11 +16,15 @@ import { Ranking } from '@/services/rankingService';
 
 interface RankingTableProps {
   rankings: Ranking[];
+  currentUserId?: string;
+  isAuthenticated?: boolean;
   showReservationType?: boolean;
 }
 
 const RankingTable: React.FC<RankingTableProps> = ({ 
   rankings,
+  currentUserId,
+  isAuthenticated = false,
   showReservationType = false
 }) => {
   const { user } = useAuth();

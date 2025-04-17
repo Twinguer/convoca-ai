@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Users, UserCheck, Accessibility, Heart, Feather, User } from 'lucide-react';
 
-type QuotaType = 'Ampla Concorrência' | 'PPP' | 'PCD' | 'Hipossuficientes' | 'Indígenas' | 'Transsexuais';
+export type QuotaType = 'Ampla Concorrência' | 'PPP' | 'PCD' | 'Hipossuficientes' | 'Indígenas' | 'Transsexuais';
 
 interface QuotaSelectorProps {
   selectedQuota: QuotaType;
