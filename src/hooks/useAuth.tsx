@@ -60,15 +60,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        // Make sure we're not in an infinite loop by checking if the session has actually changed
-        if (JSON.stringify(newSession) !== JSON.stringify(session)) {
+      (_event, newSession) => {
+        // Prevent infinite loops by checking if the session has actually changed
+        const currentSessionStr = JSON.stringify(session);
+        const newSessionStr = JSON.stringify(newSession);
+        
+        if (currentSessionStr !== newSessionStr) {
           setSession(newSession);
           setUser(newSession?.user ?? null);
-          setIsLoading(false);
         }
+        
+        // Always set loading to false after auth state change
+        setIsLoading(false);
       }
     );
 
@@ -85,10 +90,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
+    // Execute initialization
     initializeAuth();
     checkAdminSession();
     
-    // Setup session refresh interval
+    // Refresh session on a periodic basis (every 30 minutes instead of 10)
+    // This reduces unnecessary API calls
     const refreshInterval = setInterval(() => {
       if (session) {
         refreshSession();
@@ -96,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Also check admin session validity
       checkAdminSession();
-    }, 10 * 60 * 1000); // Refresh every 10 minutes
+    }, 30 * 60 * 1000); 
 
     return () => {
       subscription.unsubscribe();
@@ -106,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -117,9 +125,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem('adminAuth');
       localStorage.removeItem('adminAuthExpiry');
       localStorage.removeItem('adminAuthToken');
+      localStorage.removeItem('supabase.auth.token');
     } catch (error) {
       console.error('Error signing out:', error);
       throw error; // Re-throw to handle in the component
+    } finally {
+      setIsLoading(false);
     }
   };
 

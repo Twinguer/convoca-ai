@@ -99,7 +99,7 @@ const CriarRanking = () => {
     }
   }, [user, navigate]);
 
-  // Define the fetchRankingData function to get ranking data when editing
+  // Define the fetchRankingData function
   const fetchRankingData = async (rankingId: string) => {
     try {
       const { data, error } = await supabase
@@ -178,7 +178,7 @@ const CriarRanking = () => {
   };
 
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && id) {
       // Fetch the ranking data for editing
       fetchRankingData(id);
     }
@@ -246,20 +246,6 @@ const CriarRanking = () => {
     }
   };
 
-  const handleNextTab = () => {
-    if (activeTab === 'general-info') {
-      const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
-      if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
-        toast.error("Preencha todos os campos obrigatórios", { duration: 1500 });
-        return;
-      }
-
-      if (createdConcursoId) {
-        setActiveTab('answer-key');
-      }
-    }
-  };
-
   const handleGoToResults = () => {
     if (createdConcursoId) {
       navigate(`/concurso/${createdConcursoId}/resultados`);
@@ -305,7 +291,6 @@ const CriarRanking = () => {
                     handleJobTitleChange={handleJobTitleChange}
                     handleCustomTitleChange={handleCustomTitleChange}
                     handleBancaChange={handleBancaChange}
-                    handleNextTab={handleNextTab}
                   />
                   
                   <div className="flex justify-end mt-6">

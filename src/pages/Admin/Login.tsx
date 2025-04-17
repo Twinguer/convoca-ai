@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -89,7 +89,7 @@ const AdminLogin: React.FC = () => {
     return securityAnswer === correctAnswer;
   };
 
-  const onSubmit = (values: FormValues) => {
+  const onSubmit = async (values: FormValues) => {
     // If security check is required but not passed
     if (showSecurityCheck) {
       if (!validateSecurityCheck()) {
@@ -107,10 +107,8 @@ const AdminLogin: React.FC = () => {
     
     setIsLoading(true);
     
-    // Use a delayed login to prevent timing attacks and slow down brute force attempts
-    setTimeout(() => {
+    try {
       // Check for the admin credentials with constant-time comparison
-      // (In production, use a proper constant-time comparison function)
       if (
         sanitizedUsername === 'RlimaAdmin' && 
         values.password === '#Tijolo14@'
@@ -156,8 +154,15 @@ const AdminLogin: React.FC = () => {
           'Usuário ou senha inválidos'
         );
       }
+    } catch (error) {
+      console.error('Error during login:', error);
+      showErrorToast(
+        'Erro no sistema',
+        'Ocorreu um erro durante o login. Tente novamente.'
+      );
+    } finally {
       setIsLoading(false);
-    }, 1000); // Consistent delay to prevent timing attacks
+    }
   };
 
   return (
