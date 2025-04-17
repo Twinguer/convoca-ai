@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, UserCheck, Wheelchair, Heart, Feather, User } from 'lucide-react';
+import { Users, UserCheck, Accessibility, Heart, Feather, User } from 'lucide-react';
 
 type QuotaType = 'Ampla Concorrência' | 'PPP' | 'PCD' | 'Hipossuficientes' | 'Indígenas' | 'Transsexuais';
 
@@ -59,7 +59,7 @@ const QuotaSelector: React.FC<QuotaSelectorProps> = ({
           onClick={() => onSelectQuota('PCD')}
           className="flex items-center gap-1"
         >
-          <Wheelchair className="h-4 w-4" />
+          <Accessibility className="h-4 w-4" />
           <span>PCD</span>
         </Button>
       )}

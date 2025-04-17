@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,7 +98,6 @@ const CriarRanking = () => {
     }
   }, [user, navigate]);
 
-  // Define the fetchRankingData function
   const fetchRankingData = async (rankingId: string) => {
     try {
       const { data, error } = await supabase
@@ -117,7 +115,6 @@ const CriarRanking = () => {
       if (data) {
         console.log('Ranking data loaded:', data);
         
-        // Set form values based on data
         const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
         setIsCustomTitle(isOtherTitle);
         
@@ -168,7 +165,6 @@ const CriarRanking = () => {
           has_transsexuais: data.has_transsexuais ?? false,
         });
         
-        // Set the created ID for answering tab
         setCreatedConcursoId(data.id);
       }
     } catch (error) {
@@ -179,7 +175,6 @@ const CriarRanking = () => {
 
   useEffect(() => {
     if (isEditing && id) {
-      // Fetch the ranking data for editing
       fetchRankingData(id);
     }
   }, [isEditing, id]);
@@ -202,6 +197,10 @@ const CriarRanking = () => {
     }
   };
 
+  const handleNextTab = () => {
+    setActiveTab('answer-key');
+  };
+
   const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
 
@@ -216,7 +215,6 @@ const CriarRanking = () => {
       let result;
       
       if (isEditing && id) {
-        // Update existing ranking
         const { data, error } = await supabase
           .from('concursos')
           .update(dataToSubmit)
@@ -227,7 +225,6 @@ const CriarRanking = () => {
         result = data;
         toast.success("Ranking atualizado com sucesso!", { duration: 1500 });
       } else {
-        // Create new ranking
         result = await createRanking(dataToSubmit);
         toast.success("Ranking criado com sucesso!", { duration: 1500 });
       }
@@ -291,6 +288,7 @@ const CriarRanking = () => {
                     handleJobTitleChange={handleJobTitleChange}
                     handleCustomTitleChange={handleCustomTitleChange}
                     handleBancaChange={handleBancaChange}
+                    handleNextTab={handleNextTab}
                   />
                   
                   <div className="flex justify-end mt-6">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,7 +9,7 @@ import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
-import { QuotaSelector } from './QuotaSelector';
+import QuotaSelector from './QuotaSelector';
 
 interface ParticipationFormProps {
   concurso: Concurso;
