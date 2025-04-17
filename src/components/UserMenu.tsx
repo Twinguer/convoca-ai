@@ -33,13 +33,20 @@ const UserMenu: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
+      
+      // Force clear session state
+      window.localStorage.removeItem('supabase.auth.token');
+      
       toast({
         title: 'Desconectado com sucesso',
         description: 'Você foi desconectado da sua conta.',
         duration: 1500
       });
-      navigate('/');
+      
+      // Force navigation and page refresh to ensure state is completely reset
+      window.location.href = '/';
     } catch (error) {
+      console.error('Error during sign out:', error);
       toast({
         title: 'Erro ao desconectar',
         description: 'Ocorreu um erro ao tentar sair. Por favor, tente novamente.',

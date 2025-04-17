@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,7 @@ import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const CriarRanking = () => {
   const navigate = useNavigate();
@@ -97,6 +99,84 @@ const CriarRanking = () => {
     }
   }, [user, navigate]);
 
+  // Define the fetchRankingData function to get ranking data when editing
+  const fetchRankingData = async (rankingId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching ranking data:', error);
+        toast.error('Erro ao carregar dados do ranking');
+        return;
+      }
+      
+      if (data) {
+        console.log('Ranking data loaded:', data);
+        
+        // Set form values based on data
+        const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
+        setIsCustomTitle(isOtherTitle);
+        
+        const isOtherBanca = data.banca === 'OUTRO' || 
+                            !['Cebraspe', 'FGV', 'CESPE', 'IDECAN', 'IADES', 'AOCP', 'VUNESP'].includes(data.banca);
+        setIsCustomBanca(isOtherBanca);
+        
+        form.reset({
+          titulo: data.titulo,
+          orgao: data.orgao,
+          banca: isOtherBanca ? 'OUTRO' : data.banca,
+          custom_banca: isOtherBanca ? data.banca : '',
+          vagas: data.vagas,
+          inscritos: data.inscritos,
+          data_publicacao: data.data_publicacao ? new Date(data.data_publicacao).toISOString().split('T')[0] : undefined,
+          status: data.status,
+          exam_type: data.exam_type,
+          alternatives_count: data.alternatives_count,
+          wrong_answer_penalty: data.wrong_answer_penalty,
+          basic_knowledge_weight: data.basic_knowledge_weight || 1,
+          specific_knowledge_1_weight: data.specific_knowledge_1_weight || 1,
+          specific_knowledge_2_weight: data.specific_knowledge_2_weight || 1,
+          specific_knowledge_3_weight: data.specific_knowledge_3_weight || 1,
+          discursive_weight: data.discursive_weight || 1,
+          case_study_1_weight: data.case_study_1_weight || 1,
+          case_study_2_weight: data.case_study_2_weight || 1,
+          case_study_3_weight: data.case_study_3_weight || 1,
+          link: data.link,
+          has_basic_knowledge: data.has_basic_knowledge ?? true,
+          has_specific_knowledge_1: data.has_specific_knowledge_1 ?? true,
+          has_specific_knowledge_2: data.has_specific_knowledge_2 ?? false,
+          has_specific_knowledge_3: data.has_specific_knowledge_3 ?? false,
+          has_discursive: data.has_discursive ?? false,
+          has_case_study_1: data.has_case_study_1 ?? false,
+          has_case_study_2: data.has_case_study_2 ?? false,
+          has_case_study_3: data.has_case_study_3 ?? false,
+          basic_knowledge_questions: data.basic_knowledge_questions,
+          specific_knowledge_1_questions: data.specific_knowledge_1_questions,
+          specific_knowledge_2_questions: data.specific_knowledge_2_questions,
+          specific_knowledge_3_questions: data.specific_knowledge_3_questions,
+          predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
+          custom_job_title: isOtherTitle ? data.titulo : '',
+          has_ampla_concorrencia: data.has_ampla_concorrencia ?? true,
+          has_ppp: data.has_ppp ?? false,
+          has_pcd: data.has_pcd ?? false,
+          has_hipossuficientes: data.has_hipossuficientes ?? false,
+          has_indigenas: data.has_indigenas ?? false,
+          has_transsexuais: data.has_transsexuais ?? false,
+        });
+        
+        // Set the created ID for answering tab
+        setCreatedConcursoId(data.id);
+      }
+    } catch (error) {
+      console.error('Error in fetchRankingData:', error);
+      toast.error('Erro ao carregar dados do ranking');
+    }
+  };
+
   useEffect(() => {
     if (isEditing) {
       // Fetch the ranking data for editing
@@ -133,18 +213,34 @@ const CriarRanking = () => {
         banca: values.custom_banca || values.banca
       };
 
-      const result = await createRanking(dataToSubmit);
+      let result;
+      
+      if (isEditing && id) {
+        // Update existing ranking
+        const { data, error } = await supabase
+          .from('concursos')
+          .update(dataToSubmit)
+          .eq('id', id)
+          .select();
+          
+        if (error) throw error;
+        result = data;
+        toast.success("Ranking atualizado com sucesso!", { duration: 1500 });
+      } else {
+        // Create new ranking
+        result = await createRanking(dataToSubmit);
+        toast.success("Ranking criado com sucesso!", { duration: 1500 });
+      }
 
       if (result) {
-        toast.success("Ranking criado com sucesso!");
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
 
         setCreatedConcursoId(result[0].id);
         setActiveTab('answer-key');
       }
     } catch (error) {
-      console.error("Erro ao criar ranking:", error);
-      toast.error("Erro ao criar ranking: " + (error as Error).message);
+      console.error("Erro ao criar/atualizar ranking:", error);
+      toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message, { duration: 1500 });
     } finally {
       setIsSubmitting(false);
     }
@@ -154,7 +250,7 @@ const CriarRanking = () => {
     if (activeTab === 'general-info') {
       const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
       if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
-        toast.error("Preencha todos os campos obrigatórios");
+        toast.error("Preencha todos os campos obrigatórios", { duration: 1500 });
         return;
       }
 
@@ -186,7 +282,7 @@ const CriarRanking = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
-            {createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+            {isEditing ? 'Editar Ranking' : (createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -214,7 +310,7 @@ const CriarRanking = () => {
                   
                   <div className="flex justify-end mt-6">
                     <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Criando..." : "Criar Ranking"}
+                      {isSubmitting ? "Processando..." : (isEditing ? "Atualizar Ranking" : "Criar Ranking")}
                     </Button>
                   </div>
                 </TabsContent>

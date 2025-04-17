@@ -22,7 +22,7 @@ export interface Ranking {
 
 // Helper function to get abbreviation for reservation type
 const getReservationAbbreviation = (reservationType: string): string => {
-  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
+  if (!reservationType || reservationType === 'Ampla') return '';
   
   // Get first three letters as abbreviation
   const abbr = reservationType.substring(0, 3).toUpperCase();
@@ -54,9 +54,9 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       .eq('concurso_id', concursoId);
     
     // If a specific reservation type is requested, filter by it
-    if (reservationType && reservationType !== 'Ampla Concorrência') {
+    if (reservationType && reservationType !== 'Ampla') {
       query = query.eq('reservation_type', reservationType);
-    } else if (reservationType === 'Ampla Concorrência') {
+    } else if (reservationType === 'Ampla') {
       // For Ampla Concorrência, include all users, as they all participate in this list
       // No additional filter needed
     }
@@ -140,12 +140,17 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const caseStudy3Score = ranking.case_study_3_score || 0;
       
       // Get reservation type and create display name with abbreviation if needed
-      const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
+      // Convert 'Ampla Concorrência' to 'Ampla' if necessary
+      let userReservationType = ranking.reservation_type || 'Ampla';
+      if (userReservationType === 'Ampla Concorrência') {
+        userReservationType = 'Ampla';
+      }
+      
       const reservationAbbr = getReservationAbbreviation(userReservationType);
       
-      // For Ampla Concorrência view, show reservation badge only for those in quota
+      // For Ampla view, show reservation badge only for those in quota
       const displayName = (profile?.name || 'Usuário Anônimo') + 
-                       (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
+                       (reservationType === 'Ampla' && reservationAbbr ? ` (${reservationAbbr})` : '');
       
       return {
         position: index + 1,
@@ -193,13 +198,13 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     
     if (error) {
       console.error('Error fetching concurso reservation types:', error);
-      return ['Ampla Concorrência'];
+      return ['Ampla'];
     }
     
     const types = [];
     
-    // Ampla Concorrência is always available
-    types.push('Ampla Concorrência');
+    // Change 'Ampla Concorrência' to 'Ampla'
+    types.push('Ampla');
     
     if (data.has_ppp) types.push('PPP');
     if (data.has_pcd) types.push('PCD');
@@ -211,6 +216,6 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     return types;
   } catch (error) {
     console.error('Error determining available reservation types:', error);
-    return ['Ampla Concorrência'];
+    return ['Ampla'];
   }
 };
