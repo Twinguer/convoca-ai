@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, LogOut, Award, Users, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,8 +34,8 @@ const UserMenu: React.FC = () => {
     try {
       await signOut();
       
-      // Force clear session state
-      window.localStorage.removeItem('supabase.auth.token');
+      // Force clear session state and localStorage
+      localStorage.removeItem('supabase.auth.token');
       
       toast({
         title: 'Desconectado com sucesso',
@@ -43,7 +43,7 @@ const UserMenu: React.FC = () => {
         duration: 1500
       });
       
-      // Force navigation and page refresh to ensure state is completely reset
+      // Force navigation to home page and refresh the page
       window.location.href = '/';
     } catch (error) {
       console.error('Error during sign out:', error);
@@ -86,9 +86,6 @@ const UserMenu: React.FC = () => {
           <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          
-        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
             <Users className="mr-2 h-4 w-4" />

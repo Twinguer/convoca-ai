@@ -303,10 +303,10 @@ const UserProfile = () => {
       </div>;
   }
 
+  // Fixed conditional render issue - moved useEffect to outside any conditional logic
   if (!user) {
-    useEffect(() => {
-      navigate("/auth");
-    }, [navigate]);
+    // Don't use useEffect inside conditional render - instead return a simple component
+    navigate("/auth");
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
