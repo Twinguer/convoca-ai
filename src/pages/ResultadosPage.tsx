@@ -105,14 +105,7 @@ const ResultadosPage = () => {
         <RankingCard participantCount={participantCount} userRanking={userRanking} />
         
         {concurso && (
-          <ConcursoInfoCard 
-            concursoTitle={concurso.orgao}
-            cargoTitle={concurso.titulo}
-            banca={concurso.banca}
-            data={concurso.data_publicacao}
-            creatorName={concurso.creatorName}
-            isAdminCreated={concurso.is_admin_created}
-          />
+          <ConcursoInfoCard concurso={concurso} />
         )}
       </div>
       

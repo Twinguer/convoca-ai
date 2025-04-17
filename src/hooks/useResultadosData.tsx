@@ -73,18 +73,18 @@ export const useResultadosData = (concursoId: string) => {
     name: r.name as string, // Ensure name is treated as string
     score: r.score,
     userId: r.userId,
-    avatarUrl: r.avatarUrl,
+    avatarUrl: r.avatarUrl as string | undefined, // Fix avatarUrl type
     basicKnowledgeScore: r.basicKnowledgeScore,
-    specificKnowledge1Score: r.specificKnowledge1Score,
+    specificKnowledge1Score: r.specificKnowledge1Score || r.specificKnowledgeScore, // Handle both formats
     specificKnowledge2Score: r.specificKnowledge2Score,
     specificKnowledge3Score: r.specificKnowledge3Score,
-    specificKnowledgeScore: r.specificKnowledgeScore,
+    specificKnowledgeScore: r.specificKnowledgeScore, // For backward compatibility
     discursiveScore: r.discursiveScore,
-    caseStudy1Score: r.caseStudy1Score,
-    caseStudy2Score: r.caseStudy2Score,
-    caseStudy3Score: r.caseStudy3Score,
+    caseStudy1Score: r.caseStudy1Score || 0, // Provide defaults
+    caseStudy2Score: r.caseStudy2Score || 0,
+    caseStudy3Score: r.caseStudy3Score || 0,
     reservationType: r.reservationType || 'Ampla Concorrência',
-    displayReservation: r.displayReservation
+    displayReservation: r.displayReservation || ''
   }));
 
   // Get current user's participation in this concurso
