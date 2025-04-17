@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 
 // Function to schedule scraper for concursos
@@ -25,22 +24,7 @@ export const createRanking = async (rankingData: any) => {
       }
     }
     
-    // Check for duplicate rankings
-    const { data: existingRankings, error: checkError } = await supabase
-      .from('concursos')
-      .select('id')
-      .eq('titulo', rankingData.titulo)
-      .eq('orgao', rankingData.orgao)
-      .eq('banca', rankingData.banca);
-      
-    if (checkError) {
-      console.error('Error checking for duplicate rankings:', checkError);
-      throw new Error('Erro ao verificar rankings duplicados');
-    }
-    
-    if (existingRankings && existingRankings.length > 0) {
-      throw new Error('Já existe um ranking com o mesmo título, órgão e banca');
-    }
+    // NOTE: Duplicate checking removed as requested
     
     // Create a sanitized data object with only the fields that exist in the database
     const sanitizedData = {

@@ -4,9 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
-import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
-import { ReservationQuotasSection } from '@/components/Admin/FormSections/ReservationQuotasSection';
 import { createRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -14,6 +11,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
+import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
+import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 
 const CriarRanking = () => {
   const navigate = useNavigate();
@@ -23,6 +22,7 @@ const CriarRanking = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
+  const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
   
   // Job titles for dropdown
   const [jobTitles] = useState([
@@ -139,7 +139,12 @@ const CriarRanking = () => {
       if (result) {
         toast.success("Ranking criado com sucesso!");
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        navigate(`/concurso/${result[0].id}/resultados`);
+        
+        // Set the concurso ID to allow editing the answer key
+        setCreatedConcursoId(result[0].id);
+        
+        // Switch to the answer key tab
+        setActiveTab('answer-key');
       }
     } catch (error) {
       console.error("Erro ao criar ranking:", error);
@@ -157,28 +162,22 @@ const CriarRanking = () => {
         toast.error("Preencha todos os campos obrigatórios");
         return;
       }
-      setActiveTab('exam-structure');
-    } else if (activeTab === 'exam-structure') {
-      const formValues = form.getValues();
-      // Validate exam structure fields
-      if (
-        (formValues.has_basic_knowledge && !formValues.basic_knowledge_questions) ||
-        (formValues.has_specific_knowledge_1 && !formValues.specific_knowledge_1_questions)
-      ) {
-        toast.error("Preencha o número de questões para todas as áreas selecionadas");
-        return;
+      
+      // Only switch to answer key if concurso is created
+      if (createdConcursoId) {
+        setActiveTab('answer-key');
       }
-      setActiveTab('quotas');
     }
   };
   
-  const handlePreviousTab = () => {
-    if (activeTab === 'exam-structure') {
-      setActiveTab('general-info');
-    } else if (activeTab === 'quotas') {
-      setActiveTab('exam-structure');
+  const handleGoToResults = () => {
+    if (createdConcursoId) {
+      navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
+  
+  // Extract form values for the answer key tab
+  const formValues = form.getValues();
   
   return (
     <div className="container mx-auto p-4">
@@ -193,7 +192,9 @@ const CriarRanking = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Criar Novo Ranking</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            {createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -201,12 +202,13 @@ const CriarRanking = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="exam-structure">Estrutura da Prova</TabsTrigger>
-                  <TabsTrigger value="quotas">Cotas</TabsTrigger>
+                  <TabsTrigger value="answer-key" disabled={!createdConcursoId}>
+                    Gabarito Oficial
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="general-info">
-                  <GeneralInfoSection 
+                  <GeneralTab
                     form={form}
                     jobTitles={jobTitles}
                     isCustomTitle={isCustomTitle}
@@ -214,39 +216,40 @@ const CriarRanking = () => {
                     handleJobTitleChange={handleJobTitleChange}
                     handleCustomTitleChange={handleCustomTitleChange}
                     handleBancaChange={handleBancaChange}
+                    handleNextTab={handleNextTab}
                   />
                   
                   <div className="flex justify-end mt-6">
-                    <Button type="button" onClick={handleNextTab}>
-                      Próximo
-                    </Button>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="exam-structure">
-                  <ExamStructureSection form={form} />
-                  
-                  <div className="flex justify-between mt-6">
-                    <Button type="button" variant="outline" onClick={handlePreviousTab}>
-                      Anterior
-                    </Button>
-                    <Button type="button" onClick={handleNextTab}>
-                      Próximo
-                    </Button>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="quotas">
-                  <ReservationQuotasSection form={form} />
-                  
-                  <div className="flex justify-between mt-6">
-                    <Button type="button" variant="outline" onClick={handlePreviousTab}>
-                      Anterior
-                    </Button>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Criando..." : "Criar Ranking"}
                     </Button>
                   </div>
+                </TabsContent>
+                
+                <TabsContent value="answer-key">
+                  {createdConcursoId && (
+                    <>
+                      <AnswerKeyTab
+                        concursoId={createdConcursoId}
+                        hasBasicKnowledge={!!formValues.has_basic_knowledge}
+                        hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
+                        hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
+                        hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
+                        basicKnowledgeQuestions={formValues.basic_knowledge_questions}
+                        specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
+                        specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
+                        specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
+                        examType={formValues.exam_type}
+                        alternativesCount={formValues.alternatives_count}
+                      />
+                      
+                      <div className="flex justify-end mt-6">
+                        <Button type="button" onClick={handleGoToResults}>
+                          Ir para Resultados
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </TabsContent>
               </Tabs>
             </form>

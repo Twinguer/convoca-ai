@@ -7,9 +7,10 @@ import { Concurso } from '@/types/concursos';
 
 interface ConcursoInfoCardProps {
   concurso?: Concurso;
+  creatorName?: string;
 }
 
-export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso }) => {
+export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso, creatorName }) => {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -25,6 +26,11 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso }) 
         <p className="mt-2 text-lg">
           Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
         </p>
+        {creatorName && (
+          <p className="mt-2 text-lg">
+            Criado por: <Badge variant="outline">{creatorName}</Badge>
+          </p>
+        )}
       </CardContent>
     </Card>
   );

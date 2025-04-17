@@ -5,6 +5,7 @@ import { fetchConcursoById, getParticipantCount } from '@/services/concursoServi
 import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
@@ -15,6 +16,28 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
+  });
+  
+  // Fetch creator information if available
+  const { data: creatorInfo, isLoading: isLoadingCreator } = useQuery({
+    queryKey: ['creator', concurso?.created_by_user_id],
+    queryFn: async () => {
+      if (!concurso?.created_by_user_id) return null;
+      
+      const { data, error } = await supabase
+        .from('users_profiles')
+        .select('name')
+        .eq('id', concurso.created_by_user_id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching creator info:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!concurso?.created_by_user_id,
   });
   
   // Fetch rankings with more frequent refetching - only if user is authenticated
@@ -39,7 +62,7 @@ export function useResultadosData() {
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount;
+  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
   const refreshData = () => {
@@ -56,6 +79,7 @@ export function useResultadosData() {
     userRanking,
     isLoading,
     user,
-    refreshData
+    refreshData,
+    creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário')
   };
 }
