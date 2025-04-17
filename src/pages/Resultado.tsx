@@ -1,161 +1,179 @@
 
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, Edit, Users, Award, PenTool, Share } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-import { ParticipationForm } from '@/components/resultados/ParticipationForm';
-import { RankingTable } from '@/components/resultados/RankingTable';
-import { ConcursoInfoCard } from '@/components/resultados/ConcursoInfoCard';
-import { LoadingState } from '@/components/resultados/LoadingState';
-import { useResultadosData } from '@/hooks/useResultadosData';
-import { useAuth } from '@/hooks/useAuth';
-import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Download, Filter } from 'lucide-react';
 
-const Resultado = () => {
-  const { concursoId } = useParams<{ concursoId: string }>();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("ranking");
+const Resultado: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedConcurso, setSelectedConcurso] = useState('');
+  const [filtroSelecionado, setFiltroSelecionado] = useState('todos');
   
-  const {
-    concurso,
-    rankings,
-    userParticipation,
-    loading,
-    error,
-    userCanEdit,
-  } = useResultadosData(concursoId || '');
-
-  if (loading) {
-    return <LoadingState />;
-  }
-
-  if (error || !concurso) {
-    return (
-      <div className="container mx-auto p-4">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-          <ChevronLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
-        <div className="text-center p-8">
-          <p className="text-red-500 mb-2">Erro ao carregar os resultados.</p>
-          <p>{error || "Concurso não encontrado."}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if the current user is the creator or admin
-  const isCreatorOrAdmin = user && (
-    user.id === concurso.created_by_user_id || 
-    (user.user_metadata && user.user_metadata.is_admin)
-  );
-
-  // Get creator name from rankings data
-  const creatorName = concurso.creatorName;
-  const isAdminCreated = concurso.is_admin_created;
-
+  // Exemplo de dados
+  const concursos = [
+    { id: "1", nome: "Analista Administrativo - Ministério da Economia" },
+    { id: "2", nome: "Técnico em Informática - INSS" },
+    { id: "3", nome: "Auditor Fiscal - Receita Federal" },
+    { id: "4", nome: "Técnico Judiciário - Tribunal Regional Federal" }
+  ];
+  
+  const resultados = [
+    { id: "1", nome: "Ana Silva", inscricao: "123456", nota: 85.75, posicao: 12, situacao: "Aprovado", concursoId: "1" },
+    { id: "2", nome: "João Pereira", inscricao: "789012", nota: 92.50, posicao: 3, situacao: "Aprovado", concursoId: "1" },
+    { id: "3", nome: "Mariana Costa", inscricao: "345678", nota: 88.25, posicao: 7, situacao: "Aprovado", concursoId: "1" },
+    { id: "4", nome: "Pedro Almeida", inscricao: "234567", nota: 65.25, posicao: 145, situacao: "Reprovado", concursoId: "1" },
+    { id: "5", nome: "Lucas Santos", inscricao: "901234", nota: 79.00, posicao: 25, situacao: "Aprovado", concursoId: "2" },
+    { id: "6", nome: "Camila Oliveira", inscricao: "567890", nota: 95.50, posicao: 1, situacao: "Aprovado", concursoId: "2" },
+    { id: "7", nome: "Rafael Souza", inscricao: "234567", nota: 83.75, posicao: 15, situacao: "Aprovado", concursoId: "3" }
+  ];
+  
+  const filteredResultados = selectedConcurso
+    ? resultados.filter(r => 
+        r.concursoId === selectedConcurso && 
+        (r.nome.toLowerCase().includes(searchTerm.toLowerCase()) || r.inscricao.includes(searchTerm)) &&
+        (filtroSelecionado === 'todos' || r.situacao.toLowerCase() === filtroSelecionado.toLowerCase())
+      )
+    : [];
+    
   return (
-    <div className="container mx-auto p-4">
-      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
-        <ChevronLeft className="mr-2 h-4 w-4" /> Voltar
-      </Button>
-
+    <div className="page-container">
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Resultados de Concursos</h1>
+      
       <div className="mb-6">
-        <ConcursoInfoCard
-          concursoTitle={concurso.orgao}
-          cargoTitle={concurso.titulo}
-          banca={concurso.banca}
-          data={concurso.data_publicacao}
-          creatorName={creatorName}
-          isAdminCreated={isAdminCreated}
-        />
+        <p className="text-gray-600">
+          Consulte os resultados oficiais dos concursos públicos federais. 
+          Selecione um concurso e busque por candidatos específicos.
+        </p>
       </div>
-
-      <div className="my-4 flex flex-col md:flex-row gap-4 justify-between">
-        <div className="space-x-2">
-          {!userParticipation && user && (
-            <Button onClick={() => setActiveTab("participate")} className="mb-2 md:mb-0">
-              <PenTool className="mr-2 h-4 w-4" /> Participar
-            </Button>
-          )}
-          {userParticipation && (
-            <Button onClick={() => setActiveTab("participate")} variant="outline" className="mb-2 md:mb-0">
-              <Edit className="mr-2 h-4 w-4" /> Editar minha participação
-            </Button>
-          )}
-          {isCreatorOrAdmin && (
-            <Button onClick={() => setActiveTab("answerKey")} variant="outline" className="mb-2 md:mb-0">
-              <Award className="mr-2 h-4 w-4" /> Gabarito Oficial
-            </Button>
-          )}
-        </div>
-        
-        <div className="space-x-2">
-          <Button variant="outline" onClick={() => {
-            if (navigator.share) {
-              navigator.share({
-                title: `Ranking: ${concurso.titulo} - ${concurso.orgao}`,
-                url: window.location.href
-              }).catch(console.error);
-            } else {
-              navigator.clipboard.writeText(window.location.href);
-              toast({
-                title: "Link copiado!",
-                description: "O link foi copiado para sua área de transferência."
-              });
-            }
-          }}>
-            <Share className="mr-2 h-4 w-4" /> Compartilhar
-          </Button>
-        </div>
+      
+      <div className="mb-8">
+        <label htmlFor="concurso" className="block text-sm font-medium text-gray-700 mb-1">
+          Selecione o Concurso
+        </label>
+        <select
+          id="concurso"
+          className="w-full border-gray-300 rounded-md shadow-sm focus:border-convoca-500 focus:ring-convoca-500"
+          value={selectedConcurso}
+          onChange={(e) => setSelectedConcurso(e.target.value)}
+        >
+          <option value="">-- Selecione um concurso --</option>
+          {concursos.map((concurso) => (
+            <option key={concurso.id} value={concurso.id}>
+              {concurso.nome}
+            </option>
+          ))}
+        </select>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="ranking">
-            <Users className="mr-2 h-4 w-4" />
-            Ranking
-          </TabsTrigger>
-          <TabsTrigger value="participate">
-            <PenTool className="mr-2 h-4 w-4" />
-            Participar
-          </TabsTrigger>
-          {isCreatorOrAdmin && (
-            <TabsTrigger value="answerKey">
-              <Award className="mr-2 h-4 w-4" />
-              Gabarito Oficial
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="ranking" className="mt-6">
-          <RankingTable rankings={rankings} currentUserId={user?.id} />
-        </TabsContent>
-
-        <TabsContent value="participate" className="mt-6">
-          {user ? (
-            <ParticipationForm 
-              concurso={concurso} 
-              userRanking={userParticipation} 
-              userId={user.id}
-            />
-          ) : (
-            <div className="text-center p-8 border rounded-lg">
-              <p className="mb-4">Você precisa estar logado para participar deste ranking.</p>
-              <Button onClick={() => navigate('/auth')}>Fazer login</Button>
+      
+      {selectedConcurso && (
+        <>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-grow">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-convoca-500 focus:border-convoca-500"
+                placeholder="Busque por nome ou inscrição"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          )}
-        </TabsContent>
-
-        {isCreatorOrAdmin && (
-          <TabsContent value="answerKey" className="mt-6">
-            <AnswerKeyForm concursoId={concursoId || ''} />
-          </TabsContent>
-        )}
-      </Tabs>
+            
+            <div className="flex items-center space-x-2 sm:w-64">
+              <Filter className="h-5 w-5 text-gray-400" />
+              <select
+                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-convoca-500 focus:ring-convoca-500"
+                value={filtroSelecionado}
+                onChange={(e) => setFiltroSelecionado(e.target.value)}
+              >
+                <option value="todos">Todos os resultados</option>
+                <option value="aprovado">Aprovados</option>
+                <option value="reprovado">Reprovados</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex justify-end mb-4">
+            <button 
+              className="flex items-center text-sm text-convoca-600 hover:text-convoca-800"
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Exportar resultados (PDF)
+            </button>
+          </div>
+          
+          <div className="bg-white shadow overflow-hidden border-b border-gray-200 sm:rounded-lg mb-8">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Classificação
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nome
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Inscrição
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nota Final
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Situação
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredResultados.length > 0 ? (
+                  filteredResultados.map((resultado) => (
+                    <tr key={resultado.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {resultado.posicao}º
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {resultado.nome}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {resultado.inscricao}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {resultado.nota.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          resultado.situacao === 'Aprovado' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {resultado.situacao}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                      {searchTerm ? "Nenhum candidato encontrado com esses critérios." : "Digite um nome ou número de inscrição para buscar."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="bg-convoca-50 p-4 rounded-lg">
+            <h3 className="font-medium text-gray-800 mb-2">Informações sobre este concurso:</h3>
+            <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+              <li>Total de inscritos: 5.230 candidatos</li>
+              <li>Data da prova: 10/03/2025</li>
+              <li>Resultado homologado em: 25/04/2025</li>
+              <li>Total de aprovados: 250 candidatos</li>
+              <li>Vagas imediatas: 120 vagas</li>
+              <li>Validade do concurso: 2 anos (prorrogável por igual período)</li>
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 };
