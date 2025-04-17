@@ -10,7 +10,7 @@ import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
-import QuotaSelector, { QuotaType } from './QuotaSelector';
+import { QuotaSelector } from './QuotaSelector';
 
 interface ParticipationFormProps {
   concurso: Concurso;
@@ -27,7 +27,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
   const [showScoreForm, setShowScoreForm] = useState(false);
-  const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
+  const [selectedQuota, setSelectedQuota] = useState<string>('Ampla Concorrência');
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -133,19 +133,11 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       </p>
       
       {/* Quota selection component */}
-      <div className="mb-4">
-        <h3 className="text-sm font-medium mb-2">Selecione sua categoria:</h3>
-        <QuotaSelector 
-          selectedQuota={selectedQuota}
-          onSelectQuota={setSelectedQuota}
-          hasAmpla={concurso.has_ampla_concorrencia !== false}
-          hasPPP={concurso.has_ppp === true}
-          hasPCD={concurso.has_pcd === true}
-          hasHipossuficientes={concurso.has_hipossuficientes === true}
-          hasIndigenas={concurso.has_indigenas === true}
-          hasTranssexuais={concurso.has_transsexuais === true}
-        />
-      </div>
+      <QuotaSelector 
+        concurso={concurso} 
+        selectedQuota={selectedQuota} 
+        onQuotaChange={setSelectedQuota} 
+      />
       
       <Button 
         onClick={handleParticipate} 

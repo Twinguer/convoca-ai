@@ -157,7 +157,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
                   size="sm"
                   variant="outline"
                   className="flex items-center gap-1"
-                  onClick={() => navigate(`/criar-ranking/${ranking.id}`)}
+                  onClick={() => navigate(`/criar-ranking?edit=${ranking.id}`)}
                 >
                   <PencilLine className="h-4 w-4" />
                   <span>Editar</span>

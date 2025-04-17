@@ -98,8 +98,12 @@ const App = () => {
                     <PreClassificacao />
                   </>
                 } />
-                <Route path="/criar-ranking" element={<CriarRanking />} />
-                <Route path="/criar-ranking/:id" element={<CriarRanking />} />
+                <Route path="/criar-ranking" element={
+                  <>
+                    <Menu />
+                    <CriarRanking />
+                  </>
+                } />
                 <Route path="/resultado" element={
                   <>
                     <Menu />
