@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -30,6 +29,10 @@ export interface Concurso {
   updated_at?: string;
   predefined_job_title?: string;
   custom_job_title?: string;
+  
+  // Added missing properties
+  created_by_user_id?: string;
+  is_admin_created?: boolean;
   
   // Exam structure fields
   has_basic_knowledge?: boolean;
