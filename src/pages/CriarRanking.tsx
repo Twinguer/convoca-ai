@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,9 +13,34 @@ import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
+import { supabase } from '@/integrations/supabase/client';
+
+// Function to fetch ranking data for editing
+const fetchRankingData = async (rankingId) => {
+  if (!rankingId) return null;
+  
+  try {
+    const { data, error } = await supabase
+      .from('concursos')
+      .select('*')
+      .eq('id', rankingId)
+      .single();
+      
+    if (error) {
+      console.error('Error fetching ranking data:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in fetchRankingData:', error);
+    return null;
+  }
+};
 
 const CriarRanking = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('general-info');
@@ -23,6 +48,10 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
+  
+  // Check if we're in edit mode
+  const searchParams = new URLSearchParams(location.search);
+  const editId = searchParams.get('edit');
   
   // Job titles for dropdown
   const [jobTitles] = useState([
@@ -96,6 +125,43 @@ const CriarRanking = () => {
     }
   });
   
+  // Load existing data if in edit mode
+  useEffect(() => {
+    const loadExistingData = async () => {
+      if (editId) {
+        try {
+          const data = await fetchRankingData(editId);
+          if (data) {
+            // Set the created concurso ID for the answer key tab
+            setCreatedConcursoId(data.id);
+            
+            // Determine if title and banca are custom
+            const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
+            setIsCustomTitle(isOtherTitle);
+            
+            const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
+            setIsCustomBanca(isOtherBanca);
+            
+            // Reset form with existing data
+            form.reset({
+              ...data,
+              predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
+              custom_job_title: isOtherTitle ? data.titulo : '',
+              banca: isOtherBanca ? 'OUTRO' : data.banca,
+              custom_banca: isOtherBanca ? data.banca : '',
+              data_publicacao: data.data_publicacao ? new Date(data.data_publicacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            });
+          }
+        } catch (error) {
+          console.error('Error loading existing ranking data:', error);
+          toast.error('Erro ao carregar dados do ranking');
+        }
+      }
+    };
+    
+    loadExistingData();
+  }, [editId, form, jobTitles]);
+  
   // Check if user is authenticated
   useEffect(() => {
     if (!user) {
@@ -134,21 +200,39 @@ const CriarRanking = () => {
         banca: values.custom_banca || values.banca
       };
       
-      const result = await createRanking(dataToSubmit);
+      let result;
+      
+      // If in edit mode, update existing ranking
+      if (editId) {
+        // Update the existing ranking
+        const { data, error } = await supabase
+          .from('concursos')
+          .update(dataToSubmit)
+          .eq('id', editId)
+          .select();
+          
+        if (error) throw error;
+        result = data;
+        
+        toast.success("Ranking atualizado com sucesso!");
+      } else {
+        // Create new ranking
+        result = await createRanking(dataToSubmit);
+        toast.success("Ranking criado com sucesso!");
+      }
       
       if (result) {
-        toast.success("Ranking criado com sucesso!");
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
         
         // Set the concurso ID to allow editing the answer key
-        setCreatedConcursoId(result[0].id);
+        setCreatedConcursoId(editId || (result[0]?.id));
         
         // Switch to the answer key tab
         setActiveTab('answer-key');
       }
     } catch (error) {
-      console.error("Erro ao criar ranking:", error);
-      toast.error("Erro ao criar ranking: " + (error as Error).message);
+      console.error("Erro ao criar/atualizar ranking:", error);
+      toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -193,7 +277,7 @@ const CriarRanking = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
-            {createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+            {editId ? 'Editar Ranking' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -221,7 +305,7 @@ const CriarRanking = () => {
                   
                   <div className="flex justify-end mt-6">
                     <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Criando..." : "Criar Ranking"}
+                      {isSubmitting ? "Salvando..." : editId ? "Salvar alterações" : "Criar Ranking"}
                     </Button>
                   </div>
                 </TabsContent>

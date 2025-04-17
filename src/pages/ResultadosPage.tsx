@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -6,8 +7,9 @@ import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Trophy, UserPlus, LogIn } from 'lucide-react';
+import { RefreshCw, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const {
@@ -19,10 +21,10 @@ const ResultadosPage = () => {
     user,
     refreshData
   } = useResultadosData();
-  const {
-    toast
-  } = useToast();
+  
+  const { toast } = useToast();
   const isAuthenticated = !!user;
+  
   useEffect(() => {
     if (concurso) {
       console.log('Concurso data:', concurso);
@@ -46,7 +48,8 @@ const ResultadosPage = () => {
     if (concurso?.id) {
       refreshData();
     }
-  }, [concurso?.id]);
+  }, [concurso?.id, refreshData]);
+  
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -55,28 +58,50 @@ const ResultadosPage = () => {
       duration: 2000
     });
   };
+  
   if (isLoading) {
     return <LoadingState />;
   }
-  return <div className="container mx-auto p-2 sm:p-4">
+  
+  return (
+    <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
-          
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
         </h1>
         
         <div className="flex gap-1 sm:gap-2 flex-wrap">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-2 text-xs sm:text-sm"
+          >
+            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+            Atualizar
+          </Button>
           
-          
-          {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
+          {concurso && !userRanking && user && (
+            <Button 
+              onClick={() => navigate(`/concurso/${concurso.id}/participar`)} 
+              className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" 
+              size="sm"
+            >
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
-            </Button>}
+            </Button>
+          )}
           
-          {concurso && !user && <Button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+          {concurso && !user && (
+            <Button 
+              onClick={() => navigate('/auth')} 
+              className="flex items-center gap-2 text-xs sm:text-sm" 
+              size="sm"
+            >
               <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
               Login
-            </Button>}
+            </Button>
+          )}
         </div>
       </div>
       
@@ -86,13 +111,22 @@ const ResultadosPage = () => {
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
-      <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={isAuthenticated} />
+      <RankingTable
+        rankings={rankings}
+        concurso={concurso}
+        currentUserId={user?.id}
+        isAuthenticated={isAuthenticated}
+      />
       
-      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
+      {!isAuthenticated && (
+        <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
           <p className="text-center text-gray-600">
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };
+
 export default ResultadosPage;
