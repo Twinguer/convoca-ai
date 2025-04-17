@@ -66,10 +66,7 @@ const ResultadosPage = () => {
         </h1>
         
         <div className="flex gap-1 sm:gap-2 flex-wrap">
-          <Button onClick={handleRefresh} variant="outline" size="sm" className="flex items-center gap-1 text-xs sm:text-sm">
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
-            Atualizar
-          </Button>
+          
           
           {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
