@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
+import { useParams } from 'react-router-dom';
 
 const CriarRanking = () => {
   const navigate = useNavigate();
@@ -23,8 +23,9 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
-  
-  // Job titles for dropdown
+  const { id } = useParams();
+  const isEditing = !!id;
+
   const [jobTitles] = useState([
     { id: '1', title: 'Analista' },
     { id: '2', title: 'Técnico' },
@@ -32,11 +33,9 @@ const CriarRanking = () => {
     { id: '4', title: 'Assistente' },
     { id: '5', title: 'Especialista' }
   ]);
-  
-  // Initialize form with react-hook-form
+
   const form = useForm({
     defaultValues: {
-      // General Info
       predefined_job_title: '',
       custom_job_title: '',
       titulo: '',
@@ -50,12 +49,10 @@ const CriarRanking = () => {
       vagas: 0,
       inscritos: 0,
       
-      // Exam Structure
       exam_type: 'Alternativas',
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
-      // Knowledge Areas
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
@@ -72,11 +69,9 @@ const CriarRanking = () => {
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
       
-      // Discursive/Essay
       has_discursive: false,
       discursive_weight: 1,
       
-      // Case Studies
       has_case_study_1: false,
       case_study_1_weight: 1,
       
@@ -86,7 +81,6 @@ const CriarRanking = () => {
       has_case_study_3: false,
       case_study_3_weight: 1,
       
-      // Reservation Quotas
       has_ampla_concorrencia: true,
       has_ppp: false,
       has_pcd: false,
@@ -95,55 +89,57 @@ const CriarRanking = () => {
       has_transsexuais: false,
     }
   });
-  
-  // Check if user is authenticated
+
   useEffect(() => {
     if (!user) {
       toast.error("Você precisa estar logado para criar um ranking");
       navigate("/auth");
     }
   }, [user, navigate]);
-  
+
+  useEffect(() => {
+    if (isEditing) {
+      // Fetch the ranking data for editing
+      fetchRankingData(id);
+    }
+  }, [isEditing, id]);
+
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
     if (value !== 'OUTRO') {
       form.setValue('titulo', value);
     }
   };
-  
+
   const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('titulo', e.target.value);
   };
-  
+
   const handleBancaChange = (value: string) => {
     setIsCustomBanca(value === 'OUTRO');
     if (value !== 'OUTRO') {
       form.setValue('banca', value);
     }
   };
-  
+
   const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
-    
+
     try {
-      // Transform data from React Hook Form format to the format expected by createRanking
       const dataToSubmit = {
         ...values,
         created_by_user_id: user?.id,
         titulo: values.custom_job_title || values.predefined_job_title,
         banca: values.custom_banca || values.banca
       };
-      
+
       const result = await createRanking(dataToSubmit);
-      
+
       if (result) {
         toast.success("Ranking criado com sucesso!");
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        
-        // Set the concurso ID to allow editing the answer key
+
         setCreatedConcursoId(result[0].id);
-        
-        // Switch to the answer key tab
         setActiveTab('answer-key');
       }
     } catch (error) {
@@ -153,32 +149,29 @@ const CriarRanking = () => {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleNextTab = () => {
     if (activeTab === 'general-info') {
-      // Validate general info fields
       const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
       if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
         toast.error("Preencha todos os campos obrigatórios");
         return;
       }
-      
-      // Only switch to answer key if concurso is created
+
       if (createdConcursoId) {
         setActiveTab('answer-key');
       }
     }
   };
-  
+
   const handleGoToResults = () => {
     if (createdConcursoId) {
       navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
-  
-  // Extract form values for the answer key tab
+
   const formValues = form.getValues();
-  
+
   return (
     <div className="container mx-auto p-4">
       <Button 
@@ -189,7 +182,7 @@ const CriarRanking = () => {
         <ArrowLeft className="h-4 w-4" />
         Voltar para Rankings
       </Button>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">

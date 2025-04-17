@@ -106,13 +106,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Force clear the state after sign out
+      setUser(null);
+      setSession(null);
+      
       // Clear any local storage items that might contain sensitive data
       localStorage.removeItem('adminAuth');
       localStorage.removeItem('adminAuthExpiry');
       localStorage.removeItem('adminAuthToken');
     } catch (error) {
       console.error('Error signing out:', error);
+      throw error; // Re-throw to handle in the component
     }
   };
 
