@@ -13,6 +13,7 @@ export interface Concurso {
   exam_type?: string;
   wrong_answer_penalty?: number;
   alternatives_count?: number;
+  localidades?: string[];
   
   // Weight fields for all sections
   basic_knowledge_weight?: number;
@@ -48,7 +49,7 @@ export interface Concurso {
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
   
-  // Reservation quota types
+  // Reservation quota fields
   has_ampla_concorrencia?: boolean;
   has_ppp?: boolean;
   has_pcd?: boolean;
