@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
 
 interface DeleteProfileButtonProps {
   userId: string;
@@ -23,10 +24,20 @@ interface DeleteProfileButtonProps {
 const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmationText, setConfirmationText] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleDeleteProfile = async () => {
+    // Add confirmation check for destructive action
+    if (confirmationText !== 'EXCLUIR') {
+      showErrorToast(
+        "Confirmação incorreta",
+        "Digite 'EXCLUIR' para confirmar."
+      );
+      return;
+    }
+    
     try {
       setIsDeleting(true);
       
@@ -40,10 +51,13 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
       // Sign out the user
       await supabase.auth.signOut();
       
-      toast({
-        title: "Perfil excluído",
-        description: "Seu perfil foi excluído com sucesso. Você será redirecionado para a página inicial.",
-      });
+      // Clear any sensitive data from localStorage
+      localStorage.clear();
+      
+      showSuccessToast(
+        "Perfil excluído",
+        "Seu perfil foi excluído com sucesso. Você será redirecionado para a página inicial."
+      );
       
       // Redirect to home page
       setTimeout(() => {
@@ -52,14 +66,14 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
       
     } catch (error: any) {
       console.error("Error deleting profile:", error);
-      toast({
-        title: "Erro ao excluir perfil",
-        description: error.message || "Não foi possível excluir seu perfil. Tente novamente mais tarde.",
-        variant: "destructive",
-      });
+      showErrorToast(
+        "Erro ao excluir perfil",
+        error.message || "Não foi possível excluir seu perfil. Tente novamente mais tarde."
+      );
     } finally {
       setIsDeleting(false);
       setIsOpen(false);
+      setConfirmationText('');
     }
   };
 
@@ -87,6 +101,20 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
               e removerá todos os seus dados, incluindo rankings, respostas e relacionamentos com outros usuários.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          <div className="py-3">
+            <p className="text-sm font-medium mb-2">
+              Digite EXCLUIR para confirmar:
+            </p>
+            <input
+              type="text"
+              className="w-full p-2 border rounded-md"
+              value={confirmationText}
+              onChange={(e) => setConfirmationText(e.target.value)}
+              placeholder="EXCLUIR"
+            />
+          </div>
+          
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
@@ -94,7 +122,7 @@ const DeleteProfileButton: React.FC<DeleteProfileButtonProps> = ({ userId }) => 
                 e.preventDefault();
                 handleDeleteProfile();
               }}
-              disabled={isDeleting}
+              disabled={isDeleting || confirmationText !== 'EXCLUIR'}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isDeleting ? (

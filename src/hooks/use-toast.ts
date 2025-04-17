@@ -1,5 +1,6 @@
 
 import * as React from "react"
+import DOMPurify from "dompurify"
 
 import type {
   ToastActionElement,
@@ -72,15 +73,39 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout)
 }
 
+// Sanitize string content for toast messages to prevent XSS
+const sanitizeContent = (content: any): any => {
+  if (typeof content === 'string') {
+    return DOMPurify.sanitize(content);
+  }
+  return content;
+};
+
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
+      // Sanitize toast content before adding to state
+      if (typeof action.toast.title === 'string') {
+        action.toast.title = sanitizeContent(action.toast.title);
+      }
+      if (typeof action.toast.description === 'string') {
+        action.toast.description = sanitizeContent(action.toast.description);
+      }
+      
       return {
         ...state,
         toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
       }
 
     case "UPDATE_TOAST":
+      // Sanitize toast content before updating
+      if (typeof action.toast.title === 'string') {
+        action.toast.title = sanitizeContent(action.toast.title);
+      }
+      if (typeof action.toast.description === 'string') {
+        action.toast.description = sanitizeContent(action.toast.description);
+      }
+      
       return {
         ...state,
         toasts: state.toasts.map((t) =>
@@ -150,8 +175,16 @@ function toast({ ...props }: Toast) {
     })
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
-  // Definir duração padrão para 1.5 segundos se não for especificada
+  // Default duration to 1.5 seconds if not specified
   const duration = props.duration || 1500
+
+  // Sanitize content before dispatch
+  if (typeof props.title === 'string') {
+    props.title = sanitizeContent(props.title);
+  }
+  if (typeof props.description === 'string') {
+    props.description = sanitizeContent(props.description);
+  }
 
   dispatch({
     type: "ADD_TOAST",

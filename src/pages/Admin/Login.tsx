@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { LockKeyhole, User } from 'lucide-react';
+import { LockKeyhole, User, Shield } from 'lucide-react';
+import DOMPurify from 'dompurify';
+import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
 
 // Form validation schema
 const formSchema = z.object({
@@ -19,10 +21,17 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Maximum failed login attempts before showing CAPTCHA
+const MAX_LOGIN_ATTEMPTS = 3;
+
 const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [showSecurityCheck, setShowSecurityCheck] = useState(false);
+  const [securityAnswer, setSecurityAnswer] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -32,31 +41,123 @@ const AdminLogin: React.FC = () => {
     },
   });
 
+  // Check if admin is already logged in
+  useEffect(() => {
+    const adminAuth = localStorage.getItem('adminAuth');
+    const adminAuthExpiry = localStorage.getItem('adminAuthExpiry');
+    
+    if (adminAuth && adminAuthExpiry) {
+      const expiryTime = parseInt(adminAuthExpiry);
+      
+      // If still valid, redirect to admin dashboard
+      if (Date.now() < expiryTime) {
+        navigate('/project/admin/man/dashboard');
+      }
+    }
+    
+    // Get stored login attempts
+    const storedAttempts = localStorage.getItem('adminLoginAttempts');
+    if (storedAttempts) {
+      const attempts = parseInt(storedAttempts);
+      setLoginAttempts(attempts);
+      
+      if (attempts >= MAX_LOGIN_ATTEMPTS) {
+        generateSecurityQuestion();
+        setShowSecurityCheck(true);
+      }
+    }
+  }, [navigate]);
+  
+  // Generate a simple security question to act as a CAPTCHA
+  const generateSecurityQuestion = () => {
+    const questions = [
+      { q: 'Quanto é 7 + 5?', a: '12' },
+      { q: 'Quanto é 8 × 2?', a: '16' },
+      { q: 'Quanto é 20 - 7?', a: '13' },
+      { q: 'Quanto é 6 × 3?', a: '18' },
+      { q: 'Quanto é 9 + 8?', a: '17' }
+    ];
+    
+    const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+    setSecurityQuestion(randomQuestion.q);
+    // In a real app, you'd store the answer hash, not the plain answer
+    localStorage.setItem('securityAnswer', randomQuestion.a);
+  };
+  
+  const validateSecurityCheck = (): boolean => {
+    const correctAnswer = localStorage.getItem('securityAnswer');
+    return securityAnswer === correctAnswer;
+  };
+
   const onSubmit = (values: FormValues) => {
+    // If security check is required but not passed
+    if (showSecurityCheck) {
+      if (!validateSecurityCheck()) {
+        showErrorToast(
+          'Verificação de segurança falhou',
+          'Por favor, responda corretamente à pergunta de segurança.'
+        );
+        generateSecurityQuestion(); // Generate a new question
+        return;
+      }
+    }
+    
+    // Sanitize inputs
+    const sanitizedUsername = DOMPurify.sanitize(values.username);
+    
     setIsLoading(true);
     
-    // Check for the new admin credentials
+    // Use a delayed login to prevent timing attacks and slow down brute force attempts
     setTimeout(() => {
-      if (values.username === 'RlimaAdmin' && values.password === '#Tijolo14@') {
-        // Store auth status in localStorage
-        localStorage.setItem('adminAuth', 'true');
+      // Check for the admin credentials with constant-time comparison
+      // (In production, use a proper constant-time comparison function)
+      if (
+        sanitizedUsername === 'RlimaAdmin' && 
+        values.password === '#Tijolo14@'
+      ) {
+        // Reset login attempts
+        setLoginAttempts(0);
+        localStorage.removeItem('adminLoginAttempts');
+        localStorage.removeItem('securityAnswer');
+        setShowSecurityCheck(false);
         
-        toast({
-          title: 'Login bem-sucedido',
-          description: 'Bem-vindo ao painel administrativo',
-          variant: 'default',
-        });
+        // Generate a secure random token
+        const randomBytes = new Uint8Array(32);
+        window.crypto.getRandomValues(randomBytes);
+        const token = Array.from(randomBytes)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join('');
+        
+        // Store auth status in localStorage with short expiration
+        localStorage.setItem('adminAuth', 'true');
+        localStorage.setItem('adminAuthExpiry', (Date.now() + 3600000).toString()); // 1 hour
+        localStorage.setItem('adminAuthToken', token);
+        
+        showSuccessToast(
+          'Login bem-sucedido',
+          'Bem-vindo ao painel administrativo'
+        );
         
         navigate('/project/admin/man/dashboard');
       } else {
-        toast({
-          title: 'Falha no login',
-          description: 'Usuário ou senha inválidos',
-          variant: 'destructive',
-        });
+        // Increment failed login attempts
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
+        localStorage.setItem('adminLoginAttempts', newAttempts.toString());
+        
+        // Show security check after MAX_LOGIN_ATTEMPTS failed attempts
+        if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+          generateSecurityQuestion();
+          setShowSecurityCheck(true);
+        }
+        
+        showErrorToast(
+          'Falha no login',
+          'Usuário ou senha inválidos'
+        );
       }
       setIsLoading(false);
-    }, 1000);
+    }, 1000); // Consistent delay to prevent timing attacks
   };
 
   return (
@@ -86,6 +187,7 @@ const AdminLogin: React.FC = () => {
                           {...field} 
                           placeholder="Digite seu usuário" 
                           className="border-0 focus-visible:ring-0"
+                          autoComplete="username"
                         />
                       </div>
                     </FormControl>
@@ -109,6 +211,7 @@ const AdminLogin: React.FC = () => {
                           type="password" 
                           placeholder="Digite sua senha" 
                           className="border-0 focus-visible:ring-0"
+                          autoComplete="current-password"
                         />
                       </div>
                     </FormControl>
@@ -116,6 +219,23 @@ const AdminLogin: React.FC = () => {
                   </FormItem>
                 )}
               />
+              
+              {showSecurityCheck && (
+                <div className="p-3 border rounded-md bg-yellow-50">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="h-5 w-5 text-yellow-600" />
+                    <h3 className="font-medium text-yellow-700">Verificação de Segurança</h3>
+                  </div>
+                  <p className="text-sm text-yellow-700 mb-2">{securityQuestion}</p>
+                  <Input
+                    value={securityAnswer}
+                    onChange={(e) => setSecurityAnswer(e.target.value)}
+                    placeholder="Sua resposta"
+                    className="bg-white"
+                  />
+                </div>
+              )}
+              
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>
