@@ -10,7 +10,7 @@ import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
-import { QuotaSelector } from './QuotaSelector';
+import { QuotaSelector, QuotaType } from './QuotaSelector';
 
 interface ParticipationFormProps {
   concurso: Concurso;
@@ -27,7 +27,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
   const [showScoreForm, setShowScoreForm] = useState(false);
-  const [selectedQuota, setSelectedQuota] = useState<string>('Ampla Concorrência');
+  const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
