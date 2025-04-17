@@ -1,100 +1,30 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Clock, Calendar, Building, Award, User, Star } from 'lucide-react';
-import { formatDate } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users } from 'lucide-react';
 import { Concurso } from '@/types/concursos';
 
 interface ConcursoInfoCardProps {
-  concursoTitle: string;
-  cargoTitle: string;
-  banca: string;
-  data: string;
-  creatorName?: string;
-  isAdminCreated?: boolean;
+  concurso?: Concurso;
 }
 
-// Alternative props interface to support passing a concurso object
-interface ConcursoObjectProps {
-  concurso: Concurso;
-}
-
-// Type guard to check which props are being passed
-function isConcursoObject(props: ConcursoInfoCardProps | ConcursoObjectProps): props is ConcursoObjectProps {
-  return 'concurso' in props;
-}
-
-export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps | ConcursoObjectProps> = (props) => {
-  // Extract props based on what was passed
-  let concursoTitle: string;
-  let cargoTitle: string;
-  let banca: string;
-  let data: string;
-  let creatorName: string | undefined;
-  let isAdminCreated: boolean | undefined;
-
-  if (isConcursoObject(props)) {
-    const { concurso } = props;
-    concursoTitle = concurso.orgao;
-    cargoTitle = concurso.titulo;
-    banca = concurso.banca;
-    data = concurso.data_publicacao;
-    creatorName = concurso.creatorName;
-    isAdminCreated = concurso.is_admin_created;
-  } else {
-    concursoTitle = props.concursoTitle;
-    cargoTitle = props.cargoTitle;
-    banca = props.banca;
-    data = props.data;
-    creatorName = props.creatorName;
-    isAdminCreated = props.isAdminCreated;
-  }
-
+export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso }) => {
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold">{cargoTitle}</h2>
-            <div className="flex flex-wrap items-center gap-1 text-muted-foreground mt-1">
-              <Building className="h-4 w-4" />
-              <span>{concursoTitle}</span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-emerald-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Banca</p>
-                <p className="font-medium">{banca}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-emerald-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Data da prova</p>
-                <p className="font-medium">{formatDate(data)}</p>
-              </div>
-            </div>
-            
-            {(creatorName || isAdminCreated) && (
-              <div className="flex items-center gap-2 col-span-1 md:col-span-2">
-                <User className="h-5 w-5 text-emerald-600" />
-                <div className="flex items-center">
-                  <p className="text-sm text-muted-foreground mr-1">Criado por:</p>
-                  <p className="font-medium flex items-center">
-                    {isAdminCreated ? 'Admin' : creatorName || 'Usuário'}
-                    {!isAdminCreated && creatorName && (
-                      <Star className="h-3 w-3 ml-1 text-yellow-400" />
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl flex items-center">
+          <Users className="mr-2 h-5 w-5 text-blue-500" />
+          Informações do Concurso
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-lg">
+          Órgão: <Badge variant="outline">{concurso?.orgao}</Badge>
+        </p>
+        <p className="mt-2 text-lg">
+          Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
+        </p>
       </CardContent>
     </Card>
   );

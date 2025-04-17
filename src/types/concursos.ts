@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -51,11 +52,6 @@ export interface Concurso {
   has_hipossuficientes?: boolean;
   has_indigenas?: boolean;
   has_transsexuais?: boolean;
-  
-  // Creator information (adding these properties)
-  creatorName?: string;
-  is_admin_created?: boolean;
-  created_by_user_id?: string;
 }
 
 export interface ConcursoFilter {
