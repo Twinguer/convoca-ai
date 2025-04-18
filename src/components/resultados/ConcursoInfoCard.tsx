@@ -2,9 +2,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Calendar } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { Concurso } from '@/types/concursos';
-import { formatDate } from '@/lib/utils';
 
 interface ConcursoInfoCardProps {
   concurso?: Concurso;
@@ -66,14 +65,6 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
           <p className="text-sm">
             Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
           </p>
-          {concurso?.data_publicacao && (
-            <p className="text-sm">
-              Data da Prova: <Badge variant="outline" className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {formatDate(concurso.data_publicacao)}
-              </Badge>
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>
