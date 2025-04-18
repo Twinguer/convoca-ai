@@ -1,12 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Plus, ListChecks, LogOut, ArrowLeft } from 'lucide-react';
-
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  
   useEffect(() => {
     // Check if the user is authenticated
     const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
@@ -14,12 +11,10 @@ const AdminLayout: React.FC = () => {
       navigate('/project/admin/man/login');
     }
   }, [navigate]);
-  
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     navigate('/project/admin/man/login');
   };
-  
   return <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm">
@@ -29,10 +24,7 @@ const AdminLayout: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" asChild className="flex items-center gap-2">
-              <Link to="/project" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Voltar para o site
-              </Link>
+              
             </Button>
             <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-2">
               <LogOut className="h-4 w-4" />
@@ -75,5 +67,4 @@ const AdminLayout: React.FC = () => {
       </div>
     </div>;
 };
-
 export default AdminLayout;
