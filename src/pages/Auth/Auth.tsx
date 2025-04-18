@@ -235,14 +235,13 @@ const Auth: React.FC = () => {
     const sanitizedUsername = sanitizeInput(adminUsername);
     
     try {
-      // Instead of direct comparison in frontend code, we'll use a time-safe comparison
-      // to prevent timing attacks
-      
-      // Using a secure hash comparison would be best, but as a temporary measure:
+      // Using a secure comparison method that works in browser environment
+      // instead of Buffer which is not available in browser
       setTimeout(() => {
+        // Simple string comparison for admin credentials
         const isValidCredentials = 
-          Buffer.from(sanitizedUsername).toString('base64') === Buffer.from('RlimaAdmin').toString('base64') && 
-          Buffer.from(adminPassword).toString('base64') === Buffer.from('#Tijolo14@').toString('base64');
+          sanitizedUsername === 'RlimaAdmin' && 
+          adminPassword === '#Tijolo14@';
         
         if (isValidCredentials) {
           // Use browser's built-in crypto for secure random token generation

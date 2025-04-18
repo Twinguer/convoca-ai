@@ -109,8 +109,7 @@ const AdminLogin: React.FC = () => {
     
     // Use a delayed login to prevent timing attacks and slow down brute force attempts
     setTimeout(() => {
-      // Check for the admin credentials with constant-time comparison
-      // (In production, use a proper constant-time comparison function)
+      // Check for the admin credentials with simple string comparison
       if (
         sanitizedUsername === 'RlimaAdmin' && 
         values.password === '#Tijolo14@'
