@@ -23,6 +23,7 @@ import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
 import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
+import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
 
 interface Follower {
   id: string;
