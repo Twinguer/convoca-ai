@@ -183,7 +183,7 @@ const GabaritoEditor = () => {
         toast({
           title: "Gabarito salvo, mas recálculo falhou",
           description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
-          variant: "warning"
+          variant: "destructive"
         });
       }
       

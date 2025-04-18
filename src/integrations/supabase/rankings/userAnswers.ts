@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -99,6 +100,7 @@ export const saveUserAnswers = async (
     }
 
     console.log('Official answer key:', answerKey);
+    console.log('User answers to check:', answersArray);
     
     // Calculate score by comparing user answers with official answers
     let basicKnowledgeScore = 0;
@@ -163,8 +165,7 @@ export const saveUserAnswers = async (
     
     // Get the correct weights
     const basicWeight = concursoWithWeights?.basic_knowledge_weight || 1;
-    const specific1Weight = concursoWithWeights?.specific_knowledge_1_weight || 
-                           concursoWithWeights?.specific_knowledge_weight || 1;
+    const specific1Weight = concursoWithWeights?.specific_knowledge_1_weight || 1;
     const specific2Weight = concursoWithWeights?.specific_knowledge_2_weight || 1;
     const specific3Weight = concursoWithWeights?.specific_knowledge_3_weight || 1;
     
@@ -310,7 +311,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         specific_knowledge_2_questions,
         specific_knowledge_3_questions,
         basic_knowledge_weight,
-        specific_knowledge_weight,
         specific_knowledge_1_weight,
         specific_knowledge_2_weight,
         specific_knowledge_3_weight,
@@ -409,8 +409,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       
       // Get weights
       const basicWeight = concurso.basic_knowledge_weight || 1;
-      const specific1Weight = concurso.specific_knowledge_1_weight || 
-                             concurso.specific_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
       const specific2Weight = concurso.specific_knowledge_2_weight || 1;
       const specific3Weight = concurso.specific_knowledge_3_weight || 1;
       
