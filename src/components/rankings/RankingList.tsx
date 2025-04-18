@@ -19,6 +19,11 @@ export interface RankingItemProps {
   status?: string;
 }
 
+export interface RankingListProps {
+  rankings: RankingItemProps[];
+  isLoading: boolean;
+}
+
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
