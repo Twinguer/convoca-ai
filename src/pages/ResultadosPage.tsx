@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -113,7 +114,7 @@ const ResultadosPage = () => {
           inscritos={concurso?.inscritos}
         />
         
-        {concurso && <ConcursoInfoCard concurso={concurso} creatorName={creatorName} />}
+        {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
       <RankingTable
