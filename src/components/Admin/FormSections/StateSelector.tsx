@@ -1,173 +1,47 @@
-import React, { useState } from 'react';
-import { Label } from '@/components/ui/label';
-import { Check, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 
-// Mapeamento de estados e siglas
-const BRAZILIAN_STATES = [{
-  name: 'Acre',
-  abbr: 'AC'
-}, {
-  name: 'Alagoas',
-  abbr: 'AL'
-}, {
-  name: 'Amapá',
-  abbr: 'AP'
-}, {
-  name: 'Amazonas',
-  abbr: 'AM'
-}, {
-  name: 'Bahia',
-  abbr: 'BA'
-}, {
-  name: 'Ceará',
-  abbr: 'CE'
-}, {
-  name: 'Distrito Federal',
-  abbr: 'DF'
-}, {
-  name: 'Espírito Santo',
-  abbr: 'ES'
-}, {
-  name: 'Goiás',
-  abbr: 'GO'
-}, {
-  name: 'Maranhão',
-  abbr: 'MA'
-}, {
-  name: 'Mato Grosso',
-  abbr: 'MT'
-}, {
-  name: 'Mato Grosso do Sul',
-  abbr: 'MS'
-}, {
-  name: 'Minas Gerais',
-  abbr: 'MG'
-}, {
-  name: 'Pará',
-  abbr: 'PA'
-}, {
-  name: 'Paraíba',
-  abbr: 'PB'
-}, {
-  name: 'Paraná',
-  abbr: 'PR'
-}, {
-  name: 'Pernambuco',
-  abbr: 'PE'
-}, {
-  name: 'Piauí',
-  abbr: 'PI'
-}, {
-  name: 'Rio de Janeiro',
-  abbr: 'RJ'
-}, {
-  name: 'Rio Grande do Norte',
-  abbr: 'RN'
-}, {
-  name: 'Rio Grande do Sul',
-  abbr: 'RS'
-}, {
-  name: 'Rondônia',
-  abbr: 'RO'
-}, {
-  name: 'Roraima',
-  abbr: 'RR'
-}, {
-  name: 'Santa Catarina',
-  abbr: 'SC'
-}, {
-  name: 'São Paulo',
-  abbr: 'SP'
-}, {
-  name: 'Sergipe',
-  abbr: 'SE'
-}, {
-  name: 'Tocantins',
-  abbr: 'TO'
-}, {
-  name: 'Nacional',
-  abbr: 'Nacional'
-} // Colocamos Nacional por último, conforme solicitado
+import React from 'react';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const BRAZILIAN_STATES = [
+  'Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará',
+  'Distrito Federal', 'Espírito Santo', 'Goiás', 'Maranhão',
+  'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará',
+  'Paraíba', 'Paraná', 'Pernambuco', 'Piauí', 'Rio de Janeiro',
+  'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima',
+  'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins'
 ];
+
 interface StateSelectorProps {
   selectedStates: string[];
   onStateChange: (states: string[]) => void;
 }
-export const StateSelector: React.FC<StateSelectorProps> = ({
-  selectedStates,
-  onStateChange
-}) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [tempSelectedStates, setTempSelectedStates] = useState<string[]>(selectedStates);
-  const handleStateClick = (state: string) => {
-    if (state === 'Nacional') {
-      // Se Nacional for selecionado, limpa todas outras seleções
-      setTempSelectedStates(['Nacional']);
-    } else {
-      // Se outro estado for selecionado, remove Nacional se estiver presente
-      const newSelection = tempSelectedStates.includes(state) ? tempSelectedStates.filter(s => s !== state) : [...tempSelectedStates.filter(s => s !== 'Nacional'), state];
-      setTempSelectedStates(newSelection);
-    }
+
+export const StateSelector: React.FC<StateSelectorProps> = ({ selectedStates, onStateChange }) => {
+  const handleStateChange = (state: string) => {
+    const updatedStates = selectedStates.includes(state)
+      ? selectedStates.filter(s => s !== state)
+      : [...selectedStates, state];
+    onStateChange(updatedStates);
   };
-  const handleSave = () => {
-    onStateChange(tempSelectedStates);
-    setIsDialogOpen(false);
-  };
-  const handleDialogOpen = (open: boolean) => {
-    if (open) {
-      setTempSelectedStates([...selectedStates]);
-    }
-    setIsDialogOpen(open);
-  };
-  const getStateDisplay = () => {
-    if (selectedStates.length === 0) {
-      return <Badge variant="outline" className="text-muted-foreground">Selecione ao menos uma localidade</Badge>;
-    }
-    if (selectedStates.includes('Nacional')) {
-      return <Badge>Nacional</Badge>;
-    }
-    if (selectedStates.length <= 3) {
-      return selectedStates.map((state, index) => <Badge key={state} className="mr-1">{state}</Badge>);
-    }
-    return <>
-        {selectedStates.slice(0, 2).map(state => <Badge key={state} className="mr-1">{state}</Badge>)}
-        <Badge variant="secondary">+{selectedStates.length - 2} localidades</Badge>
-      </>;
-  };
-  return <div className="space-y-2">
-      
-      <div className="flex items-center gap-2">
-        
-        <Dialog open={isDialogOpen} onOpenChange={handleDialogOpen}>
-          <DialogTrigger asChild>
-            
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Selecionar Localidades</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="h-[300px] pr-4">
-              <div className="grid grid-cols-3 gap-2">
-                {BRAZILIAN_STATES.map(({
-                name,
-                abbr
-              }) => <Button key={abbr} variant="outline" size="sm" className={`justify-start ${tempSelectedStates.includes(abbr) ? 'bg-primary/10' : ''}`} onClick={() => handleStateClick(abbr)}>
-                    {tempSelectedStates.includes(abbr) && <Check className="h-4 w-4 mr-1" />}
-                    {abbr === 'Nacional' ? abbr : `${abbr} - ${name}`}
-                  </Button>)}
-              </div>
-            </ScrollArea>
-            <div className="flex justify-end mt-4">
-              <Button onClick={handleSave} disabled={tempSelectedStates.length === 0}>
-                Confirmar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+
+  return (
+    <div className="space-y-4">
+      <Label>Localidades</Label>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[300px] overflow-y-auto p-2 border rounded-md">
+        {BRAZILIAN_STATES.map((state) => (
+          <div key={state} className="flex items-center space-x-2">
+            <Checkbox
+              id={`state-${state}`}
+              checked={selectedStates.includes(state)}
+              onCheckedChange={() => handleStateChange(state)}
+            />
+            <Label htmlFor={`state-${state}`} className="cursor-pointer">
+              {state}
+            </Label>
+          </div>
+        ))}
       </div>
-    </div>;
+    </div>
+  );
 };

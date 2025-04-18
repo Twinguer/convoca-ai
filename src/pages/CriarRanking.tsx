@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +14,6 @@ import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
-import { StateSelector } from '@/components/Admin/FormSections/StateSelector';
-import { FormField, FormItem } from '@/components/ui/form';
 
 // Function to fetch ranking data for editing
 const fetchRankingData = async (rankingId) => {
@@ -49,7 +48,6 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
-  const [selectedLocalidades, setSelectedLocalidades] = useState<string[]>([]);
   
   // Check if we're in edit mode
   const searchParams = new URLSearchParams(location.search);
@@ -80,7 +78,6 @@ const CriarRanking = () => {
       link: '',
       vagas: 0,
       inscritos: 0,
-      localidades: [],
       
       // Exam Structure
       exam_type: 'Alternativas',
@@ -145,11 +142,6 @@ const CriarRanking = () => {
             const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
             setIsCustomBanca(isOtherBanca);
             
-            // Set localidades
-            if (data.localidades && Array.isArray(data.localidades)) {
-              setSelectedLocalidades(data.localidades);
-            }
-            
             // Reset form with existing data
             form.reset({
               ...data,
@@ -196,25 +188,13 @@ const CriarRanking = () => {
     }
   };
   
-  const handleLocalidadesChange = (localidades: string[]) => {
-    setSelectedLocalidades(localidades);
-    form.setValue('localidades', localidades);
-  };
-  
   const handleSubmit = async (values: any) => {
-    // Validar que pelo menos uma localidade foi selecionada
-    if (!selectedLocalidades || selectedLocalidades.length === 0) {
-      toast.error("Selecione pelo menos uma localidade");
-      return;
-    }
-    
     setIsSubmitting(true);
     
     try {
       // Transform data from React Hook Form format to the format expected by createRanking
       const dataToSubmit = {
         ...values,
-        localidades: selectedLocalidades,
         created_by_user_id: user?.id,
         titulo: values.custom_job_title || values.predefined_job_title,
         banca: values.custom_banca || values.banca
@@ -267,12 +247,6 @@ const CriarRanking = () => {
         return;
       }
       
-      // Validar que pelo menos uma localidade foi selecionada
-      if (!selectedLocalidades || selectedLocalidades.length === 0) {
-        toast.error("Selecione pelo menos uma localidade");
-        return;
-      }
-      
       // Only switch to answer key if concurso is created
       if (createdConcursoId) {
         setActiveTab('answer-key');
@@ -309,7 +283,7 @@ const CriarRanking = () => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)}>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
                   <TabsTrigger value="answer-key" disabled={!createdConcursoId}>
@@ -318,26 +292,16 @@ const CriarRanking = () => {
                 </TabsList>
                 
                 <TabsContent value="general-info">
-                  <div className="space-y-6">
-                    <GeneralTab
-                      form={form}
-                      jobTitles={jobTitles}
-                      isCustomTitle={isCustomTitle}
-                      isCustomBanca={isCustomBanca}
-                      handleJobTitleChange={handleJobTitleChange}
-                      handleCustomTitleChange={handleCustomTitleChange}
-                      handleBancaChange={handleBancaChange}
-                      handleNextTab={handleNextTab}
-                    />
-                    
-                    {/* Componente Seletor de Localidades */}
-                    <FormItem>
-                      <StateSelector 
-                        selectedStates={selectedLocalidades}
-                        onStateChange={handleLocalidadesChange}
-                      />
-                    </FormItem>
-                  </div>
+                  <GeneralTab
+                    form={form}
+                    jobTitles={jobTitles}
+                    isCustomTitle={isCustomTitle}
+                    isCustomBanca={isCustomBanca}
+                    handleJobTitleChange={handleJobTitleChange}
+                    handleCustomTitleChange={handleCustomTitleChange}
+                    handleBancaChange={handleBancaChange}
+                    handleNextTab={handleNextTab}
+                  />
                   
                   <div className="flex justify-end mt-6">
                     <Button type="submit" disabled={isSubmitting}>
