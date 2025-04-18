@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { Trophy, User, Star, Calendar } from 'lucide-react';
-
 export interface RankingItemProps {
   id: string;
   examDate: string;
@@ -18,12 +16,10 @@ export interface RankingItemProps {
   isAdminCreated?: boolean;
   status?: string;
 }
-
 export interface RankingListProps {
   rankings: RankingItemProps[];
   isLoading: boolean;
 }
-
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -41,7 +37,6 @@ export const RankingItem: React.FC<RankingItemProps> = ({
     }
     return '';
   };
-
   return <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
@@ -49,18 +44,13 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             <div className="flex justify-between items-start mb-2">
               <p className="text-sm font-medium text-gray-600">{banca}</p>
               <div className="flex flex-col gap-1 items-end">
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs w-fit ${getStatusColor(status)}`}
-                >
+                <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
                 </Badge>
-                {examDate && (
-                  <div className="flex items-center text-xs text-gray-500">
+                {examDate && <div className="flex items-center text-xs text-gray-500 mx-[5px]">
                     <Calendar className="h-3 w-3 mr-1" />
                     {formatDate(examDate)}
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
             
@@ -76,9 +66,9 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               </p>
               
               {(creatorName || isAdminCreated) && <div className="flex items-center text-xs text-gray-500">
-                  <User className="h-3 w-3 mr-1" />
-                  <span>Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
-                  {!isAdminCreated && <Star className="h-3 w-3 ml-1 text-yellow-400" />}
+                  
+                  <span className="text-right mx-[5px]">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  {!isAdminCreated}
                 </div>}
             </div>
           </div>
@@ -86,7 +76,6 @@ export const RankingItem: React.FC<RankingItemProps> = ({
       </Card>
     </Link>;
 };
-
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
   isLoading
@@ -103,7 +92,6 @@ export const RankingList: React.FC<RankingListProps> = ({
           </Card>)}
       </div>;
   }
-
   if (rankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -111,7 +99,6 @@ export const RankingList: React.FC<RankingListProps> = ({
         </CardContent>
       </Card>;
   }
-
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px]">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>;
