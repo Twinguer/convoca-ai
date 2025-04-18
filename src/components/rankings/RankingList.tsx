@@ -67,7 +67,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               
               {(creatorName || isAdminCreated) && <div className="flex items-center text-xs text-gray-500">
                   
-                  <span className="text-right mx-0 text-base">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  <span className="text-right mx-0 text-xs">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
                   {!isAdminCreated}
                 </div>}
             </div>
