@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,13 +30,24 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   isAdminCreated,
   status
 }) => {
+  const getStatusColor = (status?: string) => {
+    if (!status || status === 'Em andamento') {
+      return 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200';
+    }
+    return '';
+  };
+
   return <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <div className="flex flex-col gap-1">
-                <Badge variant="outline" className="text-xs w-fit">
+              <p className="text-sm font-medium text-gray-600">{banca}</p>
+              <div className="flex flex-col gap-1 items-end">
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs w-fit ${getStatusColor(status)}`}
+                >
                   {status || 'Em andamento'}
                 </Badge>
                 {examDate && (
@@ -45,7 +57,6 @@ export const RankingItem: React.FC<RankingItemProps> = ({
                   </div>
                 )}
               </div>
-              <p className="text-sm font-medium text-gray-600">{banca}</p>
             </div>
             
             <div className="mb-2">
@@ -71,17 +82,12 @@ export const RankingItem: React.FC<RankingItemProps> = ({
     </Link>;
 };
 
-interface RankingListProps {
-  rankings: RankingItemProps[];
-  isLoading: boolean;
-}
-
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
   isLoading
 }) => {
   if (isLoading) {
-    return <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    return <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px]">
         {[1, 2, 3, 4].map(i => <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
               <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -92,6 +98,7 @@ export const RankingList: React.FC<RankingListProps> = ({
           </Card>)}
       </div>;
   }
+
   if (rankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -99,7 +106,8 @@ export const RankingList: React.FC<RankingListProps> = ({
         </CardContent>
       </Card>;
   }
-  return <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+  return <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px]">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>;
 };
