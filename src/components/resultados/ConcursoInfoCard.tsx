@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { Concurso } from '@/types/concursos';
-import { formatDate } from '@/lib/utils';
 interface ConcursoInfoCardProps {
   concurso?: Concurso;
   creatorName?: string;
 }
+
 export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso,
   creatorName
@@ -48,6 +49,7 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
     };
     return localidades.map(state => stateAbbreviations[state] || state).join(', ');
   };
+
   return <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center">
@@ -63,16 +65,6 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
           
           <p className="text-sm">
             Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
-          </p>
-          
-          <p className="text-sm">
-            Status: <Badge variant="outline">{concurso?.status}</Badge>
-          </p>
-          
-          <p className="text-sm">
-            Data da Prova: <Badge variant="outline">
-              {concurso?.data_publicacao ? formatDate(concurso.data_publicacao) : 'Não definida'}
-            </Badge>
           </p>
           
           <p className="text-sm">

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
-import { Trophy, User, Star } from 'lucide-react';
+import { Trophy, User, Star, Calendar } from 'lucide-react';
+
 export interface RankingItemProps {
   id: string;
   examDate: string;
@@ -13,7 +15,9 @@ export interface RankingItemProps {
   createdByUserId?: string;
   creatorName?: string;
   isAdminCreated?: boolean;
+  status?: string;
 }
+
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -22,17 +26,33 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   cargoTitle,
   participantCount,
   creatorName,
-  isAdminCreated
+  isAdminCreated,
+  status
 }) => {
   return <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
           <div>
-            
-            <div className="flex items-center mb-2">
-              <p className="text-sm font-medium text-gray-600">{banca} • {concursoTitle}</p>
+            <div className="flex justify-between items-start mb-2">
+              <div className="flex flex-col gap-1">
+                <Badge variant="outline" className="text-xs w-fit">
+                  {status || 'Em andamento'}
+                </Badge>
+                {examDate && (
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {formatDate(examDate)}
+                  </div>
+                )}
+              </div>
+              <p className="text-sm font-medium text-gray-600">{banca}</p>
             </div>
-            <h3 className="text-lg font-bold">{cargoTitle}</h3>
+            
+            <div className="mb-2">
+              <p className="text-sm text-gray-600">{concursoTitle}</p>
+              <h3 className="text-lg font-bold">{cargoTitle}</h3>
+            </div>
+
             <div className="flex items-center justify-between mt-2">
               <p className="text-sm">
                 <Trophy className="inline-block mr-1 h-4 w-4 text-yellow-500" />
@@ -50,10 +70,12 @@ export const RankingItem: React.FC<RankingItemProps> = ({
       </Card>
     </Link>;
 };
+
 interface RankingListProps {
   rankings: RankingItemProps[];
   isLoading: boolean;
 }
+
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
   isLoading
