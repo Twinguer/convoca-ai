@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -310,7 +309,7 @@ const CriarRanking = () => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)}>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
                   <TabsTrigger value="answer-key" disabled={!createdConcursoId}>
