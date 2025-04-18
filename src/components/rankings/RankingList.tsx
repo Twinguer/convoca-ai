@@ -60,7 +60,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             </div>
 
             <div className="flex items-center justify-between mt-2">
-              <p className="text-sm">
+              <p className="text-sm text-emerald-600 font-bold">
                 
                 {participantCount.toLocaleString()} participantes
               </p>
