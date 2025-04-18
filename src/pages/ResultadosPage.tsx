@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -45,7 +44,6 @@ const ResultadosPage = () => {
     }
   }, [concurso, rankings]);
 
-  // Force a refresh of data when component mounts
   useEffect(() => {
     if (concurso?.id) {
       refreshData();
@@ -108,12 +106,7 @@ const ResultadosPage = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] mb-1 sm:mb-2">
-        <RankingCard 
-          participantCount={participantCount} 
-          userRanking={userRanking}
-          inscritos={concurso?.inscritos}
-        />
-        
+        <RankingCard userRanking={userRanking} />
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
