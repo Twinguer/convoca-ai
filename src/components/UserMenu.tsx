@@ -3,17 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, LogOut, Award, Users } from 'lucide-react';
+import { User, LogOut, Award, Users, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTheme } from '@/components/theme-provider';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
 
   const { data: profile } = useQuery({
     queryKey: ['user-profile-menu', user?.id],
@@ -64,7 +66,7 @@ const UserMenu: React.FC = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={userName} /> : <AvatarFallback>{getInitials(userName)}</AvatarFallback>}
+            {profile?.avatar_url ? <AvatarImage src={profile?.avatar_url} alt={userName} /> : <AvatarFallback>{getInitials(userName)}</AvatarFallback>}
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -94,6 +96,20 @@ const UserMenu: React.FC = () => {
             <User className="mr-2 h-4 w-4" />
             <span>Meu Perfil</span>
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+          {theme === "light" ? (
+            <>
+              <Moon className="mr-2 h-4 w-4" />
+              <span>Modo escuro</span>
+            </>
+          ) : (
+            <>
+              <Sun className="mr-2 h-4 w-4" />
+              <span>Modo claro</span>
+            </>
+          )}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">

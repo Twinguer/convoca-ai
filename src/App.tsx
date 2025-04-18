@@ -2,6 +2,7 @@ import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Menu from "./components/Menu";
@@ -34,110 +35,112 @@ const App = () => {
   return (
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/project/admin/man/login" element={<AdminLogin />} />
-                <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
-                <Route path="/project/admin/man" element={
-                  <ProtectedRoute>
-                    <AdminLayout />
-                  </ProtectedRoute>
-                }>
-                  <Route path="dashboard" element={<AdminDashboard />} />
-                  <Route path="concursos" element={<ListarConcursos />} />
-                  <Route path="concursos/novo" element={<NovoConcurso />} />
-                  <Route path="concursos/editar/:id" element={<NovoConcurso />} />
-                  <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
-                </Route>
-                <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
-                <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/perfil" element={
-                  <>
-                    <Menu />
-                    <UserProfile />
-                  </>
-                } />
-                <Route path="/usuario/:id" element={
-                  <>
-                    <Menu />
-                    <PublicUserProfile />
-                  </>
-                } />
-                <Route path="/seguidores" element={
-                  <>
-                    <Menu />
-                    <UserFollowers />
-                  </>
-                } />
-                <Route path="/" element={
-                  <>
-                    <Menu />
-                    <Index />
-                  </>
-                } />
-                <Route path="/comunidade" element={
-                  <>
-                    <Menu />
-                    <Comunidade />
-                  </>
-                } />
-                <Route path="/editais" element={
-                  <>
-                    <Menu />
-                    <Editais />
-                  </>
-                } />
-                <Route path="/pre-classificacao" element={
-                  <>
-                    <Menu />
-                    <PreClassificacao />
-                  </>
-                } />
-                <Route path="/criar-ranking" element={
-                  <>
-                    <Menu />
-                    <CriarRanking />
-                  </>
-                } />
-                <Route path="/resultado" element={
-                  <>
-                    <Menu />
-                    <Resultado />
-                  </>
-                } />
-                <Route path="/concurso/:id" element={
-                  <>
-                    <Menu />
-                    <ConcursoDetails />
-                  </>
-                } />
-                <Route path="/concurso/:id/resultados" element={
-                  <>
-                    <Menu />
-                    <ResultadosPage />
-                  </>
-                } />
-                <Route path="/concurso/:id/participar" element={
-                  <>
-                    <Menu />
-                    <ConcursoParticipation />
-                  </>
-                } />
-                <Route path="*" element={
-                  <>
-                    <Menu />
-                    <NotFound />
-                  </>
-                } />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/project/admin/man/login" element={<AdminLogin />} />
+                  <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
+                  <Route path="/project/admin/man" element={
+                    <ProtectedRoute>
+                      <AdminLayout />
+                    </ProtectedRoute>
+                  }>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="concursos" element={<ListarConcursos />} />
+                    <Route path="concursos/novo" element={<NovoConcurso />} />
+                    <Route path="concursos/editar/:id" element={<NovoConcurso />} />
+                    <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
+                  </Route>
+                  <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
+                  <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/perfil" element={
+                    <>
+                      <Menu />
+                      <UserProfile />
+                    </>
+                  } />
+                  <Route path="/usuario/:id" element={
+                    <>
+                      <Menu />
+                      <PublicUserProfile />
+                    </>
+                  } />
+                  <Route path="/seguidores" element={
+                    <>
+                      <Menu />
+                      <UserFollowers />
+                    </>
+                  } />
+                  <Route path="/" element={
+                    <>
+                      <Menu />
+                      <Index />
+                    </>
+                  } />
+                  <Route path="/comunidade" element={
+                    <>
+                      <Menu />
+                      <Comunidade />
+                    </>
+                  } />
+                  <Route path="/editais" element={
+                    <>
+                      <Menu />
+                      <Editais />
+                    </>
+                  } />
+                  <Route path="/pre-classificacao" element={
+                    <>
+                      <Menu />
+                      <PreClassificacao />
+                    </>
+                  } />
+                  <Route path="/criar-ranking" element={
+                    <>
+                      <Menu />
+                      <CriarRanking />
+                    </>
+                  } />
+                  <Route path="/resultado" element={
+                    <>
+                      <Menu />
+                      <Resultado />
+                    </>
+                  } />
+                  <Route path="/concurso/:id" element={
+                    <>
+                      <Menu />
+                      <ConcursoDetails />
+                    </>
+                  } />
+                  <Route path="/concurso/:id/resultados" element={
+                    <>
+                      <Menu />
+                      <ResultadosPage />
+                    </>
+                  } />
+                  <Route path="/concurso/:id/participar" element={
+                    <>
+                      <Menu />
+                      <ConcursoParticipation />
+                    </>
+                  } />
+                  <Route path="*" element={
+                    <>
+                      <Menu />
+                      <NotFound />
+                    </>
+                  } />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </React.StrictMode>
   );
