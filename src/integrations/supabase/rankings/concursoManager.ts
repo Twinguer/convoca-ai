@@ -1,4 +1,6 @@
+
 import { supabase } from '../client';
+import { recalculateAllUserScores } from './userAnswers';
 
 // Function to schedule scraper for concursos
 export const scheduleScraper = async (): Promise<void> => {
@@ -23,8 +25,6 @@ export const createRanking = async (rankingData: any) => {
         throw new Error(`Campo obrigatório faltando: ${field}`);
       }
     }
-    
-    // NOTE: Duplicate checking removed as requested
     
     // Create a sanitized data object with only the fields that exist in the database
     const sanitizedData = {
@@ -137,6 +137,39 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
       throw new Error('Você não tem permissão para editar este ranking');
     }
     
+    // Store old values for comparison
+    const { data: oldData, error: oldDataError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions,
+        basic_knowledge_weight,
+        specific_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight,
+        discursive_weight,
+        case_study_1_weight,
+        case_study_2_weight,
+        case_study_3_weight,
+        has_basic_knowledge,
+        has_specific_knowledge_1,
+        has_specific_knowledge_2,
+        has_specific_knowledge_3,
+        has_discursive,
+        has_case_study_1,
+        has_case_study_2,
+        has_case_study_3
+      `)
+      .eq('id', rankingId)
+      .single();
+    
+    if (oldDataError) {
+      console.error('Error fetching old ranking data:', oldDataError);
+    }
+    
     // Update the ranking
     const { data, error } = await supabase
       .from('concursos')
@@ -147,6 +180,53 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     if (error) {
       console.error('Database error updating ranking:', error);
       throw error;
+    }
+    
+    // Check if any exam structure or weights have changed
+    let structureChanged = false;
+    if (oldData) {
+      const structureFields = [
+        'basic_knowledge_questions',
+        'specific_knowledge_1_questions',
+        'specific_knowledge_2_questions',
+        'specific_knowledge_3_questions',
+        'basic_knowledge_weight',
+        'specific_knowledge_weight',
+        'specific_knowledge_1_weight',
+        'specific_knowledge_2_weight',
+        'specific_knowledge_3_weight',
+        'discursive_weight',
+        'case_study_1_weight',
+        'case_study_2_weight',
+        'case_study_3_weight',
+        'has_basic_knowledge',
+        'has_specific_knowledge_1',
+        'has_specific_knowledge_2',
+        'has_specific_knowledge_3',
+        'has_discursive',
+        'has_case_study_1',
+        'has_case_study_2',
+        'has_case_study_3'
+      ];
+      
+      for (const field of structureFields) {
+        if (rankingData[field] !== undefined && rankingData[field] !== oldData[field]) {
+          structureChanged = true;
+          console.log(`Field ${field} changed from ${oldData[field]} to ${rankingData[field]}`);
+          break;
+        }
+      }
+    }
+    
+    // If structure changed, recalculate all scores
+    if (structureChanged) {
+      try {
+        console.log('Exam structure changed, recalculating all scores');
+        await recalculateAllUserScores(rankingId);
+      } catch (recalcError) {
+        console.error('Error recalculating scores after structure change:', recalcError);
+        // Don't throw error here, as the update was successful
+      }
     }
     
     return data;
@@ -205,6 +285,28 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
     return { success: true };
   } catch (error) {
     console.error('Error deleting ranking:', error);
+    throw error;
+  }
+};
+
+// Function to update answer key and recalculate scores
+export const updateAnswerKey = async (concursoId: string, answerKeyData: any) => {
+  try {
+    // Begin a transaction
+    const { error: insertError } = await supabase
+      .from('answer_keys')
+      .upsert(answerKeyData, { onConflict: 'concurso_id,question_number' });
+      
+    if (insertError) {
+      throw insertError;
+    }
+    
+    // Recalculate scores for all users in this concurso
+    await recalculateAllUserScores(concursoId);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating answer key:', error);
     throw error;
   }
 };

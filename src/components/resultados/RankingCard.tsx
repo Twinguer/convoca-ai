@@ -35,9 +35,12 @@ export const RankingCard: React.FC<RankingCardProps> = ({
             </p>
           </div>
           
-          <p className="text-lg">
-            Inscritos: <Badge variant="outline">{inscritos}</Badge>
-          </p>
+          <div className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-gray-600" />
+            <p className="text-lg">
+              Inscritos: <Badge variant="outline">{inscritos}</Badge>
+            </p>
+          </div>
           
           {userRanking && (
             <p className="mt-4 text-lg">

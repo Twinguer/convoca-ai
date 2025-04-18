@@ -80,6 +80,7 @@ export function useResultadosData() {
     isLoading,
     user,
     refreshData,
-    creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário')
+    creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
+    inscritos: concurso?.inscritos || 0
   };
 }
