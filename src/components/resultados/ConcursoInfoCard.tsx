@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +8,7 @@ interface ConcursoInfoCardProps {
   concurso?: Concurso;
   creatorName?: string;
 }
+
 export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso,
   creatorName
@@ -47,6 +49,7 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
     };
     return localidades.map(state => stateAbbreviations[state] || state).join(', ');
   };
+
   return <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center">
@@ -56,7 +59,9 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          
+          <p className="text-sm">
+            Órgão: <Badge variant="outline">{concurso?.orgao}</Badge>
+          </p>
           
           <p className="text-sm">
             Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
@@ -66,7 +71,9 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
             Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
           </p>
           
-          {creatorName}
+          {creatorName && <p className="text-lg">
+              Criado por: <Badge variant="outline">{creatorName}</Badge>
+            </p>}
         </div>
       </CardContent>
     </Card>;
