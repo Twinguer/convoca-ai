@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { Concurso } from '@/types/concursos';
+import { formatDate } from '@/lib/utils';
 
 interface ConcursoInfoCardProps {
   concurso?: Concurso;
@@ -15,7 +16,6 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso, cr
     if (!localidades?.length) return 'Nacional';
     if (localidades.includes('Nacional')) return 'Nacional';
     
-    // Convert full state names to abbreviations
     const stateAbbreviations: { [key: string]: string } = {
       'Acre': 'AC', 'Alagoas': 'AL', 'Amapá': 'AP', 'Amazonas': 'AM',
       'Bahia': 'BA', 'Ceará': 'CE', 'Distrito Federal': 'DF',
@@ -41,20 +41,35 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso, cr
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-lg">
-          Órgão: <Badge variant="outline">{concurso?.orgao}</Badge>
-        </p>
-        <p className="mt-2 text-lg">
-          Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
-        </p>
-        <p className="mt-2 text-lg">
-          Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
-        </p>
-        {creatorName && (
-          <p className="mt-2 text-lg">
-            Criado por: <Badge variant="outline">{creatorName}</Badge>
+        <div className="space-y-2">
+          <p className="text-lg">
+            Órgão: <Badge variant="outline">{concurso?.orgao}</Badge>
           </p>
-        )}
+          
+          <p className="text-lg">
+            Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
+          </p>
+          
+          <p className="text-lg">
+            Status: <Badge variant="outline">{concurso?.status}</Badge>
+          </p>
+          
+          <p className="text-lg">
+            Data da Prova: <Badge variant="outline">
+              {concurso?.data_publicacao ? formatDate(concurso.data_publicacao) : 'Não definida'}
+            </Badge>
+          </p>
+          
+          <p className="text-lg">
+            Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
+          </p>
+          
+          {creatorName && (
+            <p className="text-lg">
+              Criado por: <Badge variant="outline">{creatorName}</Badge>
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
