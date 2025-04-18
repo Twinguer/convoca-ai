@@ -100,7 +100,7 @@ export const saveUserAnswers = async (
     }
 
     console.log('Official answer key:', answerKey);
-    console.log('User answers to check:', answersArray);
+    console.log('User answers to check:', answers);
     
     // Calculate score by comparing user answers with official answers
     let basicKnowledgeScore = 0;
