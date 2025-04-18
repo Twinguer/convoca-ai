@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -169,11 +168,24 @@ const GabaritoEditor = () => {
         
       if (insertError) throw insertError;
       
-      setSuccess(true);
-      toast({
-        title: "Gabarito salvo com sucesso",
-        description: "O gabarito oficial foi atualizado e as notas dos usuários serão recalculadas.",
-      });
+      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
+      
+      const recalculationResult = await recalculateAllUserScores(id);
+      console.log('Recalculation result:', recalculationResult);
+      
+      if (recalculationResult.success) {
+        setSuccess(true);
+        toast({
+          title: "Gabarito salvo com sucesso",
+          description: `O gabarito oficial foi atualizado e as notas de ${recalculationResult.updatedCount} usuários foram recalculadas.`,
+        });
+      } else {
+        toast({
+          title: "Gabarito salvo, mas recálculo falhou",
+          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
+          variant: "warning"
+        });
+      }
       
       queryClient.invalidateQueries({ queryKey: ['answer-key', id] });
       

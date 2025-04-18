@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch existing answer key if available
   useEffect(() => {
     const fetchAnswerKey = async () => {
       if (!concursoId) return;
@@ -122,7 +120,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       return [[]];
     }
     
-    // Calculate which questions belong to which section
     let startingQuestion = 1;
     
     if (selectedSection === "specific1" && hasBasicKnowledge) {
@@ -133,7 +130,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions + 1;
     }
     
-    // Create a matrix with 5 columns for the questions
     const numRows = Math.ceil(totalQuestions / 5);
     
     for (let i = 0; i < numRows; i++) {
@@ -176,13 +172,11 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(true);
       setError(null);
       
-      // Delete existing answer keys for this concurso
       await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
       
-      // Convert answers object to array of rows
       const answerRows = Object.keys(answers).map(questionNumber => ({
         concurso_id: concursoId,
         question_number: parseInt(questionNumber),
@@ -199,17 +193,30 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         return;
       }
       
-      // Insert all answer keys
       const { error } = await supabase
         .from('answer_keys')
         .insert(answerRows);
       
       if (error) throw error;
       
-      toast({
-        title: "Gabarito salvo com sucesso",
-        description: "As respostas oficiais foram salvas com sucesso."
-      });
+      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
+      
+      const recalculationResult = await recalculateAllUserScores(concursoId);
+      console.log('Recalculation result:', recalculationResult);
+      
+      if (recalculationResult.success) {
+        toast({
+          title: "Gabarito salvo com sucesso",
+          description: `O gabarito oficial foi atualizado. ${recalculationResult.updatedCount > 0 ? 
+            `As notas de ${recalculationResult.updatedCount} usuários foram recalculadas.` : 
+            'Não há usuários com respostas cadastradas para recalcular.'}`
+        });
+      } else {
+        toast({
+          title: "Gabarito salvo",
+          description: "As respostas oficiais foram salvas com sucesso."
+        });
+      }
     } catch (error: any) {
       console.error('Error saving answer key:', error);
       setError(error.message || "Erro ao salvar gabarito");

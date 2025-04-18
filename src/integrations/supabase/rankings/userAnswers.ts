@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -146,7 +145,6 @@ export const saveUserAnswers = async (
       .from('concursos')
       .select(`
         basic_knowledge_weight,
-        specific_knowledge_weight,
         specific_knowledge_1_weight,
         specific_knowledge_2_weight,
         specific_knowledge_3_weight,
