@@ -56,9 +56,7 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          <p className="text-sm">
-            Órgão: <Badge variant="outline">{concurso?.orgao}</Badge>
-          </p>
+          
           
           <p className="text-sm">
             Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
