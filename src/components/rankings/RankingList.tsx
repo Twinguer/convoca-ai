@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
-import { Trophy, User, Star, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+
 export interface RankingItemProps {
   id: string;
   examDate: string;
@@ -16,10 +17,12 @@ export interface RankingItemProps {
   isAdminCreated?: boolean;
   status?: string;
 }
+
 export interface RankingListProps {
   rankings: RankingItemProps[];
   isLoading: boolean;
 }
+
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -37,20 +40,24 @@ export const RankingItem: React.FC<RankingItemProps> = ({
     }
     return '';
   };
-  return <Link to={`/concurso/${id}/resultados`}>
+
+  return (
+    <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <p className="text-sm font-medium text-gray-600">{banca}</p>
+              <p className="text-sm font-medium text-gray-600">{banca}: {concursoTitle}</p>
               <div className="flex flex-col gap-1 items-end">
                 <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
                 </Badge>
-                {examDate && <div className="flex items-center text-xs text-gray-500 mx-[5px]">
+                {examDate && (
+                  <div className="flex items-center text-xs text-gray-500 mx-[5px]">
                     <Calendar className="h-3 w-3 mr-1" />
                     {formatDate(examDate)}
-                  </div>}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -74,8 +81,10 @@ export const RankingItem: React.FC<RankingItemProps> = ({
           </div>
         </CardContent>
       </Card>
-    </Link>;
+    </Link>
+  );
 };
+
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
   isLoading
