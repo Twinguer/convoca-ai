@@ -42,7 +42,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
         <CardContent className="p-6">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <p className="text-lg font-bold text-zinc-950 mx-0 px-0 my-0 py-0">{banca}: {concursoTitle}</p>
+              <p className="text-lg font-bold mx-0 px-0 my-0 py-0 text-gray-500">{banca}: {concursoTitle}</p>
               <div className="flex flex-col gap-1 items-end">
                 <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
@@ -67,7 +67,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               
               {(creatorName || isAdminCreated) && <div className="flex items-center text-xs text-gray-500">
                   
-                  <span className="text-right mx-0">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  <span className="text-right mx-0 text-base">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
                   {!isAdminCreated}
                 </div>}
             </div>
