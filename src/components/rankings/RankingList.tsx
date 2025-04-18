@@ -42,7 +42,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
         <CardContent className="p-6">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <p className="text-lg font-bold text-zinc-950">{banca}: {concursoTitle}</p>
+              <p className="text-lg font-bold text-zinc-950 mx-0 px-0 my-0 py-[5px]">{banca}: {concursoTitle}</p>
               <div className="flex flex-col gap-1 items-end">
                 <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
