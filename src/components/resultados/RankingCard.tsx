@@ -7,12 +7,14 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RankingCardProps {
-  title: string;
-  orgao: string;
-  banca: string;
-  data: string;
-  status: string;
-  participantsCount?: number;
+  title?: string;
+  orgao?: string;
+  banca?: string;
+  data?: string;
+  status?: string;
+  participantCount?: number; // Changed from participantsCount to participantCount
+  userRanking?: any; // Added userRanking prop
+  inscritos?: number; // Added inscritos prop
   createdByUserId?: string;
   isAdminCreated?: boolean;
 }
@@ -23,9 +25,11 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   banca,
   data,
   status,
-  participantsCount,
+  participantCount, // Updated prop name
   createdByUserId,
-  isAdminCreated
+  isAdminCreated,
+  userRanking,
+  inscritos
 }) => {
   const { data: creatorData, isLoading: isLoadingCreator } = useQuery({
     queryKey: ['creator', createdByUserId],
@@ -47,30 +51,36 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-        <div className="text-sm text-gray-500 space-y-1">
-          <div>Órgão: {orgao}</div>
-          <div>Banca: {banca}</div>
-          <div>Data: {data}</div>
-          <div>
-            {isLoadingCreator ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <span>
-                Criador: {isAdminCreated ? 'Admin' : creatorData?.name || 'Usuário'}
-              </span>
+        {title && <CardTitle className="text-lg font-semibold">{title}</CardTitle>}
+        {(orgao || banca || data) && (
+          <div className="text-sm text-gray-500 space-y-1">
+            {orgao && <div>Órgão: {orgao}</div>}
+            {banca && <div>Banca: {banca}</div>}
+            {data && <div>Data: {data}</div>}
+            {createdByUserId && (
+              <div>
+                {isLoadingCreator ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <span>
+                    Criador: {isAdminCreated ? 'Admin' : creatorData?.name || 'Usuário'}
+                  </span>
+                )}
+              </div>
             )}
           </div>
-        </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center">
-          <Badge variant={status === 'Em andamento' ? 'default' : 'secondary'}>
-            {status}
-          </Badge>
-          {participantsCount !== undefined && (
+          {status && (
+            <Badge variant={status === 'Em andamento' ? 'default' : 'secondary'}>
+              {status}
+            </Badge>
+          )}
+          {participantCount !== undefined && (
             <span className="text-sm text-gray-500">
-              {participantsCount} {participantsCount === 1 ? 'participante' : 'participantes'}
+              {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
             </span>
           )}
         </div>
