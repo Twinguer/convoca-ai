@@ -89,6 +89,23 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   });
   
+  // Use the saveAnswers hook
+  const { handleSaveAnswers: saveAnswers } = useSaveAnswers({
+    rankingId,
+    concurso,
+    answers,
+    questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
+    setIsSaving,
+    setError,
+    setSavedSuccess,
+    onSuccess,
+    discursiveScore,
+    caseStudy1Score,
+    caseStudy2Score,
+    caseStudy3Score,
+    editCount: userRankingData?.edit_count || 0
+  });
+  
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
@@ -129,25 +146,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
       
-      const {
-        handleSaveAnswers
-      } = useSaveAnswers({
-        rankingId,
-        concurso,
-        answers,
-        questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
-        setIsSaving,
-        setError,
-        setSavedSuccess,
-        onSuccess,
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score,
-        editCount: userRankingData?.edit_count || 0
-      });
-      
-      await handleSaveAnswers();
+      await saveAnswers();
     } catch (error: any) {
       setIsSaving(false);
       setError(error.message || "Erro ao salvar respostas");
