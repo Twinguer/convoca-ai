@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Save } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toggleQuestionNullification } from '@/services/concursoService';
 
 interface AnswerKeyTabProps {
   concursoId: string;

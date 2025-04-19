@@ -1,3 +1,4 @@
+
 import { Concurso, ConcursoFilter } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserRankings } from './rankingService';
@@ -87,7 +88,8 @@ export const toggleQuestionNullification = async (
       throw error;
     }
 
-    const { recalculateAllUserScores } = await import('./userService');
+    // Import recalculateAllUserScores from proper location
+    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
     await recalculateAllUserScores(concursoId);
   } catch (error) {
     console.error('Error toggling question nullification:', error);
