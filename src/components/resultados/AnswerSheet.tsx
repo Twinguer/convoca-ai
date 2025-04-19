@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -105,23 +104,60 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData]);
 
-  const {
-    handleSaveAnswers
-  } = useSaveAnswers({
-    rankingId,
-    concurso,
-    answers,
-    questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
-    setIsSaving,
-    setError,
-    setSavedSuccess,
-    onSuccess,
-    discursiveScore,
-    caseStudy1Score,
-    caseStudy2Score,
-    caseStudy3Score,
-    editCount: userRankingData?.edit_count || 0
-  });
+  const handleSaveAnswers = async () => {
+    if (!concurso?.id) {
+      setError("ID do concurso não encontrado");
+      return;
+    }
+
+    // New validation for multiple choice exams
+    if (concurso.exam_type === 'Alternativas') {
+      const totalQuestions = getTotalQuestions();
+      const answeredQuestions = getAnsweredQuestionsCount();
+
+      if (answeredQuestions < totalQuestions) {
+        toast({
+          title: "Atenção",
+          description: "Em provas de múltipla escolha, todas as questões devem ser respondidas antes de salvar.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      const {
+        handleSaveAnswers
+      } = useSaveAnswers({
+        rankingId,
+        concurso,
+        answers,
+        questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
+        setIsSaving,
+        setError,
+        setSavedSuccess,
+        onSuccess,
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score,
+        editCount: userRankingData?.edit_count || 0
+      });
+      
+      await handleSaveAnswers();
+    } catch (error: any) {
+      setIsSaving(false);
+      setError(error.message || "Erro ao salvar respostas");
+      toast({
+        title: "Erro ao salvar",
+        description: error.message || "Ocorreu um erro ao salvar suas respostas. Por favor, tente novamente.",
+        variant: "destructive"
+      });
+    }
+  };
   
   const handleScoreChange = (
     value: string, 
