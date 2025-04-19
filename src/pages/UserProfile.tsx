@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -28,6 +29,8 @@ const UserProfile = () => {
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
+  // Add missing state for followers count
+  const [followersCount, setFollowersCount] = useState(0);
 
   const {
     data: profile,
