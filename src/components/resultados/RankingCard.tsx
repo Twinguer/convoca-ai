@@ -2,9 +2,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trophy, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useRankingPosition } from '@/hooks/useRankingPosition';
+import { useRankingScore } from '@/hooks/useRankingScore';
 
 interface RankingCardProps {
   title?: string;
@@ -14,6 +16,7 @@ interface RankingCardProps {
   status?: string;
   participantCount?: number;
   userRanking?: {
+    id: string;
     position: number;
     score: number;
   };
@@ -24,16 +27,15 @@ interface RankingCardProps {
 
 export const RankingCard: React.FC<RankingCardProps> = ({
   title,
-  orgao,
-  banca,
-  data,
-  status,
   participantCount,
   createdByUserId,
   isAdminCreated,
   userRanking,
   inscritos
 }) => {
+  const position = userRanking ? useRankingPosition(userRanking.id) : null;
+  const score = userRanking ? useRankingScore(userRanking.id) : null;
+  
   const { data: creatorData, isLoading: isLoadingCreator } = useQuery({
     queryKey: ['creator', createdByUserId],
     queryFn: async () => {
@@ -54,55 +56,37 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   return (
     <Card className="h-full">
       <CardHeader>
-        {title && <CardTitle className="text-lg font-semibold">{title}</CardTitle>}
-        {(orgao || banca || data) && (
-          <div className="text-sm text-gray-500 space-y-1">
-            {orgao && <div>Órgão: {orgao}</div>}
-            {banca && <div>Banca: {banca}</div>}
-            {data && <div>Data: {data}</div>}
-            {createdByUserId && (
-              <div>
-                {isLoadingCreator ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <span>
-                    Criador: {isAdminCreated ? 'Admin' : creatorData?.name || 'Usuário'}
-                  </span>
-                )}
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-yellow-500" />
+          <span>Ranking</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-gray-600">
+              <Users className="h-4 w-4" />
+              <span>{participantCount || 0} participante(s)</span>
+            </div>
+            
+            {inscritos !== undefined && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Users className="h-4 w-4" />
+                <span>{inscritos} inscrito(s)</span>
               </div>
             )}
           </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            {status && (
-              <Badge variant={status === 'Em andamento' ? 'default' : 'secondary'}>
-                {status}
-              </Badge>
-            )}
-            {participantCount !== undefined && (
-              <span className="text-sm text-gray-500">
-                {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
-              </span>
-            )}
-          </div>
-          
-          {inscritos !== undefined && (
-            <div className="text-sm text-gray-600">
-              Inscritos no concurso: {inscritos}
-            </div>
-          )}
-          
+
           {userRanking && (
-            <div className="mt-2 p-3 bg-emerald-50 rounded-md border border-emerald-200">
-              <h4 className="text-sm font-medium text-emerald-800 mb-1">Seu desempenho</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-gray-600">Posição:</div>
-                <div className="font-medium">{userRanking.position}º</div>
-                <div className="text-gray-600">Pontuação total:</div>
-                <div className="font-medium">{userRanking.score.toFixed(2)}</div>
+            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+              <h4 className="text-sm font-medium text-emerald-800 mb-2">Seu desempenho</h4>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Posição:</span>
+                <span className="font-medium">{position}º</span>
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-gray-600">Pontuação:</span>
+                <span className="font-medium">{score?.toFixed(2)}</span>
               </div>
             </div>
           )}

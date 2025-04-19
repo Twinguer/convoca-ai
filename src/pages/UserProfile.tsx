@@ -5,40 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { fetchUserRankings } from '@/services/concursoService';
 import { UserRankingDisplay } from '@/types/concursos';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
-import StatusSelect from '@/components/profile/StatusSelect';
-import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import RankingsTab from '@/components/profile/RankingsTab';
-import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
-import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
-
-interface Follower {
-  id: string;
-  name: string;
-  avatar_url?: string | null;
-}
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import UserProfileContent from '@/components/profile/UserProfileContent';
 
 const UserProfile = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [concursosAprovados, setConcursosAprovados] = useState('');
@@ -46,10 +25,9 @@ const UserProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
+  const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
 
   const {
     data: profile,
@@ -299,105 +277,72 @@ const UserProfile = () => {
 
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
-      </div>;
+      <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
+    </div>;
   }
 
   if (!user) {
     useEffect(() => {
       navigate("/auth");
     }, [navigate]);
-    return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
-      </div>;
+    return null;
   }
 
   return (
     <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
-          <Card>
-            <CardContent className="pt-6">
-              <ProfileHeader 
-                name={name} 
-                email={user?.email || ''} 
-                avatarUrl={avatarUrl} 
-                uploading={uploading} 
-                handleAvatarUpload={handleAvatarUpload}
-                statusConcurseiro={statusConcurseiro}
-                profileText={profileText}
-              />
-            </CardContent>
-          </Card>
+          <ProfileHeader 
+            name={name} 
+            email={user?.email || ''} 
+            avatarUrl={avatarUrl} 
+            uploading={uploading} 
+            handleAvatarUpload={handleAvatarUpload}
+            statusConcurseiro={statusConcurseiro}
+            profileText={profileText}
+          />
         </div>
         
         <div className="md:col-span-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Meu Perfil</CardTitle>
-            </CardHeader>
+          <UserProfileContent
+            user={user}
+            name={name}
+            email={user.email || ''}
+            bio={bio}
+            statusConcurseiro={statusConcurseiro}
+            setStatusConcurseiro={setStatusConcurseiro}
+            profileText={profileText}
+            setProfileText={setProfileText}
+            setName={setName}
+            setBio={setBio}
+            concursosAprovados={concursosAprovados}
+            setConcursosAprovados={setConcursosAprovados}
+            concursosParticipando={concursosParticipando}
+            setConcursosParticipando={setConcursosParticipando}
+            userRankings={userRankings}
+          />
+
+          <div className="mt-4 flex justify-between">
+            <DeleteProfileButton userId={user?.id || ''} />
             
-            <Tabs defaultValue="profile">
-              <div className="px-6">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="profile">Perfil</TabsTrigger>
-                  <TabsTrigger value="rankings">Rankings</TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <TabsContent value="profile">
-                <CardContent className="pt-6">
-                  <ProfileInfoTab 
-                    name={name}
-                    setName={setName}
-                    email={user?.email || ''}
-                    bio={bio}
-                    setBio={setBio}
-                    statusConcurseiro={statusConcurseiro}
-                    setStatusConcurseiro={setStatusConcurseiro}
-                    profileText={profileText}
-                    setProfileText={setProfileText}
-                    concursosAprovados={concursosAprovados}
-                    setConcursosAprovados={setConcursosAprovados}
-                    concursosParticipando={concursosParticipando}
-                    setConcursosParticipando={setConcursosParticipando}
-                  />
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="rankings">
-                <CardContent className="pt-6">
-                  <CombinedRankingsTab 
-                    userId={user?.id || ''}
-                    userRankings={userRankings}
-                    isAuthenticated={!!user}
-                  />
-                </CardContent>
-              </TabsContent>
-            </Tabs>
-            
-            <CardFooter className="flex justify-between py-6 border-t">
-              <DeleteProfileButton userId={user?.id || ''} />
-              
-              <Button 
-                onClick={handleSaveProfile} 
-                disabled={saving} 
-                className="relative bg-emerald-600 hover:bg-emerald-700"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Salvar alterações
-                  </>
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
+            <Button 
+              onClick={handleSaveProfile} 
+              disabled={saving} 
+              className="relative bg-emerald-600 hover:bg-emerald-700"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Salvar alterações
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="md:col-span-3">
