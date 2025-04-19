@@ -1,4 +1,3 @@
-
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
@@ -59,7 +58,7 @@ export const useSaveAnswers = ({
 
       const { data: answerKey, error: keyError } = await supabase
         .from('answer_keys')
-        .select('*')
+        .select('*, is_nullified')
         .eq('concurso_id', concurso.id);
 
       if (keyError) throw keyError;
@@ -103,17 +102,24 @@ export const useSaveAnswers = ({
           a => a.question_number === userAnswer.questionNumber
         );
         
-        console.log(`Checking question ${userAnswer.questionNumber}: user=${userAnswer.answer}, official=${officialAnswer?.answer}`);
-
-        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+        // Award points for nullified questions as if they were correct
+        if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
           if (userAnswer.isBasicKnowledge) {
             basicScore += 1;
-          } else if (userAnswer.isSpecific1) {
-            specific1Score += 1;
-          } else if (userAnswer.isSpecific2) {
-            specific2Score += 1;
-          } else if (userAnswer.isSpecific3) {
-            specific3Score += 1;
+          } else {
+            specific1Score += 0;
+            specific2Score += 0;
+            specific3Score += 0;
+            
+            const qNum = userAnswer.questionNumber;
+            
+            if (qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + concurso.specific_knowledge_1_questions)) {
+              specific1Score += 1;
+            } else if (qNum > (basicQuestionsCount + concurso.specific_knowledge_1_questions) && qNum <= (basicQuestionsCount + concurso.specific_knowledge_1_questions + concurso.specific_knowledge_2_questions)) {
+              specific2Score += 1;
+            } else if (qNum > (basicQuestionsCount + concurso.specific_knowledge_1_questions + concurso.specific_knowledge_2_questions)) {
+              specific3Score += 1;
+            }
           }
         }
       });

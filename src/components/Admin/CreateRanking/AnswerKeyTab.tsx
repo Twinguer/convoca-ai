@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Save } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
 
 interface AnswerKeyTabProps {
   concursoId: string;
@@ -41,6 +42,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   const [selectedSection, setSelectedSection] = useState<string>("basic");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   
   useEffect(() => {
     const fetchAnswerKey = async () => {
@@ -48,7 +50,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       
       const { data, error } = await supabase
         .from('answer_keys')
-        .select('question_number, answer')
+        .select('question_number, answer, is_nullified')
         .eq('concurso_id', concursoId);
         
       if (error) {
@@ -58,10 +60,17 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       
       if (data && data.length > 0) {
         const answersObj: {[key: number]: string} = {};
+        const nullifiedSet = new Set<number>();
+        
         data.forEach(item => {
           answersObj[item.question_number] = item.answer;
+          if (item.is_nullified) {
+            nullifiedSet.add(item.question_number);
+          }
         });
+        
         setAnswers(answersObj);
+        setNullifiedQuestions(nullifiedSet);
       }
     };
     
@@ -80,6 +89,18 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       const newAnswers = { ...prev };
       delete newAnswers[questionNumber];
       return newAnswers;
+    });
+  };
+
+  const handleNullifyQuestion = (questionNumber: number) => {
+    setNullifiedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionNumber)) {
+        newSet.delete(questionNumber);
+      } else {
+        newSet.add(questionNumber);
+      }
+      return newSet;
     });
   };
   
@@ -172,30 +193,48 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(true);
       setError(null);
       
+      const allQuestions = [
+        ...getQuestionsBySection('basic'),
+        ...getQuestionsBySection('specific1'),
+        ...getQuestionsBySection('specific2'),
+        ...getQuestionsBySection('specific3')
+      ];
+
+      // Check if all questions have answers
+      const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
+      if (unansweredQuestions.length > 0) {
+        setError("Todas as questões devem ter uma resposta ou serem anuladas. Por favor, preencha todas as alternativas.");
+        setIsSaving(false);
+        return;
+      }
+      
       await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
       
-      const answerRows = Object.keys(answers).map(questionNumber => ({
+      const entries = Object.entries(answers).map(([questionNumber, answer]) => ({
         concurso_id: concursoId,
         question_number: parseInt(questionNumber),
-        answer: answers[parseInt(questionNumber)]
+        answer: answer.toUpperCase(),
+        is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
       }));
-      
-      if (answerRows.length === 0) {
-        toast({
-          title: "Nenhuma resposta para salvar",
-          description: "Por favor, informe pelo menos uma resposta no gabarito.",
-          variant: "destructive"
-        });
-        setIsSaving(false);
-        return;
-      }
+
+      // Add entries for nullified questions that don't have an answer
+      nullifiedQuestions.forEach(qNum => {
+        if (!answers[qNum]) {
+          entries.push({
+            concurso_id: concursoId,
+            question_number: qNum,
+            answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default answer for nullified questions
+            is_nullified: true
+          });
+        }
+      });
       
       const { error } = await supabase
         .from('answer_keys')
-        .insert(answerRows);
+        .insert(entries);
       
       if (error) throw error;
       
@@ -229,6 +268,17 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+  
+  const getSectionOptions = () => {
+    const options = [];
+    
+    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
+    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
+    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
+    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
+    
+    return options;
   };
   
   const sectionOptions = getSectionOptions();
@@ -269,6 +319,9 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
           onClearAnswer={handleClearAnswer}
           getOptionsForQuestion={getOptionsForQuestion}
           examType={examType as 'Alternativas' | 'Certo ou Errado'}
+          nullifiedQuestions={nullifiedQuestions}
+          onNullifyQuestion={handleNullifyQuestion}
+          isAdminView={true}
         />
         
         <div className="flex justify-end space-x-3 mt-6">

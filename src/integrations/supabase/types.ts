@@ -16,6 +16,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_basic_knowledge: boolean | null
+          is_nullified: boolean | null
           is_specific_1: boolean | null
           is_specific_2: boolean | null
           question_number: number
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           question_number: number
@@ -38,6 +40,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           question_number?: number
