@@ -1,3 +1,4 @@
+
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
@@ -107,17 +108,17 @@ export const useSaveAnswers = ({
           if (userAnswer.isBasicKnowledge) {
             basicScore += 1;
           } else {
-            specific1Score += 0;
-            specific2Score += 0;
-            specific3Score += 0;
+            const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+            const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
+            const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
             
             const qNum = userAnswer.questionNumber;
             
-            if (qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + concurso.specific_knowledge_1_questions)) {
+            if (qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
               specific1Score += 1;
-            } else if (qNum > (basicQuestionsCount + concurso.specific_knowledge_1_questions) && qNum <= (basicQuestionsCount + concurso.specific_knowledge_1_questions + concurso.specific_knowledge_2_questions)) {
+            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount) && qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
               specific2Score += 1;
-            } else if (qNum > (basicQuestionsCount + concurso.specific_knowledge_1_questions + concurso.specific_knowledge_2_questions)) {
+            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
               specific3Score += 1;
             }
           }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -183,6 +184,31 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return options;
   };
   
+  // Function to get questions for a specific section
+  const getQuestionsBySection = (section: string): number[] => {
+    let startingQuestion = 1;
+    let totalQuestions = 0;
+    
+    if (section === "basic" && hasBasicKnowledge) {
+      totalQuestions = basicKnowledgeQuestions;
+    } else if (section === "specific1" && hasSpecificKnowledge1) {
+      startingQuestion = basicKnowledgeQuestions + 1;
+      totalQuestions = specificKnowledge1Questions;
+    } else if (section === "specific2" && hasSpecificKnowledge2) {
+      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + 1;
+      totalQuestions = specificKnowledge2Questions;
+    } else if (section === "specific3" && hasSpecificKnowledge3) {
+      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions + 1;
+      totalQuestions = specificKnowledge3Questions;
+    }
+    
+    if (totalQuestions <= 0) {
+      return [];
+    }
+    
+    return Array.from({ length: totalQuestions }, (_, i) => startingQuestion + i);
+  };
+  
   const handleSaveAnswerKey = async () => {
     if (!concursoId) {
       setError("ID do concurso não encontrado");
@@ -268,17 +294,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     } finally {
       setIsSaving(false);
     }
-  };
-  
-  const getSectionOptions = () => {
-    const options = [];
-    
-    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
-    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
-    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
-    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
-    
-    return options;
   };
   
   const sectionOptions = getSectionOptions();
