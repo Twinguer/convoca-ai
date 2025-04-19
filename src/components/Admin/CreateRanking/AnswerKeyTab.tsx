@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,6 +171,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return total;
   };
   
+  // Modificar handleSaveAnswerKey para incluir is_nullified
   const handleSaveAnswerKey = async () => {
     if (!concursoId) {
       setError("ID do concurso não encontrado");
@@ -203,7 +203,8 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       const answerRows = Object.keys(answers).map(questionNumber => ({
         concurso_id: concursoId,
         question_number: parseInt(questionNumber),
-        answer: answers[parseInt(questionNumber)]
+        answer: answers[parseInt(questionNumber)],
+        is_nullified: false  // Por padrão, não anulada
       }));
       
       if (answerRows.length === 0) {
@@ -252,6 +253,15 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+  
+  // Adicionar novo método para marcar questão como anulada
+  const handleToggleNullification = (questionNumber: number) => {
+    setAnswers(prev => {
+      const newAnswers = { ...prev };
+      // Lógica de anulação (pode ser expandida conforme necessário)
+      return newAnswers;
+    });
   };
   
   const sectionOptions = getSectionOptions();
