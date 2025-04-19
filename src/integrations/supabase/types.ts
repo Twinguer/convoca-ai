@@ -472,6 +472,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user_from_ranking: {
+        Args: { ranking_id_param: string }
+        Returns: boolean
+      }
+      admin_delete_user_profile: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       admin_operations: {
         Args: { operation: string; data?: Json }
         Returns: Json
