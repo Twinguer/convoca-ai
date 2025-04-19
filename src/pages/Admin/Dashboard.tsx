@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Calendar, User, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
 const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
   const [recentConcursos, setRecentConcursos] = useState(0);
@@ -79,18 +81,24 @@ const AdminDashboard: React.FC = () => {
       setActiveConcursos(statsData.activeConcursos);
     }
   }, [statsData]);
+  
+  const handleVisitSite = () => {
+    // Open the main site in a new tab with admin view flag
+    window.open('/?admin=true', '_blank');
+  };
+  
   const dashboardCards = [{
-    title: 'Total de Concursos',
+    title: 'Total de Rankings',
     value: isLoading ? '...' : statsData?.concursosCount.toString(),
-    description: 'Concursos cadastrados',
+    description: 'Rankings cadastrados',
     icon: <FileText className="h-6 w-6 text-blue-500" />
   }, {
-    title: 'Concursos Recentes',
+    title: 'Rankings Recentes',
     value: isLoading ? '...' : recentConcursos.toString(),
     description: 'Adicionados nos últimos 30 dias',
     icon: <Calendar className="h-6 w-6 text-green-500" />
   }, {
-    title: 'Concursos Ativos',
+    title: 'Rankings Ativos',
     value: isLoading ? '...' : activeConcursos.toString(),
     description: 'Em andamento',
     icon: <Building className="h-6 w-6 text-amber-500" />
@@ -127,15 +135,14 @@ const AdminDashboard: React.FC = () => {
           <CardContent className="space-y-2">
             <a href="/project/admin/man/concursos/novo" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
             <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Rankings</a>
-            <a href="/" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site</a>
-            
+            <a href="/project/admin/man/usuarios" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Usuários</a>
+            <a href="/?admin=true" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site (Admin)</a>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Informações do Sistema</CardTitle>
-            
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

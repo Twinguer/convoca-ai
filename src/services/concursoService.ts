@@ -10,6 +10,7 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
       .from('concursos')
       .select('*');
 
+    // Apply filters if they exist
     if (filters) {
       if (filters.status && filters.status !== 'Todos') {
         query = query.eq('status', filters.status);
@@ -72,35 +73,12 @@ export const getParticipantCount = async (concursoId: string): Promise<number> =
   }
 };
 
-export const toggleQuestionNullification = async (
-  concursoId: string,
-  questionNumber: number,
-  isNullified: boolean
-): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('answer_keys')
-      .update({ is_nullified: isNullified })
-      .eq('concurso_id', concursoId)
-      .eq('question_number', questionNumber);
-
-    if (error) {
-      throw error;
-    }
-
-    // Import recalculateAllUserScores from proper location
-    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
-    await recalculateAllUserScores(concursoId);
-  } catch (error) {
-    console.error('Error toggling question nullification:', error);
-    throw error;
-  }
-};
-
+// Export functions from other service files to maintain backward compatibility
 export { fetchUserRankings } from './rankingService';
 export { getUserRankingPosition, fetchUserConcursoRankings, updateUserScores } from './userService';
 export { scheduleScraper } from './scraperService';
 
+// Re-export types that were previously defined in this file
 export interface Ranking {
   position: number;
   name: string;
