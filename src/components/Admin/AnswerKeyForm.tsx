@@ -199,10 +199,10 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const validateAllSections = () => {
     // Get all questions from all sections
     const allQuestions = [
-      ...getQuestionsRange('basic'),
-      ...getQuestionsRange('specific1'),
-      ...getQuestionsRange('specific2'),
-      ...getQuestionsRange('specific3')
+      ...getQuestionsRange(),
+      ...getQuestionsRange(),
+      ...getQuestionsRange(),
+      ...getQuestionsRange()
     ].filter(q => q !== undefined);
 
     // Check if all questions have answers or are nullified
@@ -321,9 +321,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         )}
         
         {savedSuccess && (
-          <Alert variant="success" className="bg-green-100 text-green-800 border-green-200">
-            <CheckCircle className="h-4 w-4" />
-            <AlertDescription>Gabarito salvo com sucesso!</AlertDescription>
+          <Alert>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-600">Gabarito salvo com sucesso!</AlertDescription>
           </Alert>
         )}
         
