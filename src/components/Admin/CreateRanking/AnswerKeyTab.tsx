@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -160,6 +161,16 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
     
     return options;
+  };
+  
+  // Add the missing getTotalQuestions function
+  const getTotalQuestions = (): number => {
+    let total = 0;
+    if (hasBasicKnowledge) total += basicKnowledgeQuestions || 0;
+    if (hasSpecificKnowledge1) total += specificKnowledge1Questions || 0;
+    if (hasSpecificKnowledge2) total += specificKnowledge2Questions || 0;
+    if (hasSpecificKnowledge3) total += specificKnowledge3Questions || 0;
+    return total;
   };
   
   const handleSaveAnswerKey = async () => {
