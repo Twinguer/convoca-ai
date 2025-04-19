@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster as SonnerToaster } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { ThemeProvider } from '@/components/theme-provider';
+import NotFound from '@/pages/NotFound';
+import Index from '@/pages/Index';
 
 // Lazy loaded pages
 const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
@@ -39,7 +41,7 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<div>Home Page</div>}>
-                <Route index element={<div>Home Content</div>} />
+                <Route index element={<Index />} />
                 <Route path="privacy-policy" element={<div>Privacy Policy</div>} />
                 <Route path="terms-of-service" element={<div>Terms of Service</div>} />
                 <Route path="pre-classificacao" element={<PreClassificacao />} />
@@ -59,7 +61,7 @@ function App() {
               </Route>
 
               {/* 404 route */}
-              <Route path="*" element={<div>Not Found</div>} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
           <Toaster />
