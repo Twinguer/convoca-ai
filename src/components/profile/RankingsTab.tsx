@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -127,25 +126,73 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
             </div>
             
             <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-1">
-                <div className="p-3 bg-emerald-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
-                  <p className="text-xl font-bold text-emerald-700">{Number(ranking.score || 0).toFixed(1)}</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div className="text-gray-600">Posição:</div>
+                  <div className="font-medium">{ranking.position}º</div>
+                  <div className="text-gray-600">Pontuação total:</div>
+                  <div className="font-medium">{Number(ranking.score || 0).toFixed(2)}</div>
                 </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.basic_knowledge_score || 0).toFixed(1)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.specific_knowledge_score || 0).toFixed(1)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.discursive_score || 0).toFixed(1)}</p>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">Pontuações detalhadas</h5>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    {ranking.weightedBasicScore > 0 && (
+                      <>
+                        <div className="text-gray-600">C.B. (com peso):</div>
+                        <div className="font-medium">{ranking.weightedBasicScore.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedSpecific1Score > 0 && (
+                      <>
+                        <div className="text-gray-600">C.E.1 (com peso):</div>
+                        <div className="font-medium">{ranking.weightedSpecific1Score.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedSpecific2Score > 0 && (
+                      <>
+                        <div className="text-gray-600">C.E.2 (com peso):</div>
+                        <div className="font-medium">{ranking.weightedSpecific2Score.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedSpecific3Score > 0 && (
+                      <>
+                        <div className="text-gray-600">C.E.3 (com peso):</div>
+                        <div className="font-medium">{ranking.weightedSpecific3Score.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedDiscursiveScore > 0 && (
+                      <>
+                        <div className="text-gray-600">Discursiva (com peso):</div>
+                        <div className="font-medium">{ranking.weightedDiscursiveScore.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedCaseStudy1Score > 0 && (
+                      <>
+                        <div className="text-gray-600">Est. Caso 1 (com peso):</div>
+                        <div className="font-medium">{ranking.weightedCaseStudy1Score.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedCaseStudy2Score > 0 && (
+                      <>
+                        <div className="text-gray-600">Est. Caso 2 (com peso):</div>
+                        <div className="font-medium">{ranking.weightedCaseStudy2Score.toFixed(2)}</div>
+                      </>
+                    )}
+                    
+                    {ranking.weightedCaseStudy3Score > 0 && (
+                      <>
+                        <div className="text-gray-600">Est. Caso 3 (com peso):</div>
+                        <div className="font-medium">{ranking.weightedCaseStudy3Score.toFixed(2)}</div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             </CardContent>
