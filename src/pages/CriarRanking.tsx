@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -201,17 +200,19 @@ const CriarRanking = () => {
         toast.success("Ranking atualizado com sucesso!");
       } else {
         result = await createRanking(dataToSubmit);
-        toast.success("Ranking criado com sucesso!");
+        
+        if (result && result[0]?.id) {
+          setCreatedConcursoId(result[0].id);
+          setActiveTab('gabarito');
+          toast.success("Continue preenchendo o gabarito oficial para finalizar o cadastro.");
+          return;
+        }
       }
       
-      if (result) {
-        queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        
-        setCreatedConcursoId(editId || (result[0]?.id));
-        
-        setActiveTab('answer-key');
+      if (activeTab === "informacoes") {
+        setActiveTab("gabarito");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao criar/atualizar ranking:", error);
       toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
     } finally {
@@ -306,27 +307,19 @@ const CriarRanking = () => {
                 
                 <TabsContent value="answer-key">
                   {createdConcursoId && (
-                    <>
-                      <AnswerKeyTab
-                        concursoId={createdConcursoId}
-                        hasBasicKnowledge={!!formValues.has_basic_knowledge}
-                        hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
-                        hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
-                        hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
-                        basicKnowledgeQuestions={formValues.basic_knowledge_questions}
-                        specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
-                        specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
-                        specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
-                        examType={formValues.exam_type}
-                        alternativesCount={formValues.alternatives_count}
-                      />
-                      
-                      <div className="flex justify-end mt-6">
-                        <Button type="button" onClick={handleGoToResults}>
-                          Ir para Resultados
-                        </Button>
-                      </div>
-                    </>
+                    <AnswerKeyTab
+                      concursoId={createdConcursoId}
+                      hasBasicKnowledge={!!formValues.has_basic_knowledge}
+                      hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
+                      hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
+                      hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
+                      basicKnowledgeQuestions={formValues.basic_knowledge_questions}
+                      specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
+                      specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
+                      specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
+                      examType={formValues.exam_type}
+                      alternativesCount={formValues.alternatives_count}
+                    />
                   )}
                 </TabsContent>
               </Tabs>

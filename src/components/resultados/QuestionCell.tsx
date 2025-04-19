@@ -37,43 +37,45 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
 
   return (
     <div className={`flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow ${isNullified ? 'opacity-50' : ''}`}>
-      <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200 flex items-center justify-between px-3">
+      <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200">
         <span>Questão {questionNumber}</span>
+      </div>
+      <div className={`flex flex-col gap-4 p-4`}>
+        <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4' : 'gap-3'}`}>
+          {options.map((option) => (
+            <AnswerOption
+              key={option}
+              option={option}
+              isSelected={selectedAnswer === option}
+              onClick={() => !disabled && !isNullified && onAnswerChange(questionNumber, option)}
+              disabled={disabled || isNullified}
+              examType={examType}
+            />
+          ))}
+          
+          {isCertoErrado && onClearAnswer && !isNullified && (
+            <button
+              onClick={() => onClearAnswer(questionNumber)}
+              disabled={disabled || !selectedAnswer}
+              className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
+                ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+                : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
+              title="Limpar resposta"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
+        
         {isAdmin && onToggleNullification && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className={`${isNullified ? 'text-destructive hover:text-destructive' : 'text-gray-500'} p-1 h-6`}
+            className={`${isNullified ? 'border-red-500 text-red-500 hover:bg-red-50' : 'border-gray-300'} w-full mt-2`}
             onClick={() => onToggleNullification(questionNumber)}
-            title={isNullified ? 'Questão anulada. Clique para restaurar.' : 'Anular questão'}
           >
-            <XCircle className="h-4 w-4" />
+            {isNullified ? 'Restaurar Questão' : 'Anular Questão'}
           </Button>
-        )}
-      </div>
-      <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
-        {options.map((option) => (
-          <AnswerOption
-            key={option}
-            option={option}
-            isSelected={selectedAnswer === option}
-            onClick={() => !disabled && !isNullified && onAnswerChange(questionNumber, option)}
-            disabled={disabled || isNullified}
-            examType={examType}
-          />
-        ))}
-        
-        {isCertoErrado && onClearAnswer && !isNullified && (
-          <button
-            onClick={() => onClearAnswer(questionNumber)}
-            disabled={disabled || !selectedAnswer}
-            className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
-              ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
-              : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
-            title="Limpar resposta"
-          >
-            Limpar
-          </button>
         )}
       </div>
       {isNullified && (
