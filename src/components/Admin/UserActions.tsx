@@ -14,27 +14,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface UserActionsProps {
   userId: string;
   rankingId?: string;
   userName: string;
   onSuccess?: () => void;
+  showOnlyRankingActions?: boolean;
 }
 
 export const UserActions: React.FC<UserActionsProps> = ({ 
   userId, 
   rankingId, 
   userName,
-  onSuccess 
+  onSuccess,
+  showOnlyRankingActions = false
 }) => {
   const { toast } = useToast();
   const [showDeleteFromRanking, setShowDeleteFromRanking] = React.useState(false);
@@ -44,7 +38,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
   const handleDeleteFromRanking = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .rpc('admin_delete_user_from_ranking', {
           ranking_id_param: rankingId
         });
@@ -73,7 +67,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
   const handleDeleteProfile = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .rpc('admin_delete_user_profile', {
           user_id_param: userId
         });
@@ -137,37 +131,41 @@ export const UserActions: React.FC<UserActionsProps> = ({
         </>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setShowDeleteProfile(true)}
-        className="text-red-600 hover:text-red-700"
-      >
-        <Trash2 className="h-4 w-4 mr-1" />
-        Excluir Perfil
-      </Button>
+      {!showOnlyRankingActions && (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteProfile(true)}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Excluir Perfil
+          </Button>
 
-      <AlertDialog open={showDeleteProfile} onOpenChange={setShowDeleteProfile}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir perfil do usuário</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o perfil de {userName}? 
-              Esta ação removerá todas as participações em rankings e não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteProfile}
-              disabled={isLoading}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isLoading ? "Excluindo..." : "Sim, excluir"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <AlertDialog open={showDeleteProfile} onOpenChange={setShowDeleteProfile}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir perfil do usuário</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja excluir o perfil de {userName}? 
+                  Esta ação removerá todas as participações em rankings e não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteProfile}
+                  disabled={isLoading}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {isLoading ? "Excluindo..." : "Sim, excluir"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
     </div>
   );
 };
