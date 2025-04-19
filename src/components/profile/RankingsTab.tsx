@@ -89,7 +89,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
             title={ranking.concursos?.titulo || ranking.concursoTitle}
             userRanking={{
               id: ranking.id,
-              position: ranking.position,
+              position: ranking.position || 0,
               score: ranking.score
             }}
           />
