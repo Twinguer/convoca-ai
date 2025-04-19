@@ -162,7 +162,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       } else {
         newSet.add(questionNumber);
         
-        // If no answer is set for this question, set a default answer
+        // Se a questão for anulada, defina uma resposta padrão se não houver
         if (!answers[questionNumber]) {
           handleAnswerChange(questionNumber, concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A');
         }
@@ -196,16 +196,38 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     return matrix;
   };
 
-  const validateAllSections = () => {
-    // Get all questions from all sections
-    const allQuestions = [
-      ...getQuestionsRange(),
-      ...getQuestionsRange(),
-      ...getQuestionsRange(),
-      ...getQuestionsRange()
-    ].filter(q => q !== undefined);
+  const getAllQuestions = () => {
+    // Coletar todas as perguntas de todas as seções
+    let allQuestions: number[] = [];
+    
+    if (concurso.has_basic_knowledge) {
+      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1)];
+    }
+    
+    let startNumber = (concurso.basic_knowledge_questions || 0) + 1;
+    
+    if (concurso.has_specific_knowledge_1) {
+      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i)];
+      startNumber += (concurso.specific_knowledge_1_questions || 0);
+    }
+    
+    if (concurso.has_specific_knowledge_2) {
+      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i)];
+      startNumber += (concurso.specific_knowledge_2_questions || 0);
+    }
+    
+    if (concurso.has_specific_knowledge_3) {
+      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i)];
+    }
+    
+    return allQuestions;
+  };
 
-    // Check if all questions have answers or are nullified
+  const validateAllQuestions = () => {
+    // Obter todas as questões de todas as seções
+    const allQuestions = getAllQuestions();
+    
+    // Verificar se todas as questões têm respostas ou estão anuladas
     const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
     
     if (unansweredQuestions.length > 0) {
@@ -222,8 +244,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setError(null);
       setSavedSuccess(false);
       
-      // Validate that all questions across all sections are answered or nullified
-      if (!validateAllSections()) {
+      // Validar que todas as questões têm respostas ou estão anuladas
+      if (!validateAllQuestions()) {
         setIsSaving(false);
         return;
       }
@@ -240,13 +262,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
       }));
 
-      // Add entries for nullified questions that don't have an answer
+      // Adicionar entradas para questões anuladas que não têm uma resposta
       nullifiedQuestions.forEach(qNum => {
         if (!answers[qNum]) {
           entries.push({
             concurso_id: concursoId,
             question_number: qNum,
-            answer: concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A', // Default answer for nullified questions
+            answer: concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A', // Resposta padrão para questões anuladas
             is_nullified: true
           });
         }
@@ -353,6 +375,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           nullifiedQuestions={nullifiedQuestions}
           onNullifyQuestion={handleNullifyQuestion}
           isAdminView={true}
+          disallowEmptyAnswers={true}
         />
         
         <div className="flex justify-end space-x-3 mt-6">

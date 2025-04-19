@@ -28,6 +28,15 @@ export interface Ranking {
   caseStudy3Score?: number | null;
   reservationType: string;
   id: string;
+  // Adicionar campos para pontuações ponderadas
+  weightedBasicScore?: number;
+  weightedSpecific1Score?: number;
+  weightedSpecific2Score?: number;
+  weightedSpecific3Score?: number;
+  weightedDiscursiveScore?: number;
+  weightedCaseStudy1Score?: number;
+  weightedCaseStudy2Score?: number; 
+  weightedCaseStudy3Score?: number;
 }
 
 interface RankingTableProps {
@@ -306,35 +315,73 @@ const RankingTableContent: React.FC<{
             <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
             
             {concurso.has_basic_knowledge !== false && (
-              <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedBasicScore !== undefined ? ranking.weightedBasicScore : ranking.basicKnowledgeScore || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 !== false && (
-              <TableCell className="text-right">{(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore)?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedSpecific1Score !== undefined ? 
+                  ranking.weightedSpecific1Score : 
+                  (ranking.specificKnowledge1Score || ranking.specificKnowledgeScore) || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
-              <TableCell className="text-right">{ranking.specificKnowledge2Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedSpecific2Score !== undefined ? 
+                  ranking.weightedSpecific2Score : 
+                  ranking.specificKnowledge2Score || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
-              <TableCell className="text-right">{ranking.specificKnowledge3Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedSpecific3Score !== undefined ? 
+                  ranking.weightedSpecific3Score : 
+                  ranking.specificKnowledge3Score || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_discursive === true && (
-              <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedDiscursiveScore !== undefined ? 
+                  ranking.weightedDiscursiveScore : 
+                  ranking.discursiveScore || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
-              <TableCell className="text-right">{ranking.caseStudy1Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedCaseStudy1Score !== undefined ? 
+                  ranking.weightedCaseStudy1Score : 
+                  ranking.caseStudy1Score || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
-              <TableCell className="text-right">{ranking.caseStudy2Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedCaseStudy2Score !== undefined ? 
+                  ranking.weightedCaseStudy2Score : 
+                  ranking.caseStudy2Score || 0).toFixed(2)
+              }</TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
-              <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">{
+                // Mostrar pontuação ponderada em vez da pontuação bruta
+                (ranking.weightedCaseStudy3Score !== undefined ? 
+                  ranking.weightedCaseStudy3Score : 
+                  ranking.caseStudy3Score || 0).toFixed(2)
+              }</TableCell>
             )}
             {isAdminMode && (
               <TableCell>

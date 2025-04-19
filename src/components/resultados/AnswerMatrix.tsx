@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { QuestionCell } from './QuestionCell';
 import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
 
@@ -14,6 +14,7 @@ interface AnswerMatrixProps {
   nullifiedQuestions?: Set<number>;
   onNullifyQuestion?: (questionNumber: number) => void;
   isAdminView?: boolean;
+  disallowEmptyAnswers?: boolean;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
@@ -26,9 +27,26 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   onClearAnswer,
   nullifiedQuestions = new Set(),
   onNullifyQuestion,
-  isAdminView = false
+  isAdminView = false,
+  disallowEmptyAnswers = false
 }) => {
   console.log('Rendering AnswerMatrix with matrix:', matrix);
+  
+  // Auto-selecionar a primeira opção para cada questão que não tenha resposta
+  useEffect(() => {
+    if (disallowEmptyAnswers) {
+      matrix.forEach(row => {
+        row.forEach(questionNumber => {
+          if (questionNumber !== null && !answers[questionNumber] && !nullifiedQuestions.has(questionNumber)) {
+            const options = getOptionsForQuestion(questionNumber);
+            if (options.length > 0) {
+              onAnswerChange(questionNumber, options[0]);
+            }
+          }
+        });
+      });
+    }
+  }, [disallowEmptyAnswers, matrix, answers, nullifiedQuestions, getOptionsForQuestion, onAnswerChange]);
   
   if (!matrix || matrix.length === 0) {
     return (
@@ -38,7 +56,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
     );
   }
 
-  // Check if there are any non-null question numbers in the matrix
+  // Verificar se há algum número de questão não nulo na matriz
   const hasQuestions = matrix.some(row => row.some(cell => cell !== null));
   
   if (!hasQuestions) {
@@ -68,7 +86,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     options={getOptionsForQuestion(questionNumber)}
                     disabled={disabled || nullifiedQuestions.has(questionNumber)}
                     examType={examType}
-                    onClearAnswer={onClearAnswer}
+                    onClearAnswer={disallowEmptyAnswers ? undefined : onClearAnswer}
                     isNullified={nullifiedQuestions.has(questionNumber)}
                   />
                   

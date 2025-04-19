@@ -106,6 +106,30 @@ export const useSaveAnswers = ({
       let specific2Score = 0;
       let specific3Score = 0;
 
+      // Calcular intervalos de questões
+      const basicEnd = concurso.basic_knowledge_questions || 0;
+      const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+      const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+
+      // Mapear todas as questões respondidas
+      const answeredQuestionNumbers = answersArray.map(a => a.questionNumber);
+      
+      // Para cada questão anulada, verificar se o usuário já recebeu pontos por ela
+      nullifiedQuestions.forEach(qNum => {
+        if (!answeredQuestionNumbers.includes(qNum)) {
+          // Se o usuário não respondeu a questão anulada, dar pontos
+          if (qNum <= basicEnd) {
+            basicScore += 1;
+          } else if (qNum <= specific1End) {
+            specific1Score += 1;
+          } else if (qNum <= specific2End) {
+            specific2Score += 1;
+          } else {
+            specific3Score += 1;
+          }
+        }
+      });
+
       // Count correctly answered questions
       answersArray.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
@@ -121,28 +145,6 @@ export const useSaveAnswers = ({
           } else if (userAnswer.isSpecific2) {
             specific2Score += 1;
           } else if (userAnswer.isSpecific3) {
-            specific3Score += 1;
-          }
-        }
-      });
-
-      // Add points for nullified questions that the user hasn't answered
-      nullifiedQuestions.forEach(qNum => {
-        const userHasAnswered = answersArray.some(a => a.questionNumber === qNum);
-        
-        if (!userHasAnswered) {
-          // Determine which section this question belongs to
-          const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-          const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
-          const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
-          
-          if (qNum <= basicQuestionsCount) {
-            basicScore += 1;
-          } else if (qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
-            specific1Score += 1;
-          } else if (qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-            specific2Score += 1;
-          } else {
             specific3Score += 1;
           }
         }
@@ -224,6 +226,7 @@ export const useSaveAnswers = ({
       // Return both raw scores (for display) and the total weighted score
       return {
         basic_knowledge_score: basicScore,
+        specific_knowledge_score: specific1Score + specific2Score + specific3Score,
         specific_knowledge_1_score: specific1Score,
         specific_knowledge_2_score: specific2Score,
         specific_knowledge_3_score: specific3Score,

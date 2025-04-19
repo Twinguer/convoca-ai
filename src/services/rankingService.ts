@@ -18,6 +18,15 @@ export interface Ranking {
   caseStudy3Score?: number;
   reservationType?: string;
   displayReservation?: string;
+  // Adicionar campos para pontuações ponderadas
+  weightedBasicScore?: number;
+  weightedSpecific1Score?: number;
+  weightedSpecific2Score?: number;
+  weightedSpecific3Score?: number;
+  weightedDiscursiveScore?: number;
+  weightedCaseStudy1Score?: number;
+  weightedCaseStudy2Score?: number; 
+  weightedCaseStudy3Score?: number;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -139,6 +148,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const caseStudy2Score = ranking.case_study_2_score || 0;
       const caseStudy3Score = ranking.case_study_3_score || 0;
       
+      // Calcular pontuações ponderadas
+      const weightedBasicScore = basicKnowledgeScore * weights.basicKnowledge;
+      const weightedSpecific1Score = specificKnowledge1Score * weights.specificKnowledge1;
+      const weightedSpecific2Score = specificKnowledge2Score * weights.specificKnowledge2;
+      const weightedSpecific3Score = specificKnowledge3Score * weights.specificKnowledge3;
+      const weightedDiscursiveScore = discursiveScore * weights.discursive;
+      const weightedCaseStudy1Score = caseStudy1Score * weights.caseStudy1;
+      const weightedCaseStudy2Score = caseStudy2Score * weights.caseStudy2;
+      const weightedCaseStudy3Score = caseStudy3Score * weights.caseStudy3;
+      
       // Get reservation type and create display name with abbreviation if needed
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
       const reservationAbbr = getReservationAbbreviation(userReservationType);
@@ -163,7 +182,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy2Score,
         caseStudy3Score,
         reservationType: userReservationType,
-        displayReservation: reservationAbbr
+        displayReservation: reservationAbbr,
+        // Incluir pontuações ponderadas
+        weightedBasicScore,
+        weightedSpecific1Score,
+        weightedSpecific2Score,
+        weightedSpecific3Score,
+        weightedDiscursiveScore,
+        weightedCaseStudy1Score,
+        weightedCaseStudy2Score,
+        weightedCaseStudy3Score
       };
     });
     
