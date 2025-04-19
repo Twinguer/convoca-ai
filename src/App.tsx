@@ -1,75 +1,120 @@
-
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster as SonnerToaster } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { ThemeProvider } from '@/components/theme-provider';
-import NotFound from '@/pages/NotFound';
-import Index from '@/pages/Index';
-
-// Lazy loaded pages
-const AdminDashboard = lazy(() => import('@/pages/Admin/Dashboard'));
-const ConcursoDetails = lazy(() => import('@/pages/ConcursoDetails'));
-const PreClassificacao = lazy(() => import('@/pages/PreClassificacao'));
-const CriarRanking = lazy(() => import('@/pages/CriarRanking'));
-
-// Create a client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
-
-// Loading component for Suspense
-const Loading = () => (
-  <div className="flex items-center justify-center h-screen">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-);
-
-function App() {
-  return (
-    <Router>
+import React from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/theme-provider";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Menu from "./components/Menu";
+import Index from "./pages/Index";
+import Editais from "./pages/Editais";
+import PreClassificacao from "./pages/PreClassificacao";
+import Resultado from "./pages/Resultado";
+import ConcursoDetails from "./pages/ConcursoDetails";
+import ResultadosPage from "./pages/ResultadosPage";
+import NotFound from "./pages/NotFound";
+import ConcursoParticipation from "./pages/ConcursoParticipation";
+import Auth from "./pages/Auth/Auth";
+import UserProfile from "./pages/UserProfile";
+import PublicUserProfile from "./pages/PublicUserProfile";
+import { AuthProvider } from "./hooks/useAuth";
+import UserFollowers from "./pages/UserFollowers";
+import Comunidade from "./pages/Comunidade";
+import AdminLogin from "./pages/Admin/Login";
+import AdminDashboard from "./pages/Admin/Dashboard";
+import ListarConcursos from "./pages/Admin/ListarConcursos";
+import ListarUsuarios from "./pages/Admin/ListarUsuarios";
+import NovoConcurso from "./pages/Admin/NovoConcurso";
+import GabaritoEditor from "./pages/Admin/GabaritoEditor";
+import AdminLayout from "./components/Admin/AdminLayout";
+import ProtectedRoute from "./components/Admin/ProtectedRoute";
+import CriarRanking from "./pages/CriarRanking";
+const App = () => {
+  const queryClient = new QueryClient();
+  return <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light">
-          <Suspense fallback={<Loading />}>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<div>Home Page</div>}>
-                <Route index element={<Index />} />
-                <Route path="privacy-policy" element={<div>Privacy Policy</div>} />
-                <Route path="terms-of-service" element={<div>Terms of Service</div>} />
-                <Route path="pre-classificacao" element={<PreClassificacao />} />
-                <Route path="criar-ranking" element={<CriarRanking />} />
-                <Route path="concurso/:id" element={<ConcursoDetails />} />
-                <Route path="concurso/:id/resultados" element={<div>Concurso Resultados</div>} />
-              </Route>
-
-              {/* Admin routes */}
-              <Route path="/project/admin" element={<div>Admin Layout</div>}>
-                <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="man/users" element={<div>User Management</div>} />
-                <Route path="man/concursos" element={<div>Concurso Management</div>} />
-                <Route path="man/concursos/novo" element={<CriarRanking />} />
-                <Route path="man/concursos/editar/:id" element={<CriarRanking />} />
-              </Route>
-
-              {/* 404 route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <Toaster />
-          <SonnerToaster position="top-right" />
+        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
+          <AuthProvider>
+            <TooltipProvider>
+              <div className="min-h-screen text-foreground bg-zinc-50">
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/project/admin/man/login" element={<AdminLogin />} />
+                    <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
+                    <Route path="/project/admin/man" element={<ProtectedRoute>
+                        <AdminLayout />
+                      </ProtectedRoute>}>
+                      <Route path="dashboard" element={<AdminDashboard />} />
+                      <Route path="concursos" element={<ListarConcursos />} />
+                      <Route path="usuarios" element={<ListarUsuarios />} />
+                      <Route path="concursos/novo" element={<NovoConcurso />} />
+                      <Route path="concursos/editar/:id" element={<NovoConcurso />} />
+                      <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
+                    </Route>
+                    <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
+                    <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/perfil" element={<>
+                        <Menu />
+                        <UserProfile />
+                      </>} />
+                    <Route path="/usuario/:id" element={<>
+                        <Menu />
+                        <PublicUserProfile />
+                      </>} />
+                    <Route path="/seguidores" element={<>
+                        <Menu />
+                        <UserFollowers />
+                      </>} />
+                    <Route path="/" element={<>
+                        <Menu />
+                        <Index />
+                      </>} />
+                    <Route path="/comunidade" element={<>
+                        <Menu />
+                        <Comunidade />
+                      </>} />
+                    <Route path="/editais" element={<>
+                        <Menu />
+                        <Editais />
+                      </>} />
+                    <Route path="/pre-classificacao" element={<>
+                        <Menu />
+                        <PreClassificacao />
+                      </>} />
+                    <Route path="/criar-ranking" element={<>
+                        <Menu />
+                        <CriarRanking />
+                      </>} />
+                    <Route path="/resultado" element={<>
+                        <Menu />
+                        <Resultado />
+                      </>} />
+                    <Route path="/concurso/:id" element={<>
+                        <Menu />
+                        <ConcursoDetails />
+                      </>} />
+                    <Route path="/concurso/:id/resultados" element={<>
+                        <Menu />
+                        <ResultadosPage />
+                      </>} />
+                    <Route path="/concurso/:id/participar" element={<>
+                        <Menu />
+                        <ConcursoParticipation />
+                      </>} />
+                    <Route path="*" element={<>
+                        <Menu />
+                        <NotFound />
+                      </>} />
+                  </Routes>
+                </BrowserRouter>
+              </div>
+            </TooltipProvider>
+          </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </Router>
-  );
-}
-
+    </React.StrictMode>;
+};
 export default App;
