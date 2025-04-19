@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,6 +8,26 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Ranking } from '@/services/rankingService';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
+import { UserActions } from '../Admin/UserActions';
+
+export interface Ranking {
+  position: number;
+  name: string;
+  score: number;
+  userId: string;
+  avatarUrl?: string | null;
+  basicKnowledgeScore?: number | null;
+  specificKnowledgeScore?: number | null;
+  specificKnowledge1Score?: number | null;
+  specificKnowledge2Score?: number | null;
+  specificKnowledge3Score?: number | null;
+  discursiveScore?: number | null;
+  caseStudy1Score?: number | null;
+  caseStudy2Score?: number | null;
+  caseStudy3Score?: number | null;
+  reservationType: string;
+  id: string;
+}
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -195,6 +214,12 @@ const RankingTableContent: React.FC<{
   isAmpla,
   availableQuotas
 }) => {
+  // Check if admin mode is enabled
+  const isAdminMode = React.useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('admin') === 'true';
+  }, []);
+
   // If no concurso data, render a basic table with default columns
   if (!concurso) {
     return (
@@ -204,6 +229,7 @@ const RankingTableContent: React.FC<{
             <TableHead className="text-center w-16">#</TableHead>
             <TableHead>Candidato</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -223,10 +249,20 @@ const RankingTableContent: React.FC<{
                 </div>
               </TableCell>
               <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
+              {isAdminMode && (
+                <TableCell>
+                  <UserActions 
+                    userId={ranking.userId}
+                    userName={ranking.name}
+                    rankingId={ranking.id}
+                    onSuccess={() => window.location.reload()}
+                  />
+                </TableCell>
+              )}
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={3} className="text-center py-4">
+              <TableCell colSpan={isAdminMode ? 4 : 3} className="text-center py-4">
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
             </TableRow>
@@ -251,6 +287,7 @@ const RankingTableContent: React.FC<{
               {column.label}
             </TableHead>
           ))}
+          {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -310,10 +347,20 @@ const RankingTableContent: React.FC<{
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
             )}
+            {isAdminMode && (
+              <TableCell>
+                <UserActions 
+                  userId={ranking.userId}
+                  userName={ranking.name}
+                  rankingId={ranking.id}
+                  onSuccess={() => window.location.reload()}
+                />
+              </TableCell>
+            )}
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={columns.length} className="text-center py-4">
+            <TableCell colSpan={isAdminMode ? columns.length + 1 : columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>
