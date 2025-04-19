@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { QuestionCell } from './QuestionCell';
 import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
@@ -15,11 +14,12 @@ interface AnswerMatrixProps {
   onNullifyQuestion?: (questionNumber: number) => void;
   isAdminView?: boolean;
   disallowEmptyAnswers?: boolean;
+  initializeEmpty?: boolean;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
-  matrix, 
-  answers, 
+  matrix,
+  answers,
   onAnswerChange,
   getOptionsForQuestion,
   disabled = false,
@@ -28,13 +28,13 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   nullifiedQuestions = new Set(),
   onNullifyQuestion,
   isAdminView = false,
-  disallowEmptyAnswers = false
+  disallowEmptyAnswers = false,
+  initializeEmpty = false
 }) => {
   console.log('Rendering AnswerMatrix with matrix:', matrix);
   
-  // Auto-selecionar a primeira opção para cada questão que não tenha resposta
   useEffect(() => {
-    if (disallowEmptyAnswers) {
+    if (disallowEmptyAnswers && !initializeEmpty) {
       matrix.forEach(row => {
         row.forEach(questionNumber => {
           if (questionNumber !== null && !answers[questionNumber] && !nullifiedQuestions.has(questionNumber)) {
@@ -46,7 +46,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
         });
       });
     }
-  }, [disallowEmptyAnswers, matrix, answers, nullifiedQuestions, getOptionsForQuestion, onAnswerChange]);
+  }, [disallowEmptyAnswers, initializeEmpty, matrix, answers, nullifiedQuestions, getOptionsForQuestion, onAnswerChange]);
   
   if (!matrix || matrix.length === 0) {
     return (
@@ -56,7 +56,6 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
     );
   }
 
-  // Verificar se há algum número de questão não nulo na matriz
   const hasQuestions = matrix.some(row => row.some(cell => cell !== null));
   
   if (!hasQuestions) {

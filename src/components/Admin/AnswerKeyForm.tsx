@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -162,7 +161,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       } else {
         newSet.add(questionNumber);
         
-        // Se a questão for anulada, defina uma resposta padrão se não houver
         if (!answers[questionNumber]) {
           handleAnswerChange(questionNumber, concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A');
         }
@@ -197,7 +195,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   };
 
   const getAllQuestions = () => {
-    // Coletar todas as perguntas de todas as seções
     let allQuestions: number[] = [];
     
     if (concurso.has_basic_knowledge) {
@@ -224,10 +221,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   };
 
   const validateAllQuestions = () => {
-    // Obter todas as questões de todas as seções
     const allQuestions = getAllQuestions();
     
-    // Verificar se todas as questões têm respostas ou estão anuladas
     const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
     
     if (unansweredQuestions.length > 0) {
@@ -244,7 +239,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setError(null);
       setSavedSuccess(false);
       
-      // Validar que todas as questões têm respostas ou estão anuladas
       if (!validateAllQuestions()) {
         setIsSaving(false);
         return;
@@ -262,13 +256,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
       }));
 
-      // Adicionar entradas para questões anuladas que não têm uma resposta
       nullifiedQuestions.forEach(qNum => {
         if (!answers[qNum]) {
           entries.push({
             concurso_id: concursoId,
             question_number: qNum,
-            answer: concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A', // Resposta padrão para questões anuladas
+            answer: concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A',
             is_nullified: true
           });
         }
@@ -376,6 +369,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           onNullifyQuestion={handleNullifyQuestion}
           isAdminView={true}
           disallowEmptyAnswers={true}
+          initializeEmpty={true}
         />
         
         <div className="flex justify-end space-x-3 mt-6">
