@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -337,6 +336,15 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       return { success: false, error: 'Gabarito oficial não encontrado' };
     }
     
+    // Create a set of nullified questions for quick lookup
+    const nullifiedQuestions = new Set(
+      answerKey
+        .filter(q => q.is_nullified)
+        .map(q => q.question_number)
+    );
+    
+    console.log('Nullified questions:', [...nullifiedQuestions]);
+    
     // Process each user ranking
     let updatedCount = 0;
     for (const ranking of userRankings) {
@@ -356,7 +364,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         continue;
       }
       
-      // Calculate scores using the same logic as in saveUserAnswers
       // Calculate question ranges
       const basicEnd = concurso.basic_knowledge_questions || 0;
       const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
@@ -370,11 +377,15 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       let specific3Score = 0;
       
       userAnswers.forEach(userAnswer => {
-        const officialAnswer = answerKey.find(
-          a => a.question_number === userAnswer.question_number
-        );
+        const qNum = userAnswer.question_number;
+        const officialAnswer = answerKey.find(a => a.question_number === qNum);
         
-        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+        // If the question is nullified, count it as correct
+        const isNullified = nullifiedQuestions.has(qNum);
+        const isCorrect = isNullified || 
+                         (officialAnswer && officialAnswer.answer === userAnswer.answer);
+        
+        if (isCorrect) {
           if (userAnswer.is_basic_knowledge) {
             basicKnowledgeScore += 1;
           } else if (userAnswer.is_specific_1) {
@@ -384,6 +395,27 @@ export const recalculateAllUserScores = async (concursoId: string) => {
             specific2Score += 1;
             specificKnowledgeScore += 1;
           } else if (userAnswer.is_specific_3) {
+            specific3Score += 1;
+            specificKnowledgeScore += 1;
+          }
+        }
+      });
+      
+      // Add points for nullified questions that the user hasn't answered
+      nullifiedQuestions.forEach(qNum => {
+        const userHasAnswered = userAnswers.some(a => a.question_number === qNum);
+        
+        if (!userHasAnswered) {
+          // Determine which section this question belongs to
+          if (qNum <= basicEnd) {
+            basicKnowledgeScore += 1;
+          } else if (qNum <= specific1End) {
+            specific1Score += 1;
+            specificKnowledgeScore += 1;
+          } else if (qNum <= specific2End) {
+            specific2Score += 1;
+            specificKnowledgeScore += 1;
+          } else {
             specific3Score += 1;
             specificKnowledgeScore += 1;
           }
@@ -441,6 +473,15 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         weightedCaseStudy2Score +
         weightedCaseStudy3Score;
       
+      console.log(`User ${ranking.user_id} scores:`, {
+        basic: basicKnowledgeScore,
+        specific1: specific1Score,
+        specific2: specific2Score,
+        specific3: specific3Score,
+        total: totalScore,
+        nullifiedPoints: [...nullifiedQuestions].length
+      });
+      
       // Update the ranking
       const { error: updateError } = await supabase
         .from('user_rankings')
@@ -466,6 +507,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     return { success: true, updatedCount };
   } catch (error: any) {
     console.error('Error recalculating all user scores:', error);
-    throw error;
+    return { success: false, error: error.message || 'Unknown error' };
   }
 };

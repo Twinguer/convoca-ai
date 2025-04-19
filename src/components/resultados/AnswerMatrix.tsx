@@ -58,7 +58,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
               questionNumber !== null ? (
                 <div key={`${rowIndex}-${colIndex}`} 
                   className={`${
-                    nullifiedQuestions.has(questionNumber) ? 'opacity-75' : ''
+                    nullifiedQuestions.has(questionNumber) ? 'opacity-75 bg-gray-100 rounded-md' : ''
                   }`}
                 >
                   <QuestionCell
@@ -69,13 +69,14 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     disabled={disabled || nullifiedQuestions.has(questionNumber)}
                     examType={examType}
                     onClearAnswer={onClearAnswer}
+                    isNullified={nullifiedQuestions.has(questionNumber)}
                   />
                   
-                  {isAdminView && onNullifyQuestion && (
+                  {(isAdminView || onNullifyQuestion) && (
                     <NullifyQuestionButton
                       questionNumber={questionNumber}
                       isNullified={nullifiedQuestions.has(questionNumber)}
-                      onNullify={onNullifyQuestion}
+                      onNullify={onNullifyQuestion!}
                       disabled={disabled}
                     />
                   )}

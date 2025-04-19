@@ -3,59 +3,56 @@ import React from 'react';
 import { AnswerOption } from './AnswerOption';
 
 interface QuestionCellProps {
-  questionNumber: number | null;
+  questionNumber: number;
   selectedAnswer?: string;
   onAnswerChange: (questionNumber: number, answer: string) => void;
   options: string[];
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
+  isNullified?: boolean;
 }
 
-export const QuestionCell: React.FC<QuestionCellProps> = ({ 
-  questionNumber, 
-  selectedAnswer, 
-  onAnswerChange, 
+export const QuestionCell: React.FC<QuestionCellProps> = ({
+  questionNumber,
+  selectedAnswer,
+  onAnswerChange,
   options,
   disabled = false,
   examType = 'Alternativas',
-  onClearAnswer
+  onClearAnswer,
+  isNullified = false
 }) => {
-  if (questionNumber === null) {
-    return null;
-  }
-  
-  const isCertoErrado = examType === 'Certo ou Errado';
-
   return (
-    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
-      <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200">
-        Questão {questionNumber}
+    <div className={`border rounded-md p-3 overflow-hidden ${isNullified ? 'bg-gray-100' : 'bg-white'}`}>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className={`font-medium ${isNullified ? 'text-gray-500' : 'text-gray-700'}`}>
+          Questão {questionNumber}
+          {isNullified && <span className="ml-2 text-sm italic text-gray-500">(Anulada)</span>}
+        </h3>
+        
+        {onClearAnswer && selectedAnswer && !isNullified && (
+          <button 
+            onClick={() => onClearAnswer(questionNumber)} 
+            className="text-xs text-gray-500 hover:text-gray-700"
+            disabled={disabled}
+          >
+            Limpar
+          </button>
+        )}
       </div>
-      <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
+      
+      <div className="flex flex-wrap gap-2">
         {options.map((option) => (
           <AnswerOption
             key={option}
             option={option}
             isSelected={selectedAnswer === option}
-            onClick={() => !disabled && onAnswerChange(questionNumber, option)}
-            disabled={disabled}
+            onClick={() => onAnswerChange(questionNumber, option)}
+            disabled={disabled || isNullified}
             examType={examType}
           />
         ))}
-        
-        {isCertoErrado && onClearAnswer && (
-          <button
-            onClick={() => onClearAnswer(questionNumber)}
-            disabled={disabled || !selectedAnswer}
-            className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
-              ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
-              : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
-            title="Limpar resposta"
-          >
-            Limpar
-          </button>
-        )}
       </div>
     </div>
   );

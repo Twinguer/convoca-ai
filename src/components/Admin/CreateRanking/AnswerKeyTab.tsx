@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Save } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
 
 interface AnswerKeyTabProps {
   concursoId: string;
@@ -100,6 +99,11 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         newSet.delete(questionNumber);
       } else {
         newSet.add(questionNumber);
+        
+        // If no answer is set for this question, set a default answer
+        if (!answers[questionNumber]) {
+          handleAnswerChange(questionNumber, examType === 'Certo ou Errado' ? 'C' : 'A');
+        }
       }
       return newSet;
     });
