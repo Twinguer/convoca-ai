@@ -16,6 +16,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_basic_knowledge: boolean | null
+          is_nullified: boolean | null
           is_specific_1: boolean | null
           is_specific_2: boolean | null
           question_number: number
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           question_number: number
@@ -38,6 +40,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           question_number?: number
@@ -330,6 +333,14 @@ export type Database = {
           specific_knowledge_score: number | null
           updated_at: string
           user_id: string
+          weighted_basic_score: number | null
+          weighted_case_study_1_score: number | null
+          weighted_case_study_2_score: number | null
+          weighted_case_study_3_score: number | null
+          weighted_discursive_score: number | null
+          weighted_specific_1_score: number | null
+          weighted_specific_2_score: number | null
+          weighted_specific_3_score: number | null
         }
         Insert: {
           all_questions_answered?: boolean | null
@@ -350,6 +361,14 @@ export type Database = {
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id: string
+          weighted_basic_score?: number | null
+          weighted_case_study_1_score?: number | null
+          weighted_case_study_2_score?: number | null
+          weighted_case_study_3_score?: number | null
+          weighted_discursive_score?: number | null
+          weighted_specific_1_score?: number | null
+          weighted_specific_2_score?: number | null
+          weighted_specific_3_score?: number | null
         }
         Update: {
           all_questions_answered?: boolean | null
@@ -370,6 +389,14 @@ export type Database = {
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id?: string
+          weighted_basic_score?: number | null
+          weighted_case_study_1_score?: number | null
+          weighted_case_study_2_score?: number | null
+          weighted_case_study_3_score?: number | null
+          weighted_discursive_score?: number | null
+          weighted_specific_1_score?: number | null
+          weighted_specific_2_score?: number | null
+          weighted_specific_3_score?: number | null
         }
         Relationships: [
           {
@@ -472,6 +499,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_user_from_ranking: {
+        Args: { ranking_id_param: string }
+        Returns: boolean
+      }
+      admin_delete_user_profile: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       admin_operations: {
         Args: { operation: string; data?: Json }
         Returns: Json

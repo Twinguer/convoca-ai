@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,8 @@ import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Function to fetch ranking data for editing
 const fetchRankingData = async (rankingId) => {

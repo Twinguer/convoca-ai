@@ -426,6 +426,24 @@ const NovoConcurso = () => {
                   
                   <ExamStructureSection form={form} />
                   
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="exam_type">Tipo de Prova</Label>
+                      <Select
+                        value={form.getValues().exam_type}
+                        onValueChange={(value) => form.setValue('exam_type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo de prova" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
+                          <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
                   <div className="flex justify-end space-x-4">
                     <Button 
                       type="button" 

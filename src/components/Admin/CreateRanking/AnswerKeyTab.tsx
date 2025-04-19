@@ -168,6 +168,19 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       return;
     }
     
+    // Verificar se todas as questões foram respondidas
+    const totalQuestions = getTotalQuestions();
+    const answeredQuestions = Object.keys(answers).length;
+    
+    if (answeredQuestions < totalQuestions) {
+      toast({
+        title: "Preenchimento incompleto",
+        description: "Todas as questões do gabarito devem ser respondidas antes de salvar.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setIsSaving(true);
       setError(null);
