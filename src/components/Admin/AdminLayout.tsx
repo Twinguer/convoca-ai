@@ -1,12 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Plus, ListChecks, LogOut, ArrowLeft, Users } from 'lucide-react';
-
+import { Home, Plus, ListChecks, LogOut, ArrowLeft } from 'lucide-react';
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  
   useEffect(() => {
     // Check if the user is authenticated
     const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
@@ -14,17 +11,10 @@ const AdminLayout: React.FC = () => {
       navigate('/project/admin/man/login');
     }
   }, [navigate]);
-  
   const handleLogout = () => {
     localStorage.removeItem('adminAuth');
     navigate('/project/admin/man/login');
   };
-  
-  const handleVisitSite = () => {
-    // Open the main site in a new tab with admin view flag
-    window.open('/?admin=true', '_blank');
-  };
-  
   return <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm">
@@ -33,9 +23,8 @@ const AdminLayout: React.FC = () => {
             <h1 className="text-xl font-bold text-gray-800">Convoca AI Admin</h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleVisitSite} className="flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Visualizar Site
+            <Button variant="outline" asChild className="flex items-center gap-2">
+              
             </Button>
             <Button variant="ghost" onClick={handleLogout} className="flex items-center gap-2">
               <LogOut className="h-4 w-4" />
@@ -68,12 +57,6 @@ const AdminLayout: React.FC = () => {
                 Listar Rankings
               </Link>
             </Button>
-            <Button asChild variant="ghost" className="w-full justify-start">
-              <Link to="/project/admin/man/usuarios" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Listar Usuários
-              </Link>
-            </Button>
           </nav>
         </aside>
 
@@ -84,5 +67,4 @@ const AdminLayout: React.FC = () => {
       </div>
     </div>;
 };
-
 export default AdminLayout;

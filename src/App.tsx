@@ -24,90 +24,120 @@ import Comunidade from "./pages/Comunidade";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
-import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
+import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
 
 const App = () => {
   const queryClient = new QueryClient();
-  return <React.StrictMode>
+
+  return (
+    <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
           <AuthProvider>
             <TooltipProvider>
-              <div className="min-h-screen text-foreground bg-zinc-50">
+              <div className="min-h-screen bg-background text-foreground">
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
                   <Routes>
                     <Route path="/project/admin/man/login" element={<AdminLogin />} />
                     <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
-                    <Route path="/project/admin/man" element={<ProtectedRoute>
+                    <Route path="/project/admin/man" element={
+                      <ProtectedRoute>
                         <AdminLayout />
-                      </ProtectedRoute>}>
+                      </ProtectedRoute>
+                    }>
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="concursos" element={<ListarConcursos />} />
-                      <Route path="usuarios" element={<ListarUsuarios />} />
                       <Route path="concursos/novo" element={<NovoConcurso />} />
                       <Route path="concursos/editar/:id" element={<NovoConcurso />} />
+                      <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
                     </Route>
                     <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
                     <Route path="/auth" element={<Auth />} />
-                    <Route path="/perfil" element={<>
+                    <Route path="/perfil" element={
+                      <>
                         <Menu />
                         <UserProfile />
-                      </>} />
-                    <Route path="/usuario/:id" element={<>
+                      </>
+                    } />
+                    <Route path="/usuario/:id" element={
+                      <>
                         <Menu />
                         <PublicUserProfile />
-                      </>} />
-                    <Route path="/seguidores" element={<>
+                      </>
+                    } />
+                    <Route path="/seguidores" element={
+                      <>
                         <Menu />
                         <UserFollowers />
-                      </>} />
-                    <Route path="/" element={<>
+                      </>
+                    } />
+                    <Route path="/" element={
+                      <>
                         <Menu />
                         <Index />
-                      </>} />
-                    <Route path="/comunidade" element={<>
+                      </>
+                    } />
+                    <Route path="/comunidade" element={
+                      <>
                         <Menu />
                         <Comunidade />
-                      </>} />
-                    <Route path="/editais" element={<>
+                      </>
+                    } />
+                    <Route path="/editais" element={
+                      <>
                         <Menu />
                         <Editais />
-                      </>} />
-                    <Route path="/pre-classificacao" element={<>
+                      </>
+                    } />
+                    <Route path="/pre-classificacao" element={
+                      <>
                         <Menu />
                         <PreClassificacao />
-                      </>} />
-                    <Route path="/criar-ranking" element={<>
+                      </>
+                    } />
+                    <Route path="/criar-ranking" element={
+                      <>
                         <Menu />
                         <CriarRanking />
-                      </>} />
-                    <Route path="/resultado" element={<>
+                      </>
+                    } />
+                    <Route path="/resultado" element={
+                      <>
                         <Menu />
                         <Resultado />
-                      </>} />
-                    <Route path="/concurso/:id" element={<>
+                      </>
+                    } />
+                    <Route path="/concurso/:id" element={
+                      <>
                         <Menu />
                         <ConcursoDetails />
-                      </>} />
-                    <Route path="/concurso/:id/resultados" element={<>
+                      </>
+                    } />
+                    <Route path="/concurso/:id/resultados" element={
+                      <>
                         <Menu />
                         <ResultadosPage />
-                      </>} />
-                    <Route path="/concurso/:id/participar" element={<>
+                      </>
+                    } />
+                    <Route path="/concurso/:id/participar" element={
+                      <>
                         <Menu />
                         <ConcursoParticipation />
-                      </>} />
-                    <Route path="*" element={<>
+                      </>
+                    } />
+                    <Route path="*" element={
+                      <>
                         <Menu />
                         <NotFound />
-                      </>} />
+                      </>
+                    } />
                   </Routes>
                 </BrowserRouter>
               </div>
@@ -115,6 +145,8 @@ const App = () => {
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </React.StrictMode>;
+    </React.StrictMode>
+  );
 };
+
 export default App;

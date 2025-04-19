@@ -6,11 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AnswerMatrix } from '@/components/resultados/AnswerMatrix';
 import { Concurso } from '@/types/concursos';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -22,7 +18,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -55,17 +50,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   useEffect(() => {
     if (existingAnswers && existingAnswers.length > 0) {
       const answersMap: { [key: number]: string } = {};
-      const nullifiedSet = new Set<number>();
       
       existingAnswers.forEach((item: any) => {
         answersMap[item.question_number] = item.answer;
-        if (item.is_nullified) {
-          nullifiedSet.add(item.question_number);
-        }
       });
       
       setAnswers(answersMap);
-      setNullifiedQuestions(nullifiedSet);
     }
   }, [existingAnswers]);
 
@@ -129,7 +119,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     return [];
   };
 
-  const getOptionsForQuestion = (questionNumber: number) => {
+  const getOptionsForQuestion = () => {
     if (concurso.exam_type === 'Certo ou Errado') {
       return ['C', 'E'];
     }
@@ -145,35 +135,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }));
   };
 
-  const handleClearAnswer = (questionNumber: number) => {
-    setAnswers(prev => {
-      const newAnswers = { ...prev };
-      delete newAnswers[questionNumber];
-      return newAnswers;
-    });
-  };
-
-  const handleNullifyQuestion = (questionNumber: number) => {
-    setNullifiedQuestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionNumber)) {
-        newSet.delete(questionNumber);
-      } else {
-        newSet.add(questionNumber);
-        
-        if (!answers[questionNumber]) {
-          handleAnswerChange(questionNumber, concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A');
-        }
-      }
-      return newSet;
-    });
-  };
-
   const createAnswerMatrix = () => {
     const questions = getQuestionsRange();
-    if (questions.length === 0) return [[]];
+    if (questions.length === 0) return [];
     
-    const QUESTIONS_PER_ROW = 5;
+    const QUESTIONS_PER_ROW = 4;
     const rows = Math.ceil(questions.length / QUESTIONS_PER_ROW);
     
     const matrix = [];
@@ -194,84 +160,57 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     return matrix;
   };
 
-  const getAllQuestions = () => {
-    let allQuestions: number[] = [];
-    
-    if (concurso.has_basic_knowledge) {
-      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1)];
-    }
-    
-    let startNumber = (concurso.basic_knowledge_questions || 0) + 1;
-    
-    if (concurso.has_specific_knowledge_1) {
-      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i)];
-      startNumber += (concurso.specific_knowledge_1_questions || 0);
-    }
-    
-    if (concurso.has_specific_knowledge_2) {
-      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i)];
-      startNumber += (concurso.specific_knowledge_2_questions || 0);
-    }
-    
-    if (concurso.has_specific_knowledge_3) {
-      allQuestions = [...allQuestions, ...Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i)];
-    }
-    
-    return allQuestions;
-  };
-
-  const validateAllQuestions = () => {
-    const allQuestions = getAllQuestions();
-    
-    const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
-    
-    if (unansweredQuestions.length > 0) {
-      setError(`Todas as questões devem ter uma resposta ou serem anuladas. Faltam ${unansweredQuestions.length} questões.`);
-      return false;
-    }
-    
-    return true;
-  };
-
   const handleSaveAnswerKey = async () => {
     try {
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
       
-      if (!validateAllQuestions()) {
-        setIsSaving(false);
-        return;
-      }
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        const qNum = parseInt(questionNumber);
+        let isBasic = false;
+        let isSpecific1 = false;
+        let isSpecific2 = false;
+        let isSpecific3 = false;
+        
+        const basicCount = concurso.basic_knowledge_questions || 0;
+        const specific1Count = concurso.specific_knowledge_1_questions || 0;
+        const specific2Count = concurso.specific_knowledge_2_questions || 0;
+        
+        if (qNum <= basicCount) {
+          isBasic = true;
+        } else if (qNum <= basicCount + specific1Count) {
+          isSpecific1 = true;
+        } else if (qNum <= basicCount + specific1Count + specific2Count) {
+          isSpecific2 = true;
+        } else {
+          isSpecific3 = true;
+        }
+        
+        return {
+          concurso_id: concursoId,
+          question_number: qNum,
+          answer: answer.toUpperCase(),
+          is_basic_knowledge: isBasic,
+          is_specific_1: isSpecific1,
+          is_specific_2: isSpecific2
+        };
+      });
       
-      await supabase
+      const { error: deleteError } = await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
+        
+      if (deleteError) throw deleteError;
       
-      const entries = Object.entries(answers).map(([questionNumber, answer]) => ({
-        concurso_id: concursoId,
-        question_number: parseInt(questionNumber),
-        answer: answer.toUpperCase(),
-        is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
-      }));
-
-      nullifiedQuestions.forEach(qNum => {
-        if (!answers[qNum]) {
-          entries.push({
-            concurso_id: concursoId,
-            question_number: qNum,
-            answer: concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A',
-            is_nullified: true
-          });
-        }
-      });
-      
-      const { error } = await supabase
-        .from('answer_keys')
-        .insert(entries);
-      
-      if (error) throw error;
+      if (answersArray.length > 0) {
+        const { error: insertError } = await supabase
+          .from('answer_keys')
+          .insert(answersArray);
+          
+        if (insertError) throw insertError;
+      }
       
       const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
       
@@ -282,14 +221,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         setSavedSuccess(true);
         toast({
           title: "Gabarito salvo com sucesso",
-          description: `O gabarito oficial foi atualizado. ${recalculationResult.updatedCount > 0 ? 
-            `As notas de ${recalculationResult.updatedCount} usuários foram recalculadas.` : 
-            'Não há usuários com respostas cadastradas para recalcular.'}`
+          description: `O gabarito oficial foi atualizado e as notas de ${recalculationResult.updatedCount} usuários foram recalculadas.`,
         });
       } else {
         toast({
-          title: "Gabarito salvo",
-          description: "As respostas oficiais foram salvas com sucesso."
+          title: "Gabarito salvo, mas recálculo falhou",
+          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
+          variant: "destructive"
         });
       }
       
@@ -323,64 +261,94 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const objectiveSections = getObjectiveSectionList();
 
   return (
-    <Card className="shadow-md">
+    <Card>
       <CardHeader>
-        <CardTitle>Gabarito Oficial</CardTitle>
+        <CardTitle>Gabarito Oficial - {concurso.titulo}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <Alert variant="destructive">
+          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+            <p>{error}</p>
+          </div>
         )}
         
         {savedSuccess && (
-          <Alert>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-600">Gabarito salvo com sucesso!</AlertDescription>
-          </Alert>
+          <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <p>Gabarito salvo com sucesso!</p>
+          </div>
         )}
         
-        <div className="mb-4">
-          <Label htmlFor="section">Seção</Label>
-          <Select value={selectedSection} onValueChange={(val) => setSelectedSection(val as any)}>
-            <SelectTrigger id="section">
-              <SelectValue placeholder="Selecione uma seção" />
-            </SelectTrigger>
-            <SelectContent>
-              {objectiveSections.map(option => (
-                <SelectItem key={option.key} value={option.key}>
-                  {option.label}
-                </SelectItem>
+        {objectiveSections.length > 0 && (
+          <div className="border rounded-md overflow-hidden shadow-sm">
+            <Tabs 
+              value={selectedSection} 
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              className="w-full"
+            >
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
+                {objectiveSections.map(section => (
+                  <TabsTrigger key={section.key} value={section.key}>
+                    {section.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {objectiveSections.map(section => (
+                <TabsContent key={section.key} value={section.key}>
+                  <div className="p-4 bg-gray-50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {createAnswerMatrix().map((row, rowIndex) => (
+                        <React.Fragment key={rowIndex}>
+                          {row.map((questionNumber, colIndex) => (
+                            questionNumber !== null && (
+                              <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
+                                <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {getOptionsForQuestion().map((option) => (
+                                    <button
+                                      key={option}
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
+                                        ${answers[questionNumber] === option 
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                      onClick={() => handleAnswerChange(questionNumber, option)}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </Tabs>
+          </div>
+        )}
         
-        <AnswerMatrix
-          matrix={createAnswerMatrix()}
-          answers={answers}
-          onAnswerChange={handleAnswerChange}
-          onClearAnswer={handleClearAnswer}
-          getOptionsForQuestion={getOptionsForQuestion}
-          examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
-          nullifiedQuestions={nullifiedQuestions}
-          onNullifyQuestion={handleNullifyQuestion}
-          isAdminView={true}
-          disallowEmptyAnswers={true}
-          initializeEmpty={true}
-        />
-        
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex justify-end mt-4">
           <Button 
-            type="button" 
-            onClick={handleSaveAnswerKey} 
+            onClick={handleSaveAnswerKey}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
             disabled={isSaving}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
           >
-            <Save className="h-4 w-4" />
-            {isSaving ? 'Salvando...' : 'Salvar Gabarito'}
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Salvar Gabarito
+              </>
+            )}
           </Button>
         </div>
       </CardContent>

@@ -1,3 +1,4 @@
+
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
@@ -58,7 +59,7 @@ export const useSaveAnswers = ({
 
       const { data: answerKey, error: keyError } = await supabase
         .from('answer_keys')
-        .select('*, is_nullified')
+        .select('*')
         .eq('concurso_id', concurso.id);
 
       if (keyError) throw keyError;
@@ -90,53 +91,21 @@ export const useSaveAnswers = ({
 
       console.log('Concurso weights retrieved from database:', concursoData);
 
-      // Create a set of nullified questions for quick lookup
-      const nullifiedQuestions = new Set(
-        answerKey
-          .filter((q: any) => q.is_nullified)
-          .map((q: any) => q.question_number)
-      );
-
-      console.log('Nullified questions:', [...nullifiedQuestions]);
-
       // Raw score (number of correct answers)
       let basicScore = 0;
       let specific1Score = 0;
       let specific2Score = 0;
       let specific3Score = 0;
 
-      // Calcular intervalos de questões
-      const basicEnd = concurso.basic_knowledge_questions || 0;
-      const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
-      const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-
-      // Mapear todas as questões respondidas
-      const answeredQuestionNumbers = answersArray.map(a => a.questionNumber);
-      
-      // Para cada questão anulada, verificar se o usuário já recebeu pontos por ela
-      nullifiedQuestions.forEach(qNum => {
-        if (!answeredQuestionNumbers.includes(qNum)) {
-          // Se o usuário não respondeu a questão anulada, dar pontos
-          if (qNum <= basicEnd) {
-            basicScore += 1;
-          } else if (qNum <= specific1End) {
-            specific1Score += 1;
-          } else if (qNum <= specific2End) {
-            specific2Score += 1;
-          } else {
-            specific3Score += 1;
-          }
-        }
-      });
-
       // Count correctly answered questions
       answersArray.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
-          (a: any) => a.question_number === userAnswer.questionNumber
+          a => a.question_number === userAnswer.questionNumber
         );
         
-        // Award points for nullified questions as if they were correct
-        if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
+        console.log(`Checking question ${userAnswer.questionNumber}: user=${userAnswer.answer}, official=${officialAnswer?.answer}`);
+
+        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
           if (userAnswer.isBasicKnowledge) {
             basicScore += 1;
           } else if (userAnswer.isSpecific1) {
@@ -206,9 +175,9 @@ export const useSaveAnswers = ({
 
       // Calculate total weighted score
       const totalScore = weightedBasicScore + weightedSpecific1Score + 
-                       weightedSpecific2Score + weightedSpecific3Score +
-                       discursiveValue + caseStudy1Value +
-                       caseStudy2Value + caseStudy3Value;
+                         weightedSpecific2Score + weightedSpecific3Score +
+                         discursiveValue + caseStudy1Value +
+                         caseStudy2Value + caseStudy3Value;
 
       console.log("Final total score:", totalScore);
       console.log("Individual components:", {
@@ -225,7 +194,6 @@ export const useSaveAnswers = ({
       // Return both raw scores (for display) and the total weighted score
       return {
         basic_knowledge_score: basicScore,
-        specific_knowledge_score: specific1Score + specific2Score + specific3Score,
         specific_knowledge_1_score: specific1Score,
         specific_knowledge_2_score: specific2Score,
         specific_knowledge_3_score: specific3Score,
@@ -233,15 +201,7 @@ export const useSaveAnswers = ({
         case_study_1_score: caseStudy1Score || 0,
         case_study_2_score: caseStudy2Score || 0,
         case_study_3_score: caseStudy3Score || 0,
-        score: totalScore,
-        weighted_basic_score: weightedBasicScore,
-        weighted_specific_1_score: weightedSpecific1Score,
-        weighted_specific_2_score: weightedSpecific2Score,
-        weighted_specific_3_score: weightedSpecific3Score,
-        weighted_discursive_score: discursiveValue,
-        weighted_case_study_1_score: caseStudy1Value,
-        weighted_case_study_2_score: caseStudy2Value,
-        weighted_case_study_3_score: caseStudy3Value
+        score: totalScore
       };
     } catch (error) {
       console.error('Error calculating score:', error);

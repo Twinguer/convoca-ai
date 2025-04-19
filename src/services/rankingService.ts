@@ -18,15 +18,6 @@ export interface Ranking {
   caseStudy3Score?: number;
   reservationType?: string;
   displayReservation?: string;
-  // Adicionar campos para pontuações ponderadas
-  weightedBasicScore?: number;
-  weightedSpecific1Score?: number;
-  weightedSpecific2Score?: number;
-  weightedSpecific3Score?: number;
-  weightedDiscursiveScore?: number;
-  weightedCaseStudy1Score?: number;
-  weightedCaseStudy2Score?: number; 
-  weightedCaseStudy3Score?: number;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -132,53 +123,21 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     console.log('Applied weights:', weights);
     
-    // Obter gabarito oficial para identificar questões anuladas
-    const { data: answerKey, error: keyError } = await supabase
-      .from('answer_keys')
-      .select('*')
-      .eq('concurso_id', concursoId);
-      
-    if (keyError) {
-      console.error('Error fetching answer key:', keyError);
-      throw keyError;
-    }
-    
-    // Criar conjunto de questões anuladas
-    const nullifiedQuestions = new Set(
-      answerKey
-        ?.filter((q: any) => q.is_nullified)
-        .map((q: any) => q.question_number) || []
-    );
-    
     // Map the rankings with profile information
     const formattedRankings = rankings.map((ranking, index) => {
       // Find the matching profile
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
-      // Calcular pontuações considerando questões anuladas
-      let basicKnowledgeScore = ranking.basic_knowledge_score || 0;
-      let specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
-      let specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
-      let specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
-      
-      // Aplicar pesos às pontuações
-      const weightedBasicScore = basicKnowledgeScore * weights.basicKnowledge;
-      const weightedSpecific1Score = specificKnowledge1Score * weights.specificKnowledge1;
-      const weightedSpecific2Score = specificKnowledge2Score * weights.specificKnowledge2;
-      const weightedSpecific3Score = specificKnowledge3Score * weights.specificKnowledge3;
-      
       // Get all scores
+      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
+      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
+      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
+      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
       const specificKnowledgeScore = ranking.specific_knowledge_score || 0; // For backward compatibility
       const discursiveScore = ranking.discursive_score || 0;
       const caseStudy1Score = ranking.case_study_1_score || 0;
       const caseStudy2Score = ranking.case_study_2_score || 0;
       const caseStudy3Score = ranking.case_study_3_score || 0;
-      
-      // Calculate weighted scores for subjective sections
-      const weightedDiscursiveScore = discursiveScore * weights.discursive;
-      const weightedCaseStudy1Score = caseStudy1Score * weights.caseStudy1;
-      const weightedCaseStudy2Score = caseStudy2Score * weights.caseStudy2;
-      const weightedCaseStudy3Score = caseStudy3Score * weights.caseStudy3;
       
       // Get reservation type and create display name with abbreviation if needed
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
@@ -204,16 +163,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy2Score,
         caseStudy3Score,
         reservationType: userReservationType,
-        displayReservation: reservationAbbr,
-        // Include weighted scores
-        weightedBasicScore,
-        weightedSpecific1Score,
-        weightedSpecific2Score,
-        weightedSpecific3Score,
-        weightedDiscursiveScore,
-        weightedCaseStudy1Score,
-        weightedCaseStudy2Score,
-        weightedCaseStudy3Score
+        displayReservation: reservationAbbr
       };
     });
     

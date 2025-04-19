@@ -67,10 +67,6 @@ const ListarConcursos: React.FC = () => {
     }
   };
   
-  const handleViewRanking = (id: string) => {
-    window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
-  };
-  
   const filteredConcursos = concursos?.filter(concurso =>
     concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
@@ -211,7 +207,7 @@ const ListarConcursos: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => handleViewRanking(concurso.id)}
+                          onClick={() => navigate(`/concurso/${concurso.id}/resultados`)}
                         >
                           <Eye className="h-4 w-4 text-blue-500" />
                           <span className="sr-only">Ver</span>

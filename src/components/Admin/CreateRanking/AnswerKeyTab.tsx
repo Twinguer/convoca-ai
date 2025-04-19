@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   const [selectedSection, setSelectedSection] = useState<string>("basic");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   
   useEffect(() => {
     const fetchAnswerKey = async () => {
@@ -50,7 +48,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       
       const { data, error } = await supabase
         .from('answer_keys')
-        .select('question_number, answer, is_nullified')
+        .select('question_number, answer')
         .eq('concurso_id', concursoId);
         
       if (error) {
@@ -60,17 +58,10 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       
       if (data && data.length > 0) {
         const answersObj: {[key: number]: string} = {};
-        const nullifiedSet = new Set<number>();
-        
         data.forEach(item => {
           answersObj[item.question_number] = item.answer;
-          if (item.is_nullified) {
-            nullifiedSet.add(item.question_number);
-          }
         });
-        
         setAnswers(answersObj);
-        setNullifiedQuestions(nullifiedSet);
       }
     };
     
@@ -89,23 +80,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       const newAnswers = { ...prev };
       delete newAnswers[questionNumber];
       return newAnswers;
-    });
-  };
-
-  const handleNullifyQuestion = (questionNumber: number) => {
-    setNullifiedQuestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionNumber)) {
-        newSet.delete(questionNumber);
-      } else {
-        newSet.add(questionNumber);
-        
-        // If no answer is set for this question, set a default answer
-        if (!answers[questionNumber]) {
-          handleAnswerChange(questionNumber, examType === 'Certo ou Errado' ? 'C' : 'A');
-        }
-      }
-      return newSet;
     });
   };
   
@@ -177,49 +151,15 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return matrix;
   };
   
-  // Function to get questions for a specific section
-  const getQuestionsBySection = (section: string): number[] => {
-    let startingQuestion = 1;
-    let totalQuestions = 0;
+  const getSectionOptions = () => {
+    const options = [];
     
-    if (section === "basic" && hasBasicKnowledge) {
-      totalQuestions = basicKnowledgeQuestions;
-    } else if (section === "specific1" && hasSpecificKnowledge1) {
-      startingQuestion = basicKnowledgeQuestions + 1;
-      totalQuestions = specificKnowledge1Questions;
-    } else if (section === "specific2" && hasSpecificKnowledge2) {
-      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + 1;
-      totalQuestions = specificKnowledge2Questions;
-    } else if (section === "specific3" && hasSpecificKnowledge3) {
-      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions + 1;
-      totalQuestions = specificKnowledge3Questions;
-    }
+    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
+    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
+    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
+    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
     
-    if (totalQuestions <= 0) {
-      return [];
-    }
-    
-    return Array.from({ length: totalQuestions }, (_, i) => startingQuestion + i);
-  };
-  
-  const validateAllSections = () => {
-    // Get all questions from all sections
-    const allQuestions = [
-      ...getQuestionsBySection('basic'),
-      ...getQuestionsBySection('specific1'),
-      ...getQuestionsBySection('specific2'),
-      ...getQuestionsBySection('specific3')
-    ];
-
-    // Check if all questions have answers or are nullified
-    const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
-    
-    if (unansweredQuestions.length > 0) {
-      setError(`Todas as questões devem ter uma resposta ou serem anuladas. Faltam ${unansweredQuestions.length} questões.`);
-      return false;
-    }
-    
-    return true;
+    return options;
   };
   
   const handleSaveAnswerKey = async () => {
@@ -232,39 +172,30 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(true);
       setError(null);
       
-      // Validate that all questions across all sections are answered or nullified
-      if (!validateAllSections()) {
-        setIsSaving(false);
-        return;
-      }
-      
       await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
       
-      const entries = Object.entries(answers).map(([questionNumber, answer]) => ({
+      const answerRows = Object.keys(answers).map(questionNumber => ({
         concurso_id: concursoId,
         question_number: parseInt(questionNumber),
-        answer: answer.toUpperCase(),
-        is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
+        answer: answers[parseInt(questionNumber)]
       }));
-
-      // Add entries for nullified questions that don't have an answer
-      nullifiedQuestions.forEach(qNum => {
-        if (!answers[qNum]) {
-          entries.push({
-            concurso_id: concursoId,
-            question_number: qNum,
-            answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default answer for nullified questions
-            is_nullified: true
-          });
-        }
-      });
+      
+      if (answerRows.length === 0) {
+        toast({
+          title: "Nenhuma resposta para salvar",
+          description: "Por favor, informe pelo menos uma resposta no gabarito.",
+          variant: "destructive"
+        });
+        setIsSaving(false);
+        return;
+      }
       
       const { error } = await supabase
         .from('answer_keys')
-        .insert(entries);
+        .insert(answerRows);
       
       if (error) throw error;
       
@@ -298,17 +229,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     } finally {
       setIsSaving(false);
     }
-  };
-  
-  const getSectionOptions = () => {
-    const options = [];
-    
-    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
-    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
-    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
-    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
-    
-    return options;
   };
   
   const sectionOptions = getSectionOptions();
@@ -349,9 +269,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
           onClearAnswer={handleClearAnswer}
           getOptionsForQuestion={getOptionsForQuestion}
           examType={examType as 'Alternativas' | 'Certo ou Errado'}
-          nullifiedQuestions={nullifiedQuestions}
-          onNullifyQuestion={handleNullifyQuestion}
-          isAdminView={true}
         />
         
         <div className="flex justify-end space-x-3 mt-6">
