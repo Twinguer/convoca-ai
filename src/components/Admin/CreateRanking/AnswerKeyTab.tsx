@@ -41,7 +41,8 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   const [selectedSection, setSelectedSection] = useState<string>("basic");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
+
   useEffect(() => {
     const fetchAnswerKey = async () => {
       if (!concursoId) return;
@@ -68,6 +69,26 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     fetchAnswerKey();
   }, [concursoId]);
   
+  useEffect(() => {
+    const loadNullifiedQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('answer_keys')
+          .select('question_number')
+          .eq('concurso_id', concursoId)
+          .eq('is_nullified', true);
+          
+        if (error) throw error;
+        
+        setNullifiedQuestions(data?.map(item => item.question_number) || []);
+      } catch (error) {
+        console.error('Error loading nullified questions:', error);
+      }
+    };
+    
+    loadNullifiedQuestions();
+  }, [concursoId]);
+
   const handleAnswerChange = (questionNumber: number, answer: string) => {
     setAnswers(prev => ({
       ...prev,
@@ -171,14 +192,12 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return total;
   };
   
-  // Modificar handleSaveAnswerKey para incluir is_nullified
   const handleSaveAnswerKey = async () => {
     if (!concursoId) {
       setError("ID do concurso não encontrado");
       return;
     }
     
-    // Verificar se todas as questões foram respondidas
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = Object.keys(answers).length;
     
@@ -204,7 +223,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         concurso_id: concursoId,
         question_number: parseInt(questionNumber),
         answer: answers[parseInt(questionNumber)],
-        is_nullified: false  // Por padrão, não anulada
+        is_nullified: false
       }));
       
       if (answerRows.length === 0) {
@@ -254,18 +273,33 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(false);
     }
   };
-  
-  // Adicionar novo método para marcar questão como anulada
-  const handleToggleNullification = (questionNumber: number) => {
-    setAnswers(prev => {
-      const newAnswers = { ...prev };
-      // Lógica de anulação (pode ser expandida conforme necessário)
-      return newAnswers;
-    });
+
+  const handleToggleNullification = async (questionNumber: number) => {
+    try {
+      const isCurrentlyNullified = nullifiedQuestions.includes(questionNumber);
+      const newNullifiedQuestions = isCurrentlyNullified
+        ? nullifiedQuestions.filter(q => q !== questionNumber)
+        : [...nullifiedQuestions, questionNumber];
+      
+      await toggleQuestionNullification(concursoId, questionNumber, !isCurrentlyNullified);
+      setNullifiedQuestions(newNullifiedQuestions);
+      
+      toast({
+        title: isCurrentlyNullified ? "Questão restaurada" : "Questão anulada",
+        description: `A questão ${questionNumber} foi ${isCurrentlyNullified ? 'restaurada' : 'anulada'} com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error toggling nullification:', error);
+      toast({
+        title: "Erro ao modificar questão",
+        description: "Ocorreu um erro ao tentar anular/restaurar a questão.",
+        variant: "destructive"
+      });
+    }
   };
-  
+
   const sectionOptions = getSectionOptions();
-  
+
   return (
     <Card className="shadow-md">
       <CardHeader>
@@ -302,6 +336,9 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
           onClearAnswer={handleClearAnswer}
           getOptionsForQuestion={getOptionsForQuestion}
           examType={examType as 'Alternativas' | 'Certo ou Errado'}
+          nullifiedQuestions={nullifiedQuestions}
+          onToggleNullification={handleToggleNullification}
+          isAdmin={true}
         />
         
         <div className="flex justify-end space-x-3 mt-6">

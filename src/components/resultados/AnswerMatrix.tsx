@@ -10,6 +10,9 @@ interface AnswerMatrixProps {
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
+  nullifiedQuestions?: number[];
+  onToggleNullification?: (questionNumber: number) => void;
+  isAdmin?: boolean;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({ 
@@ -19,7 +22,10 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   getOptionsForQuestion,
   disabled = false,
   examType = 'Alternativas',
-  onClearAnswer
+  onClearAnswer,
+  nullifiedQuestions = [],
+  onToggleNullification,
+  isAdmin = false
 }) => {
   console.log('Rendering AnswerMatrix with matrix:', matrix);
   
@@ -58,6 +64,9 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     disabled={disabled}
                     examType={examType}
                     onClearAnswer={onClearAnswer}
+                    isNullified={nullifiedQuestions.includes(questionNumber)}
+                    onToggleNullification={onToggleNullification}
+                    isAdmin={isAdmin}
                   />
                 </div>
               )
