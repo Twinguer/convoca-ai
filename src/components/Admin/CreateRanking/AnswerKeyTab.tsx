@@ -209,6 +209,26 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return Array.from({ length: totalQuestions }, (_, i) => startingQuestion + i);
   };
   
+  const validateAllSections = () => {
+    // Get all questions from all sections
+    const allQuestions = [
+      ...getQuestionsBySection('basic'),
+      ...getQuestionsBySection('specific1'),
+      ...getQuestionsBySection('specific2'),
+      ...getQuestionsBySection('specific3')
+    ];
+
+    // Check if all questions have answers or are nullified
+    const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
+    
+    if (unansweredQuestions.length > 0) {
+      setError(`Todas as questões devem ter uma resposta ou serem anuladas. Faltam ${unansweredQuestions.length} questões.`);
+      return false;
+    }
+    
+    return true;
+  };
+  
   const handleSaveAnswerKey = async () => {
     if (!concursoId) {
       setError("ID do concurso não encontrado");
@@ -219,17 +239,8 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(true);
       setError(null);
       
-      const allQuestions = [
-        ...getQuestionsBySection('basic'),
-        ...getQuestionsBySection('specific1'),
-        ...getQuestionsBySection('specific2'),
-        ...getQuestionsBySection('specific3')
-      ];
-
-      // Check if all questions have answers
-      const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
-      if (unansweredQuestions.length > 0) {
-        setError("Todas as questões devem ter uma resposta ou serem anuladas. Por favor, preencha todas as alternativas.");
+      // Validate that all questions across all sections are answered or nullified
+      if (!validateAllSections()) {
         setIsSaving(false);
         return;
       }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +71,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   });
   
-  // Fetch user answers
   const {
     isLoading: isLoadingAnswers
   } = useQuery({
@@ -87,7 +85,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   });
   
-  // Use the saveAnswers hook
   const { handleSaveAnswers: saveAnswers } = useSaveAnswers({
     rankingId,
     concurso,
@@ -125,19 +122,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       return;
     }
 
-    // Validation for multiple choice exams
-    if (concurso.exam_type === 'Alternativas') {
-      const totalQuestions = getTotalQuestions();
-      const answeredQuestions = getAnsweredQuestionsCount();
+    const totalQuestions = getTotalQuestions();
+    const answeredQuestions = getAnsweredQuestionsCount();
 
-      if (answeredQuestions < totalQuestions) {
-        toast({
-          title: "Atenção",
-          description: "Em provas de múltipla escolha, todas as questões devem ser respondidas antes de salvar.",
-          variant: "destructive"
-        });
-        return;
-      }
+    if (answeredQuestions < totalQuestions) {
+      toast({
+        title: "Atenção",
+        description: "Todas as questões devem ser respondidas antes de salvar.",
+        variant: "destructive"
+      });
+      return;
     }
 
     try {
@@ -196,7 +190,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
 
-  // Get only the objective sections for tabs (basic and specific knowledge)
   const getObjectiveSectionList = () => {
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
@@ -251,7 +244,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         </div>
         <Progress value={progressPercentage} className="h-2 bg-gray-200" />
         
-        {/* Objective questions tabs (only for basic and specific knowledge) */}
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
@@ -284,7 +276,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           </div>
         )}
         
-        {/* Discursive and case study scores stacked at the bottom */}
         {(concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3) && (
           <DiscursiveScoresSection 
             concurso={concurso}
