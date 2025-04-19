@@ -163,7 +163,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return options;
   };
   
-  // Add the missing getTotalQuestions function
   const getTotalQuestions = (): number => {
     let total = 0;
     if (hasBasicKnowledge) total += basicKnowledgeQuestions || 0;
@@ -186,7 +185,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     if (answeredQuestions < totalQuestions) {
       toast({
         title: "Preenchimento incompleto",
-        description: "Todas as questões do gabarito devem ser respondidas antes de salvar.",
+        description: `Todas as questões do gabarito devem ser respondidas antes de salvar. Faltam ${totalQuestions - answeredQuestions} questões.`,
         variant: "destructive"
       });
       return;
