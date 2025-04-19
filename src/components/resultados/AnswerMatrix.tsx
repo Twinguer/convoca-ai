@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { QuestionCell } from './QuestionCell';
 import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
@@ -69,11 +70,13 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     examType={examType}
                     onClearAnswer={onClearAnswer}
                   />
+                  
                   {isAdminView && onNullifyQuestion && (
                     <NullifyQuestionButton
                       questionNumber={questionNumber}
                       isNullified={nullifiedQuestions.has(questionNumber)}
                       onNullify={onNullifyQuestion}
+                      disabled={disabled}
                     />
                   )}
                 </div>

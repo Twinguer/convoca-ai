@@ -173,17 +173,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return matrix;
   };
   
-  const getSectionOptions = () => {
-    const options = [];
-    
-    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
-    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
-    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
-    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
-    
-    return options;
-  };
-  
   // Function to get questions for a specific section
   const getQuestionsBySection = (section: string): number[] => {
     let startingQuestion = 1;
@@ -305,6 +294,17 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+  
+  const getSectionOptions = () => {
+    const options = [];
+    
+    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
+    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
+    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
+    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
+    
+    return options;
   };
   
   const sectionOptions = getSectionOptions();
