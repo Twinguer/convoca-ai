@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { UserActions } from '@/components/Admin/UserActions';
 
 const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
@@ -65,6 +65,10 @@ const ListarConcursos: React.FC = () => {
         });
       }
     }
+  };
+  
+  const handleViewRanking = (id: string) => {
+    window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
   };
   
   const filteredConcursos = concursos?.filter(concurso =>
@@ -207,7 +211,7 @@ const ListarConcursos: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => navigate(`/concurso/${concurso.id}/resultados`)}
+                          onClick={() => handleViewRanking(concurso.id)}
                         >
                           <Eye className="h-4 w-4 text-blue-500" />
                           <span className="sr-only">Ver</span>

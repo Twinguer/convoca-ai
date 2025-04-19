@@ -24,6 +24,7 @@ import Comunidade from "./pages/Comunidade";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
+import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
 import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
@@ -53,6 +54,7 @@ const App = () => {
                     }>
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="concursos" element={<ListarConcursos />} />
+                      <Route path="usuarios" element={<ListarUsuarios />} />
                       <Route path="concursos/novo" element={<NovoConcurso />} />
                       <Route path="concursos/editar/:id" element={<NovoConcurso />} />
                       <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
