@@ -20,25 +20,21 @@ const Home: React.FC = () => {
     status: 'Em andamento'
   });
   
-  // Fetch concursos with React Query
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['concursos', filters],
     queryFn: () => fetchConcursos(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Filter concursos based on search term
   const filteredConcursos = data?.filter(concurso => 
     concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  // Get unique values for filter dropdowns
   const uniqueOrgaos = [...new Set(data?.map(c => c.orgao) || [])];
   const uniqueBancas = [...new Set(data?.map(c => c.banca) || [])];
   const statusOptions = ['Em andamento', 'Finalizado', 'Todos'];
 
-  // Handle filter changes
   const handleFilterChange = (key: keyof ConcursoFilter, value: string) => {
     if (value === 'Todos') {
       const newFilters = { ...filters };
@@ -49,17 +45,14 @@ const Home: React.FC = () => {
     }
   };
 
-  // Clear all filters
   const clearFilters = () => {
     setFilters({ status: 'Em andamento' });
     setSearchTerm('');
   };
 
-  // Count active filters
   const activeFilterCount = Object.keys(filters).length;
 
   useEffect(() => {
-    // Initial fetch to populate data
     refetch();
   }, [refetch]);
 

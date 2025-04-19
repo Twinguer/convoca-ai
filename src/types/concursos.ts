@@ -1,3 +1,4 @@
+
 export interface AnswerKey {
   id: string;
   concurso_id: string;
@@ -79,6 +80,7 @@ export interface ConcursoFilter {
   banca?: string;
   status?: string;
   periodo?: string;
+  orgao?: string; // Adicionando propriedade 'orgao' que estava faltando
 }
 
 export interface UserRankingDisplay {

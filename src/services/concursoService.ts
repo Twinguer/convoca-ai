@@ -1,4 +1,3 @@
-
 import { Concurso, ConcursoFilter } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchUserRankings } from './rankingService';
