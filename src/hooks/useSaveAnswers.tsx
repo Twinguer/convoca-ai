@@ -1,4 +1,3 @@
-
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
@@ -207,9 +206,9 @@ export const useSaveAnswers = ({
 
       // Calculate total weighted score
       const totalScore = weightedBasicScore + weightedSpecific1Score + 
-                         weightedSpecific2Score + weightedSpecific3Score +
-                         discursiveValue + caseStudy1Value +
-                         caseStudy2Value + caseStudy3Value;
+                       weightedSpecific2Score + weightedSpecific3Score +
+                       discursiveValue + caseStudy1Value +
+                       caseStudy2Value + caseStudy3Value;
 
       console.log("Final total score:", totalScore);
       console.log("Individual components:", {
@@ -234,7 +233,15 @@ export const useSaveAnswers = ({
         case_study_1_score: caseStudy1Score || 0,
         case_study_2_score: caseStudy2Score || 0,
         case_study_3_score: caseStudy3Score || 0,
-        score: totalScore
+        score: totalScore,
+        weighted_basic_score: weightedBasicScore,
+        weighted_specific_1_score: weightedSpecific1Score,
+        weighted_specific_2_score: weightedSpecific2Score,
+        weighted_specific_3_score: weightedSpecific3Score,
+        weighted_discursive_score: discursiveValue,
+        weighted_case_study_1_score: caseStudy1Value,
+        weighted_case_study_2_score: caseStudy2Value,
+        weighted_case_study_3_score: caseStudy3Value
       };
     } catch (error) {
       console.error('Error calculating score:', error);

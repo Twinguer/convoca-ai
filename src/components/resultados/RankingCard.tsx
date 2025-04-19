@@ -12,9 +12,9 @@ interface RankingCardProps {
   banca?: string;
   data?: string;
   status?: string;
-  participantCount?: number; // Changed from participantsCount to participantCount
-  userRanking?: any; // Added userRanking prop
-  inscritos?: number; // Added inscritos prop
+  participantCount?: number;
+  userRanking?: any;
+  inscritos?: number;
   createdByUserId?: string;
   isAdminCreated?: boolean;
 }
@@ -25,7 +25,7 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   banca,
   data,
   status,
-  participantCount, // Updated prop name
+  participantCount,
   createdByUserId,
   isAdminCreated,
   userRanking,
@@ -72,16 +72,36 @@ export const RankingCard: React.FC<RankingCardProps> = ({
         )}
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between items-center">
-          {status && (
-            <Badge variant={status === 'Em andamento' ? 'default' : 'secondary'}>
-              {status}
-            </Badge>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            {status && (
+              <Badge variant={status === 'Em andamento' ? 'default' : 'secondary'}>
+                {status}
+              </Badge>
+            )}
+            {participantCount !== undefined && (
+              <span className="text-sm text-gray-500">
+                {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
+              </span>
+            )}
+          </div>
+          
+          {inscritos !== undefined && (
+            <div className="text-sm text-gray-600">
+              Inscritos no concurso: {inscritos}
+            </div>
           )}
-          {participantCount !== undefined && (
-            <span className="text-sm text-gray-500">
-              {participantCount} {participantCount === 1 ? 'participante' : 'participantes'}
-            </span>
+          
+          {userRanking && (
+            <div className="mt-2 p-3 bg-emerald-50 rounded-md border border-emerald-200">
+              <h4 className="text-sm font-medium text-emerald-800 mb-1">Seu desempenho</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="text-gray-600">Posição:</div>
+                <div className="font-medium">{userRanking.position}º</div>
+                <div className="text-gray-600">Pontuação:</div>
+                <div className="font-medium">{userRanking.score.toFixed(2)}</div>
+              </div>
+            </div>
           )}
         </div>
       </CardContent>
