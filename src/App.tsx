@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -25,10 +26,10 @@ import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
 import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
-import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
+
 const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
@@ -51,7 +52,6 @@ const App = () => {
                       <Route path="usuarios" element={<ListarUsuarios />} />
                       <Route path="concursos/novo" element={<NovoConcurso />} />
                       <Route path="concursos/editar/:id" element={<NovoConcurso />} />
-                      <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
                     </Route>
                     <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />

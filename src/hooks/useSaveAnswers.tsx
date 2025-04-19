@@ -91,6 +91,15 @@ export const useSaveAnswers = ({
 
       console.log('Concurso weights retrieved from database:', concursoData);
 
+      // Create a set of nullified questions for quick lookup
+      const nullifiedQuestions = new Set(
+        answerKey
+          .filter((q: any) => q.is_nullified)
+          .map((q: any) => q.question_number)
+      );
+
+      console.log('Nullified questions:', [...nullifiedQuestions]);
+
       // Raw score (number of correct answers)
       let basicScore = 0;
       let specific1Score = 0;
@@ -100,27 +109,41 @@ export const useSaveAnswers = ({
       // Count correctly answered questions
       answersArray.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
-          a => a.question_number === userAnswer.questionNumber
+          (a: any) => a.question_number === userAnswer.questionNumber
         );
         
         // Award points for nullified questions as if they were correct
         if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
           if (userAnswer.isBasicKnowledge) {
             basicScore += 1;
+          } else if (userAnswer.isSpecific1) {
+            specific1Score += 1;
+          } else if (userAnswer.isSpecific2) {
+            specific2Score += 1;
+          } else if (userAnswer.isSpecific3) {
+            specific3Score += 1;
+          }
+        }
+      });
+
+      // Add points for nullified questions that the user hasn't answered
+      nullifiedQuestions.forEach(qNum => {
+        const userHasAnswered = answersArray.some(a => a.questionNumber === qNum);
+        
+        if (!userHasAnswered) {
+          // Determine which section this question belongs to
+          const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+          const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
+          const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
+          
+          if (qNum <= basicQuestionsCount) {
+            basicScore += 1;
+          } else if (qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
+            specific1Score += 1;
+          } else if (qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
+            specific2Score += 1;
           } else {
-            const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-            const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
-            const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
-            
-            const qNum = userAnswer.questionNumber;
-            
-            if (qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
-              specific1Score += 1;
-            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount) && qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-              specific2Score += 1;
-            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-              specific3Score += 1;
-            }
+            specific3Score += 1;
           }
         }
       });

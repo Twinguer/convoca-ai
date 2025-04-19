@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -101,6 +102,15 @@ export const saveUserAnswers = async (
     console.log('Official answer key:', answerKey);
     console.log('User answers to check:', answers);
     
+    // Create a set of nullified questions for quick lookup
+    const nullifiedQuestions = new Set(
+      answerKey
+        .filter(q => q.is_nullified)
+        .map(q => q.question_number)
+    );
+    
+    console.log('Nullified questions:', [...nullifiedQuestions]);
+    
     // Calculate score by comparing user answers with official answers
     let basicKnowledgeScore = 0;
     let specificKnowledgeScore = 0;
@@ -113,7 +123,9 @@ export const saveUserAnswers = async (
         a => a.question_number === userAnswer.questionNumber
       );
       
-      if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+      // Award points for nullified questions or correct answers
+      if (officialAnswer && (nullifiedQuestions.has(userAnswer.questionNumber) || 
+                             officialAnswer.answer === userAnswer.answer)) {
         if (userAnswer.isBasicKnowledge) {
           basicKnowledgeScore += 1;
         } else {
@@ -129,6 +141,27 @@ export const saveUserAnswers = async (
           } else if (qNum > specific2End) {
             specific3Score += 1;
           }
+        }
+      }
+    });
+    
+    // Add points for nullified questions that the user hasn't answered
+    nullifiedQuestions.forEach(qNum => {
+      const userHasAnswered = answers.some(a => a.questionNumber === qNum);
+      
+      if (!userHasAnswered) {
+        // Determine which section this question belongs to
+        if (qNum <= basicEnd) {
+          basicKnowledgeScore += 1;
+        } else if (qNum <= specific1End) {
+          specific1Score += 1;
+          specificKnowledgeScore += 1;
+        } else if (qNum <= specific2End) {
+          specific2Score += 1;
+          specificKnowledgeScore += 1;
+        } else {
+          specific3Score += 1;
+          specificKnowledgeScore += 1;
         }
       }
     });
