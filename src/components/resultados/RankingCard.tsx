@@ -13,7 +13,18 @@ interface RankingCardProps {
   data?: string;
   status?: string;
   participantCount?: number;
-  userRanking?: any;
+  userRanking?: {
+    position: number;
+    score: number;
+    weightedBasicScore?: number;
+    weightedSpecific1Score?: number;
+    weightedSpecific2Score?: number;
+    weightedSpecific3Score?: number;
+    weightedDiscursiveScore?: number;
+    weightedCaseStudy1Score?: number;
+    weightedCaseStudy2Score?: number;
+    weightedCaseStudy3Score?: number;
+  };
   inscritos?: number;
   createdByUserId?: string;
   isAdminCreated?: boolean;
@@ -98,8 +109,64 @@ export const RankingCard: React.FC<RankingCardProps> = ({
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-gray-600">Posição:</div>
                 <div className="font-medium">{userRanking.position}º</div>
-                <div className="text-gray-600">Pontuação:</div>
+                <div className="text-gray-600">Pontuação total:</div>
                 <div className="font-medium">{userRanking.score.toFixed(2)}</div>
+                
+                {userRanking.weightedBasicScore !== undefined && (
+                  <>
+                    <div className="text-gray-600">C.B. (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedBasicScore.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedSpecific1Score !== undefined && (
+                  <>
+                    <div className="text-gray-600">C.E.1 (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedSpecific1Score.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedSpecific2Score !== undefined && userRanking.weightedSpecific2Score > 0 && (
+                  <>
+                    <div className="text-gray-600">C.E.2 (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedSpecific2Score.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedSpecific3Score !== undefined && userRanking.weightedSpecific3Score > 0 && (
+                  <>
+                    <div className="text-gray-600">C.E.3 (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedSpecific3Score.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedDiscursiveScore !== undefined && userRanking.weightedDiscursiveScore > 0 && (
+                  <>
+                    <div className="text-gray-600">Discursiva (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedDiscursiveScore.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedCaseStudy1Score !== undefined && userRanking.weightedCaseStudy1Score > 0 && (
+                  <>
+                    <div className="text-gray-600">Est. Caso 1 (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedCaseStudy1Score.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedCaseStudy2Score !== undefined && userRanking.weightedCaseStudy2Score > 0 && (
+                  <>
+                    <div className="text-gray-600">Est. Caso 2 (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedCaseStudy2Score.toFixed(2)}</div>
+                  </>
+                )}
+                
+                {userRanking.weightedCaseStudy3Score !== undefined && userRanking.weightedCaseStudy3Score > 0 && (
+                  <>
+                    <div className="text-gray-600">Est. Caso 3 (com peso):</div>
+                    <div className="font-medium">{userRanking.weightedCaseStudy3Score.toFixed(2)}</div>
+                  </>
+                )}
               </div>
             </div>
           )}
