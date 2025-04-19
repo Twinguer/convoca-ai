@@ -114,9 +114,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   }
 
   // Default view for non-participating users
-  return <div className="p-6 rounded-lg shadow-sm border bg-zinc-950">
+  return <div className="p-6 rounded-lg shadow-sm border bg-zinc-50">
       <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
-      <p className="mb-4 text-zinc-50">
+      <p className="mb-4 text-gray-500">
         Participe do ranking deste concurso para comparar seu desempenho com outros candidatos.
         Você poderá preencher seu cartão de respostas e ver sua classificação.
       </p>
