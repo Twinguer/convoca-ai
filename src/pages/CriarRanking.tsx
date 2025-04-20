@@ -48,6 +48,7 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
+  const [concurso, setConcurso] = useState(null);
   
   // Check if we're in edit mode
   const searchParams = new URLSearchParams(location.search);
@@ -134,6 +135,7 @@ const CriarRanking = () => {
           if (data) {
             // Set the created concurso ID for the answer key tab
             setCreatedConcursoId(data.id);
+            setConcurso(data);
             
             // Determine if title and banca are custom
             const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
@@ -226,6 +228,15 @@ const CriarRanking = () => {
         
         // Set the concurso ID to allow editing the answer key
         setCreatedConcursoId(editId || (result[0]?.id));
+        
+        // Update concurso data
+        if (result[0]) {
+          setConcurso(result[0]);
+        } else if (editId) {
+          // Fetch the updated concurso data
+          const updatedData = await fetchRankingData(editId);
+          setConcurso(updatedData);
+        }
         
         // Switch to the answer key tab
         setActiveTab('answer-key');
@@ -325,6 +336,7 @@ const CriarRanking = () => {
                         specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
                         examType={formValues.exam_type}
                         alternativesCount={formValues.alternatives_count}
+                        concurso={concurso}
                       />
                       
                       <div className="flex justify-end mt-6">
