@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -364,7 +363,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         continue;
       }
       
-      // Calculate scores using the same logic as in saveUserAnswers
       // Calculate question ranges
       const basicEnd = concurso.basic_knowledge_questions || 0;
       const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
@@ -390,9 +388,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
             } else {
               specificKnowledgeScore += 1;
               
-              // Compare question number with ranges to determine section
               const qNum = userAnswer.question_number;
-              
               if (qNum > basicEnd && qNum <= specific1End) {
                 specific1Score += 1;
               } else if (qNum > specific1End && qNum <= specific2End) {
@@ -409,9 +405,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
             } else {
               specificKnowledgeScore += 1;
               
-              // Compare question number with ranges to determine section
               const qNum = userAnswer.question_number;
-              
               if (qNum > basicEnd && qNum <= specific1End) {
                 specific1Score += 1;
               } else if (qNum > specific1End && qNum <= specific2End) {
@@ -423,6 +417,18 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           }
         }
       });
+      
+      // Get weights
+      const basicWeight = concurso.basic_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+      
+      // Calculate weighted scores
+      const weightedBasicScore = basicKnowledgeScore * basicWeight;
+      const weightedSpecific1Score = specific1Score * specific1Weight;
+      const weightedSpecific2Score = specific2Score * specific2Weight;
+      const weightedSpecific3Score = specific3Score * specific3Weight;
       
       // Get subjective scores
       const { data: rankingData, error: rankingError } = await supabase
@@ -441,19 +447,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         continue;
       }
       
-      // Get weights
-      const basicWeight = concurso.basic_knowledge_weight || 1;
-      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
-      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
-      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
-      
-      // Calculate weighted scores
-      const weightedBasicScore = basicKnowledgeScore * basicWeight;
-      const weightedSpecific1Score = specific1Score * specific1Weight;
-      const weightedSpecific2Score = specific2Score * specific2Weight;
-      const weightedSpecific3Score = specific3Score * specific3Weight;
-      
-      // Add subjective scores
+      // Calculate subjective scores with weights
       const discursiveScore = (rankingData?.discursive_score || 0);
       const caseStudy1Score = (rankingData?.case_study_1_score || 0);
       const caseStudy2Score = (rankingData?.case_study_2_score || 0);

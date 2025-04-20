@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -82,12 +81,10 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     const formattedRankings: Ranking[] = rankings.map((ranking, index) => {
       const profile = ranking.users_profiles || {};
       
-      // Ensure type safety when accessing properties
       const name = typeof profile === 'object' && profile !== null && 'name' in profile 
         ? String(profile.name) 
         : 'Usuário Anônimo';
         
-      // Explicitly cast avatar_url to string or null
       const avatarUrl = typeof profile === 'object' && profile !== null && 'avatar_url' in profile 
         ? (profile.avatar_url as string | null)
         : null;
@@ -98,12 +95,12 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
 
       return {
-        id: String(ranking.id), // Ensure id is a string
+        id: String(ranking.id),
         position: index + 1,
         name: displayName,
         score: Number(ranking.score) || 0,
         userId: String(ranking.user_id),
-        avatarUrl: avatarUrl, // Now correctly typed as string | null
+        avatarUrl: avatarUrl,
         basicKnowledgeScore: Number(ranking.basic_knowledge_score) || 0,
         specificKnowledge1Score: Number(ranking.specific_knowledge_1_score) || 0,
         specificKnowledge2Score: Number(ranking.specific_knowledge_2_score) || 0,
@@ -132,7 +129,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     const { data, error } = await supabase
       .from('concursos')
       .select(`
-        has_ampla_concorrencia,
+        has_ampla_concorrrencia,
         has_ppp,
         has_pcd,
         has_hipossuficientes,
