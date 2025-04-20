@@ -1,126 +1,78 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { MapPin } from 'lucide-react';
 
 interface StateSelectorProps {
+  form: any;
   selectedStates: string[];
-  onStateChange: (states: string[]) => void;
+  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
+const ESTADOS_BRASILEIROS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
 export const StateSelector: React.FC<StateSelectorProps> = ({
+  form,
   selectedStates,
-  onStateChange,
+  setSelectedStates
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [localStates, setLocalStates] = useState<string[]>(selectedStates);
-
-  const states = [
-    { value: 'Nacional', label: 'Nacional' },
-    { value: 'AC', label: 'Acre' },
-    { value: 'AL', label: 'Alagoas' },
-    { value: 'AP', label: 'Amapá' },
-    { value: 'AM', label: 'Amazonas' },
-    { value: 'BA', label: 'Bahia' },
-    { value: 'CE', label: 'Ceará' },
-    { value: 'DF', label: 'Distrito Federal' },
-    { value: 'ES', label: 'Espírito Santo' },
-    { value: 'GO', label: 'Goiás' },
-    { value: 'MA', label: 'Maranhão' },
-    { value: 'MT', label: 'Mato Grosso' },
-    { value: 'MS', label: 'Mato Grosso do Sul' },
-    { value: 'MG', label: 'Minas Gerais' },
-    { value: 'PA', label: 'Pará' },
-    { value: 'PB', label: 'Paraíba' },
-    { value: 'PR', label: 'Paraná' },
-    { value: 'PE', label: 'Pernambuco' },
-    { value: 'PI', label: 'Piauí' },
-    { value: 'RJ', label: 'Rio de Janeiro' },
-    { value: 'RN', label: 'Rio Grande do Norte' },
-    { value: 'RS', label: 'Rio Grande do Sul' },
-    { value: 'RO', label: 'Rondônia' },
-    { value: 'RR', label: 'Roraima' },
-    { value: 'SC', label: 'Santa Catarina' },
-    { value: 'SP', label: 'São Paulo' },
-    { value: 'SE', label: 'Sergipe' },
-    { value: 'TO', label: 'Tocantins' },
-  ];
-
-  const handleStateToggle = (state: string) => {
-    setLocalStates(current => {
-      const newStates = current.includes(state)
-        ? current.filter(s => s !== state)
-        : [...current, state];
-      
-      // Se "Nacional" foi selecionado, limpar outros estados
-      if (state === 'Nacional' && !current.includes('Nacional')) {
-        return ['Nacional'];
+  const handleStateSelection = (estado: string) => {
+    setSelectedStates(prev => {
+      if (prev.includes(estado)) {
+        return prev.filter(s => s !== estado);
       }
-      
-      // Se outro estado foi selecionado, remover "Nacional"
-      if (state !== 'Nacional') {
-        return newStates.filter(s => s !== 'Nacional');
-      }
-      
-      return newStates;
+      return [...prev, estado];
     });
   };
 
-  const handleSave = () => {
-    onStateChange(localStates);
-    setIsOpen(false);
-  };
-
   return (
-    <div className="space-y-2">
-      <Label>Localidades</Label>
+    <FormItem>
+      <FormLabel>Localidade</FormLabel>
       <div className="flex flex-wrap gap-2">
-        {selectedStates.map(state => (
-          <div key={state} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
-            {state}
+        {selectedStates.map(estado => (
+          <div key={estado} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
+            {estado}
           </div>
         ))}
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Adicionar
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <MapPin className="h-4 w-4" />
+              {selectedStates.length > 0 ? "Editar Estados" : "Adicionar Estados"}
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Selecione as Localidades</DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-4">
-                {states.map(state => (
-                  <div key={state.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={state.value}
-                      checked={localStates.includes(state.value)}
-                      onCheckedChange={() => handleStateToggle(state.value)}
-                    />
-                    <Label htmlFor={state.value}>{state.label}</Label>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-            <div className="flex justify-end mt-4">
-              <Button onClick={handleSave}>Salvar</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="max-w-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Selecione os Estados</AlertDialogTitle>
+              <AlertDialogDescription>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  {ESTADOS_BRASILEIROS.map(estado => (
+                    <div key={estado} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={estado}
+                        checked={selectedStates.includes(estado)}
+                        onCheckedChange={() => handleStateSelection(estado)}
+                      />
+                      <label htmlFor={estado} className="text-sm font-medium leading-none cursor-pointer">
+                        {estado}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Fechar</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-    </div>
+    </FormItem>
   );
 };
