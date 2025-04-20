@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,49 +107,11 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         return newSet;
       });
 
-      const getQuestionWeight = (qNum: number) => {
-        if (qNum <= basicKnowledgeQuestions) {
-          return concurso.basic_knowledge_weight || 1;
-        } else if (qNum <= basicKnowledgeQuestions + specificKnowledge1Questions) {
-          return concurso.specific_knowledge_1_weight || 1;
-        } else if (qNum <= basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions) {
-          return concurso.specific_knowledge_2_weight || 1;
-        }
-        return concurso.specific_knowledge_3_weight || 1;
-      };
-
-      const { data: rankings } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('concurso_id', concursoId);
-
-      if (rankings) {
-        for (const ranking of rankings) {
-          const { data: userAnswer } = await supabase
-            .from('user_answers')
-            .select('*')
-            .eq('user_ranking_id', ranking.id)
-            .eq('question_number', questionNumber)
-            .single();
-
-          if (userAnswer) {
-            const weight = getQuestionWeight(questionNumber);
-            const weightedScore = weight;
-
-            await supabase
-              .from('user_rankings')
-              .update({
-                score: ranking.score + weightedScore,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', ranking.id);
-          }
-        }
-      }
-
       toast({
-        title: "Questão anulada com sucesso",
-        description: "As pontuações foram recalculadas para todos os participantes."
+        title: "Questão atualizada",
+        description: nullifiedQuestions.has(questionNumber) 
+          ? "A questão foi desmarcada como anulada." 
+          : "A questão foi marcada como anulada."
       });
 
     } catch (error) {
