@@ -1,13 +1,15 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ReservationQuotasSection } from '../FormSections/ReservationQuotasSection';
+import { Plus, MapPin } from 'lucide-react';
 
 interface GeneralTabProps {
   form: any;
@@ -20,6 +22,11 @@ interface GeneralTabProps {
   handleNextTab: () => void;
 }
 
+const ESTADOS_BRASILEIROS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
 export const GeneralTab: React.FC<GeneralTabProps> = ({
   form,
   jobTitles,
@@ -30,6 +37,33 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleBancaChange,
   handleNextTab
 }) => {
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  
+  const handleStateSelection = (estado: string) => {
+    setSelectedStates(prev => {
+      if (prev.includes(estado)) {
+        return prev.filter(s => s !== estado);
+      }
+      return [...prev, estado];
+    });
+    
+    form.setValue('estados', selectedStates);
+  };
+  
+  const handleAddKnowledgeArea = (type: string) => {
+    switch (type) {
+      case 'specific1':
+        form.setValue('has_specific_knowledge_1', true);
+        break;
+      case 'specific2':
+        form.setValue('has_specific_knowledge_2', true);
+        break;
+      case 'specific3':
+        form.setValue('has_specific_knowledge_3', true);
+        break;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Informações Básicas */}
@@ -107,6 +141,52 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
                 </FormItem>
               )}
             />
+            
+            {/* Localidade */}
+            <div className="col-span-2">
+              <FormItem>
+                <FormLabel>Localidade</FormLabel>
+                <div className="flex flex-wrap gap-2">
+                  {selectedStates.map(estado => (
+                    <div key={estado} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
+                      {estado}
+                    </div>
+                  ))}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Adicionar Estado
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-2xl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Selecione os Estados</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          <div className="grid grid-cols-3 gap-4 mt-4">
+                            {ESTADOS_BRASILEIROS.map(estado => (
+                              <div key={estado} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={estado}
+                                  checked={selectedStates.includes(estado)}
+                                  onCheckedChange={() => handleStateSelection(estado)}
+                                />
+                                <label htmlFor={estado} className="text-sm font-medium leading-none cursor-pointer">
+                                  {estado}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Fechar</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </FormItem>
+            </div>
             
             {/* Banca */}
             <div>
@@ -280,7 +360,34 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       {/* Estrutura da Prova */}
       <Card>
         <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-4">Estrutura da Prova</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">Estrutura da Prova</h3>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {!form.watch('has_specific_knowledge_1') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific1')}>
+                    Conhecimentos Específicos 1
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_specific_knowledge_2') && form.watch('has_specific_knowledge_1') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific2')}>
+                    Conhecimentos Específicos 2
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_specific_knowledge_3') && form.watch('has_specific_knowledge_2') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific3')}>
+                    Conhecimentos Específicos 3
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {/* Tipo de Prova */}
