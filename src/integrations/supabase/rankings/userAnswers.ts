@@ -475,7 +475,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         weightedCaseStudy2Score +
         weightedCaseStudy3Score;
       
-      // Update the ranking
+      // Update the ranking with ALL weighted fields
       const { error: updateError } = await supabase
         .from('user_rankings')
         .update({
@@ -484,6 +484,14 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           specific_knowledge_1_score: specific1Score,
           specific_knowledge_2_score: specific2Score,
           specific_knowledge_3_score: specific3Score,
+          weighted_basic_score: weightedBasicScore,
+          weighted_specific_1_score: weightedSpecific1Score,
+          weighted_specific_2_score: weightedSpecific2Score,
+          weighted_specific_3_score: weightedSpecific3Score,
+          weighted_discursive_score: weightedDiscursiveScore,
+          weighted_case_study_1_score: weightedCaseStudy1Score,
+          weighted_case_study_2_score: weightedCaseStudy2Score,
+          weighted_case_study_3_score: weightedCaseStudy3Score,
           score: totalScore,
           updated_at: new Date().toISOString()
         })
