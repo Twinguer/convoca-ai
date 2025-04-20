@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -181,42 +180,50 @@ const CriarRanking = () => {
     form.setValue('orgao', e.target.value.toUpperCase());
   };
   
-  const handleSubmit = async (values: any) => {
+  const handleNextTab = () => {
+    if (activeTab === 'general-info') {
+      setActiveTab('answer-key');
+    }
+  };
+
+  const handleSaveFullRanking = async (formValues: any, answerKeyData: any) => {
     setIsSubmitting(true);
-    
+
     try {
       const dataToSubmit = {
-        ...values,
+        ...formValues,
         created_by_user_id: user?.id,
-        titulo: values.custom_job_title || values.predefined_job_title,
-        banca: values.custom_banca || values.banca
+        titulo: formValues.custom_job_title || formValues.predefined_job_title,
+        banca: formValues.custom_banca || formValues.banca
       };
-      
+
       let result;
-      
+      let concursoIdToUse = editId;
       if (editId) {
         const { data, error } = await supabase
           .from('concursos')
           .update(dataToSubmit)
           .eq('id', editId)
           .select();
-          
+
         if (error) throw error;
         result = data;
-        
+        concursoIdToUse = editId;
         toast.success("Ranking atualizado com sucesso!");
       } else {
         result = await createRanking(dataToSubmit);
+        concursoIdToUse = result?.[0]?.id;
         toast.success("Ranking criado com sucesso!");
       }
-      
-      if (result) {
+
+      if (concursoIdToUse) {
+        await saveAnswerKeyAndRecalculate(concursoIdToUse, answerKeyData);
+
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        
-        setCreatedConcursoId(editId || (result[0]?.id));
-        
+        setCreatedConcursoId(concursoIdToUse);
         setActiveTab('answer-key');
       }
+
     } catch (error) {
       console.error("Erro ao criar/atualizar ranking:", error);
       toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
@@ -224,21 +231,22 @@ const CriarRanking = () => {
       setIsSubmitting(false);
     }
   };
-  
-  const handleNextTab = () => {
-    if (activeTab === 'general-info') {
-      setActiveTab('answer-key');
+
+  const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase.from('answer_keys').delete().eq('concurso_id', concursoId);
+    if (answerKeyData.length > 0) {
+      const { error: insertError } = await supabase.from('answer_keys').insert(answerKeyData);
+      if (insertError) throw insertError;
     }
+    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
+    await recalculateAllUserScores(concursoId);
   };
-  
-  const handleGoToResults = () => {
-    if (createdConcursoId) {
-      navigate(`/concurso/${createdConcursoId}/resultados`);
-    }
-  };
-  
+
+  const handleFakeSubmit = () => {};
+
   const formValues = form.getValues();
-  
+
   return (
     <div className="container mx-auto p-4">
       <Button 
@@ -258,15 +266,14 @@ const CriarRanking = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <form onSubmit={form.handleSubmit(handleFakeSubmit)}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!createdConcursoId}>
+                  <TabsTrigger value="answer-key" disabled={!formValues || !user}>
                     Gabarito Oficial
                   </TabsTrigger>
                 </TabsList>
-                
                 <TabsContent value="general-info">
                   <GeneralTab
                     form={form}
@@ -280,30 +287,27 @@ const CriarRanking = () => {
                     handleNextTab={handleNextTab}
                   />
                 </TabsContent>
-                
                 <TabsContent value="answer-key">
+                  <AnswerKeyTab
+                    formValues={formValues}
+                    onSaveFullRanking={handleSaveFullRanking}
+                    hasBasicKnowledge={!!formValues.has_basic_knowledge}
+                    hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
+                    hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
+                    hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
+                    basicKnowledgeQuestions={formValues.basic_knowledge_questions}
+                    specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
+                    specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
+                    specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
+                    examType={formValues.exam_type}
+                    alternativesCount={formValues.alternatives_count}
+                  />
                   {createdConcursoId && (
-                    <>
-                      <AnswerKeyTab
-                        concursoId={createdConcursoId}
-                        hasBasicKnowledge={!!formValues.has_basic_knowledge}
-                        hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
-                        hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
-                        hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
-                        basicKnowledgeQuestions={formValues.basic_knowledge_questions}
-                        specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
-                        specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
-                        specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
-                        examType={formValues.exam_type}
-                        alternativesCount={formValues.alternatives_count}
-                      />
-                      
-                      <div className="flex justify-end mt-6">
-                        <Button type="button" onClick={handleGoToResults}>
-                          Ir para Resultados
-                        </Button>
-                      </div>
-                    </>
+                    <div className="flex justify-end mt-6">
+                      <Button type="button" onClick={handleGoToResults}>
+                        Ir para Resultados
+                      </Button>
+                    </div>
                   )}
                 </TabsContent>
               </Tabs>
