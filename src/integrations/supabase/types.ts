@@ -14,6 +14,7 @@ export type Database = {
           answer: string
           concurso_id: string | null
           created_at: string | null
+          created_by_user_id: string | null
           id: string
           is_basic_knowledge: boolean | null
           is_nullified: boolean | null
@@ -26,6 +27,7 @@ export type Database = {
           answer: string
           concurso_id?: string | null
           created_at?: string | null
+          created_by_user_id?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
           is_nullified?: boolean | null
@@ -38,6 +40,7 @@ export type Database = {
           answer?: string
           concurso_id?: string | null
           created_at?: string | null
+          created_by_user_id?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
           is_nullified?: boolean | null
@@ -251,6 +254,7 @@ export type Database = {
           created_at: string
           id: string
           is_basic_knowledge: boolean
+          is_nullified: boolean | null
           is_specific_1: boolean | null
           is_specific_2: boolean | null
           is_specific_3: boolean | null
@@ -263,6 +267,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
@@ -275,6 +280,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
@@ -333,6 +339,14 @@ export type Database = {
           specific_knowledge_score: number | null
           updated_at: string
           user_id: string
+          weighted_basic_score: number | null
+          weighted_case_study_1_score: number | null
+          weighted_case_study_2_score: number | null
+          weighted_case_study_3_score: number | null
+          weighted_discursive_score: number | null
+          weighted_specific_1_score: number | null
+          weighted_specific_2_score: number | null
+          weighted_specific_3_score: number | null
         }
         Insert: {
           all_questions_answered?: boolean | null
@@ -353,6 +367,14 @@ export type Database = {
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id: string
+          weighted_basic_score?: number | null
+          weighted_case_study_1_score?: number | null
+          weighted_case_study_2_score?: number | null
+          weighted_case_study_3_score?: number | null
+          weighted_discursive_score?: number | null
+          weighted_specific_1_score?: number | null
+          weighted_specific_2_score?: number | null
+          weighted_specific_3_score?: number | null
         }
         Update: {
           all_questions_answered?: boolean | null
@@ -373,8 +395,23 @@ export type Database = {
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id?: string
+          weighted_basic_score?: number | null
+          weighted_case_study_1_score?: number | null
+          weighted_case_study_2_score?: number | null
+          weighted_case_study_3_score?: number | null
+          weighted_discursive_score?: number | null
+          weighted_specific_1_score?: number | null
+          weighted_specific_2_score?: number | null
+          weighted_specific_3_score?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_user_rankings_profiles"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_rankings_concurso_id_fkey"
             columns: ["concurso_id"]

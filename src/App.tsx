@@ -29,6 +29,7 @@ import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
+
 const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
@@ -49,9 +50,6 @@ const App = () => {
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="concursos" element={<ListarConcursos />} />
                       <Route path="usuarios" element={<ListarUsuarios />} />
-                      <Route path="concursos/novo" element={<NovoConcurso />} />
-                      <Route path="concursos/editar/:id" element={<NovoConcurso />} />
-                      <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
                     </Route>
                     <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
@@ -117,4 +115,5 @@ const App = () => {
       </QueryClientProvider>
     </React.StrictMode>;
 };
+
 export default App;
