@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,9 @@ import { updateAnswerKey } from '@/integrations/supabase/rankings/concursoManage
 import { toast } from 'sonner';
 
 interface AnswerKeyTabProps {
-  concursoId: string;
+  concursoId?: string;
+  formValues?: any;
+  onSaveFullRanking?: (formValues: any, answerKeyData: any) => Promise<void>;
   hasBasicKnowledge: boolean;
   hasSpecificKnowledge1: boolean;
   hasSpecificKnowledge2: boolean;
@@ -25,6 +28,8 @@ interface AnswerKeyTabProps {
 
 export const AnswerKeyTab = ({
   concursoId,
+  formValues,
+  onSaveFullRanking,
   hasBasicKnowledge,
   hasSpecificKnowledge1,
   hasSpecificKnowledge2,
@@ -46,6 +51,11 @@ export const AnswerKeyTab = ({
     const fetchAnswerKey = async () => {
       try {
         setIsLoading(true);
+        if (!concursoId) {
+          setIsLoading(false);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('answer_keys')
           .select('*')
@@ -76,9 +86,7 @@ export const AnswerKeyTab = ({
       }
     };
 
-    if (concursoId) {
-      fetchAnswerKey();
-    }
+    fetchAnswerKey();
   }, [concursoId]);
 
   const getQuestionRange = () => {
@@ -183,7 +191,7 @@ export const AnswerKeyTab = ({
         const specific3End = specific2End + (specificKnowledge3Questions || 0);
         
         return {
-          concurso_id: concursoId,
+          concurso_id: concursoId || '',
           question_number: qNum,
           answer: answers[qNum],
           is_nullified: nullifiedQuestions.includes(qNum),
@@ -194,12 +202,17 @@ export const AnswerKeyTab = ({
         };
       });
       
-      await updateAnswerKey(concursoId, answerKeyData);
-      
-      toast.success('Gabarito salvo com sucesso!');
+      if (onSaveFullRanking && formValues) {
+        await onSaveFullRanking(formValues, answerKeyData);
+      } else if (concursoId) {
+        await updateAnswerKey(concursoId, answerKeyData);
+        toast.success('Gabarito salvo com sucesso!');
+      } else {
+        toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
+      }
     } catch (error: any) {
       console.error('Error saving answer key:', error);
-      if (error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
+      if (error.message && error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
         toast.error('Todas as questões do gabarito oficial devem ter uma resposta');
       } else {
         toast.error('Erro ao salvar gabarito');
@@ -209,7 +222,7 @@ export const AnswerKeyTab = ({
     }
   };
 
-  if (isLoading) {
+  if (isLoading && concursoId) {
     return <div className="py-4">Carregando gabarito...</div>;
   }
 

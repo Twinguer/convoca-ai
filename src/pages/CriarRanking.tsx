@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -245,6 +246,12 @@ const CriarRanking = () => {
 
   const handleFakeSubmit = () => {};
 
+  const handleGoToResults = () => {
+    if (createdConcursoId) {
+      navigate(`/resultados/${createdConcursoId}`);
+    }
+  };
+
   const formValues = form.getValues();
 
   return (
@@ -289,6 +296,7 @@ const CriarRanking = () => {
                 </TabsContent>
                 <TabsContent value="answer-key">
                   <AnswerKeyTab
+                    concursoId={createdConcursoId || undefined}
                     formValues={formValues}
                     onSaveFullRanking={handleSaveFullRanking}
                     hasBasicKnowledge={!!formValues.has_basic_knowledge}
