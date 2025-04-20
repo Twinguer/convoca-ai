@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -468,4 +469,3 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     throw error;
   }
 };
-
