@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -28,19 +29,23 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleOrgaoChange,
   handleNextTab
 }) => {
-  const [selectedStates, setSelectedStates] = React.useState<string[]>(form.getValues('localidades') || []);
+  const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
   const { toast } = useToast();
   
-  useEffect(() => {
-    form.setValue('localidades', selectedStates);
-  }, [selectedStates, form]);
-  
+  // Quando o componente carrega, inicializa o estado local com os dados do formulário
   useEffect(() => {
     const localidades = form.getValues('localidades');
     if (localidades && Array.isArray(localidades)) {
       setSelectedStates(localidades);
     }
   }, [form]);
+  
+  // Quando o estado local muda, atualiza o formulário
+  useEffect(() => {
+    if (selectedStates.length > 0) {
+      form.setValue('localidades', selectedStates, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [selectedStates, form]);
 
   const validateBeforeNext = () => {
     const currentValues = form.getValues();
@@ -154,6 +159,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   
   const handleNext = () => {
     if (validateBeforeNext()) {
+      // Garante que a localidade seja persistida no formulário antes de avançar
+      form.setValue('localidades', selectedStates, { shouldDirty: true });
       handleNextTab();
     }
   };

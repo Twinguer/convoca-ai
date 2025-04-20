@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -25,6 +25,21 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
   setSelectedStates,
   onStateChange
 }) => {
+  // Sincroniza com o formulário quando o componente é montado
+  useEffect(() => {
+    if (form) {
+      const formLocalidades = form.getValues('localidades');
+      if (formLocalidades && Array.isArray(formLocalidades) && formLocalidades.length > 0) {
+        if (setSelectedStates) {
+          setSelectedStates(formLocalidades);
+        }
+        if (onStateChange) {
+          onStateChange(formLocalidades);
+        }
+      }
+    }
+  }, [form, setSelectedStates, onStateChange]);
+
   const handleStateSelection = (estado: string) => {
     let newStates: string[];
     
@@ -42,12 +57,17 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
       }
     }
     
-    // Use the setter function if provided
+    // Atualiza o estado local
     if (setSelectedStates) {
       setSelectedStates(newStates);
     }
     
-    // Call onStateChange callback if provided
+    // Atualiza o formulário diretamente
+    if (form) {
+      form.setValue('localidades', newStates, { shouldDirty: true, shouldValidate: true });
+    }
+    
+    // Chama o callback externo, se fornecido
     if (onStateChange) {
       onStateChange(newStates);
     }
