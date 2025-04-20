@@ -14,9 +14,11 @@ interface StateSelectorProps {
 }
 
 const ESTADOS_BRASILEIROS = [
-  // Removido 'Nacional'
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
-  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+  // "Nacional" sempre no final:
+  'Nacional'
 ];
 
 export const StateSelector: React.FC<StateSelectorProps> = ({
@@ -44,26 +46,31 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
   const handleStateSelection = (estado: string) => {
     let newStates: string[] = [];
 
-    if (selectedStates.includes(estado)) {
-      newStates = selectedStates.filter(s => s !== estado);
+    if (estado === 'Nacional') {
+      // Selecionando ou desselecionando "Nacional"
+      if (selectedStates.includes('Nacional')) {
+        newStates = [];
+      } else {
+        newStates = ['Nacional'];
+      }
     } else {
-      newStates = [...selectedStates, estado];
+      // Selecionando estados comuns
+      if (selectedStates.includes(estado)) {
+        newStates = selectedStates.filter(s => s !== estado && s !== 'Nacional');
+      } else {
+        newStates = selectedStates.filter(s => s !== 'Nacional'); // nunca pode ter Nacional + estado
+        newStates = [...newStates, estado];
+      }
     }
 
     // Atualiza o estado local
-    if (setSelectedStates) {
-      setSelectedStates(newStates);
-    }
-
+    if (setSelectedStates) setSelectedStates(newStates);
     // Atualiza o formulário diretamente
     if (form) {
       form.setValue('localidades', newStates, { shouldDirty: true, shouldValidate: true });
     }
-
     // Chama o callback externo, se fornecido
-    if (onStateChange) {
-      onStateChange(newStates);
-    }
+    if (onStateChange) onStateChange(newStates);
   };
 
   return (
@@ -87,21 +94,27 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
               <AlertDialogTitle>Selecione os Estados</AlertDialogTitle>
               <AlertDialogDescription>
                 <div className="grid grid-cols-3 gap-4 mt-4">
-                  {ESTADOS_BRASILEIROS.map(estado => (
+                  {ESTADOS_BRASILEIROS.map((estado, idx) => (
                     <div key={estado} className="flex items-center space-x-2">
                       <Checkbox
                         id={estado}
                         checked={selectedStates.includes(estado)}
                         onCheckedChange={() => handleStateSelection(estado)}
+                        disabled={estado === 'Nacional'
+                          ? selectedStates.length > 0 && !selectedStates.includes('Nacional')
+                          : selectedStates.includes('Nacional')}
                       />
                       <label 
                         htmlFor={estado} 
-                        className="text-sm font-medium leading-none cursor-pointer"
+                        className={`text-sm font-medium leading-none cursor-pointer ${estado === 'Nacional' ? "font-semibold text-blue-700" : ''}`}
                       >
                         {estado}
                       </label>
                     </div>
                   ))}
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  A opção Nacional é exclusiva. Não pode ser selecionada junto a outros estados.
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -114,3 +127,4 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
     </FormItem>
   );
 };
+

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +13,9 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso
 }) => {
   const getLocationDisplay = (localidades?: string[]): string => {
-    if (!localidades?.length) return 'Nacional';
+    // Se for vazio ou inexistente, Nacional. 
+    if (!localidades || localidades.length === 0) return 'Nacional';
+    // Nacional é exclusivo e sempre aparece sozinho.
     if (localidades.includes('Nacional')) return 'Nacional';
     return localidades.join(', ');
   };

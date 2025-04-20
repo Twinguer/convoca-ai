@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
@@ -34,6 +34,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   isSubmitting
 }) => {
   const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
+  const [rankingSaved, setRankingSaved] = useState<boolean>(false);
   const { toast } = useToast();
 
   // Quando o componente carrega, inicializa o estado local com os dados do formulário
@@ -48,8 +49,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   useEffect(() => {
     form.setValue('localidades', selectedStates, { shouldDirty: true, shouldValidate: true });
   }, [selectedStates, form]);
+  
+  // Mudança: vamos saber se o ranking foi salvo para ativar o botão Preencher Gabarito
+  const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
 
-  const validateBeforeNext = () => {
+  const validateBeforeSave = () => {
     const currentValues = form.getValues();
 
     if (!currentValues.predefined_job_title) {
@@ -159,19 +163,31 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     return true;
   };
 
-  const handleNext = () => {
-    if (validateBeforeNext()) {
+  // Mantemos o botão "Salvar Ranking"
+  const handleSave = async () => {
+    if (validateBeforeSave() && onSaveRanking) {
       form.setValue('localidades', selectedStates, { shouldDirty: true });
-      handleNextTab();
+      await onSaveRanking();
+      setIsFirstSaveDone(true); // libera botão gabarito
     }
   };
 
-  const handleSave = async () => {
-    if (validateBeforeNext() && onSaveRanking) {
-      // Persiste já as localidades corretamente.
-      form.setValue('localidades', selectedStates, { shouldDirty: true });
-      await onSaveRanking();
+  const validateBeforeNext = () => {
+    // Não permite avançar direto para o gabarito
+    if (!isFirstSaveDone) {
+      toast({
+        title: "Salvar necessário",
+        description: "Salve o ranking antes de preencher o gabarito.",
+        variant: "destructive"
+      });
+      return false;
     }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!validateBeforeNext()) return;
+    handleNextTab();
   };
 
   return (
@@ -202,7 +218,12 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         >
           Salvar Ranking
         </Button>
-        <Button type="button" onClick={handleNext}>
+        <Button 
+          type="button" 
+          onClick={handleNext}
+          disabled={!isFirstSaveDone}
+          className="bg-gray-400 hover:bg-gray-500 text-white"
+        >
           Preencher Gabarito
         </Button>
       </div>
