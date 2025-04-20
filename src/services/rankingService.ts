@@ -81,12 +81,15 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
 
     const formattedRankings: Ranking[] = rankings.map((ranking, index) => {
       const profile = ranking.users_profiles || {};
+      
+      // Ensure type safety when accessing properties
       const name = typeof profile === 'object' && profile !== null && 'name' in profile 
-        ? profile.name 
+        ? String(profile.name) 
         : 'Usuário Anônimo';
         
+      // Explicitly cast avatar_url to string or null
       const avatarUrl = typeof profile === 'object' && profile !== null && 'avatar_url' in profile 
-        ? profile.avatar_url 
+        ? (profile.avatar_url as string | null)
         : null;
 
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
@@ -95,21 +98,21 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
 
       return {
-        id: ranking.id,
+        id: String(ranking.id), // Ensure id is a string
         position: index + 1,
         name: displayName,
-        score: ranking.score || 0,
-        userId: ranking.user_id,
-        avatarUrl: avatarUrl,
-        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
-        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
-        discursiveScore: ranking.discursive_score || 0,
-        caseStudy1Score: ranking.case_study_1_score || 0,
-        caseStudy2Score: ranking.case_study_2_score || 0,
-        caseStudy3Score: ranking.case_study_3_score || 0,
+        score: Number(ranking.score) || 0,
+        userId: String(ranking.user_id),
+        avatarUrl: avatarUrl, // Now correctly typed as string | null
+        basicKnowledgeScore: Number(ranking.basic_knowledge_score) || 0,
+        specificKnowledge1Score: Number(ranking.specific_knowledge_1_score) || 0,
+        specificKnowledge2Score: Number(ranking.specific_knowledge_2_score) || 0,
+        specificKnowledge3Score: Number(ranking.specific_knowledge_3_score) || 0,
+        specificKnowledgeScore: Number(ranking.specific_knowledge_score) || 0,
+        discursiveScore: Number(ranking.discursive_score) || 0,
+        caseStudy1Score: Number(ranking.case_study_1_score) || 0,
+        caseStudy2Score: Number(ranking.case_study_2_score) || 0,
+        caseStudy3Score: Number(ranking.case_study_3_score) || 0,
         reservationType: userReservationType,
         displayReservation: reservationAbbr
       };
