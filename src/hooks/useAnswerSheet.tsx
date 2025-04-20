@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -187,12 +186,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   };
 
   const getAnsweredQuestionsCount = () => {
-    // Conta apenas questões respondidas que não estão anuladas
     const answeredQuestions = Object.keys(answers).filter(
       (key) => !nullifiedQuestions.has(parseInt(key))
     );
     
-    // Adiciona questões anuladas ao total de questões respondidas
     const totalAnswered = answeredQuestions.length + nullifiedQuestions.size;
     
     return totalAnswered;
@@ -267,7 +264,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const handleNullifyQuestion = async (questionNumber: number) => {
     try {
-      // Atualiza localmente o conjunto de questões anuladas
       const isCurrentlyNullified = nullifiedQuestions.has(questionNumber);
       
       setNullifiedQuestions(prev => {
@@ -280,7 +276,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         return newSet;
       });
       
-      // Persiste a informação de anulação no banco de dados
       const { data, error } = await supabase
         .from('user_answers')
         .upsert({
@@ -303,7 +298,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   useEffect(() => {
     const fetchNullifiedQuestions = async () => {
-      // Busca questões anuladas pelo usuário
       const { data: userAnswers, error } = await supabase
         .from('user_answers')
         .select('question_number, is_nullified')

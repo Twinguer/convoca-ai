@@ -254,6 +254,7 @@ export type Database = {
           created_at: string
           id: string
           is_basic_knowledge: boolean
+          is_nullified: boolean | null
           is_specific_1: boolean | null
           is_specific_2: boolean | null
           is_specific_3: boolean | null
@@ -266,6 +267,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
@@ -278,6 +280,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null

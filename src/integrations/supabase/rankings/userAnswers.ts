@@ -502,3 +502,112 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     throw error;
   }
 };
+
+// Já existente: atualizar a função de cálculo de pontuação para considerar questões anuladas
+const calculateAndUpdateScore = async (
+  userAnswers: { question_number: number; answer: string; isBasicKnowledge: boolean; isNullified: boolean }[],
+  officialAnswers: any[]
+) => {
+  try {
+    // Obter estrutura do concurso para definir pesos e intervalos de questões
+    const concurso = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions,
+        basic_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight
+      `)
+      .eq('id', concursoId)
+      .single();
+
+    // Calcular intervalos das seções
+    const basicEnd = concurso.basic_knowledge_questions || 0;
+    const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+    const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+
+    // Preparar pontuação por seção
+    let basicKnowledgeScore = 0;
+    let specificKnowledgeScore = 0;
+    let specific1Score = 0;
+    let specific2Score = 0;
+    let specific3Score = 0;
+
+    userAnswers.forEach(userAnswer => {
+      const officialAnswer = officialAnswers.find(
+        a => a.question_number === userAnswer.question_number
+      );
+      
+      if (officialAnswer && officialAnswer.is_nullified) {
+        // Para questões anuladas, pontua quem errou
+        if (officialAnswer.answer !== userAnswer.answer) {
+          if (userAnswer.isBasicKnowledge) {
+            basicKnowledgeScore += 1;
+          } else {
+            specificKnowledgeScore += 1;
+            
+            const qNum = userAnswer.question_number;
+            if (qNum > basicEnd && qNum <= specific1End) {
+              specific1Score += 1;
+            } else if (qNum > specific1End && qNum <= specific2End) {
+              specific2Score += 1;
+            } else {
+              specific3Score += 1;
+            }
+          }
+        }
+      } 
+      // Para questões normais, mantém a lógica de pontuação existente
+      else if (!officialAnswer?.is_nullified && officialAnswer?.answer === userAnswer.answer) {
+        if (userAnswer.isBasicKnowledge) {
+          basicKnowledgeScore += 1;
+        } else {
+          specificKnowledgeScore += 1;
+          
+          const qNum = userAnswer.question_number;
+          if (qNum > basicEnd && qNum <= specific1End) {
+            specific1Score += 1;
+          } else if (qNum > specific1End && qNum <= specific2End) {
+            specific2Score += 1;
+          } else {
+            specific3Score += 1;
+          }
+        }
+      }
+    });
+
+    // Calcular pontuações com pesos
+    const basicWeight = concurso.basic_knowledge_weight || 1;
+    const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+    const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+    const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+
+    const weightedBasicScore = basicKnowledgeScore * basicWeight;
+    const weightedSpecific1Score = specific1Score * specific1Weight;
+    const weightedSpecific2Score = specific2Score * specific2Weight;
+    const weightedSpecific3Score = specific3Score * specific3Weight;
+
+    // Atualizar pontuação do ranking
+    const { error: updateError } = await supabase
+      .from('user_rankings')
+      .update({
+        basic_knowledge_score: basicKnowledgeScore,
+        specific_knowledge_score: specificKnowledgeScore,
+        specific_knowledge_1_score: specific1Score,
+        specific_knowledge_2_score: specific2Score,
+        specific_knowledge_3_score: specific3Score,
+        score: weightedBasicScore + weightedSpecific1Score + weightedSpecific2Score + weightedSpecific3Score,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', rankingId);
+      
+    if (updateError) throw updateError;
+
+  } catch (error) {
+    console.error('Error calculating score:', error);
+  }
+};
