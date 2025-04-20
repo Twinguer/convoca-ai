@@ -4,24 +4,19 @@ import { supabase } from '../client';
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,
-  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
+  answers: { question_number: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
     // First, save the user's answers
-    const answersData = answers.map(a => {
-      // Determine the knowledge section based on question number
-      const qNum = a.questionNumber;
-
-      return {
-        user_ranking_id: rankingId,
-        question_number: qNum,
-        answer: a.answer,
-        is_basic_knowledge: a.isBasicKnowledge,
-        is_specific_1: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
-        is_specific_2: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
-        is_specific_3: !a.isBasicKnowledge && a.questionNumber <= 0  // Will be set correctly below
-      };
-    });
+    const answersData = answers.map(a => ({
+      user_ranking_id: rankingId,
+      question_number: a.question_number,
+      answer: a.answer,
+      is_basic_knowledge: a.isBasicKnowledge,
+      is_specific_1: false,
+      is_specific_2: false,
+      is_specific_3: false
+    }));
     
     console.log('Saving user answers:', answersData);
     
@@ -56,23 +51,14 @@ export const saveUserAnswers = async (
       
       if (qNum <= basicEnd) {
         item.is_basic_knowledge = true;
-        item.is_specific_1 = false;
-        item.is_specific_2 = false;
-        item.is_specific_3 = false;
       } else if (qNum <= specific1End) {
         item.is_basic_knowledge = false;
         item.is_specific_1 = true;
-        item.is_specific_2 = false;
-        item.is_specific_3 = false;
       } else if (qNum <= specific2End) {
         item.is_basic_knowledge = false;
-        item.is_specific_1 = false;
         item.is_specific_2 = true;
-        item.is_specific_3 = false;
       } else {
         item.is_basic_knowledge = false;
-        item.is_specific_1 = false;
-        item.is_specific_2 = false;
         item.is_specific_3 = true;
       }
     });
@@ -110,7 +96,7 @@ export const saveUserAnswers = async (
     
     answers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
-        a => a.question_number === userAnswer.questionNumber
+        a => a.question_number === userAnswer.question_number
       );
       
       if (officialAnswer) {
@@ -122,7 +108,7 @@ export const saveUserAnswers = async (
             specificKnowledgeScore += 1;
             
             // Compare question number with ranges to determine section
-            const qNum = userAnswer.questionNumber;
+            const qNum = userAnswer.question_number;
             
             if (qNum > basicEnd && qNum <= specific1End) {
               specific1Score += 1;
@@ -141,7 +127,7 @@ export const saveUserAnswers = async (
             specificKnowledgeScore += 1;
             
             // Compare question number with ranges to determine section
-            const qNum = userAnswer.questionNumber;
+            const qNum = userAnswer.question_number;
             
             if (qNum > basicEnd && qNum <= specific1End) {
               specific1Score += 1;
@@ -303,7 +289,7 @@ export const saveUserAnswers = async (
   }
 };
 
-// New function to recalculate scores for all users when answer key or exam structure changes
+// Function to recalculate scores for all users when answer key changes
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
     console.log(`Recalculating scores for all users in concurso: ${concursoId}`);
@@ -392,19 +378,19 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       
       userAnswers.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
-          a => a.question_number === userAnswer.questionNumber
+          a => a.question_number === userAnswer.question_number
         );
         
         if (officialAnswer) {
           // Para questões anuladas, pontua apenas quem errou
           if (officialAnswer.is_nullified && officialAnswer.answer !== userAnswer.answer) {
-            if (userAnswer.isBasicKnowledge) {
+            if (userAnswer.is_basic_knowledge) {
               basicKnowledgeScore += 1;
             } else {
               specificKnowledgeScore += 1;
               
               // Compare question number with ranges to determine section
-              const qNum = userAnswer.questionNumber;
+              const qNum = userAnswer.question_number;
               
               if (qNum > basicEnd && qNum <= specific1End) {
                 specific1Score += 1;
@@ -417,13 +403,13 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           }
           // Para questões normais, pontua quem acertou
           else if (!officialAnswer.is_nullified && officialAnswer.answer === userAnswer.answer) {
-            if (userAnswer.isBasicKnowledge) {
+            if (userAnswer.is_basic_knowledge) {
               basicKnowledgeScore += 1;
             } else {
               specificKnowledgeScore += 1;
               
               // Compare question number with ranges to determine section
-              const qNum = userAnswer.questionNumber;
+              const qNum = userAnswer.question_number;
               
               if (qNum > basicEnd && qNum <= specific1End) {
                 specific1Score += 1;
