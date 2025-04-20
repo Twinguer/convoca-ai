@@ -51,11 +51,15 @@ const CriarRanking = () => {
   const editId = searchParams.get('edit');
   
   const [jobTitles] = useState([
-    { id: '1', title: 'Analista' },
-    { id: '2', title: 'Técnico' },
-    { id: '3', title: 'Auditor' },
-    { id: '4', title: 'Assistente' },
-    { id: '5', title: 'Especialista' }
+    { id: '1', title: 'AGENTE ADMINISTRATIVO' },
+    { id: '2', title: 'ANALISTA ADMINISTRATIVO' },
+    { id: '3', title: 'AUDITOR' },
+    { id: '4', title: 'AUDITOR DE CONTROLE EXTERNO' },
+    { id: '5', title: 'AUDITOR FISCAL' },
+    { id: '6', title: 'POLICIAL CIVIL' },
+    { id: '7', title: 'POLICIAL MILITAR' },
+    { id: '8', title: 'TÉCNICO ADMINISTRATIVO' },
+    { id: '9', title: 'OUTRO' }
   ]);
   
   const form = useForm({
@@ -157,12 +161,12 @@ const CriarRanking = () => {
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
     if (value !== 'OUTRO') {
-      form.setValue('titulo', value);
+      form.setValue('titulo', value.toUpperCase());
     }
   };
   
   const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    form.setValue('titulo', e.target.value);
+    form.setValue('titulo', e.target.value.toUpperCase());
   };
   
   const handleBancaChange = (value: string) => {
@@ -170,6 +174,10 @@ const CriarRanking = () => {
     if (value !== 'OUTRO') {
       form.setValue('banca', value);
     }
+  };
+  
+  const handleOrgaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    form.setValue('orgao', e.target.value.toUpperCase());
   };
   
   const handleSubmit = async (values: any) => {
@@ -218,15 +226,7 @@ const CriarRanking = () => {
   
   const handleNextTab = () => {
     if (activeTab === 'general-info') {
-      const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
-      if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
-        toast.error("Preencha todos os campos obrigatórios");
-        return;
-      }
-      
-      if (createdConcursoId) {
-        setActiveTab('answer-key');
-      }
+      setActiveTab('answer-key');
     }
   };
   
@@ -276,6 +276,7 @@ const CriarRanking = () => {
                     handleCustomTitleChange={handleCustomTitleChange}
                     handleBancaChange={handleBancaChange}
                     handleNextTab={handleNextTab}
+                    handleOrgaoChange={handleOrgaoChange}
                   />
                 </TabsContent>
                 

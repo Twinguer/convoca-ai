@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,7 @@ interface BasicInfoSectionProps {
   handleJobTitleChange: (value: string) => void;
   handleCustomTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleBancaChange: (value: string) => void;
+  handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedStates: string[];
   setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
@@ -26,6 +26,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   handleJobTitleChange,
   handleCustomTitleChange,
   handleBancaChange,
+  handleOrgaoChange,
   selectedStates,
   setSelectedStates
 }) => {
@@ -56,12 +57,15 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {jobTitles.map(job => (
-                        <SelectItem key={job.id} value={job.title}>
-                          {job.title}
-                        </SelectItem>
+                      {jobTitles
+                        .filter(job => job.title !== 'OUTRO')
+                        .sort((a, b) => a.title.localeCompare(b.title))
+                        .map(job => (
+                          <SelectItem key={job.id} value={job.title}>
+                            {job.title}
+                          </SelectItem>
                       ))}
-                      <SelectItem value="OUTRO">Outro (especificar)</SelectItem>
+                      <SelectItem value="OUTRO">OUTRO</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
@@ -80,8 +84,9 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                         {...field}
                         placeholder="Digite o cargo"
                         onChange={(e) => {
-                          field.onChange(e);
-                          handleCustomTitleChange(e);
+                          const up = e.target.value.toUpperCase();
+                          field.onChange(up);
+                          handleCustomTitleChange({ ...e, target: { ...e.target, value: up } });
                         }}
                       />
                     </FormControl>
@@ -99,7 +104,15 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
               <FormItem>
                 <FormLabel>Órgão</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Ex: Ministério da Economia" />
+                  <Input
+                    {...field}
+                    placeholder="Ex: MINISTÉRIO DA ECONOMIA"
+                    onChange={(e) => {
+                      const up = e.target.value.toUpperCase();
+                      field.onChange(up);
+                      handleOrgaoChange({ ...e, target: { ...e.target, value: up } });
+                    }}
+                  />
                 </FormControl>
               </FormItem>
             )}
@@ -163,13 +176,13 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             )}
           </div>
           
-          {/* Data de Publicação */}
+          {/* Data da Prova */}
           <FormField
             control={form.control}
             name="data_publicacao"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Data de Publicação</FormLabel>
+                <FormLabel>Data da Prova</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>

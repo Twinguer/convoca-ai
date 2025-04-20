@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -201,6 +200,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                       <SelectItem value="0.33">0.33 pontos</SelectItem>
                       <SelectItem value="0.5">0.5 pontos</SelectItem>
                       <SelectItem value="1">1 ponto</SelectItem>
+                      <SelectItem value="1.5">1,5 pontos</SelectItem>
+                      <SelectItem value="2.5">2,5 pontos</SelectItem>
+                      <SelectItem value="3">3 pontos</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
