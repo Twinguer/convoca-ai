@@ -12,12 +12,15 @@ interface ConcursoInfoCardProps {
 export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso
 }) => {
+  // Exibe todas as localidades reais, sem "Nacional"
   const getLocationDisplay = (localidades?: string[]): string => {
-    // Se for vazio ou inexistente, Nacional. 
-    if (!localidades || localidades.length === 0) return 'Nacional';
-    // Nacional é exclusivo e sempre aparece sozinho.
-    if (localidades.includes('Nacional')) return 'Nacional';
-    return localidades.join(', ');
+    if (!localidades || localidades.length === 0) return '-';
+    // remove "Nacional" e mostra somente as localidades escolhidas (Estados)
+    const filtered = localidades.filter(loc => loc !== 'Nacional');
+    if (filtered.length === 0 && localidades.includes('Nacional')) {
+      return '-';
+    }
+    return filtered.join(', ');
   };
 
   return (

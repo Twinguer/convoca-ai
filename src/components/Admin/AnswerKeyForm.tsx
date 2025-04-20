@@ -179,17 +179,16 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         return;
       }
       
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-        const qNum = parseInt(questionNumber);
+      const answersArray = questions.map(qNum => {
         let isBasic = false;
         let isSpecific1 = false;
         let isSpecific2 = false;
         let isSpecific3 = false;
-        
+
         const basicCount = concurso.basic_knowledge_questions || 0;
         const specific1Count = concurso.specific_knowledge_1_questions || 0;
         const specific2Count = concurso.specific_knowledge_2_questions || 0;
-        
+
         if (qNum <= basicCount) {
           isBasic = true;
         } else if (qNum <= basicCount + specific1Count) {
@@ -199,37 +198,44 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         } else {
           isSpecific3 = true;
         }
-        
+
         return {
           concurso_id: concursoId,
           question_number: qNum,
-          answer: answer.toUpperCase(),
+          answer: answers[qNum]?.toUpperCase() || "",
           is_basic_knowledge: isBasic,
           is_specific_1: isSpecific1,
-          is_specific_2: isSpecific2
+          is_specific_2: isSpecific2,
+          is_specific_3: isSpecific3
         };
       });
-      
+
       const { error: deleteError } = await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
-        
+
       if (deleteError) throw deleteError;
-      
+
       if (answersArray.length > 0) {
-        const { error: insertError } = await supabase
+        const { data: existing } = await supabase
           .from('answer_keys')
-          .insert(answersArray);
-          
-        if (insertError) throw insertError;
+          .select('id')
+          .eq('concurso_id', concursoId);
+
+        if (!existing || existing.length === 0) {
+          const { error: insertError } = await supabase
+            .from('answer_keys')
+            .insert(answersArray);
+
+          if (insertError) throw insertError;
+        }
       }
-      
+
       const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
-      
       const recalculationResult = await recalculateAllUserScores(concursoId);
       console.log('Recalculation result:', recalculationResult);
-      
+
       if (recalculationResult.success) {
         setSavedSuccess(true);
         toast({
@@ -243,7 +249,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           variant: "destructive"
         });
       }
-      
+
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);

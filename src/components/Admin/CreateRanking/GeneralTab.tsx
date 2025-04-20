@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -36,22 +35,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
   const [rankingSaved, setRankingSaved] = useState<boolean>(false);
   const { toast } = useToast();
-
-  // Quando o componente carrega, inicializa o estado local com os dados do formulário
-  useEffect(() => {
-    const localidades = form.getValues('localidades');
-    if (localidades && Array.isArray(localidades)) {
-      setSelectedStates(localidades);
-    }
-  }, [form]);
-
-  // Quando o estado local muda, atualiza o formulário
-  useEffect(() => {
-    form.setValue('localidades', selectedStates, { shouldDirty: true, shouldValidate: true });
-  }, [selectedStates, form]);
-  
-  // Mudança: vamos saber se o ranking foi salvo para ativar o botão Preencher Gabarito
   const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
+
+  useEffect(() => {
+    setIsFirstSaveDone(false);
+  }, [form]);
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
@@ -163,17 +151,15 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     return true;
   };
 
-  // Mantemos o botão "Salvar Ranking"
   const handleSave = async () => {
     if (validateBeforeSave() && onSaveRanking) {
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       await onSaveRanking();
-      setIsFirstSaveDone(true); // libera botão gabarito
+      setIsFirstSaveDone(true);
     }
   };
 
   const validateBeforeNext = () => {
-    // Não permite avançar direto para o gabarito
     if (!isFirstSaveDone) {
       toast({
         title: "Salvar necessário",
@@ -214,15 +200,16 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           type="button" 
           onClick={handleSave}
           variant="secondary"
-          disabled={isSubmitting}
+          disabled={isFirstSaveDone || isSubmitting}
+          className={isFirstSaveDone ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""}
         >
           Salvar Ranking
         </Button>
         <Button 
-          type="button" 
+          type="button"
           onClick={handleNext}
           disabled={!isFirstSaveDone}
-          className="bg-gray-400 hover:bg-gray-500 text-white"
+          className={isFirstSaveDone ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"}
         >
           Preencher Gabarito
         </Button>
