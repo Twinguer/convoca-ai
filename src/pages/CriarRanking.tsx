@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,6 +115,7 @@ const CriarRanking = () => {
       has_hipossuficientes: false,
       has_indigenas: false,
       has_transsexuais: false,
+      localidades: []
     }
   });
   
@@ -135,6 +135,7 @@ const CriarRanking = () => {
             
             form.reset({
               ...data,
+              localidades: data.localidades || [],
               predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
               custom_job_title: isOtherTitle ? data.titulo : '',
               banca: isOtherBanca ? 'OUTRO' : data.banca,
@@ -195,7 +196,8 @@ const CriarRanking = () => {
         ...formValues,
         created_by_user_id: user?.id,
         titulo: formValues.custom_job_title || formValues.predefined_job_title,
-        banca: formValues.custom_banca || formValues.banca
+        banca: formValues.custom_banca || formValues.banca,
+        localidades: formValues.localidades
       };
 
       let result;

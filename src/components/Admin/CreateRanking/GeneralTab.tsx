@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
@@ -28,23 +28,20 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleOrgaoChange,
   handleNextTab
 }) => {
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [selectedStates, setSelectedStates] = React.useState<string[]>(form.getValues('localidades') || []);
   const { toast } = useToast();
   
-  React.useEffect(() => {
-    if (form.getValues("exam_type") === undefined) {
-      form.setValue("exam_type", "Alternativas");
-    }
-    if (form.getValues("alternatives_count") === undefined) {
-      form.setValue("alternatives_count", 5);
-    }
-    if (form.getValues("wrong_answer_penalty") === undefined) {
-      form.setValue("wrong_answer_penalty", 0);
-    }
-    
-    form.setValue('estados', selectedStates);
-  }, [form, selectedStates]);
+  useEffect(() => {
+    form.setValue('localidades', selectedStates);
+  }, [selectedStates, form]);
   
+  useEffect(() => {
+    const localidades = form.getValues('localidades');
+    if (localidades && Array.isArray(localidades)) {
+      setSelectedStates(localidades);
+    }
+  }, [form]);
+
   const validateBeforeNext = () => {
     const currentValues = form.getValues();
     
