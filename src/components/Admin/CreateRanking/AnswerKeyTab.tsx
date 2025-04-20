@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,7 @@ interface AnswerKeyTabProps {
   specificKnowledge3Questions: number;
   examType: string;
   alternativesCount: number;
+  concurso: any;
 }
 
 export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
@@ -36,7 +36,8 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   specificKnowledge2Questions,
   specificKnowledge3Questions,
   examType,
-  alternativesCount
+  alternativesCount,
+  concurso
 }) => {
   const { toast } = useToast();
   const [answers, setAnswers] = useState<{[key: number]: string}>({});
@@ -93,16 +94,71 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     });
   };
 
-  const handleNullifyQuestion = (questionNumber: number) => {
-    setNullifiedQuestions(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(questionNumber)) {
-        newSet.delete(questionNumber);
-      } else {
-        newSet.add(questionNumber);
+  const handleNullifyQuestion = async (questionNumber: number) => {
+    try {
+      setNullifiedQuestions(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(questionNumber)) {
+          newSet.delete(questionNumber);
+        } else {
+          newSet.add(questionNumber);
+        }
+        return newSet;
+      });
+
+      const getQuestionWeight = (qNum: number) => {
+        if (qNum <= basicKnowledgeQuestions) {
+          return concurso.basic_knowledge_weight || 1;
+        } else if (qNum <= basicKnowledgeQuestions + specificKnowledge1Questions) {
+          return concurso.specific_knowledge_1_weight || 1;
+        } else if (qNum <= basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions) {
+          return concurso.specific_knowledge_2_weight || 1;
+        }
+        return concurso.specific_knowledge_3_weight || 1;
+      };
+
+      const { data: rankings } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('concurso_id', concursoId);
+
+      if (rankings) {
+        for (const ranking of rankings) {
+          const { data: userAnswer } = await supabase
+            .from('user_answers')
+            .select('*')
+            .eq('user_ranking_id', ranking.id)
+            .eq('question_number', questionNumber)
+            .single();
+
+          if (userAnswer) {
+            const weight = getQuestionWeight(questionNumber);
+            const weightedScore = weight;
+
+            await supabase
+              .from('user_rankings')
+              .update({
+                score: ranking.score + weightedScore,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', ranking.id);
+          }
+        }
       }
-      return newSet;
-    });
+
+      toast({
+        title: "Questão anulada com sucesso",
+        description: "As pontuações foram recalculadas para todos os participantes."
+      });
+
+    } catch (error) {
+      console.error('Error nullifying question:', error);
+      toast({
+        title: "Erro ao anular questão",
+        description: "Ocorreu um erro ao tentar anular a questão.",
+        variant: "destructive"
+      });
+    }
   };
   
   const getOptionsForQuestion = (questionNumber: number): string[] => {
@@ -184,7 +240,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return options;
   };
   
-  // Function to get questions for a specific section
   const getQuestionsBySection = (section: string): number[] => {
     let startingQuestion = 1;
     let totalQuestions = 0;
@@ -210,7 +265,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   };
   
   const validateAllSections = () => {
-    // Get all questions from all sections
     const allQuestions = [
       ...getQuestionsBySection('basic'),
       ...getQuestionsBySection('specific1'),
@@ -218,7 +272,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       ...getQuestionsBySection('specific3')
     ];
 
-    // Check if all questions have answers or are nullified
     const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
     
     if (unansweredQuestions.length > 0) {
@@ -239,7 +292,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(true);
       setError(null);
       
-      // Validate that all questions across all sections are answered or nullified
       if (!validateAllSections()) {
         setIsSaving(false);
         return;
@@ -257,13 +309,12 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
       }));
 
-      // Add entries for nullified questions that don't have an answer
       nullifiedQuestions.forEach(qNum => {
         if (!answers[qNum]) {
           entries.push({
             concurso_id: concursoId,
             question_number: qNum,
-            answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default answer for nullified questions
+            answer: examType === 'Certo ou Errado' ? 'C' : 'A',
             is_nullified: true
           });
         }

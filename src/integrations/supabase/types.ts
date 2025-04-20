@@ -333,6 +333,14 @@ export type Database = {
           specific_knowledge_score: number | null
           updated_at: string
           user_id: string
+          weighted_basic_score: number | null
+          weighted_case_study_1_score: number | null
+          weighted_case_study_2_score: number | null
+          weighted_case_study_3_score: number | null
+          weighted_discursive_score: number | null
+          weighted_specific_1_score: number | null
+          weighted_specific_2_score: number | null
+          weighted_specific_3_score: number | null
         }
         Insert: {
           all_questions_answered?: boolean | null
@@ -353,6 +361,14 @@ export type Database = {
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id: string
+          weighted_basic_score?: number | null
+          weighted_case_study_1_score?: number | null
+          weighted_case_study_2_score?: number | null
+          weighted_case_study_3_score?: number | null
+          weighted_discursive_score?: number | null
+          weighted_specific_1_score?: number | null
+          weighted_specific_2_score?: number | null
+          weighted_specific_3_score?: number | null
         }
         Update: {
           all_questions_answered?: boolean | null
@@ -373,6 +389,14 @@ export type Database = {
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id?: string
+          weighted_basic_score?: number | null
+          weighted_case_study_1_score?: number | null
+          weighted_case_study_2_score?: number | null
+          weighted_case_study_3_score?: number | null
+          weighted_discursive_score?: number | null
+          weighted_specific_1_score?: number | null
+          weighted_specific_2_score?: number | null
+          weighted_specific_3_score?: number | null
         }
         Relationships: [
           {
