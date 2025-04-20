@@ -112,7 +112,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     const formattedRankings = rankings.map((ranking, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
-      // Get scores directly from the database without applying weights again
+      // Obter pontuações diretamente do banco de dados
       const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
       const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
       const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
@@ -121,10 +121,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const caseStudy1Score = ranking.case_study_1_score || 0;
       const caseStudy2Score = ranking.case_study_2_score || 0;
       const caseStudy3Score = ranking.case_study_3_score || 0;
-      
-      // Get reservation type and create display name with abbreviation if needed
-      const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
-      const reservationAbbr = getReservationAbbreviation(userReservationType);
       
       return {
         position: index + 1,
@@ -140,8 +136,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy1Score,
         caseStudy2Score,
         caseStudy3Score,
-        reservationType: userReservationType,
-        displayReservation: reservationAbbr
+        reservationType: ranking.reservation_type || 'Ampla Concorrência',
+        displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência')
       };
     });
     

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,6 @@ export const AnswerKeyTab = ({
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
   const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
 
-  // Carregar gabarito existente
   useEffect(() => {
     const fetchAnswerKey = async () => {
       try {
@@ -83,7 +81,6 @@ export const AnswerKeyTab = ({
     }
   }, [concursoId]);
 
-  // Determinar a seção correta para cada questão
   const getQuestionRange = () => {
     let questions: number[] = [];
     let startNumber = 1;
@@ -131,23 +128,57 @@ export const AnswerKeyTab = ({
     });
   };
 
+  const getAllQuestions = () => {
+    let allQuestions: number[] = [];
+    let startNumber = 1;
+    
+    if (hasBasicKnowledge) {
+      allQuestions = [...allQuestions, ...Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1)];
+      startNumber = basicKnowledgeQuestions + 1;
+    }
+    
+    if (hasSpecificKnowledge1) {
+      allQuestions = [...allQuestions, ...Array.from(
+        { length: specificKnowledge1Questions },
+        (_, i) => startNumber + i
+      )];
+      startNumber += specificKnowledge1Questions;
+    }
+    
+    if (hasSpecificKnowledge2) {
+      allQuestions = [...allQuestions, ...Array.from(
+        { length: specificKnowledge2Questions },
+        (_, i) => startNumber + i
+      )];
+      startNumber += specificKnowledge2Questions;
+    }
+    
+    if (hasSpecificKnowledge3) {
+      allQuestions = [...allQuestions, ...Array.from(
+        { length: specificKnowledge3Questions },
+        (_, i) => startNumber + i
+      )];
+    }
+    
+    return allQuestions;
+  };
+
   const handleSaveAnswerKey = async () => {
     try {
       setIsSaving(true);
       
-      const questions = getQuestionRange();
-      const unansweredQuestions = questions.filter(q => !answers[q]);
+      const allQuestions = getAllQuestions();
+      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
       
       if (unansweredQuestions.length > 0) {
-        toast.error(`Todas as questões desta seção devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        toast.error(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
         return;
       }
 
-      // Transform answers into array format for the database
-      const answerKeyData = questions.map(questionNumber => {
+      const answerKeyData = allQuestions.map(questionNumber => {
         const qNum = parseInt(questionNumber.toString());
-        const isBasic = qNum <= (basicKnowledgeQuestions || 0);
-        const specific1End = (basicKnowledgeQuestions || 0) + (specificKnowledge1Questions || 0);
+        const basicEnd = basicKnowledgeQuestions || 0;
+        const specific1End = basicEnd + (specificKnowledge1Questions || 0);
         const specific2End = specific1End + (specificKnowledge2Questions || 0);
         const specific3End = specific2End + (specificKnowledge3Questions || 0);
         
@@ -156,14 +187,13 @@ export const AnswerKeyTab = ({
           question_number: qNum,
           answer: answers[qNum],
           is_nullified: nullifiedQuestions.includes(qNum),
-          is_basic_knowledge: isBasic,
-          is_specific_1: !isBasic && qNum <= specific1End,
+          is_basic_knowledge: qNum <= basicEnd,
+          is_specific_1: qNum > basicEnd && qNum <= specific1End,
           is_specific_2: qNum > specific1End && qNum <= specific2End,
           is_specific_3: qNum > specific2End && qNum <= specific3End
         };
       });
       
-      // Update the answer key
       await updateAnswerKey(concursoId, answerKeyData);
       
       toast.success('Gabarito salvo com sucesso!');
