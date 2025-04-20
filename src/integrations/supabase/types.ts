@@ -14,6 +14,7 @@ export type Database = {
           answer: string
           concurso_id: string | null
           created_at: string | null
+          created_by_user_id: string | null
           id: string
           is_basic_knowledge: boolean | null
           is_nullified: boolean | null
@@ -26,6 +27,7 @@ export type Database = {
           answer: string
           concurso_id?: string | null
           created_at?: string | null
+          created_by_user_id?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
           is_nullified?: boolean | null
@@ -38,6 +40,7 @@ export type Database = {
           answer?: string
           concurso_id?: string | null
           created_at?: string | null
+          created_by_user_id?: string | null
           id?: string
           is_basic_knowledge?: boolean | null
           is_nullified?: boolean | null

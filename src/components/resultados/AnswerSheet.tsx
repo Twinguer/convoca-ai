@@ -52,7 +52,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score
+    setCaseStudy3Score,
+    nullifiedQuestions,
+    handleNullifyQuestion,
+    isCreator
   } = useAnswerSheet(concurso, rankingId);
   
   const {
@@ -269,6 +272,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                     getOptionsForQuestion={getOptionsForQuestion}
                     disabled={!canEdit}
                     examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
+                    nullifiedQuestions={nullifiedQuestions}
+                    onNullifyQuestion={isCreator ? handleNullifyQuestion : undefined}
+                    isCreator={isCreator}
                   />
                 </TabsContent>
               ))}

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,8 +13,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [caseStudy1Score, setCaseStudy1Score] = useState<number | null>(null);
   const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
   const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
+  const [isCreator, setIsCreator] = useState(false);
 
-  // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
       if (concurso.has_basic_knowledge) {
@@ -34,7 +34,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     try {
       console.log('Fetching existing answers for ranking ID:', rankingId);
       
-      // Fetch answers
       const { data: answersData, error: answersError } = await supabase
         .from('user_answers')
         .select('*')
@@ -69,7 +68,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setQuestionType(typesMap);
       }
       
-      // Fetch user ranking for scores
       const { data: rankingData, error: rankingError } = await supabase
         .from('user_rankings')
         .select('*')
@@ -236,7 +234,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) return [];
     
-    const QUESTIONS_PER_ROW = 4; // Changed from 5 to 4 for better display
+    const QUESTIONS_PER_ROW = 4;
     const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
     
     const matrix = [];
@@ -257,6 +255,64 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('Created answer matrix for section', selectedSection, ':', matrix);
     return matrix;
   };
+
+  const handleNullifyQuestion = async (questionNumber: number) => {
+    try {
+      const isCurrentlyNullified = nullifiedQuestions.has(questionNumber);
+      
+      const { error } = await supabase
+        .from('answer_keys')
+        .update({ is_nullified: !isCurrentlyNullified })
+        .eq('concurso_id', concurso.id)
+        .eq('question_number', questionNumber);
+
+      if (error) throw error;
+
+      setNullifiedQuestions(prev => {
+        const newSet = new Set(prev);
+        if (isCurrentlyNullified) {
+          newSet.delete(questionNumber);
+        } else {
+          newSet.add(questionNumber);
+        }
+        return newSet;
+      });
+
+      const { error: recalcError } = await supabase
+        .rpc('recalculate_all_user_scores', { concurso_id: concurso.id });
+
+      if (recalcError) throw recalcError;
+
+    } catch (error) {
+      console.error('Error nullifying question:', error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchNullifiedQuestions = async () => {
+      const { data: answerKeys, error } = await supabase
+        .from('answer_keys')
+        .select('question_number, is_nullified')
+        .eq('concurso_id', concurso.id)
+        .eq('is_nullified', true);
+
+      if (!error && answerKeys) {
+        setNullifiedQuestions(new Set(
+          answerKeys
+            .filter(key => key.is_nullified)
+            .map(key => key.question_number)
+        ));
+      }
+    };
+
+    const checkIfCreator = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setIsCreator(user?.id === concurso.created_by_user_id);
+    };
+
+    fetchNullifiedQuestions();
+    checkIfCreator();
+  }, [concurso.id]);
 
   return {
     answers,
@@ -283,6 +339,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    nullifiedQuestions,
+    handleNullifyQuestion,
+    isCreator
   };
 };
