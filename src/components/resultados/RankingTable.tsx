@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -305,36 +304,38 @@ const RankingTableContent: React.FC<{
             </TableCell>
             <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
             
-            {concurso.has_basic_knowledge !== false && (
-              <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_basic_knowledge !== false && (
+              <TableCell className="text-right">{ranking.rawBasicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
             )}
             
-            {concurso.has_specific_knowledge_1 !== false && (
-              <TableCell className="text-right">{(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore)?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_specific_knowledge_1 !== false && (
+              <TableCell className="text-right">
+                {(ranking.rawSpecificKnowledge1Score || ranking.specificKnowledgeScore)?.toFixed(2) || '0.00'}
+              </TableCell>
             )}
             
-            {concurso.has_specific_knowledge_2 === true && (
-              <TableCell className="text-right">{ranking.specificKnowledge2Score?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_specific_knowledge_2 === true && (
+              <TableCell className="text-right">{ranking.rawSpecificKnowledge2Score?.toFixed(2) || '0.00'}</TableCell>
             )}
             
-            {concurso.has_specific_knowledge_3 === true && (
-              <TableCell className="text-right">{ranking.specificKnowledge3Score?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_specific_knowledge_3 === true && (
+              <TableCell className="text-right">{ranking.rawSpecificKnowledge3Score?.toFixed(2) || '0.00'}</TableCell>
             )}
             
-            {concurso.has_discursive === true && (
-              <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_discursive === true && (
+              <TableCell className="text-right">{ranking.rawDiscursiveScore?.toFixed(2) || '0.00'}</TableCell>
             )}
             
-            {concurso.has_case_study_1 === true && (
-              <TableCell className="text-right">{ranking.caseStudy1Score?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_case_study_1 === true && (
+              <TableCell className="text-right">{ranking.rawCaseStudy1Score?.toFixed(2) || '0.00'}</TableCell>
             )}
             
-            {concurso.has_case_study_2 === true && (
-              <TableCell className="text-right">{ranking.caseStudy2Score?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_case_study_2 === true && (
+              <TableCell className="text-right">{ranking.rawCaseStudy2Score?.toFixed(2) || '0.00'}</TableCell>
             )}
             
-            {concurso.has_case_study_3 === true && (
-              <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
+            {concurso?.has_case_study_3 === true && (
+              <TableCell className="text-right">{ranking.rawCaseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
             )}
             {isAdminMode && (
               <TableCell>

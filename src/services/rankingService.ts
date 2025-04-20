@@ -6,6 +6,14 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
+  rawBasicKnowledgeScore?: number;
+  rawSpecificKnowledge1Score?: number;
+  rawSpecificKnowledge2Score?: number;
+  rawSpecificKnowledge3Score?: number;
+  rawDiscursiveScore?: number;
+  rawCaseStudy1Score?: number;
+  rawCaseStudy2Score?: number;
+  rawCaseStudy3Score?: number;
   basicKnowledgeScore?: number;
   specificKnowledge1Score?: number;
   specificKnowledge2Score?: number;
@@ -122,19 +130,29 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     console.log('Applied weights:', weights);
     
-    // Map the rankings with profile information and weighted scores
+    // Map the rankings with profile information and both raw and weighted scores
     const formattedRankings = rankings.map((ranking, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
+      // Store raw scores
+      const rawBasicKnowledgeScore = ranking.basic_knowledge_score || 0;
+      const rawSpecificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
+      const rawSpecificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
+      const rawSpecificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
+      const rawDiscursiveScore = ranking.discursive_score || 0;
+      const rawCaseStudy1Score = ranking.case_study_1_score || 0;
+      const rawCaseStudy2Score = ranking.case_study_2_score || 0;
+      const rawCaseStudy3Score = ranking.case_study_3_score || 0;
+      
       // Calculate weighted scores
-      const basicKnowledgeScore = (ranking.basic_knowledge_score || 0) * weights.basicKnowledge;
-      const specificKnowledge1Score = (ranking.specific_knowledge_1_score || 0) * weights.specificKnowledge1;
-      const specificKnowledge2Score = (ranking.specific_knowledge_2_score || 0) * weights.specificKnowledge2;
-      const specificKnowledge3Score = (ranking.specific_knowledge_3_score || 0) * weights.specificKnowledge3;
-      const discursiveScore = (ranking.discursive_score || 0) * weights.discursive;
-      const caseStudy1Score = (ranking.case_study_1_score || 0) * weights.caseStudy1;
-      const caseStudy2Score = (ranking.case_study_2_score || 0) * weights.caseStudy2;
-      const caseStudy3Score = (ranking.case_study_3_score || 0) * weights.caseStudy3;
+      const basicKnowledgeScore = rawBasicKnowledgeScore * weights.basicKnowledge;
+      const specificKnowledge1Score = rawSpecificKnowledge1Score * weights.specificKnowledge1;
+      const specificKnowledge2Score = rawSpecificKnowledge2Score * weights.specificKnowledge2;
+      const specificKnowledge3Score = rawSpecificKnowledge3Score * weights.specificKnowledge3;
+      const discursiveScore = rawDiscursiveScore * weights.discursive;
+      const caseStudy1Score = rawCaseStudy1Score * weights.caseStudy1;
+      const caseStudy2Score = rawCaseStudy2Score * weights.caseStudy2;
+      const caseStudy3Score = rawCaseStudy3Score * weights.caseStudy3;
       
       // Get reservation type and create display name with abbreviation if needed
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
@@ -146,6 +164,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
+        // Raw scores
+        rawBasicKnowledgeScore,
+        rawSpecificKnowledge1Score,
+        rawSpecificKnowledge2Score,
+        rawSpecificKnowledge3Score,
+        rawDiscursiveScore,
+        rawCaseStudy1Score,
+        rawCaseStudy2Score,
+        rawCaseStudy3Score,
+        // Weighted scores
         basicKnowledgeScore,
         specificKnowledge1Score,
         specificKnowledge2Score,
