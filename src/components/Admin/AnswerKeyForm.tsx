@@ -166,6 +166,19 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setError(null);
       setSavedSuccess(false);
       
+      const questions = getQuestionsRange();
+      const unansweredQuestions = questions.filter(q => !answers[q]);
+      
+      if (unansweredQuestions.length > 0) {
+        setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        toast({
+          title: "Erro ao salvar gabarito",
+          description: "Todas as questões devem ser respondidas antes de salvar o gabarito.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
         let isBasic = false;

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -123,33 +122,27 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     console.log('Applied weights:', weights);
     
-    // Map the rankings with profile information
+    // Map the rankings with profile information and weighted scores
     const formattedRankings = rankings.map((ranking, index) => {
-      // Find the matching profile
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
-      // Get all scores
-      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
-      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
-      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
-      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
-      const specificKnowledgeScore = ranking.specific_knowledge_score || 0; // For backward compatibility
-      const discursiveScore = ranking.discursive_score || 0;
-      const caseStudy1Score = ranking.case_study_1_score || 0;
-      const caseStudy2Score = ranking.case_study_2_score || 0;
-      const caseStudy3Score = ranking.case_study_3_score || 0;
+      // Calculate weighted scores
+      const basicKnowledgeScore = (ranking.basic_knowledge_score || 0) * weights.basicKnowledge;
+      const specificKnowledge1Score = (ranking.specific_knowledge_1_score || 0) * weights.specificKnowledge1;
+      const specificKnowledge2Score = (ranking.specific_knowledge_2_score || 0) * weights.specificKnowledge2;
+      const specificKnowledge3Score = (ranking.specific_knowledge_3_score || 0) * weights.specificKnowledge3;
+      const discursiveScore = (ranking.discursive_score || 0) * weights.discursive;
+      const caseStudy1Score = (ranking.case_study_1_score || 0) * weights.caseStudy1;
+      const caseStudy2Score = (ranking.case_study_2_score || 0) * weights.caseStudy2;
+      const caseStudy3Score = (ranking.case_study_3_score || 0) * weights.caseStudy3;
       
       // Get reservation type and create display name with abbreviation if needed
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
       const reservationAbbr = getReservationAbbreviation(userReservationType);
       
-      // For Ampla Concorrência view, show reservation badge only for those in quota
-      const displayName = (profile?.name || 'Usuário Anônimo') + 
-                       (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
-      
       return {
         position: index + 1,
-        name: displayName,
+        name: profile?.name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
@@ -157,7 +150,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         specificKnowledge1Score,
         specificKnowledge2Score,
         specificKnowledge3Score,
-        specificKnowledgeScore, // For backward compatibility
         discursiveScore,
         caseStudy1Score,
         caseStudy2Score,

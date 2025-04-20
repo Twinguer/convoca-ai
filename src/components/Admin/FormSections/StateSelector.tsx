@@ -14,6 +14,7 @@ interface StateSelectorProps {
 }
 
 const ESTADOS_BRASILEIROS = [
+  'Nacional',
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
   'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
@@ -25,9 +26,21 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
   onStateChange
 }) => {
   const handleStateSelection = (estado: string) => {
-    const newStates = selectedStates.includes(estado)
-      ? selectedStates.filter(s => s !== estado)
-      : [...selectedStates, estado];
+    let newStates: string[];
+    
+    if (estado === 'Nacional') {
+      // Se "Nacional" foi selecionado, limpa todos os outros estados
+      newStates = selectedStates.includes('Nacional') ? [] : ['Nacional'];
+    } else {
+      // Se outro estado foi selecionado, remove "Nacional" se estiver presente
+      newStates = selectedStates.filter(s => s !== 'Nacional');
+      
+      if (selectedStates.includes(estado)) {
+        newStates = newStates.filter(s => s !== estado);
+      } else {
+        newStates = [...newStates, estado];
+      }
+    }
     
     // Use the setter function if provided
     if (setSelectedStates) {
@@ -68,7 +81,10 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
                         checked={selectedStates.includes(estado)}
                         onCheckedChange={() => handleStateSelection(estado)}
                       />
-                      <label htmlFor={estado} className="text-sm font-medium leading-none cursor-pointer">
+                      <label 
+                        htmlFor={estado} 
+                        className={`text-sm font-medium leading-none cursor-pointer ${estado === 'Nacional' ? 'font-bold' : ''}`}
+                      >
                         {estado}
                       </label>
                     </div>
