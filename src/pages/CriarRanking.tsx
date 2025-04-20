@@ -238,6 +238,52 @@ const CriarRanking = () => {
     }
   };
 
+  const handleSaveRanking = async () => {
+    const formValues = form.getValues();
+    setIsSubmitting(true);
+
+    try {
+      const dataToSubmit = {
+        ...formValues,
+        created_by_user_id: user?.id,
+        titulo: formValues.custom_job_title || formValues.predefined_job_title,
+        banca: formValues.custom_banca || formValues.banca,
+        localidades: formValues.localidades
+      };
+
+      let result;
+      let concursoIdToUse = editId;
+
+      if (editId) {
+        const { data, error } = await supabase
+          .from('concursos')
+          .update(dataToSubmit)
+          .eq('id', editId)
+          .select();
+
+        if (error) throw error;
+        result = data;
+        concursoIdToUse = editId;
+        toast.success("Ranking salvo com sucesso!");
+      } else {
+        result = await createRanking(dataToSubmit);
+        concursoIdToUse = result?.[0]?.id;
+        toast.success("Ranking salvo com sucesso!");
+      }
+
+      if (concursoIdToUse) {
+        setCreatedConcursoId(concursoIdToUse);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+    } catch (error) {
+      console.error("Erro ao salvar ranking:", error);
+      toast.error("Erro ao salvar ranking: " + (error as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
     const { supabase } = await import('@/integrations/supabase/client');
     await supabase.from('answer_keys').delete().eq('concurso_id', concursoId);
@@ -297,6 +343,8 @@ const CriarRanking = () => {
                     handleBancaChange={handleBancaChange}
                     handleOrgaoChange={handleOrgaoChange}
                     handleNextTab={handleNextTab}
+                    onSaveRanking={handleSaveRanking}
+                    isSubmitting={isSubmitting}
                   />
                 </TabsContent>
                 <TabsContent value="answer-key">

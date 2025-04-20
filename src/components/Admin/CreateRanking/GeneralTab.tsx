@@ -16,6 +16,8 @@ interface GeneralTabProps {
   handleBancaChange: (value: string) => void;
   handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleNextTab: () => void;
+  onSaveRanking?: () => Promise<void>;
+  isSubmitting?: boolean;
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({
@@ -27,11 +29,13 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleCustomTitleChange,
   handleBancaChange,
   handleOrgaoChange,
-  handleNextTab
+  handleNextTab,
+  onSaveRanking,
+  isSubmitting
 }) => {
   const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
   const { toast } = useToast();
-  
+
   // Quando o componente carrega, inicializa o estado local com os dados do formulário
   useEffect(() => {
     const localidades = form.getValues('localidades');
@@ -39,17 +43,15 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       setSelectedStates(localidades);
     }
   }, [form]);
-  
+
   // Quando o estado local muda, atualiza o formulário
   useEffect(() => {
-    if (selectedStates.length > 0) {
-      form.setValue('localidades', selectedStates, { shouldDirty: true, shouldValidate: true });
-    }
+    form.setValue('localidades', selectedStates, { shouldDirty: true, shouldValidate: true });
   }, [selectedStates, form]);
 
   const validateBeforeNext = () => {
     const currentValues = form.getValues();
-    
+
     if (!currentValues.predefined_job_title) {
       toast({
         title: "Erro de validação",
@@ -58,7 +60,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     if (currentValues.predefined_job_title === "OUTRO" && !currentValues.custom_job_title) {
       toast({
         title: "Erro de validação",
@@ -67,7 +69,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     if (!currentValues.orgao) {
       toast({
         title: "Erro de validação",
@@ -76,7 +78,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     if (selectedStates.length === 0) {
       toast({
         title: "Erro de validação",
@@ -85,7 +87,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     if (!currentValues.banca) {
       toast({
         title: "Erro de validação",
@@ -94,7 +96,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     if (currentValues.banca === "OUTRO" && !currentValues.custom_banca) {
       toast({
         title: "Erro de validação",
@@ -103,7 +105,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     const hasAnyKnowledgeArea = 
       currentValues.has_basic_knowledge || 
       currentValues.has_specific_knowledge_1 || 
@@ -113,7 +115,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       currentValues.has_case_study_1 ||
       currentValues.has_case_study_2 ||
       currentValues.has_case_study_3;
-    
+
     if (!hasAnyKnowledgeArea) {
       toast({
         title: "Erro de validação",
@@ -122,15 +124,15 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     const hasAnyQuota = 
       currentValues.has_ampla_concorrencia || 
       currentValues.has_ppp || 
       currentValues.has_pcd ||
       currentValues.has_hiposuficientes ||
       currentValues.has_indigenas ||
-      currentValues.has_trans;
-    
+      currentValues.has_transsexuais;
+
     if (!hasAnyQuota) {
       toast({
         title: "Erro de validação",
@@ -153,15 +155,22 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
-    
+
     return true;
   };
-  
+
   const handleNext = () => {
     if (validateBeforeNext()) {
-      // Garante que a localidade seja persistida no formulário antes de avançar
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       handleNextTab();
+    }
+  };
+
+  const handleSave = async () => {
+    if (validateBeforeNext() && onSaveRanking) {
+      // Persiste já as localidades corretamente.
+      form.setValue('localidades', selectedStates, { shouldDirty: true });
+      await onSaveRanking();
     }
   };
 
@@ -179,12 +188,20 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         selectedStates={selectedStates}
         setSelectedStates={setSelectedStates}
       />
-      
+
       <ExamStructureSection form={form} />
-      
+
       <ReservationQuotasSection form={form} />
-      
-      <div className="flex justify-end">
+
+      <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
+        <Button 
+          type="button" 
+          onClick={handleSave}
+          variant="secondary"
+          disabled={isSubmitting}
+        >
+          Salvar Ranking
+        </Button>
         <Button type="button" onClick={handleNext}>
           Preencher Gabarito
         </Button>

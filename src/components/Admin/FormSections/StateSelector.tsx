@@ -14,7 +14,7 @@ interface StateSelectorProps {
 }
 
 const ESTADOS_BRASILEIROS = [
-  'Nacional',
+  // Removido 'Nacional'
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
   'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
@@ -29,7 +29,7 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
   useEffect(() => {
     if (form) {
       const formLocalidades = form.getValues('localidades');
-      if (formLocalidades && Array.isArray(formLocalidades) && formLocalidades.length > 0) {
+      if (formLocalidades && Array.isArray(formLocalidades)) {
         if (setSelectedStates) {
           setSelectedStates(formLocalidades);
         }
@@ -38,35 +38,28 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
         }
       }
     }
+    // eslint-disable-next-line
   }, [form, setSelectedStates, onStateChange]);
 
   const handleStateSelection = (estado: string) => {
-    let newStates: string[];
-    
-    if (estado === 'Nacional') {
-      // Se "Nacional" foi selecionado, limpa todos os outros estados
-      newStates = selectedStates.includes('Nacional') ? [] : ['Nacional'];
+    let newStates: string[] = [];
+
+    if (selectedStates.includes(estado)) {
+      newStates = selectedStates.filter(s => s !== estado);
     } else {
-      // Se outro estado foi selecionado, remove "Nacional" se estiver presente
-      newStates = selectedStates.filter(s => s !== 'Nacional');
-      
-      if (selectedStates.includes(estado)) {
-        newStates = newStates.filter(s => s !== estado);
-      } else {
-        newStates = [...newStates, estado];
-      }
+      newStates = [...selectedStates, estado];
     }
-    
+
     // Atualiza o estado local
     if (setSelectedStates) {
       setSelectedStates(newStates);
     }
-    
+
     // Atualiza o formulário diretamente
     if (form) {
       form.setValue('localidades', newStates, { shouldDirty: true, shouldValidate: true });
     }
-    
+
     // Chama o callback externo, se fornecido
     if (onStateChange) {
       onStateChange(newStates);
@@ -103,7 +96,7 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
                       />
                       <label 
                         htmlFor={estado} 
-                        className={`text-sm font-medium leading-none cursor-pointer ${estado === 'Nacional' ? 'font-bold' : ''}`}
+                        className="text-sm font-medium leading-none cursor-pointer"
                       >
                         {estado}
                       </label>
