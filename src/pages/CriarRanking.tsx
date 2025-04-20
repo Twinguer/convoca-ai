@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,13 +52,13 @@ const CriarRanking = () => {
   const editId = searchParams.get('edit');
   
   const [jobTitles] = useState([
-    { id: '1', title: 'AGENTE ADMINISTRATIVO' },
-    { id: '2', title: 'ANALISTA ADMINISTRATIVO' },
-    { id: '3', title: 'AUDITOR' },
-    { id: '4', title: 'AUDITOR DE CONTROLE EXTERNO' },
-    { id: '5', title: 'AUDITOR FISCAL' },
-    { id: '6', title: 'POLICIAL CIVIL' },
-    { id: '7', title: 'POLICIAL MILITAR' },
+    { id: '1', title: 'AUDITOR' },
+    { id: '2', title: 'AUDITOR FISCAL' },
+    { id: '3', title: 'POLICIAL CIVIL' },
+    { id: '4', title: 'POLÍCIAL MILITAR' },
+    { id: '5', title: 'AGENTE ADMINISTRATIVO' },
+    { id: '6', title: 'AUDITOR DE CONTROLE EXTERNO' },
+    { id: '7', title: 'ANALISTA ADMINISTRATIVO' },
     { id: '8', title: 'TÉCNICO ADMINISTRATIVO' },
     { id: '9', title: 'OUTRO' }
   ]);
@@ -275,8 +276,8 @@ const CriarRanking = () => {
                     handleJobTitleChange={handleJobTitleChange}
                     handleCustomTitleChange={handleCustomTitleChange}
                     handleBancaChange={handleBancaChange}
-                    handleNextTab={handleNextTab}
                     handleOrgaoChange={handleOrgaoChange}
+                    handleNextTab={handleNextTab}
                   />
                 </TabsContent>
                 

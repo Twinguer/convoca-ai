@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -13,6 +14,7 @@ interface GeneralTabProps {
   handleJobTitleChange: (value: string) => void;
   handleCustomTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleBancaChange: (value: string) => void;
+  handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleNextTab: () => void;
 }
 
@@ -24,6 +26,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleJobTitleChange,
   handleCustomTitleChange,
   handleBancaChange,
+  handleOrgaoChange,
   handleNextTab
 }) => {
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
@@ -169,6 +172,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         handleJobTitleChange={handleJobTitleChange}
         handleCustomTitleChange={handleCustomTitleChange}
         handleBancaChange={handleBancaChange}
+        handleOrgaoChange={handleOrgaoChange}
         selectedStates={selectedStates}
         setSelectedStates={setSelectedStates}
       />
