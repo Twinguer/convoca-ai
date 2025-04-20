@@ -14,6 +14,7 @@ interface AnswerMatrixProps {
   nullifiedQuestions?: Set<number>;
   onNullifyQuestion?: (questionNumber: number) => void;
   isCreator?: boolean;
+  isAdminView?: boolean;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
@@ -26,7 +27,8 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   onClearAnswer,
   nullifiedQuestions = new Set(),
   onNullifyQuestion,
-  isCreator = false
+  isCreator = false,
+  isAdminView = false
 }) => {
   console.log('Rendering AnswerMatrix with matrix:', matrix);
   
@@ -70,7 +72,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     examType={examType}
                     onClearAnswer={onClearAnswer}
                   />
-                  {isCreator && onNullifyQuestion && (
+                  {(isCreator || isAdminView) && onNullifyQuestion && (
                     <NullifyQuestionButton
                       questionNumber={questionNumber}
                       isNullified={nullifiedQuestions.has(questionNumber)}
