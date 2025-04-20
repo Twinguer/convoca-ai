@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -102,7 +101,7 @@ export const saveUserAnswers = async (
     console.log('Official answer key:', answerKey);
     console.log('User answers to check:', answers);
     
-    // Calculate score by comparing user answers with official answers
+    // Calculate scores
     let basicKnowledgeScore = 0;
     let specificKnowledgeScore = 0;
     let specific1Score = 0;
@@ -114,21 +113,43 @@ export const saveUserAnswers = async (
         a => a.question_number === userAnswer.questionNumber
       );
       
-      if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
-        if (userAnswer.isBasicKnowledge) {
-          basicKnowledgeScore += 1;
-        } else {
-          specificKnowledgeScore += 1;
-          
-          // Compare question number with ranges to determine section
-          const qNum = userAnswer.questionNumber;
-          
-          if (qNum > basicEnd && qNum <= specific1End) {
-            specific1Score += 1;
-          } else if (qNum > specific1End && qNum <= specific2End) {
-            specific2Score += 1;
-          } else if (qNum > specific2End) {
-            specific3Score += 1;
+      if (officialAnswer) {
+        // Para questões anuladas, pontua apenas quem errou
+        if (officialAnswer.is_nullified && officialAnswer.answer !== userAnswer.answer) {
+          if (userAnswer.isBasicKnowledge) {
+            basicKnowledgeScore += 1;
+          } else {
+            specificKnowledgeScore += 1;
+            
+            // Compare question number with ranges to determine section
+            const qNum = userAnswer.questionNumber;
+            
+            if (qNum > basicEnd && qNum <= specific1End) {
+              specific1Score += 1;
+            } else if (qNum > specific1End && qNum <= specific2End) {
+              specific2Score += 1;
+            } else if (qNum > specific2End) {
+              specific3Score += 1;
+            }
+          }
+        }
+        // Para questões normais, pontua quem acertou
+        else if (!officialAnswer.is_nullified && officialAnswer.answer === userAnswer.answer) {
+          if (userAnswer.isBasicKnowledge) {
+            basicKnowledgeScore += 1;
+          } else {
+            specificKnowledgeScore += 1;
+            
+            // Compare question number with ranges to determine section
+            const qNum = userAnswer.questionNumber;
+            
+            if (qNum > basicEnd && qNum <= specific1End) {
+              specific1Score += 1;
+            } else if (qNum > specific1End && qNum <= specific2End) {
+              specific2Score += 1;
+            } else if (qNum > specific2End) {
+              specific3Score += 1;
+            }
           }
         }
       }
@@ -371,21 +392,47 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       
       userAnswers.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
-          a => a.question_number === userAnswer.question_number
+          a => a.question_number === userAnswer.questionNumber
         );
         
-        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
-          if (userAnswer.is_basic_knowledge) {
-            basicKnowledgeScore += 1;
-          } else if (userAnswer.is_specific_1) {
-            specific1Score += 1;
-            specificKnowledgeScore += 1;
-          } else if (userAnswer.is_specific_2) {
-            specific2Score += 1;
-            specificKnowledgeScore += 1;
-          } else if (userAnswer.is_specific_3) {
-            specific3Score += 1;
-            specificKnowledgeScore += 1;
+        if (officialAnswer) {
+          // Para questões anuladas, pontua apenas quem errou
+          if (officialAnswer.is_nullified && officialAnswer.answer !== userAnswer.answer) {
+            if (userAnswer.isBasicKnowledge) {
+              basicKnowledgeScore += 1;
+            } else {
+              specificKnowledgeScore += 1;
+              
+              // Compare question number with ranges to determine section
+              const qNum = userAnswer.questionNumber;
+              
+              if (qNum > basicEnd && qNum <= specific1End) {
+                specific1Score += 1;
+              } else if (qNum > specific1End && qNum <= specific2End) {
+                specific2Score += 1;
+              } else if (qNum > specific2End) {
+                specific3Score += 1;
+              }
+            }
+          }
+          // Para questões normais, pontua quem acertou
+          else if (!officialAnswer.is_nullified && officialAnswer.answer === userAnswer.answer) {
+            if (userAnswer.isBasicKnowledge) {
+              basicKnowledgeScore += 1;
+            } else {
+              specificKnowledgeScore += 1;
+              
+              // Compare question number with ranges to determine section
+              const qNum = userAnswer.questionNumber;
+              
+              if (qNum > basicEnd && qNum <= specific1End) {
+                specific1Score += 1;
+              } else if (qNum > specific1End && qNum <= specific2End) {
+                specific2Score += 1;
+              } else if (qNum > specific2End) {
+                specific3Score += 1;
+              }
+            }
           }
         }
       });
