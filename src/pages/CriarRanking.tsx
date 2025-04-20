@@ -46,6 +46,7 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
+  const [pendingFormValues, setPendingFormValues] = useState<any | null>(null);
   
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
@@ -184,6 +185,7 @@ const CriarRanking = () => {
   
   const handleNextTab = () => {
     if (activeTab === 'general-info') {
+      setPendingFormValues(form.getValues());
       setActiveTab('answer-key');
     }
   };
@@ -192,12 +194,13 @@ const CriarRanking = () => {
     setIsSubmitting(true);
 
     try {
+      const effectiveFormValues = pendingFormValues || formValues;
       const dataToSubmit = {
-        ...formValues,
+        ...effectiveFormValues,
         created_by_user_id: user?.id,
-        titulo: formValues.custom_job_title || formValues.predefined_job_title,
-        banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades
+        titulo: effectiveFormValues.custom_job_title || effectiveFormValues.predefined_job_title,
+        banca: effectiveFormValues.custom_banca || effectiveFormValues.banca,
+        localidades: effectiveFormValues.localidades
       };
 
       let result;
