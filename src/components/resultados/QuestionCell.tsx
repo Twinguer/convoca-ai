@@ -28,14 +28,9 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   const isCertoErrado = examType === 'Certo ou Errado';
 
   return (
-    <div className={`flex flex-col border border-gray-200 rounded-md overflow-hidden ${
-      disabled ? 'bg-gray-100' : 'bg-white'
-    } hover:shadow-md transition-shadow`}>
-      <div className={`text-center font-bold text-sm ${
-        disabled ? 'bg-gray-200 text-gray-600' : 'bg-emerald-100'
-      } py-2 border-b border-gray-200`}>
+    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
+      <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200">
         Questão {questionNumber}
-        {disabled && <span className="text-xs ml-1">(Anulada)</span>}
       </div>
       <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
         {options.map((option) => (
@@ -49,11 +44,11 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
           />
         ))}
         
-        {isCertoErrado && onClearAnswer && !disabled && (
+        {isCertoErrado && onClearAnswer && (
           <button
             onClick={() => onClearAnswer(questionNumber)}
-            disabled={!selectedAnswer}
-            className={`text-xs p-1 rounded ${!selectedAnswer 
+            disabled={disabled || !selectedAnswer}
+            className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
               ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
               : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
             title="Limpar resposta"
@@ -65,4 +60,3 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
     </div>
   );
 };
-

@@ -8,7 +8,6 @@ import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const {
@@ -25,9 +24,7 @@ const ResultadosPage = () => {
   const {
     toast
   } = useToast();
-  
   const isAuthenticated = !!user;
-  
   useEffect(() => {
     if (concurso) {
       console.log('Concurso data:', concurso);
@@ -46,12 +43,12 @@ const ResultadosPage = () => {
     }
   }, [concurso, rankings]);
 
+  // Force a refresh of data when component mounts
   useEffect(() => {
     if (concurso?.id) {
       refreshData();
     }
   }, [concurso?.id, refreshData]);
-
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -60,13 +57,10 @@ const ResultadosPage = () => {
       duration: 2000
     });
   };
-
   if (isLoading) {
     return <LoadingState />;
   }
-
-  return (
-    <div className="container mx-auto p-2 sm:p-4">
+  return <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center mx-[6px]">
           {concurso?.titulo ? `${concurso.titulo} - Resultados` : 'Rankings'}
@@ -100,8 +94,6 @@ const ResultadosPage = () => {
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>
         </div>}
-    </div>
-  );
+    </div>;
 };
-
 export default ResultadosPage;

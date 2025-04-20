@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -13,9 +14,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [caseStudy1Score, setCaseStudy1Score] = useState<number | null>(null);
   const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
   const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
-  const [isCreator, setIsCreator] = useState(false);
 
+  // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
       if (concurso.has_basic_knowledge) {
@@ -34,6 +34,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     try {
       console.log('Fetching existing answers for ranking ID:', rankingId);
       
+      // Fetch answers
       const { data: answersData, error: answersError } = await supabase
         .from('user_answers')
         .select('*')
@@ -68,6 +69,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setQuestionType(typesMap);
       }
       
+      // Fetch user ranking for scores
       const { data: rankingData, error: rankingError } = await supabase
         .from('user_rankings')
         .select('*')
@@ -186,13 +188,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   };
 
   const getAnsweredQuestionsCount = () => {
-    const answeredQuestions = Object.keys(answers).filter(
-      (key) => !nullifiedQuestions.has(parseInt(key))
-    );
-    
-    const totalAnswered = answeredQuestions.length + nullifiedQuestions.size;
-    
-    return totalAnswered;
+    return Object.keys(answers).length;
   };
 
   const isDiscursiveSection = () => {
@@ -240,7 +236,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) return [];
     
-    const QUESTIONS_PER_ROW = 4;
+    const QUESTIONS_PER_ROW = 4; // Changed from 5 to 4 for better display
     const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
     
     const matrix = [];
@@ -261,68 +257,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('Created answer matrix for section', selectedSection, ':', matrix);
     return matrix;
   };
-
-  const handleNullifyQuestion = async (questionNumber: number) => {
-    try {
-      const isCurrentlyNullified = nullifiedQuestions.has(questionNumber);
-      
-      setNullifiedQuestions(prev => {
-        const newSet = new Set(prev);
-        if (isCurrentlyNullified) {
-          newSet.delete(questionNumber);
-        } else {
-          newSet.add(questionNumber);
-        }
-        return newSet;
-      });
-      
-      const { data, error } = await supabase
-        .from('user_answers')
-        .upsert({
-          user_ranking_id: rankingId,
-          question_number: questionNumber,
-          answer: answers[questionNumber] || getOptionsForQuestion(questionNumber)[0],
-          is_nullified: !isCurrentlyNullified,
-          is_basic_knowledge: questionType[questionNumber] === 'basic',
-          is_specific_1: questionType[questionNumber] === 'specific1',
-          is_specific_2: questionType[questionNumber] === 'specific2',
-          is_specific_3: questionType[questionNumber] === 'specific3'
-        });
-
-      if (error) throw error;
-
-    } catch (error) {
-      console.error('Error nullifying question:', error);
-    }
-  };
-
-  useEffect(() => {
-    const fetchNullifiedQuestions = async () => {
-      const { data: userAnswers, error } = await supabase
-        .from('user_answers')
-        .select('question_number, is_nullified')
-        .eq('user_ranking_id', rankingId)
-        .eq('is_nullified', true);
-
-      if (!error && userAnswers) {
-        setNullifiedQuestions(new Set(
-          userAnswers
-            .filter(answer => answer.is_nullified)
-            .map(answer => answer.question_number)
-        ));
-      }
-    };
-
-    const checkIfCreator = async () => {
-      if (concurso?.id) {
-        const { data: { user } } = await supabase.auth.getUser();
-        setIsCreator(user?.id === concurso.created_by_user_id);
-      }
-    };
-
-    fetchNullifiedQuestions();
-    checkIfCreator();
-  }, [rankingId, concurso?.id]);
 
   return {
     answers,
@@ -349,9 +283,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection,
-    nullifiedQuestions,
-    handleNullifyQuestion,
-    isCreator
+    isDiscursiveSection
   };
 };

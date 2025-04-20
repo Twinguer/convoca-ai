@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { QuestionCell } from './QuestionCell';
 import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
@@ -13,7 +12,6 @@ interface AnswerMatrixProps {
   onClearAnswer?: (questionNumber: number) => void;
   nullifiedQuestions?: Set<number>;
   onNullifyQuestion?: (questionNumber: number) => void;
-  isCreator?: boolean;
   isAdminView?: boolean;
 }
 
@@ -27,7 +25,6 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   onClearAnswer,
   nullifiedQuestions = new Set(),
   onNullifyQuestion,
-  isCreator = false,
   isAdminView = false
 }) => {
   console.log('Rendering AnswerMatrix with matrix:', matrix);
@@ -72,7 +69,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     examType={examType}
                     onClearAnswer={onClearAnswer}
                   />
-                  {(isCreator || isAdminView) && onNullifyQuestion && (
+                  {isAdminView && onNullifyQuestion && (
                     <NullifyQuestionButton
                       questionNumber={questionNumber}
                       isNullified={nullifiedQuestions.has(questionNumber)}

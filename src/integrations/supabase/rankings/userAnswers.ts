@@ -1,22 +1,28 @@
+
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,
-  answers: { question_number: number; answer: string; isBasicKnowledge: boolean }[]
+  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
     // First, save the user's answers
-    const answersData = answers.map(a => ({
-      user_ranking_id: rankingId,
-      question_number: a.question_number,
-      answer: a.answer,
-      is_basic_knowledge: a.isBasicKnowledge,
-      is_specific_1: false,
-      is_specific_2: false,
-      is_specific_3: false
-    }));
+    const answersData = answers.map(a => {
+      // Determine the knowledge section based on question number
+      const qNum = a.questionNumber;
+
+      return {
+        user_ranking_id: rankingId,
+        question_number: qNum,
+        answer: a.answer,
+        is_basic_knowledge: a.isBasicKnowledge,
+        is_specific_1: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
+        is_specific_2: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
+        is_specific_3: !a.isBasicKnowledge && a.questionNumber <= 0  // Will be set correctly below
+      };
+    });
     
     console.log('Saving user answers:', answersData);
     
@@ -51,14 +57,23 @@ export const saveUserAnswers = async (
       
       if (qNum <= basicEnd) {
         item.is_basic_knowledge = true;
+        item.is_specific_1 = false;
+        item.is_specific_2 = false;
+        item.is_specific_3 = false;
       } else if (qNum <= specific1End) {
         item.is_basic_knowledge = false;
         item.is_specific_1 = true;
+        item.is_specific_2 = false;
+        item.is_specific_3 = false;
       } else if (qNum <= specific2End) {
         item.is_basic_knowledge = false;
+        item.is_specific_1 = false;
         item.is_specific_2 = true;
+        item.is_specific_3 = false;
       } else {
         item.is_basic_knowledge = false;
+        item.is_specific_1 = false;
+        item.is_specific_2 = false;
         item.is_specific_3 = true;
       }
     });
@@ -87,7 +102,7 @@ export const saveUserAnswers = async (
     console.log('Official answer key:', answerKey);
     console.log('User answers to check:', answers);
     
-    // Calculate scores
+    // Calculate score by comparing user answers with official answers
     let basicKnowledgeScore = 0;
     let specificKnowledgeScore = 0;
     let specific1Score = 0;
@@ -96,46 +111,24 @@ export const saveUserAnswers = async (
     
     answers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
-        a => a.question_number === userAnswer.question_number
+        a => a.question_number === userAnswer.questionNumber
       );
       
-      if (officialAnswer) {
-        // Para questões anuladas, pontua apenas quem errou
-        if (officialAnswer.is_nullified && officialAnswer.answer !== userAnswer.answer) {
-          if (userAnswer.isBasicKnowledge) {
-            basicKnowledgeScore += 1;
-          } else {
-            specificKnowledgeScore += 1;
-            
-            // Compare question number with ranges to determine section
-            const qNum = userAnswer.question_number;
-            
-            if (qNum > basicEnd && qNum <= specific1End) {
-              specific1Score += 1;
-            } else if (qNum > specific1End && qNum <= specific2End) {
-              specific2Score += 1;
-            } else if (qNum > specific2End) {
-              specific3Score += 1;
-            }
-          }
-        }
-        // Para questões normais, pontua quem acertou
-        else if (!officialAnswer.is_nullified && officialAnswer.answer === userAnswer.answer) {
-          if (userAnswer.isBasicKnowledge) {
-            basicKnowledgeScore += 1;
-          } else {
-            specificKnowledgeScore += 1;
-            
-            // Compare question number with ranges to determine section
-            const qNum = userAnswer.question_number;
-            
-            if (qNum > basicEnd && qNum <= specific1End) {
-              specific1Score += 1;
-            } else if (qNum > specific1End && qNum <= specific2End) {
-              specific2Score += 1;
-            } else if (qNum > specific2End) {
-              specific3Score += 1;
-            }
+      if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+        if (userAnswer.isBasicKnowledge) {
+          basicKnowledgeScore += 1;
+        } else {
+          specificKnowledgeScore += 1;
+          
+          // Compare question number with ranges to determine section
+          const qNum = userAnswer.questionNumber;
+          
+          if (qNum > basicEnd && qNum <= specific1End) {
+            specific1Score += 1;
+          } else if (qNum > specific1End && qNum <= specific2End) {
+            specific2Score += 1;
+          } else if (qNum > specific2End) {
+            specific3Score += 1;
           }
         }
       }
@@ -289,7 +282,7 @@ export const saveUserAnswers = async (
   }
 };
 
-// Function to recalculate scores for all users when answer key changes
+// New function to recalculate scores for all users when answer key or exam structure changes
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
     console.log(`Recalculating scores for all users in concurso: ${concursoId}`);
@@ -363,6 +356,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         continue;
       }
       
+      // Calculate scores using the same logic as in saveUserAnswers
       // Calculate question ranges
       const basicEnd = concurso.basic_knowledge_questions || 0;
       const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
@@ -380,55 +374,21 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           a => a.question_number === userAnswer.question_number
         );
         
-        if (officialAnswer) {
-          // Para questões anuladas, pontua apenas quem errou
-          if (officialAnswer.is_nullified && officialAnswer.answer !== userAnswer.answer) {
-            if (userAnswer.is_basic_knowledge) {
-              basicKnowledgeScore += 1;
-            } else {
-              specificKnowledgeScore += 1;
-              
-              const qNum = userAnswer.question_number;
-              if (qNum > basicEnd && qNum <= specific1End) {
-                specific1Score += 1;
-              } else if (qNum > specific1End && qNum <= specific2End) {
-                specific2Score += 1;
-              } else if (qNum > specific2End) {
-                specific3Score += 1;
-              }
-            }
-          }
-          // Para questões normais, pontua quem acertou
-          else if (!officialAnswer.is_nullified && officialAnswer.answer === userAnswer.answer) {
-            if (userAnswer.is_basic_knowledge) {
-              basicKnowledgeScore += 1;
-            } else {
-              specificKnowledgeScore += 1;
-              
-              const qNum = userAnswer.question_number;
-              if (qNum > basicEnd && qNum <= specific1End) {
-                specific1Score += 1;
-              } else if (qNum > specific1End && qNum <= specific2End) {
-                specific2Score += 1;
-              } else if (qNum > specific2End) {
-                specific3Score += 1;
-              }
-            }
+        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+          if (userAnswer.is_basic_knowledge) {
+            basicKnowledgeScore += 1;
+          } else if (userAnswer.is_specific_1) {
+            specific1Score += 1;
+            specificKnowledgeScore += 1;
+          } else if (userAnswer.is_specific_2) {
+            specific2Score += 1;
+            specificKnowledgeScore += 1;
+          } else if (userAnswer.is_specific_3) {
+            specific3Score += 1;
+            specificKnowledgeScore += 1;
           }
         }
       });
-      
-      // Get weights
-      const basicWeight = concurso.basic_knowledge_weight || 1;
-      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
-      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
-      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
-      
-      // Calculate weighted scores
-      const weightedBasicScore = basicKnowledgeScore * basicWeight;
-      const weightedSpecific1Score = specific1Score * specific1Weight;
-      const weightedSpecific2Score = specific2Score * specific2Weight;
-      const weightedSpecific3Score = specific3Score * specific3Weight;
       
       // Get subjective scores
       const { data: rankingData, error: rankingError } = await supabase
@@ -447,7 +407,19 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         continue;
       }
       
-      // Calculate subjective scores with weights
+      // Get weights
+      const basicWeight = concurso.basic_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+      
+      // Calculate weighted scores
+      const weightedBasicScore = basicKnowledgeScore * basicWeight;
+      const weightedSpecific1Score = specific1Score * specific1Weight;
+      const weightedSpecific2Score = specific2Score * specific2Weight;
+      const weightedSpecific3Score = specific3Score * specific3Weight;
+      
+      // Add subjective scores
       const discursiveScore = (rankingData?.discursive_score || 0);
       const caseStudy1Score = (rankingData?.case_study_1_score || 0);
       const caseStudy2Score = (rankingData?.case_study_2_score || 0);
@@ -469,7 +441,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         weightedCaseStudy2Score +
         weightedCaseStudy3Score;
       
-      // Update the ranking with ALL weighted fields
+      // Update the ranking
       const { error: updateError } = await supabase
         .from('user_rankings')
         .update({
@@ -478,14 +450,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           specific_knowledge_1_score: specific1Score,
           specific_knowledge_2_score: specific2Score,
           specific_knowledge_3_score: specific3Score,
-          weighted_basic_score: weightedBasicScore,
-          weighted_specific_1_score: weightedSpecific1Score,
-          weighted_specific_2_score: weightedSpecific2Score,
-          weighted_specific_3_score: weightedSpecific3Score,
-          weighted_discursive_score: weightedDiscursiveScore,
-          weighted_case_study_1_score: weightedCaseStudy1Score,
-          weighted_case_study_2_score: weightedCaseStudy2Score,
-          weighted_case_study_3_score: weightedCaseStudy3Score,
           score: totalScore,
           updated_at: new Date().toISOString()
         })
@@ -503,118 +467,5 @@ export const recalculateAllUserScores = async (concursoId: string) => {
   } catch (error: any) {
     console.error('Error recalculating all user scores:', error);
     throw error;
-  }
-};
-
-// Função de cálculo de pontuação para considerar questões anuladas
-export const calculateAndUpdateScore = async (
-  userAnswers: { question_number: number; answer: string; isBasicKnowledge: boolean; isNullified: boolean }[],
-  officialAnswers: any[],
-  concursoId: string,
-  rankingId: string
-) => {
-  try {
-    // Obter estrutura do concurso para definir pesos e intervalos de questões
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select(`
-        basic_knowledge_questions,
-        specific_knowledge_1_questions,
-        specific_knowledge_2_questions,
-        specific_knowledge_3_questions,
-        basic_knowledge_weight,
-        specific_knowledge_1_weight,
-        specific_knowledge_2_weight,
-        specific_knowledge_3_weight
-      `)
-      .eq('id', concursoId)
-      .single();
-      
-    if (concursoError) throw concursoError;
-
-    // Calcular intervalos das seções
-    const basicEnd = concurso.basic_knowledge_questions || 0;
-    const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
-    const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-
-    // Preparar pontuação por seção
-    let basicKnowledgeScore = 0;
-    let specificKnowledgeScore = 0;
-    let specific1Score = 0;
-    let specific2Score = 0;
-    let specific3Score = 0;
-
-    userAnswers.forEach(userAnswer => {
-      const officialAnswer = officialAnswers.find(
-        a => a.question_number === userAnswer.question_number
-      );
-      
-      if (officialAnswer) {
-        // Para questões anuladas, pontua quem errou
-        if (officialAnswer.is_nullified && officialAnswer.answer !== userAnswer.answer) {
-          if (userAnswer.isBasicKnowledge) {
-            basicKnowledgeScore += 1;
-          } else {
-            specificKnowledgeScore += 1;
-            
-            const qNum = userAnswer.question_number;
-            if (qNum > basicEnd && qNum <= specific1End) {
-              specific1Score += 1;
-            } else if (qNum > specific1End && qNum <= specific2End) {
-              specific2Score += 1;
-            } else {
-              specific3Score += 1;
-            }
-          }
-        } 
-        // Para questões normais, mantém a lógica de pontuação existente
-        else if (!officialAnswer.is_nullified && officialAnswer.answer === userAnswer.answer) {
-          if (userAnswer.isBasicKnowledge) {
-            basicKnowledgeScore += 1;
-          } else {
-            specificKnowledgeScore += 1;
-            
-            const qNum = userAnswer.question_number;
-            if (qNum > basicEnd && qNum <= specific1End) {
-              specific1Score += 1;
-            } else if (qNum > specific1End && qNum <= specific2End) {
-              specific2Score += 1;
-            } else {
-              specific3Score += 1;
-            }
-          }
-        }
-      }
-    });
-
-    // Calcular pontuações com pesos
-    const basicWeight = concurso.basic_knowledge_weight || 1;
-    const specific1Weight = concurso.specific_knowledge_1_weight || 1;
-    const specific2Weight = concurso.specific_knowledge_2_weight || 1;
-    const specific3Weight = concurso.specific_knowledge_3_weight || 1;
-
-    const weightedBasicScore = basicKnowledgeScore * basicWeight;
-    const weightedSpecific1Score = specific1Score * specific1Weight;
-    const weightedSpecific2Score = specific2Score * specific2Weight;
-    const weightedSpecific3Score = specific3Score * specific3Weight;
-
-    // Atualizar pontuação do ranking
-    const { error: updateError } = await supabase
-      .from('user_rankings')
-      .update({
-        basic_knowledge_score: basicKnowledgeScore,
-        specific_knowledge_score: specificKnowledgeScore,
-        specific_knowledge_1_score: specific1Score,
-        specific_knowledge_2_score: specific2Score,
-        specific_knowledge_3_score: specific3Score,
-        score: weightedBasicScore + weightedSpecific1Score + weightedSpecific2Score + weightedSpecific3Score,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', rankingId);
-      
-    if (updateError) throw updateError;
-
-  } catch (error) {
-    console.error('Error calculating score:', error);
   }
 };

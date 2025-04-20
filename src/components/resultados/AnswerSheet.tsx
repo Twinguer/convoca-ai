@@ -52,10 +52,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score,
-    nullifiedQuestions,
-    handleNullifyQuestion,
-    isCreator
+    setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
   
   const {
@@ -101,8 +98,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy1Score,
     caseStudy2Score,
     caseStudy3Score,
-    editCount: userRankingData?.edit_count || 0,
-    nullifiedQuestions
+    editCount: userRankingData?.edit_count || 0
   });
   
   useEffect(() => {
@@ -132,7 +128,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (answeredQuestions < totalQuestions) {
       toast({
         title: "Atenção",
-        description: "Todas as questões devem ser respondidas ou anuladas antes de salvar.",
+        description: "Todas as questões devem ser respondidas antes de salvar.",
         variant: "destructive"
       });
       return;
@@ -273,9 +269,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                     getOptionsForQuestion={getOptionsForQuestion}
                     disabled={!canEdit}
                     examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
-                    nullifiedQuestions={nullifiedQuestions}
-                    onNullifyQuestion={isCreator ? handleNullifyQuestion : undefined}
-                    isCreator={isCreator}
                   />
                 </TabsContent>
               ))}

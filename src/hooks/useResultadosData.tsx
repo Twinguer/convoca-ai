@@ -12,13 +12,10 @@ export function useResultadosData() {
   const { user } = useAuth();
   const isAuthenticated = !!user;
   
-  // Fetch concurso details with more frequent refetching
+  // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    refetchInterval: 5000,
-    refetchOnWindowFocus: true,
-    staleTime: 2000,
   });
   
   // Fetch creator information if available
@@ -31,7 +28,7 @@ export function useResultadosData() {
         .from('users_profiles')
         .select('name')
         .eq('id', concurso.created_by_user_id)
-        .maybeSingle();
+        .single();
         
       if (error) {
         console.error('Error fetching creator info:', error);
@@ -43,33 +40,35 @@ export function useResultadosData() {
     enabled: !!concurso?.created_by_user_id,
   });
   
-  // Fetch rankings with more frequent refetching
+  // Fetch rankings with more frequent refetching - only if user is authenticated
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
-    queryFn: () => fetchUserRankings(id),
-    refetchInterval: 5000,
+    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
+    refetchInterval: 5000, // Refetch every 5 seconds
     refetchOnWindowFocus: true,
-    staleTime: 2000,
-    enabled: true, // Always fetch rankings regardless of auth state
+    staleTime: 2000, // Consider data stale after 2 seconds
+    enabled: isAuthenticated,
   });
   
-  // Fetch participant count
+  // Fetch participant count - for all users (authenticated or not)
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 2000, // Make this more responsive for all users
   });
   
-  // Find user's ranking if authenticated
+  // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount || isLoadingCreator;
+  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
   const refreshData = () => {
-    refetchRankings();
+    if (isAuthenticated) {
+      refetchRankings();
+    }
     refetchCount();
   };
   
