@@ -6,18 +6,18 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
-  id: string; // Adicionando o campo id que faltava
-  avatarUrl?: string | null; // Alterando de unknown para string | null
+  id: string;
+  avatarUrl?: string | null;
   basicKnowledgeScore?: number;
   specificKnowledge1Score?: number;
   specificKnowledge2Score?: number;
   specificKnowledge3Score?: number;
-  specificKnowledgeScore?: number; // For backward compatibility
+  specificKnowledgeScore?: number;
   discursiveScore?: number;
   caseStudy1Score?: number;
   caseStudy2Score?: number;
   caseStudy3Score?: number;
-  reservationType?: string;
+  reservationType: string;
   displayReservation?: string;
 }
 
@@ -79,7 +79,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
 
     console.log('Retrieved rankings data:', rankings);
 
-    const formattedRankings = rankings.map((ranking, index) => {
+    const formattedRankings: Ranking[] = rankings.map((ranking, index) => {
       const profile = ranking.users_profiles || {};
       const name = typeof profile === 'object' && profile !== null && 'name' in profile 
         ? profile.name 
@@ -95,7 +95,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
 
       return {
-        id: ranking.id, // Adicionando o ID do ranking
+        id: ranking.id,
         position: index + 1,
         name: displayName,
         score: ranking.score || 0,
