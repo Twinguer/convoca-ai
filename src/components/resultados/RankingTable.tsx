@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,24 +10,7 @@ import type { Ranking as RankingType } from '@/services/rankingService';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 
-export interface Ranking {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
-  avatarUrl?: string | null;
-  basicKnowledgeScore?: number | null;
-  specificKnowledgeScore?: number | null;
-  specificKnowledge1Score?: number | null;
-  specificKnowledge2Score?: number | null;
-  specificKnowledge3Score?: number | null;
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
-  reservationType: string;
-  id: string;
-}
+export interface Ranking extends RankingType {}
 
 interface RankingTableProps {
   rankings?: Ranking[];

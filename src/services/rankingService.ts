@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -5,7 +6,8 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
-  avatarUrl?: string | null;
+  id: string; // Adicionando o campo id que faltava
+  avatarUrl?: string | null; // Alterando de unknown para string | null
   basicKnowledgeScore?: number;
   specificKnowledge1Score?: number;
   specificKnowledge2Score?: number;
@@ -93,6 +95,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
 
       return {
+        id: ranking.id, // Adicionando o ID do ranking
         position: index + 1,
         name: displayName,
         score: ranking.score || 0,
