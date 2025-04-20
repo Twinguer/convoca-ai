@@ -101,7 +101,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy1Score,
     caseStudy2Score,
     caseStudy3Score,
-    editCount: userRankingData?.edit_count || 0
+    editCount: userRankingData?.edit_count || 0,
+    nullifiedQuestions
   });
   
   useEffect(() => {
@@ -131,7 +132,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (answeredQuestions < totalQuestions) {
       toast({
         title: "Atenção",
-        description: "Todas as questões devem ser respondidas antes de salvar.",
+        description: "Todas as questões devem ser respondidas ou anuladas antes de salvar.",
         variant: "destructive"
       });
       return;

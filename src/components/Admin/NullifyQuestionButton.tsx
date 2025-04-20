@@ -1,35 +1,49 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Ban } from 'lucide-react';
+import { Ban, CheckCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NullifyQuestionButtonProps {
   questionNumber: number;
   isNullified: boolean;
   onNullify: (questionNumber: number) => void;
-  disabled?: boolean;
 }
 
-export const NullifyQuestionButton = ({
+export const NullifyQuestionButton: React.FC<NullifyQuestionButtonProps> = ({
   questionNumber,
   isNullified,
-  onNullify,
-  disabled = false
-}: NullifyQuestionButtonProps) => {
+  onNullify
+}) => {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => onNullify(questionNumber)}
-      disabled={disabled}
-      className={`mt-2 w-full gap-2 ${
-        isNullified 
-          ? 'bg-gray-100 text-gray-500' 
-          : 'hover:bg-red-50 hover:text-red-600'
-      }`}
-    >
-      <Ban className="h-4 w-4" />
-      {isNullified ? 'Questão Anulada' : 'Anular Questão'}
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={() => onNullify(questionNumber)}
+            variant="ghost"
+            size="sm"
+            className={`mt-1 w-full ${isNullified ? 'text-red-500' : 'text-gray-500'}`}
+          >
+            {isNullified ? (
+              <div className="flex items-center gap-1">
+                <Ban className="h-4 w-4" />
+                <span className="text-xs">Reativar Questão</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Ban className="h-4 w-4" />
+                <span className="text-xs">Anular Questão</span>
+              </div>
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          {isNullified 
+            ? 'Reativar esta questão' 
+            : 'Anular esta questão (não será considerada na pontuação)'}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

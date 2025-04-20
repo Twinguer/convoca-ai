@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -186,7 +187,15 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   };
 
   const getAnsweredQuestionsCount = () => {
-    return Object.keys(answers).length;
+    // Conta apenas questões respondidas que não estão anuladas
+    const answeredQuestions = Object.keys(answers).filter(
+      (key) => !nullifiedQuestions.has(parseInt(key))
+    );
+    
+    // Adiciona questões anuladas ao total de questões respondidas
+    const totalAnswered = answeredQuestions.length + nullifiedQuestions.size;
+    
+    return totalAnswered;
   };
 
   const isDiscursiveSection = () => {
@@ -258,16 +267,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const handleNullifyQuestion = async (questionNumber: number) => {
     try {
+      // Atualiza localmente o conjunto de questões anuladas
       const isCurrentlyNullified = nullifiedQuestions.has(questionNumber);
       
-      const { error } = await supabase
-        .from('answer_keys')
-        .update({ is_nullified: !isCurrentlyNullified })
-        .eq('concurso_id', concurso.id)
-        .eq('question_number', questionNumber);
-
-      if (error) throw error;
-
       setNullifiedQuestions(prev => {
         const newSet = new Set(prev);
         if (isCurrentlyNullified) {
@@ -277,11 +279,22 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
         return newSet;
       });
+      
+      // Persiste a informação de anulação no banco de dados
+      const { data, error } = await supabase
+        .from('user_answers')
+        .upsert({
+          user_ranking_id: rankingId,
+          question_number: questionNumber,
+          answer: answers[questionNumber] || getOptionsForQuestion(questionNumber)[0],
+          is_nullified: !isCurrentlyNullified,
+          is_basic_knowledge: questionType[questionNumber] === 'basic',
+          is_specific_1: questionType[questionNumber] === 'specific1',
+          is_specific_2: questionType[questionNumber] === 'specific2',
+          is_specific_3: questionType[questionNumber] === 'specific3'
+        });
 
-      const { error: recalcError } = await supabase
-        .rpc('recalculate_all_user_scores', { concurso_id: concurso.id });
-
-      if (recalcError) throw recalcError;
+      if (error) throw error;
 
     } catch (error) {
       console.error('Error nullifying question:', error);
@@ -290,29 +303,32 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   useEffect(() => {
     const fetchNullifiedQuestions = async () => {
-      const { data: answerKeys, error } = await supabase
-        .from('answer_keys')
+      // Busca questões anuladas pelo usuário
+      const { data: userAnswers, error } = await supabase
+        .from('user_answers')
         .select('question_number, is_nullified')
-        .eq('concurso_id', concurso.id)
+        .eq('user_ranking_id', rankingId)
         .eq('is_nullified', true);
 
-      if (!error && answerKeys) {
+      if (!error && userAnswers) {
         setNullifiedQuestions(new Set(
-          answerKeys
-            .filter(key => key.is_nullified)
-            .map(key => key.question_number)
+          userAnswers
+            .filter(answer => answer.is_nullified)
+            .map(answer => answer.question_number)
         ));
       }
     };
 
     const checkIfCreator = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsCreator(user?.id === concurso.created_by_user_id);
+      if (concurso?.id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsCreator(user?.id === concurso.created_by_user_id);
+      }
     };
 
     fetchNullifiedQuestions();
     checkIfCreator();
-  }, [concurso.id]);
+  }, [rankingId, concurso?.id]);
 
   return {
     answers,
