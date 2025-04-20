@@ -228,7 +228,7 @@ export const useSaveAnswers = ({
         const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
         
         return {
-          questionNumber: qNum,
+          question_number: qNum, // Changed from questionNumber to question_number to match the expected type
           answer,
           isBasicKnowledge: qNum <= basicQuestionsCount
         };
