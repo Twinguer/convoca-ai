@@ -7,9 +7,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MapPin } from 'lucide-react';
 
 interface StateSelectorProps {
-  form: any;
+  form?: any;
   selectedStates: string[];
-  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedStates?: React.Dispatch<React.SetStateAction<string[]>>;
+  onStateChange?: (states: string[]) => void;
 }
 
 const ESTADOS_BRASILEIROS = [
@@ -20,15 +21,23 @@ const ESTADOS_BRASILEIROS = [
 export const StateSelector: React.FC<StateSelectorProps> = ({
   form,
   selectedStates,
-  setSelectedStates
+  setSelectedStates,
+  onStateChange
 }) => {
   const handleStateSelection = (estado: string) => {
-    setSelectedStates(prev => {
-      if (prev.includes(estado)) {
-        return prev.filter(s => s !== estado);
-      }
-      return [...prev, estado];
-    });
+    const newStates = selectedStates.includes(estado)
+      ? selectedStates.filter(s => s !== estado)
+      : [...selectedStates, estado];
+    
+    // Use the setter function if provided
+    if (setSelectedStates) {
+      setSelectedStates(newStates);
+    }
+    
+    // Call onStateChange callback if provided
+    if (onStateChange) {
+      onStateChange(newStates);
+    }
   };
 
   return (
