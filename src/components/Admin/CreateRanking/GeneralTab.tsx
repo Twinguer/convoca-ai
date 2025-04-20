@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -30,9 +29,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const { toast } = useToast();
   
-  // Set default form values if not set
   React.useEffect(() => {
-    // Define default values for form if they don't exist
     if (form.getValues("exam_type") === undefined) {
       form.setValue("exam_type", "Alternativas");
     }
@@ -43,14 +40,12 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       form.setValue("wrong_answer_penalty", 0);
     }
     
-    // Update form when selectedStates changes
     form.setValue('estados', selectedStates);
   }, [form, selectedStates]);
   
   const validateBeforeNext = () => {
     const currentValues = form.getValues();
     
-    // Validação básica
     if (!currentValues.predefined_job_title) {
       toast({
         title: "Erro de validação",
@@ -105,7 +100,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
     
-    // Verificar se pelo menos uma área de conhecimento foi adicionada
     const hasAnyKnowledgeArea = 
       currentValues.has_basic_knowledge || 
       currentValues.has_specific_knowledge_1 || 
@@ -125,7 +119,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
     
-    // Verificar se pelo menos uma cota de reserva foi selecionada
     const hasAnyQuota = 
       currentValues.has_ampla_concorrencia || 
       currentValues.has_ppp || 
@@ -142,6 +135,20 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
+
+    if (
+      (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
+      (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
+      (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
+      (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
+    ) {
+      toast({
+        title: "Erro de validação",
+        description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
+        variant: "destructive"
+      });
+      return false;
+    }
     
     return true;
   };
@@ -154,7 +161,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Informações Básicas */}
       <BasicInfoSection 
         form={form}
         jobTitles={jobTitles}
@@ -167,15 +173,13 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         setSelectedStates={setSelectedStates}
       />
       
-      {/* Estrutura da Prova */}
       <ExamStructureSection form={form} />
       
-      {/* Cotas de Reserva */}
       <ReservationQuotasSection form={form} />
       
       <div className="flex justify-end">
         <Button type="button" onClick={handleNext}>
-          Próximo: Gabarito
+          Preencher Gabarito
         </Button>
       </div>
     </div>
