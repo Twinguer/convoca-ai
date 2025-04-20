@@ -144,11 +144,12 @@ export const AnswerKeyTab = ({
       }
 
       // Transform answers into array format for the database
-      const answerKeyData = Object.keys(answers).map(questionNumber => {
-        const qNum = parseInt(questionNumber);
+      const answerKeyData = questions.map(questionNumber => {
+        const qNum = parseInt(questionNumber.toString());
         const isBasic = qNum <= (basicKnowledgeQuestions || 0);
         const specific1End = (basicKnowledgeQuestions || 0) + (specificKnowledge1Questions || 0);
         const specific2End = specific1End + (specificKnowledge2Questions || 0);
+        const specific3End = specific2End + (specificKnowledge3Questions || 0);
         
         return {
           concurso_id: concursoId,
@@ -158,7 +159,7 @@ export const AnswerKeyTab = ({
           is_basic_knowledge: isBasic,
           is_specific_1: !isBasic && qNum <= specific1End,
           is_specific_2: qNum > specific1End && qNum <= specific2End,
-          is_specific_3: qNum > specific2End
+          is_specific_3: qNum > specific2End && qNum <= specific3End
         };
       });
       
@@ -166,9 +167,13 @@ export const AnswerKeyTab = ({
       await updateAnswerKey(concursoId, answerKeyData);
       
       toast.success('Gabarito salvo com sucesso!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving answer key:', error);
-      toast.error('Erro ao salvar gabarito');
+      if (error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
+        toast.error('Todas as questões do gabarito oficial devem ter uma resposta');
+      } else {
+        toast.error('Erro ao salvar gabarito');
+      }
     } finally {
       setIsSaving(false);
     }

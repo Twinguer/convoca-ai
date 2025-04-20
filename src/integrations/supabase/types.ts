@@ -20,6 +20,7 @@ export type Database = {
           is_nullified: boolean | null
           is_specific_1: boolean | null
           is_specific_2: boolean | null
+          is_specific_3: boolean | null
           question_number: number
           updated_at: string | null
         }
@@ -33,6 +34,7 @@ export type Database = {
           is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
           question_number: number
           updated_at?: string | null
         }
@@ -46,6 +48,7 @@ export type Database = {
           is_nullified?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
           question_number?: number
           updated_at?: string | null
         }
