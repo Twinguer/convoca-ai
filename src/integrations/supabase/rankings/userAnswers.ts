@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -87,10 +86,10 @@ export const saveUserAnswers = async (
       
     if (insertError) throw insertError;
     
-    // Get the official answer key
+    // Get the official answer key with nullified questions
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
-      .select('*')
+      .select('*, is_nullified')
       .eq('concurso_id', concursoId);
       
     if (keyError) throw keyError;
@@ -114,7 +113,8 @@ export const saveUserAnswers = async (
         a => a.question_number === userAnswer.questionNumber
       );
       
-      if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+      // Award points for nullified questions as if they were correct
+      if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
         if (userAnswer.isBasicKnowledge) {
           basicKnowledgeScore += 1;
         } else {
@@ -324,10 +324,10 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       
     if (concursoError) throw concursoError;
     
-    // Get answer key
+    // Get answer key with nullified questions
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
-      .select('*')
+      .select('*, is_nullified')
       .eq('concurso_id', concursoId);
       
     if (keyError) throw keyError;
@@ -374,8 +374,9 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           a => a.question_number === userAnswer.question_number
         );
         
-        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
-          if (userAnswer.is_basic_knowledge) {
+        // Award points for nullified questions or correct answers
+        if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
+          if (userAnswer.isBasicKnowledge) {
             basicKnowledgeScore += 1;
           } else if (userAnswer.is_specific_1) {
             specific1Score += 1;
