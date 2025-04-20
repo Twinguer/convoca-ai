@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Save } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
+import { toggleQuestionNullification } from '@/services/concursoService';
 
 interface AnswerKeyTabProps {
   concursoId: string;
@@ -23,7 +22,6 @@ interface AnswerKeyTabProps {
   specificKnowledge3Questions: number;
   examType: string;
   alternativesCount: number;
-  concurso: any;
 }
 
 export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
@@ -37,23 +35,22 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   specificKnowledge2Questions,
   specificKnowledge3Questions,
   examType,
-  alternativesCount,
-  concurso
+  alternativesCount
 }) => {
   const { toast } = useToast();
   const [answers, setAnswers] = useState<{[key: number]: string}>({});
   const [selectedSection, setSelectedSection] = useState<string>("basic");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
-  
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
+
   useEffect(() => {
     const fetchAnswerKey = async () => {
       if (!concursoId) return;
       
       const { data, error } = await supabase
         .from('answer_keys')
-        .select('question_number, answer, is_nullified')
+        .select('question_number, answer')
         .eq('concurso_id', concursoId);
         
       if (error) {
@@ -63,23 +60,36 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       
       if (data && data.length > 0) {
         const answersObj: {[key: number]: string} = {};
-        const nullifiedSet = new Set<number>();
-        
         data.forEach(item => {
           answersObj[item.question_number] = item.answer;
-          if (item.is_nullified) {
-            nullifiedSet.add(item.question_number);
-          }
         });
-        
         setAnswers(answersObj);
-        setNullifiedQuestions(nullifiedSet);
       }
     };
     
     fetchAnswerKey();
   }, [concursoId]);
   
+  useEffect(() => {
+    const loadNullifiedQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('answer_keys')
+          .select('question_number')
+          .eq('concurso_id', concursoId)
+          .eq('is_nullified', true);
+          
+        if (error) throw error;
+        
+        setNullifiedQuestions(data?.map(item => item.question_number) || []);
+      } catch (error) {
+        console.error('Error loading nullified questions:', error);
+      }
+    };
+    
+    loadNullifiedQuestions();
+  }, [concursoId]);
+
   const handleAnswerChange = (questionNumber: number, answer: string) => {
     setAnswers(prev => ({
       ...prev,
@@ -93,35 +103,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       delete newAnswers[questionNumber];
       return newAnswers;
     });
-  };
-
-  const handleNullifyQuestion = async (questionNumber: number) => {
-    try {
-      setNullifiedQuestions(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(questionNumber)) {
-          newSet.delete(questionNumber);
-        } else {
-          newSet.add(questionNumber);
-        }
-        return newSet;
-      });
-
-      toast({
-        title: "Questão atualizada",
-        description: nullifiedQuestions.has(questionNumber) 
-          ? "A questão foi desmarcada como anulada." 
-          : "A questão foi marcada como anulada."
-      });
-
-    } catch (error) {
-      console.error('Error nullifying question:', error);
-      toast({
-        title: "Erro ao anular questão",
-        description: "Ocorreu um erro ao tentar anular a questão.",
-        variant: "destructive"
-      });
-    }
   };
   
   const getOptionsForQuestion = (questionNumber: number): string[] => {
@@ -203,46 +184,13 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     return options;
   };
   
-  const getQuestionsBySection = (section: string): number[] => {
-    let startingQuestion = 1;
-    let totalQuestions = 0;
-    
-    if (section === "basic" && hasBasicKnowledge) {
-      totalQuestions = basicKnowledgeQuestions;
-    } else if (section === "specific1" && hasSpecificKnowledge1) {
-      startingQuestion = basicKnowledgeQuestions + 1;
-      totalQuestions = specificKnowledge1Questions;
-    } else if (section === "specific2" && hasSpecificKnowledge2) {
-      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + 1;
-      totalQuestions = specificKnowledge2Questions;
-    } else if (section === "specific3" && hasSpecificKnowledge3) {
-      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions + 1;
-      totalQuestions = specificKnowledge3Questions;
-    }
-    
-    if (totalQuestions <= 0) {
-      return [];
-    }
-    
-    return Array.from({ length: totalQuestions }, (_, i) => startingQuestion + i);
-  };
-  
-  const validateAllSections = () => {
-    const allQuestions = [
-      ...getQuestionsBySection('basic'),
-      ...getQuestionsBySection('specific1'),
-      ...getQuestionsBySection('specific2'),
-      ...getQuestionsBySection('specific3')
-    ];
-
-    const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.has(q));
-    
-    if (unansweredQuestions.length > 0) {
-      setError(`Todas as questões devem ter uma resposta ou serem anuladas. Faltam ${unansweredQuestions.length} questões.`);
-      return false;
-    }
-    
-    return true;
+  const getTotalQuestions = (): number => {
+    let total = 0;
+    if (hasBasicKnowledge) total += basicKnowledgeQuestions || 0;
+    if (hasSpecificKnowledge1) total += specificKnowledge1Questions || 0;
+    if (hasSpecificKnowledge2) total += specificKnowledge2Questions || 0;
+    if (hasSpecificKnowledge3) total += specificKnowledge3Questions || 0;
+    return total;
   };
   
   const handleSaveAnswerKey = async () => {
@@ -251,41 +199,47 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       return;
     }
     
+    const totalQuestions = getTotalQuestions();
+    const answeredQuestions = Object.keys(answers).length;
+    
+    if (answeredQuestions < totalQuestions) {
+      toast({
+        title: "Preenchimento incompleto",
+        description: `Todas as questões do gabarito devem ser respondidas antes de salvar. Faltam ${totalQuestions - answeredQuestions} questões.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       setIsSaving(true);
       setError(null);
-      
-      if (!validateAllSections()) {
-        setIsSaving(false);
-        return;
-      }
       
       await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
       
-      const entries = Object.entries(answers).map(([questionNumber, answer]) => ({
+      const answerRows = Object.keys(answers).map(questionNumber => ({
         concurso_id: concursoId,
         question_number: parseInt(questionNumber),
-        answer: answer.toUpperCase(),
-        is_nullified: nullifiedQuestions.has(parseInt(questionNumber))
+        answer: answers[parseInt(questionNumber)],
+        is_nullified: false
       }));
-
-      nullifiedQuestions.forEach(qNum => {
-        if (!answers[qNum]) {
-          entries.push({
-            concurso_id: concursoId,
-            question_number: qNum,
-            answer: examType === 'Certo ou Errado' ? 'C' : 'A',
-            is_nullified: true
-          });
-        }
-      });
+      
+      if (answerRows.length === 0) {
+        toast({
+          title: "Nenhuma resposta para salvar",
+          description: "Por favor, informe pelo menos uma resposta no gabarito.",
+          variant: "destructive"
+        });
+        setIsSaving(false);
+        return;
+      }
       
       const { error } = await supabase
         .from('answer_keys')
-        .insert(entries);
+        .insert(answerRows);
       
       if (error) throw error;
       
@@ -320,9 +274,33 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsSaving(false);
     }
   };
-  
+
+  const handleToggleNullification = async (questionNumber: number) => {
+    try {
+      const isCurrentlyNullified = nullifiedQuestions.includes(questionNumber);
+      const newNullifiedQuestions = isCurrentlyNullified
+        ? nullifiedQuestions.filter(q => q !== questionNumber)
+        : [...nullifiedQuestions, questionNumber];
+      
+      await toggleQuestionNullification(concursoId, questionNumber, !isCurrentlyNullified);
+      setNullifiedQuestions(newNullifiedQuestions);
+      
+      toast({
+        title: isCurrentlyNullified ? "Questão restaurada" : "Questão anulada",
+        description: `A questão ${questionNumber} foi ${isCurrentlyNullified ? 'restaurada' : 'anulada'} com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Error toggling nullification:', error);
+      toast({
+        title: "Erro ao modificar questão",
+        description: "Ocorreu um erro ao tentar anular/restaurar a questão.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const sectionOptions = getSectionOptions();
-  
+
   return (
     <Card className="shadow-md">
       <CardHeader>
@@ -360,8 +338,8 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
           getOptionsForQuestion={getOptionsForQuestion}
           examType={examType as 'Alternativas' | 'Certo ou Errado'}
           nullifiedQuestions={nullifiedQuestions}
-          onNullifyQuestion={handleNullifyQuestion}
-          isAdminView={true}
+          onToggleNullification={handleToggleNullification}
+          isAdmin={true}
         />
         
         <div className="flex justify-end space-x-3 mt-6">

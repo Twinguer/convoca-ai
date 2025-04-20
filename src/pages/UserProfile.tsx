@@ -123,16 +123,23 @@ const UserProfile = () => {
           concursos(titulo)
         `).eq('user_id', user.id);
       if (error) throw error;
+      
       return data.map(item => {
         const concursoData = item.concursos || {};
         const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
+        
         return {
-          concursoId: item.concurso_id,
-          concursoTitle: titulo,
+          id: item.id,
+          concurso_id: item.concurso_id,
+          user_id: user.id,
+          name: '',
+          score: item.score,
           position: 0,
-          score: item.score
-        };
-      }) as UserRankingDisplay[];
+          concurso_title: titulo,
+          concurso_orgao: '',
+          created_at: new Date().toISOString()
+        } as UserRankingDisplay;
+      });
     },
     enabled: !!user
   });

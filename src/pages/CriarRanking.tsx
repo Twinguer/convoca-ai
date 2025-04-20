@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +13,9 @@ import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Function to fetch ranking data for editing
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;
   
@@ -48,13 +48,10 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
-  const [concurso, setConcurso] = useState(null);
   
-  // Check if we're in edit mode
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
   
-  // Job titles for dropdown
   const [jobTitles] = useState([
     { id: '1', title: 'Analista' },
     { id: '2', title: 'Técnico' },
@@ -63,10 +60,8 @@ const CriarRanking = () => {
     { id: '5', title: 'Especialista' }
   ]);
   
-  // Initialize form with react-hook-form
   const form = useForm({
     defaultValues: {
-      // General Info
       predefined_job_title: '',
       custom_job_title: '',
       titulo: '',
@@ -80,12 +75,10 @@ const CriarRanking = () => {
       vagas: 0,
       inscritos: 0,
       
-      // Exam Structure
       exam_type: 'Alternativas',
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
-      // Knowledge Areas
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
@@ -102,11 +95,9 @@ const CriarRanking = () => {
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
       
-      // Discursive/Essay
       has_discursive: false,
       discursive_weight: 1,
       
-      // Case Studies
       has_case_study_1: false,
       case_study_1_weight: 1,
       
@@ -116,7 +107,6 @@ const CriarRanking = () => {
       has_case_study_3: false,
       case_study_3_weight: 1,
       
-      // Reservation Quotas
       has_ampla_concorrencia: true,
       has_ppp: false,
       has_pcd: false,
@@ -126,25 +116,20 @@ const CriarRanking = () => {
     }
   });
   
-  // Load existing data if in edit mode
   useEffect(() => {
     const loadExistingData = async () => {
       if (editId) {
         try {
           const data = await fetchRankingData(editId);
           if (data) {
-            // Set the created concurso ID for the answer key tab
             setCreatedConcursoId(data.id);
-            setConcurso(data);
             
-            // Determine if title and banca are custom
             const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
             setIsCustomTitle(isOtherTitle);
             
             const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
             setIsCustomBanca(isOtherBanca);
             
-            // Reset form with existing data
             form.reset({
               ...data,
               predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
@@ -164,7 +149,6 @@ const CriarRanking = () => {
     loadExistingData();
   }, [editId, form, jobTitles]);
   
-  // Check if user is authenticated
   useEffect(() => {
     if (!user) {
       toast.error("Você precisa estar logado para criar um ranking");
@@ -194,7 +178,6 @@ const CriarRanking = () => {
     setIsSubmitting(true);
     
     try {
-      // Transform data from React Hook Form format to the format expected by createRanking
       const dataToSubmit = {
         ...values,
         created_by_user_id: user?.id,
@@ -204,9 +187,7 @@ const CriarRanking = () => {
       
       let result;
       
-      // If in edit mode, update existing ranking
       if (editId) {
-        // Update the existing ranking
         const { data, error } = await supabase
           .from('concursos')
           .update(dataToSubmit)
@@ -218,30 +199,20 @@ const CriarRanking = () => {
         
         toast.success("Ranking atualizado com sucesso!");
       } else {
-        // Create new ranking
         result = await createRanking(dataToSubmit);
-        toast.success("Ranking criado com sucesso!");
+        
+        if (result && result[0]?.id) {
+          setCreatedConcursoId(result[0].id);
+          setActiveTab('gabarito');
+          toast.success("Continue preenchendo o gabarito oficial para finalizar o cadastro.");
+          return;
+        }
       }
       
-      if (result) {
-        queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        
-        // Set the concurso ID to allow editing the answer key
-        setCreatedConcursoId(editId || (result[0]?.id));
-        
-        // Update concurso data
-        if (result[0]) {
-          setConcurso(result[0]);
-        } else if (editId) {
-          // Fetch the updated concurso data
-          const updatedData = await fetchRankingData(editId);
-          setConcurso(updatedData);
-        }
-        
-        // Switch to the answer key tab
-        setActiveTab('answer-key');
+      if (activeTab === "informacoes") {
+        setActiveTab("gabarito");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao criar/atualizar ranking:", error);
       toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
     } finally {
@@ -251,14 +222,12 @@ const CriarRanking = () => {
   
   const handleNextTab = () => {
     if (activeTab === 'general-info') {
-      // Validate general info fields
       const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
       if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
         toast.error("Preencha todos os campos obrigatórios");
         return;
       }
       
-      // Only switch to answer key if concurso is created
       if (createdConcursoId) {
         setActiveTab('answer-key');
       }
@@ -271,7 +240,6 @@ const CriarRanking = () => {
     }
   };
   
-  // Extract form values for the answer key tab
   const formValues = form.getValues();
   
   return (
@@ -314,6 +282,22 @@ const CriarRanking = () => {
                     handleNextTab={handleNextTab}
                   />
                   
+                  <div className="mb-6">
+                    <Label htmlFor="exam_type">Tipo de Prova</Label>
+                    <Select
+                      value={form.getValues().exam_type}
+                      onValueChange={(value) => form.setValue('exam_type', value)}
+                    >
+                      <SelectTrigger id="exam_type">
+                        <SelectValue placeholder="Selecione o tipo de prova" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
+                        <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
                   <div className="flex justify-end mt-6">
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? "Salvando..." : editId ? "Salvar alterações" : "Criar Ranking"}
@@ -323,28 +307,19 @@ const CriarRanking = () => {
                 
                 <TabsContent value="answer-key">
                   {createdConcursoId && (
-                    <>
-                      <AnswerKeyTab
-                        concursoId={createdConcursoId}
-                        hasBasicKnowledge={!!formValues.has_basic_knowledge}
-                        hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
-                        hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
-                        hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
-                        basicKnowledgeQuestions={formValues.basic_knowledge_questions}
-                        specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
-                        specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
-                        specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
-                        examType={formValues.exam_type}
-                        alternativesCount={formValues.alternatives_count}
-                        concurso={concurso}
-                      />
-                      
-                      <div className="flex justify-end mt-6">
-                        <Button type="button" onClick={handleGoToResults}>
-                          Ir para Resultados
-                        </Button>
-                      </div>
-                    </>
+                    <AnswerKeyTab
+                      concursoId={createdConcursoId}
+                      hasBasicKnowledge={!!formValues.has_basic_knowledge}
+                      hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
+                      hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
+                      hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
+                      basicKnowledgeQuestions={formValues.basic_knowledge_questions}
+                      specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
+                      specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
+                      specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
+                      examType={formValues.exam_type}
+                      alternativesCount={formValues.alternatives_count}
+                    />
                   )}
                 </TabsContent>
               </Tabs>

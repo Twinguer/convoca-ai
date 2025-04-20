@@ -2,7 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { UserCard } from './UserCard';
-import { UserActions } from '../Admin/UserActions';
 
 export interface User {
   id: string;
@@ -29,12 +28,6 @@ export const UsersList: React.FC<UsersListProps> = ({
   onViewProfile,
   onViewAll
 }) => {
-  // Check if admin mode is enabled
-  const isAdminMode = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('admin') === 'true';
-  }, []);
-  
   return (
     <>
       <div className="flex items-center">
@@ -49,23 +42,13 @@ export const UsersList: React.FC<UsersListProps> = ({
       ) : users.length > 0 ? (
         <div className="grid grid-cols-3 gap-1">
           {users.map((user) => (
-            <div key={user.id} className="relative">
-              <UserCard
-                id={user.id}
-                name={user.name}
-                avatarUrl={user.avatar_url}
-                onClick={onViewProfile}
-              />
-              {isAdminMode && (
-                <div className="absolute top-0 right-0 mt-1 mr-1">
-                  <UserActions 
-                    userId={user.id}
-                    userName={user.name}
-                    onSuccess={() => window.location.reload()}
-                  />
-                </div>
-              )}
-            </div>
+            <UserCard
+              key={user.id}
+              id={user.id}
+              name={user.name}
+              avatarUrl={user.avatar_url}
+              onClick={onViewProfile}
+            />
           ))}
         </div>
       ) : (

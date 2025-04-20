@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,23 +8,12 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const location = useLocation();
 
   useEffect(() => {
-    // Check if the user is authenticated via localStorage or URL parameter
-    const adminAuth = localStorage.getItem('adminAuth') === 'true';
-    
-    // Check URL for admin=true parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const adminParam = urlParams.get('admin') === 'true';
-    
-    setIsAuthenticated(adminAuth || adminParam);
-    
-    // If authenticated via URL param, save to localStorage
-    if (adminParam && !adminAuth) {
-      localStorage.setItem('adminAuth', 'true');
-    }
-  }, [location]);
+    // Check if the user is authenticated
+    const auth = localStorage.getItem('adminAuth') === 'true';
+    setIsAuthenticated(auth);
+  }, []);
 
   // While checking the authentication status
   if (isAuthenticated === null) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,8 @@ import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
 import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
 import { ReservationQuotasSection } from '@/components/Admin/FormSections/ReservationQuotasSection';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   titulo: z.string().min(1, 'O título é obrigatório'),
@@ -33,7 +36,6 @@ const formSchema = z.object({
   wrong_answer_penalty: z.coerce.number().default(0),
   link: z.string().optional(),
   
-  // Exam structure fields
   has_basic_knowledge: z.boolean().default(true),
   has_specific_knowledge_1: z.boolean().default(true),
   has_specific_knowledge_2: z.boolean().default(false),
@@ -47,23 +49,19 @@ const formSchema = z.object({
   specific_knowledge_2_questions: z.coerce.number().optional(),
   specific_knowledge_3_questions: z.coerce.number().optional(),
   
-  // Weight fields (for basic and specific knowledge)
   basic_knowledge_weight: z.coerce.number().default(1),
   specific_knowledge_1_weight: z.coerce.number().default(1),
   specific_knowledge_2_weight: z.coerce.number().default(1),
   specific_knowledge_3_weight: z.coerce.number().default(1),
   
-  // Maximum score fields (for discursive and case studies)
   discursive_weight: z.coerce.number().default(1),
   case_study_1_weight: z.coerce.number().default(1),
   case_study_2_weight: z.coerce.number().default(1),
   case_study_3_weight: z.coerce.number().default(1),
   
-  // Job title fields
   predefined_job_title: z.string().optional(),
   custom_job_title: z.string().optional(),
   
-  // Reservation quota fields
   has_ampla_concorrencia: z.boolean().default(true),
   has_ppp: z.boolean().default(false),
   has_pcd: z.boolean().default(false),
@@ -425,6 +423,24 @@ const NovoConcurso = () => {
                   <ReservationQuotasSection form={form} />
                   
                   <ExamStructureSection form={form} />
+                  
+                  <div className="grid gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="exam_type">Tipo de Prova</Label>
+                      <Select
+                        value={form.getValues().exam_type}
+                        onValueChange={(value) => form.setValue('exam_type', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo de prova" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
+                          <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                   
                   <div className="flex justify-end space-x-4">
                     <Button 

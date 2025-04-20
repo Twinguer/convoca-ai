@@ -1,6 +1,6 @@
+
 import React from 'react';
 import { QuestionCell } from './QuestionCell';
-import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
 
 interface AnswerMatrixProps {
   matrix: (number | null)[][];
@@ -10,12 +10,12 @@ interface AnswerMatrixProps {
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
-  nullifiedQuestions?: Set<number>;
-  onNullifyQuestion?: (questionNumber: number) => void;
-  isAdminView?: boolean;
+  nullifiedQuestions?: number[];
+  onToggleNullification?: (questionNumber: number) => void;
+  isAdmin?: boolean;
 }
 
-export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
+export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({ 
   matrix, 
   answers, 
   onAnswerChange,
@@ -23,9 +23,9 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   disabled = false,
   examType = 'Alternativas',
   onClearAnswer,
-  nullifiedQuestions = new Set(),
-  onNullifyQuestion,
-  isAdminView = false
+  nullifiedQuestions = [],
+  onToggleNullification,
+  isAdmin = false
 }) => {
   console.log('Rendering AnswerMatrix with matrix:', matrix);
   
@@ -53,32 +53,24 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {matrix.map((row, rowIndex) => (
           <React.Fragment key={rowIndex}>
-            {row.map((questionNumber, colIndex) => 
-              questionNumber !== null ? (
-                <div key={`${rowIndex}-${colIndex}`} 
-                  className={`${
-                    nullifiedQuestions.has(questionNumber) ? 'opacity-75' : ''
-                  }`}
-                >
+            {row.map((questionNumber, colIndex) => (
+              questionNumber !== null && (
+                <div key={`${rowIndex}-${colIndex}`}>
                   <QuestionCell
                     questionNumber={questionNumber}
                     selectedAnswer={answers[questionNumber]}
                     onAnswerChange={onAnswerChange}
                     options={getOptionsForQuestion(questionNumber)}
-                    disabled={disabled || nullifiedQuestions.has(questionNumber)}
+                    disabled={disabled}
                     examType={examType}
                     onClearAnswer={onClearAnswer}
+                    isNullified={nullifiedQuestions.includes(questionNumber)}
+                    onToggleNullification={onToggleNullification}
+                    isAdmin={isAdmin}
                   />
-                  {isAdminView && onNullifyQuestion && (
-                    <NullifyQuestionButton
-                      questionNumber={questionNumber}
-                      isNullified={nullifiedQuestions.has(questionNumber)}
-                      onNullify={onNullifyQuestion}
-                    />
-                  )}
                 </div>
-              ) : null
-            )}
+              )
+            ))}
           </React.Fragment>
         ))}
       </div>

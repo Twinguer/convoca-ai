@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -6,28 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import type { Ranking as RankingType } from '@/services/rankingService';
+import type { Ranking } from '@/services/rankingService';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
-import { UserActions } from '../Admin/UserActions';
-
-export interface Ranking {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
-  avatarUrl?: string | null;
-  basicKnowledgeScore?: number | null;
-  specificKnowledgeScore?: number | null;
-  specificKnowledge1Score?: number | null;
-  specificKnowledge2Score?: number | null;
-  specificKnowledge3Score?: number | null;
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
-  reservationType: string;
-  id: string;
-}
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -45,6 +26,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
   
+  // Use effect to log available quotas for debugging
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -74,10 +56,11 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
   }, [concurso, rankings]);
   
+  // Get available quota types from concurso object
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     
-    const quotas = ["Ampla Concorrência"];
+    const quotas = ["Ampla Concorrência"]; // Ampla is always available
     
     if (concurso.has_ppp) {
       quotas.push("PPP");
@@ -105,13 +88,16 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   
   const availableQuotas = getAvailableQuotas();
   
+  // Filter rankings by selected reservation type
   const filterRankingsByQuota = (quota: string) => {
     if (!rankings) return [];
     
     if (quota === "Ampla Concorrência") {
+      // Everyone participates in Ampla Concorrência
       return rankings;
     }
     
+    // For other quotas, filter by reservation_type
     return rankings.filter(ranking => ranking.reservationType === quota);
   };
   
@@ -136,7 +122,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       </Card>;
   }
   
-  return <Card className="dark:bg-gray-800">
+  // Display quota tabs only if there's more than one quota type available
+  return <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
       </CardHeader>
@@ -176,9 +163,11 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     </Card>;
 };
 
+// Helper to get abbreviation for quota types
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "";
   
+  // Get first 3 characters of each quota as abbreviation
   const abbreviations: Record<string, string> = {
     "PPP": "PPP",
     "PCD": "PCD",
@@ -190,6 +179,7 @@ const getQuotaAbbreviation = (quota: string): string => {
   return abbreviations[quota] || quota.substring(0, 3);
 };
 
+// Extracted table content to a separate component for reuse
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -205,11 +195,7 @@ const RankingTableContent: React.FC<{
   isAmpla,
   availableQuotas
 }) => {
-  const isAdminMode = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('admin') === 'true';
-  }, []);
-
+  // If no concurso data, render a basic table with default columns
   if (!concurso) {
     return (
       <Table>
@@ -218,7 +204,6 @@ const RankingTableContent: React.FC<{
             <TableHead className="text-center w-16">#</TableHead>
             <TableHead>Candidato</TableHead>
             <TableHead className="text-right">Total</TableHead>
-            {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -238,21 +223,10 @@ const RankingTableContent: React.FC<{
                 </div>
               </TableCell>
               <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-              {isAdminMode && (
-                <TableCell>
-                  <UserActions 
-                    userId={ranking.userId}
-                    userName={ranking.name}
-                    rankingId={ranking.id}
-                    onSuccess={() => window.location.reload()}
-                    showOnlyRankingActions={true}
-                  />
-                </TableCell>
-              )}
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={isAdminMode ? 4 : 3} className="text-center py-4">
+              <TableCell colSpan={3} className="text-center py-4">
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
             </TableRow>
@@ -262,6 +236,7 @@ const RankingTableContent: React.FC<{
     );
   }
   
+  // Get dynamic columns configuration based on the concurso
   const columns = getRankingTableColumns(concurso);
   
   return (
@@ -276,7 +251,6 @@ const RankingTableContent: React.FC<{
               {column.label}
             </TableHead>
           ))}
-          {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -294,6 +268,7 @@ const RankingTableContent: React.FC<{
                 </Avatar>
                 <span>
                   {ranking.name}
+                  {/* Show quota abbreviation for users in Ampla who also participate in other quotas */}
                   {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
                     <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                       ({getQuotaAbbreviation(ranking.reservationType)})
@@ -335,21 +310,10 @@ const RankingTableContent: React.FC<{
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
             )}
-            {isAdminMode && (
-              <TableCell>
-                <UserActions 
-                  userId={ranking.userId}
-                  userName={ranking.name}
-                  rankingId={ranking.id}
-                  onSuccess={() => window.location.reload()}
-                  showOnlyRankingActions={true}
-                />
-              </TableCell>
-            )}
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={isAdminMode ? columns.length + 1 : columns.length} className="text-center py-4">
+            <TableCell colSpan={columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>

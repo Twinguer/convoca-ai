@@ -59,7 +59,7 @@ export const useSaveAnswers = ({
 
       const { data: answerKey, error: keyError } = await supabase
         .from('answer_keys')
-        .select('*, is_nullified')
+        .select('*')
         .eq('concurso_id', concurso.id);
 
       if (keyError) throw keyError;
@@ -103,24 +103,17 @@ export const useSaveAnswers = ({
           a => a.question_number === userAnswer.questionNumber
         );
         
-        // Award points for nullified questions as if they were correct
-        if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
+        console.log(`Checking question ${userAnswer.questionNumber}: user=${userAnswer.answer}, official=${officialAnswer?.answer}`);
+
+        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
           if (userAnswer.isBasicKnowledge) {
             basicScore += 1;
-          } else {
-            const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-            const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
-            const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
-            
-            const qNum = userAnswer.questionNumber;
-            
-            if (qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
-              specific1Score += 1;
-            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount) && qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-              specific2Score += 1;
-            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-              specific3Score += 1;
-            }
+          } else if (userAnswer.isSpecific1) {
+            specific1Score += 1;
+          } else if (userAnswer.isSpecific2) {
+            specific2Score += 1;
+          } else if (userAnswer.isSpecific3) {
+            specific3Score += 1;
           }
         }
       });
