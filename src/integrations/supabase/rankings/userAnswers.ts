@@ -101,7 +101,7 @@ export const saveUserAnswers = async (
     console.log('Official answer key:', answerKey);
     console.log('User answers to check:', answers);
     
-    // Calculate score by comparing user answers with official answers
+    // Calculate raw scores without weights
     let basicKnowledgeScore = 0;
     let specificKnowledgeScore = 0;
     let specific1Score = 0;
@@ -113,16 +113,13 @@ export const saveUserAnswers = async (
         a => a.question_number === userAnswer.questionNumber
       );
       
-      // Award points for nullified questions as if they were correct
       if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
         if (userAnswer.isBasicKnowledge) {
           basicKnowledgeScore += 1;
         } else {
           specificKnowledgeScore += 1;
           
-          // Compare question number with ranges to determine section
           const qNum = userAnswer.questionNumber;
-          
           if (qNum > basicEnd && qNum <= specific1End) {
             specific1Score += 1;
           } else if (qNum > specific1End && qNum <= specific2End) {
@@ -132,14 +129,6 @@ export const saveUserAnswers = async (
           }
         }
       }
-    });
-    
-    console.log('Calculated raw scores:', {
-      basicKnowledgeScore,
-      specificKnowledgeScore,
-      specific1Score,
-      specific2Score,
-      specific3Score
     });
     
     // Get concurso weights
@@ -164,24 +153,16 @@ export const saveUserAnswers = async (
     }
     
     // Get the correct weights
-    const basicWeight = concursoWithWeights?.basic_knowledge_weight || 1;
-    const specific1Weight = concursoWithWeights?.specific_knowledge_1_weight || 1;
-    const specific2Weight = concursoWithWeights?.specific_knowledge_2_weight || 1;
-    const specific3Weight = concursoWithWeights?.specific_knowledge_3_weight || 1;
-    
-    console.log('Retrieved weights from database:', {
-      basicWeight,
-      specific1Weight,
-      specific2Weight,
-      specific3Weight,
-      fullConcursoData: concursoWithWeights
-    });
-    
-    // Calculate weighted scores
-    const weightedBasicScore = basicKnowledgeScore * basicWeight;
-    const weightedSpecific1Score = specific1Score * specific1Weight;
-    const weightedSpecific2Score = specific2Score * specific2Weight;
-    const weightedSpecific3Score = specific3Score * specific3Weight;
+    const weights = {
+      basicKnowledge: concursoWithWeights?.basic_knowledge_weight || 1,
+      specificKnowledge1: concursoWithWeights?.specific_knowledge_1_weight || 1,
+      specificKnowledge2: concursoWithWeights?.specific_knowledge_2_weight || 1,
+      specificKnowledge3: concursoWithWeights?.specific_knowledge_3_weight || 1,
+      discursive: concursoWithWeights?.discursive_weight || 1,
+      caseStudy1: concursoWithWeights?.case_study_1_weight || 1,
+      caseStudy2: concursoWithWeights?.case_study_2_weight || 1,
+      caseStudy3: concursoWithWeights?.case_study_3_weight || 1
+    };
     
     // Get existing subjective scores from user_rankings to include in total score
     const { data: rankingData, error: rankingError } = await supabase
@@ -205,53 +186,18 @@ export const saveUserAnswers = async (
     const caseStudy2Score = (rankingData?.case_study_2_score || 0);
     const caseStudy3Score = (rankingData?.case_study_3_score || 0);
     
-    const weightedDiscursiveScore = discursiveScore * (concursoWithWeights?.discursive_weight || 1);
-    const weightedCaseStudy1Score = caseStudy1Score * (concursoWithWeights?.case_study_1_weight || 1);
-    const weightedCaseStudy2Score = caseStudy2Score * (concursoWithWeights?.case_study_2_weight || 1);
-    const weightedCaseStudy3Score = caseStudy3Score * (concursoWithWeights?.case_study_3_weight || 1);
-    
-    console.log('Subjective scores:', {
-      discursiveScore,
-      weightedDiscursiveScore,
-      caseStudy1Score,
-      weightedCaseStudy1Score,
-      caseStudy2Score,
-      weightedCaseStudy2Score,
-      caseStudy3Score,
-      weightedCaseStudy3Score
-    });
-    
-    // Calculate total score including subjective scores
+    // Apply weights only once for the total score calculation
     const totalScore = 
-      weightedBasicScore + 
-      weightedSpecific1Score + 
-      weightedSpecific2Score + 
-      weightedSpecific3Score +
-      weightedDiscursiveScore +
-      weightedCaseStudy1Score +
-      weightedCaseStudy2Score +
-      weightedCaseStudy3Score;
+      (basicKnowledgeScore * weights.basicKnowledge) +
+      (specific1Score * weights.specificKnowledge1) +
+      (specific2Score * weights.specificKnowledge2) +
+      (specific3Score * weights.specificKnowledge3) +
+      (discursiveScore * weights.discursive) +
+      (caseStudy1Score * weights.caseStudy1) +
+      (caseStudy2Score * weights.caseStudy2) +
+      (caseStudy3Score * weights.caseStudy3);
     
-    console.log('Weighted scores:', {
-      weightedBasicScore,
-      weightedSpecific1Score,
-      weightedSpecific2Score,
-      weightedSpecific3Score,
-      totalWithObjective: weightedBasicScore + weightedSpecific1Score + weightedSpecific2Score + weightedSpecific3Score,
-      totalWithSubjective: totalScore,
-      weights: {
-        basic: basicWeight,
-        specific1: specific1Weight,
-        specific2: specific2Weight,
-        specific3: specific3Weight,
-        discursive: concursoWithWeights?.discursive_weight || 1,
-        caseStudy1: concursoWithWeights?.case_study_1_weight || 1,
-        caseStudy2: concursoWithWeights?.case_study_2_weight || 1,
-        caseStudy3: concursoWithWeights?.case_study_3_weight || 1
-      }
-    });
-    
-    // Update user ranking with scores
+    // Save raw scores without weights to the database
     const { error: updateError } = await supabase
       .from('user_rankings')
       .update({
