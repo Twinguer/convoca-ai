@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,6 +17,16 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
+  // Raw scores (without weights)
+  rawBasicKnowledgeScore?: number;
+  rawSpecificKnowledge1Score?: number;
+  rawSpecificKnowledge2Score?: number;
+  rawSpecificKnowledge3Score?: number;
+  rawDiscursiveScore?: number;
+  rawCaseStudy1Score?: number;
+  rawCaseStudy2Score?: number;
+  rawCaseStudy3Score?: number;
+  // Weighted scores
   basicKnowledgeScore?: number | null;
   specificKnowledgeScore?: number | null;
   specificKnowledge1Score?: number | null;

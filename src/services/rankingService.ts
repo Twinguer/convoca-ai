@@ -6,6 +6,7 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
+  // Raw scores (without weights)
   rawBasicKnowledgeScore?: number;
   rawSpecificKnowledge1Score?: number;
   rawSpecificKnowledge2Score?: number;
@@ -14,6 +15,7 @@ export interface Ranking {
   rawCaseStudy1Score?: number;
   rawCaseStudy2Score?: number;
   rawCaseStudy3Score?: number;
+  // Weighted scores
   basicKnowledgeScore?: number;
   specificKnowledge1Score?: number;
   specificKnowledge2Score?: number;
