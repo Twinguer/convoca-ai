@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 
 // Function to save user answers and calculate scores
@@ -364,6 +365,10 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       const specific1Weight = concurso.specific_knowledge_1_weight || 1;
       const specific2Weight = concurso.specific_knowledge_2_weight || 1;
       const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+      const discursiveWeight = concurso.discursive_weight || 1;
+      const caseStudy1Weight = concurso.case_study_1_weight || 1;
+      const caseStudy2Weight = concurso.case_study_2_weight || 1;
+      const caseStudy3Weight = concurso.case_study_3_weight || 1;
       
       // Calculate weighted scores
       const weightedBasicScore = basicKnowledgeScore * basicWeight;
@@ -377,10 +382,10 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       const caseStudy2Score = (rankingData?.case_study_2_score || 0);
       const caseStudy3Score = (rankingData?.case_study_3_score || 0);
       
-      const weightedDiscursiveScore = discursiveScore * (concurso.discursive_weight || 1);
-      const weightedCaseStudy1Score = caseStudy1Score * (concurso.case_study_1_weight || 1);
-      const weightedCaseStudy2Score = caseStudy2Score * (concurso.case_study_2_weight || 1);
-      const weightedCaseStudy3Score = caseStudy3Score * (concurso.case_study_3_weight || 1);
+      const weightedDiscursiveScore = discursiveScore * discursiveWeight;
+      const weightedCaseStudy1Score = caseStudy1Score * caseStudy1Weight;
+      const weightedCaseStudy2Score = caseStudy2Score * caseStudy2Weight;
+      const weightedCaseStudy3Score = caseStudy3Score * caseStudy3Weight;
       
       // Calculate total score
       const totalScore = 
@@ -393,7 +398,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         weightedCaseStudy2Score +
         weightedCaseStudy3Score;
       
-      // Update the ranking
+      // Update the ranking - MODIFICADO PARA INCLUIR TODOS OS CAMPOS PONDERADOS
       const { error: updateError } = await supabase
         .from('user_rankings')
         .update({
@@ -402,6 +407,14 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           specific_knowledge_1_score: specific1Score,
           specific_knowledge_2_score: specific2Score,
           specific_knowledge_3_score: specific3Score,
+          weighted_basic_score: weightedBasicScore,
+          weighted_specific_1_score: weightedSpecific1Score,
+          weighted_specific_2_score: weightedSpecific2Score,
+          weighted_specific_3_score: weightedSpecific3Score,
+          weighted_discursive_score: weightedDiscursiveScore,
+          weighted_case_study_1_score: weightedCaseStudy1Score,
+          weighted_case_study_2_score: weightedCaseStudy2Score,
+          weighted_case_study_3_score: weightedCaseStudy3Score,
           score: totalScore,
           updated_at: new Date().toISOString()
         })
