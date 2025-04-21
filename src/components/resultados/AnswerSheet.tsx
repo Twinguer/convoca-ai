@@ -101,8 +101,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     editCount: userRankingData?.edit_count || 0
   });
   
-  const EDIT_LIMIT = 5;
-
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
@@ -189,7 +187,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
-  const editsLeft = EDIT_LIMIT - (userRankingData?.edit_count || 0);
+  const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
 
   const getObjectiveSectionList = () => {
@@ -210,7 +208,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <CardDescription>
           {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
             <div className="text-sm font-medium text-emerald-700 mt-2">
-              Edições disponíveis: {editsLeft} de {EDIT_LIMIT}
+              Edições disponíveis: {editsLeft} de 3
               {!canEdit && (
                 <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)

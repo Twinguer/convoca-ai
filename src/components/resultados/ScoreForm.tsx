@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,7 +12,6 @@ import { Loader2, Scale } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useQueryClient } from '@tanstack/react-query';
-import { applyWeightsToScores } from '@/integrations/supabase/rankings/scoreCalculation';
 
 interface ScoreFormProps {
   concurso: Concurso;
@@ -119,74 +119,94 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      console.log('Enviando pontuações brutas (sem aplicar pesos):', values);
-      
-      // 1. Preparamos as pontuações brutas
-      const rawScores = {
-        basicKnowledgeScore: concurso.has_basic_knowledge ? values.basicKnowledgeScore : 0,
-        specificKnowledgeScore: (
-          (concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0) + 
-          (concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0) + 
-          (concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0)
-        ),
-        specific1Score: concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0,
-        specific2Score: concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0,
-        specific3Score: concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0
+      // Use weights from state if available, otherwise fall back to concurso prop
+      const actualWeights = weights || {
+        basicKnowledge: concurso.basic_knowledge_weight || 1,
+        specificKnowledge1: concurso.specific_knowledge_1_weight || concurso.specific_knowledge_weight || 1,
+        specificKnowledge2: concurso.specific_knowledge_2_weight || 1,
+        specificKnowledge3: concurso.specific_knowledge_3_weight || 1,
+        discursive: concurso.discursive_weight || 1,
+        caseStudy1: concurso.case_study_1_weight || 1,
+        caseStudy2: concurso.case_study_2_weight || 1,
+        caseStudy3: concurso.case_study_3_weight || 1
       };
       
-      // 2. Preparamos as pontuações subjetivas
-      const subjectiveScores = {
-        discursiveScore: concurso.has_discursive ? values.discursiveScore : 0,
-        caseStudy1Score: concurso.has_case_study_1 ? values.caseStudy1Score : 0,
-        caseStudy2Score: concurso.has_case_study_2 ? values.caseStudy2Score : 0,
-        caseStudy3Score: concurso.has_case_study_3 ? values.caseStudy3Score : 0
-      };
+      console.log('Using weights for calculation:', actualWeights);
       
-      // 3. Aplicamos os pesos para calcular pontuações ponderadas
-      const weightedScores = await applyWeightsToScores(
-        concurso.id,
-        rawScores,
-        subjectiveScores
-      );
+      // Apply weights to each component
+      const weightedBasicScore = values.basicKnowledgeScore * actualWeights.basicKnowledge;
+      const weightedSpecific1Score = values.specificKnowledge1Score * actualWeights.specificKnowledge1;
+      const weightedSpecific2Score = values.specificKnowledge2Score * actualWeights.specificKnowledge2;
+      const weightedSpecific3Score = values.specificKnowledge3Score * actualWeights.specificKnowledge3;
+      const weightedDiscursiveScore = values.discursiveScore * actualWeights.discursive;
+      const weightedCaseStudy1Score = values.caseStudy1Score * actualWeights.caseStudy1;
+      const weightedCaseStudy2Score = values.caseStudy2Score * actualWeights.caseStudy2;
+      const weightedCaseStudy3Score = values.caseStudy3Score * actualWeights.caseStudy3;
       
-      console.log('Pontuações calculadas:', {
-        rawScores,
-        subjectiveScores,
-        weightedScores
+      // Combined specific knowledge score
+      const specificKnowledgeScore = 
+        (concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0) + 
+        (concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0) + 
+        (concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0);
+      
+      // Calculate total weighted score
+      const totalScore = 
+        (concurso.has_basic_knowledge ? weightedBasicScore : 0) + 
+        (concurso.has_specific_knowledge_1 ? weightedSpecific1Score : 0) + 
+        (concurso.has_specific_knowledge_2 ? weightedSpecific2Score : 0) + 
+        (concurso.has_specific_knowledge_3 ? weightedSpecific3Score : 0) + 
+        (concurso.has_discursive ? weightedDiscursiveScore : 0) + 
+        (concurso.has_case_study_1 ? weightedCaseStudy1Score : 0) + 
+        (concurso.has_case_study_2 ? weightedCaseStudy2Score : 0) + 
+        (concurso.has_case_study_3 ? weightedCaseStudy3Score : 0);
+      
+      console.log('Calculando pontuação total:', {
+        rankingId,
+        userId,
+        basicKnowledge: values.basicKnowledgeScore,
+        basicWeight: actualWeights.basicKnowledge,
+        weightedBasic: weightedBasicScore,
+        specificKnowledge1: values.specificKnowledge1Score,
+        specific1Weight: actualWeights.specificKnowledge1,
+        weightedSpecific1: weightedSpecific1Score,
+        specificKnowledge2: values.specificKnowledge2Score,
+        specific2Weight: actualWeights.specificKnowledge2,
+        weightedSpecific2: weightedSpecific2Score,
+        specificKnowledge3: values.specificKnowledge3Score,
+        specific3Weight: actualWeights.specificKnowledge3,
+        weightedSpecific3: weightedSpecific3Score,
+        discursive: values.discursiveScore,
+        discursiveWeight: actualWeights.discursive,
+        weightedDiscursive: weightedDiscursiveScore,
+        caseStudy1: values.caseStudy1Score,
+        caseStudy1Weight: actualWeights.caseStudy1,
+        weightedCaseStudy1: weightedCaseStudy1Score,
+        caseStudy2: values.caseStudy2Score,
+        caseStudy2Weight: actualWeights.caseStudy2,
+        weightedCaseStudy2: weightedCaseStudy2Score,
+        caseStudy3: values.caseStudy3Score,
+        caseStudy3Weight: actualWeights.caseStudy3,
+        weightedCaseStudy3: weightedCaseStudy3Score,
+        total: totalScore
       });
       
-      // 4. Salvar todas as pontuações no banco de dados
+      // Prepare the scores to update
       const scoreData = {
-        // Pontuações brutas
-        basic_knowledge_score: rawScores.basicKnowledgeScore,
-        specific_knowledge_score: rawScores.specificKnowledgeScore,
-        specific_knowledge_1_score: rawScores.specific1Score,
-        specific_knowledge_2_score: rawScores.specific2Score,
-        specific_knowledge_3_score: rawScores.specific3Score,
-        discursive_score: subjectiveScores.discursiveScore,
-        case_study_1_score: subjectiveScores.caseStudy1Score,
-        case_study_2_score: subjectiveScores.caseStudy2Score,
-        case_study_3_score: subjectiveScores.caseStudy3Score,
-        
-        // Pontuações ponderadas
-        weighted_basic_score: weightedScores.weightedBasicScore,
-        weighted_specific_1_score: weightedScores.weightedSpecific1Score,
-        weighted_specific_2_score: weightedScores.weightedSpecific2Score,
-        weighted_specific_3_score: weightedScores.weightedSpecific3Score,
-        weighted_discursive_score: weightedScores.weightedDiscursiveScore,
-        weighted_case_study_1_score: weightedScores.weightedCaseStudy1Score,
-        weighted_case_study_2_score: weightedScores.weightedCaseStudy2Score,
-        weighted_case_study_3_score: weightedScores.weightedCaseStudy3Score,
-        
-        // Pontuação total
-        score: weightedScores.totalScore,
-        
-        // Outras flags
-        all_questions_answered: true,
+        basic_knowledge_score: concurso.has_basic_knowledge ? values.basicKnowledgeScore : 0,
+        specific_knowledge_1_score: concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0,
+        specific_knowledge_2_score: concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0,
+        specific_knowledge_3_score: concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0,
+        specific_knowledge_score: specificKnowledgeScore,
+        discursive_score: concurso.has_discursive ? values.discursiveScore : 0,
+        case_study_1_score: concurso.has_case_study_1 ? values.caseStudy1Score : 0,
+        case_study_2_score: concurso.has_case_study_2 ? values.caseStudy2Score : 0,
+        case_study_3_score: concurso.has_case_study_3 ? values.caseStudy3Score : 0,
+        score: totalScore,
+        all_questions_answered: true, // Since user is manually entering scores
         updated_at: new Date().toISOString()
       };
       
-      // Atualizar o ranking do usuário
+      // Update the user ranking directly
       const { error } = await supabase
         .from('user_rankings')
         .update(scoreData)
@@ -197,7 +217,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         throw error;
       }
       
-      // Invalidar queries relacionadas para forçar uma atualização
+      // Invalidate related queries to force a refresh
       queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['participant-count', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
@@ -207,7 +227,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         description: 'Suas notas foram salvas e seu ranking foi atualizado.',
       });
       
-      // Pequeno atraso para permitir que o toast apareça antes de redirecionar
+      // Small delay to let the toast appear before redirecting
       setTimeout(onSuccess, 1500);
     } catch (error) {
       console.error('Error updating scores:', error);

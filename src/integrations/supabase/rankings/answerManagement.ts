@@ -1,6 +1,6 @@
 
 import { supabase } from '../client';
-import { getExamStructure, getQuestionSection } from './examStructure';
+import { getExamStructure } from './examStructure';
 
 // Função para salvar as respostas do usuário no banco de dados
 export const saveUserAnswersData = async (
@@ -9,8 +9,6 @@ export const saveUserAnswersData = async (
   answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
-    console.log('Salvando respostas do usuário:', { rankingId, concursoId, answersCount: answers.length });
-    
     // Carregue os dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
@@ -29,28 +27,37 @@ export const saveUserAnswersData = async (
     // Preparar os dados de resposta com as marcações corretas de seção
     const answersData = answers.map(a => {
       const qNum = a.questionNumber;
-      const section = getQuestionSection(qNum, basicEnd, specific1End, specific2End);
 
       return {
         user_ranking_id: rankingId,
         question_number: qNum,
         answer: a.answer,
-        is_basic_knowledge: section === 'basic',
-        is_specific_1: section === 'specific1',
-        is_specific_2: section === 'specific2',
-        is_specific_3: section === 'specific3'
+        is_basic_knowledge: false, // Será ajustado abaixo
+        is_specific_1: false,
+        is_specific_2: false,
+        is_specific_3: false
       };
     });
     
-    console.log('Deletando respostas existentes antes de inserir novas');
-    
+    // Corrija as flags para as seções corretamente
+    answersData.forEach(item => {
+      const qNum = item.question_number;
+      if (qNum <= basicEnd) {
+        item.is_basic_knowledge = true;
+      } else if (qNum <= specific1End) {
+        item.is_specific_1 = true;
+      } else if (qNum <= specific2End) {
+        item.is_specific_2 = true;
+      } else {
+        item.is_specific_3 = true;
+      }
+    });
+
     // Delete existing answers first
     await supabase
       .from('user_answers')
       .delete()
       .eq('user_ranking_id', rankingId);
-    
-    console.log('Inserindo novas respostas:', answersData.length);
     
     // Insert new answers
     const { error: insertError } = await supabase
@@ -58,8 +65,6 @@ export const saveUserAnswersData = async (
       .insert(answersData);
       
     if (insertError) throw insertError;
-    
-    console.log('Respostas salvas com sucesso');
     
     return answersData;
   } catch (error: any) {

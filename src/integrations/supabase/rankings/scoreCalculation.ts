@@ -79,7 +79,7 @@ export const calculateRawScores = async (
 // Aplica pesos para calcular as pontuações finais
 export const applyWeightsToScores = async (
   concursoId: string,
-  rawScores: {
+  scores: {
     basicKnowledgeScore: number;
     specificKnowledgeScore: number;
     specific1Score: number;
@@ -123,14 +123,12 @@ export const applyWeightsToScores = async (
       caseStudy3: concursoWithWeights?.case_study_3_weight || 1
     };
 
-    console.log('Applying weights to raw scores:', { rawScores, subjectiveScores, weights });
-
     // Aplica os pesos
     const weightedScores = {
-      weightedBasicScore: rawScores.basicKnowledgeScore * weights.basicKnowledge,
-      weightedSpecific1Score: rawScores.specific1Score * weights.specificKnowledge1,
-      weightedSpecific2Score: rawScores.specific2Score * weights.specificKnowledge2,
-      weightedSpecific3Score: rawScores.specific3Score * weights.specificKnowledge3,
+      weightedBasicScore: scores.basicKnowledgeScore * weights.basicKnowledge,
+      weightedSpecific1Score: scores.specific1Score * weights.specificKnowledge1,
+      weightedSpecific2Score: scores.specific2Score * weights.specificKnowledge2,
+      weightedSpecific3Score: scores.specific3Score * weights.specificKnowledge3,
       weightedDiscursiveScore: subjectiveScores.discursiveScore * weights.discursive,
       weightedCaseStudy1Score: subjectiveScores.caseStudy1Score * weights.caseStudy1,
       weightedCaseStudy2Score: subjectiveScores.caseStudy2Score * weights.caseStudy2,
@@ -147,8 +145,6 @@ export const applyWeightsToScores = async (
       weightedScores.weightedCaseStudy1Score +
       weightedScores.weightedCaseStudy2Score +
       weightedScores.weightedCaseStudy3Score;
-
-    console.log('Weighted scores calculated:', { weightedScores, totalScore });
 
     return {
       ...weightedScores,
@@ -189,8 +185,6 @@ export const saveUserScores = async (
   }
 ) => {
   try {
-    console.log('Saving user scores to database:', { rankingId, rawScores, weightedScores });
-    
     // Atualiza o ranking do usuário com todas as pontuações
     const { error: updateError } = await supabase
       .from('user_rankings')
