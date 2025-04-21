@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -159,6 +158,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   concurso={concurso}
                   isAmpla={quota === "Ampla Concorrência"}
                   availableQuotas={availableQuotas}
+                  sectionWeights={getSectionWeights()}
                 />
               </TabsContent>
             ))}
@@ -171,6 +171,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             concurso={concurso}
             isAmpla={true}
             availableQuotas={availableQuotas}
+            sectionWeights={getSectionWeights()}
           />
         )}
       </CardContent>
@@ -191,6 +192,19 @@ const getQuotaAbbreviation = (quota: string): string => {
   return abbreviations[quota] || quota.substring(0, 3);
 };
 
+const getSectionWeights = () => {
+  return {
+    basic: concurso?.basic_knowledge_weight ?? 1,
+    specific1: concurso?.specific_knowledge_1_weight ?? concurso?.specific_knowledge_weight ?? 1,
+    specific2: concurso?.specific_knowledge_2_weight ?? 1,
+    specific3: concurso?.specific_knowledge_3_weight ?? 1,
+    discursive: concurso?.discursive_weight ?? 1,
+    caseStudy1: concurso?.case_study_1_weight ?? 1,
+    caseStudy2: concurso?.case_study_2_weight ?? 1,
+    caseStudy3: concurso?.case_study_3_weight ?? 1,
+  };
+};
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -198,13 +212,24 @@ const RankingTableContent: React.FC<{
   concurso?: Concurso;
   isAmpla: boolean;
   availableQuotas: string[];
+  sectionWeights: {
+    basic: number,
+    specific1: number,
+    specific2: number,
+    specific3: number,
+    discursive: number,
+    caseStudy1: number,
+    caseStudy2: number,
+    caseStudy3: number,
+  }
 }> = ({
   rankings,
   currentUserId,
   handleUserClick,
   concurso,
   isAmpla,
-  availableQuotas
+  availableQuotas,
+  sectionWeights
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -306,35 +331,51 @@ const RankingTableContent: React.FC<{
             <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
             
             {concurso.has_basic_knowledge !== false && (
-              <TableCell className="text-right">{ranking.basicKnowledgeScore?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.basicKnowledgeScore || 0) * sectionWeights.basic).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 !== false && (
-              <TableCell className="text-right">{(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore)?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore || 0) * sectionWeights.specific1).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
-              <TableCell className="text-right">{ranking.specificKnowledge2Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.specificKnowledge2Score || 0) * sectionWeights.specific2).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
-              <TableCell className="text-right">{ranking.specificKnowledge3Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.specificKnowledge3Score || 0) * sectionWeights.specific3).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_discursive === true && (
-              <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.discursiveScore || 0) * sectionWeights.discursive).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
-              <TableCell className="text-right">{ranking.caseStudy1Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.caseStudy1Score || 0) * sectionWeights.caseStudy1).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
-              <TableCell className="text-right">{ranking.caseStudy2Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.caseStudy2Score || 0) * sectionWeights.caseStudy2).toFixed(2)}
+              </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
-              <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(Number(ranking.caseStudy3Score || 0) * sectionWeights.caseStudy3).toFixed(2)}
+              </TableCell>
             )}
             {isAdminMode && (
               <TableCell>
