@@ -13,6 +13,7 @@ import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
+import { useSaveRanking } from '@/hooks/useSaveRanking';
 
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;
@@ -183,8 +184,49 @@ const CriarRanking = () => {
     form.setValue('orgao', e.target.value.toUpperCase());
   };
   
-  const handleNextTab = () => {
+  const { saveRanking } = useSaveRanking();
+
+  const handleSaveRanking = async () => {
+    const formValues = form.getValues();
+    // Faz sincronização final das localidades do StateSelector (caso não esteja)
+    if (
+      formValues.localidades &&
+      JSON.stringify(formValues.localidades) !== JSON.stringify(formValues.selectedStates)
+    ) {
+      form.setValue('localidades', formValues.selectedStates);
+    }
+    setIsSubmitting(true);
+
+    try {
+      const saveResult = await saveRanking({
+        formValues: {
+          ...formValues,
+          localidades: formValues.localidades, // sempre pronto
+        },
+        userId: user?.id,
+        editId,
+        jobTitles,
+      });
+      if (saveResult?.duplicated) {
+        setIsSubmitting(false);
+        return;
+      }
+      if (saveResult?.id) {
+        setCreatedConcursoId(saveResult.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+    } catch (error) {
+      console.error("Erro ao salvar ranking:", error);
+      toast.error("Erro ao salvar ranking: " + (error as Error).message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Garante que a aba Gabarito só aparece depois do ranking existir
+  const handleNextTab = async () => {
     if (activeTab === 'general-info') {
+      await handleSaveRanking();
       setPendingFormValues(form.getValues());
       setActiveTab('answer-key');
     }
@@ -233,52 +275,6 @@ const CriarRanking = () => {
     } catch (error) {
       console.error("Erro ao criar/atualizar ranking:", error);
       toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSaveRanking = async () => {
-    const formValues = form.getValues();
-    setIsSubmitting(true);
-
-    try {
-      const dataToSubmit = {
-        ...formValues,
-        created_by_user_id: user?.id,
-        titulo: formValues.custom_job_title || formValues.predefined_job_title,
-        banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades
-      };
-
-      let result;
-      let concursoIdToUse = editId;
-
-      if (editId) {
-        const { data, error } = await supabase
-          .from('concursos')
-          .update(dataToSubmit)
-          .eq('id', editId)
-          .select();
-
-        if (error) throw error;
-        result = data;
-        concursoIdToUse = editId;
-        toast.success("Ranking salvo com sucesso!");
-      } else {
-        result = await createRanking(dataToSubmit);
-        concursoIdToUse = result?.[0]?.id;
-        toast.success("Ranking salvo com sucesso!");
-      }
-
-      if (concursoIdToUse) {
-        setCreatedConcursoId(concursoIdToUse);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['rankings'] });
-    } catch (error) {
-      console.error("Erro ao salvar ranking:", error);
-      toast.error("Erro ao salvar ranking: " + (error as Error).message);
     } finally {
       setIsSubmitting(false);
     }
