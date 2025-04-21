@@ -1,52 +1,13 @@
+
 import { supabase } from '../client';
-import { loadExamStructure } from './examStructure';
+import { getExamStructure } from './examStructure';
 
-/**
- * Interface para pontuações brutas (contagem de acertos)
- */
-interface RawScores {
-  basicKnowledgeScore: number;
-  specificKnowledgeScore: number; // Soma dos específicos (compatibilidade)
-  specific1Score: number;
-  specific2Score: number;
-  specific3Score: number;
-}
-
-/**
- * Interface para pontuações subjetivas
- */
-interface SubjectiveScores {
-  discursiveScore: number;
-  caseStudy1Score: number;
-  caseStudy2Score: number;
-  caseStudy3Score: number;
-}
-
-/**
- * Interface para pontuações ponderadas
- */
-interface WeightedScores {
-  weightedBasicScore: number;
-  weightedSpecific1Score: number;
-  weightedSpecific2Score: number;
-  weightedSpecific3Score: number;
-  weightedDiscursiveScore: number;
-  weightedCaseStudy1Score: number;
-  weightedCaseStudy2Score: number;
-  weightedCaseStudy3Score: number;
-  totalScore: number;
-}
-
-/**
- * Calcula pontuação bruta com base nas respostas e no gabarito
- */
+// Calcula pontuação bruta com base nas respostas e no gabarito
 export const calculateRawScores = async (
   concursoId: string,
   userAnswers: any[]
-): Promise<RawScores> => {
+) => {
   try {
-    console.log(`Calculando scores brutos para concurso ${concursoId}`);
-    
     // Obtenha o gabarito oficial
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
@@ -57,40 +18,50 @@ export const calculateRawScores = async (
       throw new Error('Gabarito oficial não encontrado para este concurso');
     }
 
-    // Carregue a estrutura do exame
-    const structure = await loadExamStructure(concursoId);
+    // Carregue os dados do concurso para determinar as faixas das seções
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions
+      `)
+      .eq('id', concursoId)
+      .single();
+    if (concursoError) throw concursoError;
+
+    const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
 
     // Inicializa contadores de acertos por seção
     let basicKnowledgeScore = 0;
+    let specificKnowledgeScore = 0;
     let specific1Score = 0;
     let specific2Score = 0;
     let specific3Score = 0;
 
-    // Para cada resposta do usuário, verifica o gabarito e incrementa apenas na seção correta
+    // Calcula os acertos
     userAnswers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
         a => a.question_number === userAnswer.question_number
       );
 
-      // Só soma ponto se a resposta está correta ou a questão foi anulada
+      // Contabiliza acerto se a questão é anulada ou a resposta está correta
       if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
-        const qNum = userAnswer.question_number;
-        
-        // Determina a seção por faixas de números
-        if (qNum <= structure.basicEnd) {
+        if (userAnswer.is_basic_knowledge) {
           basicKnowledgeScore += 1;
-        } else if (qNum <= structure.specific1End) {
+        } else if (userAnswer.is_specific_1) {
           specific1Score += 1;
-        } else if (qNum <= structure.specific2End) {
+          specificKnowledgeScore += 1;
+        } else if (userAnswer.is_specific_2) {
           specific2Score += 1;
-        } else if (qNum <= structure.specific3End) {
+          specificKnowledgeScore += 1;
+        } else if (userAnswer.is_specific_3) {
           specific3Score += 1;
+          specificKnowledgeScore += 1;
         }
       }
     });
-
-    // Soma total dos específicos (para compatibilidade)
-    const specificKnowledgeScore = specific1Score + specific2Score + specific3Score;
 
     return {
       basicKnowledgeScore,
@@ -105,17 +76,24 @@ export const calculateRawScores = async (
   }
 };
 
-/**
- * Aplica pesos para calcular as pontuações finais
- */
+// Aplica pesos para calcular as pontuações finais
 export const applyWeightsToScores = async (
   concursoId: string,
-  rawScores: RawScores,
-  subjectiveScores: SubjectiveScores
-): Promise<WeightedScores> => {
+  scores: {
+    basicKnowledgeScore: number;
+    specificKnowledgeScore: number;
+    specific1Score: number;
+    specific2Score: number;
+    specific3Score: number;
+  },
+  subjectiveScores: {
+    discursiveScore: number;
+    caseStudy1Score: number;
+    caseStudy2Score: number;
+    caseStudy3Score: number;
+  }
+) => {
   try {
-    console.log(`Aplicando pesos para concurso ${concursoId}`);
-    
     // Obtenha os pesos do concurso
     const { data: concursoWithWeights, error: concursoWeightsError } = await supabase
       .from('concursos')
@@ -131,15 +109,9 @@ export const applyWeightsToScores = async (
       `)
       .eq('id', concursoId)
       .single();
-    
     if (concursoWeightsError) throw concursoWeightsError;
     
-    // Log de debug
-    console.log('Pesos obtidos do banco:', concursoWithWeights);
-    console.log('Pontuações brutas:', rawScores);
-    console.log('Pontuações subjetivas:', subjectiveScores);
-    
-    // Extrai os pesos (valores padrão são 1)
+    // Extrai os pesos
     const weights = {
       basicKnowledge: concursoWithWeights?.basic_knowledge_weight || 1,
       specificKnowledge1: concursoWithWeights?.specific_knowledge_1_weight || 1,
@@ -151,22 +123,19 @@ export const applyWeightsToScores = async (
       caseStudy3: concursoWithWeights?.case_study_3_weight || 1
     };
 
-    // Log de pesos aplicados
-    console.log('Pesos que serão aplicados:', weights);
-
     // Aplica os pesos
     const weightedScores = {
-      weightedBasicScore: rawScores.basicKnowledgeScore * weights.basicKnowledge,
-      weightedSpecific1Score: rawScores.specific1Score * weights.specificKnowledge1,
-      weightedSpecific2Score: rawScores.specific2Score * weights.specificKnowledge2,
-      weightedSpecific3Score: rawScores.specific3Score * weights.specificKnowledge3,
+      weightedBasicScore: scores.basicKnowledgeScore * weights.basicKnowledge,
+      weightedSpecific1Score: scores.specific1Score * weights.specificKnowledge1,
+      weightedSpecific2Score: scores.specific2Score * weights.specificKnowledge2,
+      weightedSpecific3Score: scores.specific3Score * weights.specificKnowledge3,
       weightedDiscursiveScore: subjectiveScores.discursiveScore * weights.discursive,
       weightedCaseStudy1Score: subjectiveScores.caseStudy1Score * weights.caseStudy1,
       weightedCaseStudy2Score: subjectiveScores.caseStudy2Score * weights.caseStudy2,
       weightedCaseStudy3Score: subjectiveScores.caseStudy3Score * weights.caseStudy3
     };
 
-    // Calcula o score total (soma das pontuações ponderadas)
+    // Calcula o score total
     const totalScore = 
       weightedScores.weightedBasicScore + 
       weightedScores.weightedSpecific1Score + 
@@ -176,9 +145,6 @@ export const applyWeightsToScores = async (
       weightedScores.weightedCaseStudy1Score +
       weightedScores.weightedCaseStudy2Score +
       weightedScores.weightedCaseStudy3Score;
-
-    // Log de scores ponderados
-    console.log('Scores ponderados calculados:', { ...weightedScores, totalScore });
 
     return {
       ...weightedScores,
@@ -190,27 +156,40 @@ export const applyWeightsToScores = async (
   }
 };
 
-/**
- * Salva todas as pontuações do usuário (brutas e ponderadas)
- * - Armazena apenas scores brutos nas colunas de cada área de conhecimento
- * - Salva os scores ponderados separadamente para cálculo do total e classificação
- */
+// Salva todas as pontuações do usuário (brutas e ponderadas)
 export const saveUserScores = async (
   rankingId: string,
-  rawScores: RawScores,
-  subjectiveScores: SubjectiveScores,
-  weightedScores: WeightedScores
-): Promise<boolean> => {
+  rawScores: {
+    basicKnowledgeScore: number;
+    specificKnowledgeScore: number;
+    specific1Score: number;
+    specific2Score: number;
+    specific3Score: number;
+  },
+  subjectiveScores: {
+    discursiveScore: number;
+    caseStudy1Score: number;
+    caseStudy2Score: number;
+    caseStudy3Score: number;
+  },
+  weightedScores: {
+    weightedBasicScore: number;
+    weightedSpecific1Score: number;
+    weightedSpecific2Score: number;
+    weightedSpecific3Score: number;
+    weightedDiscursiveScore: number;
+    weightedCaseStudy1Score: number;
+    weightedCaseStudy2Score: number;
+    weightedCaseStudy3Score: number;
+    totalScore: number;
+  }
+) => {
   try {
-    console.log(`Salvando scores para ranking ${rankingId}`);
-    // Atualiza o ranking do usuário:
-    // - Os campos de *_score das áreas recebem apenas os valores brutos de acertos
-    // - Os campos de weighted_* recebem os ponderados
-    // - Score total é a soma dos weighted (ponderados)
+    // Atualiza o ranking do usuário com todas as pontuações
     const { error: updateError } = await supabase
       .from('user_rankings')
       .update({
-        // Pontuações brutas (sempre só o número de questões acertadas)
+        // Pontuações brutas
         basic_knowledge_score: rawScores.basicKnowledgeScore,
         specific_knowledge_score: rawScores.specificKnowledgeScore,
         specific_knowledge_1_score: rawScores.specific1Score,
@@ -221,7 +200,7 @@ export const saveUserScores = async (
         case_study_2_score: subjectiveScores.caseStudy2Score,
         case_study_3_score: subjectiveScores.caseStudy3Score,
         
-        // Pontuações ponderadas (valor bruto * peso)
+        // Pontuações ponderadas
         weighted_basic_score: weightedScores.weightedBasicScore,
         weighted_specific_1_score: weightedScores.weightedSpecific1Score,
         weighted_specific_2_score: weightedScores.weightedSpecific2Score,
@@ -230,14 +209,15 @@ export const saveUserScores = async (
         weighted_case_study_1_score: weightedScores.weightedCaseStudy1Score,
         weighted_case_study_2_score: weightedScores.weightedCaseStudy2Score,
         weighted_case_study_3_score: weightedScores.weightedCaseStudy3Score,
-        // Total só na soma dos ponderados!
+        
+        // Pontuação final
         score: weightedScores.totalScore,
-        all_questions_answered: true,
         updated_at: new Date().toISOString()
       })
       .eq('id', rankingId);
+      
     if (updateError) throw updateError;
-    console.log(`Scores salvos com sucesso para ranking ${rankingId}`);
+    
     return true;
   } catch (error) {
     console.error('Error saving user scores:', error);
