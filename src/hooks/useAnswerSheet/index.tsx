@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +45,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     staleTime: 1000
   });
 
+  // Atualizado para usar o limite correto de 5 edições
   const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
   const canEdit = editsLeft > 0;
 
@@ -68,6 +70,29 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     fetchData();
   }, [rankingId]);
+
+  // Garantir que as pontuações subjetivas sejam atualizadas quando os dados do ranking forem carregados
+  useEffect(() => {
+    if (userRankingData) {
+      console.log('Atualizando pontuações subjetivas do estado do usuário:', userRankingData);
+      
+      if (userRankingData.discursive_score !== null && userRankingData.discursive_score !== undefined) {
+        setDiscursiveScore(userRankingData.discursive_score);
+      }
+      
+      if (userRankingData.case_study_1_score !== null && userRankingData.case_study_1_score !== undefined) {
+        setCaseStudy1Score(userRankingData.case_study_1_score);
+      }
+      
+      if (userRankingData.case_study_2_score !== null && userRankingData.case_study_2_score !== undefined) {
+        setCaseStudy2Score(userRankingData.case_study_2_score);
+      }
+      
+      if (userRankingData.case_study_3_score !== null && userRankingData.case_study_3_score !== undefined) {
+        setCaseStudy3Score(userRankingData.case_study_3_score);
+      }
+    }
+  }, [userRankingData]);
 
   useEffect(() => {
     if (concurso) {

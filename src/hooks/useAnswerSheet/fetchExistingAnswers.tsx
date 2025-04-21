@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (
@@ -10,7 +11,7 @@ export const fetchExistingAnswers = async (
   setCaseStudy3Score: React.Dispatch<React.SetStateAction<number | null>>
 ) => {
   try {
-    console.log('Fetching existing answers for ranking ID:', rankingId);
+    console.log('[fetchExistingAnswers] Buscando respostas existentes para o ranking ID:', rankingId);
     
     // Fetch answers
     const { data: answersData, error: answersError } = await supabase
@@ -18,9 +19,12 @@ export const fetchExistingAnswers = async (
       .select('*')
       .eq('user_ranking_id', rankingId);
       
-    if (answersError) throw answersError;
+    if (answersError) {
+      console.error('[fetchExistingAnswers] Erro ao buscar respostas:', answersError);
+      throw answersError;
+    }
     
-    console.log('Fetched answers data:', answersData);
+    console.log('[fetchExistingAnswers] Dados de respostas obtidos:', answersData?.length || 0, 'respostas');
     
     if (answersData?.length) {
       const answersMap: { [key: number]: string } = {};
@@ -40,44 +44,44 @@ export const fetchExistingAnswers = async (
         }
       });
       
-      console.log('Parsed answers map:', answersMap);
-      console.log('Parsed question types map:', typesMap);
+      console.log('[fetchExistingAnswers] Mapa de respostas criado:', Object.keys(answersMap).length, 'respostas');
       
       setAnswers(answersMap);
       setQuestionType(typesMap);
+    } else {
+      console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para este ranking');
     }
     
     // Fetch user ranking for scores
+    console.log('[fetchExistingAnswers] Buscando dados do ranking para pontuações subjetivas');
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select('*')
       .eq('id', rankingId)
       .single();
       
-    console.log('Fetched ranking data with subjective scores:', rankingData);
+    if (rankingError) {
+      console.error('[fetchExistingAnswers] Erro ao buscar dados do ranking:', rankingError);
+      throw rankingError;
+    }
     
+    console.log('[fetchExistingAnswers] Dados do ranking obtidos:', rankingData);
+    
+    // Definir explicitamente todas as pontuações subjetivas com base nos dados do ranking
     if (rankingData) {
-      if (rankingData.discursive_score !== null && rankingData.discursive_score !== undefined) {
-        console.log('Setting discursive score:', rankingData.discursive_score);
-        setDiscursiveScore(rankingData.discursive_score);
-      }
+      console.log('[fetchExistingAnswers] Definindo pontuações subjetivas:',
+        'Discursiva:', rankingData.discursive_score,
+        'Estudo de Caso 1:', rankingData.case_study_1_score,
+        'Estudo de Caso 2:', rankingData.case_study_2_score,
+        'Estudo de Caso 3:', rankingData.case_study_3_score
+      );
       
-      if (rankingData.case_study_1_score !== null && rankingData.case_study_1_score !== undefined) {
-        console.log('Setting case study 1 score:', rankingData.case_study_1_score);
-        setCaseStudy1Score(rankingData.case_study_1_score);
-      }
-      
-      if (rankingData.case_study_2_score !== null && rankingData.case_study_2_score !== undefined) {
-        console.log('Setting case study 2 score:', rankingData.case_study_2_score);
-        setCaseStudy2Score(rankingData.case_study_2_score);
-      }
-      
-      if (rankingData.case_study_3_score !== null && rankingData.case_study_3_score !== undefined) {
-        console.log('Setting case study 3 score:', rankingData.case_study_3_score);
-        setCaseStudy3Score(rankingData.case_study_3_score);
-      }
+      setDiscursiveScore(rankingData.discursive_score);
+      setCaseStudy1Score(rankingData.case_study_1_score);
+      setCaseStudy2Score(rankingData.case_study_2_score);
+      setCaseStudy3Score(rankingData.case_study_3_score);
     }
   } catch (error) {
-    console.error('Error fetching answers:', error);
+    console.error('[fetchExistingAnswers] Erro não tratado:', error);
   }
 };
