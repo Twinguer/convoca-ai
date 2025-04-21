@@ -164,7 +164,15 @@ export const useSaveAnswers = ({
       // 7. Chamar a API para recálculo de pontuação com base nas novas respostas
       // Importação dinâmica para evitar ciclos de dependência
       const { saveUserAnswers } = await import('@/integrations/supabase/rankings/userAnswers');
-      const result = await saveUserAnswers(rankingId, concurso.id, answerData);
+
+      // Adaptação dos dados para o formato esperado pela função
+      const formattedAnswerData = answerData.map(answer => ({
+        questionNumber: answer.question_number,
+        answer: answer.answer,
+        is_basic_knowledge: answer.is_basic_knowledge
+      }));
+      
+      const result = await saveUserAnswers(rankingId, concurso.id, formattedAnswerData);
       
       if (!result || !result.success) {
         throw new Error('Erro no cálculo final da pontuação');
@@ -177,7 +185,7 @@ export const useSaveAnswers = ({
           user_ranking_id: rankingId,
           calculation_type: editCount > 0 ? 'edit' : 'creation',
           previous_score: 0, // Aqui poderíamos buscar a pontuação anterior, mas já temos o trigger para o histórico
-          new_score: result.totalScore || 0,
+          new_score: result.totalScore !== undefined ? result.totalScore : 0,
           calculation_details: {
             ...result,
             answer_count: answerData.length,

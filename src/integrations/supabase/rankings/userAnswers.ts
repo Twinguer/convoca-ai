@@ -4,12 +4,31 @@ import { saveUserAnswersData } from './answerManagement';
 import { calculateRawScores, applyWeightsToScores, saveUserScores } from './scoreCalculation';
 import { recalculateAllUserScores } from './batchOperations';
 
+// Definição de tipos para o retorno da função
+interface SuccessResult {
+  success: true;
+  totalScore: number;
+  basicKnowledgeScore: number;
+  specificKnowledgeScore: number;
+  specific1Score: number;
+  specific2Score: number;
+  specific3Score: number;
+  [key: string]: any;
+}
+
+interface ErrorResult {
+  success: false;
+  error: string;
+}
+
+type SaveUserAnswersResult = SuccessResult | ErrorResult;
+
 // Função principal para salvar respostas do usuário e calcular pontuações
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,
   answers: { questionNumber: number; answer: string; is_basic_knowledge?: boolean }[]
-) => {
+): Promise<SaveUserAnswersResult> => {
   try {
     console.log('Iniciando processamento de pontuação para ranking:', rankingId);
     
