@@ -76,7 +76,7 @@ export const useSaveAnswers = ({
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada com as questões anuladas.",
+        description: "Sua pontuação foi recalculada com base no gabarito atual, incluindo as questões anuladas.",
         duration: 5000
       });
 
