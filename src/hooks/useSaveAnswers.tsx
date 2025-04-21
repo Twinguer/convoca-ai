@@ -7,7 +7,6 @@ interface UseSaveAnswersProps {
   rankingId: string;
   concurso: Concurso;
   answers: { [key: number]: string };
-  questionType: 'Alternativas' | 'Certo ou Errado';
   setIsSaving: (saving: boolean) => void;
   setError: (error: string | null) => void;
   setSavedSuccess: (success: boolean) => void;
@@ -41,32 +40,24 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Preparar os dados de respostas para enviar ao backend
+      // Preparar os dados de respostas para enviar
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber),
         answer,
       }));
 
-      console.log('[useSaveAnswers] Iniciando processo de salvamento centralizado');
+      console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
 
-      // Preparar dados de pontuações subjetivas
-      const subjectiveScores = {
-        discursiveScore: discursiveScore || 0,
-        caseStudy1Score: caseStudy1Score || 0,
-        caseStudy2Score: caseStudy2Score || 0,
-        caseStudy3Score: caseStudy3Score || 0
-      };
-
-      // Usar a nova função que centraliza toda a lógica de salvamento e cálculo
+      // Chamar a função RPC centralizada
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_answers: answersArray,
-        p_discursive_score: subjectiveScores.discursiveScore,
-        p_case_study_1_score: subjectiveScores.caseStudy1Score,
-        p_case_study_2_score: subjectiveScores.caseStudy2Score,
-        p_case_study_3_score: subjectiveScores.caseStudy3Score,
+        p_discursive_score: discursiveScore || 0,
+        p_case_study_1_score: caseStudy1Score || 0,
+        p_case_study_2_score: caseStudy2Score || 0,
+        p_case_study_3_score: caseStudy3Score || 0,
         p_current_edit_count: editCount
       });
 
@@ -76,6 +67,10 @@ export const useSaveAnswers = ({
       }
 
       console.log('[useSaveAnswers] Resposta da função RPC:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || "Erro ao salvar respostas");
+      }
 
       // Atualizar estado da UI
       setSavedSuccess(true);

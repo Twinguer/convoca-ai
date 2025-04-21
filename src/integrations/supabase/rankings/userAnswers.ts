@@ -7,24 +7,8 @@ export const saveUserAnswers = async (
   concursoId: string,
   answers: { questionNumber: number; answer: string; isBasicKnowledge?: boolean }[]
 ) => {
-  try {
-    console.log('[saveUserAnswers] Usando função RPC centralizada...');
-    
-    // Preparar os dados para enviar à função RPC
-    const answersForRPC = answers.map(a => ({
-      questionNumber: a.questionNumber,
-      answer: a.answer
-    }));
-    
-    // A chamada real será feita pelo hook useSaveAnswers
-    // Esta função existe apenas para manter compatibilidade com código existente
-    
-    console.log('[saveUserAnswers] Total de respostas a serem processadas:', answersForRPC.length);
-    return true;
-  } catch (error: any) {
-    console.error('[saveUserAnswers] Erro (compatibilidade):', error);
-    throw error;
-  }
+  console.log('[saveUserAnswers] Função legada chamada, usando RPC...');
+  return true;
 };
 
 // Função para buscar as respostas de um usuário

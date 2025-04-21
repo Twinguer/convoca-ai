@@ -587,6 +587,19 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      save_user_answers_and_calculate_scores: {
+        Args: {
+          p_ranking_id: string
+          p_concurso_id: string
+          p_answers: Json
+          p_discursive_score?: number
+          p_case_study_1_score?: number
+          p_case_study_2_score?: number
+          p_case_study_3_score?: number
+          p_current_edit_count?: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
