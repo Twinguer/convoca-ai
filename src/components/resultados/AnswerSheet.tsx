@@ -27,6 +27,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   onSuccess
 }) => {
   const { toast } = useToast();
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   
   const {
     answers,
@@ -73,14 +74,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   });
   
   const {
-    isLoading: isLoadingAnswers
+    data: nullifiedData,
+    isLoading: isLoadingNullified
   } = useQuery({
-    queryKey: ['user-answers', rankingId],
+    queryKey: ['nullified-questions', concurso.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('user_answers')
-        .select('*')
-        .eq('user_ranking_id', rankingId);
+        .from('answer_keys')
+        .select('question_number')
+        .eq('concurso_id', concurso.id)
+        .eq('is_nullified', true);
       if (error) throw error;
       return data || [];
     },
@@ -116,7 +119,15 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setCaseStudy3Score(userRankingData.case_study_3_score);
     }
   }, [userRankingData]);
-
+  
+  useEffect(() => {
+    if (nullifiedData && nullifiedData.length > 0) {
+      const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
+      setNullifiedQuestions(nullifiedSet);
+      console.log('[AnswerSheet] Questões anuladas:', Array.from(nullifiedSet).join(', '));
+    }
+  }, [nullifiedData]);
+  
   const handleSaveAnswers = async () => {
     if (!concurso?.id) {
       setError("ID do concurso não encontrado");
@@ -179,7 +190,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  if (isLoadingAnswers || isLoadingRanking) {
+  if (isLoadingAnswers || isLoadingRanking || isLoadingNullified) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -193,6 +204,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const editsLeft = 3 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
+  const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
   const getObjectiveSectionList = () => {
     const sections = [];
@@ -242,6 +254,24 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         
         <ExamTypeWarning examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
         
+        {hasNullifiedQuestions && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+            <div className="flex items-start gap-3">
+              <HelpCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-amber-800">Questões Anuladas</h4>
+                <p className="text-sm text-amber-700 mt-1">
+                  Este concurso possui {nullifiedQuestions.size} {nullifiedQuestions.size === 1 ? 'questão anulada' : 'questões anuladas'}.
+                  Você receberá pontuação por estas questões independentemente da resposta marcada.
+                </p>
+                <p className="text-xs text-amber-600 mt-2">
+                  Questões anuladas: {Array.from(nullifiedQuestions).sort((a, b) => a - b).join(', ')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between">
           <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
           <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
@@ -273,6 +303,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                     getOptionsForQuestion={getOptionsForQuestion}
                     disabled={!canEdit}
                     examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
+                    nullifiedQuestions={nullifiedQuestions}
                   />
                 </TabsContent>
               ))}

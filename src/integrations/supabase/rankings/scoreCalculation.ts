@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -10,11 +11,20 @@ export const calculateRawScores = async (
     // Obtenha o gabarito oficial
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
-      .select('*, is_nullified')
+      .select('question_number, answer, is_nullified')
       .eq('concurso_id', concursoId);
     if (keyError) throw keyError;
     if (!answerKey || answerKey.length === 0) {
       throw new Error('Gabarito oficial não encontrado para este concurso');
+    }
+
+    // Logging para depuração
+    console.log(`[calculateRawScores] Número de questões no gabarito: ${answerKey.length}`);
+    const nullifiedQuestions = answerKey.filter(q => q.is_nullified);
+    console.log(`[calculateRawScores] Questões anuladas: ${nullifiedQuestions.length}`);
+    if (nullifiedQuestions.length > 0) {
+      console.log('[calculateRawScores] Números das questões anuladas:', 
+        nullifiedQuestions.map(q => q.question_number).join(', '));
     }
 
     // Carregue os dados do concurso para determinar as faixas das seções
@@ -39,28 +49,51 @@ export const calculateRawScores = async (
     let specific2Score = 0;
     let specific3Score = 0;
 
+    // Debug log para respostas do usuário
+    console.log(`[calculateRawScores] Número de respostas do usuário: ${userAnswers.length}`);
+
     // Calcula os acertos
     userAnswers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
         a => a.question_number === userAnswer.question_number
       );
 
-      // Contabiliza acerto se a questão é anulada ou a resposta está correta
-      if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
-        if (userAnswer.is_basic_knowledge) {
-          basicKnowledgeScore += 1;
-        } else if (userAnswer.is_specific_1) {
-          specific1Score += 1;
-          specificKnowledgeScore += 1;
-        } else if (userAnswer.is_specific_2) {
-          specific2Score += 1;
-          specificKnowledgeScore += 1;
-        } else if (userAnswer.is_specific_3) {
-          specific3Score += 1;
-          specificKnowledgeScore += 1;
+      // Verificação detalhada para depuração
+      if (officialAnswer) {
+        const isNullified = officialAnswer.is_nullified;
+        const isCorrect = officialAnswer.answer === userAnswer.answer;
+        
+        console.log(`[calculateRawScores] Questão ${userAnswer.question_number}: ` +
+          `Anulada: ${isNullified}, ` +
+          `Resposta oficial: ${officialAnswer.answer}, ` +
+          `Resposta do usuário: ${userAnswer.answer}, ` +
+          `Correta: ${isCorrect}`);
+
+        // Contabiliza acerto se a questão é anulada ou a resposta está correta
+        if (isNullified || isCorrect) {
+          if (userAnswer.is_basic_knowledge) {
+            basicKnowledgeScore += 1;
+          } else if (userAnswer.is_specific_1) {
+            specific1Score += 1;
+            specificKnowledgeScore += 1;
+          } else if (userAnswer.is_specific_2) {
+            specific2Score += 1;
+            specificKnowledgeScore += 1;
+          } else if (userAnswer.is_specific_3) {
+            specific3Score += 1;
+            specificKnowledgeScore += 1;
+          }
         }
+      } else {
+        console.log(`[calculateRawScores] ALERTA: Questão ${userAnswer.question_number} não encontrada no gabarito oficial`);
       }
     });
+
+    // Log das pontuações calculadas
+    console.log(`[calculateRawScores] Pontuações calculadas: ` +
+      `Básico: ${basicKnowledgeScore}, ` +
+      `Específico total: ${specificKnowledgeScore} ` +
+      `(E1: ${specific1Score}, E2: ${specific2Score}, E3: ${specific3Score})`);
 
     return {
       basicKnowledgeScore,

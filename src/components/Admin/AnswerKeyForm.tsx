@@ -7,6 +7,7 @@ import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
+import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -18,6 +19,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -50,12 +52,17 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   useEffect(() => {
     if (existingAnswers && existingAnswers.length > 0) {
       const answersMap: { [key: number]: string } = {};
+      const nullifiedSet = new Set<number>();
       
       existingAnswers.forEach((item: any) => {
         answersMap[item.question_number] = item.answer;
+        if (item.is_nullified) {
+          nullifiedSet.add(item.question_number);
+        }
       });
       
       setAnswers(answersMap);
+      setNullifiedQuestions(nullifiedSet);
     }
   }, [existingAnswers]);
 
@@ -135,6 +142,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }));
   };
 
+  const handleNullifyQuestion = (questionNumber: number) => {
+    setNullifiedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionNumber)) {
+        newSet.delete(questionNumber);
+      } else {
+        newSet.add(questionNumber);
+      }
+      return newSet;
+    });
+  };
+
   const createAnswerMatrix = () => {
     const questions = getQuestionsRange();
     if (questions.length === 0) return [];
@@ -203,6 +222,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           concurso_id: concursoId,
           question_number: qNum,
           answer: answers[qNum]?.toUpperCase() || "",
+          is_nullified: nullifiedQuestions.has(qNum),
           is_basic_knowledge: isBasic,
           is_specific_1: isSpecific1,
           is_specific_2: isSpecific2,
@@ -218,21 +238,20 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       if (deleteError) throw deleteError;
 
       if (answersArray.length > 0) {
-        const { data: existing } = await supabase
+        const { error: insertError } = await supabase
           .from('answer_keys')
-          .select('id')
-          .eq('concurso_id', concursoId);
+          .insert(answersArray);
 
-        if (!existing || existing.length === 0) {
-          const { error: insertError } = await supabase
-            .from('answer_keys')
-            .insert(answersArray);
-
-          if (insertError) throw insertError;
-        }
+        if (insertError) throw insertError;
       }
 
       const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
+      
+      toast({
+        title: "Recalculando pontuações",
+        description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
+      });
+      
       const recalculationResult = await recalculateAllUserScores(concursoId);
       console.log('Recalculation result:', recalculationResult);
 
@@ -282,7 +301,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gabarito Oficial - {concurso.titulo}</CardTitle>
+        <CardTitle>Gabarito Oficial - {concurso?.titulo}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
@@ -333,11 +352,17 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                           ? 'bg-emerald-600 text-white'
                                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                                       onClick={() => handleAnswerChange(questionNumber, option)}
+                                      disabled={nullifiedQuestions.has(questionNumber)}
                                     >
                                       {option}
                                     </button>
                                   ))}
                                 </div>
+                                <NullifyQuestionButton
+                                  questionNumber={questionNumber}
+                                  isNullified={nullifiedQuestions.has(questionNumber)}
+                                  onNullify={handleNullifyQuestion}
+                                />
                               </div>
                             )
                           ))}
