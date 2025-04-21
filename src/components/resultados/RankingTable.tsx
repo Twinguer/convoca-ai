@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -180,7 +179,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 };
 
 const getQuotaAbbreviation = (quota: string): string => {
-  if (quota === "Ampla Concorrência") return "";
+  if (!quota || quota === "Ampla Concorrência") return "";
   
   const abbreviations: Record<string, string> = {
     "PPP": "PPP",
@@ -259,7 +258,7 @@ const RankingTableContent: React.FC<{
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                    <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{ranking.name ? ranking.name.substring(0, 2).toUpperCase() : 'UN'}</AvatarFallback>
                   </Avatar>
                   <span>{ranking.name}</span>
                 </div>
@@ -317,11 +316,11 @@ const RankingTableContent: React.FC<{
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                  <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{ranking.name ? ranking.name.substring(0, 2).toUpperCase() : 'UN'}</AvatarFallback>
                 </Avatar>
                 <span>
                   {ranking.name}
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
+                  {isAmpla && ranking.reservationType && ranking.reservationType !== "Ampla Concorrência" && (
                     <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                       ({getQuotaAbbreviation(ranking.reservationType)})
                     </span>
@@ -401,4 +400,3 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
-
