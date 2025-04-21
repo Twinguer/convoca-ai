@@ -1,24 +1,29 @@
 
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { HelpCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface ExamTypeWarningProps {
   examType: 'Alternativas' | 'Certo ou Errado';
 }
 
 export const ExamTypeWarning: React.FC<ExamTypeWarningProps> = ({ examType }) => {
+  if (examType === 'Alternativas') {
+    return (
+      <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+        <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+        <p className="text-sm text-amber-800">
+          <strong>Importante:</strong> Neste tipo de prova, você deve responder a todas as questões antes de salvar o cartão.
+        </p>
+      </div>
+    );
+  }
+  
   return (
-    <Alert className="bg-blue-50 text-blue-900 border-blue-200">
-      <HelpCircle className="h-4 w-4 text-blue-600" />
-      <AlertTitle>Este é um exame do tipo {examType}</AlertTitle>
-      <AlertDescription>
-        {examType === 'Alternativas' ? (
-          <span>Selecione uma alternativa de A a E para cada questão.</span>
-        ) : (
-          <span>Selecione C (Certo) ou E (Errado) para cada questão.</span>
-        )}
-      </AlertDescription>
-    </Alert>
+    <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+      <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+      <p className="text-sm text-amber-800">
+        <strong>Atenção:</strong> Em provas Certo ou Errado, questões em branco não recebem pontuação nem penalidade.
+      </p>
+    </div>
   );
 };
