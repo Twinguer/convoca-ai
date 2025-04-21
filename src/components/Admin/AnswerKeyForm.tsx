@@ -295,7 +295,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
 
-      // Iniciar automaticamente o recálculo para todos os usuários
       await performRecalculation();
       
       setTimeout(() => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from 'react-query';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -14,7 +15,23 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
   const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
 
-  // Initialize with the first available section
+  const { data: userRankingData } = useQuery({
+    queryKey: ['user-ranking-detail', rankingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+      if (error) throw error;
+      return data || {};
+    },
+    staleTime: 1000
+  });
+  
+  const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
+  const canEdit = editsLeft > 0;
+
   useEffect(() => {
     if (concurso) {
       if (concurso.has_basic_knowledge) {
@@ -33,7 +50,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     try {
       console.log('Fetching existing answers for ranking ID:', rankingId);
       
-      // Fetch answers
       const { data: answersData, error: answersError } = await supabase
         .from('user_answers')
         .select('*')
@@ -68,7 +84,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setQuestionType(typesMap);
       }
       
-      // Fetch user ranking for scores
       const { data: rankingData, error: rankingError } = await supabase
         .from('user_rankings')
         .select('*')
@@ -240,7 +255,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) return [];
     
-    const QUESTIONS_PER_ROW = 4; // Changed from 5 to 4 for better display
+    const QUESTIONS_PER_ROW = 4;
     const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
     
     const matrix = [];
@@ -287,6 +302,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    editsLeft,
+    canEdit
   };
 };
