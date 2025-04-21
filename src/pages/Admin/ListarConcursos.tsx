@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -66,6 +65,10 @@ const ListarConcursos: React.FC = () => {
       }
     }
   };
+
+  const handleCreateRanking = () => {
+    navigate('/criar-ranking');
+  };
   
   const handleViewRanking = (id: string) => {
     window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
@@ -80,7 +83,7 @@ const ListarConcursos: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Rankings Cadastrados</h1>
-        <Button onClick={() => navigate('/project/admin/man/concursos/novo')}>
+        <Button onClick={handleCreateRanking}>
           <Plus className="mr-2 h-4 w-4" /> Novo Ranking
         </Button>
       </div>
@@ -164,7 +167,7 @@ const ListarConcursos: React.FC = () => {
               <Building className="mx-auto h-12 w-12 text-gray-400 mb-2" />
               <h3 className="font-medium text-lg">Nenhum ranking encontrado</h3>
               <p className="mt-1">Tente ajustar os filtros ou adicione um novo ranking.</p>
-              <Button onClick={() => navigate('/project/admin/man/concursos/novo')} variant="outline" className="mt-4">
+              <Button onClick={handleCreateRanking} variant="outline" className="mt-4">
                 <Plus className="mr-2 h-4 w-4" /> Adicionar Ranking
               </Button>
             </div>

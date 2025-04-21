@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { recalculateAllUserScores } from './userAnswers';
 
@@ -250,28 +249,33 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       throw new Error('Ranking não encontrado');
     }
     
-    // Only the creator or an admin can delete the ranking
+    // Allow admins to delete any ranking, or users to delete their own
     const isCreator = rankingCheck.created_by_user_id === userId;
-    
     if (!isAdmin && !isCreator) {
       throw new Error('Você não tem permissão para excluir este ranking');
     }
     
-    // Check if there are more than 10 participants (only if not admin)
-    if (!isAdmin) {
-      const { data: participantCount, error: countError } = await supabase
-        .rpc('count_concurso_participants', { concurso_id: rankingId });
-        
-      if (countError) {
-        throw new Error('Erro ao verificar número de participantes');
-      }
+    // Delete all related user_answers first
+    const { error: answersError } = await supabase
+      .from('user_answers')
+      .delete()
+      .eq('concurso_id', rankingId);
       
-      if (participantCount > 10) {
-        throw new Error('Rankings com mais de 10 participantes só podem ser excluídos pelo administrador');
-      }
+    if (answersError) {
+      console.error('Error deleting user answers:', answersError);
     }
     
-    // Delete the ranking
+    // Delete all related user_rankings
+    const { error: rankingsError } = await supabase
+      .from('user_rankings')
+      .delete()
+      .eq('concurso_id', rankingId);
+      
+    if (rankingsError) {
+      console.error('Error deleting user rankings:', rankingsError);
+    }
+    
+    // Finally delete the ranking itself
     const { error } = await supabase
       .from('concursos')
       .delete()
