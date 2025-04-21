@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -45,7 +44,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     setIsFirstSaveDone(false);
   }, [form]);
 
-  // Sincronizar as localidades do formulário quando o componente é montado
   useEffect(() => {
     const formValues = form.getValues();
     if (formValues.localidades && Array.isArray(formValues.localidades) && formValues.localidades.length > 0) {
@@ -133,7 +131,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       currentValues.has_ampla_concorrencia || 
       currentValues.has_ppp || 
       currentValues.has_pcd ||
-      currentValues.has_hiposuficientes ||
+      currentValues.has_hipossuficientes ||
       currentValues.has_indigenas ||
       currentValues.has_transsexuais;
 
@@ -165,7 +163,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const handleSave = async () => {
     if (validateBeforeSave() && onSaveRanking) {
-      // Sincroniza as localidades com o formulário antes de salvar
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       await onSaveRanking();
       setIsFirstSaveDone(true);

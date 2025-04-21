@@ -97,7 +97,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
           
           <FormField
             control={form.control}
-            name="has_trans"
+            name="has_transsexuais"
             render={({ field }) => (
               <FormItem className="flex items-center space-x-2">
                 <FormControl>

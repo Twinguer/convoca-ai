@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,7 +57,7 @@ const CriarRanking = () => {
     { id: '1', title: 'AUDITOR' },
     { id: '2', title: 'AUDITOR FISCAL' },
     { id: '3', title: 'POLICIAL CIVIL' },
-    { id: '4', title: 'POLÍCIAL MILITAR' },
+    { id: '4', title: 'POLÍCIA MILITAR' },
     { id: '5', title: 'AGENTE ADMINISTRATIVO' },
     { id: '6', title: 'AUDITOR DE CONTROLE EXTERNO' },
     { id: '7', title: 'ANALISTA ADMINISTRATIVO' },
