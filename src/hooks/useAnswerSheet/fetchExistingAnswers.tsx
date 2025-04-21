@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (
@@ -55,24 +54,26 @@ export const fetchExistingAnswers = async (
       .eq('id', rankingId)
       .single();
       
-    if (rankingError) throw rankingError;
-    
-    console.log('Fetched ranking data:', rankingData);
+    console.log('Fetched ranking data with subjective scores:', rankingData);
     
     if (rankingData) {
       if (rankingData.discursive_score !== null && rankingData.discursive_score !== undefined) {
+        console.log('Setting discursive score:', rankingData.discursive_score);
         setDiscursiveScore(rankingData.discursive_score);
       }
       
-      if (rankingData.case_study_1_score !== undefined) {
+      if (rankingData.case_study_1_score !== null && rankingData.case_study_1_score !== undefined) {
+        console.log('Setting case study 1 score:', rankingData.case_study_1_score);
         setCaseStudy1Score(rankingData.case_study_1_score);
       }
       
-      if (rankingData.case_study_2_score !== undefined) {
+      if (rankingData.case_study_2_score !== null && rankingData.case_study_2_score !== undefined) {
+        console.log('Setting case study 2 score:', rankingData.case_study_2_score);
         setCaseStudy2Score(rankingData.case_study_2_score);
       }
       
-      if (rankingData.case_study_3_score !== undefined) {
+      if (rankingData.case_study_3_score !== null && rankingData.case_study_3_score !== undefined) {
+        console.log('Setting case study 3 score:', rankingData.case_study_3_score);
         setCaseStudy3Score(rankingData.case_study_3_score);
       }
     }

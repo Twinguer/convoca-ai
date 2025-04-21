@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,7 +75,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   });
   
   // Definir a variável editsLeft e canEdit antes de useEffect
-  const editsLeft = userRankingData ? 3 - (userRankingData.edit_count || 0) : 3;
+  const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
   const canEdit = editsLeft > 0;
   
   const {
@@ -253,7 +252,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <CardDescription>
           {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
             <div className="text-sm font-medium text-emerald-700 mt-2">
-              Edições disponíveis: {editsLeft} de 3
+              Edições disponíveis: {editsLeft} de 5
               {!canEdit && (
                 <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)
