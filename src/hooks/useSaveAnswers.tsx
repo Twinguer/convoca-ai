@@ -1,4 +1,3 @@
-
 import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
@@ -38,25 +37,26 @@ export const useSaveAnswers = ({
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
 
-  const calculateScore = async () => {
+  const getRawAnswersForProcessing = () => {
+    const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+    const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
+    const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
+    return Object.entries(answers).map(([questionNumber, answer]) => {
+      const qNum = parseInt(questionNumber);
+
+      return {
+        questionNumber: qNum,
+        answer,
+        isBasicKnowledge: qNum <= basicQuestionsCount,
+        isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
+        isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
+        isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
+      };
+    });
+  };
+
+  const calculateScore = async (rawAnswersArray: any[]) => {
     try {
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-        const qNum = parseInt(questionNumber);
-        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-        const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
-        const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
-
-        return {
-          questionNumber: qNum,
-          answer,
-          isBasicKnowledge: qNum <= basicQuestionsCount,
-          isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
-          isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && 
-                       qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
-          isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
-        };
-      });
-
       const { data: answerKey, error: keyError } = await supabase
         .from('answer_keys')
         .select('*, is_nullified')
@@ -64,10 +64,6 @@ export const useSaveAnswers = ({
 
       if (keyError) throw keyError;
 
-      console.log('Answer keys retrieved:', answerKey);
-      console.log('User answers to check:', answersArray);
-
-      // Get the concurso with all weight data
       const { data: concursoData, error: concursoError } = await supabase
         .from('concursos')
         .select(`
@@ -84,55 +80,34 @@ export const useSaveAnswers = ({
         .eq('id', concurso.id)
         .single();
 
-      if (concursoError) {
-        console.error('Error fetching concurso weights:', concursoError);
-        throw concursoError;
-      }
+      if (concursoError) throw concursoError;
 
-      console.log('Concurso weights retrieved from database:', concursoData);
-
-      // Raw score (number of correct answers)
       let basicScore = 0;
       let specific1Score = 0;
       let specific2Score = 0;
       let specific3Score = 0;
 
-      // Count correctly answered questions
-      answersArray.forEach(userAnswer => {
+      rawAnswersArray.forEach(userAnswer => {
         const officialAnswer = answerKey.find(
           a => a.question_number === userAnswer.questionNumber
         );
-        
-        // Award points for nullified questions as if they were correct
+
         if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
           if (userAnswer.isBasicKnowledge) {
             basicScore += 1;
           } else {
-            const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-            const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
-            const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
-            
             const qNum = userAnswer.questionNumber;
-            
-            if (qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
-              specific1Score += 1;
-            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount) && qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-              specific2Score += 1;
-            } else if (qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
-              specific3Score += 1;
-            }
+            const b = concurso.basic_knowledge_questions || 0;
+            const s1 = concurso.specific_knowledge_1_questions || 0;
+            const s2 = concurso.specific_knowledge_2_questions || 0;
+
+            if (qNum > b && qNum <= (b + s1)) specific1Score += 1;
+            else if (qNum > (b + s1) && qNum <= (b + s1 + s2)) specific2Score += 1;
+            else if (qNum > (b + s1 + s2)) specific3Score += 1;
           }
         }
       });
 
-      console.log("Scores before applying weights:", {
-        basicScore,
-        specific1Score,
-        specific2Score,
-        specific3Score
-      });
-
-      // Apply weights to raw scores using values from database
       const basicWeight = concursoData.basic_knowledge_weight || 1;
       const specific1Weight = concursoData.specific_knowledge_1_weight || 
                              concursoData.specific_knowledge_weight || 1;
@@ -143,62 +118,21 @@ export const useSaveAnswers = ({
       const caseStudy2Weight = concursoData.case_study_2_weight || 1;
       const caseStudy3Weight = concursoData.case_study_3_weight || 1;
 
-      console.log("Weights applied from database:", {
-        basicWeight,
-        specific1Weight,
-        specific2Weight,
-        specific3Weight,
-        discursiveWeight,
-        caseStudy1Weight,
-        caseStudy2Weight,
-        caseStudy3Weight
-      });
-
-      // Calculate weighted scores for objective sections
       const weightedBasicScore = basicScore * basicWeight;
       const weightedSpecific1Score = specific1Score * specific1Weight;
       const weightedSpecific2Score = specific2Score * specific2Weight;
       const weightedSpecific3Score = specific3Score * specific3Weight;
 
-      console.log("Weighted scores:", {
-        weightedBasicScore,
-        weightedSpecific1Score,
-        weightedSpecific2Score,
-        weightedSpecific3Score
-      });
-
-      // Discursive and case study scores (applying weights)
       const discursiveValue = (discursiveScore || 0) * discursiveWeight;
       const caseStudy1Value = (caseStudy1Score || 0) * caseStudy1Weight;
       const caseStudy2Value = (caseStudy2Score || 0) * caseStudy2Weight;
       const caseStudy3Value = (caseStudy3Score || 0) * caseStudy3Weight;
 
-      console.log("Subjective scores with weights applied:", {
-        discursiveValue,
-        caseStudy1Value,
-        caseStudy2Value,
-        caseStudy3Value
-      });
-
-      // Calculate total weighted score
       const totalScore = weightedBasicScore + weightedSpecific1Score + 
                          weightedSpecific2Score + weightedSpecific3Score +
                          discursiveValue + caseStudy1Value +
                          caseStudy2Value + caseStudy3Value;
 
-      console.log("Final total score:", totalScore);
-      console.log("Individual components:", {
-        weightedBasicScore,
-        weightedSpecific1Score,
-        weightedSpecific2Score,
-        weightedSpecific3Score,
-        discursiveValue,
-        caseStudy1Value,
-        caseStudy2Value,
-        caseStudy3Value
-      });
-
-      // Return both raw scores (for display) and the total weighted score
       return {
         basic_knowledge_score: basicScore,
         specific_knowledge_1_score: specific1Score,
@@ -222,24 +156,10 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-        // Determine if this question is in basic knowledge or specific knowledge sections
-        const qNum = parseInt(questionNumber);
-        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-        
-        return {
-          questionNumber: qNum,
-          answer,
-          isBasicKnowledge: qNum <= basicQuestionsCount
-        };
-      });
+      const answersArray = getRawAnswersForProcessing();
 
-      // Calculate scores using the enhanced calculation function
-      const scoreDetails = await calculateScore();
+      const scoreDetails = await calculateScore(answersArray);
 
-      console.log('Final score details before saving:', scoreDetails);
-
-      // Update user ranking with calculated scores
       const { error } = await supabase
         .from('user_rankings')
         .update({
@@ -253,17 +173,14 @@ export const useSaveAnswers = ({
         throw error;
       }
 
-      // Save user answers
       await saveUserAnswers(rankingId, concurso.id, answersArray);
 
-      // Update UI state
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
         description: "Sua pontuação foi calculada com sucesso."
       });
 
-      // Call the success callback
       onSuccess();
     } catch (error: any) {
       console.error('Error saving answers:', error);
