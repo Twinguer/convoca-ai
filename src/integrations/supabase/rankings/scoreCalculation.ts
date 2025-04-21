@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -256,3 +255,29 @@ export const saveUserScores = async (
     throw error;
   }
 };
+
+interface RawScores {
+  basicKnowledgeScore: number;
+  specificKnowledge1Score: number;
+  specificKnowledge2Score: number;
+  specificKnowledge3Score: number;
+}
+
+interface WeightedScores {
+  weightedBasicScore: number;
+  weightedSpecific1Score: number;
+  weightedSpecific2Score: number;
+  weightedSpecific3Score: number;
+  weightedDiscursiveScore: number;
+  weightedCaseStudy1Score: number;
+  weightedCaseStudy2Score: number;
+  weightedCaseStudy3Score: number;
+  totalScore: number;
+}
+
+interface SubjectiveScores {
+  discursiveScore: number;
+  caseStudy1Score: number;
+  caseStudy2Score: number;
+  caseStudy3Score: number;
+}
