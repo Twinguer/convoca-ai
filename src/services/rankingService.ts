@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -6,17 +7,29 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
+  // Pontuações brutas
   basicKnowledgeScore?: number;
   specificKnowledge1Score?: number;
   specificKnowledge2Score?: number;
   specificKnowledge3Score?: number;
-  specificKnowledgeScore?: number; // For backward compatibility
+  specificKnowledgeScore?: number; // Para compatibilidade
   discursiveScore?: number;
   caseStudy1Score?: number;
   caseStudy2Score?: number;
   caseStudy3Score?: number;
+  // Pontuações ponderadas
+  weightedBasicScore?: number;
+  weightedSpecific1Score?: number;
+  weightedSpecific2Score?: number;
+  weightedSpecific3Score?: number;
+  weightedDiscursiveScore?: number;
+  weightedCaseStudy1Score?: number;
+  weightedCaseStudy2Score?: number;
+  weightedCaseStudy3Score?: number;
+  // Outros campos
   reservationType?: string;
   displayReservation?: string;
+  id?: string;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -40,14 +53,22 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         user_id,
         score,
         basic_knowledge_score,
+        specific_knowledge_score,
         specific_knowledge_1_score,
         specific_knowledge_2_score,
         specific_knowledge_3_score,
-        specific_knowledge_score,
         discursive_score,
         case_study_1_score,
         case_study_2_score,
         case_study_3_score,
+        weighted_basic_score,
+        weighted_specific_1_score,
+        weighted_specific_2_score,
+        weighted_specific_3_score,
+        weighted_discursive_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score,
         reservation_type
       `)
       .eq('concurso_id', concursoId);
@@ -112,30 +133,35 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     const formattedRankings = rankings.map((ranking, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
-      // Obter pontuações diretamente do banco de dados
-      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
-      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
-      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
-      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
-      const discursiveScore = ranking.discursive_score || 0;
-      const caseStudy1Score = ranking.case_study_1_score || 0;
-      const caseStudy2Score = ranking.case_study_2_score || 0;
-      const caseStudy3Score = ranking.case_study_3_score || 0;
-      
       return {
         position: index + 1,
         name: profile?.name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore,
-        specificKnowledge1Score,
-        specificKnowledge2Score,
-        specificKnowledge3Score,
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score,
+        id: ranking.id,
+        
+        // Pontuações brutas
+        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
+        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
+        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
+        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
+        specificKnowledgeScore: ranking.specific_knowledge_score || 0, // Para compatibilidade
+        discursiveScore: ranking.discursive_score || 0,
+        caseStudy1Score: ranking.case_study_1_score || 0,
+        caseStudy2Score: ranking.case_study_2_score || 0,
+        caseStudy3Score: ranking.case_study_3_score || 0,
+        
+        // Pontuações ponderadas
+        weightedBasicScore: ranking.weighted_basic_score || 0,
+        weightedSpecific1Score: ranking.weighted_specific_1_score || 0,
+        weightedSpecific2Score: ranking.weighted_specific_2_score || 0,
+        weightedSpecific3Score: ranking.weighted_specific_3_score || 0,
+        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
+        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
+        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
+        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
+        
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência')
       };

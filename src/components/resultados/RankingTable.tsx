@@ -26,6 +26,14 @@ export interface Ranking {
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
+  weightedBasicScore?: number | null;
+  weightedSpecific1Score?: number | null;
+  weightedSpecific2Score?: number | null;
+  weightedSpecific3Score?: number | null;
+  weightedDiscursiveScore?: number | null;
+  weightedCaseStudy1Score?: number | null;
+  weightedCaseStudy2Score?: number | null;
+  weightedCaseStudy3Score?: number | null;
   reservationType: string;
   id: string;
 }
@@ -35,16 +43,19 @@ interface RankingTableProps {
   concurso?: Concurso;
   currentUserId?: string | null;
   isAuthenticated: boolean;
+  showWeightedValues?: boolean;
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
   currentUserId,
-  isAuthenticated
+  isAuthenticated,
+  showWeightedValues = false
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  const [displayMode, setDisplayMode] = useState<'raw' | 'weighted'>(showWeightedValues ? 'weighted' : 'raw');
   
   useEffect(() => {
     if (concurso) {
@@ -72,6 +83,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (rankings && rankings.length > 0) {
       console.log('Reservation types in rankings:', 
         [...new Set(rankings.map(r => r.reservationType))]);
+      
+      // Log some sample values to debug
+      console.log('Sample ranking data:', rankings[0]);
     }
   }, [concurso, rankings]);
   
@@ -139,7 +153,28 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   
   return <Card>
       <CardHeader>
-        <CardTitle>Classificação Pós-prova</CardTitle>
+        <CardTitle className="flex justify-between items-center">
+          <span>Classificação Pós-prova</span>
+          {rankings && rankings.length > 0 && (
+            <div className="flex items-center text-sm">
+              <span className="mr-2">Exibir valores:</span>
+              <div className="flex bg-gray-100 rounded overflow-hidden">
+                <button 
+                  className={`px-3 py-1 ${displayMode === 'raw' ? 'bg-emerald-600 text-white' : 'hover:bg-gray-200'}`}
+                  onClick={() => setDisplayMode('raw')}
+                >
+                  Brutos
+                </button>
+                <button 
+                  className={`px-3 py-1 ${displayMode === 'weighted' ? 'bg-emerald-600 text-white' : 'hover:bg-gray-200'}`}
+                  onClick={() => setDisplayMode('weighted')}
+                >
+                  Ponderados
+                </button>
+              </div>
+            </div>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {availableQuotas.length > 1 ? (
@@ -160,6 +195,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   isAmpla={quota === "Ampla Concorrência"}
                   availableQuotas={availableQuotas}
                   sectionWeights={getSectionWeights(concurso)}
+                  displayMode={displayMode}
                 />
               </TabsContent>
             ))}
@@ -173,6 +209,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             isAmpla={true}
             availableQuotas={availableQuotas}
             sectionWeights={getSectionWeights(concurso)}
+            displayMode={displayMode}
           />
         )}
       </CardContent>
@@ -222,7 +259,8 @@ const RankingTableContent: React.FC<{
     caseStudy1: number,
     caseStudy2: number,
     caseStudy3: number,
-  }
+  };
+  displayMode: 'raw' | 'weighted';
 }> = ({
   rankings,
   currentUserId,
@@ -230,12 +268,24 @@ const RankingTableContent: React.FC<{
   concurso,
   isAmpla,
   availableQuotas,
-  sectionWeights
+  sectionWeights,
+  displayMode
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('admin') === 'true';
   }, []);
+
+  // Função para renderizar o valor correto com base no modo de exibição
+  const renderScoreValue = (rawValue: number | null | undefined, weightedValue: number | null | undefined, weight: number = 1) => {
+    if (displayMode === 'raw') {
+      return rawValue !== undefined && rawValue !== null ? rawValue.toFixed(2) : '0.00';
+    } else {
+      return weightedValue !== undefined && weightedValue !== null 
+        ? weightedValue.toFixed(2) 
+        : (rawValue !== undefined && rawValue !== null ? (rawValue * weight).toFixed(2) : '0.00');
+    }
+  };
 
   if (!concurso) {
     return (
@@ -258,8 +308,8 @@ const RankingTableContent: React.FC<{
                   onClick={() => handleUserClick(ranking.userId)}
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                    <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name || 'Usuário'} />
+                    <AvatarFallback>{ranking.name ? ranking.name.substring(0, 2).toUpperCase() : 'UN'}</AvatarFallback>
                   </Avatar>
                   <span>{ranking.name}</span>
                 </div>
@@ -301,6 +351,12 @@ const RankingTableContent: React.FC<{
               className={`${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''} ${column.width ? `w-${column.width}` : ''}`}
             >
               {column.label}
+              {displayMode === 'weighted' && column.id !== 'position' && column.id !== 'name' && column.id !== 'total' && 
+              getWeightForColumn(column.id, sectionWeights) > 1 && (
+                <span className="ml-1 text-xs text-emerald-600">
+                  (peso {getWeightForColumn(column.id, sectionWeights)})
+                </span>
+              )}
             </TableHead>
           ))}
           {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
@@ -316,8 +372,8 @@ const RankingTableContent: React.FC<{
                 onClick={() => handleUserClick(ranking.userId)}
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                  <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name || 'Usuário'} />
+                  <AvatarFallback>{ranking.name ? ranking.name.substring(0, 2).toUpperCase() : 'UN'}</AvatarFallback>
                 </Avatar>
                 <span>
                   {ranking.name}
@@ -333,49 +389,81 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge !== false && (
               <TableCell className="text-right">
-                {(Number(ranking.basicKnowledgeScore || 0) * sectionWeights.basic).toFixed(2)}
+                {renderScoreValue(
+                  ranking.basicKnowledgeScore, 
+                  ranking.weightedBasicScore, 
+                  sectionWeights.basic
+                )}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 !== false && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore || 0) * sectionWeights.specific1).toFixed(2)}
+                {renderScoreValue(
+                  ranking.specificKnowledge1Score || ranking.specificKnowledgeScore, 
+                  ranking.weightedSpecific1Score, 
+                  sectionWeights.specific1
+                )}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge2Score || 0) * sectionWeights.specific2).toFixed(2)}
+                {renderScoreValue(
+                  ranking.specificKnowledge2Score, 
+                  ranking.weightedSpecific2Score, 
+                  sectionWeights.specific2
+                )}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge3Score || 0) * sectionWeights.specific3).toFixed(2)}
+                {renderScoreValue(
+                  ranking.specificKnowledge3Score, 
+                  ranking.weightedSpecific3Score, 
+                  sectionWeights.specific3
+                )}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {(Number(ranking.discursiveScore || 0) * sectionWeights.discursive).toFixed(2)}
+                {renderScoreValue(
+                  ranking.discursiveScore, 
+                  ranking.weightedDiscursiveScore, 
+                  sectionWeights.discursive
+                )}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy1Score || 0) * sectionWeights.caseStudy1).toFixed(2)}
+                {renderScoreValue(
+                  ranking.caseStudy1Score, 
+                  ranking.weightedCaseStudy1Score, 
+                  sectionWeights.caseStudy1
+                )}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy2Score || 0) * sectionWeights.caseStudy2).toFixed(2)}
+                {renderScoreValue(
+                  ranking.caseStudy2Score, 
+                  ranking.weightedCaseStudy2Score, 
+                  sectionWeights.caseStudy2
+                )}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy3Score || 0) * sectionWeights.caseStudy3).toFixed(2)}
+                {renderScoreValue(
+                  ranking.caseStudy3Score, 
+                  ranking.weightedCaseStudy3Score, 
+                  sectionWeights.caseStudy3
+                )}
               </TableCell>
             )}
             {isAdminMode && (
@@ -402,3 +490,17 @@ const RankingTableContent: React.FC<{
   );
 };
 
+// Helper para obter o peso correto com base na coluna
+const getWeightForColumn = (columnId: string, weights: any) => {
+  switch (columnId) {
+    case 'basicKnowledge': return weights.basic;
+    case 'specificKnowledge1': return weights.specific1;
+    case 'specificKnowledge2': return weights.specific2;
+    case 'specificKnowledge3': return weights.specific3;
+    case 'discursive': return weights.discursive;
+    case 'caseStudy1': return weights.caseStudy1;
+    case 'caseStudy2': return weights.caseStudy2;
+    case 'caseStudy3': return weights.caseStudy3;
+    default: return 1;
+  }
+};

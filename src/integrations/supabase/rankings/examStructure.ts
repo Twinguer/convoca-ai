@@ -27,3 +27,25 @@ export const getQuestionSection = (
     return 'specific3';
   }
 };
+
+// Verifica se uma questão pertence a uma determinada seção
+export const isQuestionInSection = (
+  questionNumber: number,
+  section: 'basic' | 'specific1' | 'specific2' | 'specific3',
+  concurso: any
+) => {
+  const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
+  
+  switch (section) {
+    case 'basic':
+      return questionNumber <= basicEnd;
+    case 'specific1':
+      return questionNumber > basicEnd && questionNumber <= specific1End;
+    case 'specific2':
+      return questionNumber > specific1End && questionNumber <= specific2End;
+    case 'specific3':
+      return questionNumber > specific2End;
+    default:
+      return false;
+  }
+};

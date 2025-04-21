@@ -1,6 +1,6 @@
 
 import { supabase } from '../client';
-import { getExamStructure } from './examStructure';
+import { getExamStructure, getQuestionSection } from './examStructure';
 
 // Função para salvar as respostas do usuário no banco de dados
 export const saveUserAnswersData = async (
@@ -27,32 +27,19 @@ export const saveUserAnswersData = async (
     // Preparar os dados de resposta com as marcações corretas de seção
     const answersData = answers.map(a => {
       const qNum = a.questionNumber;
+      const section = getQuestionSection(qNum, basicEnd, specific1End, specific2End);
 
       return {
         user_ranking_id: rankingId,
         question_number: qNum,
         answer: a.answer,
-        is_basic_knowledge: false, // Será ajustado abaixo
-        is_specific_1: false,
-        is_specific_2: false,
-        is_specific_3: false
+        is_basic_knowledge: section === 'basic',
+        is_specific_1: section === 'specific1',
+        is_specific_2: section === 'specific2',
+        is_specific_3: section === 'specific3'
       };
     });
     
-    // Corrija as flags para as seções corretamente
-    answersData.forEach(item => {
-      const qNum = item.question_number;
-      if (qNum <= basicEnd) {
-        item.is_basic_knowledge = true;
-      } else if (qNum <= specific1End) {
-        item.is_specific_1 = true;
-      } else if (qNum <= specific2End) {
-        item.is_specific_2 = true;
-      } else {
-        item.is_specific_3 = true;
-      }
-    });
-
     // Delete existing answers first
     await supabase
       .from('user_answers')

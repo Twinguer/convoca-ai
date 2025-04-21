@@ -13,10 +13,10 @@ export const saveUserAnswers = async (
   try {
     console.log('Iniciando salvamento de respostas do usuário e cálculo de pontuação');
     
-    // Salva as respostas do usuário
+    // 1. Salvar as respostas brutas (sem aplicar pesos)
     await saveUserAnswersData(rankingId, concursoId, answers);
     
-    // Busca as respostas salvas do usuário para recalcular as pontuações
+    // 2. Buscar as respostas salvas do usuário para recalcular as pontuações brutas
     const { data: userAnswers, error: answersError } = await supabase
       .from('user_answers')
       .select('*')
@@ -28,10 +28,10 @@ export const saveUserAnswers = async (
       throw new Error('Nenhuma resposta encontrada após o salvamento');
     }
 
-    // Calcula as pontuações brutas
+    // 3. Calcular as pontuações brutas (quantidade de acertos sem pesos)
     const rawScores = await calculateRawScores(concursoId, userAnswers);
     
-    // Busca as pontuações subjetivas
+    // 4. Buscar as pontuações subjetivas brutas
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select(`
@@ -45,7 +45,7 @@ export const saveUserAnswers = async (
       
     if (rankingError) throw rankingError;
     
-    // Prepara as pontuações subjetivas
+    // Preparar as pontuações subjetivas brutas
     const subjectiveScores = {
       discursiveScore: rankingData?.discursive_score || 0,
       caseStudy1Score: rankingData?.case_study_1_score || 0,
@@ -53,18 +53,20 @@ export const saveUserAnswers = async (
       caseStudy3Score: rankingData?.case_study_3_score || 0
     };
     
-    // Aplica os pesos para calcular as pontuações ponderadas
+    // 5. Aplicar os pesos para calcular as pontuações ponderadas (somente nesta etapa)
     const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
     
-    // Salva todas as pontuações
+    // 6. Salvar todas as pontuações (brutas e ponderadas)
     await saveUserScores(rankingId, rawScores, subjectiveScores, weightedScores);
 
-    // Retorna as pontuações calculadas
+    // 7. Retornar as pontuações calculadas
     return {
       success: true,
-      ...rawScores,
-      ...subjectiveScores,
-      ...weightedScores
+      rawScores: {
+        ...rawScores,
+        ...subjectiveScores
+      },
+      weightedScores
     };
   } catch (error: any) {
     console.error('Erro salvando respostas e calculando pontuação:', error);
