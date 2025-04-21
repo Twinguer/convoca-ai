@@ -4,15 +4,20 @@ import { saveUserAnswersData } from './answerManagement';
 import { calculateRawScores, applyWeightsToScores, saveUserScores } from './scoreCalculation';
 import { recalculateAllUserScores } from './batchOperations';
 
-// Função principal para salvar respostas do usuário e calcular pontuações
+// Função principal para salvar respostas do usuário e calcular pontuações.
+// AGORA aceita os valores subjetivos DIRETAMENTE.
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,
-  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
+  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[],
+  discursiveScore?: number,
+  caseStudy1Score?: number,
+  caseStudy2Score?: number,
+  caseStudy3Score?: number
 ) => {
   try {
     console.log('Iniciando salvamento de respostas do usuário e cálculo de pontuação');
-    console.log('Inputs:', { rankingId, concursoId, answersCount: answers.length });
+    console.log('Inputs:', { rankingId, concursoId, answersCount: answers.length, discursiveScore, caseStudy1Score, caseStudy2Score, caseStudy3Score });
     
     // 1. Salvar as respostas brutas (sem aplicar pesos)
     await saveUserAnswersData(rankingId, concursoId, answers);
@@ -35,29 +40,16 @@ export const saveUserAnswers = async (
     const rawScores = await calculateRawScores(concursoId, userAnswers);
     console.log('Pontuações brutas calculadas:', rawScores);
     
-    // 4. Buscar as pontuações subjetivas brutas
-    const { data: rankingData, error: rankingError } = await supabase
-      .from('user_rankings')
-      .select(`
-        discursive_score,
-        case_study_1_score,
-        case_study_2_score,
-        case_study_3_score
-      `)
-      .eq('id', rankingId)
-      .single();
-      
-    if (rankingError) throw rankingError;
-    
-    // Preparar as pontuações subjetivas brutas
+    // 4. Pega os valores subjetivos PUROS vindos do formulário e não do banco!
+    // Usamos 0 como fallback caso o valor venha undefined, para compatibilidade.
     const subjectiveScores = {
-      discursiveScore: rankingData?.discursive_score || 0,
-      caseStudy1Score: rankingData?.case_study_1_score || 0,
-      caseStudy2Score: rankingData?.case_study_2_score || 0,
-      caseStudy3Score: rankingData?.case_study_3_score || 0
+      discursiveScore: discursiveScore ?? 0,
+      caseStudy1Score: caseStudy1Score ?? 0,
+      caseStudy2Score: caseStudy2Score ?? 0,
+      caseStudy3Score: caseStudy3Score ?? 0
     };
     
-    console.log('Pontuações subjetivas brutas:', subjectiveScores);
+    console.log('Pontuações subjetivas brutas (direto do formulário):', subjectiveScores);
     
     // 5. Aplicar os pesos para calcular as pontuações ponderadas (somente nesta etapa)
     const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
@@ -83,3 +75,4 @@ export const saveUserAnswers = async (
 
 // Re-exporta a função de recálculo em lote
 export { recalculateAllUserScores };
+

@@ -68,10 +68,10 @@ export const useSaveAnswers = ({
       await supabase
         .from('user_rankings')
         .update({
-          discursive_score: discursiveScore || 0,
-          case_study_1_score: caseStudy1Score || 0,
-          case_study_2_score: caseStudy2Score || 0,
-          case_study_3_score: caseStudy3Score || 0,
+          discursive_score: discursiveScore ?? 0,
+          case_study_1_score: caseStudy1Score ?? 0,
+          case_study_2_score: caseStudy2Score ?? 0,
+          case_study_3_score: caseStudy3Score ?? 0,
           edit_count: editCount + 1
         })
         .eq('id', rankingId);
@@ -79,7 +79,16 @@ export const useSaveAnswers = ({
       console.log('Iniciando fluxo de salvamento e cálculo');
       
       // Salvar respostas e calcular pontuações (tanto brutas quanto ponderadas)
-      const result = await saveUserAnswers(rankingId, concurso.id, answersArray);
+      // Passa os valores subjetivos brutos para o backend
+      const result = await saveUserAnswers(
+        rankingId, 
+        concurso.id, 
+        answersArray, 
+        discursiveScore ?? 0, 
+        caseStudy1Score ?? 0, 
+        caseStudy2Score ?? 0, 
+        caseStudy3Score ?? 0
+      );
 
       console.log('Resultado do salvamento e cálculo de pontuação:', result);
 
@@ -107,3 +116,4 @@ export const useSaveAnswers = ({
 
   return { handleSaveAnswers };
 };
+
