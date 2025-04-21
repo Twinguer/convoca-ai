@@ -191,7 +191,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
-  const editsLeft = 3 - (userRankingData?.edit_count || 0);
+  const editsLeft = 10 - (userRankingData?.edit_count || 0);
   const canEdit = editsLeft > 0;
 
   const getObjectiveSectionList = () => {
