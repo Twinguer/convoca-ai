@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -71,7 +70,7 @@ export const calculateRawScores = async (
       specific3Score
     };
   } catch (error) {
-    console.error('Error calculating raw scores:', error);
+    console.error('[calculateRawScores] Error calculating raw scores:', error);
     throw error;
   }
 };

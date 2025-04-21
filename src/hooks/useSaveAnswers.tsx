@@ -1,8 +1,6 @@
 
-import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
-import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface UseSaveAnswersProps {
@@ -25,7 +23,6 @@ export const useSaveAnswers = ({
   rankingId,
   concurso,
   answers,
-  questionType,
   setIsSaving,
   setError,
   setSavedSuccess,
@@ -44,37 +41,41 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-        // Determine if this question is in basic knowledge or specific knowledge sections
-        const qNum = parseInt(questionNumber);
-        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
-        
-        return {
-          questionNumber: qNum,
-          answer,
-          isBasicKnowledge: qNum <= basicQuestionsCount
-        };
+      // Preparar os dados de respostas para enviar ao backend
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
+        questionNumber: parseInt(questionNumber),
+        answer,
+      }));
+
+      console.log('[useSaveAnswers] Iniciando processo de salvamento centralizado');
+      console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
+
+      // Preparar dados de pontuações subjetivas
+      const subjectiveScores = {
+        discursiveScore: discursiveScore || 0,
+        caseStudy1Score: caseStudy1Score || 0,
+        caseStudy2Score: caseStudy2Score || 0,
+        caseStudy3Score: caseStudy3Score || 0
+      };
+
+      // Usar a nova função que centraliza toda a lógica de salvamento e cálculo
+      const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
+        p_ranking_id: rankingId,
+        p_concurso_id: concurso.id,
+        p_answers: answersArray,
+        p_discursive_score: subjectiveScores.discursiveScore,
+        p_case_study_1_score: subjectiveScores.caseStudy1Score,
+        p_case_study_2_score: subjectiveScores.caseStudy2Score,
+        p_case_study_3_score: subjectiveScores.caseStudy3Score,
+        p_current_edit_count: editCount
       });
 
-      console.log('Salvando respostas do usuário:', answersArray);
-
-      // Salvar respostas do usuário utilizando o método que agora vai gerenciar
-      // toda a lógica de cálculo de pontuação no servidor
-      await saveUserAnswers(rankingId, concurso.id, answersArray);
-
-      // Apenas incrementar o contador de edições
-      const { error: updateError } = await supabase
-        .from('user_rankings')
-        .update({
-          edit_count: editCount + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', rankingId);
-
-      if (updateError) {
-        console.error('Erro ao atualizar contador de edições:', updateError);
-        throw updateError;
+      if (error) {
+        console.error('[useSaveAnswers] Erro na função RPC:', error);
+        throw new Error(error.message || "Erro ao salvar respostas");
       }
+
+      console.log('[useSaveAnswers] Resposta da função RPC:', data);
 
       // Atualizar estado da UI
       setSavedSuccess(true);
@@ -86,7 +87,7 @@ export const useSaveAnswers = ({
       // Chamar callback de sucesso
       onSuccess();
     } catch (error: any) {
-      console.error('Erro ao salvar respostas:', error);
+      console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
       setError(error.message || "Erro ao salvar respostas");
       toast({
         title: "Erro ao salvar",

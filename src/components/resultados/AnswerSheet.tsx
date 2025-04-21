@@ -68,7 +68,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         .single();
       if (error) throw error;
       return data || {};
-    }
+    },
+    staleTime: 1000
   });
   
   const {
@@ -82,7 +83,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         .eq('user_ranking_id', rankingId);
       if (error) throw error;
       return data || [];
-    }
+    },
+    staleTime: 1000
   });
   
   const { handleSaveAnswers: saveAnswers } = useSaveAnswers({
@@ -135,11 +137,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
 
     try {
+      console.log("[AnswerSheet] Iniciando processo de salvamento");
       setIsSaving(true);
       setError(null);
       
       await saveAnswers();
+      console.log("[AnswerSheet] Salvamento concluído com sucesso");
     } catch (error: any) {
+      console.error("[AnswerSheet] Erro durante o salvamento:", error);
       setIsSaving(false);
       setError(error.message || "Erro ao salvar respostas");
       toast({

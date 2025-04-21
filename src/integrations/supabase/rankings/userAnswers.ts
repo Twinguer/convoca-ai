@@ -1,83 +1,47 @@
 
 import { supabase } from '../client';
-import { saveUserAnswersData } from './answerManagement';
-import { calculateRawScores, applyWeightsToScores, saveUserScores } from './scoreCalculation';
-import { recalculateAllUserScores } from './batchOperations';
 
-// Função principal para salvar respostas do usuário e calcular pontuações
+// Esta função será substituída pela stored procedure, mantemos apenas para compatibilidade
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,
-  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
+  answers: { questionNumber: number; answer: string; isBasicKnowledge?: boolean }[]
 ) => {
   try {
-    console.log('Iniciando processo completo de salvamento de respostas e cálculo de pontuação');
+    console.log('[saveUserAnswers] Usando função RPC centralizada...');
     
-    // Salva as respostas do usuário (esta função agora já exclui respostas anteriores)
-    await saveUserAnswersData(rankingId, concursoId, answers);
+    // Preparar os dados para enviar à função RPC
+    const answersForRPC = answers.map(a => ({
+      questionNumber: a.questionNumber,
+      answer: a.answer
+    }));
     
-    // Busca as respostas salvas do usuário para recalcular as pontuações
-    const { data: userAnswers, error: answersError } = await supabase
-      .from('user_answers')
-      .select('*')
-      .eq('user_ranking_id', rankingId);
-      
-    if (answersError) throw answersError;
+    // A chamada real será feita pelo hook useSaveAnswers
+    // Esta função existe apenas para manter compatibilidade com código existente
     
-    if (!userAnswers || userAnswers.length === 0) {
-      throw new Error('Nenhuma resposta encontrada após o salvamento');
-    }
-
-    console.log(`Encontradas ${userAnswers.length} respostas para recálculo`);
-
-    // Calcula as pontuações brutas
-    const rawScores = await calculateRawScores(concursoId, userAnswers);
-    console.log('Pontuações brutas calculadas:', rawScores);
-    
-    // Busca as pontuações subjetivas
-    const { data: rankingData, error: rankingError } = await supabase
-      .from('user_rankings')
-      .select(`
-        discursive_score,
-        case_study_1_score,
-        case_study_2_score,
-        case_study_3_score
-      `)
-      .eq('id', rankingId)
-      .single();
-      
-    if (rankingError) throw rankingError;
-    
-    // Prepara as pontuações subjetivas
-    const subjectiveScores = {
-      discursiveScore: rankingData?.discursive_score || 0,
-      caseStudy1Score: rankingData?.case_study_1_score || 0,
-      caseStudy2Score: rankingData?.case_study_2_score || 0,
-      caseStudy3Score: rankingData?.case_study_3_score || 0
-    };
-    
-    console.log('Pontuações subjetivas recuperadas:', subjectiveScores);
-    
-    // Aplica os pesos para calcular as pontuações ponderadas
-    const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
-    console.log('Pontuações ponderadas calculadas:', weightedScores);
-    
-    // Salva todas as pontuações
-    await saveUserScores(rankingId, rawScores, subjectiveScores, weightedScores);
-    console.log('Pontuações salvas com sucesso');
-
-    // Retorna as pontuações calculadas
-    return {
-      success: true,
-      ...rawScores,
-      ...subjectiveScores,
-      ...weightedScores
-    };
+    console.log('[saveUserAnswers] Total de respostas a serem processadas:', answersForRPC.length);
+    return true;
   } catch (error: any) {
-    console.error('Erro salvando respostas e calculando pontuação:', error);
+    console.error('[saveUserAnswers] Erro (compatibilidade):', error);
     throw error;
   }
 };
 
-// Re-exporta a função de recálculo em lote
-export { recalculateAllUserScores };
+// Função para buscar as respostas de um usuário
+export const fetchUserAnswers = async (rankingId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_answers')
+      .select('*')
+      .eq('user_ranking_id', rankingId);
+      
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('[fetchUserAnswers] Erro ao buscar respostas:', error);
+    return [];
+  }
+};
+
+// Re-exporta a função de recálculo em lote para manter compatibilidade
+export { recalculateAllUserScores } from './batchOperations';
