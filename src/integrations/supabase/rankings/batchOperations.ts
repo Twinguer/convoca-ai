@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { calculateRawScores, applyWeightsToScores } from './scoreCalculation';
 
@@ -71,7 +70,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             caseStudy3Score: rankingData?.case_study_3_score || 0
           };
           
-          // Calcula pontuações brutas e ponderadas
           const rawScores = await calculateRawScores(concursoId, userAnswers || []);
           const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
           
@@ -144,4 +142,3 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     };
   }
 };
-

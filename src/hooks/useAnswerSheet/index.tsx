@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +8,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
+import { useQuery } from '@tanstack/react-query';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -30,7 +30,23 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
-  // Initialize with the first available section
+  const { data: userRankingData, isLoading: isLoadingRanking } = useQuery({
+    queryKey: ['user-ranking-detail', rankingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+      if (error) throw error;
+      return data || {};
+    },
+    staleTime: 1000
+  });
+
+  const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
+  const canEdit = editsLeft > 0;
+
   useEffect(() => {
     if (concurso) {
       handleQuestionSectionSelection(concurso, setSelectedSection);
@@ -151,6 +167,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    editsLeft,
+    canEdit
   };
 };

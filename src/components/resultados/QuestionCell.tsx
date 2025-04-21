@@ -58,17 +58,11 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             option={option}
             isSelected={selectedAnswer === option}
             onClick={() => onAnswerChange(questionNumber, option)}
-            disabled={disabled}
+            disabled={disabled} // Removida a restrição de questões anuladas
             examType={examType}
           />
         ))}
       </div>
-      
-      {isNullified && (
-        <div className="mt-2 text-xs text-amber-700 italic">
-          Esta questão foi anulada. Todos os candidatos recebem a pontuação.
-        </div>
-      )}
     </div>
   );
 };
