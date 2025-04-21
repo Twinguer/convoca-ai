@@ -1,14 +1,20 @@
-
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
-// Função para salvar as respostas do usuário no banco de dados
 export const saveUserAnswersData = async (
   rankingId: string,
   concursoId: string,
   answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
+    // Primeiro, deletar todas as respostas existentes do usuário
+    const { error: deleteError } = await supabase
+      .from('user_answers')
+      .delete()
+      .eq('user_ranking_id', rankingId);
+      
+    if (deleteError) throw deleteError;
+
     // Carregue os dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
@@ -32,34 +38,14 @@ export const saveUserAnswersData = async (
         user_ranking_id: rankingId,
         question_number: qNum,
         answer: a.answer,
-        is_basic_knowledge: false, // Será ajustado abaixo
-        is_specific_1: false,
-        is_specific_2: false,
-        is_specific_3: false
+        is_basic_knowledge: qNum <= basicEnd,
+        is_specific_1: qNum > basicEnd && qNum <= specific1End,
+        is_specific_2: qNum > specific1End && qNum <= specific2End,
+        is_specific_3: qNum > specific2End
       };
     });
-    
-    // Corrija as flags para as seções corretamente
-    answersData.forEach(item => {
-      const qNum = item.question_number;
-      if (qNum <= basicEnd) {
-        item.is_basic_knowledge = true;
-      } else if (qNum <= specific1End) {
-        item.is_specific_1 = true;
-      } else if (qNum <= specific2End) {
-        item.is_specific_2 = true;
-      } else {
-        item.is_specific_3 = true;
-      }
-    });
 
-    // Delete existing answers first
-    await supabase
-      .from('user_answers')
-      .delete()
-      .eq('user_ranking_id', rankingId);
-    
-    // Insert new answers
+    // Inserir as novas respostas
     const { error: insertError } = await supabase
       .from('user_answers')
       .insert(answersData);
@@ -73,7 +59,6 @@ export const saveUserAnswersData = async (
   }
 };
 
-// Função para buscar as respostas de um usuário
 export const fetchUserAnswers = async (rankingId: string) => {
   try {
     const { data, error } = await supabase
