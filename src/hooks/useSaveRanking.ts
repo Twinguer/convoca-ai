@@ -13,19 +13,25 @@ interface SaveRankingOptions {
 export const useSaveRanking = () => {
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
     try {
-      // Checa se já existe ranking idêntico (mesmo título, órgão, banca e data de publicação)
-      const title = formValues.custom_job_title || formValues.predefined_job_title;
-      const { data: found, error: findError } = await supabase
-        .from('concursos')
-        .select('id')
-        .eq('titulo', title)
-        .eq('orgao', formValues.orgao)
-        .eq('banca', formValues.custom_banca || formValues.banca)
-        .eq('data_publicacao', formValues.data_publicacao)
-        .maybeSingle();
+      // Normalize strings for uniqueness check (handling case and spaces)
+      const normalize = (str: string) => (str || "").replace(/\s+/g, " ").trim().toUpperCase();
 
-      // Bloqueia duplicidade se não for no modo edição e encontrou igual
-      if (!editId && found) {
+      const title = formValues.custom_job_title || formValues.predefined_job_title;
+      // Fetch concursos and do the comparison in JS for robust uniqueness
+      const { data: founds, error: findError } = await supabase
+        .from('concursos')
+        .select('id, titulo, orgao, banca, data_publicacao')
+        .eq('data_publicacao', formValues.data_publicacao);
+
+      if (findError) throw findError;
+
+      const isDuplicate = !editId && founds?.some(item =>
+        normalize(item.titulo) === normalize(title) &&
+        normalize(item.orgao) === normalize(formValues.orgao) &&
+        normalize(item.banca) === normalize(formValues.custom_banca || formValues.banca)
+      );
+
+      if (isDuplicate) {
         toast.error("Já existe um ranking com mesmo título, órgão, banca e data.");
         return { duplicated: true };
       }
@@ -70,3 +76,4 @@ export const useSaveRanking = () => {
 
   return { saveRanking };
 };
+
