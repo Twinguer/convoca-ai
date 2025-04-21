@@ -12,6 +12,7 @@ export const saveUserAnswers = async (
 ) => {
   try {
     console.log('Iniciando salvamento de respostas do usuário e cálculo de pontuação');
+    console.log('Inputs:', { rankingId, concursoId, answersCount: answers.length });
     
     // 1. Salvar as respostas brutas (sem aplicar pesos)
     await saveUserAnswersData(rankingId, concursoId, answers);
@@ -28,8 +29,11 @@ export const saveUserAnswers = async (
       throw new Error('Nenhuma resposta encontrada após o salvamento');
     }
 
+    console.log(`Recalculando pontuações para ${userAnswers.length} respostas`);
+
     // 3. Calcular as pontuações brutas (quantidade de acertos sem pesos)
     const rawScores = await calculateRawScores(concursoId, userAnswers);
+    console.log('Pontuações brutas calculadas:', rawScores);
     
     // 4. Buscar as pontuações subjetivas brutas
     const { data: rankingData, error: rankingError } = await supabase
@@ -53,8 +57,11 @@ export const saveUserAnswers = async (
       caseStudy3Score: rankingData?.case_study_3_score || 0
     };
     
+    console.log('Pontuações subjetivas brutas:', subjectiveScores);
+    
     // 5. Aplicar os pesos para calcular as pontuações ponderadas (somente nesta etapa)
     const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
+    console.log('Pontuações ponderadas calculadas:', weightedScores);
     
     // 6. Salvar todas as pontuações (brutas e ponderadas)
     await saveUserScores(rankingId, rawScores, subjectiveScores, weightedScores);

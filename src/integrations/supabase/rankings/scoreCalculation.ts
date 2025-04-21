@@ -123,6 +123,8 @@ export const applyWeightsToScores = async (
       caseStudy3: concursoWithWeights?.case_study_3_weight || 1
     };
 
+    console.log('Applying weights to raw scores:', { rawScores, subjectiveScores, weights });
+
     // Aplica os pesos
     const weightedScores = {
       weightedBasicScore: rawScores.basicKnowledgeScore * weights.basicKnowledge,
@@ -145,6 +147,8 @@ export const applyWeightsToScores = async (
       weightedScores.weightedCaseStudy1Score +
       weightedScores.weightedCaseStudy2Score +
       weightedScores.weightedCaseStudy3Score;
+
+    console.log('Weighted scores calculated:', { weightedScores, totalScore });
 
     return {
       ...weightedScores,
@@ -185,6 +189,8 @@ export const saveUserScores = async (
   }
 ) => {
   try {
+    console.log('Saving user scores to database:', { rankingId, rawScores, weightedScores });
+    
     // Atualiza o ranking do usuário com todas as pontuações
     const { error: updateError } = await supabase
       .from('user_rankings')

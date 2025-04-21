@@ -9,6 +9,8 @@ export const saveUserAnswersData = async (
   answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
+    console.log('Salvando respostas do usuário:', { rankingId, concursoId, answersCount: answers.length });
+    
     // Carregue os dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
@@ -40,11 +42,15 @@ export const saveUserAnswersData = async (
       };
     });
     
+    console.log('Deletando respostas existentes antes de inserir novas');
+    
     // Delete existing answers first
     await supabase
       .from('user_answers')
       .delete()
       .eq('user_ranking_id', rankingId);
+    
+    console.log('Inserindo novas respostas:', answersData.length);
     
     // Insert new answers
     const { error: insertError } = await supabase
@@ -52,6 +58,8 @@ export const saveUserAnswersData = async (
       .insert(answersData);
       
     if (insertError) throw insertError;
+    
+    console.log('Respostas salvas com sucesso');
     
     return answersData;
   } catch (error: any) {

@@ -47,7 +47,8 @@ export const useSaveAnswers = ({
       console.log('Preparando respostas para salvamento:', {
         rankingId,
         concursoId: concurso.id,
-        respostasCount: Object.keys(answers).length
+        respostasCount: Object.keys(answers).length,
+        editCount: editCount
       });
 
       // Prepara as respostas no formato esperado pela API
@@ -75,6 +76,8 @@ export const useSaveAnswers = ({
         })
         .eq('id', rankingId);
 
+      console.log('Iniciando fluxo de salvamento e cálculo');
+      
       // Salvar respostas e calcular pontuações (tanto brutas quanto ponderadas)
       const result = await saveUserAnswers(rankingId, concurso.id, answersArray);
 
@@ -84,7 +87,7 @@ export const useSaveAnswers = ({
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi calculada."
+        description: "Sua pontuação foi calculada corretamente."
       });
 
       // Chamar callback de sucesso
