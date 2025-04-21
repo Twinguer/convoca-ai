@@ -91,7 +91,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     rankingId,
     concurso,
     answers,
-    questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
     setIsSaving,
     setError,
     setSavedSuccess,
