@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,6 +74,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     staleTime: 1000
   });
   
+  // Definir a variável editsLeft e canEdit antes de useEffect
+  const editsLeft = userRankingData ? 3 - (userRankingData.edit_count || 0) : 3;
+  const canEdit = editsLeft > 0;
+  
   const {
     data: nullifiedData,
     isLoading: isLoadingNullified,
@@ -92,7 +97,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     refetchInterval: 10000
   });
   
-  const { handleSaveAnswers: saveAnswers } = useSaveAnswers({
+  const { handleSaveAnswers } = useSaveAnswers({
     rankingId,
     concurso,
     answers,
@@ -209,8 +214,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
-  const editsLeft = 3 - (userRankingData?.edit_count || 0);
-  const canEdit = editsLeft > 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
   const getObjectiveSectionList = () => {
