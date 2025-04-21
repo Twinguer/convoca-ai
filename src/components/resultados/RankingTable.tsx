@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -158,7 +159,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   concurso={concurso}
                   isAmpla={quota === "Ampla Concorrência"}
                   availableQuotas={availableQuotas}
-                  sectionWeights={getSectionWeights()}
+                  sectionWeights={getSectionWeights(concurso)}
                 />
               </TabsContent>
             ))}
@@ -171,7 +172,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             concurso={concurso}
             isAmpla={true}
             availableQuotas={availableQuotas}
-            sectionWeights={getSectionWeights()}
+            sectionWeights={getSectionWeights(concurso)}
           />
         )}
       </CardContent>
@@ -192,7 +193,7 @@ const getQuotaAbbreviation = (quota: string): string => {
   return abbreviations[quota] || quota.substring(0, 3);
 };
 
-const getSectionWeights = () => {
+const getSectionWeights = (concurso?: Concurso) => {
   return {
     basic: concurso?.basic_knowledge_weight ?? 1,
     specific1: concurso?.specific_knowledge_1_weight ?? concurso?.specific_knowledge_weight ?? 1,
@@ -400,3 +401,4 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
+
