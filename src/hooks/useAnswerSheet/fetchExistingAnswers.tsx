@@ -13,7 +13,6 @@ export const fetchExistingAnswers = async (
   try {
     console.log('[fetchExistingAnswers] Buscando respostas existentes para o ranking ID:', rankingId);
     
-    // Fetch answers
     const { data: answersData, error: answersError } = await supabase
       .from('user_answers')
       .select('*')
@@ -45,14 +44,11 @@ export const fetchExistingAnswers = async (
       });
       
       console.log('[fetchExistingAnswers] Mapa de respostas criado:', Object.keys(answersMap).length, 'respostas');
-      
       setAnswers(answersMap);
       setQuestionType(typesMap);
-    } else {
-      console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para este ranking');
     }
     
-    // Fetch user ranking for scores
+    // Buscar dados do ranking com notas subjetivas
     console.log('[fetchExistingAnswers] Buscando dados do ranking para pontuações subjetivas');
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
@@ -67,7 +63,7 @@ export const fetchExistingAnswers = async (
     
     console.log('[fetchExistingAnswers] Dados do ranking obtidos:', rankingData);
     
-    // Definir explicitamente todas as pontuações subjetivas com base nos dados do ranking
+    // Garantir que todas as pontuações subjetivas sejam definidas explicitamente
     if (rankingData) {
       console.log('[fetchExistingAnswers] Definindo pontuações subjetivas:',
         'Discursiva:', rankingData.discursive_score,
@@ -83,5 +79,6 @@ export const fetchExistingAnswers = async (
     }
   } catch (error) {
     console.error('[fetchExistingAnswers] Erro não tratado:', error);
+    throw error;
   }
 };

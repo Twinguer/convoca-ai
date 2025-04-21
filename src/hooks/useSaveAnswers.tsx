@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -33,6 +34,7 @@ export const useSaveAnswers = ({
   editCount
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSaveAnswers = async () => {
     try {
@@ -40,12 +42,10 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Verificar limite de edições
       if (editCount >= 5) {
         throw new Error("Você atingiu o limite de 5 edições permitidas");
       }
 
-      // Preparar os dados de respostas para enviar
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber),
         answer,
@@ -60,7 +60,6 @@ export const useSaveAnswers = ({
       );
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
 
-      // Chamar a função RPC centralizada
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -83,7 +82,13 @@ export const useSaveAnswers = ({
         throw new Error(data.error || "Erro ao salvar respostas");
       }
 
-      // Atualizar estado da UI
+      // Invalidar caches relevantes para forçar recarregamento dos dados
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['user-ranking-detail', rankingId] }),
+        queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] }),
+        queryClient.invalidateQueries({ queryKey: ['participating', concurso.id] })
+      ]);
+
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
@@ -91,7 +96,6 @@ export const useSaveAnswers = ({
         duration: 5000
       });
 
-      // Chamar callback de sucesso
       onSuccess();
     } catch (error: any) {
       console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
