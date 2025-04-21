@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -190,7 +191,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  if (isLoadingAnswers || isLoadingRanking || isLoadingNullified) {
+  // Fix: Replace isLoadingAnswers with the other loading states we have
+  if (isLoadingRanking || isLoadingNullified) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
