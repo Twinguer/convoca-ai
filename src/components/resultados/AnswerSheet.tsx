@@ -97,7 +97,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     refetchInterval: 10000
   });
   
-  const { handleSaveAnswers } = useSaveAnswers({
+  // Renomeie a função importada de useSaveAnswers para saveAnswersService
+  const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
     answers,
@@ -162,7 +163,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
       
-      await saveAnswers();
+      // Chamando o serviço correto renomeado
+      await saveAnswersService();
       await refetchNullified();
       console.log("[AnswerSheet] Salvamento concluído com sucesso");
     } catch (error: any) {
