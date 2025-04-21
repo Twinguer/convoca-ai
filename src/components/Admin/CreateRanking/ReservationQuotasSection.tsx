@@ -65,7 +65,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
           
           <FormField
             control={form.control}
-            name="has_hiposuficientes"
+            name="has_hipossuficientes"
             render={({ field }) => (
               <FormItem className="flex items-center space-x-2">
                 <FormControl>

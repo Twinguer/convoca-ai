@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -53,7 +54,7 @@ export interface Concurso {
   has_ampla_concorrencia?: boolean;
   has_ppp?: boolean;
   has_pcd?: boolean;
-  has_hipossuficientes?: boolean;
+  has_hipossuficientes?: boolean;  // Corrigido: antes estava 'has_hiposuficientes'
   has_indigenas?: boolean;
   has_transsexuais?: boolean;
 }
