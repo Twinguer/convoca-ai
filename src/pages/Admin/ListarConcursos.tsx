@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,10 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
+import { useAuth } from '@/hooks/useAuth';
 
 const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<ConcursoFilter>({});
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -42,12 +46,17 @@ const ListarConcursos: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este ranking?')) {
       try {
-        const { error } = await supabase
-          .from('concursos')
-          .delete()
-          .eq('id', id);
+        if (!user) {
+          toast({
+            title: 'Erro ao excluir ranking',
+            description: 'Você precisa estar logado para excluir um ranking.',
+            variant: 'destructive',
+          });
+          return;
+        }
         
-        if (error) throw error;
+        // Use the deleteRanking function and pass isAdmin=true
+        await deleteRanking(id, user.id, true);
         
         toast({
           title: 'Ranking excluído com sucesso!',
@@ -55,11 +64,11 @@ const ListarConcursos: React.FC = () => {
         });
         
         refetch();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao excluir ranking:', error);
         toast({
           title: 'Erro ao excluir ranking',
-          description: 'Ocorreu um erro ao tentar excluir o ranking.',
+          description: error.message || 'Ocorreu um erro ao tentar excluir o ranking.',
           variant: 'destructive',
         });
       }

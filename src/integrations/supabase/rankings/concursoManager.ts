@@ -255,17 +255,45 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       throw new Error('Você não tem permissão para excluir este ranking');
     }
     
-    // Delete all related user_answers first
-    const { error: answersError } = await supabase
-      .from('user_answers')
-      .delete()
+    // 1. First, get all user_rankings ids for this concurso
+    const { data: userRankings, error: userRankingsError } = await supabase
+      .from('user_rankings')
+      .select('id')
       .eq('concurso_id', rankingId);
       
-    if (answersError) {
-      console.error('Error deleting user answers:', answersError);
+    if (userRankingsError) {
+      console.error('Error fetching user_rankings ids:', userRankingsError);
     }
     
-    // Delete all related user_rankings
+    const userRankingIds = userRankings?.map(ur => ur.id) || [];
+    
+    // 2. Delete score_calculation_logs for each user_ranking
+    if (userRankingIds.length > 0) {
+      for (const userRankingId of userRankingIds) {
+        const { error: scoreLogsError } = await supabase
+          .from('score_calculation_logs')
+          .delete()
+          .eq('user_ranking_id', userRankingId);
+          
+        if (scoreLogsError) {
+          console.error(`Error deleting score_calculation_logs for user_ranking ${userRankingId}:`, scoreLogsError);
+        }
+      }
+    }
+    
+    // 3. Delete all user_answers
+    for (const userRankingId of userRankingIds) {
+      const { error: answersError } = await supabase
+        .from('user_answers')
+        .delete()
+        .eq('user_ranking_id', userRankingId);
+        
+      if (answersError) {
+        console.error(`Error deleting user answers for user_ranking ${userRankingId}:`, answersError);
+      }
+    }
+    
+    // 4. Delete all user_rankings for this concurso
     const { error: rankingsError } = await supabase
       .from('user_rankings')
       .delete()
@@ -273,9 +301,20 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       
     if (rankingsError) {
       console.error('Error deleting user rankings:', rankingsError);
+      throw rankingsError;
     }
     
-    // Finally delete the ranking itself
+    // 5. Delete answer_keys for this concurso
+    const { error: answersKeysError } = await supabase
+      .from('answer_keys')
+      .delete()
+      .eq('concurso_id', rankingId);
+      
+    if (answersKeysError) {
+      console.error('Error deleting answer keys:', answersKeysError);
+    }
+    
+    // 6. Finally delete the ranking itself
     const { error } = await supabase
       .from('concursos')
       .delete()

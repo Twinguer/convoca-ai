@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Calendar, User, FileText } from 'lucide-react';
@@ -99,6 +100,7 @@ const AdminDashboard: React.FC = () => {
     description: 'Usuários registrados',
     icon: <User className="h-6 w-6 text-purple-500" />
   }];
+  
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Painel Administrativo</h1>
