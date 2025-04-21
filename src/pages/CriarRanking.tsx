@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +49,7 @@ const CriarRanking = () => {
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
   const [pendingFormValues, setPendingFormValues] = useState<any | null>(null);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
@@ -135,6 +137,11 @@ const CriarRanking = () => {
             const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
             setIsCustomBanca(isOtherBanca);
             
+            // Configurar as localidades
+            if (data.localidades && Array.isArray(data.localidades)) {
+              setSelectedStates(data.localidades);
+            }
+            
             form.reset({
               ...data,
               localidades: data.localidades || [],
@@ -188,32 +195,30 @@ const CriarRanking = () => {
 
   const handleSaveRanking = async () => {
     const formValues = form.getValues();
-    // Faz sincronização final das localidades do StateSelector (caso não esteja)
-    if (
-      formValues.localidades &&
-      JSON.stringify(formValues.localidades) !== JSON.stringify(formValues.selectedStates)
-    ) {
-      form.setValue('localidades', formValues.selectedStates);
-    }
+    
+    // Sincronizar os estados selecionados com o formulário
+    form.setValue('localidades', selectedStates, { shouldDirty: true });
+    formValues.localidades = selectedStates;
+    
     setIsSubmitting(true);
 
     try {
       const saveResult = await saveRanking({
-        formValues: {
-          ...formValues,
-          localidades: formValues.localidades, // sempre pronto
-        },
+        formValues,
         userId: user?.id,
         editId,
         jobTitles,
       });
+      
       if (saveResult?.duplicated) {
         setIsSubmitting(false);
         return;
       }
+      
       if (saveResult?.id) {
         setCreatedConcursoId(saveResult.id);
       }
+      
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
     } catch (error) {
       console.error("Erro ao salvar ranking:", error);
@@ -236,39 +241,45 @@ const CriarRanking = () => {
     setIsSubmitting(true);
 
     try {
+      // Use o ID do concurso já criado ou o ID de edição
+      const existingConcursoId = createdConcursoId || editId;
       const effectiveFormValues = pendingFormValues || formValues;
+      
+      // Sincronize as localidades
+      effectiveFormValues.localidades = selectedStates;
+      
       const dataToSubmit = {
         ...effectiveFormValues,
         created_by_user_id: user?.id,
         titulo: effectiveFormValues.custom_job_title || effectiveFormValues.predefined_job_title,
         banca: effectiveFormValues.custom_banca || effectiveFormValues.banca,
-        localidades: effectiveFormValues.localidades
+        localidades: selectedStates
       };
 
-      let result;
-      let concursoIdToUse = editId;
-      if (editId) {
+      let concursoIdToUse = existingConcursoId;
+      
+      // Atualize o ranking existente ou crie um novo se não existir
+      if (existingConcursoId) {
         const { data, error } = await supabase
           .from('concursos')
           .update(dataToSubmit)
-          .eq('id', editId)
+          .eq('id', existingConcursoId)
           .select();
 
         if (error) throw error;
-        result = data;
-        concursoIdToUse = editId;
+        concursoIdToUse = existingConcursoId;
         toast.success("Ranking atualizado com sucesso!");
       } else {
-        result = await createRanking(dataToSubmit);
-        concursoIdToUse = result?.[0]?.id;
+        const { data, error } = await supabase.from('concursos').insert(dataToSubmit).select();
+        if (error) throw error;
+        concursoIdToUse = data?.[0]?.id;
+        setCreatedConcursoId(concursoIdToUse);
         toast.success("Ranking criado com sucesso!");
       }
 
       if (concursoIdToUse) {
         await saveAnswerKeyAndRecalculate(concursoIdToUse, answerKeyData);
-
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        setCreatedConcursoId(concursoIdToUse);
         setActiveTab('answer-key');
       }
 
@@ -299,8 +310,6 @@ const CriarRanking = () => {
     }
   };
 
-  const formValues = form.getValues();
-
   return (
     <div className="container mx-auto p-4">
       <Button 
@@ -324,7 +333,7 @@ const CriarRanking = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!formValues || !user}>
+                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editId}>
                     Gabarito Oficial
                   </TabsTrigger>
                 </TabsList>
@@ -341,25 +350,27 @@ const CriarRanking = () => {
                     handleNextTab={handleNextTab}
                     onSaveRanking={handleSaveRanking}
                     isSubmitting={isSubmitting}
+                    selectedStates={selectedStates}
+                    setSelectedStates={setSelectedStates}
                   />
                 </TabsContent>
                 <TabsContent value="answer-key">
                   <AnswerKeyTab
-                    concursoId={createdConcursoId || undefined}
-                    formValues={formValues}
+                    concursoId={createdConcursoId || editId || undefined}
+                    formValues={form.getValues()}
                     onSaveFullRanking={handleSaveFullRanking}
-                    hasBasicKnowledge={!!formValues.has_basic_knowledge}
-                    hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
-                    hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
-                    hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
-                    basicKnowledgeQuestions={formValues.basic_knowledge_questions}
-                    specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
-                    specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
-                    specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
-                    examType={formValues.exam_type}
-                    alternativesCount={formValues.alternatives_count}
+                    hasBasicKnowledge={!!form.getValues().has_basic_knowledge}
+                    hasSpecificKnowledge1={!!form.getValues().has_specific_knowledge_1}
+                    hasSpecificKnowledge2={!!form.getValues().has_specific_knowledge_2}
+                    hasSpecificKnowledge3={!!form.getValues().has_specific_knowledge_3}
+                    basicKnowledgeQuestions={form.getValues().basic_knowledge_questions}
+                    specificKnowledge1Questions={form.getValues().specific_knowledge_1_questions}
+                    specificKnowledge2Questions={form.getValues().specific_knowledge_2_questions}
+                    specificKnowledge3Questions={form.getValues().specific_knowledge_3_questions}
+                    examType={form.getValues().exam_type}
+                    alternativesCount={form.getValues().alternatives_count}
                   />
-                  {createdConcursoId && (
+                  {(createdConcursoId || editId) && (
                     <div className="flex justify-end mt-6">
                       <Button type="button" onClick={handleGoToResults}>
                         Ir para Resultados

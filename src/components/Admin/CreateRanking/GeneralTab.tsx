@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -17,6 +18,8 @@ interface GeneralTabProps {
   handleNextTab: () => void;
   onSaveRanking?: () => Promise<void>;
   isSubmitting?: boolean;
+  selectedStates: string[];
+  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({
@@ -30,9 +33,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   handleOrgaoChange,
   handleNextTab,
   onSaveRanking,
-  isSubmitting
+  isSubmitting,
+  selectedStates,
+  setSelectedStates
 }) => {
-  const [selectedStates, setSelectedStates] = React.useState<string[]>([]);
   const [rankingSaved, setRankingSaved] = useState<boolean>(false);
   const { toast } = useToast();
   const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
@@ -40,6 +44,14 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   useEffect(() => {
     setIsFirstSaveDone(false);
   }, [form]);
+
+  // Sincronizar as localidades do formulário quando o componente é montado
+  useEffect(() => {
+    const formValues = form.getValues();
+    if (formValues.localidades && Array.isArray(formValues.localidades) && formValues.localidades.length > 0) {
+      setSelectedStates(formValues.localidades);
+    }
+  }, [form, setSelectedStates]);
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
@@ -153,6 +165,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const handleSave = async () => {
     if (validateBeforeSave() && onSaveRanking) {
+      // Sincroniza as localidades com o formulário antes de salvar
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       await onSaveRanking();
       setIsFirstSaveDone(true);
