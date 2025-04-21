@@ -8,30 +8,34 @@ import { recalculateAllUserScores } from './batchOperations';
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,
-  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
+  answers: { questionNumber: number; answer: string; is_basic_knowledge?: boolean }[]
 ) => {
   try {
-    console.log('Iniciando salvamento de respostas do usuário e cálculo de pontuação');
+    console.log('Iniciando processamento de pontuação para ranking:', rankingId);
     
-    // Salva as respostas do usuário
-    await saveUserAnswersData(rankingId, concursoId, answers);
-    
-    // Busca as respostas salvas do usuário para recalcular as pontuações
+    // 1. Primeiro buscamos as respostas do banco, não usando as passadas por parâmetro
+    // Isso garante que estamos sempre trabalhando com os dados mais recentes
     const { data: userAnswers, error: answersError } = await supabase
       .from('user_answers')
       .select('*')
       .eq('user_ranking_id', rankingId);
       
-    if (answersError) throw answersError;
+    if (answersError) {
+      console.error('Erro ao buscar respostas do usuário:', answersError);
+      throw answersError;
+    }
     
     if (!userAnswers || userAnswers.length === 0) {
-      throw new Error('Nenhuma resposta encontrada após o salvamento');
+      throw new Error('Nenhuma resposta encontrada para processamento. Verifique se as respostas foram salvas corretamente.');
     }
 
-    // Calcula as pontuações brutas
-    const rawScores = await calculateRawScores(concursoId, userAnswers);
+    console.log(`Processando ${userAnswers.length} respostas para cálculo de pontuação`);
     
-    // Busca as pontuações subjetivas
+    // 2. Calcular as pontuações brutas (baseado nas respostas do banco)
+    const rawScores = await calculateRawScores(concursoId, userAnswers);
+    console.log('Pontuações brutas calculadas:', rawScores);
+    
+    // 3. Buscar as pontuações subjetivas diretamente do banco
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select(`
@@ -43,9 +47,12 @@ export const saveUserAnswers = async (
       .eq('id', rankingId)
       .single();
       
-    if (rankingError) throw rankingError;
+    if (rankingError) {
+      console.error('Erro ao buscar pontuações subjetivas:', rankingError);
+      throw rankingError;
+    }
     
-    // Prepara as pontuações subjetivas
+    // Montar objeto com pontuações subjetivas
     const subjectiveScores = {
       discursiveScore: rankingData?.discursive_score || 0,
       caseStudy1Score: rankingData?.case_study_1_score || 0,
@@ -53,22 +60,40 @@ export const saveUserAnswers = async (
       caseStudy3Score: rankingData?.case_study_3_score || 0
     };
     
-    // Aplica os pesos para calcular as pontuações ponderadas
-    const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
+    console.log('Pontuações subjetivas recuperadas:', subjectiveScores);
     
-    // Salva todas as pontuações
+    // 4. Aplicar os pesos para calcular as pontuações ponderadas
+    const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
+    console.log('Pontuações ponderadas calculadas:', weightedScores);
+    
+    // 5. Salvar todas as pontuações no banco de dados
     await saveUserScores(rankingId, rawScores, subjectiveScores, weightedScores);
+    
+    // 6. Marcar que o recálculo foi concluído
+    await supabase
+      .from('user_rankings')
+      .update({ 
+        is_score_recalculated: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', rankingId);
+    
+    console.log('Processamento de pontuação concluído com sucesso');
 
-    // Retorna as pontuações calculadas
+    // Retornar as pontuações calculadas
     return {
       success: true,
       ...rawScores,
       ...subjectiveScores,
-      ...weightedScores
+      ...weightedScores,
+      totalScore: weightedScores.totalScore
     };
   } catch (error: any) {
-    console.error('Erro salvando respostas e calculando pontuação:', error);
-    throw error;
+    console.error('Erro completo no processamento de pontuação:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido durante o cálculo de pontuação'
+    };
   }
 };
 

@@ -1,9 +1,11 @@
 
-export const createAnswerMatrix = (sectionQuestions: number[]) => {
-  if (sectionQuestions.length === 0) return [];
+// Utilitário para criar uma matriz de questões para exibição na interface
+export const createAnswerMatrix = (questions: number[]) => {
+  if (questions.length === 0) return [];
   
-  const QUESTIONS_PER_ROW = 4; // Changed from 5 to 4 for better display
-  const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
+  // Configurar para 4 questões por linha para melhor visualização
+  const QUESTIONS_PER_ROW = 4;
+  const rows = Math.ceil(questions.length / QUESTIONS_PER_ROW);
   
   const matrix = [];
   
@@ -11,8 +13,8 @@ export const createAnswerMatrix = (sectionQuestions: number[]) => {
     const rowData = [];
     for (let col = 0; col < QUESTIONS_PER_ROW; col++) {
       const index = row * QUESTIONS_PER_ROW + col;
-      if (index < sectionQuestions.length) {
-        rowData.push(sectionQuestions[index]);
+      if (index < questions.length) {
+        rowData.push(questions[index]);
       } else {
         rowData.push(null);
       }

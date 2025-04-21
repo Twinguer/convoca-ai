@@ -1,7 +1,7 @@
-import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
+
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
-import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface UseSaveAnswersProps {
@@ -36,118 +36,43 @@ export const useSaveAnswers = ({
   editCount
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
+  const [processingStatus, setProcessingStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
 
-  const getRawAnswersForProcessing = () => {
+  // Esta função prepara os dados das respostas para serem salvos no banco
+  const prepareAnswersForSaving = () => {
     const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
     const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
     const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
+    
     return Object.entries(answers).map(([questionNumber, answer]) => {
       const qNum = parseInt(questionNumber);
+      
+      // Determina a qual tipo de conhecimento a questão pertence
+      let isBasicKnowledge = false;
+      let isSpecific1 = false;
+      let isSpecific2 = false;
+      let isSpecific3 = false;
+      
+      if (qNum <= basicQuestionsCount) {
+        isBasicKnowledge = true;
+      } else if (qNum <= (basicQuestionsCount + specific1QuestionsCount)) {
+        isSpecific1 = true;
+      } else if (qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)) {
+        isSpecific2 = true;
+      } else {
+        isSpecific3 = true;
+      }
 
       return {
-        questionNumber: qNum,
+        user_ranking_id: rankingId,
+        question_number: qNum,
         answer,
-        isBasicKnowledge: qNum <= basicQuestionsCount,
-        isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
-        isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
-        isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
+        is_basic_knowledge: isBasicKnowledge,
+        is_specific_1: isSpecific1,
+        is_specific_2: isSpecific2,
+        is_specific_3: isSpecific3
       };
     });
-  };
-
-  const calculateScore = async (rawAnswersArray: any[]) => {
-    try {
-      const { data: answerKey, error: keyError } = await supabase
-        .from('answer_keys')
-        .select('*, is_nullified')
-        .eq('concurso_id', concurso.id);
-
-      if (keyError) throw keyError;
-
-      const { data: concursoData, error: concursoError } = await supabase
-        .from('concursos')
-        .select(`
-          basic_knowledge_weight,
-          specific_knowledge_1_weight,
-          specific_knowledge_2_weight,
-          specific_knowledge_3_weight,
-          specific_knowledge_weight,
-          discursive_weight,
-          case_study_1_weight,
-          case_study_2_weight,
-          case_study_3_weight
-        `)
-        .eq('id', concurso.id)
-        .single();
-
-      if (concursoError) throw concursoError;
-
-      let basicScore = 0;
-      let specific1Score = 0;
-      let specific2Score = 0;
-      let specific3Score = 0;
-
-      rawAnswersArray.forEach(userAnswer => {
-        const officialAnswer = answerKey.find(
-          a => a.question_number === userAnswer.questionNumber
-        );
-
-        if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
-          if (userAnswer.isBasicKnowledge) {
-            basicScore += 1;
-          } else {
-            const qNum = userAnswer.questionNumber;
-            const b = concurso.basic_knowledge_questions || 0;
-            const s1 = concurso.specific_knowledge_1_questions || 0;
-            const s2 = concurso.specific_knowledge_2_questions || 0;
-
-            if (qNum > b && qNum <= (b + s1)) specific1Score += 1;
-            else if (qNum > (b + s1) && qNum <= (b + s1 + s2)) specific2Score += 1;
-            else if (qNum > (b + s1 + s2)) specific3Score += 1;
-          }
-        }
-      });
-
-      const basicWeight = concursoData.basic_knowledge_weight || 1;
-      const specific1Weight = concursoData.specific_knowledge_1_weight || 
-                             concursoData.specific_knowledge_weight || 1;
-      const specific2Weight = concursoData.specific_knowledge_2_weight || 1;
-      const specific3Weight = concursoData.specific_knowledge_3_weight || 1;
-      const discursiveWeight = concursoData.discursive_weight || 1;
-      const caseStudy1Weight = concursoData.case_study_1_weight || 1;
-      const caseStudy2Weight = concursoData.case_study_2_weight || 1;
-      const caseStudy3Weight = concursoData.case_study_3_weight || 1;
-
-      const weightedBasicScore = basicScore * basicWeight;
-      const weightedSpecific1Score = specific1Score * specific1Weight;
-      const weightedSpecific2Score = specific2Score * specific2Weight;
-      const weightedSpecific3Score = specific3Score * specific3Weight;
-
-      const discursiveValue = (discursiveScore || 0) * discursiveWeight;
-      const caseStudy1Value = (caseStudy1Score || 0) * caseStudy1Weight;
-      const caseStudy2Value = (caseStudy2Score || 0) * caseStudy2Weight;
-      const caseStudy3Value = (caseStudy3Score || 0) * caseStudy3Weight;
-
-      const totalScore = weightedBasicScore + weightedSpecific1Score + 
-                         weightedSpecific2Score + weightedSpecific3Score +
-                         discursiveValue + caseStudy1Value +
-                         caseStudy2Value + caseStudy3Value;
-
-      return {
-        basic_knowledge_score: basicScore,
-        specific_knowledge_1_score: specific1Score,
-        specific_knowledge_2_score: specific2Score,
-        specific_knowledge_3_score: specific3Score,
-        discursive_score: discursiveScore || 0,
-        case_study_1_score: caseStudy1Score || 0,
-        case_study_2_score: caseStudy2Score || 0,
-        case_study_3_score: caseStudy3Score || 0,
-        score: totalScore
-      };
-    } catch (error) {
-      console.error('Error calculating score:', error);
-      throw error;
-    }
   };
 
   const handleSaveAnswers = async () => {
@@ -155,45 +80,140 @@ export const useSaveAnswers = ({
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
-
-      const answersArray = getRawAnswersForProcessing();
-
-      const scoreDetails = await calculateScore(answersArray);
-
-      const { error } = await supabase
+      setProcessingStatus('processing');
+      
+      console.log('Iniciando salvamento de respostas para ranking:', rankingId);
+      console.log('Quantidade de respostas:', Object.keys(answers).length);
+      
+      // 1. Verificar dados preenchidos
+      if (Object.keys(answers).length === 0) {
+        throw new Error('Nenhuma resposta fornecida para salvar');
+      }
+      
+      // 2. Preparar os dados para salvar
+      const answerData = prepareAnswersForSaving();
+      
+      // 3. Registrar o histórico de edição antes de salvar (se for uma edição)
+      if (editCount > 0) {
+        const { data: previousData, error: fetchError } = await supabase
+          .from('user_rankings')
+          .select(`
+            score, 
+            basic_knowledge_score, 
+            specific_knowledge_score,
+            specific_knowledge_1_score,
+            specific_knowledge_2_score,
+            specific_knowledge_3_score,
+            discursive_score,
+            case_study_1_score,
+            case_study_2_score,
+            case_study_3_score
+          `)
+          .eq('id', rankingId)
+          .single();
+        
+        if (fetchError) {
+          console.error('Erro ao buscar dados anteriores:', fetchError);
+        } else {
+          console.log('Dados anteriores para histórico:', previousData);
+          
+          // O trigger que criamos vai adicionar esses dados ao histórico automaticamente
+        }
+      }
+      
+      // 4. Remover respostas anteriores (para garantir que não haja duplicação)
+      const { error: deleteError } = await supabase
+        .from('user_answers')
+        .delete()
+        .eq('user_ranking_id', rankingId);
+      
+      if (deleteError) {
+        console.error('Erro ao excluir respostas anteriores:', deleteError);
+        throw new Error(`Erro ao preparar para novas respostas: ${deleteError.message}`);
+      }
+      
+      // 5. Inserir novas respostas
+      const { error: insertError } = await supabase
+        .from('user_answers')
+        .insert(answerData);
+      
+      if (insertError) {
+        console.error('Erro ao inserir novas respostas:', insertError);
+        throw new Error(`Erro ao salvar respostas: ${insertError.message}`);
+      }
+      
+      // 6. Atualizar informações sobre pontuações subjetivas e contagem de edições
+      const { error: updateError } = await supabase
         .from('user_rankings')
         .update({
-          ...scoreDetails,
-          edit_count: editCount + 1
+          discursive_score: discursiveScore || 0,
+          case_study_1_score: caseStudy1Score || 0,
+          case_study_2_score: caseStudy2Score || 0,
+          case_study_3_score: caseStudy3Score || 0,
+          edit_count: editCount + 1,
+          all_questions_answered: true,
+          updated_at: new Date().toISOString()
         })
         .eq('id', rankingId);
-
-      if (error) {
-        console.error('Error updating user ranking:', error);
-        throw error;
+      
+      if (updateError) {
+        console.error('Erro ao atualizar ranking:', updateError);
+        throw new Error(`Erro ao atualizar informações do ranking: ${updateError.message}`);
       }
-
-      await saveUserAnswers(rankingId, concurso.id, answersArray);
-
+      
+      // 7. Chamar a API para recálculo de pontuação com base nas novas respostas
+      // Importação dinâmica para evitar ciclos de dependência
+      const { saveUserAnswers } = await import('@/integrations/supabase/rankings/userAnswers');
+      const result = await saveUserAnswers(rankingId, concurso.id, answerData);
+      
+      if (!result || !result.success) {
+        throw new Error('Erro no cálculo final da pontuação');
+      }
+      
+      // 8. Registrar o log de cálculo
+      await supabase
+        .from('score_calculation_logs')
+        .insert({
+          user_ranking_id: rankingId,
+          calculation_type: editCount > 0 ? 'edit' : 'creation',
+          previous_score: 0, // Aqui poderíamos buscar a pontuação anterior, mas já temos o trigger para o histórico
+          new_score: result.totalScore || 0,
+          calculation_details: {
+            ...result,
+            answer_count: answerData.length,
+            calculation_time: new Date().toISOString()
+          }
+        });
+      
+      // Finalizar o processo com sucesso
       setSavedSuccess(true);
+      setProcessingStatus('success');
+      
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi calculada com sucesso."
+        description: "Sua pontuação foi calculada e seu ranking foi atualizado.",
+        duration: 5000
       });
-
+      
       onSuccess();
     } catch (error: any) {
-      console.error('Error saving answers:', error);
-      setError(error.message || "Erro ao salvar respostas");
+      console.error('Erro completo ao salvar respostas:', error);
+      setError(error.message || "Erro desconhecido ao salvar respostas");
+      setProcessingStatus('error');
+      
       toast({
         title: "Erro ao salvar",
-        description: error.message,
-        variant: "destructive"
+        description: error.message || "Ocorreu um erro ao salvar suas respostas. Por favor, tente novamente.",
+        variant: "destructive",
+        duration: 7000
       });
     } finally {
       setIsSaving(false);
     }
   };
 
-  return { handleSaveAnswers };
+  return { 
+    handleSaveAnswers,
+    processingStatus
+  };
 };

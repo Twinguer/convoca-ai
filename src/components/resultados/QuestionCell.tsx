@@ -1,10 +1,12 @@
 
 import React from 'react';
 import { AnswerOption } from './AnswerOption';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface QuestionCellProps {
-  questionNumber: number | null;
-  selectedAnswer?: string;
+  questionNumber: number;
+  selectedAnswer: string;
   onAnswerChange: (questionNumber: number, answer: string) => void;
   options: string[];
   disabled?: boolean;
@@ -12,50 +14,42 @@ interface QuestionCellProps {
   onClearAnswer?: (questionNumber: number) => void;
 }
 
-export const QuestionCell: React.FC<QuestionCellProps> = ({ 
-  questionNumber, 
-  selectedAnswer, 
-  onAnswerChange, 
+export const QuestionCell: React.FC<QuestionCellProps> = ({
+  questionNumber,
+  selectedAnswer,
+  onAnswerChange,
   options,
   disabled = false,
   examType = 'Alternativas',
   onClearAnswer
 }) => {
-  if (questionNumber === null) {
-    return null;
-  }
-  
-  const isCertoErrado = examType === 'Certo ou Errado';
-
   return (
-    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
-      <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200">
-        Questão {questionNumber}
+    <div className={`p-3 border rounded-md bg-white shadow-sm ${disabled ? 'opacity-75' : ''}`}>
+      <div className="flex justify-between items-center mb-2">
+        <div className="font-medium text-gray-700">Questão {questionNumber}</div>
+        {onClearAnswer && selectedAnswer && !disabled && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0"
+            onClick={() => onClearAnswer(questionNumber)}
+          >
+            <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+          </Button>
+        )}
       </div>
-      <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
+      
+      <div className="flex flex-wrap gap-2 justify-center">
         {options.map((option) => (
           <AnswerOption
             key={option}
             option={option}
             isSelected={selectedAnswer === option}
-            onClick={() => !disabled && onAnswerChange(questionNumber, option)}
+            onClick={() => onAnswerChange(questionNumber, option)}
             disabled={disabled}
             examType={examType}
           />
         ))}
-        
-        {isCertoErrado && onClearAnswer && (
-          <button
-            onClick={() => onClearAnswer(questionNumber)}
-            disabled={disabled || !selectedAnswer}
-            className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
-              ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
-              : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
-            title="Limpar resposta"
-          >
-            Limpar
-          </button>
-        )}
       </div>
     </div>
   );

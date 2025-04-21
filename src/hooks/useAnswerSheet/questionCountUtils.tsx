@@ -1,7 +1,8 @@
 
 import { Concurso } from '@/types/concursos';
 
-export const getTotalQuestions = (concurso: Concurso | null) => {
+// Conta o número total de questões para o concurso
+export const getTotalQuestions = (concurso: Concurso) => {
   if (!concurso) return 0;
   
   let total = 0;
@@ -25,6 +26,7 @@ export const getTotalQuestions = (concurso: Concurso | null) => {
   return total;
 };
 
+// Conta o número de questões respondidas
 export const getAnsweredQuestionsCount = (answers: { [key: number]: string }) => {
   return Object.keys(answers).length;
 };
