@@ -76,7 +76,8 @@ export const useSaveAnswers = ({
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada."
+        description: "Sua pontuação foi recalculada com as questões anuladas.",
+        duration: 5000
       });
 
       // Chamar callback de sucesso

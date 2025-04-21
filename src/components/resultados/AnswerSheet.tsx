@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,7 +75,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   
   const {
     data: nullifiedData,
-    isLoading: isLoadingNullified
+    isLoading: isLoadingNullified,
+    refetch: refetchNullified
   } = useQuery({
     queryKey: ['nullified-questions', concurso.id],
     queryFn: async () => {
@@ -88,7 +88,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       if (error) throw error;
       return data || [];
     },
-    staleTime: 1000
+    staleTime: 1000,
+    refetchInterval: 10000
   });
   
   const { handleSaveAnswers: saveAnswers } = useSaveAnswers({
@@ -125,7 +126,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
-      console.log('[AnswerSheet] Questões anuladas:', Array.from(nullifiedSet).join(', '));
+      console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
+      
+      if (!isSaving && canEdit) {
+        handleSaveAnswers();
+      }
     }
   }, [nullifiedData]);
   
@@ -153,6 +158,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setError(null);
       
       await saveAnswers();
+      await refetchNullified();
       console.log("[AnswerSheet] Salvamento concluído com sucesso");
     } catch (error: any) {
       console.error("[AnswerSheet] Erro durante o salvamento:", error);
@@ -191,7 +197,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  // Fix: Replace isLoadingAnswers with the other loading states we have
   if (isLoadingRanking || isLoadingNullified) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
