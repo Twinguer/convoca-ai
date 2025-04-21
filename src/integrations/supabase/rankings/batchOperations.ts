@@ -19,7 +19,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
   try {
     console.log(`Iniciando recálculo de scores para concurso: ${concursoId}`);
     
-    // Busca todos os rankings de usuários para este concurso
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select('id, user_id')
@@ -34,11 +33,9 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     
     console.log(`Encontrados ${userRankings.length} rankings para atualizar`);
     
-    // Arrays para armazenar resultados
     let updatedCount = 0;
     const failedRankings: Array<{ rankingId: string; userId: string; error: string; attempts: number }> = [];
     
-    // Processa cada ranking com retentativas
     for (const ranking of userRankings) {
       const maxRetries = 3;
       let currentTry = 0;
@@ -46,7 +43,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
       
       while (currentTry < maxRetries && !success) {
         try {
-          // Busca todas as respostas do usuário
           const { data: userAnswers, error: answersError } = await supabase
             .from('user_answers')
             .select('*')
@@ -54,14 +50,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             
           if (answersError) throw answersError;
           
-          // Se não há respostas, registra e continua
-          if (!userAnswers || userAnswers.length === 0) {
-            console.log(`Nenhuma resposta encontrada para ranking ${ranking.id}`);
-            success = true;
-            continue;
-          }
-          
-          // Busca pontuações subjetivas atuais
           const { data: rankingData, error: rankingError } = await supabase
             .from('user_rankings')
             .select(`
@@ -83,13 +71,11 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             caseStudy3Score: rankingData?.case_study_3_score || 0
           };
           
-          // Calcula pontuações brutas
-          const rawScores = await calculateRawScores(concursoId, userAnswers);
-          
-          // Aplica pesos
+          // Calcula pontuações brutas e ponderadas
+          const rawScores = await calculateRawScores(concursoId, userAnswers || []);
           const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
           
-          // Tenta salvar as pontuações usando uma transação RPC
+          // Usa a nova função RPC para salvar as pontuações em uma única transação
           const { data: rpcResult, error: rpcError } = await supabase.rpc('save_scores_transaction', {
             p_ranking_id: ranking.id,
             p_raw_scores: rawScores,
@@ -98,6 +84,10 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           });
           
           if (rpcError) throw rpcError;
+          
+          if (!rpcResult.success) {
+            throw new Error(rpcResult.error || 'Erro desconhecido ao salvar pontuações');
+          }
           
           updatedCount++;
           success = true;
@@ -109,12 +99,10 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           const waitTime = Math.pow(2, currentTry) * 1000; // Backoff exponencial
           console.error(`Tentativa ${currentTry} falhou para ranking ${ranking.id}:`, error);
           
-          // Se ainda há tentativas, aguarda antes da próxima
           if (currentTry < maxRetries) {
             console.log(`Aguardando ${waitTime}ms antes da próxima tentativa...`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
           } else {
-            // Registra falha após todas as tentativas
             failedRankings.push({
               rankingId: ranking.id,
               userId: ranking.user_id,
@@ -156,3 +144,4 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     };
   }
 };
+

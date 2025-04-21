@@ -202,6 +202,11 @@ export const saveUserScores = async (
     });
     
     if (error) throw error;
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Erro ao salvar pontuações');
+    }
+    
     return true;
   } catch (error) {
     console.error('Error saving user scores:', error);
