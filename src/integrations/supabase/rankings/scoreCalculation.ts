@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -31,37 +30,49 @@ export const calculateRawScores = async (
       .single();
     if (concursoError) throw concursoError;
 
-    const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
+    const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+    const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
+    const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
+    const specific3QuestionsCount = concurso.specific_knowledge_3_questions || 0;
+
+    // Faixas das seções para determinar em qual conhecimento a questão pertence
+    const basicEnd = basicQuestionsCount;
+    const specific1End = basicEnd + specific1QuestionsCount;
+    const specific2End = specific1End + specific2QuestionsCount;
+    const specific3End = specific2End + specific3QuestionsCount;
 
     // Inicializa contadores de acertos por seção
     let basicKnowledgeScore = 0;
-    let specificKnowledgeScore = 0;
     let specific1Score = 0;
     let specific2Score = 0;
     let specific3Score = 0;
 
-    // Calcula os acertos
+    // Para manter compatibilidade (campo legado de soma dos específicos)
+    let specificKnowledgeScore = 0;
+
+    // Para cada resposta do usuário, verifica o gabarito e incrementa apenas na seção correta
     userAnswers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
         a => a.question_number === userAnswer.question_number
       );
 
-      // Contabiliza acerto se a questão é anulada ou a resposta está correta
+      // Só soma ponto em uma seção por questão, inclusive anulação
       if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
-        if (userAnswer.is_basic_knowledge) {
+        const qNum = userAnswer.question_number;
+        if (qNum <= basicEnd) {
           basicKnowledgeScore += 1;
-        } else if (userAnswer.is_specific_1) {
+        } else if (qNum <= specific1End) {
           specific1Score += 1;
-          specificKnowledgeScore += 1;
-        } else if (userAnswer.is_specific_2) {
+        } else if (qNum <= specific2End) {
           specific2Score += 1;
-          specificKnowledgeScore += 1;
-        } else if (userAnswer.is_specific_3) {
+        } else if (qNum <= specific3End) {
           specific3Score += 1;
-          specificKnowledgeScore += 1;
         }
       }
     });
+
+    // Soma dos específicos total para manter compatibilidade
+    specificKnowledgeScore = specific1Score + specific2Score + specific3Score;
 
     return {
       basicKnowledgeScore,
