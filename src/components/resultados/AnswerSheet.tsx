@@ -29,6 +29,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 }) => {
   const { toast } = useToast();
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
+  const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   
   const {
     answers,
@@ -134,8 +135,24 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setNullifiedQuestions(nullifiedSet);
       console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
       
-      if (!isSaving && canEdit) {
-        handleSaveAnswers();
+      // Verificar se houve alteração no número de questões anuladas
+      if (nullifiedSet.size !== lastCheckedNullifiedCount) {
+        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:', 
+          `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
+        
+        setLastCheckedNullifiedCount(nullifiedSet.size);
+        
+        // Se não estiver salvando e o usuário pode editar, salvar automaticamente
+        // para atualizar os cálculos das pontuações
+        if (!isSaving && canEdit) {
+          toast({
+            title: "Atualização automática",
+            description: "Detectamos alterações no gabarito. Suas pontuações serão atualizadas.",
+            variant: "default"
+          });
+          
+          handleSaveAnswers();
+        }
       }
     }
   }, [nullifiedData]);

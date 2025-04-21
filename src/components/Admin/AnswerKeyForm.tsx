@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -16,7 +18,9 @@ interface AnswerKeyFormProps {
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
   const [isSaving, setIsSaving] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [recalculationSuccess, setRecalculationSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
@@ -179,6 +183,47 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     return matrix;
   };
 
+  const performRecalculation = async () => {
+    try {
+      setIsRecalculating(true);
+      
+      toast({
+        title: "Recalculando pontuações",
+        description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
+      });
+      
+      const recalculationResult = await recalculateAllUserScores(concursoId);
+      console.log('Recalculation result:', recalculationResult);
+
+      if (recalculationResult.success) {
+        setRecalculationSuccess(true);
+        toast({
+          title: "Recálculo completado",
+          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
+        });
+        
+        setTimeout(() => {
+          setRecalculationSuccess(false);
+        }, 5000);
+      } else {
+        toast({
+          title: "Erro no recálculo",
+          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Error during recalculation:', error);
+      toast({
+        title: "Erro no recálculo",
+        description: error.message || "Ocorreu um erro durante o recálculo das pontuações.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   const handleSaveAnswerKey = async () => {
     try {
       setIsSaving(true);
@@ -245,30 +290,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         if (insertError) throw insertError;
       }
 
-      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
-      
+      setSavedSuccess(true);
       toast({
-        title: "Recalculando pontuações",
-        description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
+        title: "Gabarito salvo com sucesso",
+        description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
+
+      // Iniciar automaticamente o recálculo para todos os usuários
+      await performRecalculation();
       
-      const recalculationResult = await recalculateAllUserScores(concursoId);
-      console.log('Recalculation result:', recalculationResult);
-
-      if (recalculationResult.success) {
-        setSavedSuccess(true);
-        toast({
-          title: "Gabarito salvo com sucesso",
-          description: `O gabarito oficial foi atualizado e as notas de ${recalculationResult.updatedCount} usuários foram recalculadas.`,
-        });
-      } else {
-        toast({
-          title: "Gabarito salvo, mas recálculo falhou",
-          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
-          variant: "destructive"
-        });
-      }
-
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);
@@ -317,6 +347,33 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
             <p>Gabarito salvo com sucesso!</p>
           </div>
         )}
+        
+        {recalculationSuccess && (
+          <div className="bg-blue-100 p-3 rounded-md flex items-center gap-2 text-blue-800">
+            <CheckCircle className="h-4 w-4" />
+            <p>Recálculo de pontuações concluído com sucesso!</p>
+          </div>
+        )}
+        
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-amber-800">Questões Anuladas</h4>
+              <p className="text-sm text-amber-700 mt-1">
+                Este concurso possui {nullifiedQuestions.size} {nullifiedQuestions.size === 1 ? 'questão anulada' : 'questões anuladas'}.
+                {nullifiedQuestions.size > 0 && (
+                  <span className="block mt-1">
+                    Questões anuladas: {Array.from(nullifiedQuestions).sort((a, b) => a - b).join(', ')}
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-amber-600 mt-2">
+                Ao anular questões, as pontuações de todos os usuários serão recalculadas automaticamente após salvar.
+              </p>
+            </div>
+          </div>
+        </div>
         
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
@@ -376,11 +433,29 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-between mt-4">
+          <Button 
+            onClick={performRecalculation}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={isSaving || isRecalculating}
+          >
+            {isRecalculating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Recalculando...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Recalcular Pontuações
+              </>
+            )}
+          </Button>
+          
           <Button 
             onClick={handleSaveAnswerKey}
             className="bg-emerald-600 hover:bg-emerald-700 text-white"
-            disabled={isSaving}
+            disabled={isSaving || isRecalculating}
           >
             {isSaving ? (
               <>
