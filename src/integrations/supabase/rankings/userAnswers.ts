@@ -7,9 +7,8 @@ export const saveUserAnswers = async (
   answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
-    // First, save the user's answers
+    // Primeiramente, salve as respostas do usuário
     const answersData = answers.map(a => {
-      // Determine the knowledge section based on question number
       const qNum = a.questionNumber;
 
       return {
@@ -17,9 +16,9 @@ export const saveUserAnswers = async (
         question_number: qNum,
         answer: a.answer,
         is_basic_knowledge: a.isBasicKnowledge,
-        is_specific_1: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
-        is_specific_2: !a.isBasicKnowledge && a.questionNumber <= 0, // Will be set correctly below
-        is_specific_3: !a.isBasicKnowledge && a.questionNumber <= 0  // Will be set correctly below
+        is_specific_1: !a.isBasicKnowledge && a.questionNumber <= 0, // Ajustado depois
+        is_specific_2: !a.isBasicKnowledge && a.questionNumber <= 0,
+        is_specific_3: !a.isBasicKnowledge && a.questionNumber <= 0
       };
     });
     
@@ -31,7 +30,7 @@ export const saveUserAnswers = async (
       .delete()
       .eq('user_ranking_id', rankingId);
     
-    // Get concurso data to determine question ranges
+    // Carregue os dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
       .select(`
@@ -42,18 +41,15 @@ export const saveUserAnswers = async (
       `)
       .eq('id', concursoId)
       .single();
-      
     if (concursoError) throw concursoError;
-    
-    // Calculate question ranges
+
     const basicEnd = concurso.basic_knowledge_questions || 0;
     const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
     const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-    
-    // Set correct section flags
+
+    // Corrija as flags para as seções corretamente, usando is_basic_knowledge
     answersData.forEach(item => {
       const qNum = item.question_number;
-      
       if (qNum <= basicEnd) {
         item.is_basic_knowledge = true;
         item.is_specific_1 = false;
@@ -76,7 +72,7 @@ export const saveUserAnswers = async (
         item.is_specific_3 = true;
       }
     });
-    
+
     console.log('Updated answers with correct section flags:', answersData);
     
     // Insert new answers
@@ -85,40 +81,40 @@ export const saveUserAnswers = async (
       .insert(answersData);
       
     if (insertError) throw insertError;
-    
-    // Get the official answer key with nullified questions
+
+    // Obtenha o gabarito oficial
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
       .select('*, is_nullified')
       .eq('concurso_id', concursoId);
-      
     if (keyError) throw keyError;
-    
     if (!answerKey || answerKey.length === 0) {
       throw new Error('Gabarito oficial não encontrado para este concurso');
     }
 
-    console.log('Official answer key:', answerKey);
-    console.log('User answers to check:', answers);
-    
-    // Calculate raw scores without weights
+    // Cálculo das notas brutas SEM aplicar pesos
     let basicKnowledgeScore = 0;
     let specificKnowledgeScore = 0;
     let specific1Score = 0;
     let specific2Score = 0;
     let specific3Score = 0;
-    
+
     answers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
         a => a.question_number === userAnswer.questionNumber
       );
-      
+
+      // Use userAnswer.is_basic_knowledge corretamente
+      const is_basic_knowledge = userAnswer.isBasicKnowledge !== undefined
+        ? userAnswer.isBasicKnowledge
+        : (userAnswer as any).is_basic_knowledge;
+
       if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
-        if (userAnswer.isBasicKnowledge) {
+        if (is_basic_knowledge) {
           basicKnowledgeScore += 1;
         } else {
           specificKnowledgeScore += 1;
-          
+
           const qNum = userAnswer.questionNumber;
           if (qNum > basicEnd && qNum <= specific1End) {
             specific1Score += 1;
@@ -130,8 +126,8 @@ export const saveUserAnswers = async (
         }
       }
     });
-    
-    // Get concurso weights
+
+    // Obtenha os pesos do concurso
     const { data: concursoWithWeights, error: concursoWeightsError } = await supabase
       .from('concursos')
       .select(`
@@ -146,13 +142,8 @@ export const saveUserAnswers = async (
       `)
       .eq('id', concursoId)
       .single();
-      
-    if (concursoWeightsError) {
-      console.error('Error fetching concurso weights:', concursoWeightsError);
-      throw concursoWeightsError;
-    }
+    if (concursoWeightsError) throw concursoWeightsError;
     
-    // Get the correct weights
     const weights = {
       basicKnowledge: concursoWithWeights?.basic_knowledge_weight || 1,
       specificKnowledge1: concursoWithWeights?.specific_knowledge_1_weight || 1,
@@ -163,8 +154,8 @@ export const saveUserAnswers = async (
       caseStudy2: concursoWithWeights?.case_study_2_weight || 1,
       caseStudy3: concursoWithWeights?.case_study_3_weight || 1
     };
-    
-    // Get existing subjective scores from user_rankings to include in total score
+
+    // Obtenha as notas subjetivas salvas, SEM aplicar pesos ainda
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select(`
@@ -175,29 +166,28 @@ export const saveUserAnswers = async (
       `)
       .eq('id', rankingId)
       .single();
-      
-    if (rankingError) {
-      console.error('Error fetching existing subjective scores:', rankingError);
-    }
     
-    // Calculate subjective scores with weights
-    const discursiveScore = (rankingData?.discursive_score || 0);
-    const caseStudy1Score = (rankingData?.case_study_1_score || 0);
-    const caseStudy2Score = (rankingData?.case_study_2_score || 0);
-    const caseStudy3Score = (rankingData?.case_study_3_score || 0);
-    
-    // Apply weights only once for the total score calculation
+    // Calcule as notas ponderadas
+    const weighted_basic_score = basicKnowledgeScore * weights.basicKnowledge;
+    const weighted_specific_1_score = specific1Score * weights.specificKnowledge1;
+    const weighted_specific_2_score = specific2Score * weights.specificKnowledge2;
+    const weighted_specific_3_score = specific3Score * weights.specificKnowledge3;
+    const weighted_discursive_score = (rankingData?.discursive_score || 0) * weights.discursive;
+    const weighted_case_study_1_score = (rankingData?.case_study_1_score || 0) * weights.caseStudy1;
+    const weighted_case_study_2_score = (rankingData?.case_study_2_score || 0) * weights.caseStudy2;
+    const weighted_case_study_3_score = (rankingData?.case_study_3_score || 0) * weights.caseStudy3;
+
     const totalScore = 
-      (basicKnowledgeScore * weights.basicKnowledge) +
-      (specific1Score * weights.specificKnowledge1) +
-      (specific2Score * weights.specificKnowledge2) +
-      (specific3Score * weights.specificKnowledge3) +
-      (discursiveScore * weights.discursive) +
-      (caseStudy1Score * weights.caseStudy1) +
-      (caseStudy2Score * weights.caseStudy2) +
-      (caseStudy3Score * weights.caseStudy3);
-    
-    // Save raw scores without weights to the database
+      weighted_basic_score +
+      weighted_specific_1_score +
+      weighted_specific_2_score +
+      weighted_specific_3_score +
+      weighted_discursive_score +
+      weighted_case_study_1_score +
+      weighted_case_study_2_score +
+      weighted_case_study_3_score;
+
+    // Atualiza as notas no ranking do usuário: salve OS DOIS tipos de nota!
     const { error: updateError } = await supabase
       .from('user_rankings')
       .update({
@@ -206,21 +196,36 @@ export const saveUserAnswers = async (
         specific_knowledge_1_score: specific1Score,
         specific_knowledge_2_score: specific2Score,
         specific_knowledge_3_score: specific3Score,
+        weighted_basic_score,
+        weighted_specific_1_score,
+        weighted_specific_2_score,
+        weighted_specific_3_score,
+        weighted_discursive_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score,
         score: totalScore,
         updated_at: new Date().toISOString()
       })
       .eq('id', rankingId);
-      
     if (updateError) throw updateError;
-    
-    return { 
-      success: true, 
-      basicKnowledgeScore, 
-      specificKnowledgeScore, 
+
+    return {
+      success: true,
+      basicKnowledgeScore,
+      specificKnowledgeScore,
       specific1Score,
       specific2Score,
       specific3Score,
-      totalScore 
+      weighted_basic_score,
+      weighted_specific_1_score,
+      weighted_specific_2_score,
+      weighted_specific_3_score,
+      weighted_discursive_score,
+      weighted_case_study_1_score,
+      weighted_case_study_2_score,
+      weighted_case_study_3_score,
+      totalScore
     };
   } catch (error: any) {
     console.error('Error saving answers and calculating score:', error);
@@ -322,7 +327,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
         
         // Award points for nullified questions or correct answers
         if (officialAnswer && (officialAnswer.is_nullified || officialAnswer.answer === userAnswer.answer)) {
-          if (userAnswer.isBasicKnowledge) {
+          if (userAnswer.is_basic_knowledge) {
             basicKnowledgeScore += 1;
           } else if (userAnswer.is_specific_1) {
             specific1Score += 1;
