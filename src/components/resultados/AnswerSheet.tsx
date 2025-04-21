@@ -212,7 +212,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <CardDescription>
           {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
             <div className="text-sm font-medium text-emerald-700 mt-2">
-              Edições disponíveis: {editsLeft} de 10
+              Edições disponíveis: {editsLeft} de 3
               {!canEdit && (
                 <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)
