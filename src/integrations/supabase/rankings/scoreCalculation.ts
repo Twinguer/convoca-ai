@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { loadExamStructure } from './examStructure';
 
@@ -193,6 +192,8 @@ export const applyWeightsToScores = async (
 
 /**
  * Salva todas as pontuações do usuário (brutas e ponderadas)
+ * - Armazena apenas scores brutos nas colunas de cada área de conhecimento
+ * - Salva os scores ponderados separadamente para cálculo do total e classificação
  */
 export const saveUserScores = async (
   rankingId: string,
@@ -202,12 +203,14 @@ export const saveUserScores = async (
 ): Promise<boolean> => {
   try {
     console.log(`Salvando scores para ranking ${rankingId}`);
-    
-    // Atualiza o ranking do usuário com todas as pontuações
+    // Atualiza o ranking do usuário:
+    // - Os campos de *_score das áreas recebem apenas os valores brutos de acertos
+    // - Os campos de weighted_* recebem os ponderados
+    // - Score total é a soma dos weighted (ponderados)
     const { error: updateError } = await supabase
       .from('user_rankings')
       .update({
-        // Pontuações brutas
+        // Pontuações brutas (sempre só o número de questões acertadas)
         basic_knowledge_score: rawScores.basicKnowledgeScore,
         specific_knowledge_score: rawScores.specificKnowledgeScore,
         specific_knowledge_1_score: rawScores.specific1Score,
@@ -218,7 +221,7 @@ export const saveUserScores = async (
         case_study_2_score: subjectiveScores.caseStudy2Score,
         case_study_3_score: subjectiveScores.caseStudy3Score,
         
-        // Pontuações ponderadas
+        // Pontuações ponderadas (valor bruto * peso)
         weighted_basic_score: weightedScores.weightedBasicScore,
         weighted_specific_1_score: weightedScores.weightedSpecific1Score,
         weighted_specific_2_score: weightedScores.weightedSpecific2Score,
@@ -227,18 +230,13 @@ export const saveUserScores = async (
         weighted_case_study_1_score: weightedScores.weightedCaseStudy1Score,
         weighted_case_study_2_score: weightedScores.weightedCaseStudy2Score,
         weighted_case_study_3_score: weightedScores.weightedCaseStudy3Score,
-        
-        // Pontuação final
+        // Total só na soma dos ponderados!
         score: weightedScores.totalScore,
-        
-        // Flag e timestamp
         all_questions_answered: true,
         updated_at: new Date().toISOString()
       })
       .eq('id', rankingId);
-      
     if (updateError) throw updateError;
-    
     console.log(`Scores salvos com sucesso para ranking ${rankingId}`);
     return true;
   } catch (error) {
