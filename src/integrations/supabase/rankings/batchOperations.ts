@@ -1,6 +1,6 @@
 
 import { supabase } from '../client';
-import { calculateRawScores, applyWeightsToScores, saveUserScores } from './scoreCalculation';
+import { calculateRawScores, applyWeightsToScores } from './scoreCalculation';
 
 interface RecalculationResult {
   success: boolean;
@@ -9,6 +9,7 @@ interface RecalculationResult {
     rankingId: string;
     userId: string;
     error: string;
+    attempts: number;
   }>;
   error?: string;
 }
@@ -16,7 +17,7 @@ interface RecalculationResult {
 // Recalcula as pontuações para todos os usuários em um concurso
 export const recalculateAllUserScores = async (concursoId: string): Promise<RecalculationResult> => {
   try {
-    console.log(`Recalculando scores para todos os usuários no concurso: ${concursoId}`);
+    console.log(`Iniciando recálculo de scores para concurso: ${concursoId}`);
     
     // Busca todos os rankings de usuários para este concurso
     const { data: userRankings, error: rankingsError } = await supabase
@@ -31,28 +32,13 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
       return { success: true, updatedCount: 0 };
     }
     
-    console.log(`Encontrados ${userRankings.length} rankings de usuários para atualizar`);
-    
-    // Verifica se há questões anuladas
-    const { data: nullifiedQuestions, error: nullifiedError } = await supabase
-      .from('answer_keys')
-      .select('question_number')
-      .eq('concurso_id', concursoId)
-      .eq('is_nullified', true);
-      
-    if (nullifiedError) throw nullifiedError;
-    
-    if (nullifiedQuestions && nullifiedQuestions.length > 0) {
-      console.log(`Encontradas ${nullifiedQuestions.length} questões anuladas`);
-      const nullifiedNumbers = nullifiedQuestions.map(q => q.question_number).join(', ');
-      console.log(`Questões anuladas: ${nullifiedNumbers}`);
-    }
+    console.log(`Encontrados ${userRankings.length} rankings para atualizar`);
     
     // Arrays para armazenar resultados
     let updatedCount = 0;
-    const failedRankings: Array<{ rankingId: string; userId: string; error: string }> = [];
+    const failedRankings: Array<{ rankingId: string; userId: string; error: string; attempts: number }> = [];
     
-    // Processa cada ranking de usuário com retentativas
+    // Processa cada ranking com retentativas
     for (const ranking of userRankings) {
       const maxRetries = 3;
       let currentTry = 0;
@@ -60,7 +46,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
       
       while (currentTry < maxRetries && !success) {
         try {
-          // Busca as respostas do usuário
+          // Busca todas as respostas do usuário
           const { data: userAnswers, error: answersError } = await supabase
             .from('user_answers')
             .select('*')
@@ -68,16 +54,14 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             
           if (answersError) throw answersError;
           
+          // Se não há respostas, registra e continua
           if (!userAnswers || userAnswers.length === 0) {
-            console.log(`Nenhuma resposta encontrada para o ranking ${ranking.id}`);
-            success = true; // Consideramos sucesso pois não há o que recalcular
+            console.log(`Nenhuma resposta encontrada para ranking ${ranking.id}`);
+            success = true;
             continue;
           }
           
-          // Calcula as pontuações brutas
-          const rawScores = await calculateRawScores(concursoId, userAnswers);
-          
-          // Busca as pontuações subjetivas
+          // Busca pontuações subjetivas atuais
           const { data: rankingData, error: rankingError } = await supabase
             .from('user_rankings')
             .select(`
@@ -99,16 +83,21 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             caseStudy3Score: rankingData?.case_study_3_score || 0
           };
           
-          // Aplica os pesos
+          // Calcula pontuações brutas
+          const rawScores = await calculateRawScores(concursoId, userAnswers);
+          
+          // Aplica pesos
           const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
           
-          // Salva todas as pontuações em uma única transação
-          await supabase.rpc('save_scores_transaction', {
+          // Tenta salvar as pontuações usando uma transação RPC
+          const { data: rpcResult, error: rpcError } = await supabase.rpc('save_scores_transaction', {
             p_ranking_id: ranking.id,
             p_raw_scores: rawScores,
             p_weighted_scores: weightedScores,
             p_subjective_scores: subjectiveScores
           });
+          
+          if (rpcError) throw rpcError;
           
           updatedCount++;
           success = true;
@@ -117,36 +106,40 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           
         } catch (error: any) {
           currentTry++;
+          const waitTime = Math.pow(2, currentTry) * 1000; // Backoff exponencial
           console.error(`Tentativa ${currentTry} falhou para ranking ${ranking.id}:`, error);
           
-          // Se todas as tentativas falharam, registra o erro
-          if (currentTry === maxRetries) {
+          // Se ainda há tentativas, aguarda antes da próxima
+          if (currentTry < maxRetries) {
+            console.log(`Aguardando ${waitTime}ms antes da próxima tentativa...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          } else {
+            // Registra falha após todas as tentativas
             failedRankings.push({
               rankingId: ranking.id,
               userId: ranking.user_id,
-              error: error.message || 'Erro desconhecido'
+              error: error.message || 'Erro desconhecido',
+              attempts: currentTry
             });
-          }
-          
-          // Aguarda um tempo antes da próxima tentativa (backoff exponencial)
-          if (currentTry < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, currentTry) * 1000));
           }
         }
       }
     }
     
     // Registra o resultado final do recálculo
-    await supabase.from('score_calculation_logs').insert({
+    const logDetails = {
       calculation_type: 'recalculate_all_scores',
       calculation_details: {
         concurso_id: concursoId,
         total_rankings: userRankings.length,
         successful_updates: updatedCount,
         failed_updates: failedRankings.length,
-        failed_rankings: failedRankings
+        failed_rankings: failedRankings,
+        timestamp: new Date().toISOString()
       }
-    });
+    };
+    
+    await supabase.from('score_calculation_logs').insert([logDetails]);
     
     return {
       success: true,
@@ -155,7 +148,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     };
     
   } catch (error: any) {
-    console.error('Erro recalculando todas as pontuações de usuários:', error);
+    console.error('Erro fatal recalculando pontuações:', error);
     return {
       success: false,
       updatedCount: 0,
@@ -163,4 +156,3 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     };
   }
 };
-
