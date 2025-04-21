@@ -53,22 +53,38 @@ export const saveUserAnswersData = async (
       }
     });
 
-    // Delete existing answers first
-    await supabase
+    console.log('Dados de respostas preparados para salvar:', answersData);
+
+    // Primeiro exclui todas as respostas existentes
+    const { error: deleteError } = await supabase
       .from('user_answers')
       .delete()
       .eq('user_ranking_id', rankingId);
     
-    // Insert new answers
-    const { error: insertError } = await supabase
-      .from('user_answers')
-      .insert(answersData);
+    if (deleteError) {
+      console.error('Erro ao excluir respostas existentes:', deleteError);
+      throw deleteError;
+    }
+    
+    console.log('Respostas anteriores excluídas com sucesso');
+    
+    // Insere novas respostas apenas se houver respostas para inserir
+    if (answersData.length > 0) {
+      const { error: insertError } = await supabase
+        .from('user_answers')
+        .insert(answersData);
+        
+      if (insertError) {
+        console.error('Erro ao inserir novas respostas:', insertError);
+        throw insertError;
+      }
       
-    if (insertError) throw insertError;
+      console.log('Novas respostas inseridas com sucesso');
+    }
     
     return answersData;
   } catch (error: any) {
-    console.error('Error saving user answers:', error);
+    console.error('Erro ao salvar respostas do usuário:', error);
     throw error;
   }
 };

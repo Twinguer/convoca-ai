@@ -11,9 +11,9 @@ export const saveUserAnswers = async (
   answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
-    console.log('Iniciando salvamento de respostas do usuário e cálculo de pontuação');
+    console.log('Iniciando processo completo de salvamento de respostas e cálculo de pontuação');
     
-    // Salva as respostas do usuário
+    // Salva as respostas do usuário (esta função agora já exclui respostas anteriores)
     await saveUserAnswersData(rankingId, concursoId, answers);
     
     // Busca as respostas salvas do usuário para recalcular as pontuações
@@ -28,8 +28,11 @@ export const saveUserAnswers = async (
       throw new Error('Nenhuma resposta encontrada após o salvamento');
     }
 
+    console.log(`Encontradas ${userAnswers.length} respostas para recálculo`);
+
     // Calcula as pontuações brutas
     const rawScores = await calculateRawScores(concursoId, userAnswers);
+    console.log('Pontuações brutas calculadas:', rawScores);
     
     // Busca as pontuações subjetivas
     const { data: rankingData, error: rankingError } = await supabase
@@ -53,11 +56,15 @@ export const saveUserAnswers = async (
       caseStudy3Score: rankingData?.case_study_3_score || 0
     };
     
+    console.log('Pontuações subjetivas recuperadas:', subjectiveScores);
+    
     // Aplica os pesos para calcular as pontuações ponderadas
     const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
+    console.log('Pontuações ponderadas calculadas:', weightedScores);
     
     // Salva todas as pontuações
     await saveUserScores(rankingId, rawScores, subjectiveScores, weightedScores);
+    console.log('Pontuações salvas com sucesso');
 
     // Retorna as pontuações calculadas
     return {

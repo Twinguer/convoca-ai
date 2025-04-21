@@ -251,6 +251,44 @@ export type Database = {
         }
         Relationships: []
       }
+      score_calculation_logs: {
+        Row: {
+          calculation_details: Json | null
+          calculation_type: string
+          created_at: string | null
+          id: string
+          new_score: number | null
+          previous_score: number | null
+          user_ranking_id: string
+        }
+        Insert: {
+          calculation_details?: Json | null
+          calculation_type: string
+          created_at?: string | null
+          id?: string
+          new_score?: number | null
+          previous_score?: number | null
+          user_ranking_id: string
+        }
+        Update: {
+          calculation_details?: Json | null
+          calculation_type?: string
+          created_at?: string | null
+          id?: string
+          new_score?: number | null
+          previous_score?: number | null
+          user_ranking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
+            columns: ["user_ranking_id"]
+            isOneToOne: false
+            referencedRelation: "user_rankings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_answers: {
         Row: {
           answer: string
@@ -333,7 +371,9 @@ export type Database = {
           created_at: string
           discursive_score: number | null
           edit_count: number | null
+          edit_history: Json | null
           id: string
+          is_score_recalculated: boolean | null
           reservation_type: string | null
           score: number | null
           specific_knowledge_1_score: number | null
@@ -361,7 +401,9 @@ export type Database = {
           created_at?: string
           discursive_score?: number | null
           edit_count?: number | null
+          edit_history?: Json | null
           id?: string
+          is_score_recalculated?: boolean | null
           reservation_type?: string | null
           score?: number | null
           specific_knowledge_1_score?: number | null
@@ -389,7 +431,9 @@ export type Database = {
           created_at?: string
           discursive_score?: number | null
           edit_count?: number | null
+          edit_history?: Json | null
           id?: string
+          is_score_recalculated?: boolean | null
           reservation_type?: string | null
           score?: number | null
           specific_knowledge_1_score?: number | null
