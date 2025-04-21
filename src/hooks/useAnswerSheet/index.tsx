@@ -30,7 +30,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
-  const { data: userRankingData, isLoading: isLoadingRanking } = useQuery({
+  const { data: userRankingData } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
       const { data, error } = await supabase
