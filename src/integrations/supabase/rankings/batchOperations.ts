@@ -77,9 +77,9 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           const formattedRawScores = {
             basicKnowledgeScore: rawScores.basicKnowledgeScore || 0,
             specificKnowledgeScore: rawScores.specificKnowledgeScore || 0,
-            specific1Score: rawScores.specific1Score || rawScores.specificKnowledge1Score || 0,
-            specific2Score: rawScores.specific2Score || rawScores.specificKnowledge2Score || 0,
-            specific3Score: rawScores.specific3Score || rawScores.specificKnowledge3Score || 0
+            specific1Score: rawScores.specific1Score || 0,
+            specific2Score: rawScores.specific2Score || 0,
+            specific3Score: rawScores.specific3Score || 0
           };
           
           const formattedWeightedScores = {
