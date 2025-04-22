@@ -51,15 +51,34 @@ export const useSaveAnswers = ({
         answer,
       }));
 
-      console.log('[useSaveAnswers] Iniciando salvamento via RPC');
-      console.log('[useSaveAnswers] Pontuações subjetivas:',
-        'Discursiva:', discursiveScore,
-        'Estudo de Caso 1:', caseStudy1Score,
-        'Estudo de Caso 2:', caseStudy2Score,
-        'Estudo de Caso 3:', caseStudy3Score
-      );
-      console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
+      // Log detalhado dos parâmetros enviados para a RPC
+      console.log('[useSaveAnswers] Iniciando chamada RPC com parâmetros:', {
+        rankingId,
+        concursoId: concurso.id,
+        totalRespostas: answersArray.length,
+        respostas: answersArray,
+        notasSubjetivas: {
+          discursive: discursiveScore,
+          caseStudy1: caseStudy1Score,
+          caseStudy2: caseStudy2Score,
+          caseStudy3: caseStudy3Score
+        },
+        editCount
+      });
 
+      // Log do gabarito atual
+      const { data: gabarito, error: gabaritoError } = await supabase
+        .from('answer_keys')
+        .select('*')
+        .eq('concurso_id', concurso.id);
+
+      if (gabaritoError) {
+        console.error('[useSaveAnswers] Erro ao buscar gabarito:', gabaritoError);
+      } else {
+        console.log('[useSaveAnswers] Gabarito atual:', gabarito);
+      }
+
+      // Chamada RPC com log detalhado
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -82,12 +101,27 @@ export const useSaveAnswers = ({
         throw new Error(data.error || "Erro ao salvar respostas");
       }
 
+      // Log do estado atual do ranking após salvamento
+      const { data: rankingAtual, error: rankingError } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+
+      if (rankingError) {
+        console.error('[useSaveAnswers] Erro ao buscar ranking atualizado:', rankingError);
+      } else {
+        console.log('[useSaveAnswers] Estado do ranking após atualização:', rankingAtual);
+      }
+
       // Invalidar caches relevantes para forçar recarregamento dos dados
+      console.log('[useSaveAnswers] Invalidando caches...');
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['user-ranking-detail', rankingId] }),
         queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] }),
         queryClient.invalidateQueries({ queryKey: ['participating', concurso.id] })
       ]);
+      console.log('[useSaveAnswers] Caches invalidados com sucesso');
 
       setSavedSuccess(true);
       toast({
