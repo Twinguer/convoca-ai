@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,7 +96,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     refetchInterval: 10000
   });
   
-  // Renomeie a função importada de useSaveAnswers para saveAnswersService
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -114,7 +112,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   });
   
   useEffect(() => {
-    // Atualizar pontuações subjetivas quando os dados do ranking são carregados
     if (userRankingData) {
       console.log('[AnswerSheet] Atualizando pontuações subjetivas dos dados do ranking:', userRankingData);
       
@@ -146,22 +143,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setNullifiedQuestions(nullifiedSet);
       console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
       
-      // Verificar se houve alteração no número de questões anuladas
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
         console.log('[AnswerSheet] Alteração detectada nas questões anuladas:', 
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
         
-        // Se não estiver salvando e o usuário pode editar, salvar automaticamente
-        // para atualizar os cálculos das pontuações
         if (!isSaving && canEdit) {
-          toast({
-            title: "Atualização automática",
-            description: "Detectamos alterações no gabarito. Suas pontuações serão atualizadas.",
-            variant: "default"
-          });
-          
           handleSaveAnswers();
         }
       }
@@ -191,7 +179,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
       
-      // Chamando o serviço correto renomeado
       await saveAnswersService();
       await refetchNullified();
       await refetchUserRanking();
@@ -287,7 +274,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         {savedSuccess && (
           <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <Check className="h-4 w-4" />
-            <p>Respostas salvas com sucesso! Calculando pontuação...</p>
+            <p>Respostas salvas com sucesso!</p>
           </div>
         )}
         
