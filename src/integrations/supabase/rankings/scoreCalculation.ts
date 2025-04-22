@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -188,67 +187,25 @@ export const applyWeightsToScores = async (
   }
 };
 
-// Salva todas as pontuações do usuário (brutas e ponderadas)
 export const saveUserScores = async (
-  rankingId: string,
-  rawScores: {
-    basicKnowledgeScore: number;
-    specificKnowledgeScore: number;
-    specific1Score: number;
-    specific2Score: number;
-    specific3Score: number;
-  },
-  subjectiveScores: {
-    discursiveScore: number;
-    caseStudy1Score: number;
-    caseStudy2Score: number;
-    caseStudy3Score: number;
-  },
-  weightedScores: {
-    weightedBasicScore: number;
-    weightedSpecific1Score: number;
-    weightedSpecific2Score: number;
-    weightedSpecific3Score: number;
-    weightedDiscursiveScore: number;
-    weightedCaseStudy1Score: number;
-    weightedCaseStudy2Score: number;
-    weightedCaseStudy3Score: number;
-    totalScore: number;
-  }
+  rankingId: string, 
+  rawScores: any,
+  weightedScores: any,
+  subjectiveScores: any
 ) => {
   try {
-    // Atualiza o ranking do usuário com todas as pontuações
-    const { error: updateError } = await supabase
-      .from('user_rankings')
-      .update({
-        // Pontuações brutas
-        basic_knowledge_score: rawScores.basicKnowledgeScore,
-        specific_knowledge_score: rawScores.specificKnowledgeScore,
-        specific_knowledge_1_score: rawScores.specific1Score,
-        specific_knowledge_2_score: rawScores.specific2Score,
-        specific_knowledge_3_score: rawScores.specific3Score,
-        discursive_score: subjectiveScores.discursiveScore,
-        case_study_1_score: subjectiveScores.caseStudy1Score,
-        case_study_2_score: subjectiveScores.caseStudy2Score,
-        case_study_3_score: subjectiveScores.caseStudy3Score,
-        
-        // Pontuações ponderadas
-        weighted_basic_score: weightedScores.weightedBasicScore,
-        weighted_specific_1_score: weightedScores.weightedSpecific1Score,
-        weighted_specific_2_score: weightedScores.weightedSpecific2Score,
-        weighted_specific_3_score: weightedScores.weightedSpecific3Score,
-        weighted_discursive_score: weightedScores.weightedDiscursiveScore,
-        weighted_case_study_1_score: weightedScores.weightedCaseStudy1Score,
-        weighted_case_study_2_score: weightedScores.weightedCaseStudy2Score,
-        weighted_case_study_3_score: weightedScores.weightedCaseStudy3Score,
-        
-        // Pontuação final
-        score: weightedScores.totalScore,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', rankingId);
-      
-    if (updateError) throw updateError;
+    const { data, error } = await supabase.rpc('save_scores_transaction', {
+      p_ranking_id: rankingId,
+      p_raw_scores: rawScores,
+      p_weighted_scores: weightedScores,
+      p_subjective_scores: subjectiveScores
+    });
+    
+    if (error) throw error;
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Erro ao salvar pontuações');
+    }
     
     return true;
   } catch (error) {
@@ -256,3 +213,29 @@ export const saveUserScores = async (
     throw error;
   }
 };
+
+interface RawScores {
+  basicKnowledgeScore: number;
+  specificKnowledge1Score: number;
+  specificKnowledge2Score: number;
+  specificKnowledge3Score: number;
+}
+
+interface WeightedScores {
+  weightedBasicScore: number;
+  weightedSpecific1Score: number;
+  weightedSpecific2Score: number;
+  weightedSpecific3Score: number;
+  weightedDiscursiveScore: number;
+  weightedCaseStudy1Score: number;
+  weightedCaseStudy2Score: number;
+  weightedCaseStudy3Score: number;
+  totalScore: number;
+}
+
+interface SubjectiveScores {
+  discursiveScore: number;
+  caseStudy1Score: number;
+  caseStudy2Score: number;
+  caseStudy3Score: number;
+}
