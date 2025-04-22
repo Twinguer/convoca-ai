@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -164,14 +165,26 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
+    const effectivelyAnsweredQuestions = answeredQuestions + Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
-    if (answeredQuestions < totalQuestions) {
-      toast({
-        title: "Atenção",
-        description: "Todas as questões devem ser respondidas antes de salvar.",
-        variant: "destructive"
-      });
-      return;
+    // Modificação: Considerar questões anuladas como "respondidas" para validação
+    if (effectivelyAnsweredQuestions < totalQuestions) {
+      const unansweredNonNullified = [];
+      for (let i = 1; i <= totalQuestions; i++) {
+        if (!answers[i] && !nullifiedQuestions.has(i)) {
+          unansweredNonNullified.push(i);
+        }
+      }
+      
+      if (unansweredNonNullified.length > 0) {
+        console.log('[AnswerSheet] Questões não respondidas (excluindo anuladas):', unansweredNonNullified);
+        toast({
+          title: "Atenção",
+          description: `Todas as questões não anuladas devem ser respondidas antes de salvar. Faltam: ${unansweredNonNullified.join(', ')}`,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     try {
@@ -231,7 +244,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
-  const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
+  // Modificação: Incluir questões anuladas no cálculo de progresso
+  const effectivelyAnsweredCount = answeredQuestions + Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
+  const progressPercentage = totalQuestions ? effectivelyAnsweredCount / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
   const getObjectiveSectionList = () => {
@@ -301,7 +316,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         )}
         
         <div className="flex items-center justify-between">
-          <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
+          <div className="font-medium">Progresso: {effectivelyAnsweredCount} de {totalQuestions} questões</div>
           <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
         </div>
         <Progress value={progressPercentage} className="h-2 bg-gray-200" />
