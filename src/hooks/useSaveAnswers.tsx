@@ -1,8 +1,8 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { answerSavingService } from '@/services/answerSavingService';
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -38,91 +38,53 @@ export const useSaveAnswers = ({
 
   const handleSaveAnswers = async () => {
     try {
+      // Atualizar estados de UI
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
 
+      // Verificação do limite de edições
       if (editCount >= 5) {
         throw new Error("Você atingiu o limite de 5 edições permitidas");
       }
 
+      // Transformar objeto de respostas em array para API
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber),
         answer,
       }));
 
-      // Log detalhado dos parâmetros enviados para a RPC
-      console.log('[useSaveAnswers] Iniciando chamada RPC com parâmetros:', {
+      console.log('[useSaveAnswers] Preparando para salvar respostas:', {
+        totalRespostas: answersArray.length,
+        concursoId: concurso.id,
+        rankingId
+      });
+
+      // Chamar serviço para salvar respostas
+      const result = await answerSavingService.saveAnswersAndCalculateScores({
         rankingId,
         concursoId: concurso.id,
-        totalRespostas: answersArray.length,
-        respostas: answersArray,
-        notasSubjetivas: {
-          discursive: discursiveScore,
-          caseStudy1: caseStudy1Score,
-          caseStudy2: caseStudy2Score,
-          caseStudy3: caseStudy3Score
-        },
-        editCount
+        answers: answersArray,
+        discursiveScore: discursiveScore || 0,
+        caseStudy1Score: caseStudy1Score || 0,
+        caseStudy2Score: caseStudy2Score || 0,
+        caseStudy3Score: caseStudy3Score || 0,
+        currentEditCount: editCount
       });
 
-      // Log do gabarito atual
-      const { data: gabarito, error: gabaritoError } = await supabase
-        .from('answer_keys')
-        .select('*')
-        .eq('concurso_id', concurso.id);
-
-      if (gabaritoError) {
-        console.error('[useSaveAnswers] Erro ao buscar gabarito:', gabaritoError);
-      } else {
-        console.log('[useSaveAnswers] Gabarito atual:', gabarito);
+      if (!result.success) {
+        throw new Error(result.error || "Erro ao salvar respostas");
       }
 
-      // Chamada RPC com log detalhado
-      const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
-        p_ranking_id: rankingId,
-        p_concurso_id: concurso.id,
-        p_answers: answersArray,
-        p_discursive_score: discursiveScore || 0,
-        p_case_study_1_score: caseStudy1Score || 0,
-        p_case_study_2_score: caseStudy2Score || 0,
-        p_case_study_3_score: caseStudy3Score || 0,
-        p_current_edit_count: editCount
-      });
-
-      if (error) {
-        console.error('[useSaveAnswers] Erro na função RPC:', error);
-        throw new Error(error.message || "Erro ao salvar respostas");
-      }
-
-      console.log('[useSaveAnswers] Resposta da função RPC:', data);
-
-      if (!data.success) {
-        throw new Error(data.error || "Erro ao salvar respostas");
-      }
-
-      // Log do estado atual do ranking após salvamento
-      const { data: rankingAtual, error: rankingError } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-
-      if (rankingError) {
-        console.error('[useSaveAnswers] Erro ao buscar ranking atualizado:', rankingError);
-      } else {
-        console.log('[useSaveAnswers] Estado do ranking após atualização:', rankingAtual);
-      }
-
-      // Invalidar caches relevantes para forçar recarregamento dos dados
-      console.log('[useSaveAnswers] Invalidando caches...');
+      // Invalidar caches relevantes
+      console.log('[useSaveAnswers] Invalidando caches para forçar atualização de dados');
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['user-ranking-detail', rankingId] }),
         queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] }),
         queryClient.invalidateQueries({ queryKey: ['participating', concurso.id] })
       ]);
-      console.log('[useSaveAnswers] Caches invalidados com sucesso');
 
+      // Atualizar UI com sucesso
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
@@ -130,6 +92,7 @@ export const useSaveAnswers = ({
         duration: 5000
       });
 
+      // Chamar callback de sucesso
       onSuccess();
     } catch (error: any) {
       console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
