@@ -1,6 +1,6 @@
 
 export const createAnswerMatrix = (questions: number[]) => {
-  if (questions.length === 0) return [];
+  if (!questions || questions.length === 0) return [];
   
   const QUESTIONS_PER_ROW = 4;
   const rows = Math.ceil(questions.length / QUESTIONS_PER_ROW);

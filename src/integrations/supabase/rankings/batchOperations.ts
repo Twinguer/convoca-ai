@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { calculateRawScores, applyWeightsToScores } from './scoreCalculation';
 
@@ -20,7 +21,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
-      .select('id, user_id')
+      .select('id, user_id, discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
       .eq('concurso_id', concursoId);
       
     if (rankingsError) throw rankingsError;
@@ -42,6 +43,9 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
       
       while (currentTry < maxRetries && !success) {
         try {
+          // Log mais detalhado sobre o ranking atual
+          console.log(`Processando ranking ${ranking.id} para usuário ${ranking.user_id} (tentativa ${currentTry + 1})`);
+          
           const { data: userAnswers, error: answersError } = await supabase
             .from('user_answers')
             .select('*')
@@ -49,48 +53,73 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             
           if (answersError) throw answersError;
           
-          const { data: rankingData, error: rankingError } = await supabase
-            .from('user_rankings')
-            .select(`
-              discursive_score,
-              case_study_1_score,
-              case_study_2_score,
-              case_study_3_score
-            `)
-            .eq('id', ranking.id)
-            .single();
-            
-          if (rankingError) throw rankingError;
+          console.log(`Encontradas ${userAnswers?.length || 0} respostas para o ranking ${ranking.id}`);
           
           // Prepara as pontuações subjetivas
           const subjectiveScores = {
-            discursiveScore: rankingData?.discursive_score || 0,
-            caseStudy1Score: rankingData?.case_study_1_score || 0,
-            caseStudy2Score: rankingData?.case_study_2_score || 0,
-            caseStudy3Score: rankingData?.case_study_3_score || 0
+            discursiveScore: ranking.discursive_score || 0,
+            caseStudy1Score: ranking.case_study_1_score || 0,
+            caseStudy2Score: ranking.case_study_2_score || 0,
+            caseStudy3Score: ranking.case_study_3_score || 0
           };
           
-          const rawScores = await calculateRawScores(concursoId, userAnswers || []);
-          const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
+          console.log(`Pontuações subjetivas para o ranking ${ranking.id}:`, subjectiveScores);
           
-          // Usa a nova função RPC para salvar as pontuações em uma única transação
+          // Calcular pontuações brutas
+          const rawScores = await calculateRawScores(concursoId, userAnswers || []);
+          console.log(`Pontuações brutas calculadas para o ranking ${ranking.id}:`, rawScores);
+          
+          // Aplicar pesos às pontuações
+          const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
+          console.log(`Pontuações ponderadas calculadas para o ranking ${ranking.id}:`, weightedScores);
+          
+          // Garantir que o formato dos dados seja exatamente o que a função RPC espera
+          const formattedRawScores = {
+            basicKnowledgeScore: rawScores.basicKnowledgeScore || 0,
+            specificKnowledgeScore: rawScores.specificKnowledgeScore || 0,
+            specific1Score: rawScores.specific1Score || rawScores.specificKnowledge1Score || 0,
+            specific2Score: rawScores.specific2Score || rawScores.specificKnowledge2Score || 0,
+            specific3Score: rawScores.specific3Score || rawScores.specificKnowledge3Score || 0
+          };
+          
+          const formattedWeightedScores = {
+            weightedBasicScore: weightedScores.weightedBasicScore || 0,
+            weightedSpecific1Score: weightedScores.weightedSpecific1Score || 0,
+            weightedSpecific2Score: weightedScores.weightedSpecific2Score || 0,
+            weightedSpecific3Score: weightedScores.weightedSpecific3Score || 0,
+            weightedDiscursiveScore: weightedScores.weightedDiscursiveScore || 0,
+            weightedCaseStudy1Score: weightedScores.weightedCaseStudy1Score || 0,
+            weightedCaseStudy2Score: weightedScores.weightedCaseStudy2Score || 0,
+            weightedCaseStudy3Score: weightedScores.weightedCaseStudy3Score || 0,
+            totalScore: weightedScores.totalScore || 0
+          };
+          
+          // Usa a função RPC para salvar as pontuações em uma única transação
+          console.log(`Salvando pontuações para o ranking ${ranking.id} via RPC...`);
           const { data: rpcResult, error: rpcError } = await supabase.rpc('save_scores_transaction', {
             p_ranking_id: ranking.id,
-            p_raw_scores: rawScores,
-            p_weighted_scores: weightedScores,
+            p_raw_scores: formattedRawScores,
+            p_weighted_scores: formattedWeightedScores,
             p_subjective_scores: subjectiveScores
           });
           
-          if (rpcError) throw rpcError;
+          if (rpcError) {
+            console.error(`Erro na função RPC para o ranking ${ranking.id}:`, rpcError);
+            throw rpcError;
+          }
           
-          if (!rpcResult.success) {
-            throw new Error(rpcResult.error || 'Erro desconhecido ao salvar pontuações');
+          console.log(`Resposta da RPC para o ranking ${ranking.id}:`, rpcResult);
+          
+          if (!rpcResult || !rpcResult.success) {
+            const errorMsg = (rpcResult && rpcResult.error) ? rpcResult.error : 'Erro desconhecido ao salvar pontuações';
+            console.error(`Erro ao salvar pontuações para o ranking ${ranking.id}:`, errorMsg);
+            throw new Error(errorMsg);
           }
           
           updatedCount++;
           success = true;
           
-          console.log(`Ranking ${ranking.id} atualizado com sucesso. Nova pontuação: ${weightedScores.totalScore}`);
+          console.log(`Ranking ${ranking.id} atualizado com sucesso. Nova pontuação total: ${formattedWeightedScores.totalScore}`);
           
         } catch (error: any) {
           currentTry++;

@@ -25,6 +25,13 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   onClearAnswer,
   isNullified = false
 }) => {
+  // Adicionando log para rastrear o tratamento de questões anuladas
+  React.useEffect(() => {
+    if (isNullified) {
+      console.log(`[QuestionCell] Questão ${questionNumber} está anulada. Resposta atual: ${selectedAnswer || 'nenhuma'}`);
+    }
+  }, [isNullified, questionNumber, selectedAnswer]);
+
   return (
     <div className={`border rounded-md p-3 ${isNullified ? 'bg-gray-50' : 'bg-white'}`}>
       <div className="flex justify-between items-center mb-2">
@@ -58,7 +65,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             option={option}
             isSelected={selectedAnswer === option}
             onClick={() => onAnswerChange(questionNumber, option)}
-            disabled={disabled} // Removida a restrição de questões anuladas
+            disabled={disabled} // Permitindo seleção mesmo em questões anuladas
             examType={examType}
           />
         ))}
