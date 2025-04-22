@@ -55,15 +55,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score,
-    editsLeft,
-    canEdit
+    setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
   
   const {
     data: userRankingData,
-    isLoading: isLoadingRanking,
-    refetch: refetchUserRanking
+    isLoading: isLoadingRanking
   } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
@@ -77,6 +74,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     },
     staleTime: 1000
   });
+  
+  // Definir a variável editsLeft e canEdit antes de useEffect
+  const editsLeft = userRankingData ? 3 - (userRankingData.edit_count || 0) : 3;
+  const canEdit = editsLeft > 0;
   
   const {
     data: nullifiedData,
@@ -114,29 +115,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   });
   
   useEffect(() => {
-    // Atualizar pontuações subjetivas quando os dados do ranking são carregados
-    if (userRankingData) {
-      console.log('[AnswerSheet] Atualizando pontuações subjetivas dos dados do ranking:', userRankingData);
-      
-      if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação discursiva:', userRankingData.discursive_score);
-        setDiscursiveScore(userRankingData.discursive_score);
-      }
-      
-      if (userRankingData?.case_study_1_score !== undefined && userRankingData?.case_study_1_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação do estudo de caso 1:', userRankingData.case_study_1_score);
-        setCaseStudy1Score(userRankingData.case_study_1_score);
-      }
-      
-      if (userRankingData?.case_study_2_score !== undefined && userRankingData?.case_study_2_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação do estudo de caso 2:', userRankingData.case_study_2_score);
-        setCaseStudy2Score(userRankingData.case_study_2_score);
-      }
-      
-      if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação do estudo de caso 3:', userRankingData.case_study_3_score);
-        setCaseStudy3Score(userRankingData.case_study_3_score);
-      }
+    if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
+      setDiscursiveScore(userRankingData.discursive_score);
+    }
+    if (userRankingData?.case_study_1_score !== undefined && userRankingData?.case_study_1_score !== null) {
+      setCaseStudy1Score(userRankingData.case_study_1_score);
+    }
+    if (userRankingData?.case_study_2_score !== undefined && userRankingData?.case_study_2_score !== null) {
+      setCaseStudy2Score(userRankingData.case_study_2_score);
+    }
+    if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
+      setCaseStudy3Score(userRankingData.case_study_3_score);
     }
   }, [userRankingData]);
   
@@ -194,7 +183,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       // Chamando o serviço correto renomeado
       await saveAnswersService();
       await refetchNullified();
-      await refetchUserRanking();
       console.log("[AnswerSheet] Salvamento concluído com sucesso");
     } catch (error: any) {
       console.error("[AnswerSheet] Erro durante o salvamento:", error);
@@ -265,7 +253,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <CardDescription>
           {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
             <div className="text-sm font-medium text-emerald-700 mt-2">
-              Edições disponíveis: {editsLeft} de 5
+              Edições disponíveis: {editsLeft} de 3
               {!canEdit && (
                 <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)
@@ -326,7 +314,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
               className="w-full"
             >
-              <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))` }}>
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}

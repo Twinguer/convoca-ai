@@ -8,7 +8,7 @@ export const useAnswerManagement = (
   const handleAnswerChange = (questionNumber: number, answer: string) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionNumber]: answer.toUpperCase()
+      [questionNumber]: answer
     }));
   };
   

@@ -11,19 +11,17 @@ export const fetchExistingAnswers = async (
   setCaseStudy3Score: React.Dispatch<React.SetStateAction<number | null>>
 ) => {
   try {
-    console.log('[fetchExistingAnswers] Buscando respostas existentes para o ranking ID:', rankingId);
+    console.log('Fetching existing answers for ranking ID:', rankingId);
     
+    // Fetch answers
     const { data: answersData, error: answersError } = await supabase
       .from('user_answers')
       .select('*')
       .eq('user_ranking_id', rankingId);
       
-    if (answersError) {
-      console.error('[fetchExistingAnswers] Erro ao buscar respostas:', answersError);
-      throw answersError;
-    }
+    if (answersError) throw answersError;
     
-    console.log('[fetchExistingAnswers] Dados de respostas obtidos:', answersData?.length || 0, 'respostas');
+    console.log('Fetched answers data:', answersData);
     
     if (answersData?.length) {
       const answersMap: { [key: number]: string } = {};
@@ -43,42 +41,42 @@ export const fetchExistingAnswers = async (
         }
       });
       
-      console.log('[fetchExistingAnswers] Mapa de respostas criado:', Object.keys(answersMap).length, 'respostas');
+      console.log('Parsed answers map:', answersMap);
+      console.log('Parsed question types map:', typesMap);
+      
       setAnswers(answersMap);
       setQuestionType(typesMap);
     }
     
-    // Buscar dados do ranking com notas subjetivas
-    console.log('[fetchExistingAnswers] Buscando dados do ranking para pontuações subjetivas');
+    // Fetch user ranking for scores
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select('*')
       .eq('id', rankingId)
       .single();
       
-    if (rankingError) {
-      console.error('[fetchExistingAnswers] Erro ao buscar dados do ranking:', rankingError);
-      throw rankingError;
-    }
+    if (rankingError) throw rankingError;
     
-    console.log('[fetchExistingAnswers] Dados do ranking obtidos:', rankingData);
+    console.log('Fetched ranking data:', rankingData);
     
-    // Garantir que todas as pontuações subjetivas sejam definidas explicitamente
     if (rankingData) {
-      console.log('[fetchExistingAnswers] Definindo pontuações subjetivas:',
-        'Discursiva:', rankingData.discursive_score,
-        'Estudo de Caso 1:', rankingData.case_study_1_score,
-        'Estudo de Caso 2:', rankingData.case_study_2_score,
-        'Estudo de Caso 3:', rankingData.case_study_3_score
-      );
+      if (rankingData.discursive_score !== null && rankingData.discursive_score !== undefined) {
+        setDiscursiveScore(rankingData.discursive_score);
+      }
       
-      setDiscursiveScore(rankingData.discursive_score);
-      setCaseStudy1Score(rankingData.case_study_1_score);
-      setCaseStudy2Score(rankingData.case_study_2_score);
-      setCaseStudy3Score(rankingData.case_study_3_score);
+      if (rankingData.case_study_1_score !== undefined) {
+        setCaseStudy1Score(rankingData.case_study_1_score);
+      }
+      
+      if (rankingData.case_study_2_score !== undefined) {
+        setCaseStudy2Score(rankingData.case_study_2_score);
+      }
+      
+      if (rankingData.case_study_3_score !== undefined) {
+        setCaseStudy3Score(rankingData.case_study_3_score);
+      }
     }
   } catch (error) {
-    console.error('[fetchExistingAnswers] Erro não tratado:', error);
-    throw error;
+    console.error('Error fetching answers:', error);
   }
 };

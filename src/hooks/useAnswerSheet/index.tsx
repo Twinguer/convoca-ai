@@ -9,7 +9,6 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { useQuery } from '@tanstack/react-query';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -31,24 +30,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
-  const { data: userRankingData } = useQuery({
-    queryKey: ['user-ranking-detail', rankingId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-      if (error) throw error;
-      return data || {};
-    },
-    staleTime: 1000
-  });
-
-  // Atualizado para usar o limite correto de 5 edições
-  const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
-  const canEdit = editsLeft > 0;
-
+  // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
       handleQuestionSectionSelection(concurso, setSelectedSection);
@@ -70,29 +52,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     fetchData();
   }, [rankingId]);
-
-  // Garantir que as pontuações subjetivas sejam atualizadas quando os dados do ranking forem carregados
-  useEffect(() => {
-    if (userRankingData) {
-      console.log('Atualizando pontuações subjetivas do estado do usuário:', userRankingData);
-      
-      if (userRankingData.discursive_score !== null && userRankingData.discursive_score !== undefined) {
-        setDiscursiveScore(userRankingData.discursive_score);
-      }
-      
-      if (userRankingData.case_study_1_score !== null && userRankingData.case_study_1_score !== undefined) {
-        setCaseStudy1Score(userRankingData.case_study_1_score);
-      }
-      
-      if (userRankingData.case_study_2_score !== null && userRankingData.case_study_2_score !== undefined) {
-        setCaseStudy2Score(userRankingData.case_study_2_score);
-      }
-      
-      if (userRankingData.case_study_3_score !== null && userRankingData.case_study_3_score !== undefined) {
-        setCaseStudy3Score(userRankingData.case_study_3_score);
-      }
-    }
-  }, [userRankingData]);
 
   useEffect(() => {
     if (concurso) {
@@ -192,8 +151,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection,
-    editsLeft,
-    canEdit
+    isDiscursiveSection
   };
 };

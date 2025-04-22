@@ -52,9 +52,12 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       `)
       .eq('concurso_id', concursoId);
     
-    // Se um tipo de reserva específico for solicitado, filtre por ele
+    // If a specific reservation type is requested, filter by it
     if (reservationType && reservationType !== 'Ampla Concorrência') {
       query = query.eq('reservation_type', reservationType);
+    } else if (reservationType === 'Ampla Concorrência') {
+      // For Ampla Concorrência, include all users, as they all participate in this list
+      // No additional filter needed
     }
       
     // Get concurso info to apply weights for score calculation
@@ -85,10 +88,13 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       throw rankingsError;
     }
     
-    console.log('Raw rankings data:', rankings);
+    // If no rankings, return empty array
+    if (!rankings || rankings.length === 0) {
+      return [];
+    }
     
-    // Buscar perfis de usuário
-    const userIds = rankings?.map(ranking => ranking.user_id) || [];
+    // Now fetch the user profiles separately
+    const userIds = rankings.map(ranking => ranking.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('users_profiles')
       .select('id, name, avatar_url')
@@ -100,22 +106,21 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     }
     
     console.log('User profiles data:', profiles);
+    console.log('Raw rankings data:', rankings);
     
     // Map the rankings with profile information and scores
-    const formattedRankings = rankings?.map((ranking, index) => {
+    const formattedRankings = rankings.map((ranking, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
-      // Log detalhado de cada ranking individual
-      console.log('Processando ranking:', {
-        userId: ranking.user_id,
-        scores: {
-          basic: ranking.basic_knowledge_score,
-          specific1: ranking.specific_knowledge_1_score,
-          specific2: ranking.specific_knowledge_2_score,
-          specific3: ranking.specific_knowledge_3_score,
-          discursive: ranking.discursive_score
-        }
-      });
+      // Obter pontuações diretamente do banco de dados
+      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
+      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
+      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
+      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
+      const discursiveScore = ranking.discursive_score || 0;
+      const caseStudy1Score = ranking.case_study_1_score || 0;
+      const caseStudy2Score = ranking.case_study_2_score || 0;
+      const caseStudy3Score = ranking.case_study_3_score || 0;
       
       return {
         position: index + 1,
@@ -123,18 +128,18 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
-        discursiveScore: ranking.discursive_score || 0,
-        caseStudy1Score: ranking.case_study_1_score || 0,
-        caseStudy2Score: ranking.case_study_2_score || 0,
-        caseStudy3Score: ranking.case_study_3_score || 0,
+        basicKnowledgeScore,
+        specificKnowledge1Score,
+        specificKnowledge2Score,
+        specificKnowledge3Score,
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência')
       };
-    }) || [];
+    });
     
     console.log('Transformed rankings:', formattedRankings);
     return formattedRankings;

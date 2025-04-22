@@ -198,7 +198,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         setRecalculationSuccess(true);
         toast({
           title: "Recálculo completado",
-          description: `As notas de ${recalculationResult.processedCount} usuários foram atualizadas.`,
+          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
         });
         
         setTimeout(() => {
@@ -207,7 +207,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       } else {
         toast({
           title: "Erro no recálculo",
-          description: recalculationResult.message || "Ocorreu um erro ao recalcular as notas dos usuários.",
+          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
           variant: "destructive"
         });
       }
@@ -295,6 +295,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
 
+      // Iniciar automaticamente o recálculo para todos os usuários
       await performRecalculation();
       
       setTimeout(() => {

@@ -10,13 +10,11 @@ import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
 import { QuotaSelector, QuotaType } from './QuotaSelector';
-
 interface ParticipationFormProps {
   concurso: Concurso;
   isAlreadyParticipating: boolean;
   userRankingId?: string;
 }
-
 export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   concurso,
   isAlreadyParticipating,
@@ -43,7 +41,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       setShowScoreForm(false);
     }
   }, []);
-
   const handleParticipate = async () => {
     if (!user) {
       toast({
@@ -93,7 +90,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       });
     }
   };
-
   if (!user) {
     return <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
@@ -104,20 +100,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
   // Show the answer sheet if selected and we have a ranking ID
   if ((showAnswerSheet || isAlreadyParticipating) && userRankingId) {
-    return <AnswerSheet 
-      concurso={concurso} 
-      rankingId={userRankingId} 
-      onSuccess={() => {
-        setShowAnswerSheet(false);
-        queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
-        queryClient.invalidateQueries({ queryKey: ['user-ranking-detail', userRankingId] });
-        navigate(`/concurso/${concurso.id}/resultados`);
-        toast({
-          title: "Cartão de Respostas Processado",
-          description: "Suas respostas foram processadas e seu ranking foi atualizado."
-        });
-      }}
-    />;
+    return <AnswerSheet concurso={concurso} rankingId={userRankingId} onSuccess={() => {
+      setShowAnswerSheet(false);
+      queryClient.invalidateQueries({
+        queryKey: ['rankings', concurso.id]
+      });
+      navigate(`/concurso/${concurso.id}/resultados`);
+      toast({
+        title: "Cartão de Respostas Processado",
+        description: "Suas respostas foram processadas e seu ranking foi atualizado."
+      });
+    }} />;
   }
 
   // Default view for non-participating users
