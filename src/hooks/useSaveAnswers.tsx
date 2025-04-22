@@ -66,6 +66,13 @@ export const useSaveAnswers = ({
       // para questões anuladas mesmo que o usuário não tenha respondido
       const answersArray = [];
       
+      // Determinar o número total de questões com base na estrutura do concurso
+      const totalQuestions = 
+        (concurso.has_basic_knowledge ? (concurso.basic_knowledge_questions || 0) : 0) +
+        (concurso.has_specific_knowledge_1 ? (concurso.specific_knowledge_1_questions || 0) : 0) +
+        (concurso.has_specific_knowledge_2 ? (concurso.specific_knowledge_2_questions || 0) : 0) +
+        (concurso.has_specific_knowledge_3 ? (concurso.specific_knowledge_3_questions || 0) : 0);
+      
       // Primeiro, adicione todas as respostas que o usuário forneceu
       for (const [questionNumber, answer] of Object.entries(answers)) {
         answersArray.push({
@@ -74,14 +81,7 @@ export const useSaveAnswers = ({
         });
       }
       
-      // Adicionar respostas "C" para questões anuladas não respondidas
-      // Isso simplifica a lógica no backend e garante que tudo seja contabilizado corretamente
-      const totalQuestions = 
-        (concurso.has_basic_knowledge ? (concurso.basic_knowledge_questions || 0) : 0) +
-        (concurso.has_specific_knowledge_1 ? (concurso.specific_knowledge_1_questions || 0) : 0) +
-        (concurso.has_specific_knowledge_2 ? (concurso.specific_knowledge_2_questions || 0) : 0) +
-        (concurso.has_specific_knowledge_3 ? (concurso.specific_knowledge_3_questions || 0) : 0);
-        
+      // Adicionar respostas padrão para questões anuladas não respondidas
       for (let i = 1; i <= totalQuestions; i++) {
         if (nullifiedQuestions.has(i) && !answers[i]) {
           // Para questões anuladas não respondidas, usamos uma resposta padrão
