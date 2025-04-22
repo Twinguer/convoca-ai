@@ -40,6 +40,11 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
+      // Verificar limite de edições
+      if (editCount >= 5) {
+        throw new Error("Você atingiu o limite de 5 edições permitidas");
+      }
+
       // Preparar os dados de respostas para enviar
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber),
@@ -47,6 +52,12 @@ export const useSaveAnswers = ({
       }));
 
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
+      console.log('[useSaveAnswers] Pontuações subjetivas:',
+        'Discursiva:', discursiveScore,
+        'Estudo de Caso 1:', caseStudy1Score,
+        'Estudo de Caso 2:', caseStudy2Score,
+        'Estudo de Caso 3:', caseStudy3Score
+      );
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
 
       // Chamar a função RPC centralizada
