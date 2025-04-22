@@ -42,23 +42,23 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings with more frequent refetching - only if user is authenticated
+  // Fetch rankings - apenas quando solicitado explicitamente, sem refetchInterval
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    refetchInterval: 3000, // Reduzido para 3 segundos
-    refetchOnWindowFocus: true,
-    staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
+    // Removida a atualização automática (refetchInterval)
+    refetchOnWindowFocus: false, // Desabilitada atualização em foco
+    staleTime: 300000, // Considerado atual por 5 minutos
     enabled: isAuthenticated,
   });
   
-  // Fetch participant count - for all users (authenticated or not)
+  // Fetch participant count - sem atualização automática
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 5000,
-    refetchOnWindowFocus: true,
-    staleTime: 2000,
+    // Removida a atualização automática (refetchInterval)
+    refetchOnWindowFocus: false, // Desabilitada atualização em foco
+    staleTime: 300000, // 5 minutos
   });
   
   // Find user's ranking - only if user is authenticated
@@ -66,10 +66,10 @@ export function useResultadosData() {
   
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
-  // Function to manually refresh all data
+  // Function to manually refresh all data - mantida para atualização manual
   const refreshData = () => {
+    console.log("[useResultadosData] Atualizando dados manualmente");
     if (isAuthenticated) {
-      console.log("[useResultadosData] Atualizando rankings manualmente");
       refetchRankings();
     }
     refetchCount();

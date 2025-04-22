@@ -191,20 +191,31 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
       });
       
+      console.log('[AnswerKeyForm] Iniciando recálculo de pontuações para concurso:', concursoId);
       const recalculationResult = await recalculateAllUserScores(concursoId);
-      console.log('Recalculation result:', recalculationResult);
+      console.log('[AnswerKeyForm] Resultado do recálculo:', recalculationResult);
 
       if (recalculationResult.success) {
         setRecalculationSuccess(true);
+        
+        const successMessage = `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas com sucesso.`;
+        
+        let failureInfo = '';
+        if (recalculationResult.failedRankings && recalculationResult.failedRankings.length > 0) {
+          failureInfo = ` ${recalculationResult.failedRankings.length} ranking(s) não puderam ser atualizados.`;
+        }
+        
         toast({
           title: "Recálculo completado",
-          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
+          description: successMessage + failureInfo,
+          duration: 5000
         });
         
         setTimeout(() => {
           setRecalculationSuccess(false);
         }, 5000);
       } else {
+        console.error('[AnswerKeyForm] Erro no recálculo:', recalculationResult.error);
         toast({
           title: "Erro no recálculo",
           description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
@@ -212,7 +223,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         });
       }
     } catch (error: any) {
-      console.error('Error during recalculation:', error);
+      console.error('[AnswerKeyForm] Erro durante o recálculo:', error);
       toast({
         title: "Erro no recálculo",
         description: error.message || "Ocorreu um erro durante o recálculo das pontuações.",
@@ -274,21 +285,32 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         };
       });
 
+      console.log('[AnswerKeyForm] Salvando gabarito para concurso:', concursoId);
+      console.log('[AnswerKeyForm] Total de questões no gabarito:', answersArray?.length);
+      
       const { error: deleteError } = await supabase
         .from('answer_keys')
         .delete()
         .eq('concurso_id', concursoId);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('[AnswerKeyForm] Erro ao deletar gabarito existente:', deleteError);
+        throw deleteError;
+      }
 
       if (answersArray.length > 0) {
+        console.log('[AnswerKeyForm] Inserindo novo gabarito');
         const { error: insertError } = await supabase
           .from('answer_keys')
           .insert(answersArray);
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('[AnswerKeyForm] Erro ao inserir novo gabarito:', insertError);
+          throw insertError;
+        }
       }
 
+      console.log('[AnswerKeyForm] Gabarito salvo com sucesso, iniciando recálculo');
       setSavedSuccess(true);
       toast({
         title: "Gabarito salvo com sucesso",
@@ -302,7 +324,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       }, 3000);
       
     } catch (error: any) {
-      console.error('Error saving answer key:', error);
+      console.error('[AnswerKeyForm] Erro ao salvar gabarito:', error);
       setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
       
       toast({

@@ -36,12 +36,14 @@ export const useSaveAnswers = ({
 
   const handleSaveAnswers = async () => {
     try {
+      console.log('[useSaveAnswers] Iniciando salvamento de respostas');
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
 
       // Verificar limite de edições
       if (editCount >= 5) {
+        console.error('[useSaveAnswers] Limite de edições atingido:', editCount);
         throw new Error("Você atingiu o limite de 5 edições permitidas");
       }
 
@@ -51,16 +53,26 @@ export const useSaveAnswers = ({
         answer,
       }));
 
-      console.log('[useSaveAnswers] Iniciando salvamento via RPC');
+      console.log('[useSaveAnswers] Número de respostas a salvar:', answersArray.length);
       console.log('[useSaveAnswers] Pontuações subjetivas:',
         'Discursiva:', discursiveScore,
         'Estudo de Caso 1:', caseStudy1Score,
         'Estudo de Caso 2:', caseStudy2Score,
         'Estudo de Caso 3:', caseStudy3Score
       );
-      console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
+
+      if (answersArray.length === 0) {
+        console.warn('[useSaveAnswers] Nenhuma resposta para salvar');
+        toast({
+          title: "Atenção",
+          description: "Nenhuma resposta para salvar. Por favor, responda pelo menos uma questão.",
+          variant: "destructive"
+        });
+        return;
+      }
 
       // Chamar a função RPC centralizada
+      console.log('[useSaveAnswers] Chamando função RPC para salvar respostas e calcular pontuações');
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -80,6 +92,7 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Resposta da função RPC:', data);
 
       if (!data.success) {
+        console.error('[useSaveAnswers] RPC retornou erro:', data.error);
         throw new Error(data.error || "Erro ao salvar respostas");
       }
 
@@ -91,6 +104,8 @@ export const useSaveAnswers = ({
         duration: 5000
       });
 
+      console.log('[useSaveAnswers] Salvamento concluído com sucesso');
+      
       // Chamar callback de sucesso
       onSuccess();
     } catch (error: any) {
