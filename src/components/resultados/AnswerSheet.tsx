@@ -7,14 +7,17 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
+import { SectionToggle } from './SectionToggle';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
 import { useSaveAnswers } from '@/hooks/useSaveAnswers';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DiscursiveScoresSection } from './DiscursiveScoresSection';
-import { ExamTypeWarning } from './ExamTypeWarning';
+import { Separator } from '@/components/ui/separator';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -28,8 +31,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   onSuccess
 }) => {
   const { toast } = useToast();
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
-  const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   
   const {
     answers,
@@ -55,15 +56,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score,
-    editsLeft,
-    canEdit
+    setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
   
   const {
     data: userRankingData,
-    isLoading: isLoadingRanking,
-    refetch: refetchUserRanking
+    isLoading: isLoadingRanking
   } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
@@ -74,33 +72,46 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         .single();
       if (error) throw error;
       return data || {};
-    },
-    staleTime: 1000
+    }
   });
   
+  // Fetch user answers
   const {
-    data: nullifiedData,
-    isLoading: isLoadingNullified,
-    refetch: refetchNullified
+    isLoading: isLoadingAnswers
   } = useQuery({
-    queryKey: ['nullified-questions', concurso.id],
+    queryKey: ['user-answers', rankingId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('answer_keys')
-        .select('question_number')
-        .eq('concurso_id', concurso.id)
-        .eq('is_nullified', true);
+        .from('user_answers')
+        .select('*')
+        .eq('user_ranking_id', rankingId);
       if (error) throw error;
       return data || [];
-    },
-    staleTime: 1000,
-    refetchInterval: 10000
+    }
   });
   
-  const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
+  useEffect(() => {
+    if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
+      setDiscursiveScore(userRankingData.discursive_score);
+    }
+    if (userRankingData?.case_study_1_score !== undefined && userRankingData?.case_study_1_score !== null) {
+      setCaseStudy1Score(userRankingData.case_study_1_score);
+    }
+    if (userRankingData?.case_study_2_score !== undefined && userRankingData?.case_study_2_score !== null) {
+      setCaseStudy2Score(userRankingData.case_study_2_score);
+    }
+    if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
+      setCaseStudy3Score(userRankingData.case_study_3_score);
+    }
+  }, [userRankingData]);
+
+  const {
+    handleSaveAnswers
+  } = useSaveAnswers({
     rankingId,
     concurso,
     answers,
+    questionType: concurso.exam_type as 'Alternativas' | 'Certo ou Errado',
     setIsSaving,
     setError,
     setSavedSuccess,
@@ -111,102 +122,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0
   });
-  
-  useEffect(() => {
-    if (userRankingData) {
-      console.log('[AnswerSheet] Atualizando pontuações subjetivas dos dados do ranking:', userRankingData);
-      
-      if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação discursiva:', userRankingData.discursive_score);
-        setDiscursiveScore(userRankingData.discursive_score);
-      }
-      
-      if (userRankingData?.case_study_1_score !== undefined && userRankingData?.case_study_1_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação do estudo de caso 1:', userRankingData.case_study_1_score);
-        setCaseStudy1Score(userRankingData.case_study_1_score);
-      }
-      
-      if (userRankingData?.case_study_2_score !== undefined && userRankingData?.case_study_2_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação do estudo de caso 2:', userRankingData.case_study_2_score);
-        setCaseStudy2Score(userRankingData.case_study_2_score);
-      }
-      
-      if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
-        console.log('[AnswerSheet] Definindo pontuação do estudo de caso 3:', userRankingData.case_study_3_score);
-        setCaseStudy3Score(userRankingData.case_study_3_score);
-      }
-    }
-  }, [userRankingData]);
-  
-  useEffect(() => {
-    if (nullifiedData && nullifiedData.length > 0) {
-      const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
-      setNullifiedQuestions(nullifiedSet);
-      console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
-      
-      if (nullifiedSet.size !== lastCheckedNullifiedCount) {
-        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:', 
-          `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
-        
-        setLastCheckedNullifiedCount(nullifiedSet.size);
-        
-        if (!isSaving && canEdit) {
-          handleSaveAnswers();
-        }
-      }
-    }
-  }, [nullifiedData]);
-  
-  const handleSaveAnswers = async () => {
-    if (!concurso?.id) {
-      setError("ID do concurso não encontrado");
-      return;
-    }
-
-    const totalQuestions = getTotalQuestions();
-    const answeredQuestions = getAnsweredQuestionsCount();
-    const effectivelyAnsweredQuestions = answeredQuestions + Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
-
-    // Modificação: Considerar questões anuladas como "respondidas" para validação
-    if (effectivelyAnsweredQuestions < totalQuestions) {
-      const unansweredNonNullified = [];
-      for (let i = 1; i <= totalQuestions; i++) {
-        if (!answers[i] && !nullifiedQuestions.has(i)) {
-          unansweredNonNullified.push(i);
-        }
-      }
-      
-      if (unansweredNonNullified.length > 0) {
-        console.log('[AnswerSheet] Questões não respondidas (excluindo anuladas):', unansweredNonNullified);
-        toast({
-          title: "Atenção",
-          description: `Todas as questões não anuladas devem ser respondidas antes de salvar. Faltam: ${unansweredNonNullified.join(', ')}`,
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    try {
-      console.log("[AnswerSheet] Iniciando processo de salvamento");
-      setIsSaving(true);
-      setError(null);
-      
-      await saveAnswersService();
-      await refetchNullified();
-      await refetchUserRanking();
-      console.log("[AnswerSheet] Salvamento concluído com sucesso");
-    } catch (error: any) {
-      console.error("[AnswerSheet] Erro durante o salvamento:", error);
-      setIsSaving(false);
-      setError(error.message || "Erro ao salvar respostas");
-      toast({
-        title: "Erro ao salvar",
-        description: error.message || "Ocorreu um erro ao salvar suas respostas. Por favor, tente novamente.",
-        variant: "destructive"
-      });
-    }
-  };
   
   const handleScoreChange = (
     value: string, 
@@ -233,7 +148,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  if (isLoadingRanking || isLoadingNullified) {
+  if (isLoadingAnswers || isLoadingRanking) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -244,11 +159,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
-  // Modificação: Incluir questões anuladas no cálculo de progresso
-  const effectivelyAnsweredCount = answeredQuestions + Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
-  const progressPercentage = totalQuestions ? effectivelyAnsweredCount / totalQuestions * 100 : 0;
-  const hasNullifiedQuestions = nullifiedQuestions.size > 0;
+  const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
+  const editsLeft = 3 - (userRankingData?.edit_count || 0);
+  const canEdit = editsLeft > 0;
 
+  // Get only the objective sections for tabs (basic and specific knowledge)
   const getObjectiveSectionList = () => {
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
@@ -256,6 +171,107 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
     if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
     return sections;
+  };
+  
+  // Render discursive/case study score inputs
+  const renderDiscursiveScores = () => {
+    return (
+      <div className="space-y-4 p-6 bg-gray-50 border rounded-md mt-6">
+        <h3 className="text-lg font-medium mb-4">Notas Subjetivas</h3>
+        
+        {concurso.has_discursive && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="discursive-score" className="font-medium">
+              Nota da Prova Discursiva:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="discursive-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={discursiveScore === null ? '' : discursiveScore}
+                onChange={(e) => handleScoreChange(e.target.value, setDiscursiveScore, 'discursiva')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+        
+        {concurso.has_case_study_1 && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="case-study-1-score" className="font-medium">
+              Nota do Estudo de Caso 1:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-1-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy1Score === null ? '' : caseStudy1Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy1Score, 'estudo de caso 1')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+        
+        {concurso.has_case_study_2 && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="case-study-2-score" className="font-medium">
+              Nota do Estudo de Caso 2:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-2-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy2Score === null ? '' : caseStudy2Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy2Score, 'estudo de caso 2')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+        
+        {concurso.has_case_study_3 && (
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="case-study-3-score" className="font-medium">
+              Nota do Estudo de Caso 3:
+            </Label>
+            <div className="flex items-center">
+              <Input
+                id="case-study-3-score"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="Informe sua nota (0-100)"
+                value={caseStudy3Score === null ? '' : caseStudy3Score}
+                onChange={(e) => handleScoreChange(e.target.value, setCaseStudy3Score, 'estudo de caso 3')}
+                className="w-32"
+                disabled={!canEdit}
+              />
+              <span className="ml-2 text-gray-500">/ 100</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
   
   const objectiveSections = getObjectiveSectionList();
@@ -267,7 +283,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <CardDescription>
           {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
             <div className="text-sm font-medium text-emerald-700 mt-2">
-              Edições disponíveis: {editsLeft} de 5
+              Edições disponíveis: {editsLeft} de 3
               {!canEdit && (
                 <span className="text-destructive ml-2">
                   (Você atingiu o limite de edições permitidas)
@@ -289,38 +305,37 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         {savedSuccess && (
           <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <Check className="h-4 w-4" />
-            <p>Respostas salvas com sucesso!</p>
+            <p>Respostas salvas com sucesso! Calculando pontuação...</p>
           </div>
         )}
         
         <AnswerSheetHeader concurso={concurso} getTotalQuestions={getTotalQuestions} />
         
-        <ExamTypeWarning examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
+        {concurso.exam_type === 'Alternativas' && (
+          <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <p className="text-sm text-amber-800">
+              <strong>Importante:</strong> Neste tipo de prova, você deve responder a todas as questões antes de salvar o cartão.
+            </p>
+          </div>
+        )}
         
-        {hasNullifiedQuestions && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <div className="flex items-start gap-3">
-              <HelpCircle className="h-5 w-5 text-amber-500 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-amber-800">Questões Anuladas</h4>
-                <p className="text-sm text-amber-700 mt-1">
-                  Este concurso possui {nullifiedQuestions.size} {nullifiedQuestions.size === 1 ? 'questão anulada' : 'questões anuladas'}.
-                  Você receberá pontuação por estas questões independentemente da resposta marcada.
-                </p>
-                <p className="text-xs text-amber-600 mt-2">
-                  Questões anuladas: {Array.from(nullifiedQuestions).sort((a, b) => a - b).join(', ')}
-                </p>
-              </div>
-            </div>
+        {concurso.exam_type === 'Certo ou Errado' && (
+          <div className="bg-amber-50 p-4 rounded-md border border-amber-200 flex items-start gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <p className="text-sm text-amber-800">
+              <strong>Atenção:</strong> Em provas Certo ou Errado, questões em branco não recebem pontuação nem penalidade.
+            </p>
           </div>
         )}
         
         <div className="flex items-center justify-between">
-          <div className="font-medium">Progresso: {effectivelyAnsweredCount} de {totalQuestions} questões</div>
+          <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
           <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
         </div>
         <Progress value={progressPercentage} className="h-2 bg-gray-200" />
         
+        {/* Objective questions tabs (only for basic and specific knowledge) */}
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
@@ -328,7 +343,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
               className="w-full"
             >
-              <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))` }}>
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
@@ -346,7 +361,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                     getOptionsForQuestion={getOptionsForQuestion}
                     disabled={!canEdit}
                     examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
-                    nullifiedQuestions={nullifiedQuestions}
                   />
                 </TabsContent>
               ))}
@@ -354,20 +368,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           </div>
         )}
         
+        {/* Discursive and case study scores stacked at the bottom */}
         {(concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3) && (
-          <DiscursiveScoresSection 
-            concurso={concurso}
-            discursiveScore={discursiveScore}
-            caseStudy1Score={caseStudy1Score}
-            caseStudy2Score={caseStudy2Score}
-            caseStudy3Score={caseStudy3Score}
-            handleScoreChange={handleScoreChange}
-            setDiscursiveScore={setDiscursiveScore}
-            setCaseStudy1Score={setCaseStudy1Score}
-            setCaseStudy2Score={setCaseStudy2Score}
-            setCaseStudy3Score={setCaseStudy3Score}
-            canEdit={canEdit}
-          />
+          renderDiscursiveScores()
         )}
       </CardContent>
       

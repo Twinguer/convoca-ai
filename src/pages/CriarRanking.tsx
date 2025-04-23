@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +14,8 @@ import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
-import { useSaveRanking } from '@/hooks/useSaveRanking';
 
+// Function to fetch ranking data for editing
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;
   
@@ -47,26 +48,24 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
-  const [pendingFormValues, setPendingFormValues] = useState<any | null>(null);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   
+  // Check if we're in edit mode
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
   
+  // Job titles for dropdown
   const [jobTitles] = useState([
-    { id: '1', title: 'AUDITOR' },
-    { id: '2', title: 'AUDITOR FISCAL' },
-    { id: '3', title: 'POLICIAL CIVIL' },
-    { id: '4', title: 'POLÍCIA MILITAR' },
-    { id: '5', title: 'AGENTE ADMINISTRATIVO' },
-    { id: '6', title: 'AUDITOR DE CONTROLE EXTERNO' },
-    { id: '7', title: 'ANALISTA ADMINISTRATIVO' },
-    { id: '8', title: 'TÉCNICO ADMINISTRATIVO' },
-    { id: '9', title: 'OUTRO' }
+    { id: '1', title: 'Analista' },
+    { id: '2', title: 'Técnico' },
+    { id: '3', title: 'Auditor' },
+    { id: '4', title: 'Assistente' },
+    { id: '5', title: 'Especialista' }
   ]);
   
+  // Initialize form with react-hook-form
   const form = useForm({
     defaultValues: {
+      // General Info
       predefined_job_title: '',
       custom_job_title: '',
       titulo: '',
@@ -80,10 +79,12 @@ const CriarRanking = () => {
       vagas: 0,
       inscritos: 0,
       
+      // Exam Structure
       exam_type: 'Alternativas',
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
+      // Knowledge Areas
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
@@ -100,9 +101,11 @@ const CriarRanking = () => {
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
       
+      // Discursive/Essay
       has_discursive: false,
       discursive_weight: 1,
       
+      // Case Studies
       has_case_study_1: false,
       case_study_1_weight: 1,
       
@@ -112,38 +115,36 @@ const CriarRanking = () => {
       has_case_study_3: false,
       case_study_3_weight: 1,
       
+      // Reservation Quotas
       has_ampla_concorrencia: true,
       has_ppp: false,
       has_pcd: false,
       has_hipossuficientes: false,
       has_indigenas: false,
       has_transsexuais: false,
-      localidades: []
     }
   });
   
+  // Load existing data if in edit mode
   useEffect(() => {
     const loadExistingData = async () => {
       if (editId) {
         try {
           const data = await fetchRankingData(editId);
           if (data) {
+            // Set the created concurso ID for the answer key tab
             setCreatedConcursoId(data.id);
             
+            // Determine if title and banca are custom
             const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
             setIsCustomTitle(isOtherTitle);
             
             const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
             setIsCustomBanca(isOtherBanca);
             
-            // Configurar as localidades
-            if (data.localidades && Array.isArray(data.localidades)) {
-              setSelectedStates(data.localidades);
-            }
-            
+            // Reset form with existing data
             form.reset({
               ...data,
-              localidades: data.localidades || [],
               predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
               custom_job_title: isOtherTitle ? data.titulo : '',
               banca: isOtherBanca ? 'OUTRO' : data.banca,
@@ -161,6 +162,7 @@ const CriarRanking = () => {
     loadExistingData();
   }, [editId, form, jobTitles]);
   
+  // Check if user is authenticated
   useEffect(() => {
     if (!user) {
       toast.error("Você precisa estar logado para criar um ranking");
@@ -171,12 +173,12 @@ const CriarRanking = () => {
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
     if (value !== 'OUTRO') {
-      form.setValue('titulo', value.toUpperCase());
+      form.setValue('titulo', value);
     }
   };
   
   const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    form.setValue('titulo', e.target.value.toUpperCase());
+    form.setValue('titulo', e.target.value);
   };
   
   const handleBancaChange = (value: string) => {
@@ -186,102 +188,48 @@ const CriarRanking = () => {
     }
   };
   
-  const handleOrgaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    form.setValue('orgao', e.target.value.toUpperCase());
-  };
-  
-  const { saveRanking } = useSaveRanking();
-
-  const handleSaveRanking = async () => {
-    const formValues = form.getValues();
-    
-    // Sincronizar os estados selecionados com o formulário
-    form.setValue('localidades', selectedStates, { shouldDirty: true });
-    formValues.localidades = selectedStates;
-    
+  const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
-
+    
     try {
-      const saveResult = await saveRanking({
-        formValues,
-        userId: user?.id,
-        editId,
-        jobTitles,
-      });
-      
-      if (saveResult?.duplicated) {
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (saveResult?.id) {
-        setCreatedConcursoId(saveResult.id);
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['rankings'] });
-    } catch (error) {
-      console.error("Erro ao salvar ranking:", error);
-      toast.error("Erro ao salvar ranking: " + (error as Error).message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Garante que a aba Gabarito só aparece depois do ranking existir
-  const handleNextTab = async () => {
-    if (activeTab === 'general-info') {
-      await handleSaveRanking();
-      setPendingFormValues(form.getValues());
-      setActiveTab('answer-key');
-    }
-  };
-
-  const handleSaveFullRanking = async (formValues: any, answerKeyData: any) => {
-    setIsSubmitting(true);
-
-    try {
-      // Use o ID do concurso já criado ou o ID de edição
-      const existingConcursoId = createdConcursoId || editId;
-      const effectiveFormValues = pendingFormValues || formValues;
-      
-      // Sincronize as localidades
-      effectiveFormValues.localidades = selectedStates;
-      
+      // Transform data from React Hook Form format to the format expected by createRanking
       const dataToSubmit = {
-        ...effectiveFormValues,
+        ...values,
         created_by_user_id: user?.id,
-        titulo: effectiveFormValues.custom_job_title || effectiveFormValues.predefined_job_title,
-        banca: effectiveFormValues.custom_banca || effectiveFormValues.banca,
-        localidades: selectedStates
+        titulo: values.custom_job_title || values.predefined_job_title,
+        banca: values.custom_banca || values.banca
       };
-
-      let concursoIdToUse = existingConcursoId;
       
-      // Atualize o ranking existente ou crie um novo se não existir
-      if (existingConcursoId) {
+      let result;
+      
+      // If in edit mode, update existing ranking
+      if (editId) {
+        // Update the existing ranking
         const { data, error } = await supabase
           .from('concursos')
           .update(dataToSubmit)
-          .eq('id', existingConcursoId)
+          .eq('id', editId)
           .select();
-
+          
         if (error) throw error;
-        concursoIdToUse = existingConcursoId;
+        result = data;
+        
         toast.success("Ranking atualizado com sucesso!");
       } else {
-        const { data, error } = await supabase.from('concursos').insert(dataToSubmit).select();
-        if (error) throw error;
-        concursoIdToUse = data?.[0]?.id;
-        setCreatedConcursoId(concursoIdToUse);
+        // Create new ranking
+        result = await createRanking(dataToSubmit);
         toast.success("Ranking criado com sucesso!");
       }
-
-      if (concursoIdToUse) {
-        await saveAnswerKeyAndRecalculate(concursoIdToUse, answerKeyData);
+      
+      if (result) {
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
+        
+        // Set the concurso ID to allow editing the answer key
+        setCreatedConcursoId(editId || (result[0]?.id));
+        
+        // Switch to the answer key tab
         setActiveTab('answer-key');
       }
-
     } catch (error) {
       console.error("Erro ao criar/atualizar ranking:", error);
       toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
@@ -289,26 +237,32 @@ const CriarRanking = () => {
       setIsSubmitting(false);
     }
   };
-
-  const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
-    const { supabase } = await import('@/integrations/supabase/client');
-    await supabase.from('answer_keys').delete().eq('concurso_id', concursoId);
-    if (answerKeyData.length > 0) {
-      const { error: insertError } = await supabase.from('answer_keys').insert(answerKeyData);
-      if (insertError) throw insertError;
+  
+  const handleNextTab = () => {
+    if (activeTab === 'general-info') {
+      // Validate general info fields
+      const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
+      if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
+        toast.error("Preencha todos os campos obrigatórios");
+        return;
+      }
+      
+      // Only switch to answer key if concurso is created
+      if (createdConcursoId) {
+        setActiveTab('answer-key');
+      }
     }
-    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
-    await recalculateAllUserScores(concursoId);
   };
-
-  const handleFakeSubmit = () => {};
-
+  
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      navigate(`/resultados/${createdConcursoId}`);
+      navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
-
+  
+  // Extract form values for the answer key tab
+  const formValues = form.getValues();
+  
   return (
     <div className="container mx-auto p-4">
       <Button 
@@ -328,14 +282,15 @@ const CriarRanking = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFakeSubmit)}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editId}>
+                  <TabsTrigger value="answer-key" disabled={!createdConcursoId}>
                     Gabarito Oficial
                   </TabsTrigger>
                 </TabsList>
+                
                 <TabsContent value="general-info">
                   <GeneralTab
                     form={form}
@@ -345,36 +300,39 @@ const CriarRanking = () => {
                     handleJobTitleChange={handleJobTitleChange}
                     handleCustomTitleChange={handleCustomTitleChange}
                     handleBancaChange={handleBancaChange}
-                    handleOrgaoChange={handleOrgaoChange}
                     handleNextTab={handleNextTab}
-                    onSaveRanking={handleSaveRanking}
-                    isSubmitting={isSubmitting}
-                    selectedStates={selectedStates}
-                    setSelectedStates={setSelectedStates}
                   />
+                  
+                  <div className="flex justify-end mt-6">
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Salvando..." : editId ? "Salvar alterações" : "Criar Ranking"}
+                    </Button>
+                  </div>
                 </TabsContent>
+                
                 <TabsContent value="answer-key">
-                  <AnswerKeyTab
-                    concursoId={createdConcursoId || editId || undefined}
-                    formValues={form.getValues()}
-                    onSaveFullRanking={handleSaveFullRanking}
-                    hasBasicKnowledge={!!form.getValues().has_basic_knowledge}
-                    hasSpecificKnowledge1={!!form.getValues().has_specific_knowledge_1}
-                    hasSpecificKnowledge2={!!form.getValues().has_specific_knowledge_2}
-                    hasSpecificKnowledge3={!!form.getValues().has_specific_knowledge_3}
-                    basicKnowledgeQuestions={form.getValues().basic_knowledge_questions}
-                    specificKnowledge1Questions={form.getValues().specific_knowledge_1_questions}
-                    specificKnowledge2Questions={form.getValues().specific_knowledge_2_questions}
-                    specificKnowledge3Questions={form.getValues().specific_knowledge_3_questions}
-                    examType={form.getValues().exam_type}
-                    alternativesCount={form.getValues().alternatives_count}
-                  />
-                  {(createdConcursoId || editId) && (
-                    <div className="flex justify-end mt-6">
-                      <Button type="button" onClick={handleGoToResults}>
-                        Ir para Resultados
-                      </Button>
-                    </div>
+                  {createdConcursoId && (
+                    <>
+                      <AnswerKeyTab
+                        concursoId={createdConcursoId}
+                        hasBasicKnowledge={!!formValues.has_basic_knowledge}
+                        hasSpecificKnowledge1={!!formValues.has_specific_knowledge_1}
+                        hasSpecificKnowledge2={!!formValues.has_specific_knowledge_2}
+                        hasSpecificKnowledge3={!!formValues.has_specific_knowledge_3}
+                        basicKnowledgeQuestions={formValues.basic_knowledge_questions}
+                        specificKnowledge1Questions={formValues.specific_knowledge_1_questions}
+                        specificKnowledge2Questions={formValues.specific_knowledge_2_questions}
+                        specificKnowledge3Questions={formValues.specific_knowledge_3_questions}
+                        examType={formValues.exam_type}
+                        alternativesCount={formValues.alternatives_count}
+                      />
+                      
+                      <div className="flex justify-end mt-6">
+                        <Button type="button" onClick={handleGoToResults}>
+                          Ir para Resultados
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </TabsContent>
               </Tabs>

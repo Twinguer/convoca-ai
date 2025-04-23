@@ -1,12 +1,15 @@
 
+import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
+import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface UseSaveAnswersProps {
   rankingId: string;
   concurso: Concurso;
   answers: { [key: number]: string };
+  questionType: 'Alternativas' | 'Certo ou Errado';
   setIsSaving: (saving: boolean) => void;
   setError: (error: string | null) => void;
   setSavedSuccess: (success: boolean) => void;
@@ -22,6 +25,7 @@ export const useSaveAnswers = ({
   rankingId,
   concurso,
   answers,
+  questionType,
   setIsSaving,
   setError,
   setSavedSuccess,
@@ -34,126 +38,228 @@ export const useSaveAnswers = ({
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
 
+  const calculateScore = async () => {
+    try {
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        const qNum = parseInt(questionNumber);
+        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+        const specific1QuestionsCount = concurso.specific_knowledge_1_questions || 0;
+        const specific2QuestionsCount = concurso.specific_knowledge_2_questions || 0;
+
+        return {
+          questionNumber: qNum,
+          answer,
+          isBasicKnowledge: qNum <= basicQuestionsCount,
+          isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
+          isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && 
+                       qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
+          isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
+        };
+      });
+
+      const { data: answerKey, error: keyError } = await supabase
+        .from('answer_keys')
+        .select('*')
+        .eq('concurso_id', concurso.id);
+
+      if (keyError) throw keyError;
+
+      console.log('Answer keys retrieved:', answerKey);
+      console.log('User answers to check:', answersArray);
+
+      // Get the concurso with all weight data
+      const { data: concursoData, error: concursoError } = await supabase
+        .from('concursos')
+        .select(`
+          basic_knowledge_weight,
+          specific_knowledge_1_weight,
+          specific_knowledge_2_weight,
+          specific_knowledge_3_weight,
+          specific_knowledge_weight,
+          discursive_weight,
+          case_study_1_weight,
+          case_study_2_weight,
+          case_study_3_weight
+        `)
+        .eq('id', concurso.id)
+        .single();
+
+      if (concursoError) {
+        console.error('Error fetching concurso weights:', concursoError);
+        throw concursoError;
+      }
+
+      console.log('Concurso weights retrieved from database:', concursoData);
+
+      // Raw score (number of correct answers)
+      let basicScore = 0;
+      let specific1Score = 0;
+      let specific2Score = 0;
+      let specific3Score = 0;
+
+      // Count correctly answered questions
+      answersArray.forEach(userAnswer => {
+        const officialAnswer = answerKey.find(
+          a => a.question_number === userAnswer.questionNumber
+        );
+        
+        console.log(`Checking question ${userAnswer.questionNumber}: user=${userAnswer.answer}, official=${officialAnswer?.answer}`);
+
+        if (officialAnswer && officialAnswer.answer === userAnswer.answer) {
+          if (userAnswer.isBasicKnowledge) {
+            basicScore += 1;
+          } else if (userAnswer.isSpecific1) {
+            specific1Score += 1;
+          } else if (userAnswer.isSpecific2) {
+            specific2Score += 1;
+          } else if (userAnswer.isSpecific3) {
+            specific3Score += 1;
+          }
+        }
+      });
+
+      console.log("Scores before applying weights:", {
+        basicScore,
+        specific1Score,
+        specific2Score,
+        specific3Score
+      });
+
+      // Apply weights to raw scores using values from database
+      const basicWeight = concursoData.basic_knowledge_weight || 1;
+      const specific1Weight = concursoData.specific_knowledge_1_weight || 
+                             concursoData.specific_knowledge_weight || 1;
+      const specific2Weight = concursoData.specific_knowledge_2_weight || 1;
+      const specific3Weight = concursoData.specific_knowledge_3_weight || 1;
+      const discursiveWeight = concursoData.discursive_weight || 1;
+      const caseStudy1Weight = concursoData.case_study_1_weight || 1;
+      const caseStudy2Weight = concursoData.case_study_2_weight || 1;
+      const caseStudy3Weight = concursoData.case_study_3_weight || 1;
+
+      console.log("Weights applied from database:", {
+        basicWeight,
+        specific1Weight,
+        specific2Weight,
+        specific3Weight,
+        discursiveWeight,
+        caseStudy1Weight,
+        caseStudy2Weight,
+        caseStudy3Weight
+      });
+
+      // Calculate weighted scores for objective sections
+      const weightedBasicScore = basicScore * basicWeight;
+      const weightedSpecific1Score = specific1Score * specific1Weight;
+      const weightedSpecific2Score = specific2Score * specific2Weight;
+      const weightedSpecific3Score = specific3Score * specific3Weight;
+
+      console.log("Weighted scores:", {
+        weightedBasicScore,
+        weightedSpecific1Score,
+        weightedSpecific2Score,
+        weightedSpecific3Score
+      });
+
+      // Discursive and case study scores (applying weights)
+      const discursiveValue = (discursiveScore || 0) * discursiveWeight;
+      const caseStudy1Value = (caseStudy1Score || 0) * caseStudy1Weight;
+      const caseStudy2Value = (caseStudy2Score || 0) * caseStudy2Weight;
+      const caseStudy3Value = (caseStudy3Score || 0) * caseStudy3Weight;
+
+      console.log("Subjective scores with weights applied:", {
+        discursiveValue,
+        caseStudy1Value,
+        caseStudy2Value,
+        caseStudy3Value
+      });
+
+      // Calculate total weighted score
+      const totalScore = weightedBasicScore + weightedSpecific1Score + 
+                         weightedSpecific2Score + weightedSpecific3Score +
+                         discursiveValue + caseStudy1Value +
+                         caseStudy2Value + caseStudy3Value;
+
+      console.log("Final total score:", totalScore);
+      console.log("Individual components:", {
+        weightedBasicScore,
+        weightedSpecific1Score,
+        weightedSpecific2Score,
+        weightedSpecific3Score,
+        discursiveValue,
+        caseStudy1Value,
+        caseStudy2Value,
+        caseStudy3Value
+      });
+
+      // Return both raw scores (for display) and the total weighted score
+      return {
+        basic_knowledge_score: basicScore,
+        specific_knowledge_1_score: specific1Score,
+        specific_knowledge_2_score: specific2Score,
+        specific_knowledge_3_score: specific3Score,
+        discursive_score: discursiveScore || 0,
+        case_study_1_score: caseStudy1Score || 0,
+        case_study_2_score: caseStudy2Score || 0,
+        case_study_3_score: caseStudy3Score || 0,
+        score: totalScore
+      };
+    } catch (error) {
+      console.error('Error calculating score:', error);
+      throw error;
+    }
+  };
+
   const handleSaveAnswers = async () => {
     try {
-      console.log('[useSaveAnswers] Iniciando salvamento de respostas');
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
 
-      // Verificar limite de edições
-      if (editCount >= 5) {
-        console.error('[useSaveAnswers] Limite de edições atingido:', editCount);
-        throw new Error("Você atingiu o limite de 5 edições permitidas");
-      }
-      
-      // Obter questões anuladas para considerar na validação
-      const { data: nullifiedData, error: nullifiedError } = await supabase
-        .from('answer_keys')
-        .select('question_number')
-        .eq('concurso_id', concurso.id)
-        .eq('is_nullified', true);
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        // Determine if this question is in basic knowledge or specific knowledge sections
+        const qNum = parseInt(questionNumber);
+        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
         
-      if (nullifiedError) {
-        console.error('[useSaveAnswers] Erro ao buscar questões anuladas:', nullifiedError);
-        throw nullifiedError;
-      }
-      
-      const nullifiedQuestions = new Set(nullifiedData?.map(item => item.question_number) || []);
-      console.log('[useSaveAnswers] Questões anuladas encontradas:', Array.from(nullifiedQuestions));
-
-      // Preparar os dados de respostas para enviar - incluindo respostas 
-      // para questões anuladas mesmo que o usuário não tenha respondido
-      const answersArray = [];
-      
-      // Determinar o número total de questões com base na estrutura do concurso
-      const totalQuestions = 
-        (concurso.has_basic_knowledge ? (concurso.basic_knowledge_questions || 0) : 0) +
-        (concurso.has_specific_knowledge_1 ? (concurso.specific_knowledge_1_questions || 0) : 0) +
-        (concurso.has_specific_knowledge_2 ? (concurso.specific_knowledge_2_questions || 0) : 0) +
-        (concurso.has_specific_knowledge_3 ? (concurso.specific_knowledge_3_questions || 0) : 0);
-      
-      // Primeiro, adicione todas as respostas que o usuário forneceu
-      for (const [questionNumber, answer] of Object.entries(answers)) {
-        answersArray.push({
-          questionNumber: parseInt(questionNumber),
+        return {
+          questionNumber: qNum,
           answer,
-        });
-      }
-      
-      // Adicionar respostas padrão para questões anuladas não respondidas
-      for (let i = 1; i <= totalQuestions; i++) {
-        if (nullifiedQuestions.has(i) && !answers[i]) {
-          // Para questões anuladas não respondidas, usamos uma resposta padrão
-          // A resposta real não importa já que a questão está anulada
-          const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-          
-          answersArray.push({
-            questionNumber: i,
-            answer: defaultAnswer
-          });
-          
-          console.log(`[useSaveAnswers] Adicionando resposta padrão ${defaultAnswer} para questão anulada ${i}`);
-        }
-      }
-
-      console.log('[useSaveAnswers] Número de respostas a salvar:', answersArray.length);
-      console.log('[useSaveAnswers] Pontuações subjetivas:',
-        'Discursiva:', discursiveScore,
-        'Estudo de Caso 1:', caseStudy1Score,
-        'Estudo de Caso 2:', caseStudy2Score,
-        'Estudo de Caso 3:', caseStudy3Score
-      );
-
-      if (answersArray.length === 0) {
-        console.warn('[useSaveAnswers] Nenhuma resposta para salvar');
-        toast({
-          title: "Atenção",
-          description: "Nenhuma resposta para salvar. Por favor, responda pelo menos uma questão.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Chamar a função RPC centralizada
-      console.log('[useSaveAnswers] Chamando função RPC para salvar respostas e calcular pontuações');
-      const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
-        p_ranking_id: rankingId,
-        p_concurso_id: concurso.id,
-        p_answers: answersArray,
-        p_discursive_score: discursiveScore || 0,
-        p_case_study_1_score: caseStudy1Score || 0,
-        p_case_study_2_score: caseStudy2Score || 0,
-        p_case_study_3_score: caseStudy3Score || 0,
-        p_current_edit_count: editCount
+          isBasicKnowledge: qNum <= basicQuestionsCount
+        };
       });
 
+      // Calculate scores using the enhanced calculation function
+      const scoreDetails = await calculateScore();
+
+      console.log('Final score details before saving:', scoreDetails);
+
+      // Update user ranking with calculated scores
+      const { error } = await supabase
+        .from('user_rankings')
+        .update({
+          ...scoreDetails,
+          edit_count: editCount + 1
+        })
+        .eq('id', rankingId);
+
       if (error) {
-        console.error('[useSaveAnswers] Erro na função RPC:', error);
-        throw new Error(error.message || "Erro ao salvar respostas");
+        console.error('Error updating user ranking:', error);
+        throw error;
       }
 
-      console.log('[useSaveAnswers] Resposta da função RPC:', data);
+      // Save user answers
+      await saveUserAnswers(rankingId, concurso.id, answersArray);
 
-      if (!data.success) {
-        console.error('[useSaveAnswers] RPC retornou erro:', data.error);
-        throw new Error(data.error || "Erro ao salvar respostas");
-      }
-
-      // Atualizar estado da UI
+      // Update UI state
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada com base no gabarito atual, incluindo as questões anuladas.",
-        duration: 5000
+        description: "Sua pontuação foi calculada com sucesso."
       });
 
-      console.log('[useSaveAnswers] Salvamento concluído com sucesso');
-      
-      // Chamar callback de sucesso
+      // Call the success callback
       onSuccess();
     } catch (error: any) {
-      console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
+      console.error('Error saving answers:', error);
       setError(error.message || "Erro ao salvar respostas");
       toast({
         title: "Erro ao salvar",

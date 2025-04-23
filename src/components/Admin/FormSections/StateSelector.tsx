@@ -1,130 +1,115 @@
 
-import React, { useEffect } from 'react';
-import { FormField, FormItem, FormLabel } from '@/components/ui/form';
+import React from 'react';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-interface StateSelectorProps {
-  form?: any;
-  selectedStates: string[];
-  setSelectedStates?: React.Dispatch<React.SetStateAction<string[]>>;
-  onStateChange?: (states: string[]) => void;
-}
-
-const ESTADOS_BRASILEIROS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
-  // "Nacional" sempre no final:
-  'Nacional'
+const BRAZILIAN_STATES = [
+  { name: 'Acre', abbr: 'AC' },
+  { name: 'Alagoas', abbr: 'AL' },
+  { name: 'Amapá', abbr: 'AP' },
+  { name: 'Amazonas', abbr: 'AM' },
+  { name: 'Bahia', abbr: 'BA' },
+  { name: 'Ceará', abbr: 'CE' },
+  { name: 'Distrito Federal', abbr: 'DF' },
+  { name: 'Espírito Santo', abbr: 'ES' },
+  { name: 'Goiás', abbr: 'GO' },
+  { name: 'Maranhão', abbr: 'MA' },
+  { name: 'Mato Grosso', abbr: 'MT' },
+  { name: 'Mato Grosso do Sul', abbr: 'MS' },
+  { name: 'Minas Gerais', abbr: 'MG' },
+  { name: 'Pará', abbr: 'PA' },
+  { name: 'Paraíba', abbr: 'PB' },
+  { name: 'Paraná', abbr: 'PR' },
+  { name: 'Pernambuco', abbr: 'PE' },
+  { name: 'Piauí', abbr: 'PI' },
+  { name: 'Rio de Janeiro', abbr: 'RJ' },
+  { name: 'Rio Grande do Norte', abbr: 'RN' },
+  { name: 'Rio Grande do Sul', abbr: 'RS' },
+  { name: 'Rondônia', abbr: 'RO' },
+  { name: 'Roraima', abbr: 'RR' },
+  { name: 'Santa Catarina', abbr: 'SC' },
+  { name: 'São Paulo', abbr: 'SP' },
+  { name: 'Sergipe', abbr: 'SE' },
+  { name: 'Tocantins', abbr: 'TO' },
+  { name: 'Nacional', abbr: 'Nacional' }
 ];
 
-export const StateSelector: React.FC<StateSelectorProps> = ({
-  form,
-  selectedStates,
-  setSelectedStates,
-  onStateChange
-}) => {
-  // Sincroniza com o formulário quando o componente é montado
-  useEffect(() => {
-    if (form) {
-      const formLocalidades = form.getValues('localidades');
-      if (formLocalidades && Array.isArray(formLocalidades)) {
-        if (setSelectedStates) {
-          setSelectedStates(formLocalidades);
-        }
-        if (onStateChange) {
-          onStateChange(formLocalidades);
-        }
-      }
-    }
-    // eslint-disable-next-line
-  }, [form, setSelectedStates, onStateChange]);
+interface StateSelectorProps {
+  selectedStates: string[];
+  onStateChange: (states: string[]) => void;
+}
 
-  const handleStateSelection = (estado: string) => {
-    let newStates: string[] = [];
-
-    if (estado === 'Nacional') {
-      // Selecionando ou desselecionando "Nacional"
-      if (selectedStates.includes('Nacional')) {
-        newStates = [];
-      } else {
-        newStates = ['Nacional'];
-      }
-    } else {
-      // Selecionando estados comuns
-      if (selectedStates.includes(estado)) {
-        newStates = selectedStates.filter(s => s !== estado && s !== 'Nacional');
-      } else {
-        newStates = selectedStates.filter(s => s !== 'Nacional'); // nunca pode ter Nacional + estado
-        newStates = [...newStates, estado];
-      }
+export const StateSelector: React.FC<StateSelectorProps> = ({ selectedStates, onStateChange }) => {
+  const handleStateChange = (state: string) => {
+    if (state === 'Nacional') {
+      onStateChange(['Nacional']);
+      return;
     }
-
-    // Atualiza o estado local
-    if (setSelectedStates) setSelectedStates(newStates);
-    // Atualiza o formulário diretamente
-    if (form) {
-      form.setValue('localidades', newStates, { shouldDirty: true, shouldValidate: true });
-    }
-    // Chama o callback externo, se fornecido
-    if (onStateChange) onStateChange(newStates);
+    
+    const newStates = selectedStates.includes(state)
+      ? selectedStates.filter(s => s !== state)
+      : [...selectedStates.filter(s => s !== 'Nacional'), state];
+      
+    onStateChange(newStates);
   };
 
   return (
-    <FormItem>
-      <FormLabel>Localidade</FormLabel>
-      <div className="flex flex-wrap gap-2">
-        {selectedStates.map(estado => (
-          <div key={estado} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
-            {estado}
-          </div>
-        ))}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <MapPin className="h-4 w-4" />
-              {selectedStates.length > 0 ? "Editar Estados" : "Adicionar Estados"}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <Label>Localidades</Label>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Adicionar
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="max-w-2xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Selecione os Estados</AlertDialogTitle>
-              <AlertDialogDescription>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  {ESTADOS_BRASILEIROS.map((estado, idx) => (
-                    <div key={estado} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={estado}
-                        checked={selectedStates.includes(estado)}
-                        onCheckedChange={() => handleStateSelection(estado)}
-                        disabled={estado === 'Nacional'
-                          ? selectedStates.length > 0 && !selectedStates.includes('Nacional')
-                          : selectedStates.includes('Nacional')}
-                      />
-                      <label 
-                        htmlFor={estado} 
-                        className={`text-sm font-medium leading-none cursor-pointer ${estado === 'Nacional' ? "font-semibold text-blue-700" : ''}`}
-                      >
-                        {estado}
-                      </label>
-                    </div>
-                  ))}
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Selecione as Localidades</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-3 gap-4 max-h-[400px] overflow-y-auto p-2">
+              {BRAZILIAN_STATES.map((state) => (
+                <div key={state.abbr} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`state-${state.abbr}`}
+                    checked={selectedStates.includes(state.abbr)}
+                    onCheckedChange={() => handleStateChange(state.abbr)}
+                  />
+                  <Label htmlFor={`state-${state.abbr}`} className="cursor-pointer">
+                    {state.abbr}
+                  </Label>
                 </div>
-                <div className="mt-2 text-xs text-muted-foreground">
-                  A opção Nacional é exclusiva. Não pode ser selecionada junto a outros estados.
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Fechar</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-    </FormItem>
+      
+      {selectedStates.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {selectedStates.map((state) => (
+            <Badge 
+              key={state} 
+              variant="secondary"
+              className="cursor-pointer"
+              onClick={() => handleStateChange(state)}
+            >
+              {state} ×
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
-

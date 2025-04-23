@@ -16,7 +16,6 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 60000, // 1 minuto
   });
   
   // Fetch creator information if available
@@ -39,26 +38,25 @@ export function useResultadosData() {
       return data;
     },
     enabled: !!concurso?.created_by_user_id,
-    staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings - apenas quando solicitado explicitamente, sem refetchInterval
+  // Fetch rankings with more frequent refetching - only if user is authenticated
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    // Removida a atualização automática (refetchInterval)
-    refetchOnWindowFocus: false, // Desabilitada atualização em foco
-    staleTime: 300000, // Considerado atual por 5 minutos
+    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchOnWindowFocus: true,
+    staleTime: 2000, // Consider data stale after 2 seconds
     enabled: isAuthenticated,
   });
   
-  // Fetch participant count - sem atualização automática
+  // Fetch participant count - for all users (authenticated or not)
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    // Removida a atualização automática (refetchInterval)
-    refetchOnWindowFocus: false, // Desabilitada atualização em foco
-    staleTime: 300000, // 5 minutos
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
+    staleTime: 2000, // Make this more responsive for all users
   });
   
   // Find user's ranking - only if user is authenticated
@@ -66,9 +64,8 @@ export function useResultadosData() {
   
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
-  // Function to manually refresh all data - mantida para atualização manual
+  // Function to manually refresh all data
   const refreshData = () => {
-    console.log("[useResultadosData] Atualizando dados manualmente");
     if (isAuthenticated) {
       refetchRankings();
     }

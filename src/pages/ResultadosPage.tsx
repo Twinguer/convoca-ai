@@ -27,15 +27,31 @@ const ResultadosPage = () => {
   const { toast } = useToast();
   const isAuthenticated = !!user;
   
-  // Forçar atualização de dados quando o componente monta para garantir dados atualizados
+  useEffect(() => {
+    if (concurso) {
+      console.log('Concurso data:', concurso);
+      console.log('Available quotas:', {
+        ampla: concurso.has_ampla_concorrencia,
+        ppp: concurso.has_ppp,
+        pcd: concurso.has_pcd,
+        hipossuficientes: concurso.has_hipossuficientes,
+        indigenas: concurso.has_indigenas,
+        transsexuais: concurso.has_transsexuais
+      });
+    }
+    if (rankings?.length > 0) {
+      console.log('Rankings data:', rankings);
+      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
+    }
+  }, [concurso, rankings]);
+
+  // Force a refresh of data when component mounts
   useEffect(() => {
     if (concurso?.id) {
-      console.log("[ResultadosPage] Componente montado, atualizando dados");
       refreshData();
     }
-  }, [concurso?.id]);
+  }, [concurso?.id, refreshData]);
   
-  // Função para atualizar manualmente os dados
   const handleRefresh = () => {
     refreshData();
     toast({
@@ -60,8 +76,8 @@ const ResultadosPage = () => {
           <Button 
             onClick={handleRefresh} 
             variant="outline" 
-            className="flex items-center gap-2 text-xs sm:text-sm" 
-            size="sm"
+            size="sm" 
+            className="flex items-center gap-2 text-xs sm:text-sm"
           >
             <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
             Atualizar
@@ -94,18 +110,18 @@ const ResultadosPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] mb-1 sm:mb-2">
         <RankingCard 
           participantCount={participantCount} 
-          userRanking={userRanking} 
-          inscritos={concurso?.inscritos} 
+          userRanking={userRanking}
+          inscritos={concurso?.inscritos}
         />
         
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
-      <RankingTable 
-        rankings={rankings} 
-        concurso={concurso} 
-        currentUserId={user?.id} 
-        isAuthenticated={isAuthenticated} 
+      <RankingTable
+        rankings={rankings}
+        concurso={concurso}
+        currentUserId={user?.id}
+        isAuthenticated={isAuthenticated}
       />
       
       {!isAuthenticated && (

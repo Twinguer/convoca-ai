@@ -10,12 +10,14 @@ const AdminDashboard: React.FC = () => {
   const [recentConcursos, setRecentConcursos] = useState(0);
   const [activeConcursos, setActiveConcursos] = useState(0);
 
+  // Fetch concursos count and other stats
   const {
     data: statsData,
     isLoading
   } = useQuery({
     queryKey: ['admin-dashboard-stats'],
     queryFn: async () => {
+      // Get concursos count
       const {
         count: concursosCount
       } = await supabase.from('concursos').select('*', {
@@ -23,6 +25,7 @@ const AdminDashboard: React.FC = () => {
         head: true
       });
 
+      // Get concursos added in the last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const {
@@ -32,6 +35,7 @@ const AdminDashboard: React.FC = () => {
         head: true
       }).gte('created_at', thirtyDaysAgo.toISOString());
 
+      // Get active concursos
       const {
         count: activeCount
       } = await supabase.from('concursos').select('*', {
@@ -46,6 +50,7 @@ const AdminDashboard: React.FC = () => {
     }
   });
 
+  // Set up real-time subscription for user count updates
   useEffect(() => {
     const fetchUserCount = async () => {
       const {
@@ -58,6 +63,7 @@ const AdminDashboard: React.FC = () => {
     };
     fetchUserCount();
 
+    // Subscribe to changes in the users_profiles table
     const channel = supabase.channel('users_profiles_changes').on('postgres_changes', {
       event: '*',
       schema: 'public',
@@ -68,6 +74,7 @@ const AdminDashboard: React.FC = () => {
     };
   }, []);
 
+  // Update state from query results
   useEffect(() => {
     if (statsData) {
       setRecentConcursos(statsData.recentConcursos);
@@ -76,6 +83,7 @@ const AdminDashboard: React.FC = () => {
   }, [statsData]);
   
   const handleVisitSite = () => {
+    // Open the main site in a new tab with admin view flag
     window.open('/?admin=true', '_blank');
   };
   
@@ -100,9 +108,7 @@ const AdminDashboard: React.FC = () => {
     description: 'Usuários registrados',
     icon: <User className="h-6 w-6 text-purple-500" />
   }];
-  
-  return (
-    <div>
+  return <div>
       <h1 className="text-2xl font-bold mb-6">Painel Administrativo</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -127,7 +133,7 @@ const AdminDashboard: React.FC = () => {
             <CardDescription>Acesse as principais funcionalidades</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a href="/criar-ranking" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
+            <a href="/project/admin/man/concursos/novo" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
             <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Rankings</a>
             <a href="/project/admin/man/usuarios" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Usuários</a>
             <a href="/?admin=true" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site (Admin)</a>
@@ -156,8 +162,6 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminDashboard;

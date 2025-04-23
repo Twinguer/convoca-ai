@@ -25,7 +25,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
   handleBancaChange
 }) => {
   return (
-    <div className="space-y-6">
+    <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField 
           control={form.control} 
@@ -216,15 +216,16 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
         <FormField control={form.control} name="exam_type" render={({field}) => (
           <FormItem>
             <FormLabel>Tipo de Prova</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de prova" />
+                  <SelectValue placeholder="Selecione um tipo" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
                 <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+                <SelectItem value="Dissertativa">Dissertativa</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -244,6 +245,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           </FormItem>
         )} />
       </div>
-    </div>
+    </>
   );
 };

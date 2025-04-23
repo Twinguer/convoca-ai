@@ -1,7 +1,8 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, ListChecks, LogOut, ArrowLeft, Users } from 'lucide-react';
+import { Home, Plus, ListChecks, LogOut, ArrowLeft, Users } from 'lucide-react';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -53,6 +54,12 @@ const AdminLayout: React.FC = () => {
               <Link to="/project/admin/man/dashboard" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
                 Dashboard
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link to="/project/admin/man/concursos/novo" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Novo Ranking
               </Link>
             </Button>
             <Button asChild variant="ghost" className="w-full justify-start">
