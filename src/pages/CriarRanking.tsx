@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -155,6 +154,46 @@ const CriarRanking = () => {
     }
   }, [user, navigate]);
   
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const formValues = form.getValues();
+      if (
+        (formValues.has_basic_knowledge && (!formValues.basic_knowledge_questions || formValues.basic_knowledge_questions <= 0)) ||
+        (formValues.has_specific_knowledge_1 && (!formValues.specific_knowledge_1_questions || formValues.specific_knowledge_1_questions <= 0)) ||
+        (formValues.has_specific_knowledge_2 && (!formValues.specific_knowledge_2_questions || formValues.specific_knowledge_2_questions <= 0)) ||
+        (formValues.has_specific_knowledge_3 && (!formValues.specific_knowledge_3_questions || formValues.specific_knowledge_3_questions <= 0))
+      ) {
+        e.preventDefault();
+        e.returnValue = 'Há áreas de conhecimento com quantidade de questões zerada. Deseja realmente sair?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [form]);
+
+  useEffect(() => {
+    const handleNavigation = () => {
+      const formValues = form.getValues();
+      if (
+        (formValues.has_basic_knowledge && (!formValues.basic_knowledge_questions || formValues.basic_knowledge_questions <= 0)) ||
+        (formValues.has_specific_knowledge_1 && (!formValues.specific_knowledge_1_questions || formValues.specific_knowledge_1_questions <= 0)) ||
+        (formValues.has_specific_knowledge_2 && (!formValues.specific_knowledge_2_questions || formValues.specific_knowledge_2_questions <= 0)) ||
+        (formValues.has_specific_knowledge_3 && (!formValues.specific_knowledge_3_questions || formValues.specific_knowledge_3_questions <= 0))
+      ) {
+        if (!window.confirm('Há áreas de conhecimento com quantidade de questões zerada. Deseja realmente sair?')) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, [form]);
+
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
     if (value !== 'OUTRO') {

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -86,9 +85,12 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
                     <Input 
                       {...field} 
                       onChange={e => {
+                        const upperValue = e.target.value.toUpperCase();
+                        e.target.value = upperValue;
                         field.onChange(e);
                         handleCustomTitleChange(e);
-                      }} 
+                      }}
+                      className="uppercase"
                     />
                   </FormControl>
                   <FormDescription>
@@ -107,7 +109,15 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
               <FormItem>
                 <FormLabel>Orgão</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input 
+                    {...field} 
+                    onChange={e => {
+                      const upperValue = e.target.value.toUpperCase();
+                      e.target.value = upperValue;
+                      field.onChange(e);
+                    }}
+                    className="uppercase"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -149,7 +159,15 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
                 <FormItem>
                   <FormLabel>Especifique a banca</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input 
+                      {...field} 
+                      onChange={e => {
+                        const upperValue = e.target.value.toUpperCase();
+                        e.target.value = upperValue;
+                        field.onChange(e);
+                      }}
+                      className="uppercase"
+                    />
                   </FormControl>
                   <FormDescription>
                     Digite o nome da banca examinadora
