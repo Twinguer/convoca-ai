@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -251,7 +252,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
               </Select>
               <FormMessage />
             </FormItem>
-          )}
+          )} />
 
           {showPenaltySelect && (
             <FormField
