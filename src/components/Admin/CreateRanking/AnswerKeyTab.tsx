@@ -42,6 +42,31 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  const validateQuestionCounts = () => {
+    if (hasBasicKnowledge && (!basicKnowledgeQuestions || basicKnowledgeQuestions <= 0)) {
+      return false;
+    }
+    if (hasSpecificKnowledge1 && (!specificKnowledge1Questions || specificKnowledge1Questions <= 0)) {
+      return false;
+    }
+    if (hasSpecificKnowledge2 && (!specificKnowledge2Questions || specificKnowledge2Questions <= 0)) {
+      return false;
+    }
+    if (hasSpecificKnowledge3 && (!specificKnowledge3Questions || specificKnowledge3Questions <= 0)) {
+      return false;
+    }
+    return true;
+  };
+
+  const validateAllQuestionsAnswered = () => {
+    const totalQuestions = (hasBasicKnowledge ? basicKnowledgeQuestions : 0) +
+                         (hasSpecificKnowledge1 ? specificKnowledge1Questions : 0) +
+                         (hasSpecificKnowledge2 ? specificKnowledge2Questions : 0) +
+                         (hasSpecificKnowledge3 ? specificKnowledge3Questions : 0);
+    
+    return Object.keys(answers).length === totalQuestions;
+  };
+
   useEffect(() => {
     const fetchAnswerKey = async () => {
       if (!concursoId) return;
@@ -163,6 +188,24 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   };
   
   const handleSaveAnswerKey = async () => {
+    if (!validateQuestionCounts()) {
+      toast({
+        title: "Erro na configuração",
+        description: "Todas as áreas de conhecimento habilitadas devem ter quantidade de questões maior que zero.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!validateAllQuestionsAnswered()) {
+      toast({
+        title: "Gabarito incompleto",
+        description: "É necessário preencher todas as questões do gabarito antes de salvar.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!concursoId) {
       setError("ID do concurso não encontrado");
       return;
