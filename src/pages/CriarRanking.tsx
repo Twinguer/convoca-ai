@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -239,14 +240,10 @@ const CriarRanking = () => {
   const formValues = form.getValues();
   
   const handleTabChange = (value: string) => {
-    if (value === "gabarito") {
+    if (value === "answer-key") {
       const { orgao, banca, custom_banca, predefined_job_title, custom_job_title } = form.getValues();
       if (!orgao || (!banca && !custom_banca) || (!predefined_job_title && !custom_job_title)) {
-        toast({
-          title: "Formulário incompleto",
-          description: "Preencha todas as informações gerais antes de prosseguir para o gabarito.",
-          variant: "destructive"
-        });
+        toast.error("Preencha todas as informações gerais antes de prosseguir para o gabarito.");
         return;
       }
 
@@ -257,11 +254,7 @@ const CriarRanking = () => {
         (formValues.has_specific_knowledge_2 && (!formValues.specific_knowledge_2_questions || formValues.specific_knowledge_2_questions <= 0)) ||
         (formValues.has_specific_knowledge_3 && (!formValues.specific_knowledge_3_questions || formValues.specific_knowledge_3_questions <= 0))
       ) {
-        toast({
-          title: "Configuração inválida",
-          description: "Todas as áreas de conhecimento habilitadas devem ter quantidade de questões maior que zero.",
-          variant: "destructive"
-        });
+        toast.error("Todas as áreas de conhecimento habilitadas devem ter quantidade de questões maior que zero.");
         return;
       }
     }
