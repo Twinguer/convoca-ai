@@ -18,6 +18,14 @@ export interface Ranking {
   caseStudy3Score?: number;
   reservationType?: string;
   displayReservation?: string;
+  weightedBasicScore?: number;
+  weightedSpecific1Score?: number;
+  weightedSpecific2Score?: number;
+  weightedSpecific3Score?: number;
+  weightedDiscursiveScore?: number;
+  weightedCaseStudy1Score?: number;
+  weightedCaseStudy2Score?: number;
+  weightedCaseStudy3Score?: number;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -49,6 +57,14 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         case_study_1_score,
         case_study_2_score,
         case_study_3_score,
+        weighted_basic_score,
+        weighted_specific_1_score,
+        weighted_specific_2_score,
+        weighted_specific_3_score,
+        weighted_discursive_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score,
         reservation_type
       `)
       .eq('concurso_id', concursoId);
@@ -109,20 +125,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.log('User profiles data:', profiles);
     console.log('Raw rankings data:', rankings);
     
-    // Determine weights from concurso if available
-    const weights = {
-      basicKnowledge: concurso?.basic_knowledge_weight || 1,
-      specificKnowledge1: concurso?.specific_knowledge_1_weight || concurso?.specific_knowledge_weight || 1,
-      specificKnowledge2: concurso?.specific_knowledge_2_weight || 1,
-      specificKnowledge3: concurso?.specific_knowledge_3_weight || 1,
-      discursive: concurso?.discursive_weight || 1,
-      caseStudy1: concurso?.case_study_1_weight || 1,
-      caseStudy2: concurso?.case_study_2_weight || 1,
-      caseStudy3: concurso?.case_study_3_weight || 1
-    };
-    
-    console.log('Applied weights:', weights);
-    
     // Map the rankings with profile information
     const formattedRankings = rankings.map((ranking, index) => {
       // Find the matching profile
@@ -138,6 +140,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const caseStudy1Score = ranking.case_study_1_score || 0;
       const caseStudy2Score = ranking.case_study_2_score || 0;
       const caseStudy3Score = ranking.case_study_3_score || 0;
+      
+      // Get weighted scores
+      const weightedBasicScore = ranking.weighted_basic_score || 0;
+      const weightedSpecific1Score = ranking.weighted_specific_1_score || 0;
+      const weightedSpecific2Score = ranking.weighted_specific_2_score || 0;
+      const weightedSpecific3Score = ranking.weighted_specific_3_score || 0;
+      const weightedDiscursiveScore = ranking.weighted_discursive_score || 0;
+      const weightedCaseStudy1Score = ranking.weighted_case_study_1_score || 0;
+      const weightedCaseStudy2Score = ranking.weighted_case_study_2_score || 0;
+      const weightedCaseStudy3Score = ranking.weighted_case_study_3_score || 0;
       
       // Get reservation type and create display name with abbreviation if needed
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
@@ -162,8 +174,17 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy1Score,
         caseStudy2Score,
         caseStudy3Score,
+        weightedBasicScore,
+        weightedSpecific1Score,
+        weightedSpecific2Score,
+        weightedSpecific3Score,
+        weightedDiscursiveScore,
+        weightedCaseStudy1Score,
+        weightedCaseStudy2Score,
+        weightedCaseStudy3Score,
         reservationType: userReservationType,
-        displayReservation: reservationAbbr
+        displayReservation: reservationAbbr,
+        id: ranking.id
       };
     });
     

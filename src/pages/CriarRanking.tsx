@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -212,7 +213,40 @@ const CriarRanking = () => {
     }
   };
   
+  const validateQuestionsCount = () => {
+    const formValues = form.getValues();
+    const errors = [];
+    
+    if (formValues.has_basic_knowledge && (!formValues.basic_knowledge_questions || formValues.basic_knowledge_questions <= 0)) {
+      errors.push('Conhecimentos Básicos');
+    }
+    
+    if (formValues.has_specific_knowledge_1 && (!formValues.specific_knowledge_1_questions || formValues.specific_knowledge_1_questions <= 0)) {
+      errors.push('Conhecimentos Específicos 1');
+    }
+    
+    if (formValues.has_specific_knowledge_2 && (!formValues.specific_knowledge_2_questions || formValues.specific_knowledge_2_questions <= 0)) {
+      errors.push('Conhecimentos Específicos 2');
+    }
+    
+    if (formValues.has_specific_knowledge_3 && (!formValues.specific_knowledge_3_questions || formValues.specific_knowledge_3_questions <= 0)) {
+      errors.push('Conhecimentos Específicos 3');
+    }
+    
+    if (errors.length > 0) {
+      toast.error(`As seguintes áreas de conhecimento têm quantidade de questões zerada: ${errors.join(', ')}`);
+      return false;
+    }
+    
+    return true;
+  };
+  
   const handleSubmit = async (values: any) => {
+    // Validar quantidade de questões
+    if (!validateQuestionsCount()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -264,6 +298,11 @@ const CriarRanking = () => {
         return;
       }
       
+      // Validar quantidade de questões
+      if (!validateQuestionsCount()) {
+        return;
+      }
+      
       if (createdConcursoId) {
         setActiveTab('answer-key');
       }
@@ -286,14 +325,8 @@ const CriarRanking = () => {
         return;
       }
 
-      const formValues = form.getValues();
-      if (
-        (formValues.has_basic_knowledge && (!formValues.basic_knowledge_questions || formValues.basic_knowledge_questions <= 0)) ||
-        (formValues.has_specific_knowledge_1 && (!formValues.specific_knowledge_1_questions || formValues.specific_knowledge_1_questions <= 0)) ||
-        (formValues.has_specific_knowledge_2 && (!formValues.specific_knowledge_2_questions || formValues.specific_knowledge_2_questions <= 0)) ||
-        (formValues.has_specific_knowledge_3 && (!formValues.specific_knowledge_3_questions || formValues.specific_knowledge_3_questions <= 0))
-      ) {
-        toast.error("Todas as áreas de conhecimento habilitadas devem ter quantidade de questões maior que zero.");
+      // Validar quantidade de questões
+      if (!validateQuestionsCount()) {
         return;
       }
     }

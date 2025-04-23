@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -203,6 +204,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             name="localidades"
             render={({ field }) => (
               <FormItem>
+                <FormLabel>Localidades</FormLabel>
                 <StateSelector
                   selectedStates={field.value || []}
                   onStateChange={(states) => field.onChange(states)}
@@ -306,7 +308,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <FormItem>
               <FormLabel>Quantidade de Alternativas</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input type="number" {...field} min="1" />
               </FormControl>
               <FormDescription>
                 Para provas de Certo ou Errado, considere 2

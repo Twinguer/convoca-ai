@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -32,6 +33,10 @@ export interface Ranking {
   weightedSpecific1Score?: number | null;
   weightedSpecific2Score?: number | null;
   weightedSpecific3Score?: number | null;
+  weightedDiscursiveScore?: number | null;
+  weightedCaseStudy1Score?: number | null;
+  weightedCaseStudy2Score?: number | null;
+  weightedCaseStudy3Score?: number | null;
 }
 
 interface RankingTableProps {
@@ -77,6 +82,14 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (rankings && rankings.length > 0) {
       console.log('Reservation types in rankings:', 
         [...new Set(rankings.map(r => r.reservationType))]);
+      
+      // Log weighted scores for debugging
+      console.log('Weighted scores in first ranking:', {
+        weightedBasic: rankings[0].weightedBasicScore,
+        weightedSpecific1: rankings[0].weightedSpecific1Score,
+        weightedSpecific2: rankings[0].weightedSpecific2Score,
+        weightedSpecific3: rankings[0].weightedSpecific3Score
+      });
     }
   }, [concurso, rankings]);
   
@@ -166,9 +179,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     <CardContent>
       {availableQuotas.length > 1 ? (
         <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 flex flex-wrap h-auto">
+          <TabsList className="mb-4 flex flex-wrap h-auto bg-card text-card-foreground">
             {availableQuotas.map(quota => (
-              <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>
+              <TabsTrigger key={quota} value={quota} className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{quota}</TabsTrigger>
             ))}
           </TabsList>
           
@@ -322,7 +335,7 @@ const RankingTableContent: React.FC<{
                 <span>
                   {ranking.name}
                   {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
-                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded-full">
                       ({getQuotaAbbreviation(ranking.reservationType)})
                     </span>
                   )}
@@ -356,19 +369,27 @@ const RankingTableContent: React.FC<{
             )}
             
             {concurso.has_discursive === true && (
-              <TableCell className="text-right">{ranking.discursiveScore?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(showWeightedScores ? ranking.weightedDiscursiveScore : ranking.discursiveScore)?.toFixed(2) || '0.00'}
+              </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
-              <TableCell className="text-right">{ranking.caseStudy1Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(showWeightedScores ? ranking.weightedCaseStudy1Score : ranking.caseStudy1Score)?.toFixed(2) || '0.00'}
+              </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
-              <TableCell className="text-right">{ranking.caseStudy2Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(showWeightedScores ? ranking.weightedCaseStudy2Score : ranking.caseStudy2Score)?.toFixed(2) || '0.00'}
+              </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
-              <TableCell className="text-right">{ranking.caseStudy3Score?.toFixed(2) || '0.00'}</TableCell>
+              <TableCell className="text-right">
+                {(showWeightedScores ? ranking.weightedCaseStudy3Score : ranking.caseStudy3Score)?.toFixed(2) || '0.00'}
+              </TableCell>
             )}
             {isAdminMode && (
               <TableCell>
