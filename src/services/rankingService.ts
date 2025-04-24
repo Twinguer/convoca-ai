@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -44,7 +45,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id,
         user_id,
         concurso_id,
-        score,
         basic_knowledge_score,
         specific_knowledge_score,
         specific_knowledge_1_score,
@@ -62,6 +62,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_1_score,
         weighted_case_study_2_score,
         weighted_case_study_3_score,
+        weighted_total_score,
         reservation_type
       `);
     
