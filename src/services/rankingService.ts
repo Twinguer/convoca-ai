@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -28,7 +27,31 @@ export interface Ranking {
   weightedCaseStudy3Score?: number;
 }
 
-// Helper function to get abbreviation for reservation type
+interface WeightedRankingResponse {
+  id: string;
+  user_id: string;
+  concurso_id: string;
+  basic_knowledge_score: number | null;
+  specific_knowledge_score: number | null;
+  specific_knowledge_1_score: number | null;
+  specific_knowledge_2_score: number | null;
+  specific_knowledge_3_score: number | null;
+  discursive_score: number | null;
+  case_study_1_score: number | null;
+  case_study_2_score: number | null;
+  case_study_3_score: number | null;
+  weighted_basic_score: number | null;
+  weighted_specific_1_score: number | null;
+  weighted_specific_2_score: number | null;
+  weighted_specific_3_score: number | null;
+  weighted_discursive_score: number | null;
+  weighted_case_study_1_score: number | null;
+  weighted_case_study_2_score: number | null;
+  weighted_case_study_3_score: number | null;
+  weighted_total_score: number;
+  reservation_type: string;
+}
+
 const getReservationAbbreviation = (reservationType: string): string => {
   if (!reservationType || reservationType === 'Ampla Concorrência') return '';
   return reservationType.substring(0, 3).toUpperCase();
@@ -38,7 +61,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
-    // Use the materialized view for weighted scores
     let query = supabase
       .from('weighted_rankings_view')
       .select(`
@@ -66,7 +88,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         reservation_type
       `);
     
-    // If a specific reservation type is requested, filter by it
     if (reservationType && reservationType !== 'Ampla Concorrência') {
       query = query.eq('reservation_type', reservationType);
     }
@@ -83,7 +104,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       return [];
     }
     
-    // Fetch user profiles
     const userIds = rankings.map(ranking => ranking.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('users_profiles')
@@ -95,8 +115,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       throw profilesError;
     }
     
-    // Map the rankings with profile information
-    return rankings.map((ranking, index) => {
+    return rankings.map((ranking: WeightedRankingResponse, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
       const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
       const reservationAbbr = getReservationAbbreviation(userReservationType);
@@ -142,7 +161,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     const { data, error } = await supabase
       .from('concursos')
       .select(`
-        has_ampla_concorrencia,
+        has_ampla_concorrrencia,
         has_ppp,
         has_pcd,
         has_hipossuficientes,
@@ -159,7 +178,6 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     
     const types = [];
     
-    // Ampla Concorrência is always available
     types.push('Ampla Concorrência');
     
     if (data.has_ppp) types.push('PPP');
