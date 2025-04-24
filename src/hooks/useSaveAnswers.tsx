@@ -1,14 +1,12 @@
-import { saveUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
+
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
-import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface UseSaveAnswersProps {
   rankingId: string;
   concurso: Concurso;
   answers: { [key: number]: string };
-  questionType: 'Alternativas' | 'Certo ou Errado';
   setIsSaving: (saving: boolean) => void;
   setError: (error: string | null) => void;
   setSavedSuccess: (success: boolean) => void;
@@ -24,7 +22,6 @@ export const useSaveAnswers = ({
   rankingId,
   concurso,
   answers,
-  questionType,
   setIsSaving,
   setError,
   setSavedSuccess,
@@ -43,36 +40,50 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
+      // Preparar os dados de respostas para enviar
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber),
         answer,
-        isBasicKnowledge: parseInt(questionNumber) <= (concurso.basic_knowledge_questions || 0)
       }));
 
-      await saveUserAnswers(rankingId, concurso.id, answersArray);
+      console.log('[useSaveAnswers] Iniciando salvamento via RPC');
+      console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
 
-      const { error: updateError } = await supabase
-        .from('user_rankings')
-        .update({
-          discursive_score: discursiveScore || 0,
-          case_study_1_score: caseStudy1Score || 0,
-          case_study_2_score: caseStudy2Score || 0,
-          case_study_3_score: caseStudy3Score || 0,
-          edit_count: editCount + 1
-        })
-        .eq('id', rankingId);
+      // Chamar a função RPC centralizada
+      const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
+        p_ranking_id: rankingId,
+        p_concurso_id: concurso.id,
+        p_answers: answersArray,
+        p_discursive_score: discursiveScore || 0,
+        p_case_study_1_score: caseStudy1Score || 0,
+        p_case_study_2_score: caseStudy2Score || 0,
+        p_case_study_3_score: caseStudy3Score || 0,
+        p_current_edit_count: editCount
+      });
 
-      if (updateError) throw updateError;
+      if (error) {
+        console.error('[useSaveAnswers] Erro na função RPC:', error);
+        throw new Error(error.message || "Erro ao salvar respostas");
+      }
 
+      console.log('[useSaveAnswers] Resposta da função RPC:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || "Erro ao salvar respostas");
+      }
+
+      // Atualizar estado da UI
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi calculada com sucesso."
+        description: "Sua pontuação foi recalculada com base no gabarito atual, incluindo as questões anuladas.",
+        duration: 5000
       });
 
+      // Chamar callback de sucesso
       onSuccess();
     } catch (error: any) {
-      console.error('Error saving answers:', error);
+      console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
       setError(error.message || "Erro ao salvar respostas");
       toast({
         title: "Erro ao salvar",

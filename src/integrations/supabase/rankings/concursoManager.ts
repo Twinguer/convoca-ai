@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { recalculateAllUserScores } from './userAnswers';
 
@@ -250,28 +249,72 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       throw new Error('Ranking não encontrado');
     }
     
-    // Only the creator or an admin can delete the ranking
+    // Allow admins to delete any ranking, or users to delete their own
     const isCreator = rankingCheck.created_by_user_id === userId;
-    
     if (!isAdmin && !isCreator) {
       throw new Error('Você não tem permissão para excluir este ranking');
     }
     
-    // Check if there are more than 10 participants (only if not admin)
-    if (!isAdmin) {
-      const { data: participantCount, error: countError } = await supabase
-        .rpc('count_concurso_participants', { concurso_id: rankingId });
-        
-      if (countError) {
-        throw new Error('Erro ao verificar número de participantes');
-      }
+    // 1. First, get all user_rankings ids for this concurso
+    const { data: userRankings, error: userRankingsError } = await supabase
+      .from('user_rankings')
+      .select('id')
+      .eq('concurso_id', rankingId);
       
-      if (participantCount > 10) {
-        throw new Error('Rankings com mais de 10 participantes só podem ser excluídos pelo administrador');
+    if (userRankingsError) {
+      console.error('Error fetching user_rankings ids:', userRankingsError);
+    }
+    
+    const userRankingIds = userRankings?.map(ur => ur.id) || [];
+    
+    // 2. Delete score_calculation_logs for each user_ranking
+    if (userRankingIds.length > 0) {
+      for (const userRankingId of userRankingIds) {
+        const { error: scoreLogsError } = await supabase
+          .from('score_calculation_logs')
+          .delete()
+          .eq('user_ranking_id', userRankingId);
+          
+        if (scoreLogsError) {
+          console.error(`Error deleting score_calculation_logs for user_ranking ${userRankingId}:`, scoreLogsError);
+        }
       }
     }
     
-    // Delete the ranking
+    // 3. Delete all user_answers
+    for (const userRankingId of userRankingIds) {
+      const { error: answersError } = await supabase
+        .from('user_answers')
+        .delete()
+        .eq('user_ranking_id', userRankingId);
+        
+      if (answersError) {
+        console.error(`Error deleting user answers for user_ranking ${userRankingId}:`, answersError);
+      }
+    }
+    
+    // 4. Delete all user_rankings for this concurso
+    const { error: rankingsError } = await supabase
+      .from('user_rankings')
+      .delete()
+      .eq('concurso_id', rankingId);
+      
+    if (rankingsError) {
+      console.error('Error deleting user rankings:', rankingsError);
+      throw rankingsError;
+    }
+    
+    // 5. Delete answer_keys for this concurso
+    const { error: answersKeysError } = await supabase
+      .from('answer_keys')
+      .delete()
+      .eq('concurso_id', rankingId);
+      
+    if (answersKeysError) {
+      console.error('Error deleting answer keys:', answersKeysError);
+    }
+    
+    // 6. Finally delete the ranking itself
     const { error } = await supabase
       .from('concursos')
       .delete()

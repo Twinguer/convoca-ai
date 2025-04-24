@@ -259,7 +259,7 @@ export type Database = {
           id: string
           new_score: number | null
           previous_score: number | null
-          user_ranking_id: string | null
+          user_ranking_id: string
         }
         Insert: {
           calculation_details?: Json | null
@@ -268,7 +268,7 @@ export type Database = {
           id?: string
           new_score?: number | null
           previous_score?: number | null
-          user_ranking_id?: string | null
+          user_ranking_id: string
         }
         Update: {
           calculation_details?: Json | null
@@ -277,7 +277,7 @@ export type Database = {
           id?: string
           new_score?: number | null
           previous_score?: number | null
-          user_ranking_id?: string | null
+          user_ranking_id?: string
         }
         Relationships: [
           {

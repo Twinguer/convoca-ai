@@ -17,93 +17,83 @@ export interface Ranking {
   caseStudy3Score?: number;
   reservationType?: string;
   displayReservation?: string;
-  weightedBasicScore?: number;
-  weightedSpecific1Score?: number;
-  weightedSpecific2Score?: number;
-  weightedSpecific3Score?: number;
-  weightedDiscursiveScore?: number;
-  weightedCaseStudy1Score?: number;
-  weightedCaseStudy2Score?: number;
-  weightedCaseStudy3Score?: number;
 }
 
-interface WeightedRankingResponse {
-  id: string;
-  user_id: string;
-  concurso_id: string;
-  basic_knowledge_score: number | null;
-  specific_knowledge_score: number | null;
-  specific_knowledge_1_score: number | null;
-  specific_knowledge_2_score: number | null;
-  specific_knowledge_3_score: number | null;
-  discursive_score: number | null;
-  case_study_1_score: number | null;
-  case_study_2_score: number | null;
-  case_study_3_score: number | null;
-  weighted_basic_score: number | null;
-  weighted_specific_1_score: number | null;
-  weighted_specific_2_score: number | null;
-  weighted_specific_3_score: number | null;
-  weighted_discursive_score: number | null;
-  weighted_case_study_1_score: number | null;
-  weighted_case_study_2_score: number | null;
-  weighted_case_study_3_score: number | null;
-  weighted_total_score: number;
-  reservation_type: string;
-}
-
+// Helper function to get abbreviation for reservation type
 const getReservationAbbreviation = (reservationType: string): string => {
   if (!reservationType || reservationType === 'Ampla Concorrência') return '';
-  return reservationType.substring(0, 3).toUpperCase();
+  
+  // Get first three letters as abbreviation
+  const abbr = reservationType.substring(0, 3).toUpperCase();
+  return abbr;
 };
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
+    // Build query depending on whether we want a specific reservation type
     let query = supabase
-      .from('weighted_rankings_view')
+      .from('user_rankings')
       .select(`
         id,
         user_id,
-        concurso_id,
+        score,
         basic_knowledge_score,
-        specific_knowledge_score,
         specific_knowledge_1_score,
         specific_knowledge_2_score,
         specific_knowledge_3_score,
+        specific_knowledge_score,
         discursive_score,
         case_study_1_score,
         case_study_2_score,
         case_study_3_score,
-        weighted_basic_score,
-        weighted_specific_1_score,
-        weighted_specific_2_score,
-        weighted_specific_3_score,
-        weighted_discursive_score,
-        weighted_case_study_1_score,
-        weighted_case_study_2_score,
-        weighted_case_study_3_score,
-        weighted_total_score,
         reservation_type
-      `);
+      `)
+      .eq('concurso_id', concursoId);
     
+    // If a specific reservation type is requested, filter by it
     if (reservationType && reservationType !== 'Ampla Concorrência') {
       query = query.eq('reservation_type', reservationType);
+    } else if (reservationType === 'Ampla Concorrência') {
+      // For Ampla Concorrência, include all users, as they all participate in this list
+      // No additional filter needed
     }
-    
-    const { data: rankings, error: rankingsError } = await query
-      .order('weighted_total_score', { ascending: false });
+      
+    // Get concurso info to apply weights for score calculation
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight,
+        specific_knowledge_weight,
+        discursive_weight,
+        case_study_1_weight,
+        case_study_2_weight,
+        case_study_3_weight
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) {
+      console.error('Error fetching concurso weights:', concursoError);
+    }
+      
+    const { data: rankings, error: rankingsError } = await query.order('score', { ascending: false });
       
     if (rankingsError) {
       console.error('Error in fetchUserRankings query:', rankingsError);
       throw rankingsError;
     }
     
+    // If no rankings, return empty array
     if (!rankings || rankings.length === 0) {
       return [];
     }
     
+    // Now fetch the user profiles separately
     const userIds = rankings.map(ranking => ranking.user_id);
     const { data: profiles, error: profilesError } = await supabase
       .from('users_profiles')
@@ -115,53 +105,57 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       throw profilesError;
     }
     
-    return rankings.map((ranking: WeightedRankingResponse, index) => {
+    console.log('User profiles data:', profiles);
+    console.log('Raw rankings data:', rankings);
+    
+    // Map the rankings with profile information and scores
+    const formattedRankings = rankings.map((ranking, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
-      const userReservationType = ranking.reservation_type || 'Ampla Concorrência';
-      const reservationAbbr = getReservationAbbreviation(userReservationType);
-      const displayName = (profile?.name || 'Usuário Anônimo') + 
-                       (reservationType === 'Ampla Concorrência' && reservationAbbr ? ` (${reservationAbbr})` : '');
+      
+      // Obter pontuações diretamente do banco de dados
+      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
+      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
+      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
+      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
+      const discursiveScore = ranking.discursive_score || 0;
+      const caseStudy1Score = ranking.case_study_1_score || 0;
+      const caseStudy2Score = ranking.case_study_2_score || 0;
+      const caseStudy3Score = ranking.case_study_3_score || 0;
       
       return {
         position: index + 1,
-        name: displayName,
-        score: ranking.weighted_total_score || 0,
+        name: profile?.name || 'Usuário Anônimo',
+        score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore: ranking.basic_knowledge_score,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score,
-        specificKnowledgeScore: ranking.specific_knowledge_score,
-        discursiveScore: ranking.discursive_score,
-        caseStudy1Score: ranking.case_study_1_score,
-        caseStudy2Score: ranking.case_study_2_score,
-        caseStudy3Score: ranking.case_study_3_score,
-        weightedBasicScore: ranking.weighted_basic_score,
-        weightedSpecific1Score: ranking.weighted_specific_1_score,
-        weightedSpecific2Score: ranking.weighted_specific_2_score,
-        weightedSpecific3Score: ranking.weighted_specific_3_score,
-        weightedDiscursiveScore: ranking.weighted_discursive_score,
-        weightedCaseStudy1Score: ranking.weighted_case_study_1_score,
-        weightedCaseStudy2Score: ranking.weighted_case_study_2_score,
-        weightedCaseStudy3Score: ranking.weighted_case_study_3_score,
-        reservationType: userReservationType,
-        displayReservation: reservationAbbr,
-        id: ranking.id
+        basicKnowledgeScore,
+        specificKnowledge1Score,
+        specificKnowledge2Score,
+        specificKnowledge3Score,
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score,
+        reservationType: ranking.reservation_type || 'Ampla Concorrência',
+        displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência')
       };
     });
+    
+    console.log('Transformed rankings:', formattedRankings);
+    return formattedRankings;
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
   }
 };
 
+// Get the available reservation types for a concurso
 export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
       .from('concursos')
       .select(`
-        has_ampla_concorrrencia,
+        has_ampla_concorrencia,
         has_ppp,
         has_pcd,
         has_hipossuficientes,
@@ -178,6 +172,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     
     const types = [];
     
+    // Ampla Concorrência is always available
     types.push('Ampla Concorrência');
     
     if (data.has_ppp) types.push('PPP');

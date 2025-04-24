@@ -10,7 +10,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Ranking as RankingType } from '@/services/rankingService';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export interface Ranking {
   position: number;
@@ -29,14 +28,6 @@ export interface Ranking {
   caseStudy3Score?: number | null;
   reservationType: string;
   id: string;
-  weightedBasicScore?: number | null;
-  weightedSpecific1Score?: number | null;
-  weightedSpecific2Score?: number | null;
-  weightedSpecific3Score?: number | null;
-  weightedDiscursiveScore?: number | null;
-  weightedCaseStudy1Score?: number | null;
-  weightedCaseStudy2Score?: number | null;
-  weightedCaseStudy3Score?: number | null;
 }
 
 interface RankingTableProps {
@@ -54,7 +45,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
-  const [showWeightedScores, setShowWeightedScores] = useState(true);
   
   useEffect(() => {
     if (concurso) {
@@ -82,14 +72,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (rankings && rankings.length > 0) {
       console.log('Reservation types in rankings:', 
         [...new Set(rankings.map(r => r.reservationType))]);
-      
-      // Log weighted scores for debugging
-      console.log('Weighted scores in first ranking:', {
-        weightedBasic: rankings[0].weightedBasicScore,
-        weightedSpecific1: rankings[0].weightedSpecific1Score,
-        weightedSpecific2: rankings[0].weightedSpecific2Score,
-        weightedSpecific3: rankings[0].weightedSpecific3Score
-      });
     }
   }, [concurso, rankings]);
   
@@ -156,62 +138,45 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   }
   
   return <Card>
-    <CardHeader>
-      <div className="flex justify-between items-center">
+      <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Mostrar pontuação:</span>
-          <Select
-            value={showWeightedScores ? "weighted" : "raw"}
-            onValueChange={(value) => setShowWeightedScores(value === "weighted")}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue>{showWeightedScores ? "Com peso" : "Sem peso"}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weighted">Com peso</SelectItem>
-              <SelectItem value="raw">Sem peso</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </CardHeader>
-    <CardContent>
-      {availableQuotas.length > 1 ? (
-        <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 flex flex-wrap h-auto bg-card text-card-foreground">
+      </CardHeader>
+      <CardContent>
+        {availableQuotas.length > 1 ? (
+          <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-4 flex flex-wrap h-auto">
+              {availableQuotas.map(quota => (
+                <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>
+              ))}
+            </TabsList>
+            
             {availableQuotas.map(quota => (
-              <TabsTrigger key={quota} value={quota} className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{quota}</TabsTrigger>
+              <TabsContent key={quota} value={quota}>
+                <RankingTableContent 
+                  rankings={filterRankingsByQuota(quota)} 
+                  currentUserId={currentUserId} 
+                  handleUserClick={handleUserClick}
+                  concurso={concurso}
+                  isAmpla={quota === "Ampla Concorrência"}
+                  availableQuotas={availableQuotas}
+                  sectionWeights={getSectionWeights(concurso)}
+                />
+              </TabsContent>
             ))}
-          </TabsList>
-          
-          {availableQuotas.map(quota => (
-            <TabsContent key={quota} value={quota}>
-              <RankingTableContent 
-                rankings={filterRankingsByQuota(quota)} 
-                currentUserId={currentUserId} 
-                handleUserClick={handleUserClick}
-                concurso={concurso}
-                isAmpla={quota === "Ampla Concorrência"}
-                availableQuotas={availableQuotas}
-                showWeightedScores={showWeightedScores}
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
-      ) : (
-        <RankingTableContent 
-          rankings={rankings || []} 
-          currentUserId={currentUserId} 
-          handleUserClick={handleUserClick}
-          concurso={concurso}
-          isAmpla={true}
-          availableQuotas={availableQuotas}
-          showWeightedScores={showWeightedScores}
-        />
-      )}
-    </CardContent>
-  </Card>;
+          </Tabs>
+        ) : (
+          <RankingTableContent 
+            rankings={rankings || []} 
+            currentUserId={currentUserId} 
+            handleUserClick={handleUserClick}
+            concurso={concurso}
+            isAmpla={true}
+            availableQuotas={availableQuotas}
+            sectionWeights={getSectionWeights(concurso)}
+          />
+        )}
+      </CardContent>
+    </Card>;
 };
 
 const getQuotaAbbreviation = (quota: string): string => {
@@ -228,6 +193,19 @@ const getQuotaAbbreviation = (quota: string): string => {
   return abbreviations[quota] || quota.substring(0, 3);
 };
 
+const getSectionWeights = (concurso?: Concurso) => {
+  return {
+    basic: concurso?.basic_knowledge_weight ?? 1,
+    specific1: concurso?.specific_knowledge_1_weight ?? concurso?.specific_knowledge_weight ?? 1,
+    specific2: concurso?.specific_knowledge_2_weight ?? 1,
+    specific3: concurso?.specific_knowledge_3_weight ?? 1,
+    discursive: concurso?.discursive_weight ?? 1,
+    caseStudy1: concurso?.case_study_1_weight ?? 1,
+    caseStudy2: concurso?.case_study_2_weight ?? 1,
+    caseStudy3: concurso?.case_study_3_weight ?? 1,
+  };
+};
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -235,7 +213,16 @@ const RankingTableContent: React.FC<{
   concurso?: Concurso;
   isAmpla: boolean;
   availableQuotas: string[];
-  showWeightedScores: boolean;
+  sectionWeights: {
+    basic: number,
+    specific1: number,
+    specific2: number,
+    specific3: number,
+    discursive: number,
+    caseStudy1: number,
+    caseStudy2: number,
+    caseStudy3: number,
+  }
 }> = ({
   rankings,
   currentUserId,
@@ -243,7 +230,7 @@ const RankingTableContent: React.FC<{
   concurso,
   isAmpla,
   availableQuotas,
-  showWeightedScores
+  sectionWeights
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -335,7 +322,7 @@ const RankingTableContent: React.FC<{
                 <span>
                   {ranking.name}
                   {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
-                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400 px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                       ({getQuotaAbbreviation(ranking.reservationType)})
                     </span>
                   )}
@@ -346,49 +333,49 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge !== false && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedBasicScore : ranking.basicKnowledgeScore)?.toFixed(2) || '0.00'}
+                {(Number(ranking.basicKnowledgeScore || 0) * sectionWeights.basic).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 !== false && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedSpecific1Score : (ranking.specificKnowledge1Score || ranking.specificKnowledgeScore))?.toFixed(2) || '0.00'}
+                {(Number(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore || 0) * sectionWeights.specific1).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedSpecific2Score : ranking.specificKnowledge2Score)?.toFixed(2) || '0.00'}
+                {(Number(ranking.specificKnowledge2Score || 0) * sectionWeights.specific2).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedSpecific3Score : ranking.specificKnowledge3Score)?.toFixed(2) || '0.00'}
+                {(Number(ranking.specificKnowledge3Score || 0) * sectionWeights.specific3).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedDiscursiveScore : ranking.discursiveScore)?.toFixed(2) || '0.00'}
+                {(Number(ranking.discursiveScore || 0) * sectionWeights.discursive).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedCaseStudy1Score : ranking.caseStudy1Score)?.toFixed(2) || '0.00'}
+                {(Number(ranking.caseStudy1Score || 0) * sectionWeights.caseStudy1).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedCaseStudy2Score : ranking.caseStudy2Score)?.toFixed(2) || '0.00'}
+                {(Number(ranking.caseStudy2Score || 0) * sectionWeights.caseStudy2).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {(showWeightedScores ? ranking.weightedCaseStudy3Score : ranking.caseStudy3Score)?.toFixed(2) || '0.00'}
+                {(Number(ranking.caseStudy3Score || 0) * sectionWeights.caseStudy3).toFixed(2)}
               </TableCell>
             )}
             {isAdminMode && (
@@ -414,3 +401,4 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
+

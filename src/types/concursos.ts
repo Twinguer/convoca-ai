@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;

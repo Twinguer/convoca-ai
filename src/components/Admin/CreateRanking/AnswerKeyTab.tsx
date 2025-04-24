@@ -1,16 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { AnswerMatrix } from '@/components/resultados/AnswerMatrix';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, Save } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { updateAnswerKey } from '@/integrations/supabase/rankings/concursoManager';
+import { toast } from 'sonner';
 
 interface AnswerKeyTabProps {
-  concursoId: string;
+  concursoId?: string;
+  formValues?: any;
+  onSaveFullRanking?: (formValues: any, answerKeyData: any) => Promise<void>;
   hasBasicKnowledge: boolean;
   hasSpecificKnowledge1: boolean;
   hasSpecificKnowledge2: boolean;
@@ -23,8 +26,10 @@ interface AnswerKeyTabProps {
   alternativesCount: number;
 }
 
-export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
+export const AnswerKeyTab = ({
   concursoId,
+  formValues,
+  onSaveFullRanking,
   hasBasicKnowledge,
   hasSpecificKnowledge1,
   hasSpecificKnowledge2,
@@ -35,293 +40,309 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   specificKnowledge3Questions,
   examType,
   alternativesCount
-}) => {
-  const { toast } = useToast();
-  const [answers, setAnswers] = useState<{[key: number]: string}>({});
-  const [selectedSection, setSelectedSection] = useState<string>("basic");
+}: AnswerKeyTabProps) => {
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const validateQuestionCounts = () => {
-    if (hasBasicKnowledge && (!basicKnowledgeQuestions || basicKnowledgeQuestions <= 0)) {
-      return false;
-    }
-    if (hasSpecificKnowledge1 && (!specificKnowledge1Questions || specificKnowledge1Questions <= 0)) {
-      return false;
-    }
-    if (hasSpecificKnowledge2 && (!specificKnowledge2Questions || specificKnowledge2Questions <= 0)) {
-      return false;
-    }
-    if (hasSpecificKnowledge3 && (!specificKnowledge3Questions || specificKnowledge3Questions <= 0)) {
-      return false;
-    }
-    return true;
-  };
-
-  const validateAllQuestionsAnswered = () => {
-    const totalQuestions = (hasBasicKnowledge ? basicKnowledgeQuestions : 0) +
-                         (hasSpecificKnowledge1 ? specificKnowledge1Questions : 0) +
-                         (hasSpecificKnowledge2 ? specificKnowledge2Questions : 0) +
-                         (hasSpecificKnowledge3 ? specificKnowledge3Questions : 0);
-    
-    return Object.keys(answers).length === totalQuestions;
-  };
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
+  const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
 
   useEffect(() => {
     const fetchAnswerKey = async () => {
-      if (!concursoId) return;
-      
-      const { data, error } = await supabase
-        .from('answer_keys')
-        .select('question_number, answer')
-        .eq('concurso_id', concursoId);
+      try {
+        setIsLoading(true);
+        if (!concursoId) {
+          setIsLoading(false);
+          return;
+        }
         
-      if (error) {
+        const { data, error } = await supabase
+          .from('answer_keys')
+          .select('*')
+          .eq('concurso_id', concursoId)
+          .order('question_number', { ascending: true });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const answerMap: Record<number, string> = {};
+          const nullified: number[] = [];
+          
+          data.forEach(item => {
+            answerMap[item.question_number] = item.answer;
+            if (item.is_nullified) {
+              nullified.push(item.question_number);
+            }
+          });
+          
+          setAnswers(answerMap);
+          setNullifiedQuestions(nullified);
+        }
+      } catch (error) {
         console.error('Error fetching answer key:', error);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        const answersObj: {[key: number]: string} = {};
-        data.forEach(item => {
-          answersObj[item.question_number] = item.answer;
-        });
-        setAnswers(answersObj);
+        toast.error('Erro ao carregar gabarito existente');
+      } finally {
+        setIsLoading(false);
       }
     };
-    
+
     fetchAnswerKey();
   }, [concursoId]);
-  
+
+  const getQuestionRange = () => {
+    let questions: number[] = [];
+    let startNumber = 1;
+
+    if (selectedSection === 'basic' && hasBasicKnowledge) {
+      questions = Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1);
+    } else if (selectedSection === 'specific1' && hasSpecificKnowledge1) {
+      startNumber = (basicKnowledgeQuestions || 0) + 1;
+      questions = Array.from(
+        { length: specificKnowledge1Questions },
+        (_, i) => startNumber + i
+      );
+    } else if (selectedSection === 'specific2' && hasSpecificKnowledge2) {
+      startNumber = (basicKnowledgeQuestions || 0) + (specificKnowledge1Questions || 0) + 1;
+      questions = Array.from(
+        { length: specificKnowledge2Questions },
+        (_, i) => startNumber + i
+      );
+    } else if (selectedSection === 'specific3' && hasSpecificKnowledge3) {
+      startNumber = (basicKnowledgeQuestions || 0) + (specificKnowledge1Questions || 0) + 
+                   (specificKnowledge2Questions || 0) + 1;
+      questions = Array.from(
+        { length: specificKnowledge3Questions },
+        (_, i) => startNumber + i
+      );
+    }
+
+    return questions;
+  };
+
   const handleAnswerChange = (questionNumber: number, answer: string) => {
     setAnswers(prev => ({
       ...prev,
       [questionNumber]: answer
     }));
   };
-  
-  const handleClearAnswer = (questionNumber: number) => {
-    setAnswers(prev => {
-      const newAnswers = { ...prev };
-      delete newAnswers[questionNumber];
-      return newAnswers;
+
+  const handleToggleNullified = (questionNumber: number) => {
+    setNullifiedQuestions(prev => {
+      if (prev.includes(questionNumber)) {
+        return prev.filter(q => q !== questionNumber);
+      } else {
+        return [...prev, questionNumber];
+      }
     });
   };
-  
-  const getOptionsForQuestion = (questionNumber: number): string[] => {
-    if (examType === 'Alternativas') {
-      const options: string[] = [];
-      const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-      
-      for (let i = 0; i < alternativesCount; i++) {
-        if (i < letters.length) {
-          options.push(letters[i]);
-        }
-      }
-      
-      return options;
-    } else if (examType === 'Certo ou Errado') {
-      return ['C', 'E'];
+
+  const getAllQuestions = () => {
+    let allQuestions: number[] = [];
+    let startNumber = 1;
+    
+    if (hasBasicKnowledge) {
+      allQuestions = [...allQuestions, ...Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1)];
+      startNumber = basicKnowledgeQuestions + 1;
     }
     
-    return [];
+    if (hasSpecificKnowledge1) {
+      allQuestions = [...allQuestions, ...Array.from(
+        { length: specificKnowledge1Questions },
+        (_, i) => startNumber + i
+      )];
+      startNumber += specificKnowledge1Questions;
+    }
+    
+    if (hasSpecificKnowledge2) {
+      allQuestions = [...allQuestions, ...Array.from(
+        { length: specificKnowledge2Questions },
+        (_, i) => startNumber + i
+      )];
+      startNumber += specificKnowledge2Questions;
+    }
+    
+    if (hasSpecificKnowledge3) {
+      allQuestions = [...allQuestions, ...Array.from(
+        { length: specificKnowledge3Questions },
+        (_, i) => startNumber + i
+      )];
+    }
+    
+    return allQuestions;
   };
-  
-  const createAnswerMatrix = () => {
-    const matrix: (number | null)[][] = [];
-    let totalQuestions = 0;
-    
-    if (selectedSection === "basic" && hasBasicKnowledge) {
-      totalQuestions = basicKnowledgeQuestions;
-    } else if (selectedSection === "specific1" && hasSpecificKnowledge1) {
-      totalQuestions = specificKnowledge1Questions;
-    } else if (selectedSection === "specific2" && hasSpecificKnowledge2) {
-      totalQuestions = specificKnowledge2Questions;
-    } else if (selectedSection === "specific3" && hasSpecificKnowledge3) {
-      totalQuestions = specificKnowledge3Questions;
-    }
-    
-    if (totalQuestions <= 0) {
-      return [[]];
-    }
-    
-    let startingQuestion = 1;
-    
-    if (selectedSection === "specific1" && hasBasicKnowledge) {
-      startingQuestion = basicKnowledgeQuestions + 1;
-    } else if (selectedSection === "specific2") {
-      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + 1;
-    } else if (selectedSection === "specific3") {
-      startingQuestion = basicKnowledgeQuestions + specificKnowledge1Questions + specificKnowledge2Questions + 1;
-    }
-    
-    const numRows = Math.ceil(totalQuestions / 5);
-    
-    for (let i = 0; i < numRows; i++) {
-      const row: (number | null)[] = [];
-      
-      for (let j = 0; j < 5; j++) {
-        const questionNumber = startingQuestion + (i * 5) + j;
-        
-        if (questionNumber <= startingQuestion + totalQuestions - 1) {
-          row.push(questionNumber);
-        } else {
-          row.push(null);
-        }
-      }
-      
-      matrix.push(row);
-    }
-    
-    return matrix;
-  };
-  
-  const getSectionOptions = () => {
-    const options = [];
-    
-    if (hasBasicKnowledge) options.push({ id: "basic", label: "Conhecimentos Básicos" });
-    if (hasSpecificKnowledge1) options.push({ id: "specific1", label: "C. Específicos 1" });
-    if (hasSpecificKnowledge2) options.push({ id: "specific2", label: "C. Específicos 2" });
-    if (hasSpecificKnowledge3) options.push({ id: "specific3", label: "C. Específicos 3" });
-    
-    return options;
-  };
-  
+
   const handleSaveAnswerKey = async () => {
-    if (!validateQuestionCounts()) {
-      toast({
-        title: "Erro na configuração",
-        description: "Todas as áreas de conhecimento habilitadas devem ter quantidade de questões maior que zero.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!validateAllQuestionsAnswered()) {
-      toast({
-        title: "Gabarito incompleto",
-        description: "É necessário preencher todas as questões do gabarito antes de salvar.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!concursoId) {
-      setError("ID do concurso não encontrado");
-      return;
-    }
-    
     try {
       setIsSaving(true);
-      setError(null);
       
-      await supabase
-        .from('answer_keys')
-        .delete()
-        .eq('concurso_id', concursoId);
+      const allQuestions = getAllQuestions();
+      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
       
-      const answerRows = Object.keys(answers).map(questionNumber => ({
-        concurso_id: concursoId,
-        question_number: parseInt(questionNumber),
-        answer: answers[parseInt(questionNumber)]
-      }));
-      
-      if (answerRows.length === 0) {
-        toast({
-          title: "Nenhuma resposta para salvar",
-          description: "Por favor, informe pelo menos uma resposta no gabarito.",
-          variant: "destructive"
-        });
-        setIsSaving(false);
+      if (unansweredQuestions.length > 0) {
+        toast.error(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
         return;
       }
+
+      const answerKeyData = allQuestions.map(questionNumber => {
+        const qNum = parseInt(questionNumber.toString());
+        const basicEnd = basicKnowledgeQuestions || 0;
+        const specific1End = basicEnd + (specificKnowledge1Questions || 0);
+        const specific2End = specific1End + (specificKnowledge2Questions || 0);
+        const specific3End = specific2End + (specificKnowledge3Questions || 0);
+        
+        return {
+          concurso_id: concursoId || '',
+          question_number: qNum,
+          answer: answers[qNum],
+          is_nullified: nullifiedQuestions.includes(qNum),
+          is_basic_knowledge: qNum <= basicEnd,
+          is_specific_1: qNum > basicEnd && qNum <= specific1End,
+          is_specific_2: qNum > specific1End && qNum <= specific2End,
+          is_specific_3: qNum > specific2End && qNum <= specific3End
+        };
+      });
       
-      const { error } = await supabase
-        .from('answer_keys')
-        .insert(answerRows);
-      
-      if (error) throw error;
-      
-      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
-      
-      const recalculationResult = await recalculateAllUserScores(concursoId);
-      console.log('Recalculation result:', recalculationResult);
-      
-      if (recalculationResult.success) {
-        toast({
-          title: "Gabarito salvo com sucesso",
-          description: `O gabarito oficial foi atualizado. ${recalculationResult.updatedCount > 0 ? 
-            `As notas de ${recalculationResult.updatedCount} usuários foram recalculadas.` : 
-            'Não há usuários com respostas cadastradas para recalcular.'}`
-        });
+      if (onSaveFullRanking && formValues) {
+        await onSaveFullRanking(formValues, answerKeyData);
+      } else if (concursoId) {
+        await updateAnswerKey(concursoId, answerKeyData);
+        toast.success('Gabarito salvo com sucesso!');
       } else {
-        toast({
-          title: "Gabarito salvo",
-          description: "As respostas oficiais foram salvas com sucesso."
-        });
+        toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
       }
     } catch (error: any) {
       console.error('Error saving answer key:', error);
-      setError(error.message || "Erro ao salvar gabarito");
-      
-      toast({
-        title: "Erro ao salvar gabarito",
-        description: error.message || "Ocorreu um erro ao salvar o gabarito oficial.",
-        variant: "destructive"
-      });
+      if (error.message && error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
+        toast.error('Todas as questões do gabarito oficial devem ter uma resposta');
+      } else {
+        toast.error('Erro ao salvar gabarito');
+      }
     } finally {
       setIsSaving(false);
     }
   };
-  
-  const sectionOptions = getSectionOptions();
-  
+
+  if (isLoading && concursoId) {
+    return <div className="py-4">Carregando gabarito...</div>;
+  }
+
   return (
-    <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle>Gabarito Oficial</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {error && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+    <Card>
+      <CardContent className="pt-6">
+        <h3 className="text-lg font-semibold mb-4">Gabarito Oficial</h3>
         
-        <div className="mb-4">
-          <Label htmlFor="section">Seção</Label>
-          <Select value={selectedSection} onValueChange={setSelectedSection}>
-            <SelectTrigger id="section">
-              <SelectValue placeholder="Selecione uma seção" />
-            </SelectTrigger>
-            <SelectContent>
-              {sectionOptions.map(option => (
-                <SelectItem key={option.id} value={option.id}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Tabs 
+          value={selectedSection} 
+          onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+          className="w-full"
+        >
+          <TabsList className="grid w-full" style={{
+            gridTemplateColumns: `repeat(${[
+              hasBasicKnowledge,
+              hasSpecificKnowledge1,
+              hasSpecificKnowledge2,
+              hasSpecificKnowledge3
+            ].filter(Boolean).length}, minmax(0, 1fr))`
+          }}>
+            {hasBasicKnowledge && (
+              <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>
+            )}
+            {hasSpecificKnowledge1 && (
+              <TabsTrigger value="specific1">C. Específicos 1</TabsTrigger>
+            )}
+            {hasSpecificKnowledge2 && (
+              <TabsTrigger value="specific2">C. Específicos 2</TabsTrigger>
+            )}
+            {hasSpecificKnowledge3 && (
+              <TabsTrigger value="specific3">C. Específicos 3</TabsTrigger>
+            )}
+          </TabsList>
+
+          {[
+            { value: 'basic', label: 'Conhecimentos Básicos', show: hasBasicKnowledge },
+            { value: 'specific1', label: 'C. Específicos 1', show: hasSpecificKnowledge1 },
+            { value: 'specific2', label: 'C. Específicos 2', show: hasSpecificKnowledge2 },
+            { value: 'specific3', label: 'C. Específicos 3', show: hasSpecificKnowledge3 }
+          ].map(section => section.show && (
+            <TabsContent key={section.value} value={section.value}>
+              <div className="grid gap-4">
+                <p className="text-sm text-gray-500">
+                  Digite o gabarito para a seção de {section.label}.
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {getQuestionRange().map(questionNumber => (
+                    <div key={questionNumber} className="border p-3 rounded-md">
+                      <div className="flex justify-between items-center mb-2">
+                        <Label className="font-medium">Questão {questionNumber}</Label>
+                        <Button
+                          type="button"
+                          variant={nullifiedQuestions.includes(questionNumber) ? "destructive" : "outline"}
+                          size="sm"
+                          onClick={() => handleToggleNullified(questionNumber)}
+                        >
+                          {nullifiedQuestions.includes(questionNumber) ? "Anulada" : "Anular"}
+                        </Button>
+                      </div>
+                      
+                      {examType === 'Alternativas' ? (
+                        <RadioGroup
+                          value={answers[questionNumber] || ''}
+                          onValueChange={(value) => handleAnswerChange(questionNumber, value)}
+                          className="flex flex-row space-x-2 mt-2"
+                        >
+                          {Array.from(
+                            { length: alternativesCount || 5 },
+                            (_, i) => String.fromCharCode(65 + i)
+                          ).map((option) => (
+                            <div key={option} className="flex items-center space-x-1">
+                              <RadioGroupItem
+                                value={option}
+                                id={`q${questionNumber}-${option}`}
+                                disabled={nullifiedQuestions.includes(questionNumber)}
+                              />
+                              <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      ) : (
+                        <RadioGroup
+                          value={answers[questionNumber] || ''}
+                          onValueChange={(value) => handleAnswerChange(questionNumber, value)}
+                          className="flex space-x-4 mt-2"
+                        >
+                          <div className="flex items-center space-x-1">
+                            <RadioGroupItem
+                              value="C"
+                              id={`q${questionNumber}-C`}
+                              disabled={nullifiedQuestions.includes(questionNumber)}
+                            />
+                            <Label htmlFor={`q${questionNumber}-C`}>C</Label>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <RadioGroupItem
+                              value="E"
+                              id={`q${questionNumber}-E`}
+                              disabled={nullifiedQuestions.includes(questionNumber)}
+                            />
+                            <Label htmlFor={`q${questionNumber}-E`}>E</Label>
+                          </div>
+                        </RadioGroup>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
         
-        <AnswerMatrix
-          matrix={createAnswerMatrix()}
-          answers={answers}
-          onAnswerChange={handleAnswerChange}
-          onClearAnswer={handleClearAnswer}
-          getOptionsForQuestion={getOptionsForQuestion}
-          examType={examType as 'Alternativas' | 'Certo ou Errado'}
-        />
-        
-        <div className="flex justify-end space-x-3 mt-6">
+        <div className="flex justify-end mt-6">
           <Button 
             type="button" 
-            onClick={handleSaveAnswerKey} 
+            onClick={handleSaveAnswerKey}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700"
           >
-            <Save className="h-4 w-4" />
             {isSaving ? 'Salvando...' : 'Salvar Gabarito'}
           </Button>
         </div>
