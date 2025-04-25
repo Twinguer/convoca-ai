@@ -19,6 +19,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
   try {
     console.log(`Iniciando recálculo de scores para concurso: ${concursoId}`);
     
+    // Buscar todos os rankings de usuários para este concurso
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select(`
@@ -32,7 +33,8 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
         specific_knowledge_score,
         specific_knowledge_1_score,
         specific_knowledge_2_score,
-        specific_knowledge_3_score
+        specific_knowledge_3_score,
+        all_questions_answered
       `)
       .eq('concurso_id', concursoId);
       
@@ -48,6 +50,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     let updatedCount = 0;
     const failedRankings: Array<{ rankingId: string; userId: string; error: string; attempts: number }> = [];
     
+    // Para cada ranking, verificar primeiro se o usuário tem respostas antes de recalcular
     for (const ranking of userRankings) {
       const maxRetries = 3;
       let currentTry = 0;
@@ -55,12 +58,35 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
       
       while (currentTry < maxRetries && !success) {
         try {
+          // Buscar as respostas deste usuário
           const { data: userAnswers, error: answersError } = await supabase
             .from('user_answers')
             .select('*')
             .eq('user_ranking_id', ranking.id);
             
           if (answersError) throw answersError;
+          
+          // Verificar se o usuário tem respostas antes de prosseguir
+          if (!userAnswers || userAnswers.length === 0) {
+            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: Nenhuma resposta encontrada, preservando pontuações existentes`);
+            
+            // Registrar esta ocorrência no log para depuração
+            await supabase.from('score_calculation_logs').insert([{
+              user_ranking_id: ranking.id,
+              calculation_type: 'recalculate_skipped_no_answers',
+              calculation_details: {
+                concurso_id: concursoId,
+                user_id: ranking.user_id,
+                timestamp: new Date().toISOString()
+              }
+            }]);
+            
+            // Consideramos como um "sucesso" mesmo não recalculando, já que não é um erro
+            success = true;
+            continue;
+          }
+          
+          console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: ${userAnswers.length} respostas encontradas`);
           
           // Preservar as pontuações subjetivas existentes
           const subjectiveScores = {
@@ -107,10 +133,15 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             p_subjective_scores: subjectiveScores
           });
           
-          if (rpcError) throw rpcError;
+          if (rpcError) {
+            console.error(`[recalculateAllUserScores] Erro na função RPC para ranking ${ranking.id}:`, rpcError);
+            throw rpcError;
+          }
           
           if (!rpcResult || !rpcResult.success) {
-            throw new Error(rpcResult?.error || 'Erro desconhecido ao salvar pontuações');
+            const errorMsg = rpcResult?.error || 'Erro desconhecido ao salvar pontuações';
+            console.error(`[recalculateAllUserScores] Falha na função RPC para ranking ${ranking.id}:`, errorMsg);
+            throw new Error(errorMsg);
           }
           
           updatedCount++;
@@ -122,6 +153,17 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           currentTry++;
           const waitTime = Math.pow(2, currentTry) * 1000; // Backoff exponencial
           console.error(`Tentativa ${currentTry} falhou para ranking ${ranking.id}:`, error);
+          
+          // Registrar o erro no log
+          await supabase.from('score_calculation_logs').insert([{
+            user_ranking_id: ranking.id,
+            calculation_type: 'recalculate_attempt_error',
+            calculation_details: {
+              attempt: currentTry,
+              error: error.message || 'Erro desconhecido',
+              timestamp: new Date().toISOString()
+            }
+          }]);
           
           if (currentTry < maxRetries) {
             console.log(`Aguardando ${waitTime}ms antes da próxima tentativa...`);
