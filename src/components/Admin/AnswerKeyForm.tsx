@@ -198,7 +198,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         setRecalculationSuccess(true);
         toast({
           title: "Recálculo completado",
-          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
+          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas conforme o gabarito oficial atual.`,
         });
         
         setTimeout(() => {
@@ -292,10 +292,20 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setSavedSuccess(true);
       toast({
         title: "Gabarito salvo com sucesso",
-        description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
+        description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações para todos os usuários...",
       });
 
-      // Iniciar automaticamente o recálculo para todos os usuários
+      await supabase.from('score_calculation_logs').insert([{
+        calculation_type: 'answer_key_updated',
+        calculation_details: {
+          concurso_id: concursoId,
+          updated_by: "admin",
+          questions_count: answersArray.length,
+          nullified_count: nullifiedQuestions.size,
+          timestamp: new Date().toISOString()
+        }
+      }]);
+
       await performRecalculation();
       
       setTimeout(() => {

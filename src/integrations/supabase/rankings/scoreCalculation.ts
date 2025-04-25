@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -6,6 +7,7 @@ export const calculateRawScores = async (
   userAnswers: any[]
 ) => {
   try {
+    // Buscar sempre o gabarito oficial mais atual
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
       .select('question_number, answer, is_nullified')
@@ -45,6 +47,7 @@ export const calculateRawScores = async (
 
     console.log(`[calculateRawScores] Número de respostas do usuário: ${userAnswers.length}`);
 
+    // Para cada resposta do usuário, verificamos se ela está correta comparando com o gabarito oficial atual
     userAnswers.forEach(userAnswer => {
       const officialAnswer = answerKey.find(
         a => a.question_number === userAnswer.question_number
@@ -60,6 +63,7 @@ export const calculateRawScores = async (
           `Resposta do usuário: ${userAnswer.answer}, ` +
           `Correta: ${isCorrect}`);
 
+        // A resposta é considerada correta se for igual ao gabarito ou se a questão estiver anulada
         if (isNullified || isCorrect) {
           if (userAnswer.is_basic_knowledge) {
             basicKnowledgeScore += 1;
@@ -114,6 +118,7 @@ export const applyWeightsToScores = async (
   }
 ) => {
   try {
+    // Buscamos os pesos definidos no concurso
     const { data: concursoWithWeights, error: concursoWeightsError } = await supabase
       .from('concursos')
       .select(`
@@ -130,6 +135,7 @@ export const applyWeightsToScores = async (
       .single();
     if (concursoWeightsError) throw concursoWeightsError;
     
+    // Aplicamos os pesos às pontuações
     const weights = {
       basicKnowledge: concursoWithWeights?.basic_knowledge_weight || 1,
       specificKnowledge1: concursoWithWeights?.specific_knowledge_1_weight || 1,
@@ -152,6 +158,7 @@ export const applyWeightsToScores = async (
       weightedCaseStudy3Score: subjectiveScores.caseStudy3Score * weights.caseStudy3
     };
 
+    // Calculamos a pontuação total
     const totalScore = 
       weightedScores.weightedBasicScore + 
       weightedScores.weightedSpecific1Score + 
@@ -179,6 +186,7 @@ export const saveUserScores = async (
   subjectiveScores: any
 ) => {
   try {
+    // Usamos a função RPC para salvar as pontuações em uma transação
     const { data, error } = await supabase.rpc('save_scores_transaction', {
       p_ranking_id: rankingId,
       p_raw_scores: rawScores,
