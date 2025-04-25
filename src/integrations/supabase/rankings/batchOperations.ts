@@ -48,14 +48,14 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     console.log(`Encontrados ${userRankings.length} rankings para atualizar`);
     
     // Verificar se o gabarito existe para este concurso
-    const { data: answerKeyCheck, error: answerKeyError } = await supabase
+    const { count, error: answerKeyError } = await supabase
       .from('answer_keys')
-      .select('count(*)', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('concurso_id', concursoId);
       
     if (answerKeyError) throw answerKeyError;
     
-    if (!answerKeyCheck || answerKeyCheck.count === 0) {
+    if (!count || count === 0) {
       console.log('Nenhum gabarito encontrado para este concurso, não é possível recalcular');
       return { 
         success: false, 
@@ -170,7 +170,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           await supabase.from('score_calculation_logs').insert([{
             user_ranking_id: ranking.id,
             calculation_type: 'recalculate_success',
-            previous_score: ranking.score,
+            previous_score: ranking.score ?? 0, // Adicionamos verificação nula aqui
             new_score: weightedScores.totalScore,
             calculation_details: {
               concurso_id: concursoId,
