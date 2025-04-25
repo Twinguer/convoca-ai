@@ -27,6 +27,14 @@ export interface Ranking {
   caseStudy3Score?: number | null;
   reservationType: string;
   id: string;
+  weightedBasicScore?: number;
+  weightedSpecific1Score?: number;
+  weightedSpecific2Score?: number;
+  weightedSpecific3Score?: number;
+  weightedDiscursiveScore?: number;
+  weightedCaseStudy1Score?: number;
+  weightedCaseStudy2Score?: number;
+  weightedCaseStudy3Score?: number;
 }
 
 interface RankingTableProps {
@@ -332,49 +340,49 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge !== false && (
               <TableCell className="text-right">
-                {ranking.weightedBasicScore.toFixed(2)}
+                {ranking.weightedBasicScore ? ranking.weightedBasicScore.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 !== false && (
               <TableCell className="text-right">
-                {ranking.weightedSpecific1Score.toFixed(2)}
+                {ranking.weightedSpecific1Score ? ranking.weightedSpecific1Score.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {ranking.weightedSpecific2Score.toFixed(2)}
+                {ranking.weightedSpecific2Score ? ranking.weightedSpecific2Score.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {ranking.weightedSpecific3Score.toFixed(2)}
+                {ranking.weightedSpecific3Score ? ranking.weightedSpecific3Score.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {ranking.weightedDiscursiveScore.toFixed(2)}
+                {ranking.weightedDiscursiveScore ? ranking.weightedDiscursiveScore.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {ranking.weightedCaseStudy1Score.toFixed(2)}
+                {ranking.weightedCaseStudy1Score ? ranking.weightedCaseStudy1Score.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {ranking.weightedCaseStudy2Score.toFixed(2)}
+                {ranking.weightedCaseStudy2Score ? ranking.weightedCaseStudy2Score.toFixed(2) : "0.00"}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {ranking.weightedCaseStudy3Score.toFixed(2)}
+                {ranking.weightedCaseStudy3Score ? ranking.weightedCaseStudy3Score.toFixed(2) : "0.00"}
               </TableCell>
             )}
             {isAdminMode && (

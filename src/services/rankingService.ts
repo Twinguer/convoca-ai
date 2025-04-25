@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -90,6 +91,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.log('Raw rankings data:', rankings);
     
     const formattedRankings = rankings.map((ranking, index) => {
+      // Fix: Correctly access profile properties - profile is an object, not an array
       const profile = ranking.users_profiles;
       
       return {
