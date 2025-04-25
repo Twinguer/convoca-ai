@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -333,49 +332,49 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge !== false && (
               <TableCell className="text-right">
-                {(Number(ranking.basicKnowledgeScore || 0) * sectionWeights.basic).toFixed(2)}
+                {ranking.weightedBasicScore.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 !== false && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore || 0) * sectionWeights.specific1).toFixed(2)}
+                {ranking.weightedSpecific1Score.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge2Score || 0) * sectionWeights.specific2).toFixed(2)}
+                {ranking.weightedSpecific2Score.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge3Score || 0) * sectionWeights.specific3).toFixed(2)}
+                {ranking.weightedSpecific3Score.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {(Number(ranking.discursiveScore || 0) * sectionWeights.discursive).toFixed(2)}
+                {ranking.weightedDiscursiveScore.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy1Score || 0) * sectionWeights.caseStudy1).toFixed(2)}
+                {ranking.weightedCaseStudy1Score.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy2Score || 0) * sectionWeights.caseStudy2).toFixed(2)}
+                {ranking.weightedCaseStudy2Score.toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy3Score || 0) * sectionWeights.caseStudy3).toFixed(2)}
+                {ranking.weightedCaseStudy3Score.toFixed(2)}
               </TableCell>
             )}
             {isAdminMode && (
@@ -401,4 +400,3 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
-
