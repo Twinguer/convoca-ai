@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { calculateRawScores, applyWeightsToScores } from './scoreCalculation';
 
@@ -20,7 +21,19 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
-      .select('id, user_id')
+      .select(`
+        id, 
+        user_id,
+        discursive_score,
+        case_study_1_score,
+        case_study_2_score,
+        case_study_3_score,
+        basic_knowledge_score,
+        specific_knowledge_score,
+        specific_knowledge_1_score,
+        specific_knowledge_2_score,
+        specific_knowledge_3_score
+      `)
       .eq('concurso_id', concursoId);
       
     if (rankingsError) throw rankingsError;
@@ -49,42 +62,55 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             
           if (answersError) throw answersError;
           
-          const { data: rankingData, error: rankingError } = await supabase
-            .from('user_rankings')
-            .select(`
-              discursive_score,
-              case_study_1_score,
-              case_study_2_score,
-              case_study_3_score
-            `)
-            .eq('id', ranking.id)
-            .single();
-            
-          if (rankingError) throw rankingError;
-          
-          // Prepara as pontuações subjetivas
+          // Preservar as pontuações subjetivas existentes
           const subjectiveScores = {
-            discursiveScore: rankingData?.discursive_score || 0,
-            caseStudy1Score: rankingData?.case_study_1_score || 0,
-            caseStudy2Score: rankingData?.case_study_2_score || 0,
-            caseStudy3Score: rankingData?.case_study_3_score || 0
+            discursiveScore: ranking?.discursive_score || 0,
+            caseStudy1Score: ranking?.case_study_1_score || 0,
+            caseStudy2Score: ranking?.case_study_2_score || 0,
+            caseStudy3Score: ranking?.case_study_3_score || 0
           };
           
+          // Calcular novas pontuações objetivas
           const rawScores = await calculateRawScores(concursoId, userAnswers || []);
+          
+          // Aplicar pesos às pontuações
           const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
           
-          // Usa a nova função RPC para salvar as pontuações em uma única transação
+          // Registrar detalhes do cálculo para debugging
+          console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}:`);
+          console.log('  Raw scores:', rawScores);
+          console.log('  Subjective scores:', subjectiveScores);
+          console.log('  Weighted scores:', weightedScores);
+          
+          // Usar a função RPC atualizada para salvar as pontuações em uma única transação
+          // Incluir explicitamente TODAS as pontuações para garantir que nenhuma seja perdida
           const { data: rpcResult, error: rpcError } = await supabase.rpc('save_scores_transaction', {
             p_ranking_id: ranking.id,
-            p_raw_scores: rawScores,
-            p_weighted_scores: weightedScores,
+            p_raw_scores: {
+              basicKnowledgeScore: rawScores.basicKnowledgeScore,
+              specificKnowledgeScore: rawScores.specificKnowledgeScore,
+              specific1Score: rawScores.specific1Score,
+              specific2Score: rawScores.specific2Score,
+              specific3Score: rawScores.specific3Score
+            },
+            p_weighted_scores: {
+              weightedBasicScore: weightedScores.weightedBasicScore,
+              weightedSpecific1Score: weightedScores.weightedSpecific1Score,
+              weightedSpecific2Score: weightedScores.weightedSpecific2Score,
+              weightedSpecific3Score: weightedScores.weightedSpecific3Score,
+              weightedDiscursiveScore: weightedScores.weightedDiscursiveScore,
+              weightedCaseStudy1Score: weightedScores.weightedCaseStudy1Score,
+              weightedCaseStudy2Score: weightedScores.weightedCaseStudy2Score,
+              weightedCaseStudy3Score: weightedScores.weightedCaseStudy3Score,
+              totalScore: weightedScores.totalScore
+            },
             p_subjective_scores: subjectiveScores
           });
           
           if (rpcError) throw rpcError;
           
-          if (!rpcResult.success) {
-            throw new Error(rpcResult.error || 'Erro desconhecido ao salvar pontuações');
+          if (!rpcResult || !rpcResult.success) {
+            throw new Error(rpcResult?.error || 'Erro desconhecido ao salvar pontuações');
           }
           
           updatedCount++;
