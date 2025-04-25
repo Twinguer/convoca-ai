@@ -49,12 +49,14 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     console.log(`Encontrados ${userRankings.length} rankings para atualizar`);
     
     // Verificar se o gabarito existe para este concurso
-    const { count, error: answerKeyError } = await supabase
+    const { data: answerKeyCount, error: answerKeyError } = await supabase
       .from('answer_keys')
-      .select('*', { count: 'exact', head: true })
+      .select('*', { count: 'exact' })
       .eq('concurso_id', concursoId);
       
     if (answerKeyError) throw answerKeyError;
+    
+    const count = answerKeyCount ? answerKeyCount.length : 0;
     
     if (!count || count === 0) {
       console.log('Nenhum gabarito encontrado para este concurso, não é possível recalcular');

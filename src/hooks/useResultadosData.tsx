@@ -1,16 +1,18 @@
 
 import { useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
 import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
+import { useEffect } from 'react';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
   const { user } = useAuth();
   const isAuthenticated = !!user;
+  const queryClient = useQueryClient();
   
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -42,14 +44,13 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings with more frequent refetching - only if user is authenticated
+  // Fetch rankings with more frequent refetching
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
-    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
+    queryFn: () => fetchUserRankings(id),
     refetchInterval: 3000, // Reduzido para 3 segundos
     refetchOnWindowFocus: true,
     staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
-    enabled: isAuthenticated,
   });
   
   // Fetch participant count - for all users (authenticated or not)
@@ -61,17 +62,64 @@ export function useResultadosData() {
     staleTime: 2000,
   });
   
+  // Monitor changes to the answer_key table to trigger updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('answer-key-changes')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*',
+          schema: 'public', 
+          table: 'answer_keys', 
+          filter: `concurso_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('[useResultadosData] Detected change in answer_keys:', payload);
+          // Invalidar o cache imediatamente quando o gabarito for alterado
+          queryClient.invalidateQueries({ queryKey: ['rankings', id] });
+          refetchRankings();
+          refetchCount();
+        }
+      )
+      .subscribe();
+      
+    // Também monitorar mudanças na tabela de registros de cálculo de pontuação
+    const scoresChannel = supabase
+      .channel('score-calculation-logs-changes')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT',
+          schema: 'public', 
+          table: 'score_calculation_logs'
+        },
+        (payload) => {
+          const details = payload.new?.calculation_details;
+          if (details && details.concurso_id === id) {
+            console.log('[useResultadosData] Detected score calculation event:', payload);
+            queryClient.invalidateQueries({ queryKey: ['rankings', id] });
+            refetchRankings();
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+      supabase.removeChannel(scoresChannel);
+    };
+  }, [id, queryClient, refetchRankings, refetchCount]);
+  
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
+  const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
   const refreshData = () => {
-    if (isAuthenticated) {
-      console.log("[useResultadosData] Atualizando rankings manualmente");
-      refetchRankings();
-    }
+    console.log("[useResultadosData] Atualizando rankings manualmente");
+    refetchRankings();
     refetchCount();
   };
   

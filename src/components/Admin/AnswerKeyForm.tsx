@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -24,6 +25,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso-details', concursoId],
@@ -201,6 +203,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas conforme o gabarito oficial atual.`,
         });
         
+        queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+        queryClient.invalidateQueries({ queryKey: ['participant-count', concursoId] });
+        
         setTimeout(() => {
           setRecalculationSuccess(false);
         }, 5000);
@@ -306,6 +311,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         }
       }]);
 
+      queryClient.invalidateQueries({ queryKey: ['answer-keys', concursoId] });
+      
       await performRecalculation();
       
       setTimeout(() => {

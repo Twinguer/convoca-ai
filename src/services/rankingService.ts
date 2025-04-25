@@ -74,7 +74,10 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       query = query.eq('reservation_type', reservationType);
     }
       
-    const { data: rankings, error: rankingsError } = await query.order('score', { ascending: false });
+    const { data: rankings, error: rankingsError } = await query
+      .order('score', { ascending: false })
+      // Adicionando cache: false para garantir dados recentes
+      .limit(1000);
       
     if (rankingsError) {
       console.error('Error in fetchUserRankings query:', rankingsError);
