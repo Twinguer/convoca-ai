@@ -82,12 +82,12 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     const formattedRankings = rankings.map((ranking, index) => {
       // Safely access profile properties
-      const profile = ranking.users_profiles || {};
+      const profile = ranking.users_profiles ?? {};
       
       return {
         position: index + 1,
-        name: profile.name || 'Usuário Anônimo',
-        avatarUrl: profile.avatar_url || null,
+        name: profile?.name ?? 'Usuário Anônimo',
+        avatarUrl: profile?.avatar_url ?? null,
         score: ranking.score || 0,
         userId: ranking.user_id,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
