@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -28,15 +27,6 @@ export interface Ranking {
   weightedCaseStudy2Score?: number;
   weightedCaseStudy3Score?: number;
 }
-
-// Helper function to get abbreviation for reservation type
-const getReservationAbbreviation = (reservationType: string): string => {
-  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
-  
-  // Get first three letters as abbreviation
-  const abbr = reservationType.substring(0, 3).toUpperCase();
-  return abbr;
-};
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
@@ -91,15 +81,15 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.log('Raw rankings data:', rankings);
     
     const formattedRankings = rankings.map((ranking, index) => {
-      // Fix: Correctly access profile properties - profile is an object, not an array
-      const profile = ranking.users_profiles;
+      // Safely access profile properties
+      const profile = ranking.users_profiles || {};
       
       return {
         position: index + 1,
-        name: profile?.name || 'Usuário Anônimo',
+        name: profile.name || 'Usuário Anônimo',
+        avatarUrl: profile.avatar_url || null,
         score: ranking.score || 0,
         userId: ranking.user_id,
-        avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
@@ -131,7 +121,15 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   }
 };
 
-// Get the available reservation types for a concurso
+// Helper function to get abbreviation for reservation type
+const getReservationAbbreviation = (reservationType: string): string => {
+  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
+  
+  // Get first three letters as abbreviation
+  const abbr = reservationType.substring(0, 3).toUpperCase();
+  return abbr;
+};
+
 export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
