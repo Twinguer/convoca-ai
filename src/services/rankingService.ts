@@ -76,7 +76,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       
     const { data: rankings, error: rankingsError } = await query
       .order('score', { ascending: false })
-      // Adicionando cache: false para garantir dados recentes
+      // Setting cache to false to ensure we always get fresh data
       .limit(1000);
       
     if (rankingsError) {
@@ -176,5 +176,26 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
   } catch (error) {
     console.error('Error determining available reservation types:', error);
     return ['Ampla Concorrência'];
+  }
+};
+
+// Force recalculation of all scores in a ranking
+export const forceRecalculateAllScores = async (concursoId: string): Promise<boolean> => {
+  try {
+    console.log('[forceRecalculateAllScores] Initiating forced recalculation for concurso:', concursoId);
+    
+    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/batchOperations');
+    const result = await recalculateAllUserScores(concursoId);
+    
+    if (result.success) {
+      console.log(`[forceRecalculateAllScores] Successfully recalculated ${result.updatedCount} user rankings`);
+      return true;
+    } else {
+      console.error('[forceRecalculateAllScores] Error recalculating scores:', result.error);
+      return false;
+    }
+  } catch (error) {
+    console.error('[forceRecalculateAllScores] Exception during recalculation:', error);
+    return false;
   }
 };

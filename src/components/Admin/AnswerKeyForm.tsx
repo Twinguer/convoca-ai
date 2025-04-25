@@ -193,6 +193,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
       });
       
+      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/batchOperations');
       const recalculationResult = await recalculateAllUserScores(concursoId);
       console.log('Recalculation result:', recalculationResult);
 

@@ -2,7 +2,7 @@
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
-import { fetchUserRankings } from '@/services/rankingService';
+import { fetchUserRankings, forceRecalculateAllScores } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +18,7 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000, // 1 minute
   });
   
   // Fetch creator information if available
@@ -41,16 +41,16 @@ export function useResultadosData() {
       return data;
     },
     enabled: !!concurso?.created_by_user_id,
-    staleTime: 300000, // 5 minutos
+    staleTime: 300000, // 5 minutes
   });
   
   // Fetch rankings with more frequent refetching
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 3000, // Reduzido para 3 segundos
+    refetchInterval: 3000, // 3 seconds
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
+    staleTime: 1000, // Considered stale after 1 second to ensure frequent updates
   });
   
   // Fetch participant count - for all users (authenticated or not)
@@ -76,7 +76,7 @@ export function useResultadosData() {
         },
         (payload) => {
           console.log('[useResultadosData] Detected change in answer_keys:', payload);
-          // Invalidar o cache imediatamente quando o gabarito for alterado
+          // Invalidate the cache immediately when answer key changes
           queryClient.invalidateQueries({ queryKey: ['rankings', id] });
           refetchRankings();
           refetchCount();
@@ -84,7 +84,7 @@ export function useResultadosData() {
       )
       .subscribe();
       
-    // Também monitorar mudanças na tabela de registros de cálculo de pontuação
+    // Also monitor changes in the score calculation logs table
     const scoresChannel = supabase
       .channel('score-calculation-logs-changes')
       .on(
@@ -117,10 +117,22 @@ export function useResultadosData() {
   const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
-  const refreshData = () => {
-    console.log("[useResultadosData] Atualizando rankings manualmente");
-    refetchRankings();
-    refetchCount();
+  const refreshData = async () => {
+    console.log("[useResultadosData] Manually refreshing rankings");
+    
+    // Attempt to force recalculation of all scores
+    const recalculated = await forceRecalculateAllScores(id);
+    if (recalculated) {
+      console.log("[useResultadosData] Force recalculation successful");
+    }
+    
+    // Invalidate cached data to ensure fresh fetch
+    queryClient.invalidateQueries({ queryKey: ['rankings', id] });
+    queryClient.invalidateQueries({ queryKey: ['participant-count', id] });
+    
+    // Refetch data
+    await refetchRankings();
+    await refetchCount();
   };
   
   return {
