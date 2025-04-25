@@ -25,6 +25,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
       .select(`
         id, 
         user_id,
+        score,
         discursive_score,
         case_study_1_score,
         case_study_2_score,
@@ -170,7 +171,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           await supabase.from('score_calculation_logs').insert([{
             user_ranking_id: ranking.id,
             calculation_type: 'recalculate_success',
-            previous_score: ranking.score ?? 0, // Adicionamos verificação nula aqui
+            previous_score: ranking.score ?? 0,
             new_score: weightedScores.totalScore,
             calculation_details: {
               concurso_id: concursoId,
