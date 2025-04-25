@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -26,6 +27,12 @@ export interface Ranking {
   weightedCaseStudy1Score?: number;
   weightedCaseStudy2Score?: number;
   weightedCaseStudy3Score?: number;
+}
+
+// Define an interface for the profile data structure
+interface UserProfile {
+  name?: string;
+  avatar_url?: string | null;
 }
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
@@ -81,13 +88,13 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.log('Raw rankings data:', rankings);
     
     const formattedRankings = rankings.map((ranking, index) => {
-      // Safely access profile properties
-      const profile = ranking.users_profiles ?? {};
+      // Safely access profile properties by typecasting the profile object
+      const profile = (ranking.users_profiles as UserProfile) || {};
       
       return {
         position: index + 1,
-        name: profile?.name ?? 'Usuário Anônimo',
-        avatarUrl: profile?.avatar_url ?? null,
+        name: profile.name || 'Usuário Anônimo',
+        avatarUrl: profile.avatar_url || null,
         score: ranking.score || 0,
         userId: ranking.user_id,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
