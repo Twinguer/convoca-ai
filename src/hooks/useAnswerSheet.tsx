@@ -32,8 +32,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const fetchExistingAnswers = async () => {
     try {
-      console.log('Fetching existing answers for ranking ID:', rankingId);
-      
       // Fetch answers
       const { data: answersData, error: answersError } = await supabase
         .from('user_answers')
@@ -41,8 +39,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         .eq('user_ranking_id', rankingId);
         
       if (answersError) throw answersError;
-      
-      console.log('Fetched answers data:', answersData);
       
       if (answersData?.length) {
         const answersMap: { [key: number]: string } = {};
@@ -57,13 +53,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
             typesMap[item.question_number] = 'specific1';
           } else if (item.is_specific_2) {
             typesMap[item.question_number] = 'specific2';
-          } else if (item.is_specific_3) {
+          } else {
             typesMap[item.question_number] = 'specific3';
           }
         });
-        
-        console.log('Parsed answers map:', answersMap);
-        console.log('Parsed question types map:', typesMap);
         
         setAnswers(answersMap);
         setQuestionType(typesMap);
@@ -77,8 +70,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         .single();
         
       if (rankingError) throw rankingError;
-      
-      console.log('Fetched ranking data:', rankingData);
       
       if (rankingData) {
         if (rankingData.discursive_score !== null && rankingData.discursive_score !== undefined) {
@@ -135,7 +126,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
       }
       
-      console.log('Initialized question types mapping:', typesMap);
       setQuestionType(typesMap);
     }
   };
@@ -201,9 +191,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
-    console.log('Getting questions for section:', selectedSection);
-    console.log('Question type mapping:', questionType);
-    
     const questions: number[] = [];
     
     Object.entries(questionType).forEach(([num, type]) => {
@@ -217,7 +204,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       }
     });
     
-    console.log('Questions for section', selectedSection, ':', questions);
     return questions.sort((a, b) => a - b);
   };
 
@@ -254,7 +240,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       matrix.push(rowData);
     }
     
-    console.log('Created answer matrix for section', selectedSection, ':', matrix);
     return matrix;
   };
 

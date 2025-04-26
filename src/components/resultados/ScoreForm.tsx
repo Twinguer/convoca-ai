@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Scale } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useQueryClient } from '@tanstack/react-query';
@@ -52,55 +52,7 @@ type FormValues = z.infer<typeof formSchema>;
 export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userId, onSuccess }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [weights, setWeights] = useState<any>(null);
   const queryClient = useQueryClient();
-
-  // Fetch the current weights from the database to ensure we're using the latest values
-  useEffect(() => {
-    const fetchWeights = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('concursos')
-          .select(`
-            basic_knowledge_weight,
-            specific_knowledge_1_weight,
-            specific_knowledge_2_weight,
-            specific_knowledge_3_weight,
-            specific_knowledge_weight,
-            discursive_weight,
-            case_study_1_weight,
-            case_study_2_weight,
-            case_study_3_weight
-          `)
-          .eq('id', concurso.id)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching concurso weights:', error);
-          return;
-        }
-        
-        if (data) {
-          setWeights({
-            basicKnowledge: data.basic_knowledge_weight || 1,
-            specificKnowledge1: data.specific_knowledge_1_weight || data.specific_knowledge_weight || 1,
-            specificKnowledge2: data.specific_knowledge_2_weight || 1,
-            specificKnowledge3: data.specific_knowledge_3_weight || 1,
-            discursive: data.discursive_weight || 1,
-            caseStudy1: data.case_study_1_weight || 1,
-            caseStudy2: data.case_study_2_weight || 1,
-            caseStudy3: data.case_study_3_weight || 1
-          });
-          
-          console.log('Weights loaded from database:', data);
-        }
-      } catch (err) {
-        console.error('Error in fetchWeights:', err);
-      }
-    };
-    
-    fetchWeights();
-  }, [concurso.id]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -119,29 +71,23 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Use weights from state if available, otherwise fall back to concurso prop
-      const actualWeights = weights || {
-        basicKnowledge: concurso.basic_knowledge_weight || 1,
-        specificKnowledge1: concurso.specific_knowledge_1_weight || concurso.specific_knowledge_weight || 1,
-        specificKnowledge2: concurso.specific_knowledge_2_weight || 1,
-        specificKnowledge3: concurso.specific_knowledge_3_weight || 1,
-        discursive: concurso.discursive_weight || 1,
-        caseStudy1: concurso.case_study_1_weight || 1,
-        caseStudy2: concurso.case_study_2_weight || 1,
-        caseStudy3: concurso.case_study_3_weight || 1
-      };
-      
-      console.log('Using weights for calculation:', actualWeights);
-      
       // Apply weights to each component
-      const weightedBasicScore = values.basicKnowledgeScore * actualWeights.basicKnowledge;
-      const weightedSpecific1Score = values.specificKnowledge1Score * actualWeights.specificKnowledge1;
-      const weightedSpecific2Score = values.specificKnowledge2Score * actualWeights.specificKnowledge2;
-      const weightedSpecific3Score = values.specificKnowledge3Score * actualWeights.specificKnowledge3;
-      const weightedDiscursiveScore = values.discursiveScore * actualWeights.discursive;
-      const weightedCaseStudy1Score = values.caseStudy1Score * actualWeights.caseStudy1;
-      const weightedCaseStudy2Score = values.caseStudy2Score * actualWeights.caseStudy2;
-      const weightedCaseStudy3Score = values.caseStudy3Score * actualWeights.caseStudy3;
+      const basicWeight = concurso.basic_knowledge_weight || 1;
+      const specific1Weight = concurso.specific_knowledge_1_weight || 1;
+      const specific2Weight = concurso.specific_knowledge_2_weight || 1;
+      const specific3Weight = concurso.specific_knowledge_3_weight || 1;
+      
+      // Calculate weighted scores for objective tests
+      const weightedBasicScore = values.basicKnowledgeScore * basicWeight;
+      const weightedSpecific1Score = values.specificKnowledge1Score * specific1Weight;
+      const weightedSpecific2Score = values.specificKnowledge2Score * specific2Weight;
+      const weightedSpecific3Score = values.specificKnowledge3Score * specific3Weight;
+      
+      // Add discursive and case study scores (without weights)
+      const discursiveScore = values.discursiveScore;
+      const caseStudy1Score = values.caseStudy1Score;
+      const caseStudy2Score = values.caseStudy2Score;
+      const caseStudy3Score = values.caseStudy3Score;
       
       // Combined specific knowledge score
       const specificKnowledgeScore = 
@@ -149,44 +95,44 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         (concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0) + 
         (concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0);
       
-      // Calculate total weighted score
+      // Combined discursive/case study score
+      const combinedDiscursiveScore = 
+        (concurso.has_discursive ? values.discursiveScore : 0) + 
+        (concurso.has_case_study_1 ? values.caseStudy1Score : 0) + 
+        (concurso.has_case_study_2 ? values.caseStudy2Score : 0) + 
+        (concurso.has_case_study_3 ? values.caseStudy3Score : 0);
+        
+      // Calculate total weighted score using the formula:
+      // (C.Bas x Peso) + (C.Esp1 x Peso) + (C.Esp2 x Peso) + (C.Esp3 x Peso) + Discursiva + Est. Caso1 + Est. Caso2 + Est. Caso3
       const totalScore = 
         (concurso.has_basic_knowledge ? weightedBasicScore : 0) + 
         (concurso.has_specific_knowledge_1 ? weightedSpecific1Score : 0) + 
         (concurso.has_specific_knowledge_2 ? weightedSpecific2Score : 0) + 
         (concurso.has_specific_knowledge_3 ? weightedSpecific3Score : 0) + 
-        (concurso.has_discursive ? weightedDiscursiveScore : 0) + 
-        (concurso.has_case_study_1 ? weightedCaseStudy1Score : 0) + 
-        (concurso.has_case_study_2 ? weightedCaseStudy2Score : 0) + 
-        (concurso.has_case_study_3 ? weightedCaseStudy3Score : 0);
+        (concurso.has_discursive ? discursiveScore : 0) + 
+        (concurso.has_case_study_1 ? caseStudy1Score : 0) + 
+        (concurso.has_case_study_2 ? caseStudy2Score : 0) + 
+        (concurso.has_case_study_3 ? caseStudy3Score : 0);
       
       console.log('Calculando pontuação total:', {
         rankingId,
         userId,
         basicKnowledge: values.basicKnowledgeScore,
-        basicWeight: actualWeights.basicKnowledge,
+        basicWeight,
         weightedBasic: weightedBasicScore,
         specificKnowledge1: values.specificKnowledge1Score,
-        specific1Weight: actualWeights.specificKnowledge1,
+        specific1Weight,
         weightedSpecific1: weightedSpecific1Score,
         specificKnowledge2: values.specificKnowledge2Score,
-        specific2Weight: actualWeights.specificKnowledge2,
+        specific2Weight,
         weightedSpecific2: weightedSpecific2Score,
         specificKnowledge3: values.specificKnowledge3Score,
-        specific3Weight: actualWeights.specificKnowledge3,
+        specific3Weight,
         weightedSpecific3: weightedSpecific3Score,
-        discursive: values.discursiveScore,
-        discursiveWeight: actualWeights.discursive,
-        weightedDiscursive: weightedDiscursiveScore,
-        caseStudy1: values.caseStudy1Score,
-        caseStudy1Weight: actualWeights.caseStudy1,
-        weightedCaseStudy1: weightedCaseStudy1Score,
-        caseStudy2: values.caseStudy2Score,
-        caseStudy2Weight: actualWeights.caseStudy2,
-        weightedCaseStudy2: weightedCaseStudy2Score,
-        caseStudy3: values.caseStudy3Score,
-        caseStudy3Weight: actualWeights.caseStudy3,
-        weightedCaseStudy3: weightedCaseStudy3Score,
+        discursive: discursiveScore,
+        caseStudy1: caseStudy1Score,
+        caseStudy2: caseStudy2Score,
+        caseStudy3: caseStudy3Score,
         total: totalScore
       });
       
@@ -259,15 +205,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="basicKnowledgeScore"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Conhecimentos Básicos (C.B.)
-                      {weights?.basicKnowledge > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.basicKnowledge}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Conhecimentos Básicos (C.B.)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -278,6 +216,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota na parte de conhecimentos básicos (0-100)
+                      {concurso.basic_knowledge_weight && concurso.basic_knowledge_weight > 1 && 
+                        ` - Peso ${concurso.basic_knowledge_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -292,15 +232,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="specificKnowledge1Score"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Conhecimentos Específicos 1 (C.E.1)
-                      {weights?.specificKnowledge1 > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.specificKnowledge1}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Conhecimentos Específicos 1 (C.E.1)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -311,6 +243,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota na parte de conhecimentos específicos 1 (0-100)
+                      {concurso.specific_knowledge_1_weight && concurso.specific_knowledge_1_weight > 1 && 
+                        ` - Peso ${concurso.specific_knowledge_1_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -325,15 +259,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="specificKnowledge2Score"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Conhecimentos Específicos 2 (C.E.2)
-                      {weights?.specificKnowledge2 > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.specificKnowledge2}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Conhecimentos Específicos 2 (C.E.2)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -344,6 +270,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota na parte de conhecimentos específicos 2 (0-100)
+                      {concurso.specific_knowledge_2_weight && concurso.specific_knowledge_2_weight > 1 && 
+                        ` - Peso ${concurso.specific_knowledge_2_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -358,15 +286,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="specificKnowledge3Score"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Conhecimentos Específicos 3 (C.E.3)
-                      {weights?.specificKnowledge3 > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.specificKnowledge3}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Conhecimentos Específicos 3 (C.E.3)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -377,6 +297,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota na parte de conhecimentos específicos 3 (0-100)
+                      {concurso.specific_knowledge_3_weight && concurso.specific_knowledge_3_weight > 1 && 
+                        ` - Peso ${concurso.specific_knowledge_3_weight}`}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -391,15 +313,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="discursiveScore"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Discursiva
-                      {weights?.discursive > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.discursive}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Discursiva</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -424,15 +338,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="caseStudy1Score"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Estudo de Caso 1
-                      {weights?.caseStudy1 > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.caseStudy1}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Estudo de Caso 1</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -457,15 +363,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="caseStudy2Score"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Estudo de Caso 2
-                      {weights?.caseStudy2 > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.caseStudy2}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Estudo de Caso 2</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -490,15 +388,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 name="caseStudy3Score"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center">
-                      Estudo de Caso 3
-                      {weights?.caseStudy3 > 1 && (
-                        <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                          <Scale className="h-3.5 w-3.5 mr-1" />
-                          Peso {weights.caseStudy3}
-                        </span>
-                      )}
-                    </FormLabel>
+                    <FormLabel>Estudo de Caso 3</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 

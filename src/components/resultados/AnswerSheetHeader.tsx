@@ -35,145 +35,87 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           {concurso.has_basic_knowledge && (
-            <div className="flex items-start">
+            <div className="flex items-center">
               <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Básicos
-                  {concurso.basic_knowledge_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.basic_knowledge_weight}
-                    </span>
-                  )}
-                </p>
+                <p className="font-medium">Conhecimentos Básicos</p>
                 <div className="flex items-center text-gray-500">
                   <p>{concurso.basic_knowledge_questions} questões</p>
+                  {concurso.basic_knowledge_weight && concurso.basic_knowledge_weight > 1 && (
+                    <p className="ml-2 flex items-center text-emerald-700">
+                      <Scale className="h-3.5 w-3.5 mr-1" />
+                      Peso {concurso.basic_knowledge_weight}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
           {concurso.has_specific_knowledge_1 && (
-            <div className="flex items-start">
+            <div className="flex items-center">
               <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Específicos 1
-                  {concurso.specific_knowledge_1_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.specific_knowledge_1_weight}
-                    </span>
-                  )}
-                </p>
+                <p className="font-medium">Conhecimentos Específicos 1</p>
                 <div className="flex items-center text-gray-500">
                   <p>{concurso.specific_knowledge_1_questions} questões</p>
+                  {concurso.specific_knowledge_1_weight && concurso.specific_knowledge_1_weight > 1 && (
+                    <p className="ml-2 flex items-center text-emerald-700">
+                      <Scale className="h-3.5 w-3.5 mr-1" />
+                      Peso {concurso.specific_knowledge_1_weight}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
           {concurso.has_specific_knowledge_2 && (
-            <div className="flex items-start">
+            <div className="flex items-center">
               <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Específicos 2
-                  {concurso.specific_knowledge_2_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.specific_knowledge_2_weight}
-                    </span>
-                  )}
-                </p>
+                <p className="font-medium">Conhecimentos Específicos 2</p>
                 <div className="flex items-center text-gray-500">
                   <p>{concurso.specific_knowledge_2_questions} questões</p>
+                  {concurso.specific_knowledge_2_weight && concurso.specific_knowledge_2_weight > 1 && (
+                    <p className="ml-2 flex items-center text-emerald-700">
+                      <Scale className="h-3.5 w-3.5 mr-1" />
+                      Peso {concurso.specific_knowledge_2_weight}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
           {concurso.has_specific_knowledge_3 && (
-            <div className="flex items-start">
+            <div className="flex items-center">
               <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Específicos 3
-                  {concurso.specific_knowledge_3_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.specific_knowledge_3_weight}
-                    </span>
-                  )}
-                </p>
+                <p className="font-medium">Conhecimentos Específicos 3</p>
                 <div className="flex items-center text-gray-500">
                   <p>{concurso.specific_knowledge_3_questions} questões</p>
+                  {concurso.specific_knowledge_3_weight && concurso.specific_knowledge_3_weight > 1 && (
+                    <p className="ml-2 flex items-center text-emerald-700">
+                      <Scale className="h-3.5 w-3.5 mr-1" />
+                      Peso {concurso.specific_knowledge_3_weight}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
           {concurso.has_discursive && (
-            <div className="flex items-start">
+            <div className="flex items-center">
               <div>
-                <p className="font-medium flex items-center">
-                  Discursiva
-                  {concurso.discursive_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.discursive_weight}
-                    </span>
-                  )}
-                </p>
+                <p className="font-medium">Discursiva</p>
                 <p className="text-gray-500">Nota de 0 a 100</p>
               </div>
             </div>
           )}
           
-          {concurso.has_case_study_1 && (
-            <div className="flex items-start">
+          {(concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3) && (
+            <div className="flex items-center">
               <div>
-                <p className="font-medium flex items-center">
-                  Estudo de Caso 1
-                  {concurso.case_study_1_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.case_study_1_weight}
-                    </span>
-                  )}
-                </p>
-                <p className="text-gray-500">Nota de 0 a 100</p>
-              </div>
-            </div>
-          )}
-          
-          {concurso.has_case_study_2 && (
-            <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Estudo de Caso 2
-                  {concurso.case_study_2_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.case_study_2_weight}
-                    </span>
-                  )}
-                </p>
-                <p className="text-gray-500">Nota de 0 a 100</p>
-              </div>
-            </div>
-          )}
-          
-          {concurso.has_case_study_3 && (
-            <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Estudo de Caso 3
-                  {concurso.case_study_3_weight > 0 && (
-                    <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.case_study_3_weight}
-                    </span>
-                  )}
-                </p>
-                <p className="text-gray-500">Nota de 0 a 100</p>
+                <p className="font-medium">Estudos de Caso</p>
+                <p className="text-gray-500">Notas de 0 a 100</p>
               </div>
             </div>
           )}

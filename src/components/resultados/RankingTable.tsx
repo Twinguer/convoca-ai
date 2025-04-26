@@ -143,8 +143,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   currentUserId={currentUserId} 
                   handleUserClick={handleUserClick}
                   concurso={concurso}
-                  isAmpla={quota === "Ampla Concorrência"}
-                  availableQuotas={availableQuotas}
                 />
               </TabsContent>
             ))}
@@ -155,28 +153,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             currentUserId={currentUserId} 
             handleUserClick={handleUserClick}
             concurso={concurso}
-            isAmpla={true}
-            availableQuotas={availableQuotas}
           />
         )}
       </CardContent>
     </Card>;
-};
-
-// Helper to get abbreviation for quota types
-const getQuotaAbbreviation = (quota: string): string => {
-  if (quota === "Ampla Concorrência") return "";
-  
-  // Get first 3 characters of each quota as abbreviation
-  const abbreviations: Record<string, string> = {
-    "PPP": "PPP",
-    "PCD": "PCD",
-    "Hipossuficientes": "Hip",
-    "Indígenas": "Ind",
-    "Pessoas Trans": "Tra"
-  };
-  
-  return abbreviations[quota] || quota.substring(0, 3);
 };
 
 // Extracted table content to a separate component for reuse
@@ -185,15 +165,11 @@ const RankingTableContent: React.FC<{
   currentUserId?: string | null;
   handleUserClick: (userId: string) => void;
   concurso?: Concurso;
-  isAmpla: boolean;
-  availableQuotas: string[];
 }> = ({
   rankings,
   currentUserId,
   handleUserClick,
-  concurso,
-  isAmpla,
-  availableQuotas
+  concurso
 }) => {
   // If no concurso data, render a basic table with default columns
   if (!concurso) {
@@ -266,15 +242,7 @@ const RankingTableContent: React.FC<{
                   <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                   <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
-                <span>
-                  {ranking.name}
-                  {/* Show quota abbreviation for users in Ampla who also participate in other quotas */}
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
-                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      ({getQuotaAbbreviation(ranking.reservationType)})
-                    </span>
-                  )}
-                </span>
+                <span>{ranking.name}</span>
               </div>
             </TableCell>
             <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
