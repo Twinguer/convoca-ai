@@ -19,7 +19,27 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
   try {
     console.log(`[recalculateAllUserScores] Iniciando recálculo de scores para concurso: ${concursoId}`);
     
+    // Verificar se o gabarito existe para este concurso
+    const { data: answerKeyCount, error: answerKeyError } = await supabase
+      .from('answer_keys')
+      .select('*', { count: 'exact' })
+      .eq('concurso_id', concursoId);
+      
+    if (answerKeyError) throw answerKeyError;
+    
+    const count = answerKeyCount ? answerKeyCount.length : 0;
+    
+    if (!count || count === 0) {
+      console.log('[recalculateAllUserScores] Nenhum gabarito encontrado para este concurso, não é possível recalcular');
+      return { 
+        success: false, 
+        updatedCount: 0, 
+        error: 'Nenhum gabarito oficial encontrado para este concurso' 
+      };
+    }
+    
     // Buscar todos os rankings de usuários para este concurso
+    // Não filtramos por respostas aqui - vamos recalcular para TODOS os usuários no ranking
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select(`
@@ -47,25 +67,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     }
     
     console.log(`[recalculateAllUserScores] Encontrados ${userRankings.length} rankings para atualizar`);
-    
-    // Verificar se o gabarito existe para este concurso
-    const { data: answerKeyCount, error: answerKeyError } = await supabase
-      .from('answer_keys')
-      .select('*', { count: 'exact' })
-      .eq('concurso_id', concursoId);
-      
-    if (answerKeyError) throw answerKeyError;
-    
-    const count = answerKeyCount ? answerKeyCount.length : 0;
-    
-    if (!count || count === 0) {
-      console.log('[recalculateAllUserScores] Nenhum gabarito encontrado para este concurso, não é possível recalcular');
-      return { 
-        success: false, 
-        updatedCount: 0, 
-        error: 'Nenhum gabarito oficial encontrado para este concurso' 
-      };
-    }
     
     let updatedCount = 0;
     const failedRankings: Array<{ rankingId: string; userId: string; error: string; attempts: number }> = [];

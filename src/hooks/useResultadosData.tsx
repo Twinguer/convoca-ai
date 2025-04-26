@@ -64,6 +64,7 @@ export function useResultadosData() {
   
   // Monitor changes to the answer_key table to trigger updates
   useEffect(() => {
+    // Subscribe to answer key changes
     const channel = supabase
       .channel('answer-key-changes')
       .on(
@@ -78,8 +79,12 @@ export function useResultadosData() {
           console.log('[useResultadosData] Detected change in answer_keys:', payload);
           // Invalidate the cache immediately when answer key changes
           queryClient.invalidateQueries({ queryKey: ['rankings', id] });
-          refetchRankings();
-          refetchCount();
+          
+          // Wait a moment to let the database trigger complete its work
+          setTimeout(() => {
+            refetchRankings();
+            refetchCount();
+          }, 1000);
         }
       )
       .subscribe();
@@ -141,11 +146,14 @@ export function useResultadosData() {
   const refreshData = async () => {
     console.log("[useResultadosData] Manually refreshing rankings");
     
-    // Attempt to force recalculation of all scores
     try {
+      // Force recalculation of ALL scores for all users in this concurso
+      // This will make sure that all users have their scores updated based on the latest answer key
       const recalculated = await forceRecalculateAllScores(id);
       if (recalculated) {
         console.log("[useResultadosData] Force recalculation successful");
+      } else {
+        console.warn("[useResultadosData] Force recalculation returned false");
       }
     } catch (error) {
       console.error("[useResultadosData] Error during force recalculation:", error);

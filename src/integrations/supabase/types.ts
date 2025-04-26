@@ -587,6 +587,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      recalculate_all_scores: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       save_scores_transaction: {
         Args: {
           p_ranking_id: string
