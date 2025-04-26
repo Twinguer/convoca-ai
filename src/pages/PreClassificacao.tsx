@@ -51,7 +51,7 @@ const PreClassificacao = () => {
     // Map to required format
     return concursos.map(concurso => ({
       id: concurso.id,
-      examDate: concurso.data_publicacao || new Date().toISOString(),
+      examDate: concurso.data_publicacao || new Date().toISOString().split('T')[0],
       banca: concurso.banca || 'Desconhecida',
       concursoTitle: concurso.titulo || 'Concurso',
       cargoTitle: concurso.custom_job_title || concurso.predefined_job_title || 'Cargo Público',

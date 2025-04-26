@@ -194,11 +194,15 @@ export const useSaveAnswers = ({
 
       if (error) throw error;
 
-      // Create the answersArray here to fix the undefined reference
+      // Fix: Create the proper answersArray with isBasicKnowledge property for saveUserAnswers
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        const qNum = parseInt(questionNumber);
+        const basicQuestionsCount = concurso.basic_knowledge_questions || 0;
+        
         return {
-          questionNumber: parseInt(questionNumber),
-          answer: answer.toUpperCase() // Ensure answers are uppercase
+          questionNumber: qNum,
+          answer: answer.toUpperCase(),
+          isBasicKnowledge: qNum <= basicQuestionsCount
         };
       });
       
