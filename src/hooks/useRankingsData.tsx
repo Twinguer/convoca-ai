@@ -1,67 +1,46 @@
 
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { RankingItemProps } from '@/components/rankings/RankingList';
+import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
 
-const fetchRankings = async (): Promise<RankingItemProps[]> => {
-  try {
-    const { data: concursos, error } = await supabase
-      .from('concursos')
-      .select(`
-        id,
-        titulo,
-        orgao,
-        banca,
-        data_publicacao,
-        etapa_atual
-      `)
-      .order('data_publicacao', { ascending: false });
-
-    if (error) throw error;
-
-    // For each concurso, get the participant count
-    const rankings = await Promise.all(
-      concursos.map(async (concurso) => {
-        // Use RPC function to get participant count more reliably
-        const { data: countData, error: countError } = await supabase
-          .rpc('count_concurso_participants', { concurso_id: concurso.id });
-
-        if (countError) {
-          console.error('Error fetching participant count:', countError);
-          return null;
-        }
-
-        return {
-          id: concurso.id,
-          examDate: concurso.data_publicacao || new Date().toISOString(),
-          banca: concurso.banca,
-          concursoTitle: concurso.orgao,
-          cargoTitle: concurso.titulo,
-          participantCount: countData || 0
-        };
-      })
-    );
-
-    return rankings.filter(Boolean) as RankingItemProps[];
-  } catch (error) {
-    console.error('Error fetching rankings:', error);
-    return [];
-  }
-};
-
-export function useRankingsData() {
-  const { data: rankings = [], isLoading } = useQuery({
-    queryKey: ['rankings'],
-    queryFn: fetchRankings,
-    // Ensuring data is updated every 2 minutes for all users
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    // Disabling retry to avoid too many calls in case of error
-    retry: 1
+export const useRankingsData = (concursoId?: string) => {
+  const {
+    data: rankings,
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['rankings', concursoId],
+    queryFn: () => getRankingsWithUserInfo(concursoId as string),
+    enabled: !!concursoId
   });
 
+  // Sort rankings by weighted score and apply position
+  const sortedRankings = useMemo(() => {
+    if (!rankings) return [];
+
+    return rankings
+      .sort((a, b) => b.score - a.score)
+      .map((ranking, index) => ({
+        ...ranking,
+        position: index + 1,
+        // Display weighted scores
+        basicKnowledgeScore: ranking.basic_knowledge_score,
+        specificKnowledgeScore: ranking.specific_knowledge_score,
+        specificKnowledge1Score: ranking.specific_knowledge_1_score,
+        specificKnowledge2Score: ranking.specific_knowledge_2_score,
+        specificKnowledge3Score: ranking.specific_knowledge_3_score,
+        discursiveScore: ranking.discursive_score,
+        caseStudy1Score: ranking.case_study_1_score,
+        caseStudy2Score: ranking.case_study_2_score,
+        caseStudy3Score: ranking.case_study_3_score,
+        // The total score is already weighted from the database
+        score: ranking.score
+      }));
+  }, [rankings]);
+
   return {
-    rankings,
-    isLoading
+    rankings: sortedRankings,
+    isLoading,
+    error
   };
-}
+};

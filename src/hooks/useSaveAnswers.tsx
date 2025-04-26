@@ -38,6 +38,25 @@ export const useSaveAnswers = ({
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
 
+  const calculateTotalQuestions = () => {
+    let total = 0;
+    if (concurso.has_basic_knowledge) total += concurso.basic_knowledge_questions || 0;
+    if (concurso.has_specific_knowledge_1) total += concurso.specific_knowledge_1_questions || 0;
+    if (concurso.has_specific_knowledge_2) total += concurso.specific_knowledge_2_questions || 0;
+    if (concurso.has_specific_knowledge_3) total += concurso.specific_knowledge_3_questions || 0;
+    return total;
+  };
+
+  const validateAnswers = () => {
+    const totalQuestions = calculateTotalQuestions();
+    const answeredQuestions = Object.keys(answers).length;
+
+    // For "Alternativas" type, all questions must be answered
+    if (questionType === 'Alternativas' && answeredQuestions < totalQuestions) {
+      throw new Error(`Todas as questões devem ser respondidas! (${answeredQuestions}/${totalQuestions})`);
+    }
+  };
+
   const calculateScore = async () => {
     try {
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
@@ -48,11 +67,11 @@ export const useSaveAnswers = ({
 
         return {
           questionNumber: qNum,
-          answer,
+          answer: answer.toUpperCase(), // Ensure answers are uppercase
           isBasicKnowledge: qNum <= basicQuestionsCount,
           isSpecific1: qNum > basicQuestionsCount && qNum <= (basicQuestionsCount + specific1QuestionsCount),
           isSpecific2: qNum > (basicQuestionsCount + specific1QuestionsCount) && 
-                       qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
+                     qNum <= (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount),
           isSpecific3: qNum > (basicQuestionsCount + specific1QuestionsCount + specific2QuestionsCount)
         };
       });
@@ -146,7 +165,6 @@ export const useSaveAnswers = ({
         case_study_1_score: caseStudy1Value,
         case_study_2_score: caseStudy2Value,
         case_study_3_score: caseStudy3Value,
-        // Store the total weighted score
         score: totalScore
       };
     } catch (error) {
@@ -161,11 +179,8 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
-        questionNumber: parseInt(questionNumber),
-        answer,
-        isBasicKnowledge: true  // Default, will be refined in calculation
-      }));
+      // Validate answers before saving
+      validateAnswers();
 
       const scoreDetails = await calculateScore();
 
