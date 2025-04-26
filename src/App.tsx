@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -18,14 +19,16 @@ import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
-import UserConcursos from "./pages/UserConcursos";
 import Comunidade from "./pages/Comunidade";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
 import NovoConcurso from "./pages/Admin/NovoConcurso";
+import GabaritoEditor from "./pages/Admin/GabaritoEditor";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
+import ConcursoNovo from "./pages/ConcursoNovo";
+import UserConcursos from "./pages/UserConcursos";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -50,6 +53,7 @@ const App = () => {
                   <Route path="concursos" element={<ListarConcursos />} />
                   <Route path="concursos/novo" element={<NovoConcurso />} />
                   <Route path="concursos/editar/:id" element={<NovoConcurso />} />
+                  <Route path="concursos/gabarito/:id" element={<GabaritoEditor />} />
                 </Route>
                 <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                 <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
@@ -70,12 +74,6 @@ const App = () => {
                   <>
                     <Menu />
                     <UserFollowers />
-                  </>
-                } />
-                <Route path="/meus-concursos" element={
-                  <>
-                    <Menu />
-                    <UserConcursos />
                   </>
                 } />
                 <Route path="/" element={
@@ -124,6 +122,18 @@ const App = () => {
                   <>
                     <Menu />
                     <ConcursoParticipation />
+                  </>
+                } />
+                <Route path="/concurso/novo" element={
+                  <>
+                    <Menu />
+                    <ConcursoNovo />
+                  </>
+                } />
+                <Route path="/meus-concursos" element={
+                  <>
+                    <Menu />
+                    <UserConcursos />
                   </>
                 } />
                 <Route path="*" element={

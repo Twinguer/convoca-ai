@@ -13,9 +13,7 @@ const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
@@ -29,17 +27,13 @@ const Menu = () => {
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-2 sm:px-4">
+      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
+        {/* User login button - Now on the left */}
         <div className="flex items-center">
-          {user ? (
-            <UserMenu />
-          ) : (
-            <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
-              Fazer Login
-            </Button>
-          )}
+          <UserMenu />
         </div>
         
+        {/* Navigation - Now on the right */}
         <div className="flex items-center space-x-2 sm:space-x-4">
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="space-x-1">
@@ -111,7 +105,7 @@ const Menu = () => {
                 <span className="sr-only">Abrir Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="pl-0 max-w-[280px]">
+            <SheetContent side="right" className="pr-0 max-w-[280px]">
               <nav className="flex flex-col gap-4 px-4 pt-8">
                 <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-primary" : "text-foreground/70")}>
                   <Home className="mr-2 h-4 w-4" />

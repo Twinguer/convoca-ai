@@ -20,6 +20,8 @@ import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
+import RankingsTab from '@/components/profile/RankingsTab';
+import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 
 interface Follower {
   id: string;
@@ -28,9 +30,13 @@ interface Follower {
 }
 
 const UserProfile = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [concursosAprovados, setConcursosAprovados] = useState('');
@@ -41,6 +47,7 @@ const UserProfile = () => {
   const [followersCount, setFollowersCount] = useState(0);
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
+  const [profileText, setProfileText] = useState('');
 
   const {
     data: profile,
@@ -69,7 +76,8 @@ const UserProfile = () => {
               name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              status_concurseiro: 'Na Ativa'
+              status_concurseiro: 'Na Ativa',
+              profile_text: ''
             }).select('*').single();
             if (createError) {
               console.error('Error creating profile:', createError);
@@ -133,7 +141,12 @@ const UserProfile = () => {
     queryKey: ['user-followers-count', user?.id],
     queryFn: async () => {
       if (!user) return 0;
-      const { data, error } = await supabase.rpc('count_user_followers', { user_id: user.id });
+      const {
+        data,
+        error
+      } = await supabase.rpc('count_user_followers', {
+        user_id: user.id
+      });
       if (error) {
         console.error('Error fetching follower count:', error);
         return 0;
@@ -164,6 +177,7 @@ const UserProfile = () => {
       setConcursosParticipando(profile.concursos_participando || '');
       setAvatarUrl(profile.avatar_url);
       setStatusConcurseiro(profile.status_concurseiro || 'Na Ativa');
+      setProfileText(profile.profile_text || '');
     }
   }, [profile]);
 
@@ -235,7 +249,8 @@ const UserProfile = () => {
         concursosAprovados,
         concursosParticipando,
         avatarUrl,
-        statusConcurseiro
+        statusConcurseiro,
+        profileText
       });
       const currentAvatarUrl = avatarUrl;
       const {
@@ -248,6 +263,7 @@ const UserProfile = () => {
         concursos_participando: concursosParticipando,
         avatar_url: currentAvatarUrl,
         status_concurseiro: statusConcurseiro,
+        profile_text: profileText,
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
       if (error) {
@@ -281,7 +297,7 @@ const UserProfile = () => {
 
   if (isLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
   }
 
@@ -290,27 +306,16 @@ const UserProfile = () => {
       navigate("/auth");
     }, [navigate]);
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-convoca-600 rounded-full border-t-transparent"></div>
+        <div className="animate-spin h-8 w-8 border-4 border-emerald-600 rounded-full border-t-transparent"></div>
       </div>;
   }
 
-  return (
-    <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+  return <div className="container mx-auto p-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
-              <ProfileHeader
-                name={name}
-                email={user.email || ''}
-                avatarUrl={avatarUrl}
-                uploading={uploading}
-                handleAvatarUpload={handleAvatarUpload}
-                userRankingsCount={userRankings.length}
-                followersCount={followersCount}
-                concursosAprovadosCount={concursosAprovadosCount}
-                statusConcurseiro={statusConcurseiro}
-              />
+              <ProfileHeader name={name} email={user.email || ''} avatarUrl={avatarUrl} uploading={uploading} handleAvatarUpload={handleAvatarUpload} statusConcurseiro={statusConcurseiro} profileText={profileText} />
             </CardContent>
           </Card>
         </div>
@@ -319,9 +324,6 @@ const UserProfile = () => {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Meu Perfil</CardTitle>
-              <CardDescription>
-                Gerencie suas informações pessoais e preferências
-              </CardDescription>
             </CardHeader>
             
             <Tabs defaultValue="profile">
@@ -335,45 +337,17 @@ const UserProfile = () => {
               
               <TabsContent value="profile">
                 <CardContent className="pt-6 space-y-4">
-                  <ProfileInfoTab
-                    name={name}
-                    setName={setName}
-                    email={user.email || ''}
-                    bio={bio}
-                    setBio={setBio}
-                    statusConcurseiro={statusConcurseiro}
-                    setStatusConcurseiro={setStatusConcurseiro}
-                  />
+                  <ProfileInfoTab name={name} setName={setName} email={user.email || ''} bio={bio} setBio={setBio} statusConcurseiro={statusConcurseiro} setStatusConcurseiro={setStatusConcurseiro} profileText={profileText} setProfileText={setProfileText} />
                 </CardContent>
               </TabsContent>
               
               <TabsContent value="concursos">
                 <CardContent className="pt-6 space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="concursos-aprovados">Concursos em que foi aprovado</Label>
-                    <Textarea 
-                      id="concursos-aprovados" 
-                      value={concursosAprovados} 
-                      onChange={e => setConcursosAprovados(e.target.value)} 
-                      placeholder="Liste os concursos em que você foi aprovado (um por linha)" 
-                      rows={5} 
-                    />
+                    <Label htmlFor="concursos-aprovados">Aprovações:</Label>
+                    <Textarea id="concursos-aprovados" value={concursosAprovados} onChange={e => setConcursosAprovados(e.target.value)} placeholder="Liste os concursos em que você foi aprovado (um por linha)" rows={5} />
                     <p className="text-sm text-muted-foreground">
                       Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="concursos-participando">Concursos em que está participando</Label>
-                    <Textarea 
-                      id="concursos-participando" 
-                      value={concursosParticipando} 
-                      onChange={e => setConcursosParticipando(e.target.value)} 
-                      placeholder="Liste os concursos em que você está participando atualmente (um por linha)" 
-                      rows={5} 
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Dica: Liste um por linha, incluindo o nome do concurso, órgão e data da prova
                     </p>
                   </div>
                 </CardContent>
@@ -381,62 +355,22 @@ const UserProfile = () => {
               
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
-                  {userRankings && userRankings.length > 0 ? 
-                    <div className="space-y-1">
-                      {userRankings.map((ranking, index) => 
-                        <Card key={ranking.concursoId} className="overflow-hidden">
-                          <div className="bg-gradient-to-r from-purple-100 to-blue-100 p-4 flex justify-between items-center">
-                            <div>
-                              <h3 className="font-medium">{ranking.concursoTitle}</h3>
-                              <div className="flex items-center mt-1">
-                                <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                                <span className="text-sm">
-                                  {ranking.position > 0 ? `${ranking.position}º lugar` : 'Posição não definida'}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
-                              <span className="text-lg font-bold">{ranking.score}</span>
-                              <span className="text-xs ml-1">pts</span>
-                            </div>
-                          </div>
-                          <div className="p-4 bg-white">
-                            <Button variant="outline" size="sm" onClick={() => navigate(`/concurso/${ranking.concursoId}/resultados`)}>
-                              Ver ranking completo
-                            </Button>
-                          </div>
-                        </Card>
-                      )}
-                    </div> 
-                    : 
-                    <div className="text-center py-8">
-                      <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <h3 className="text-lg font-medium">Você ainda não tem rankings</h3>
-                      <p className="text-muted-foreground">
-                        Participe de concursos e simulados para ver sua classificação aqui
-                      </p>
-                      <Button variant="outline" className="mt-4" onClick={() => navigate('/concursos')}>
-                        Ver concursos disponíveis
-                      </Button>
-                    </div>
-                  }
+                  <RankingsTab userId={user?.id || ''} userRankings={userRankings} isAuthenticated={!!user} />
                 </CardContent>
               </TabsContent>
             </Tabs>
             
-            <CardFooter className="flex justify-end py-6">
-              <Button onClick={handleSaveProfile} disabled={saving} className="relative">
-                {saving ? (
-                  <>
+            <CardFooter className="flex justify-between py-6 border-t">
+              <DeleteProfileButton userId={user.id} />
+              
+              <Button onClick={handleSaveProfile} disabled={saving} className="relative bg-emerald-600 hover:bg-emerald-700">
+                {saving ? <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Salvando...
-                  </>
-                ) : (
-                  <>
+                  </> : <>
                     <Check className="h-4 w-4 mr-2" />
                     Salvar alterações
-                  </>
-                )}
+                  </>}
               </Button>
             </CardFooter>
           </Card>
@@ -459,8 +393,7 @@ const UserProfile = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
 
 export default UserProfile;

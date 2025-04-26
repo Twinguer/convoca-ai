@@ -9,20 +9,93 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      answer_keys: {
+        Row: {
+          answer: string
+          concurso_id: string | null
+          created_at: string | null
+          id: string
+          is_basic_knowledge: boolean | null
+          is_specific_1: boolean | null
+          is_specific_2: boolean | null
+          question_number: number
+          updated_at: string | null
+        }
+        Insert: {
+          answer: string
+          concurso_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_basic_knowledge?: boolean | null
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          question_number: number
+          updated_at?: string | null
+        }
+        Update: {
+          answer?: string
+          concurso_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_basic_knowledge?: boolean | null
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          question_number?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_keys_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concursos: {
         Row: {
           alternatives_count: number | null
           banca: string
+          basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
+          case_study_1_weight: number | null
+          case_study_2_weight: number | null
+          case_study_3_weight: number | null
           created_at: string
+          created_by_user_id: string | null
+          custom_banca: string | null
+          custom_job_title: string | null
           data_publicacao: string | null
           discursive_weight: number | null
           etapa_atual: string | null
           exam_type: string | null
+          has_ampla_concorrencia: boolean | null
+          has_basic_knowledge: boolean | null
+          has_case_study_1: boolean | null
+          has_case_study_2: boolean | null
+          has_case_study_3: boolean | null
+          has_discursive: boolean | null
+          has_hipossuficientes: boolean | null
+          has_indigenas: boolean | null
+          has_pcd: boolean | null
+          has_ppp: boolean | null
+          has_specific_knowledge_1: boolean | null
+          has_specific_knowledge_2: boolean | null
+          has_specific_knowledge_3: boolean | null
+          has_transsexuais: boolean | null
           id: string
           inscritos: number | null
+          is_admin_created: boolean | null
           link: string | null
           orgao: string
+          predefined_job_title: string | null
+          specific_knowledge_1_questions: number | null
+          specific_knowledge_1_weight: number | null
+          specific_knowledge_2_questions: number | null
+          specific_knowledge_2_weight: number | null
+          specific_knowledge_3_questions: number | null
+          specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
           status: string
           titulo: string
@@ -33,16 +106,45 @@ export type Database = {
         Insert: {
           alternatives_count?: number | null
           banca?: string
+          basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
+          case_study_1_weight?: number | null
+          case_study_2_weight?: number | null
+          case_study_3_weight?: number | null
           created_at?: string
+          created_by_user_id?: string | null
+          custom_banca?: string | null
+          custom_job_title?: string | null
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
+          has_ampla_concorrencia?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
+          has_discursive?: boolean | null
+          has_hipossuficientes?: boolean | null
+          has_indigenas?: boolean | null
+          has_pcd?: boolean | null
+          has_ppp?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
+          has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
+          is_admin_created?: boolean | null
           link?: string | null
           orgao: string
+          predefined_job_title?: string | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo: string
@@ -53,16 +155,45 @@ export type Database = {
         Update: {
           alternatives_count?: number | null
           banca?: string
+          basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
+          case_study_1_weight?: number | null
+          case_study_2_weight?: number | null
+          case_study_3_weight?: number | null
           created_at?: string
+          created_by_user_id?: string | null
+          custom_banca?: string | null
+          custom_job_title?: string | null
           data_publicacao?: string | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
+          has_ampla_concorrencia?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
+          has_discursive?: boolean | null
+          has_hipossuficientes?: boolean | null
+          has_indigenas?: boolean | null
+          has_pcd?: boolean | null
+          has_ppp?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
+          has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
+          is_admin_created?: boolean | null
           link?: string | null
           orgao?: string
+          predefined_job_title?: string | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo?: string
@@ -87,12 +218,36 @@ export type Database = {
         }
         Relationships: []
       }
+      job_titles: {
+        Row: {
+          created_at: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_answers: {
         Row: {
           answer: string
           created_at: string
           id: string
           is_basic_knowledge: boolean
+          is_specific_1: boolean | null
+          is_specific_2: boolean | null
+          is_specific_3: boolean | null
           question_number: number
           updated_at: string
           user_ranking_id: string
@@ -102,6 +257,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
           question_number: number
           updated_at?: string
           user_ranking_id: string
@@ -111,6 +269,9 @@ export type Database = {
           created_at?: string
           id?: string
           is_basic_knowledge?: boolean
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
           question_number?: number
           updated_at?: string
           user_ranking_id?: string
@@ -148,34 +309,61 @@ export type Database = {
       }
       user_rankings: {
         Row: {
+          all_questions_answered: boolean | null
           basic_knowledge_score: number | null
+          case_study_1_score: number | null
+          case_study_2_score: number | null
+          case_study_3_score: number | null
           concurso_id: string
           created_at: string
           discursive_score: number | null
+          edit_count: number | null
           id: string
+          reservation_type: string | null
           score: number | null
+          specific_knowledge_1_score: number | null
+          specific_knowledge_2_score: number | null
+          specific_knowledge_3_score: number | null
           specific_knowledge_score: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          all_questions_answered?: boolean | null
           basic_knowledge_score?: number | null
+          case_study_1_score?: number | null
+          case_study_2_score?: number | null
+          case_study_3_score?: number | null
           concurso_id: string
           created_at?: string
           discursive_score?: number | null
+          edit_count?: number | null
           id?: string
+          reservation_type?: string | null
           score?: number | null
+          specific_knowledge_1_score?: number | null
+          specific_knowledge_2_score?: number | null
+          specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          all_questions_answered?: boolean | null
           basic_knowledge_score?: number | null
+          case_study_1_score?: number | null
+          case_study_2_score?: number | null
+          case_study_3_score?: number | null
           concurso_id?: string
           created_at?: string
           discursive_score?: number | null
+          edit_count?: number | null
           id?: string
+          reservation_type?: string | null
           score?: number | null
+          specific_knowledge_1_score?: number | null
+          specific_knowledge_2_score?: number | null
+          specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
           updated_at?: string
           user_id?: string
@@ -244,6 +432,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          profile_text: string | null
           status_concurseiro: string | null
           updated_at: string
         }
@@ -256,6 +445,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          profile_text?: string | null
           status_concurseiro?: string | null
           updated_at?: string
         }
@@ -268,6 +458,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          profile_text?: string | null
           status_concurseiro?: string | null
           updated_at?: string
         }
@@ -293,6 +484,10 @@ export type Database = {
       count_user_posts: {
         Args: { user_id: string }
         Returns: number
+      }
+      delete_user_profile: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -48,7 +48,7 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
 
   // Get the number of approvals from concursos_aprovados (if it's a comma-separated string)
   const approvalCount = userProfile.concursos_aprovados 
-    ? userProfile.concursos_aprovados.split(',').filter(Boolean).length 
+    ? userProfile.concursos_aprovados.split('\n').filter(Boolean).length 
     : userProfile.approvalCount || 0;
 
   return (

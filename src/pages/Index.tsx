@@ -1,15 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Award, Book, ChevronRight, FileText, GraduationCap, Trophy, Users, Briefcase, CheckSquare, BarChart3, ChartPieIcon, Mail, MapPin, Instagram, Phone } from 'lucide-react';
+import { ChevronRight, Users, FileText, Trophy, Briefcase, Instagram, Mail, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-
 const Index = () => {
-  const { user } = useAuth();
-  
+  const {
+    user
+  } = useAuth();
   return <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
       {/* Hero Section with Image */}
       <section className="relative py-20 px-4 overflow-hidden">
@@ -21,28 +19,20 @@ const Index = () => {
         <div className="container mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div className="animate-fade-in">
-              {/* Updated Logo with 20% larger size and centered */}
-              <div className="mb-12 flex justify-center md:justify-start">
-                <img 
-                  src="https://tibizurada.store/logo-01.png" 
-                  alt="Convoca.ai Logo" 
-                  className="h-60 w-auto object-contain" 
-                />
+              {/* Logo added above the main heading */}
+              <div className="flex justify-center md:justify-start mb-8">
+                <img src="https://tibizurada.store/logo-01.png" alt="Convoca.ai Logo" className="h-auto max-w-[350px] md:max-w-[437px]" // Increased by 25%: 280 * 1.25 = 350, and 350 * 1.25 = 437
+              />
               </div>
               
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
                 Somos todos concurseiros onde o que conta é o HBC. 
               </h1>
-              <p className="text-xl text-gray-700 mb-8">
-                Compare seus resultados em rankings pós-prova com o resultado oficial da banca.
-              </p>
+              <p className="text-xl text-gray-700 mb-8">Compare seus resultados em rankings pós-prova com o resultado de outros concurseiros como você.</p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                <Link to="/pre-classificacao">
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-lg w-full sm:w-auto px-8 py-6 shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-1">
-                    Rankings
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </Button>
+                <Link to="/editais">
+                  
                 </Link>
                 
                 {!user && <Link to="/auth">
@@ -70,7 +60,7 @@ const Index = () => {
       <section className="bg-white py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Siga pessoas com o mesmo propósito que o seu.</h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">Uma plataforma para acompanhar seus resultados. Uma comunidade para quem é concurseiro. Já recebeu seu convite?</p>
+          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">Uma plataforma para acompanhar seus resultados. Uma comunidade para quem é concurseiro. Sabemos das dificuldades que enfrentamos para conseguir a nomeação.</p>
           
           <Carousel className="w-full max-w-5xl mx-auto">
             <CarouselContent>
@@ -161,7 +151,7 @@ const Index = () => {
             {/* Column 1: Logo */}
             <div>
               <div className="mb-4">
-                <img alt="Convoca.ai Logo" src="/lovable-uploads/15560250-f133-4c6d-ad11-a8931bd1c2ce.png" className="h-30 w-auto object-contain" />
+                <img alt="Convoca.ai Logo" className="h-30 w-auto object-contain" src="/lovable-uploads/099271d5-4e92-4e8b-825c-a1e72803431f.png" />
               </div>
               
             </div>
@@ -176,7 +166,7 @@ const Index = () => {
                 </li>
                 <li className="flex items-center mt-2">
                   <Phone className="h-5 w-5 mr-2" />
-                  <span>(11) 99999-9999</span>
+                  <span>(11) 95350-1988</span>
                 </li>
                 <li className="flex items-center mt-2">
                   <MapPin className="h-5 w-5 mr-2" />
@@ -237,5 +227,4 @@ const Index = () => {
       </footer>
     </div>;
 };
-
 export default Index;

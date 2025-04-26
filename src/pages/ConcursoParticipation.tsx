@@ -7,68 +7,77 @@ import { LoadingState } from '@/components/resultados/LoadingState';
 import { ParticipationForm } from '@/components/resultados/ParticipationForm';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const ConcursoParticipation = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  
+
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
-    queryFn: () => fetchConcursoById(id!),
+    queryFn: () => fetchConcursoById(id!)
   });
-  
+
   // Check if user is already participating and get ranking ID
   const { data: userRanking, isLoading: isCheckingParticipation } = useQuery({
     queryKey: ['participating', id, user?.id],
     queryFn: async () => {
       if (!user || !id) return null;
-      
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('id')
+        .select('id, reservation_type')
         .eq('concurso_id', id)
         .eq('user_id', user.id)
-        .single();
-        
+        .maybeSingle();
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows found, user is not participating
-          return null;
-        }
         throw error;
       }
-      
       return data;
     },
-    enabled: !!user && !!id,
+    enabled: !!user && !!id
   });
-  
+
   if (isLoadingConcurso || isCheckingParticipation) {
     return <LoadingState />;
   }
-  
+
   if (!concurso) {
     return (
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">Concurso não encontrado</h1>
-        <p>O concurso que você está tentando acessar não existe ou foi removido.</p>
-      </div>
+      <Card className="mx-auto max-w-4xl mt-6">
+        <CardContent className="p-6">
+          <h1 className="text-2xl font-bold mb-4">Concurso não encontrado</h1>
+          <p>O concurso que você está tentando acessar não existe ou foi removido.</p>
+        </CardContent>
+      </Card>
     );
   }
-  
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">{concurso.titulo}</h1>
-      <p className="text-gray-600 mb-8">
-        Para participar deste ranking, registre suas notas abaixo. Sua posição será calculada com base em sua pontuação total.
-      </p>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{concurso.titulo}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Órgão</p>
+              <p>{concurso.orgao}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Banca</p>
+              <p>{concurso.banca}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
-      <div className="mt-8">
+      <div className="mt-4">
         <ParticipationForm 
           concurso={concurso} 
           isAlreadyParticipating={!!userRanking} 
-          userRankingId={userRanking?.id}
+          userRankingId={userRanking?.id} 
         />
       </div>
     </div>

@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users } from 'lucide-react';
-
 interface RankingCardProps {
   participantCount?: number;
   userRanking?: {
@@ -11,13 +9,11 @@ interface RankingCardProps {
     score: number;
   } | null;
 }
-
 export const RankingCard: React.FC<RankingCardProps> = ({
   participantCount = 0,
-  userRanking,
+  userRanking
 }) => {
-  return (
-    <Card>
+  return <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center">
           <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
@@ -32,19 +28,12 @@ export const RankingCard: React.FC<RankingCardProps> = ({
           </p>
         </div>
         
-        {userRanking && (
-          <p className="mt-4 text-lg">
+        {userRanking && <p className="mt-4 text-lg">
             Sua posição: <Badge>{userRanking.position}º</Badge> com{' '}
-            <Badge variant="secondary">{userRanking.score.toFixed(2)} pontos</Badge>
-          </p>
-        )}
+            <Badge variant="secondary">{userRanking.score} pontos</Badge>
+          </p>}
         
-        {!userRanking && (
-          <p className="mt-4 text-sm text-gray-600">
-            Faça login para participar do ranking e acompanhar sua posição
-          </p>
-        )}
+        {!userRanking}
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };

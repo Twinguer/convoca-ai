@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Users, BookOpen, Pen, ArrowLeft } from 'lucide-react';
+import { Trophy, Users, BookOpen, Pen, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
+import { Link } from 'react-router-dom';
 
 interface UserProfile {
   id: string;
@@ -24,6 +24,7 @@ interface UserProfile {
   status_concurseiro: string | null;
   followerCount?: number;
   postCount?: number;
+  profile_text?: string | null;
 }
 
 interface UserRanking {
@@ -93,28 +94,49 @@ const PublicUserProfile: React.FC = () => {
     queryFn: async () => {
       if (!id) return [];
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('user_rankings').select(`
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select(`
             id,
             concurso_id,
             score,
             concursos(titulo)
-          `).eq('user_id', id).order('score', {
-          ascending: false
-        });
+          `)
+          .eq('user_id', id)
+          .order('score', { ascending: false });
+        
         if (error) throw error;
-        return data.map(item => {
-          const concursoData = item.concursos || {};
-          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
-          return {
-            concursoId: item.concurso_id,
-            concursoTitle: titulo,
-            position: 0,
-            score: item.score
-          };
-        }) as UserRanking[];
+        
+        const rankingsWithPosition = await Promise.all(
+          data.map(async (item) => {
+            const { data: allScores, error: scoresError } = await supabase
+              .from('user_rankings')
+              .select('score')
+              .eq('concurso_id', item.concurso_id)
+              .order('score', { ascending: false });
+            
+            if (scoresError) {
+              console.error('Error fetching scores:', scoresError);
+              return null;
+            }
+            
+            const position = allScores.findIndex(s => s.score <= item.score) + 1;
+            
+            const concursoData = item.concursos || {};
+            const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData 
+              ? String(concursoData.titulo) 
+              : 'Concurso sem título';
+            
+            return {
+              concursoId: item.concurso_id,
+              concursoTitle: titulo,
+              position,
+              score: item.score
+            };
+          })
+        );
+        
+        return rankingsWithPosition.filter(Boolean) as UserRanking[];
       } catch (error) {
         console.error('Error fetching rankings:', error);
         return [];
@@ -224,7 +246,6 @@ const PublicUserProfile: React.FC = () => {
       </Button>
       
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        {/* Left Column - Profile Card */}
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
@@ -256,55 +277,55 @@ const PublicUserProfile: React.FC = () => {
                 <div className="w-full space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
-                      <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
-                      <span className="text-sm">Rankings</span>
-                    </div>
-                    <span className="text-sm font-semibold">{profile?.postCount || 0}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-blue-500" />
-                      <span className="text-sm">Seguidores</span>
-                    </div>
-                    <span className="text-sm font-semibold">{profile?.followerCount || 0}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <BookOpen className="h-4 w-4 mr-2 text-green-500" />
-                      <span className="text-sm">Aprovações</span>
-                    </div>
-                    <span className="text-sm font-semibold">{approvalCount}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
                       <Pen className="h-4 w-4 mr-2 text-purple-500" />
                       <span className="text-sm">Status</span>
                     </div>
                     <span className="text-sm font-semibold">{profile?.status_concurseiro || 'Na Ativa'}</span>
                   </div>
+                  
+                  {profile?.profile_text && (
+                    <div className="mt-3 text-sm text-center py-2 px-3 bg-gray-50 rounded-md italic">
+                      "{profile.profile_text}"
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
         
-        {/* Middle Column - Rankings and Concursos */}
         <div className="md:col-span-6">
           <Card className="mb-4">
             <CardHeader className="pb-3">
               <h3 className="text-xl font-bold">Rankings</h3>
             </CardHeader>
             <CardContent>
-              {rankings && rankings.length > 0 ? (
+              {!user ? (
+                <div className="text-center py-6">
+                  <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground mb-4">
+                    Você precisa estar cadastrado para visualizar os rankings.
+                  </p>
+                  <Button asChild>
+                    <Link to="/auth" className="flex items-center">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Cadastrar-se
+                    </Link>
+                  </Button>
+                </div>
+              ) : rankings && rankings.length > 0 ? (
                 <div className="space-y-4">
                   {rankings.map((ranking, index) => (
                     <Card key={ranking.concursoId} className="overflow-hidden">
                       <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
                         <div>
                           <h3 className="font-medium">{ranking.concursoTitle}</h3>
+                          <div className="flex items-center mt-1">
+                            <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
+                            <span className="text-sm">
+                              {ranking.position > 0 ? `Posição: ${ranking.position}º` : 'Posição não definida'}
+                            </span>
+                          </div>
                         </div>
                         <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
                           <span className="text-lg font-bold">{ranking.score}</span>
@@ -354,8 +375,7 @@ const PublicUserProfile: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Right Column - Followers */}
+        
         <div className="md:col-span-3">
           <FollowersColumn userId={id || ''} />
         </div>

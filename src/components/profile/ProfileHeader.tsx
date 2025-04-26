@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { User, Upload, Loader2, Trophy, Users, BookOpen, Pen } from 'lucide-react';
+import { User, Upload, Loader2, Pen } from 'lucide-react';
 
 interface ProfileHeaderProps {
   name: string;
@@ -12,10 +12,8 @@ interface ProfileHeaderProps {
   avatarUrl: string | null;
   uploading: boolean;
   handleAvatarUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  userRankingsCount: number;
-  followersCount: number;
-  concursosAprovadosCount: number;
   statusConcurseiro: string;
+  profileText?: string;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -24,10 +22,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   avatarUrl,
   uploading,
   handleAvatarUpload,
-  userRankingsCount,
-  followersCount,
-  concursosAprovadosCount,
-  statusConcurseiro
+  statusConcurseiro,
+  profileText
 }) => {
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -80,35 +76,17 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="w-full space-y-2">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <Trophy className="h-4 w-4 mr-2 text-yellow-500" />
-            <span className="text-sm">Rankings</span>
-          </div>
-          <span className="text-sm font-semibold">{userRankingsCount}</span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <Users className="h-4 w-4 mr-2 text-blue-500" />
-            <span className="text-sm">Seguidores</span>
-          </div>
-          <span className="text-sm font-semibold">{followersCount}</span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <BookOpen className="h-4 w-4 mr-2 text-green-500" />
-            <span className="text-sm">Aprovações</span>
-          </div>
-          <span className="text-sm font-semibold">{concursosAprovadosCount}</span>
-        </div>
-        
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
             <Pen className="h-4 w-4 mr-2 text-purple-500" />
             <span className="text-sm">Status</span>
           </div>
           <span className="text-sm font-semibold">{statusConcurseiro}</span>
         </div>
+        
+        {profileText && (
+          <div className="mt-3 text-sm text-center py-2 px-3 bg-gray-50 rounded-md italic">
+            "{profileText}"
+          </div>
+        )}
       </div>
     </div>
   );

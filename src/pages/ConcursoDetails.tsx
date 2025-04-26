@@ -10,17 +10,17 @@ import { LoadingState } from '@/components/resultados/LoadingState';
 import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
 
 const ConcursoDetails = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id: string; }>();
   
   const { data: concurso, isLoading } = useQuery({
     queryKey: ['concurso', id],
-    queryFn: () => fetchConcursoById(id!),
+    queryFn: () => fetchConcursoById(id!)
   });
-  
+
   if (isLoading) {
     return <LoadingState />;
   }
-  
+
   if (!concurso) {
     return (
       <div className="container mx-auto p-4">
@@ -29,7 +29,7 @@ const ConcursoDetails = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-2">{concurso.titulo}</h1>
@@ -41,7 +41,7 @@ const ConcursoDetails = () => {
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mb-1">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xl">Informações Gerais</CardTitle>
@@ -57,7 +57,7 @@ const ConcursoDetails = () => {
                 <dd>{concurso.inscritos?.toLocaleString() || 'Não informado'}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Data de Publicação</dt>
+                <dt className="text-sm font-medium text-gray-500">Data da Prova</dt>
                 <dd>{concurso.data_publicacao || 'Não informado'}</dd>
               </div>
               <div>
@@ -98,24 +98,42 @@ const ConcursoDetails = () => {
           </CardHeader>
           <CardContent>
             <dl className="space-y-2">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Conhecimentos Básicos</dt>
-                <dd>{concurso.basic_knowledge_weight || 1}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Conhecimentos Específicos</dt>
-                <dd>{concurso.specific_knowledge_weight || 1}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Discursiva</dt>
-                <dd>{concurso.discursive_weight || 1}</dd>
-              </div>
+              {concurso.has_basic_knowledge && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Conhecimentos Básicos</dt>
+                  <dd>{concurso.basic_knowledge_weight || 1}</dd>
+                </div>
+              )}
+              {concurso.has_specific_knowledge_1 && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Conhecimentos Específicos 1</dt>
+                  <dd>{concurso.specific_knowledge_1_weight || 1}</dd>
+                </div>
+              )}
+              {concurso.has_specific_knowledge_2 && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Conhecimentos Específicos 2</dt>
+                  <dd>{concurso.specific_knowledge_2_weight || 1}</dd>
+                </div>
+              )}
+              {concurso.has_specific_knowledge_3 && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Conhecimentos Específicos 3</dt>
+                  <dd>{concurso.specific_knowledge_3_weight || 1}</dd>
+                </div>
+              )}
+              {concurso.has_discursive && (
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">Discursiva</dt>
+                  <dd>{concurso.discursive_weight || 1}</dd>
+                </div>
+              )}
             </dl>
           </CardContent>
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -157,7 +175,12 @@ const ConcursoDetails = () => {
           <CardFooter>
             {concurso.link ? (
               <Button asChild>
-                <a href={concurso.link} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                <a 
+                  href={concurso.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center"
+                >
                   <FileText className="mr-2 h-4 w-4" />
                   Acessar Edital
                 </a>
