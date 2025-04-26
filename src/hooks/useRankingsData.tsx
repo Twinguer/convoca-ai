@@ -23,16 +23,16 @@ export const useRankingsData = (concursoId?: string) => {
       .map((ranking, index) => ({
         ...ranking,
         position: index + 1,
-        // Display weighted scores
-        basicKnowledgeScore: ranking.basic_knowledge_score,
-        specificKnowledgeScore: ranking.specific_knowledge_score,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score,
-        discursiveScore: ranking.discursive_score,
-        caseStudy1Score: ranking.case_study_1_score,
-        caseStudy2Score: ranking.case_study_2_score,
-        caseStudy3Score: ranking.case_study_3_score,
+        // Display weighted scores - use camelCase properties consistently
+        basicKnowledgeScore: ranking.basicKnowledgeScore || ranking.basic_knowledge_score || 0,
+        specificKnowledgeScore: ranking.specificKnowledgeScore || ranking.specific_knowledge_score || 0,
+        specificKnowledge1Score: ranking.specificKnowledge1Score || ranking.specific_knowledge_1_score || 0,
+        specificKnowledge2Score: ranking.specificKnowledge2Score || ranking.specific_knowledge_2_score || 0,
+        specificKnowledge3Score: ranking.specificKnowledge3Score || ranking.specific_knowledge_3_score || 0,
+        discursiveScore: ranking.discursiveScore || ranking.discursive_score || 0,
+        caseStudy1Score: ranking.caseStudy1Score || ranking.case_study_1_score || 0,
+        caseStudy2Score: ranking.caseStudy2Score || ranking.case_study_2_score || 0,
+        caseStudy3Score: ranking.caseStudy3Score || ranking.case_study_3_score || 0,
         // The total score is already weighted from the database
         score: ranking.score
       }));

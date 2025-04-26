@@ -194,6 +194,14 @@ export const useSaveAnswers = ({
 
       if (error) throw error;
 
+      // Create the answersArray here to fix the undefined reference
+      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+        return {
+          questionNumber: parseInt(questionNumber),
+          answer: answer.toUpperCase() // Ensure answers are uppercase
+        };
+      });
+      
       await saveUserAnswers(rankingId, concurso.id, answersArray);
 
       setSavedSuccess(true);
