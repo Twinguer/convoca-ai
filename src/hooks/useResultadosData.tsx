@@ -6,21 +6,32 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
+import { useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
   const { user } = useAuth();
+  const { toast } = useToast();
   const isAuthenticated = !!user;
   
   // Fetch concurso details
-  const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
+  const { 
+    data: concurso, 
+    isLoading: isLoadingConcurso,
+    refetch: refetchConcurso 
+  } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
     staleTime: 60000, // 1 minuto
   });
   
   // Fetch creator information if available
-  const { data: creatorInfo, isLoading: isLoadingCreator } = useQuery({
+  const { 
+    data: creatorInfo, 
+    isLoading: isLoadingCreator,
+    refetch: refetchCreator 
+  } = useQuery({
     queryKey: ['creator', concurso?.created_by_user_id],
     queryFn: async () => {
       if (!concurso?.created_by_user_id) return null;
@@ -43,7 +54,12 @@ export function useResultadosData() {
   });
   
   // Fetch rankings with more frequent refetching - only if user is authenticated
-  const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
+  const { 
+    data: rankings = [], 
+    isLoading: isLoadingRankings, 
+    refetch: refetchRankings,
+    isFetching: isRefetchingRankings
+  } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
     refetchInterval: 3000, // Reduzido para 3 segundos
@@ -53,7 +69,12 @@ export function useResultadosData() {
   });
   
   // Fetch participant count - for all users (authenticated or not)
-  const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
+  const { 
+    data: participantCount = 0, 
+    isLoading: isLoadingCount, 
+    refetch: refetchCount,
+    isFetching: isRefetchingCount
+  } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
     refetchInterval: 5000,
@@ -65,15 +86,29 @@ export function useResultadosData() {
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
+  const isFetching = isRefetchingRankings || isRefetchingCount;
   
   // Function to manually refresh all data
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
+    console.log("[useResultadosData] Atualizando rankings manualmente");
+    
     if (isAuthenticated) {
-      console.log("[useResultadosData] Atualizando rankings manualmente");
       refetchRankings();
     }
+    
     refetchCount();
-  };
+    refetchConcurso();
+    
+    if (concurso?.created_by_user_id) {
+      refetchCreator();
+    }
+    
+    toast({
+      title: "Dados atualizados",
+      description: "Os rankings foram atualizados com sucesso",
+      duration: 3000,
+    });
+  }, [isAuthenticated, refetchRankings, refetchCount, refetchConcurso, refetchCreator, concurso?.created_by_user_id, toast]);
   
   return {
     concurso,
@@ -81,6 +116,7 @@ export function useResultadosData() {
     participantCount,
     userRanking,
     isLoading,
+    isFetching,
     user,
     refreshData,
     creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),

@@ -259,7 +259,7 @@ export type Database = {
           id: string
           new_score: number | null
           previous_score: number | null
-          user_ranking_id: string
+          user_ranking_id: string | null
         }
         Insert: {
           calculation_details?: Json | null
@@ -268,7 +268,7 @@ export type Database = {
           id?: string
           new_score?: number | null
           previous_score?: number | null
-          user_ranking_id: string
+          user_ranking_id?: string | null
         }
         Update: {
           calculation_details?: Json | null
@@ -277,7 +277,7 @@ export type Database = {
           id?: string
           new_score?: number | null
           previous_score?: number | null
-          user_ranking_id?: string
+          user_ranking_id?: string | null
         }
         Relationships: [
           {
@@ -586,6 +586,19 @@ export type Database = {
       delete_user_profile: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      recalculate_all_scores: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      save_scores_transaction: {
+        Args: {
+          p_ranking_id: string
+          p_raw_scores: Json
+          p_weighted_scores: Json
+          p_subjective_scores: Json
+        }
+        Returns: Json
       }
       save_user_answers_and_calculate_scores: {
         Args: {
