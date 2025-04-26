@@ -12,7 +12,6 @@ interface QuestionCellProps {
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
-  isNullified?: boolean;
 }
 
 export const QuestionCell: React.FC<QuestionCellProps> = ({
@@ -23,18 +22,12 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   disabled = false,
   examType = 'Alternativas',
   onClearAnswer,
-  isNullified = false
 }) => {
   return (
-    <div className={`border rounded-md p-3 ${isNullified ? 'bg-gray-50' : 'bg-white'}`}>
+    <div className="border rounded-md p-3 bg-white">
       <div className="flex justify-between items-center mb-2">
         <div className="font-medium">
           Questão {questionNumber}
-          {isNullified && (
-            <span className="ml-2 text-xs text-amber-600 font-normal bg-amber-50 px-1.5 py-0.5 rounded-full">
-              Anulada
-            </span>
-          )}
         </div>
         
         {selectedAnswer && onClearAnswer && (
@@ -58,7 +51,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             option={option}
             isSelected={selectedAnswer === option}
             onClick={() => onAnswerChange(questionNumber, option)}
-            disabled={disabled} // Removida a restrição de questões anuladas
+            disabled={disabled}
             examType={examType}
           />
         ))}

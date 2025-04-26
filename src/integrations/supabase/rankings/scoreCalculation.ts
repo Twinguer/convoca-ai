@@ -1,4 +1,3 @@
-
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
 
@@ -7,10 +6,10 @@ export const calculateRawScores = async (
   userAnswers: any[]
 ) => {
   try {
-    // Buscar sempre o gabarito oficial mais atual
+    // Buscar o gabarito oficial mais atual
     const { data: answerKey, error: keyError } = await supabase
       .from('answer_keys')
-      .select('question_number, answer, is_nullified')
+      .select('question_number, answer')
       .eq('concurso_id', concursoId);
     if (keyError) throw keyError;
     if (!answerKey || answerKey.length === 0) {
@@ -18,12 +17,6 @@ export const calculateRawScores = async (
     }
 
     console.log(`[calculateRawScores] Número de questões no gabarito: ${answerKey.length}`);
-    const nullifiedQuestions = answerKey.filter(q => q.is_nullified);
-    console.log(`[calculateRawScores] Questões anuladas: ${nullifiedQuestions.length}`);
-    if (nullifiedQuestions.length > 0) {
-      console.log('[calculateRawScores] Números das questões anuladas:', 
-        nullifiedQuestions.map(q => q.question_number).join(', '));
-    }
 
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
@@ -54,17 +47,14 @@ export const calculateRawScores = async (
       );
 
       if (officialAnswer) {
-        const isNullified = officialAnswer.is_nullified;
         const isCorrect = officialAnswer.answer === userAnswer.answer;
         
         console.log(`[calculateRawScores] Questão ${userAnswer.question_number}: ` +
-          `Anulada: ${isNullified}, ` +
           `Resposta oficial: ${officialAnswer.answer}, ` +
           `Resposta do usuário: ${userAnswer.answer}, ` +
           `Correta: ${isCorrect}`);
 
-        // A resposta é considerada correta se for igual ao gabarito ou se a questão estiver anulada
-        if (isNullified || isCorrect) {
+        if (isCorrect) {
           if (userAnswer.is_basic_knowledge) {
             basicKnowledgeScore += 1;
           } else if (userAnswer.is_specific_1) {

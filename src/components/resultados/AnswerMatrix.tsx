@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { QuestionCell } from './QuestionCell';
-import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
 
 interface AnswerMatrixProps {
   matrix: (number | null)[][];
@@ -11,8 +10,6 @@ interface AnswerMatrixProps {
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
-  nullifiedQuestions?: Set<number>;
-  onNullifyQuestion?: (questionNumber: number) => void;
   isAdminView?: boolean;
 }
 
@@ -24,12 +21,8 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   disabled = false,
   examType = 'Alternativas',
   onClearAnswer,
-  nullifiedQuestions = new Set(),
-  onNullifyQuestion,
   isAdminView = false
 }) => {
-  console.log('Rendering AnswerMatrix with matrix:', matrix);
-  
   if (!matrix || matrix.length === 0) {
     return (
       <div className="p-6 text-center text-gray-500">
@@ -38,7 +31,6 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
     );
   }
 
-  // Check if there are any non-null question numbers in the matrix
   const hasQuestions = matrix.some(row => row.some(cell => cell !== null));
   
   if (!hasQuestions) {
@@ -56,28 +48,16 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
           <React.Fragment key={rowIndex}>
             {row.map((questionNumber, colIndex) => 
               questionNumber !== null ? (
-                <div key={`${rowIndex}-${colIndex}`} 
-                  className={`${
-                    nullifiedQuestions.has(questionNumber) ? 'opacity-75' : ''
-                  }`}
-                >
+                <div key={`${rowIndex}-${colIndex}`}>
                   <QuestionCell
                     questionNumber={questionNumber}
                     selectedAnswer={answers[questionNumber]}
                     onAnswerChange={onAnswerChange}
                     options={getOptionsForQuestion(questionNumber)}
-                    disabled={disabled} // Removida a restrição de questões anuladas
+                    disabled={disabled}
                     examType={examType}
                     onClearAnswer={onClearAnswer}
-                    isNullified={nullifiedQuestions.has(questionNumber)}
                   />
-                  {isAdminView && onNullifyQuestion && (
-                    <NullifyQuestionButton
-                      questionNumber={questionNumber}
-                      isNullified={nullifiedQuestions.has(questionNumber)}
-                      onNullify={onNullifyQuestion}
-                    />
-                  )}
                 </div>
               ) : null
             )}

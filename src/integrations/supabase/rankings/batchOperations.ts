@@ -14,7 +14,6 @@ interface RecalculationResult {
   error?: string;
 }
 
-// Recalcula as pontuações para todos os usuários em um concurso
 export const recalculateAllUserScores = async (concursoId: string): Promise<RecalculationResult> => {
   try {
     console.log(`[recalculateAllUserScores] Iniciando recálculo de scores para concurso: ${concursoId}`);
@@ -30,7 +29,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     const count = answerKeyCount ? answerKeyCount.length : 0;
     
     if (!count || count === 0) {
-      console.log('[recalculateAllUserScores] Nenhum gabarito encontrado para este concurso, não é possível recalcular');
+      console.log('[recalculateAllUserScores] Nenhum gabarito encontrado para este concurso');
       return { 
         success: false, 
         updatedCount: 0, 
@@ -39,7 +38,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     }
     
     // Buscar todos os rankings de usuários para este concurso
-    // Não filtramos por respostas aqui - vamos recalcular para TODOS os usuários no ranking
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select(`
@@ -49,20 +47,14 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
         discursive_score,
         case_study_1_score,
         case_study_2_score,
-        case_study_3_score,
-        basic_knowledge_score,
-        specific_knowledge_score,
-        specific_knowledge_1_score,
-        specific_knowledge_2_score,
-        specific_knowledge_3_score,
-        all_questions_answered
+        case_study_3_score
       `)
       .eq('concurso_id', concursoId);
       
     if (rankingsError) throw rankingsError;
     
     if (!userRankings || userRankings.length === 0) {
-      console.log('[recalculateAllUserScores] Nenhum ranking de usuário encontrado para este concurso');
+      console.log('[recalculateAllUserScores] Nenhum ranking de usuário encontrado');
       return { success: true, updatedCount: 0 };
     }
     
@@ -87,142 +79,57 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             
           if (answersError) throw answersError;
           
-          // Preservar as pontuações subjetivas existentes que não dependem do gabarito
-          const subjectiveScores = {
-            discursiveScore: ranking?.discursive_score || 0,
-            caseStudy1Score: ranking?.case_study_1_score || 0,
-            caseStudy2Score: ranking?.case_study_2_score || 0,
-            caseStudy3Score: ranking?.case_study_3_score || 0
-          };
+          // Calcular novas pontuações
+          const rawScores = await calculateRawScores(concursoId, userAnswers || []);
           
-          // Preservar pontuações objetivas existentes se o usuário não tiver respostas
-          let rawScores = {
-            basicKnowledgeScore: ranking?.basic_knowledge_score || 0,
-            specificKnowledgeScore: ranking?.specific_knowledge_score || 0,
-            specific1Score: ranking?.specific_knowledge_1_score || 0,
-            specific2Score: ranking?.specific_knowledge_2_score || 0,
-            specific3Score: ranking?.specific_knowledge_3_score || 0
-          };
+          // Aplicar pesos
+          const weightedScores = await applyWeightsToScores(
+            concursoId,
+            rawScores,
+            {
+              discursiveScore: ranking.discursive_score || 0,
+              caseStudy1Score: ranking.case_study_1_score || 0,
+              caseStudy2Score: ranking.case_study_2_score || 0,
+              caseStudy3Score: ranking.case_study_3_score || 0
+            }
+          );
           
-          // Se o usuário tem respostas, calcular pontuações objetivas
-          if (userAnswers && userAnswers.length > 0) {
-            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: ${userAnswers.length} respostas encontradas, recalculando pontuações`);
+          // Registrar log de cálculo para debug
+          await supabase.from('score_calculation_logs').insert([{
+            user_ranking_id: ranking.id,
+            calculation_type: 'recalculate_all_scores',
+            previous_score: ranking.score,
+            new_score: weightedScores.totalScore,
+            calculation_details: {
+              raw_scores: rawScores,
+              weighted_scores: weightedScores,
+              timestamp: new Date().toISOString()
+            }
+          }]);
+          
+          // Atualizar o ranking
+          const { error: updateError } = await supabase
+            .from('user_rankings')
+            .update({
+              ...rawScores,
+              ...weightedScores,
+              score: weightedScores.totalScore,
+              updated_at: new Date().toISOString(),
+              is_score_recalculated: true
+            })
+            .eq('id', ranking.id);
             
-            // Só calcula novas pontuações se houver respostas para calcular
-            const calculatedScores = await calculateRawScores(concursoId, userAnswers);
-            
-            // Registrar esta ocorrência no log para depuração
-            await supabase.from('score_calculation_logs').insert([{
-              user_ranking_id: ranking.id,
-              calculation_type: 'recalculate_with_answers',
-              calculation_details: {
-                concurso_id: concursoId,
-                user_id: ranking.user_id,
-                answers_count: userAnswers.length,
-                old_scores: rawScores,
-                new_scores: calculatedScores,
-                timestamp: new Date().toISOString()
-              }
-            }]);
-            
-            // Atualiza com as novas pontuações calculadas
-            rawScores = calculatedScores;
-          } else {
-            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: Nenhuma resposta encontrada, mantendo pontuações objetivas existentes`);
-            
-            // Registrar esta ocorrência no log para depuração
-            await supabase.from('score_calculation_logs').insert([{
-              user_ranking_id: ranking.id,
-              calculation_type: 'recalculate_preserving_scores',
-              calculation_details: {
-                concurso_id: concursoId,
-                user_id: ranking.user_id,
-                reason: 'no_answers_found',
-                preserved_scores: rawScores,
-                timestamp: new Date().toISOString()
-              }
-            }]);
-          }
-          
-          // Aplicar pesos às pontuações
-          const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
-          
-          // Registrar detalhes do cálculo para debugging
-          console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}:`);
-          console.log('  Raw scores:', rawScores);
-          console.log('  Subjective scores:', subjectiveScores);
-          console.log('  Weighted scores:', weightedScores);
-          
-          // Usar a função RPC atualizada para salvar as pontuações em uma única transação
-          // Incluir explicitamente TODAS as pontuações para garantir que nenhuma seja perdida
-          const { data: rpcResult, error: rpcError } = await supabase.rpc('save_scores_transaction', {
-            p_ranking_id: ranking.id,
-            p_raw_scores: {
-              basicKnowledgeScore: rawScores.basicKnowledgeScore,
-              specificKnowledgeScore: rawScores.specificKnowledgeScore,
-              specific1Score: rawScores.specific1Score,
-              specific2Score: rawScores.specific2Score,
-              specific3Score: rawScores.specific3Score
-            },
-            p_weighted_scores: {
-              weightedBasicScore: weightedScores.weightedBasicScore,
-              weightedSpecific1Score: weightedScores.weightedSpecific1Score,
-              weightedSpecific2Score: weightedScores.weightedSpecific2Score,
-              weightedSpecific3Score: weightedScores.weightedSpecific3Score,
-              weightedDiscursiveScore: weightedScores.weightedDiscursiveScore,
-              weightedCaseStudy1Score: weightedScores.weightedCaseStudy1Score,
-              weightedCaseStudy2Score: weightedScores.weightedCaseStudy2Score,
-              weightedCaseStudy3Score: weightedScores.weightedCaseStudy3Score,
-              totalScore: weightedScores.totalScore
-            },
-            p_subjective_scores: subjectiveScores
-          });
-          
-          if (rpcError) {
-            console.error(`[recalculateAllUserScores] Erro na função RPC para ranking ${ranking.id}:`, rpcError);
-            throw rpcError;
-          }
-          
-          if (!rpcResult || !rpcResult.success) {
-            const errorMsg = rpcResult?.error || 'Erro desconhecido ao salvar pontuações';
-            console.error(`[recalculateAllUserScores] Falha na função RPC para ranking ${ranking.id}:`, errorMsg);
-            throw new Error(errorMsg);
-          }
+          if (updateError) throw updateError;
           
           updatedCount++;
           success = true;
           
-          console.log(`[recalculateAllUserScores] Ranking ${ranking.id} atualizado com sucesso. Nova pontuação: ${weightedScores.totalScore}`);
+          console.log(`[recalculateAllUserScores] Ranking ${ranking.id} atualizado com sucesso`);
           
-          // Registrar o recálculo bem-sucedido no log
-          await supabase.from('score_calculation_logs').insert([{
-            user_ranking_id: ranking.id,
-            calculation_type: 'recalculate_success',
-            previous_score: ranking.score ?? 0,
-            new_score: weightedScores.totalScore,
-            calculation_details: {
-              concurso_id: concursoId,
-              user_id: ranking.user_id,
-              answers_count: userAnswers?.length || 0,
-              had_answers: !!userAnswers?.length,
-              timestamp: new Date().toISOString()
-            }
-          }]);
         } catch (error: any) {
           currentTry++;
-          const waitTime = Math.pow(2, currentTry) * 1000; // Backoff exponencial
+          const waitTime = Math.pow(2, currentTry) * 1000;
           console.error(`[recalculateAllUserScores] Tentativa ${currentTry} falhou para ranking ${ranking.id}:`, error);
-          
-          // Registrar o erro no log
-          await supabase.from('score_calculation_logs').insert([{
-            user_ranking_id: ranking.id,
-            calculation_type: 'recalculate_attempt_error',
-            calculation_details: {
-              attempt: currentTry,
-              error: error.message || 'Erro desconhecido',
-              timestamp: new Date().toISOString()
-            }
-          }]);
           
           if (currentTry < maxRetries) {
             console.log(`[recalculateAllUserScores] Aguardando ${waitTime}ms antes da próxima tentativa...`);
@@ -238,21 +145,6 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
         }
       }
     }
-    
-    // Registra o resultado final do recálculo
-    const logDetails = {
-      calculation_type: 'recalculate_all_scores_completed',
-      calculation_details: {
-        concurso_id: concursoId,
-        total_rankings: userRankings.length,
-        successful_updates: updatedCount,
-        failed_updates: failedRankings.length,
-        failed_rankings: failedRankings,
-        timestamp: new Date().toISOString()
-      }
-    };
-    
-    await supabase.from('score_calculation_logs').insert([logDetails]);
     
     return {
       success: true,
