@@ -25,7 +25,7 @@ export const useRankingsData = (concursoId?: string) => {
         position: index + 1,
         // Use camelCase properties consistently - these are now weighted scores
         basicKnowledgeScore: ranking.weightedBasicScore || ranking.weighted_basic_score || 0,
-        specificKnowledgeScore: ranking.weightedSpecificScore || ranking.weighted_specific_score || 0,
+        specificKnowledgeScore: ranking.weightedSpecific1Score || ranking.weighted_specific_1_score || 0,
         specificKnowledge1Score: ranking.weightedSpecific1Score || ranking.weighted_specific_1_score || 0,
         specificKnowledge2Score: ranking.weightedSpecific2Score || ranking.weighted_specific_2_score || 0,
         specificKnowledge3Score: ranking.weightedSpecific3Score || ranking.weighted_specific_3_score || 0,
