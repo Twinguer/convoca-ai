@@ -10,6 +10,7 @@ interface QuestionCellProps {
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
+  isNullified?: boolean;
 }
 
 export const QuestionCell: React.FC<QuestionCellProps> = ({ 
@@ -19,7 +20,8 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   options,
   disabled = false,
   examType = 'Alternativas',
-  onClearAnswer
+  onClearAnswer,
+  isNullified = false
 }) => {
   if (questionNumber === null) {
     return null;
@@ -28,9 +30,9 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   const isCertoErrado = examType === 'Certo ou Errado';
 
   return (
-    <div className="flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow">
-      <div className="text-center font-bold text-sm bg-emerald-100 py-2 border-b border-gray-200">
-        Questão {questionNumber}
+    <div className={`flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow ${isNullified ? 'opacity-50' : ''}`}>
+      <div className={`text-center font-bold text-sm ${isNullified ? 'bg-gray-200' : 'bg-emerald-100'} py-2 border-b border-gray-200`}>
+        Questão {questionNumber} {isNullified && '(Anulada)'}
       </div>
       <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
         {options.map((option) => (
@@ -38,13 +40,13 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             key={option}
             option={option}
             isSelected={selectedAnswer === option}
-            onClick={() => !disabled && onAnswerChange(questionNumber, option)}
-            disabled={disabled}
+            onClick={() => !disabled && !isNullified && onAnswerChange(questionNumber, option)}
+            disabled={disabled || isNullified}
             examType={examType}
           />
         ))}
         
-        {isCertoErrado && onClearAnswer && (
+        {isCertoErrado && onClearAnswer && !isNullified && (
           <button
             onClick={() => onClearAnswer(questionNumber)}
             disabled={disabled || !selectedAnswer}
