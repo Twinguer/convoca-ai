@@ -1,9 +1,26 @@
-
 import { supabase } from '../client';
+
+// Enable realtime for the user_rankings table
+const enableRealtimeForRankings = async () => {
+  await supabase.rpc('supabase_realtime.enable_subscription', {
+    table: 'user_rankings',
+    source: 'postgres_changes'
+  });
+};
+
+// Interface for the response from the recalculate_all_scores RPC function
+interface RecalculateScoresResponse {
+  success: boolean;
+  error?: string;
+  updatedCount?: number;
+}
 
 // Function to get rankings for a concurso with user information
 export const getRankingsWithUserInfo = async (concursoId: string) => {
   try {
+    // Enable realtime subscriptions for this table
+    await enableRealtimeForRankings();
+    
     const { data, error } = await supabase
       .from('user_rankings')
       .select(`

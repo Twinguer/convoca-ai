@@ -6,7 +6,7 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export function useResultadosData() {
@@ -23,7 +23,7 @@ export function useResultadosData() {
   } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 60000, // 1 minuto
+    staleTime: 60000, // 1 minute
   });
   
   // Fetch creator information if available
@@ -40,7 +40,7 @@ export function useResultadosData() {
         .from('users_profiles')
         .select('name')
         .eq('id', concurso.created_by_user_id)
-        .single();
+        .maybeSingle();
         
       if (error) {
         console.error('Error fetching creator info:', error);
@@ -50,7 +50,7 @@ export function useResultadosData() {
       return data;
     },
     enabled: !!concurso?.created_by_user_id,
-    staleTime: 300000, // 5 minutos
+    staleTime: 300000, // 5 minutes
   });
   
   // Fetch rankings with more frequent refetching - only if user is authenticated
@@ -62,11 +62,54 @@ export function useResultadosData() {
   } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    refetchInterval: 3000, // Reduzido para 3 segundos
+    refetchInterval: 1000, // Reduced to 1 second for more responsive updates
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
+    staleTime: 0, // Consider data immediately stale to ensure fresh data
     enabled: isAuthenticated,
+    retry: 3, // Add retry attempts
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
   });
+  
+  // Subscribe to real-time ranking updates
+  useEffect(() => {
+    if (!id || !isAuthenticated) return;
+
+    console.log('Setting up realtime subscription for rankings...');
+    
+    const channel = supabase
+      .channel('rankings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_rankings',
+          filter: `concurso_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('Received ranking update:', payload);
+          // Refresh data when rankings change
+          refetchRankings();
+          
+          // Show toast for recalculation updates
+          if (payload.eventType === 'UPDATE') {
+            toast({
+              title: "Ranking atualizado",
+              description: "As pontuações foram recalculadas",
+              duration: 3000,
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription...');
+      supabase.removeChannel(channel);
+    };
+  }, [id, isAuthenticated, refetchRankings, toast]);
   
   // Fetch participant count - for all users (authenticated or not)
   const { 
@@ -77,9 +120,9 @@ export function useResultadosData() {
   } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 5000,
+    refetchInterval: 2000, // Reduced to 2 seconds
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 0,
   });
   
   // Find user's ranking - only if user is authenticated

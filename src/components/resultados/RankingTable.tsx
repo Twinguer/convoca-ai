@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,6 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Ranking as RankingType } from '@/services/rankingService';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 export interface Ranking {
   position: number;
@@ -45,7 +46,41 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  const { toast } = useToast();
   
+  useEffect(() => {
+    if (!concurso || !isAuthenticated) return;
+    
+    // Subscribe to ranking updates
+    const channel = supabase
+      .channel(`rankings-table-${concurso.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_rankings',
+          filter: `concurso_id=eq.${concurso.id}`
+        },
+        (payload) => {
+          console.log('Rankings table update:', payload);
+          
+          if (payload.eventType === 'UPDATE') {
+            toast({
+              title: "Ranking atualizado",
+              description: "A tabela foi atualizada com as novas pontuações",
+              duration: 2000,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [concurso, isAuthenticated, toast]);
+
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -401,4 +436,3 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
-
