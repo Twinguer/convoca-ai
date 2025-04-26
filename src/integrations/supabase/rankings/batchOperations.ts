@@ -17,7 +17,7 @@ interface RecalculationResult {
 // Recalcula as pontuações para todos os usuários em um concurso
 export const recalculateAllUserScores = async (concursoId: string): Promise<RecalculationResult> => {
   try {
-    console.log(`Iniciando recálculo de scores para concurso: ${concursoId}`);
+    console.log(`[recalculateAllUserScores] Iniciando recálculo de scores para concurso: ${concursoId}`);
     
     // Buscar todos os rankings de usuários para este concurso
     const { data: userRankings, error: rankingsError } = await supabase
@@ -42,11 +42,11 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     if (rankingsError) throw rankingsError;
     
     if (!userRankings || userRankings.length === 0) {
-      console.log('Nenhum ranking de usuário encontrado para este concurso');
+      console.log('[recalculateAllUserScores] Nenhum ranking de usuário encontrado para este concurso');
       return { success: true, updatedCount: 0 };
     }
     
-    console.log(`Encontrados ${userRankings.length} rankings para atualizar`);
+    console.log(`[recalculateAllUserScores] Encontrados ${userRankings.length} rankings para atualizar`);
     
     // Verificar se o gabarito existe para este concurso
     const { data: answerKeyCount, error: answerKeyError } = await supabase
@@ -59,7 +59,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     const count = answerKeyCount ? answerKeyCount.length : 0;
     
     if (!count || count === 0) {
-      console.log('Nenhum gabarito encontrado para este concurso, não é possível recalcular');
+      console.log('[recalculateAllUserScores] Nenhum gabarito encontrado para este concurso, não é possível recalcular');
       return { 
         success: false, 
         updatedCount: 0, 
@@ -86,29 +86,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             
           if (answersError) throw answersError;
           
-          // Se o usuário não tem respostas, não podemos recalcular, mas registramos como sucesso
-          // pois não é um erro, apenas não há o que recalcular
-          if (!userAnswers || userAnswers.length === 0) {
-            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: Nenhuma resposta encontrada, preservando pontuações existentes`);
-            
-            // Registrar esta ocorrência no log para depuração
-            await supabase.from('score_calculation_logs').insert([{
-              user_ranking_id: ranking.id,
-              calculation_type: 'recalculate_skipped_no_answers',
-              calculation_details: {
-                concurso_id: concursoId,
-                user_id: ranking.user_id,
-                timestamp: new Date().toISOString()
-              }
-            }]);
-            
-            success = true;
-            continue;
-          }
-          
-          console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: ${userAnswers.length} respostas encontradas`);
-          
-          // Preservar as pontuações subjetivas existentes
+          // Preservar as pontuações subjetivas existentes que não dependem do gabarito
           const subjectiveScores = {
             discursiveScore: ranking?.discursive_score || 0,
             caseStudy1Score: ranking?.case_study_1_score || 0,
@@ -116,8 +94,34 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             caseStudy3Score: ranking?.case_study_3_score || 0
           };
           
-          // Calcular novas pontuações objetivas usando o gabarito oficial atual
-          const rawScores = await calculateRawScores(concursoId, userAnswers || []);
+          // Inicializar pontuações objetivas com zero
+          let rawScores = {
+            basicKnowledgeScore: 0,
+            specificKnowledgeScore: 0,
+            specific1Score: 0,
+            specific2Score: 0,
+            specific3Score: 0
+          };
+          
+          // Se o usuário tem respostas, calcular pontuações objetivas
+          if (userAnswers && userAnswers.length > 0) {
+            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: ${userAnswers.length} respostas encontradas`);
+            rawScores = await calculateRawScores(concursoId, userAnswers);
+          } else {
+            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: Nenhuma resposta encontrada, zerando pontuações objetivas`);
+            
+            // Registrar esta ocorrência no log para depuração
+            await supabase.from('score_calculation_logs').insert([{
+              user_ranking_id: ranking.id,
+              calculation_type: 'recalculate_zeroing_scores',
+              calculation_details: {
+                concurso_id: concursoId,
+                user_id: ranking.user_id,
+                reason: 'no_answers_found',
+                timestamp: new Date().toISOString()
+              }
+            }]);
+          }
           
           // Aplicar pesos às pontuações
           const weightedScores = await applyWeightsToScores(concursoId, rawScores, subjectiveScores);
@@ -167,7 +171,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           updatedCount++;
           success = true;
           
-          console.log(`Ranking ${ranking.id} atualizado com sucesso. Nova pontuação: ${weightedScores.totalScore}`);
+          console.log(`[recalculateAllUserScores] Ranking ${ranking.id} atualizado com sucesso. Nova pontuação: ${weightedScores.totalScore}`);
           
           // Registrar o recálculo bem-sucedido no log
           await supabase.from('score_calculation_logs').insert([{
@@ -179,13 +183,14 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
               concurso_id: concursoId,
               user_id: ranking.user_id,
               answers_count: userAnswers?.length || 0,
+              had_answers: !!userAnswers?.length,
               timestamp: new Date().toISOString()
             }
           }]);
         } catch (error: any) {
           currentTry++;
           const waitTime = Math.pow(2, currentTry) * 1000; // Backoff exponencial
-          console.error(`Tentativa ${currentTry} falhou para ranking ${ranking.id}:`, error);
+          console.error(`[recalculateAllUserScores] Tentativa ${currentTry} falhou para ranking ${ranking.id}:`, error);
           
           // Registrar o erro no log
           await supabase.from('score_calculation_logs').insert([{
@@ -199,7 +204,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
           }]);
           
           if (currentTry < maxRetries) {
-            console.log(`Aguardando ${waitTime}ms antes da próxima tentativa...`);
+            console.log(`[recalculateAllUserScores] Aguardando ${waitTime}ms antes da próxima tentativa...`);
             await new Promise(resolve => setTimeout(resolve, waitTime));
           } else {
             failedRankings.push({
@@ -215,7 +220,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     
     // Registra o resultado final do recálculo
     const logDetails = {
-      calculation_type: 'recalculate_all_scores',
+      calculation_type: 'recalculate_all_scores_completed',
       calculation_details: {
         concurso_id: concursoId,
         total_rankings: userRankings.length,
@@ -235,7 +240,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
     };
     
   } catch (error: any) {
-    console.error('Erro fatal recalculando pontuações:', error);
+    console.error('[recalculateAllUserScores] Erro fatal recalculando pontuações:', error);
     return {
       success: false,
       updatedCount: 0,

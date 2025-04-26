@@ -84,6 +84,26 @@ export function useResultadosData() {
       )
       .subscribe();
       
+    // Also monitor changes in the user_rankings table
+    const rankingsChannel = supabase
+      .channel('user-rankings-changes')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*',
+          schema: 'public', 
+          table: 'user_rankings', 
+          filter: `concurso_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('[useResultadosData] Detected change in user_rankings:', payload);
+          queryClient.invalidateQueries({ queryKey: ['rankings', id] });
+          refetchRankings();
+          refetchCount();
+        }
+      )
+      .subscribe();
+      
     // Also monitor changes in the score calculation logs table
     const scoresChannel = supabase
       .channel('score-calculation-logs-changes')
@@ -107,6 +127,7 @@ export function useResultadosData() {
     
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(rankingsChannel);
       supabase.removeChannel(scoresChannel);
     };
   }, [id, queryClient, refetchRankings, refetchCount]);
@@ -121,9 +142,13 @@ export function useResultadosData() {
     console.log("[useResultadosData] Manually refreshing rankings");
     
     // Attempt to force recalculation of all scores
-    const recalculated = await forceRecalculateAllScores(id);
-    if (recalculated) {
-      console.log("[useResultadosData] Force recalculation successful");
+    try {
+      const recalculated = await forceRecalculateAllScores(id);
+      if (recalculated) {
+        console.log("[useResultadosData] Force recalculation successful");
+      }
+    } catch (error) {
+      console.error("[useResultadosData] Error during force recalculation:", error);
     }
     
     // Invalidate cached data to ensure fresh fetch
