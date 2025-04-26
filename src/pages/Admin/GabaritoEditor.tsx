@@ -34,6 +34,7 @@ const GabaritoEditor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
   const [selectedTab, setSelectedTab] = useState<'basic' | 'specific1' | 'specific2'>('basic');
   const [answerKey, setAnswerKey] = useState<Record<number, string>>({});
   
@@ -125,7 +126,7 @@ const GabaritoEditor = () => {
     try {
       setIsLoading(true);
       setError(null);
-      setSuccess(false);
+      setSavedSuccess(false);
       
       const allQuestions = [
         ...getQuestionsBySection('basic'),
@@ -146,7 +147,7 @@ const GabaritoEditor = () => {
         
       if (deleteError) throw deleteError;
       
-      const entries = Object.entries(answerKey).map(([questionNumber, answer]) => {
+      const answersArray = Object.entries(answerKey).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber);
         const qType = getQuestionType(qNum);
         
@@ -162,11 +163,13 @@ const GabaritoEditor = () => {
         };
       });
       
-      const { error: insertError } = await supabase
-        .from('answer_keys')
-        .insert(entries);
-        
-      if (insertError) throw insertError;
+      if (answersArray.length > 0) {
+        const { error: insertError } = await supabase
+          .from('answer_keys')
+          .insert(answersArray);
+          
+        if (insertError) throw insertError;
+      }
 
       const { error: recalculationError } = await supabase
         .rpc('recalculate_all_scores', { p_concurso_id: id });
