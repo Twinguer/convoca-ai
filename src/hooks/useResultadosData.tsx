@@ -5,6 +5,7 @@ import { fetchConcursoById, getParticipantCount } from '@/services/concursoServi
 import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
@@ -15,15 +16,39 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
+    staleTime: 60000, // 1 minuto
+  });
+  
+  // Fetch creator information if available
+  const { data: creatorInfo, isLoading: isLoadingCreator } = useQuery({
+    queryKey: ['creator', concurso?.created_by_user_id],
+    queryFn: async () => {
+      if (!concurso?.created_by_user_id) return null;
+      
+      const { data, error } = await supabase
+        .from('users_profiles')
+        .select('name')
+        .eq('id', concurso.created_by_user_id)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching creator info:', error);
+        return null;
+      }
+      
+      return data;
+    },
+    enabled: !!concurso?.created_by_user_id,
+    staleTime: 300000, // 5 minutos
   });
   
   // Fetch rankings with more frequent refetching - only if user is authenticated
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 3000, // Reduzido para 3 segundos
     refetchOnWindowFocus: true,
-    staleTime: 2000, // Consider data stale after 2 seconds
+    staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
     enabled: isAuthenticated,
   });
   
@@ -33,17 +58,18 @@ export function useResultadosData() {
     queryFn: () => getParticipantCount(id),
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
-    staleTime: 2000, // Make this more responsive for all users
+    staleTime: 2000,
   });
   
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount;
+  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
   const refreshData = () => {
     if (isAuthenticated) {
+      console.log("[useResultadosData] Atualizando rankings manualmente");
       refetchRankings();
     }
     refetchCount();
@@ -56,6 +82,8 @@ export function useResultadosData() {
     userRanking,
     isLoading,
     user,
-    refreshData
+    refreshData,
+    creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
+    inscritos: concurso?.inscritos || 0
   };
 }

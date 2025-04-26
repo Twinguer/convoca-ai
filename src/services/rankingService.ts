@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -17,7 +16,17 @@ export interface Ranking {
   caseStudy2Score?: number;
   caseStudy3Score?: number;
   reservationType?: string;
+  displayReservation?: string;
 }
+
+// Helper function to get abbreviation for reservation type
+const getReservationAbbreviation = (reservationType: string): string => {
+  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
+  
+  // Get first three letters as abbreviation
+  const abbr = reservationType.substring(0, 3).toUpperCase();
+  return abbr;
+};
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
@@ -51,6 +60,27 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       // No additional filter needed
     }
       
+    // Get concurso info to apply weights for score calculation
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight,
+        specific_knowledge_weight,
+        discursive_weight,
+        case_study_1_weight,
+        case_study_2_weight,
+        case_study_3_weight
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) {
+      console.error('Error fetching concurso weights:', concursoError);
+    }
+      
     const { data: rankings, error: rankingsError } = await query.order('score', { ascending: false });
       
     if (rankingsError) {
@@ -78,10 +108,19 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.log('User profiles data:', profiles);
     console.log('Raw rankings data:', rankings);
     
-    // Map the rankings with profile information
+    // Map the rankings with profile information and scores
     const formattedRankings = rankings.map((ranking, index) => {
-      // Find the matching profile
       const profile = profiles?.find(p => p.id === ranking.user_id);
+      
+      // Obter pontuações diretamente do banco de dados
+      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
+      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
+      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
+      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
+      const discursiveScore = ranking.discursive_score || 0;
+      const caseStudy1Score = ranking.case_study_1_score || 0;
+      const caseStudy2Score = ranking.case_study_2_score || 0;
+      const caseStudy3Score = ranking.case_study_3_score || 0;
       
       return {
         position: index + 1,
@@ -89,16 +128,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
-        specificKnowledgeScore: ranking.specific_knowledge_score || 0, // For backward compatibility
-        discursiveScore: ranking.discursive_score || 0,
-        caseStudy1Score: ranking.case_study_1_score || 0,
-        caseStudy2Score: ranking.case_study_2_score || 0,
-        caseStudy3Score: ranking.case_study_3_score || 0,
-        reservationType: ranking.reservation_type || 'Ampla Concorrência'
+        basicKnowledgeScore,
+        specificKnowledge1Score,
+        specificKnowledge2Score,
+        specificKnowledge3Score,
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score,
+        reservationType: ranking.reservation_type || 'Ampla Concorrência',
+        displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência')
       };
     });
     

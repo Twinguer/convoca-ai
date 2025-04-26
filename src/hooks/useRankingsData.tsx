@@ -1,46 +1,86 @@
 
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
+import { supabase } from '@/integrations/supabase/client';
+import { RankingItemProps } from '@/components/rankings/RankingList';
 
-export const useRankingsData = (concursoId?: string) => {
-  const {
-    data: rankings,
-    isLoading,
-    error
-  } = useQuery({
-    queryKey: ['rankings', concursoId],
-    queryFn: () => getRankingsWithUserInfo(concursoId as string),
-    enabled: !!concursoId
+const fetchRankings = async (): Promise<RankingItemProps[]> => {
+  try {
+    const { data: concursos, error } = await supabase
+      .from('concursos')
+      .select(`
+        id,
+        titulo,
+        orgao,
+        banca,
+        data_publicacao,
+        etapa_atual,
+        created_by_user_id,
+        is_admin_created
+      `)
+      .order('data_publicacao', { ascending: false });
+
+    if (error) throw error;
+
+    // For each concurso, get the participant count and creator info
+    const rankings = await Promise.all(
+      concursos.map(async (concurso) => {
+        // Use RPC function to get participant count more reliably
+        const { data: countData, error: countError } = await supabase
+          .rpc('count_concurso_participants', { concurso_id: concurso.id });
+
+        if (countError) {
+          console.error('Error fetching participant count:', countError);
+          return null;
+        }
+
+        // If there's a creator user ID, fetch their name
+        let creatorName = null;
+        if (concurso.created_by_user_id && !concurso.is_admin_created) {
+          const { data: userData, error: userError } = await supabase
+            .from('users_profiles')
+            .select('name')
+            .eq('id', concurso.created_by_user_id)
+            .maybeSingle();
+
+          if (!userError && userData) {
+            creatorName = userData.name;
+          }
+        }
+
+        return {
+          id: concurso.id,
+          examDate: concurso.data_publicacao || new Date().toISOString(),
+          banca: concurso.banca,
+          concursoTitle: concurso.orgao,
+          cargoTitle: concurso.titulo,
+          participantCount: countData || 0,
+          createdByUserId: concurso.created_by_user_id || null,
+          creatorName: creatorName,
+          isAdminCreated: concurso.is_admin_created
+        };
+      })
+    );
+
+    return rankings.filter(Boolean) as RankingItemProps[];
+  } catch (error) {
+    console.error('Error fetching rankings:', error);
+    return [];
+  }
+};
+
+export function useRankingsData() {
+  const { data: rankings = [], isLoading } = useQuery({
+    queryKey: ['rankings'],
+    queryFn: fetchRankings,
+    // Ensuring data is updated every 2 minutes for all users
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    // Disabling retry to avoid too many calls in case of error
+    retry: 1
   });
 
-  // Sort rankings by weighted score and apply position
-  const sortedRankings = useMemo(() => {
-    if (!rankings) return [];
-
-    return rankings
-      .sort((a, b) => b.score - a.score)
-      .map((ranking, index) => ({
-        ...ranking,
-        position: index + 1,
-        // Show only weighted scores in the UI
-        basicKnowledgeScore: ranking.weighted_basic_score || 0,
-        specificKnowledgeScore: ranking.weighted_specific_1_score || 0,
-        specificKnowledge1Score: ranking.weighted_specific_1_score || 0,
-        specificKnowledge2Score: ranking.weighted_specific_2_score || 0,
-        specificKnowledge3Score: ranking.weighted_specific_3_score || 0,
-        discursiveScore: ranking.weighted_discursive_score || 0,
-        caseStudy1Score: ranking.weighted_case_study_1_score || 0,
-        caseStudy2Score: ranking.weighted_case_study_2_score || 0,
-        caseStudy3Score: ranking.weighted_case_study_3_score || 0,
-        // The total score is already weighted from the database
-        score: ranking.score
-      }));
-  }, [rankings]);
-
   return {
-    rankings: sortedRankings,
-    isLoading,
-    error
+    rankings,
+    isLoading
   };
-};
+}

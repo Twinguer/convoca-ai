@@ -4,10 +4,12 @@ import { Concurso } from '@/types/concursos';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
+export type QuotaType = 'Ampla Concorrência' | 'PPP' | 'PCD' | 'Hipossuficientes' | 'Indígenas' | 'Pessoas Trans';
+
 interface QuotaSelectorProps {
   concurso: Concurso;
-  selectedQuota: string;
-  onQuotaChange: (quota: string) => void;
+  selectedQuota: QuotaType;
+  onQuotaChange: (quota: QuotaType) => void;
 }
 
 export const QuotaSelector: React.FC<QuotaSelectorProps> = ({ 
@@ -61,7 +63,7 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
         value={selectedQuota} 
         onValueChange={(value) => {
           console.log('Selected quota changed to:', value);
-          onQuotaChange(value);
+          onQuotaChange(value as QuotaType);
         }}
         className="flex flex-col space-y-2"
       >

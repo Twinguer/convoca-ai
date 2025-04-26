@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,9 @@ import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import RankingsTab from '@/components/profile/RankingsTab';
+import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
+import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
 
 interface Follower {
   id: string;
@@ -310,12 +312,21 @@ const UserProfile = () => {
       </div>;
   }
 
-  return <div className="container mx-auto p-4 py-8">
+  return (
+    <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
         <div className="md:col-span-3">
           <Card>
             <CardContent className="pt-6">
-              <ProfileHeader name={name} email={user.email || ''} avatarUrl={avatarUrl} uploading={uploading} handleAvatarUpload={handleAvatarUpload} statusConcurseiro={statusConcurseiro} profileText={profileText} />
+              <ProfileHeader 
+                name={name} 
+                email={user?.email || ''} 
+                avatarUrl={avatarUrl} 
+                uploading={uploading} 
+                handleAvatarUpload={handleAvatarUpload}
+                statusConcurseiro={statusConcurseiro}
+                profileText={profileText}
+              />
             </CardContent>
           </Card>
         </div>
@@ -328,49 +339,62 @@ const UserProfile = () => {
             
             <Tabs defaultValue="profile">
               <div className="px-6">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="profile">Perfil</TabsTrigger>
-                  <TabsTrigger value="concursos">Concursos</TabsTrigger>
                   <TabsTrigger value="rankings">Rankings</TabsTrigger>
                 </TabsList>
               </div>
               
               <TabsContent value="profile">
-                <CardContent className="pt-6 space-y-4">
-                  <ProfileInfoTab name={name} setName={setName} email={user.email || ''} bio={bio} setBio={setBio} statusConcurseiro={statusConcurseiro} setStatusConcurseiro={setStatusConcurseiro} profileText={profileText} setProfileText={setProfileText} />
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="concursos">
-                <CardContent className="pt-6 space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="concursos-aprovados">Aprovações:</Label>
-                    <Textarea id="concursos-aprovados" value={concursosAprovados} onChange={e => setConcursosAprovados(e.target.value)} placeholder="Liste os concursos em que você foi aprovado (um por linha)" rows={5} />
-                    <p className="text-sm text-muted-foreground">
-                      Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
-                    </p>
-                  </div>
+                <CardContent className="pt-6">
+                  <ProfileInfoTab 
+                    name={name}
+                    setName={setName}
+                    email={user?.email || ''}
+                    bio={bio}
+                    setBio={setBio}
+                    statusConcurseiro={statusConcurseiro}
+                    setStatusConcurseiro={setStatusConcurseiro}
+                    profileText={profileText}
+                    setProfileText={setProfileText}
+                    concursosAprovados={concursosAprovados}
+                    setConcursosAprovados={setConcursosAprovados}
+                    concursosParticipando={concursosParticipando}
+                    setConcursosParticipando={setConcursosParticipando}
+                  />
                 </CardContent>
               </TabsContent>
               
               <TabsContent value="rankings">
                 <CardContent className="pt-6">
-                  <RankingsTab userId={user?.id || ''} userRankings={userRankings} isAuthenticated={!!user} />
+                  <CombinedRankingsTab 
+                    userId={user?.id || ''}
+                    userRankings={userRankings}
+                    isAuthenticated={!!user}
+                  />
                 </CardContent>
               </TabsContent>
             </Tabs>
             
             <CardFooter className="flex justify-between py-6 border-t">
-              <DeleteProfileButton userId={user.id} />
+              <DeleteProfileButton userId={user?.id || ''} />
               
-              <Button onClick={handleSaveProfile} disabled={saving} className="relative bg-emerald-600 hover:bg-emerald-700">
-                {saving ? <>
+              <Button 
+                onClick={handleSaveProfile} 
+                disabled={saving} 
+                className="relative bg-emerald-600 hover:bg-emerald-700"
+              >
+                {saving ? (
+                  <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Salvando...
-                  </> : <>
+                  </>
+                ) : (
+                  <>
                     <Check className="h-4 w-4 mr-2" />
                     Salvar alterações
-                  </>}
+                  </>
+                )}
               </Button>
             </CardFooter>
           </Card>
@@ -393,7 +417,8 @@ const UserProfile = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
 
 export default UserProfile;

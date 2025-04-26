@@ -8,10 +8,12 @@ interface RankingCardProps {
     position: number;
     score: number;
   } | null;
+  inscritos?: number;
 }
 export const RankingCard: React.FC<RankingCardProps> = ({
   participantCount = 0,
-  userRanking
+  userRanking,
+  inscritos = 0
 }) => {
   return <Card>
       <CardHeader className="pb-2">
@@ -21,19 +23,26 @@ export const RankingCard: React.FC<RankingCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center">
-          <Users className="mr-2 h-5 w-5 text-gray-600" />
-          <p className="text-lg">
-            Participantes: <Badge variant="outline">{participantCount}</Badge>
-          </p>
+        <div className="space-y-1">
+          <div className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-gray-600" />
+            <p className="font-normal text-sm">
+              Participantes: <Badge variant="outline">{participantCount}</Badge>
+            </p>
+          </div>
+          
+          <div className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-gray-600" />
+            <p className="text-sm">
+              Inscritos: <Badge variant="outline">{inscritos}</Badge>
+            </p>
+          </div>
+          
+          {userRanking && <p className="mt-4 text-sm">
+              Sua posição: <Badge>{userRanking.position}º</Badge> com{' '}
+              <Badge variant="secondary">{userRanking.score} pontos</Badge>
+            </p>}
         </div>
-        
-        {userRanking && <p className="mt-4 text-lg">
-            Sua posição: <Badge>{userRanking.position}º</Badge> com{' '}
-            <Badge variant="secondary">{userRanking.score} pontos</Badge>
-          </p>}
-        
-        {!userRanking}
       </CardContent>
     </Card>;
 };

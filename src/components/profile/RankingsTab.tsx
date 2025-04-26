@@ -77,8 +77,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({ userId, userRankings, isAuthe
           <p className="text-muted-foreground mb-4">
             Este usuário ainda não está participando de nenhum ranking.
           </p>
-          <Button variant="outline" onClick={() => navigate('/')}>
-            Ver concursos disponíveis
+          <Button variant="outline" onClick={() => navigate('/pre-classificacao')}>
+            Ver Rankings disponíveis
           </Button>
         </CardContent>
       </Card>

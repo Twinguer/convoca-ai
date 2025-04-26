@@ -1,12 +1,34 @@
+
 import * as React from "react"
+import DOMPurify from "dompurify"
 
 import { cn } from "@/lib/utils"
 
 export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  sanitize?: boolean;
+}
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
+  ({ className, value, onChange, sanitize = true, ...props }, ref) => {
+    // Handle sanitized input changes
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      if (sanitize && onChange) {
+        // Create a new synthetic event with sanitized value
+        const sanitizedEvent = {
+          ...e,
+          target: {
+            ...e.target,
+            value: DOMPurify.sanitize(e.target.value)
+          }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+        
+        onChange(sanitizedEvent);
+      } else if (onChange) {
+        onChange(e);
+      }
+    };
+    
     return (
       <textarea
         className={cn(
@@ -14,6 +36,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className
         )}
         ref={ref}
+        value={value}
+        onChange={handleChange}
         {...props}
       />
     )

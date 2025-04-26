@@ -11,10 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Building, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
+import { useAuth } from '@/hooks/useAuth';
 
 const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [filter, setFilter] = useState<ConcursoFilter>({});
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -43,12 +46,17 @@ const ListarConcursos: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este ranking?')) {
       try {
-        const { error } = await supabase
-          .from('concursos')
-          .delete()
-          .eq('id', id);
+        if (!user) {
+          toast({
+            title: 'Erro ao excluir ranking',
+            description: 'Você precisa estar logado para excluir um ranking.',
+            variant: 'destructive',
+          });
+          return;
+        }
         
-        if (error) throw error;
+        // Use the deleteRanking function and pass isAdmin=true
+        await deleteRanking(id, user.id, true);
         
         toast({
           title: 'Ranking excluído com sucesso!',
@@ -56,15 +64,23 @@ const ListarConcursos: React.FC = () => {
         });
         
         refetch();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao excluir ranking:', error);
         toast({
           title: 'Erro ao excluir ranking',
-          description: 'Ocorreu um erro ao tentar excluir o ranking.',
+          description: error.message || 'Ocorreu um erro ao tentar excluir o ranking.',
           variant: 'destructive',
         });
       }
     }
+  };
+
+  const handleCreateRanking = () => {
+    navigate('/criar-ranking');
+  };
+  
+  const handleViewRanking = (id: string) => {
+    window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
   };
   
   const filteredConcursos = concursos?.filter(concurso =>
@@ -76,7 +92,7 @@ const ListarConcursos: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Rankings Cadastrados</h1>
-        <Button onClick={() => navigate('/project/admin/man/concursos/novo')}>
+        <Button onClick={handleCreateRanking}>
           <Plus className="mr-2 h-4 w-4" /> Novo Ranking
         </Button>
       </div>
@@ -160,7 +176,7 @@ const ListarConcursos: React.FC = () => {
               <Building className="mx-auto h-12 w-12 text-gray-400 mb-2" />
               <h3 className="font-medium text-lg">Nenhum ranking encontrado</h3>
               <p className="mt-1">Tente ajustar os filtros ou adicione um novo ranking.</p>
-              <Button onClick={() => navigate('/project/admin/man/concursos/novo')} variant="outline" className="mt-4">
+              <Button onClick={handleCreateRanking} variant="outline" className="mt-4">
                 <Plus className="mr-2 h-4 w-4" /> Adicionar Ranking
               </Button>
             </div>
@@ -207,7 +223,7 @@ const ListarConcursos: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => navigate(`/concurso/${concurso.id}/resultados`)}
+                          onClick={() => handleViewRanking(concurso.id)}
                         >
                           <Eye className="h-4 w-4 text-blue-500" />
                           <span className="sr-only">Ver</span>

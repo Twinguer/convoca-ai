@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { AnswerOption } from './AnswerOption';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface QuestionCellProps {
-  questionNumber: number | null;
+  questionNumber: number;
   selectedAnswer?: string;
   onAnswerChange: (questionNumber: number, answer: string) => void;
   options: string[];
@@ -13,52 +15,60 @@ interface QuestionCellProps {
   isNullified?: boolean;
 }
 
-export const QuestionCell: React.FC<QuestionCellProps> = ({ 
-  questionNumber, 
-  selectedAnswer, 
-  onAnswerChange, 
+export const QuestionCell: React.FC<QuestionCellProps> = ({
+  questionNumber,
+  selectedAnswer,
+  onAnswerChange,
   options,
   disabled = false,
   examType = 'Alternativas',
   onClearAnswer,
   isNullified = false
 }) => {
-  if (questionNumber === null) {
-    return null;
-  }
-  
-  const isCertoErrado = examType === 'Certo ou Errado';
-
   return (
-    <div className={`flex flex-col border border-gray-200 rounded-md overflow-hidden bg-white hover:shadow-md transition-shadow ${isNullified ? 'opacity-50' : ''}`}>
-      <div className={`text-center font-bold text-sm ${isNullified ? 'bg-gray-200' : 'bg-emerald-100'} py-2 border-b border-gray-200`}>
-        Questão {questionNumber} {isNullified && '(Anulada)'}
+    <div className={`border rounded-md p-3 ${isNullified ? 'bg-gray-50' : 'bg-white'}`}>
+      <div className="flex justify-between items-center mb-2">
+        <div className="font-medium">
+          Questão {questionNumber}
+          {isNullified && (
+            <span className="ml-2 text-xs text-amber-600 font-normal bg-amber-50 px-1.5 py-0.5 rounded-full">
+              Anulada
+            </span>
+          )}
+        </div>
+        
+        {selectedAnswer && onClearAnswer && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 w-6 p-0" 
+            onClick={() => onClearAnswer(questionNumber)}
+            disabled={disabled}
+          >
+            <X className="h-3 w-3" />
+            <span className="sr-only">Limpar resposta</span>
+          </Button>
+        )}
       </div>
-      <div className={`flex justify-center items-center ${isCertoErrado ? 'gap-4 p-4' : 'gap-3 p-4'}`}>
+      
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         {options.map((option) => (
           <AnswerOption
             key={option}
             option={option}
             isSelected={selectedAnswer === option}
-            onClick={() => !disabled && !isNullified && onAnswerChange(questionNumber, option)}
-            disabled={disabled || isNullified}
+            onClick={() => onAnswerChange(questionNumber, option)}
+            disabled={disabled}
             examType={examType}
           />
         ))}
-        
-        {isCertoErrado && onClearAnswer && !isNullified && (
-          <button
-            onClick={() => onClearAnswer(questionNumber)}
-            disabled={disabled || !selectedAnswer}
-            className={`text-xs p-1 rounded ${!selectedAnswer || disabled 
-              ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
-              : 'text-gray-600 bg-gray-200 hover:bg-gray-300'}`}
-            title="Limpar resposta"
-          >
-            Limpar
-          </button>
-        )}
       </div>
+      
+      {isNullified && (
+        <div className="mt-2 text-xs text-amber-700 italic">
+          Esta questão foi anulada. Todos os candidatos recebem a pontuação.
+        </div>
+      )}
     </div>
   );
 };

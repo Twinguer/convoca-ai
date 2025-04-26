@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { StateSelector } from './StateSelector';
 
 interface GeneralInfoSectionProps {
   form: UseFormReturn<any>;
@@ -25,9 +25,8 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
   handleBancaChange
 }) => {
   return (
-    <>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Cargo Predefinido */}
         <FormField 
           control={form.control} 
           name="predefined_job_title" 
@@ -61,7 +60,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           )} 
         />
         
-        {/* Cargo Personalizado (aparece somente se "OUTRO" for selecionado) */}
         {isCustomTitle && (
           <FormField 
             control={form.control} 
@@ -109,7 +107,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <Select onValueChange={value => {
               field.onChange(value);
               handleBancaChange(value);
-            }} defaultValue={field.value} value={field.value}>
+            }} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma banca" />
@@ -128,7 +126,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           </FormItem>
         )} />
         
-        {/* Custom Banca field - only shown when OUTRO is selected */}
         {isCustomBanca && (
           <FormField 
             control={form.control} 
@@ -167,6 +164,20 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <FormMessage />
           </FormItem>
         )} />
+        
+        <FormField
+          control={form.control}
+          name="localidades"
+          render={({ field }) => (
+            <FormItem>
+              <StateSelector
+                selectedStates={field.value || []}
+                onStateChange={(states) => field.onChange(states)}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -205,16 +216,15 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
         <FormField control={form.control} name="exam_type" render={({field}) => (
           <FormItem>
             <FormLabel>Tipo de Prova</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um tipo" />
+                  <SelectValue placeholder="Selecione o tipo de prova" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
                 <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
-                <SelectItem value="Dissertativa">Dissertativa</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -234,6 +244,6 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           </FormItem>
         )} />
       </div>
-    </>
+    </div>
   );
 };

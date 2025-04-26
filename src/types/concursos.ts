@@ -14,6 +14,9 @@ export interface Concurso {
   exam_type?: string;
   wrong_answer_penalty?: number;
   alternatives_count?: number;
+  localidades?: string[];
+  
+  // Weight fields for all sections
   basic_knowledge_weight?: number;
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
@@ -23,10 +26,15 @@ export interface Concurso {
   case_study_1_weight?: number;
   case_study_2_weight?: number;
   case_study_3_weight?: number;
+  
   created_at?: string;
   updated_at?: string;
   predefined_job_title?: string;
   custom_job_title?: string;
+  
+  // Added missing properties
+  created_by_user_id?: string;
+  is_admin_created?: boolean;
   
   // Exam structure fields
   has_basic_knowledge?: boolean;
@@ -42,7 +50,7 @@ export interface Concurso {
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
   
-  // Reservation quota types
+  // Reservation quota fields
   has_ampla_concorrencia?: boolean;
   has_ppp?: boolean;
   has_pcd?: boolean;
