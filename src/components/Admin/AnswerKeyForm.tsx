@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Save, CheckCircle, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
@@ -24,6 +23,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
+  const [isRecalculationError, setIsRecalculationError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
   const { toast } = useToast();
 
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -185,6 +187,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
   const performRecalculation = async () => {
     try {
+      setIsRecalculationError(false);
       setIsRecalculating(true);
       
       toast({
@@ -197,6 +200,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
       if (recalculationResult.success) {
         setRecalculationSuccess(true);
+        setRetryCount(0);
+        
         toast({
           title: "Recálculo completado",
           description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
@@ -206,21 +211,35 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           setRecalculationSuccess(false);
         }, 5000);
       } else {
-        toast({
-          title: "Erro no recálculo",
-          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
-          variant: "destructive"
-        });
+        handleRecalculationError(recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.");
       }
     } catch (error: any) {
       console.error('Error during recalculation:', error);
-      toast({
-        title: "Erro no recálculo",
-        description: error.message || "Ocorreu um erro durante o recálculo das pontuações.",
-        variant: "destructive"
-      });
+      handleRecalculationError(error.message || "Ocorreu um erro durante o recálculo das pontuações.");
     } finally {
       setIsRecalculating(false);
+    }
+  };
+
+  const handleRecalculationError = (errorMessage: string) => {
+    setIsRecalculationError(true);
+    
+    if (retryCount < maxRetries) {
+      toast({
+        title: "Erro no recálculo",
+        description: `${errorMessage} Tentativa ${retryCount + 1} de ${maxRetries}. Tentando novamente...`,
+        variant: "destructive"
+      });
+      
+      setRetryCount(prev => prev + 1);
+      setTimeout(performRecalculation, 2000);
+    } else {
+      toast({
+        title: "Erro no recálculo",
+        description: `${errorMessage} Número máximo de tentativas atingido.`,
+        variant: "destructive"
+      });
+      setRetryCount(0);
     }
   };
 
@@ -296,7 +315,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
 
-      // Iniciar automaticamente o recálculo para todos os usuários
+      setRetryCount(0);
       await performRecalculation();
       
       setTimeout(() => {
@@ -436,18 +455,22 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         <div className="flex justify-between mt-4">
           <Button 
             onClick={performRecalculation}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className={`bg-blue-600 hover:bg-blue-700 text-white ${isRecalculationError ? 'border-red-500 border-2' : ''}`}
             disabled={isSaving || isRecalculating}
           >
             {isRecalculating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Recalculando...
+                {retryCount > 0 ? `Tentativa ${retryCount} de ${maxRetries}...` : 'Recalculando...'}
               </>
             ) : (
               <>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Recalcular Pontuações
+                {isRecalculationError ? (
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                ) : (
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                )}
+                {isRecalculationError ? 'Tentar Novamente' : 'Recalcular Pontuações'}
               </>
             )}
           </Button>

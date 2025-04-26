@@ -1,6 +1,5 @@
 
 import { supabase } from '../client';
-import { calculateRawScores, applyWeightsToScores, saveUserScores } from './scoreCalculation';
 
 // Interface for the response from the recalculate_all_scores RPC function
 interface RecalculateScoresResponse {
