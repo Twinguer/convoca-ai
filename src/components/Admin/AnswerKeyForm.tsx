@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     },
   });
 
-  // Initialize answers from existing data
   useEffect(() => {
     if (existingAnswers && existingAnswers.length > 0) {
       const answersMap: { [key: number]: string } = {};
@@ -199,7 +197,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         };
       });
       
-      // Delete existing answers first
       const { error: deleteError } = await supabase
         .from('answer_keys')
         .delete()
@@ -207,7 +204,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         
       if (deleteError) throw deleteError;
       
-      // Insert new answers
       if (answersArray.length > 0) {
         const { error: insertError } = await supabase
           .from('answer_keys')
@@ -222,7 +218,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado com sucesso.",
       });
       
-      // Reload data
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);
@@ -241,7 +236,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }
   };
 
-  // Get only the objective sections for tabs (basic and specific knowledge)
   const getObjectiveSectionList = () => {
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
@@ -256,7 +250,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Gabarito Oficial - {concurso.titulo}</CardTitle>
+        <CardTitle>Gabarito Oficial - {concurso?.titulo}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
@@ -273,7 +267,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
-        {/* Objective questions tabs (only for basic and specific knowledge) */}
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 

@@ -10,6 +10,8 @@ interface AnswerMatrixProps {
   disabled?: boolean;
   examType?: 'Alternativas' | 'Certo ou Errado';
   onClearAnswer?: (questionNumber: number) => void;
+  // Adding nullifiedQuestions prop to fix the compatibility issue
+  nullifiedQuestions?: Set<number>;
 }
 
 export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({ 
@@ -19,7 +21,8 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   getOptionsForQuestion,
   disabled = false,
   examType = 'Alternativas',
-  onClearAnswer
+  onClearAnswer,
+  nullifiedQuestions = new Set()
 }) => {
   if (matrix.length === 0) {
     return (
@@ -45,6 +48,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     disabled={disabled}
                     examType={examType}
                     onClearAnswer={onClearAnswer}
+                    isNullified={nullifiedQuestions.has(questionNumber)}
                   />
                 </div>
               )
