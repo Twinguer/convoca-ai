@@ -2,6 +2,13 @@
 import { supabase } from '../client';
 import { calculateRawScores, applyWeightsToScores, saveUserScores } from './scoreCalculation';
 
+// Interface for the response from the recalculate_all_scores RPC function
+interface RecalculateScoresResponse {
+  success: boolean;
+  error?: string;
+  updatedCount?: number;
+}
+
 // Recalcula as pontuações para todos os usuários em um concurso
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
@@ -19,18 +26,21 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     
     console.log('Resultado do recálculo:', data);
     
+    // Cast the data to our expected response type
+    const typedData = data as RecalculateScoresResponse;
+    
     // Verificar o resultado retornado pela função
-    if (!data?.success) {
+    if (!typedData?.success) {
       return { 
         success: false, 
-        error: data?.error || 'Falha ao recalcular pontuações', 
+        error: typedData?.error || 'Falha ao recalcular pontuações', 
         updatedCount: 0 
       };
     }
     
     return { 
       success: true, 
-      updatedCount: data.updatedCount || 0 
+      updatedCount: typedData.updatedCount || 0 
     };
   } catch (error: any) {
     console.error('Erro recalculando todas as pontuações de usuários:', error);
