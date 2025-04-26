@@ -127,23 +127,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     navigate(`/usuario/${userId}`);
   };
 
-  if (!isAuthenticated) {
-    return <Card>
-        <CardHeader>
-          <CardTitle>Classificação Pós-prova</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
-          <Button asChild>
-            <Link to="/auth" className="flex items-center">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Cadastrar-se
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>;
-  }
-  
   return <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -181,6 +164,20 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             availableQuotas={availableQuotas}
             sectionWeights={getSectionWeights(concurso)}
           />
+        )}
+        
+        {!isAuthenticated && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+            <p className="text-center text-gray-600">
+              Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
+            </p>
+            <Button asChild className="w-full mt-2">
+              <Link to="/auth">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Cadastrar-se ou fazer login
+              </Link>
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>;

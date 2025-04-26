@@ -95,30 +95,50 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Reca
             caseStudy3Score: ranking?.case_study_3_score || 0
           };
           
-          // Inicializar pontuações objetivas com zero
+          // Preservar pontuações objetivas existentes se o usuário não tiver respostas
           let rawScores = {
-            basicKnowledgeScore: 0,
-            specificKnowledgeScore: 0,
-            specific1Score: 0,
-            specific2Score: 0,
-            specific3Score: 0
+            basicKnowledgeScore: ranking?.basic_knowledge_score || 0,
+            specificKnowledgeScore: ranking?.specific_knowledge_score || 0,
+            specific1Score: ranking?.specific_knowledge_1_score || 0,
+            specific2Score: ranking?.specific_knowledge_2_score || 0,
+            specific3Score: ranking?.specific_knowledge_3_score || 0
           };
           
           // Se o usuário tem respostas, calcular pontuações objetivas
           if (userAnswers && userAnswers.length > 0) {
-            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: ${userAnswers.length} respostas encontradas`);
-            rawScores = await calculateRawScores(concursoId, userAnswers);
-          } else {
-            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: Nenhuma resposta encontrada, zerando pontuações objetivas`);
+            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: ${userAnswers.length} respostas encontradas, recalculando pontuações`);
+            
+            // Só calcula novas pontuações se houver respostas para calcular
+            const calculatedScores = await calculateRawScores(concursoId, userAnswers);
             
             // Registrar esta ocorrência no log para depuração
             await supabase.from('score_calculation_logs').insert([{
               user_ranking_id: ranking.id,
-              calculation_type: 'recalculate_zeroing_scores',
+              calculation_type: 'recalculate_with_answers',
+              calculation_details: {
+                concurso_id: concursoId,
+                user_id: ranking.user_id,
+                answers_count: userAnswers.length,
+                old_scores: rawScores,
+                new_scores: calculatedScores,
+                timestamp: new Date().toISOString()
+              }
+            }]);
+            
+            // Atualiza com as novas pontuações calculadas
+            rawScores = calculatedScores;
+          } else {
+            console.log(`[recalculateAllUserScores] Ranking ${ranking.id}, User ${ranking.user_id}: Nenhuma resposta encontrada, mantendo pontuações objetivas existentes`);
+            
+            // Registrar esta ocorrência no log para depuração
+            await supabase.from('score_calculation_logs').insert([{
+              user_ranking_id: ranking.id,
+              calculation_type: 'recalculate_preserving_scores',
               calculation_details: {
                 concurso_id: concursoId,
                 user_id: ranking.user_id,
                 reason: 'no_answers_found',
+                preserved_scores: rawScores,
                 timestamp: new Date().toISOString()
               }
             }]);

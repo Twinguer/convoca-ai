@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -181,7 +182,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
 // Force recalculation of all scores in a ranking
 export const forceRecalculateAllScores = async (concursoId: string): Promise<boolean> => {
   try {
-    console.log('[forceRecalculateAllScores] Initiating forced recalculation for concurso:', concursoId);
+    console.log('[forceRecalculateAllScores] Iniciating forced recalculation for concurso:', concursoId);
     
     const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/batchOperations');
     const result = await recalculateAllUserScores(concursoId);
