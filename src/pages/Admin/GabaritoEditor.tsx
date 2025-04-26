@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -168,14 +167,22 @@ const GabaritoEditor = () => {
         .insert(entries);
         
       if (insertError) throw insertError;
+
+      const { error: recalculationError } = await supabase
+        .rpc('recalculate_all_scores', { p_concurso_id: id });
+
+      if (recalculationError) {
+        throw new Error('Erro ao recalcular pontuações: ' + recalculationError.message);
+      }
       
       setSuccess(true);
       toast({
         title: "Gabarito salvo com sucesso",
-        description: "O gabarito oficial foi atualizado e as notas dos usuários serão recalculadas.",
+        description: "O gabarito oficial foi atualizado e as notas dos usuários foram recalculadas.",
       });
       
       queryClient.invalidateQueries({ queryKey: ['answer-key', id] });
+      queryClient.invalidateQueries({ queryKey: ['rankings', id] });
       
       setTimeout(() => {
         navigate(`/project/admin/man/concursos/editar/${id}`);
