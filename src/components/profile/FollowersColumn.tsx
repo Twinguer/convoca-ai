@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck } from 'lucide-react';
 import { UsersList, User } from './UsersList';
-import { getFollowers, getFollowing } from './FollowersService';
+import { FollowersService } from './FollowersService';
 
 interface FollowersColumnProps {
   userId: string;
@@ -18,12 +18,17 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
 
   useEffect(() => {
     const loadFollowersData = async () => {
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
+      
       setIsLoading(true);
       try {
         // Load followers and following in parallel
         const [followersData, followingData] = await Promise.all([
-          getFollowers(userId),
-          getFollowing(userId)
+          FollowersService.getUserFollowers(userId),
+          FollowersService.getUserFollowing(userId)
         ]);
         
         setFollowers(followersData);
@@ -38,22 +43,16 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
       }
     };
 
-    if (userId) {
-      loadFollowersData();
-    }
+    loadFollowersData();
   }, [userId]);
 
   const handleViewProfile = (id: string) => {
     navigate(`/usuario/${id}`);
   };
 
-  // Limitar para exatamente 6 usuários para exibição
-  const displayFollowers = followers.slice(0, 6);
-  const displayFollowing = following.slice(0, 6);
-
   return (
-    <div className="space-y-1">
-      <Card>
+    <>
+      <Card className="mb-1">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center">
             <Users className="h-4 w-4 mr-2 text-blue-500" />
@@ -63,7 +62,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
         <CardContent>
           <UsersList
             title=""
-            users={displayFollowers}
+            users={followers}
             isLoading={isLoading}
             emptyMessage="Nenhum seguidor ainda"
             icon={<></>}
@@ -83,7 +82,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
         <CardContent>
           <UsersList
             title=""
-            users={displayFollowing}
+            users={following}
             isLoading={isLoading}
             emptyMessage="Não seguindo ninguém ainda"
             icon={<></>}
@@ -92,6 +91,6 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
           />
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 };

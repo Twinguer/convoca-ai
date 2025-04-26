@@ -8,38 +8,16 @@ export interface Ranking {
   userId: string;
   avatarUrl?: string | null;
   basicKnowledgeScore?: number;
-  specificKnowledge1Score?: number;
-  specificKnowledge2Score?: number;
-  specificKnowledge3Score?: number;
-  specificKnowledgeScore?: number; // For backward compatibility
+  specificKnowledgeScore?: number; 
   discursiveScore?: number;
-  caseStudy1Score?: number;
-  caseStudy2Score?: number;
-  caseStudy3Score?: number;
-  reservationType: string; // Made this required instead of optional
-  displayReservation?: string;
-  id: string;
-  weightedBasicScore?: number;
-  weightedSpecific1Score?: number;
-  weightedSpecific2Score?: number;
-  weightedSpecific3Score?: number;
-  weightedDiscursiveScore?: number;
-  weightedCaseStudy1Score?: number;
-  weightedCaseStudy2Score?: number;
-  weightedCaseStudy3Score?: number;
 }
 
-// Define an interface for the profile data structure
-interface UserProfile {
-  name?: string;
-  avatar_url?: string | null;
-}
-
-export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
+export const fetchUserRankings = async (concursoId: string): Promise<Ranking[]> => {
   try {
-    console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
+    console.log('Fetching rankings for concurso:', concursoId);
     
-    let query = supabase
+    // First, get all rankings for the concurso
+    const { data: rankings, error: rankingsError } = await supabase
       .from('user_rankings')
       .select(`
         id,
@@ -47,79 +25,49 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score,
         basic_knowledge_score,
         specific_knowledge_score,
-        specific_knowledge_1_score,
-        specific_knowledge_2_score,
-        specific_knowledge_3_score,
-        discursive_score,
-        case_study_1_score,
-        case_study_2_score,
-        case_study_3_score,
-        weighted_basic_score,
-        weighted_specific_1_score,
-        weighted_specific_2_score,
-        weighted_specific_3_score,
-        weighted_discursive_score,
-        weighted_case_study_1_score,
-        weighted_case_study_2_score,
-        weighted_case_study_3_score,
-        reservation_type,
-        users_profiles (
-          name,
-          avatar_url
-        )
+        discursive_score
       `)
-      .eq('concurso_id', concursoId);
-    
-    if (reservationType && reservationType !== 'Ampla Concorrência') {
-      query = query.eq('reservation_type', reservationType);
-    }
-      
-    const { data: rankings, error: rankingsError } = await query
-      .order('score', { ascending: false })
-      // Setting cache to false to ensure we always get fresh data
-      .limit(1000);
+      .eq('concurso_id', concursoId)
+      .order('score', { ascending: false });
       
     if (rankingsError) {
       console.error('Error in fetchUserRankings query:', rankingsError);
       throw rankingsError;
     }
     
+    // If no rankings, return empty array
     if (!rankings || rankings.length === 0) {
       return [];
     }
-
-    console.log('Raw rankings data:', rankings);
     
+    // Now fetch the user profiles separately
+    const userIds = rankings.map(ranking => ranking.user_id);
+    const { data: profiles, error: profilesError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+      
+    if (profilesError) {
+      console.error('Error fetching user profiles:', profilesError);
+      throw profilesError;
+    }
+    
+    console.log('User profiles data:', profiles);
+    
+    // Map the rankings with profile information
     const formattedRankings = rankings.map((ranking, index) => {
-      // Safely access profile properties by typecasting the profile object
-      const profile = (ranking.users_profiles as UserProfile) || {};
+      // Find the matching profile
+      const profile = profiles?.find(p => p.id === ranking.user_id);
       
       return {
         position: index + 1,
-        name: profile.name || 'Usuário Anônimo',
-        avatarUrl: profile.avatar_url || null,
+        name: profile?.name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
+        avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
-        discursiveScore: ranking.discursive_score || 0,
-        caseStudy1Score: ranking.case_study_1_score || 0,
-        caseStudy2Score: ranking.case_study_2_score || 0,
-        caseStudy3Score: ranking.case_study_3_score || 0,
-        weightedBasicScore: ranking.weighted_basic_score || 0,
-        weightedSpecific1Score: ranking.weighted_specific_1_score || 0,
-        weightedSpecific2Score: ranking.weighted_specific_2_score || 0,
-        weightedSpecific3Score: ranking.weighted_specific_3_score || 0,
-        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
-        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
-        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
-        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
-        reservationType: ranking.reservation_type || 'Ampla Concorrência',
-        displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
-        id: ranking.id
+        discursiveScore: ranking.discursive_score || 0
       };
     });
     
@@ -128,74 +76,5 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   } catch (error) {
     console.error('Error fetching rankings:', error);
     return [];
-  }
-};
-
-// Helper function to get abbreviation for reservation type
-const getReservationAbbreviation = (reservationType: string): string => {
-  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
-  
-  // Get first three letters as abbreviation
-  const abbr = reservationType.substring(0, 3).toUpperCase();
-  return abbr;
-};
-
-export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('concursos')
-      .select(`
-        has_ampla_concorrencia,
-        has_ppp,
-        has_pcd,
-        has_hipossuficientes,
-        has_indigenas,
-        has_transsexuais
-      `)
-      .eq('id', concursoId)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching concurso reservation types:', error);
-      return ['Ampla Concorrência'];
-    }
-    
-    const types = [];
-    
-    // Ampla Concorrência is always available
-    types.push('Ampla Concorrência');
-    
-    if (data.has_ppp) types.push('PPP');
-    if (data.has_pcd) types.push('PCD');
-    if (data.has_hipossuficientes) types.push('Hipossuficientes');
-    if (data.has_indigenas) types.push('Indígenas');
-    if (data.has_transsexuais) types.push('Pessoas Trans');
-    
-    console.log('Available reservation types for concurso', concursoId, ':', types);
-    return types;
-  } catch (error) {
-    console.error('Error determining available reservation types:', error);
-    return ['Ampla Concorrência'];
-  }
-};
-
-// Force recalculation of all scores in a ranking
-export const forceRecalculateAllScores = async (concursoId: string): Promise<boolean> => {
-  try {
-    console.log('[forceRecalculateAllScores] Iniciating forced recalculation for concurso:', concursoId);
-    
-    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/batchOperations');
-    const result = await recalculateAllUserScores(concursoId);
-    
-    if (result.success) {
-      console.log(`[forceRecalculateAllScores] Successfully recalculated ${result.updatedCount} user rankings`);
-      return true;
-    } else {
-      console.error('[forceRecalculateAllScores] Error recalculating scores:', result.error);
-      return false;
-    }
-  } catch (error) {
-    console.error('[forceRecalculateAllScores] Exception during recalculation:', error);
-    return false;
   }
 };

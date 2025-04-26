@@ -13,15 +13,13 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
         orgao,
         banca,
         data_publicacao,
-        etapa_atual,
-        created_by_user_id,
-        is_admin_created
+        etapa_atual
       `)
       .order('data_publicacao', { ascending: false });
 
     if (error) throw error;
 
-    // For each concurso, get the participant count and creator info
+    // For each concurso, get the participant count
     const rankings = await Promise.all(
       concursos.map(async (concurso) => {
         // Use RPC function to get participant count more reliably
@@ -33,30 +31,13 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           return null;
         }
 
-        // If there's a creator user ID, fetch their name
-        let creatorName = null;
-        if (concurso.created_by_user_id && !concurso.is_admin_created) {
-          const { data: userData, error: userError } = await supabase
-            .from('users_profiles')
-            .select('name')
-            .eq('id', concurso.created_by_user_id)
-            .maybeSingle();
-
-          if (!userError && userData) {
-            creatorName = userData.name;
-          }
-        }
-
         return {
           id: concurso.id,
           examDate: concurso.data_publicacao || new Date().toISOString(),
           banca: concurso.banca,
           concursoTitle: concurso.orgao,
           cargoTitle: concurso.titulo,
-          participantCount: countData || 0,
-          createdByUserId: concurso.created_by_user_id || null,
-          creatorName: creatorName,
-          isAdminCreated: concurso.is_admin_created
+          participantCount: countData || 0
         };
       })
     );

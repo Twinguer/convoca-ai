@@ -10,34 +10,29 @@ const AdminDashboard: React.FC = () => {
   const [recentConcursos, setRecentConcursos] = useState(0);
   const [activeConcursos, setActiveConcursos] = useState(0);
 
-  const {
-    data: statsData,
-    isLoading
-  } = useQuery({
+  // Fetch concursos count and other stats
+  const { data: statsData, isLoading } = useQuery({
     queryKey: ['admin-dashboard-stats'],
     queryFn: async () => {
-      const {
-        count: concursosCount
-      } = await supabase.from('concursos').select('*', {
-        count: 'exact',
-        head: true
-      });
-
+      // Get concursos count
+      const { count: concursosCount } = await supabase
+        .from('concursos')
+        .select('*', { count: 'exact', head: true });
+      
+      // Get concursos added in the last 30 days
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const {
-        count: recentCount
-      } = await supabase.from('concursos').select('*', {
-        count: 'exact',
-        head: true
-      }).gte('created_at', thirtyDaysAgo.toISOString());
-
-      const {
-        count: activeCount
-      } = await supabase.from('concursos').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('status', 'Em andamento');
+      const { count: recentCount } = await supabase
+        .from('concursos')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', thirtyDaysAgo.toISOString());
+      
+      // Get active concursos
+      const { count: activeCount } = await supabase
+        .from('concursos')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'Em andamento');
+      
       return {
         concursosCount: concursosCount || 0,
         recentConcursos: recentCount || 0,
@@ -46,67 +41,74 @@ const AdminDashboard: React.FC = () => {
     }
   });
 
+  // Set up real-time subscription for user count updates
   useEffect(() => {
     const fetchUserCount = async () => {
-      const {
-        count
-      } = await supabase.from('users_profiles').select('*', {
-        count: 'exact',
-        head: true
-      });
+      const { count } = await supabase
+        .from('users_profiles')
+        .select('*', { count: 'exact', head: true });
+      
       setUserCount(count || 0);
     };
+
     fetchUserCount();
 
-    const channel = supabase.channel('users_profiles_changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'users_profiles'
-    }, () => fetchUserCount()).subscribe();
+    // Subscribe to changes in the users_profiles table
+    const channel = supabase
+      .channel('users_profiles_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'users_profiles' },
+        () => fetchUserCount()
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
+  // Update state from query results
   useEffect(() => {
     if (statsData) {
       setRecentConcursos(statsData.recentConcursos);
       setActiveConcursos(statsData.activeConcursos);
     }
   }, [statsData]);
-  
-  const handleVisitSite = () => {
-    window.open('/?admin=true', '_blank');
-  };
-  
-  const dashboardCards = [{
-    title: 'Total de Rankings',
-    value: isLoading ? '...' : statsData?.concursosCount.toString(),
-    description: 'Rankings cadastrados',
-    icon: <FileText className="h-6 w-6 text-blue-500" />
-  }, {
-    title: 'Rankings Recentes',
-    value: isLoading ? '...' : recentConcursos.toString(),
-    description: 'Adicionados nos últimos 30 dias',
-    icon: <Calendar className="h-6 w-6 text-green-500" />
-  }, {
-    title: 'Rankings Ativos',
-    value: isLoading ? '...' : activeConcursos.toString(),
-    description: 'Em andamento',
-    icon: <Building className="h-6 w-6 text-amber-500" />
-  }, {
-    title: 'Total de Participantes',
-    value: isLoading ? '...' : userCount.toString(),
-    description: 'Usuários registrados',
-    icon: <User className="h-6 w-6 text-purple-500" />
-  }];
-  
+
+  const dashboardCards = [
+    {
+      title: 'Total de Concursos',
+      value: isLoading ? '...' : statsData?.concursosCount.toString(),
+      description: 'Concursos cadastrados',
+      icon: <FileText className="h-6 w-6 text-blue-500" />
+    },
+    {
+      title: 'Concursos Recentes',
+      value: isLoading ? '...' : recentConcursos.toString(),
+      description: 'Adicionados nos últimos 30 dias',
+      icon: <Calendar className="h-6 w-6 text-green-500" />
+    },
+    {
+      title: 'Concursos Ativos',
+      value: isLoading ? '...' : activeConcursos.toString(),
+      description: 'Em andamento',
+      icon: <Building className="h-6 w-6 text-amber-500" />
+    },
+    {
+      title: 'Total de Participantes',
+      value: isLoading ? '...' : userCount.toString(),
+      description: 'Usuários registrados',
+      icon: <User className="h-6 w-6 text-purple-500" />
+    }
+  ];
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Painel Administrativo</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {dashboardCards.map((card, index) => <Card key={index}>
+        {dashboardCards.map((card, index) => (
+          <Card key={index}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-md font-medium">{card.title}</CardTitle>
@@ -117,7 +119,8 @@ const AdminDashboard: React.FC = () => {
               <div className="text-2xl font-bold">{card.value}</div>
               <CardDescription>{card.description}</CardDescription>
             </CardContent>
-          </Card>)}
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -127,16 +130,39 @@ const AdminDashboard: React.FC = () => {
             <CardDescription>Acesse as principais funcionalidades</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a href="/criar-ranking" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
-            <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Rankings</a>
-            <a href="/project/admin/man/usuarios" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Usuários</a>
-            <a href="/?admin=true" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site (Admin)</a>
+            <a 
+              href="/project/admin/man/concursos/novo" 
+              className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
+            >
+              Cadastrar novo concurso
+            </a>
+            <a 
+              href="/project/admin/man/concursos" 
+              className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
+            >
+              Gerenciar concursos
+            </a>
+            <a 
+              href="/" 
+              target="_blank"
+              className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
+            >
+              Visualizar site público
+            </a>
+            <a 
+              href="/api/scrape-cebraspe"
+              target="_blank" 
+              className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md"
+            >
+              Atualizar concursos do Cebraspe
+            </a>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle>Informações do Sistema</CardTitle>
+            <CardDescription>Detalhes do sistema ConvocAI</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">

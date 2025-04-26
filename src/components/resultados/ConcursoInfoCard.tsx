@@ -9,20 +9,7 @@ interface ConcursoInfoCardProps {
   concurso?: Concurso;
 }
 
-export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
-  concurso
-}) => {
-  // Exibe todas as localidades reais, sem "Nacional"
-  const getLocationDisplay = (localidades?: string[]): string => {
-    if (!localidades || localidades.length === 0) return '-';
-    // remove "Nacional" e mostra somente as localidades escolhidas (Estados)
-    const filtered = localidades.filter(loc => loc !== 'Nacional');
-    if (filtered.length === 0 && localidades.includes('Nacional')) {
-      return '-';
-    }
-    return filtered.join(', ');
-  };
-
+export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso }) => {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -32,14 +19,12 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          <p className="text-sm">
-            Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
-          </p>
-          <p className="text-sm">
-            Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
-          </p>
-        </div>
+        <p className="text-lg">
+          Órgão: <Badge variant="outline">{concurso?.orgao}</Badge>
+        </p>
+        <p className="mt-2 text-lg">
+          Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
+        </p>
       </CardContent>
     </Card>
   );
