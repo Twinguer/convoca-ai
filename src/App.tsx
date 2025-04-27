@@ -21,12 +21,6 @@ import PublicUserProfile from "./pages/PublicUserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
 import Comunidade from "./pages/Comunidade";
-import AdminLogin from "./pages/Admin/Login";
-import AdminDashboard from "./pages/Admin/Dashboard";
-import ListarConcursos from "./pages/Admin/ListarConcursos";
-import ListarUsuarios from "./pages/Admin/ListarUsuarios";
-import AdminLayout from "./components/Admin/AdminLayout";
-import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
 
 const App = () => {
@@ -41,17 +35,6 @@ const App = () => {
                 <Sonner />
                 <BrowserRouter>
                   <Routes>
-                    <Route path="/project/admin/man/login" element={<AdminLogin />} />
-                    <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
-                    <Route path="/project/admin/man" element={<ProtectedRoute>
-                        <AdminLayout />
-                      </ProtectedRoute>}>
-                      <Route path="dashboard" element={<AdminDashboard />} />
-                      <Route path="concursos" element={<ListarConcursos />} />
-                      <Route path="usuarios" element={<ListarUsuarios />} />
-                    </Route>
-                    <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
-                    <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/perfil" element={<>
                         <Menu />

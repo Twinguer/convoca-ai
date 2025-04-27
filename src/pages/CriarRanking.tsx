@@ -1,19 +1,36 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { createRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
-import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
-import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
+
+// Temporary placeholder components until you recreate these components
+const GeneralTab = (props) => (
+  <div className="p-4">
+    <h3 className="text-lg font-medium mb-4">Informações Gerais</h3>
+    <p className="text-muted-foreground">
+      Este componente precisa ser recriado sem dependências de admin.
+    </p>
+  </div>
+);
+
+const AnswerKeyTab = (props) => (
+  <div className="p-4">
+    <h3 className="text-lg font-medium mb-4">Gabarito Oficial</h3>
+    <p className="text-muted-foreground">
+      Este componente precisa ser recriado sem dependências de admin.
+    </p>
+  </div>
+);
 
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;

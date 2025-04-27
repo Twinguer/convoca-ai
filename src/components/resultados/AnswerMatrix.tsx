@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { QuestionCell } from './QuestionCell';
-import { NullifyQuestionButton } from '@/components/Admin/NullifyQuestionButton';
 
 interface AnswerMatrixProps {
   matrix: (number | null)[][];
@@ -71,13 +70,6 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     onClearAnswer={onClearAnswer}
                     isNullified={nullifiedQuestions.has(questionNumber)}
                   />
-                  {isAdminView && onNullifyQuestion && (
-                    <NullifyQuestionButton
-                      questionNumber={questionNumber}
-                      isNullified={nullifiedQuestions.has(questionNumber)}
-                      onNullify={onNullifyQuestion}
-                    />
-                  )}
                 </div>
               ) : null
             )}
