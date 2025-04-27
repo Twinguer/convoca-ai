@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { ExamStructureSection } from '@/components/Admin/CreateRanking/ExamStructureSection';
-import { plus, save } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 
 interface GeneralTabProps {
   form: any;
