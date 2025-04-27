@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
@@ -97,10 +96,20 @@ export function useResultadosData() {
   
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
-  // Function to manually refresh all data
+  // Function to manually refresh all data - MODIFIED VERSION
   const refreshData = async () => {
     console.log("[useResultadosData] Atualizando rankings manualmente");
     
+<<<<<<< HEAD
+    try {
+      // Primeiro, forçar recálculo usando a função no banco de dados
+      const { data: recalcResult, error: recalcError } = await supabase.rpc('recalculate_all_scores', {
+        p_concurso_id: id
+      });
+      
+      if (recalcError) {
+        throw recalcError;
+=======
     if (recalculationNeeded && id) {
       try {
         // Trigger recalculation of all scores
@@ -109,13 +118,41 @@ export function useResultadosData() {
         console.log("[useResultadosData] Resultado do recálculo:", result);
       } catch (error) {
         console.error("[useResultadosData] Erro ao recalcular pontuações:", error);
+>>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
       }
+<<<<<<< HEAD
+      
+      console.log("[useResultadosData] Recalculation result:", recalcResult);
+      
+      // Forçar uma limpeza total do cache para este concurso
+      queryClient.removeQueries({ queryKey: ['rankings', id] });
+      queryClient.removeQueries({ queryKey: ['participant-count', id] });
+      
+      // Buscar dados atualizados
+      await refetchRankings();
+      await refetchCount();
+      
+      // Forçar atualização para todos os usuários
+      supabase.channel('force-refresh-rankings')
+        .send({
+          type: 'broadcast',
+          event: 'rankings-updated',
+          payload: { concursoId: id, timestamp: new Date().toISOString() }
+        });
+      
+    } catch (error) {
+      console.error("[useResultadosData] Error during recalculation:", error);
+=======
+>>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
     }
+<<<<<<< HEAD
+=======
     
     if (isAuthenticated) {
       refetchRankings();
     }
     refetchCount();
+>>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
   };
   
   return {

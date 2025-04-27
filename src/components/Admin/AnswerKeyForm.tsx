@@ -93,6 +93,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   }
 
   // This is a simplified version without admin functionality
+>>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
   return (
     <Card>
       <CardHeader>
@@ -121,6 +122,67 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               </div>
             </div>
           </div>
+<<<<<<< HEAD
+        </div>
+        
+        {objectiveSections.length > 0 && (
+          <div className="bg-white border rounded-lg shadow-sm p-0">
+            <Tabs value={selectedSection} onValueChange={(v) => setSelectedSection(v as any)}>
+              <TabsList className="bg-gray-100 border-b p-0 rounded-t-lg">
+                {objectiveSections.map(section => (
+                  <TabsTrigger 
+                    key={section.key} 
+                    value={section.key}
+                    className="rounded-none border-r last:border-r-0 py-2 px-4 data-[state=active]:bg-white"
+                  >
+                    {section.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {objectiveSections.map(section => (
+                <TabsContent key={section.key} value={section.key}>
+                  <div className="p-4 bg-gray-50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {createAnswerMatrix().map((row, rowIndex) => (
+                        <React.Fragment key={rowIndex}>
+                          {row.map((questionNumber, colIndex) => (
+                            questionNumber !== null && (
+                              <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
+                                <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {getOptionsForQuestion().map((option) => (
+                                    <button
+                                      key={option}
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
+                                        ${answers[questionNumber] === option 
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                      onClick={() => handleAnswerChange(questionNumber, option)}
+                                      disabled={nullifiedQuestions.has(questionNumber)}
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                                <NullifyQuestionButton
+                                  questionNumber={questionNumber}
+                                  isNullified={nullifiedQuestions.has(questionNumber)}
+                                  onNullify={handleNullifyQuestion}
+                                />
+                              </div>
+                            )
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+=======
+>>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
         )}
         
         <div className="text-center mt-4">
