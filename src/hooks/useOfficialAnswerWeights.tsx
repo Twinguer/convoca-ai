@@ -3,8 +3,6 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/useAuth';
-import { fetchConcursoById } from '@/services/concursoService';
 
 interface AnswerWeight {
   resposta: string;
@@ -20,16 +18,7 @@ interface OfficialAnswerWeights {
 export const useOfficialAnswerWeights = (concursoId: string) => {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
-  const { user } = useAuth();
 
-  // Get concurso details to check if user is the creator
-  const { data: concurso } = useQuery({
-    queryKey: ['concurso', concursoId],
-    queryFn: () => fetchConcursoById(concursoId),
-  });
-
-  const isCreator = !!user && !!concurso && user.id === concurso.created_by_user_id;
-  
   // Buscar gabarito oficial com pesos
   const { data: officialAnswers, isLoading } = useQuery({
     queryKey: ['official-answers-weights', concursoId],
@@ -60,11 +49,6 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       weight: number;
       isNullified: boolean;
     }) => {
-      // Check if user is the creator of this ranking
-      if (!isCreator) {
-        throw new Error('Apenas o criador do ranking pode modificar o gabarito');
-      }
-      
       setIsUpdating(true);
       
       try {
@@ -89,7 +73,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     },
     onError: (error) => {
       console.error('Erro ao atualizar gabarito:', error);
-      toast.error('Erro ao atualizar gabarito: ' + error.message);
+      toast.error('Erro ao atualizar gabarito');
     }
   });
 
@@ -112,7 +96,6 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     officialAnswers,
     isLoading,
     isUpdating,
-    updateAnswer,
-    isCreator
+    updateAnswer
   };
 };

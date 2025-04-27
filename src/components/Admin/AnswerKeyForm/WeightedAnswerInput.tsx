@@ -16,7 +16,6 @@ interface WeightedAnswerInputProps {
   onAnswerChange: (questionNumber: number, answer: string) => void;
   onWeightChange: (questionNumber: number, weight: number) => void;
   onNullifyQuestion: (questionNumber: number) => void;
-  isCreator?: boolean;
 }
 
 export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
@@ -28,12 +27,8 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
   disabled = false,
   onAnswerChange,
   onWeightChange,
-  onNullifyQuestion,
-  isCreator = false
+  onNullifyQuestion
 }) => {
-  // Only creator can edit answers
-  const isEditable = isCreator && !disabled;
-  
   return (
     <div className="border p-4 rounded-lg bg-white shadow-sm">
       <div className="flex justify-between items-start mb-2">
@@ -46,32 +41,28 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
             </span>
           )}
         </div>
-        {isCreator && (
-          <Button
-            type="button"
-            variant={isNullified ? "destructive" : "outline"}
-            size="sm"
-            onClick={() => onNullifyQuestion(questionNumber)}
-            disabled={!isEditable}
-            className="text-xs"
-          >
-            {isNullified ? "Anulada" : "Anular"}
-          </Button>
-        )}
+        <Button
+          type="button"
+          variant={isNullified ? "destructive" : "outline"}
+          size="sm"
+          onClick={() => onNullifyQuestion(questionNumber)}
+          className="text-xs"
+        >
+          {isNullified ? "Anulada" : "Anular"}
+        </Button>
       </div>
 
       <RadioGroup
         value={selectedAnswer}
         onValueChange={(value) => onAnswerChange(questionNumber, value)}
         className="flex flex-wrap gap-2 mb-3"
-        disabled={!isEditable || isNullified}
+        disabled={disabled || isNullified}
       >
         {options.map((option) => (
           <div key={option} className="flex items-center space-x-1">
             <RadioGroupItem
               value={option}
               id={`q${questionNumber}-${option}`}
-              disabled={!isEditable || isNullified}
             />
             <Label htmlFor={`q${questionNumber}-${option}`} className="text-sm">
               {option}
@@ -80,20 +71,18 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
         ))}
       </RadioGroup>
 
-      {isCreator && (
-        <div className="mt-2">
-          <Label className="text-xs text-gray-500 mb-1">Peso da questão</Label>
-          <Input
-            type="number"
-            min="0.1"
-            step="0.1"
-            value={weight}
-            onChange={(e) => onWeightChange(questionNumber, parseFloat(e.target.value) || 1)}
-            className="w-24 text-sm"
-            disabled={!isEditable || isNullified}
-          />
-        </div>
-      )}
+      <div className="mt-2">
+        <Label className="text-xs text-gray-500 mb-1">Peso da questão</Label>
+        <Input
+          type="number"
+          min="0.1"
+          step="0.1"
+          value={weight}
+          onChange={(e) => onWeightChange(questionNumber, parseFloat(e.target.value) || 1)}
+          className="w-24 text-sm"
+          disabled={disabled || isNullified}
+        />
+      </div>
     </div>
   );
 };

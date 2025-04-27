@@ -20,7 +20,7 @@ export const answerKeyService = {
     return data;
   },
 
-  // Atualizar resposta com peso (apenas para criador do ranking)
+  // Atualizar resposta com peso
   async updateAnswer({
     concursoId,
     questionNumber,
@@ -35,6 +35,14 @@ export const answerKeyService = {
       p_weight: weight,
       p_is_nullified: isNullified
     });
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Migrar dados do gabarito antigo para o novo formato
+  async migrateAnswerKeys(concursoId: string) {
+    const { data, error } = await supabase.rpc('migrate_answer_keys_to_weights');
 
     if (error) throw error;
     return data;

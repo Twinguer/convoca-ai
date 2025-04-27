@@ -1,133 +1,229 @@
-
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue 
-} from '@/components/ui/select';
-import { FormField } from '@/components/ui/form';
-import { Switch } from '@/components/ui/switch';
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { BasicInfoSection } from './BasicInfoSection';
+import { ExamStructureSection } from './ExamStructureSection';
+import { ReservationQuotasSection } from './ReservationQuotasSection';
+import { useToast } from '@/hooks/use-toast';
 
 interface GeneralTabProps {
   form: any;
+  jobTitles: Array<{id: string, title: string}>;
+  isCustomTitle: boolean;
+  isCustomBanca: boolean;
+  handleJobTitleChange: (value: string) => void;
+  handleCustomTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleBancaChange: (value: string) => void;
+  handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleNextTab: () => void;
+  onSaveRanking?: () => Promise<void>;
+  isSubmitting?: boolean;
+  selectedStates: string[];
+  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-export const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
+export const GeneralTab: React.FC<GeneralTabProps> = ({
+  form,
+  jobTitles,
+  isCustomTitle,
+  isCustomBanca,
+  handleJobTitleChange,
+  handleCustomTitleChange,
+  handleBancaChange,
+  handleOrgaoChange,
+  handleNextTab,
+  onSaveRanking,
+  isSubmitting,
+  selectedStates,
+  setSelectedStates
+}) => {
+  const [rankingSaved, setRankingSaved] = useState<boolean>(false);
+  const { toast } = useToast();
+  const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
+
+  useEffect(() => {
+    setIsFirstSaveDone(false);
+  }, [form]);
+
+  useEffect(() => {
+    const formValues = form.getValues();
+    if (formValues.localidades && Array.isArray(formValues.localidades) && formValues.localidades.length > 0) {
+      setSelectedStates(formValues.localidades);
+    }
+  }, [form, setSelectedStates]);
+
+  const validateBeforeSave = () => {
+    const currentValues = form.getValues();
+
+    if (!currentValues.predefined_job_title) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, selecione um cargo.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (currentValues.predefined_job_title === "OUTRO" && !currentValues.custom_job_title) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, informe o cargo personalizado.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!currentValues.orgao) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, informe o órgão.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (selectedStates.length === 0) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, selecione pelo menos um estado.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!currentValues.banca) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, selecione uma banca.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (currentValues.banca === "OUTRO" && !currentValues.custom_banca) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, informe a banca personalizada.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const hasAnyKnowledgeArea = 
+      currentValues.has_basic_knowledge || 
+      currentValues.has_specific_knowledge_1 || 
+      currentValues.has_specific_knowledge_2 || 
+      currentValues.has_specific_knowledge_3 ||
+      currentValues.has_discursive ||
+      currentValues.has_case_study_1 ||
+      currentValues.has_case_study_2 ||
+      currentValues.has_case_study_3;
+
+    if (!hasAnyKnowledgeArea) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, adicione pelo menos uma área de conhecimento.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    const hasAnyQuota = 
+      currentValues.has_ampla_concorrencia || 
+      currentValues.has_ppp || 
+      currentValues.has_pcd ||
+      currentValues.has_hipossuficientes ||
+      currentValues.has_indigenas ||
+      currentValues.has_transsexuais;
+
+    if (!hasAnyQuota) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, selecione pelo menos uma cota de reserva.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (
+      (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
+      (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
+      (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
+      (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
+    ) {
+      toast({
+        title: "Erro de validação",
+        description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (validateBeforeSave() && onSaveRanking) {
+      form.setValue('localidades', selectedStates, { shouldDirty: true });
+      await onSaveRanking();
+      setIsFirstSaveDone(true);
+    }
+  };
+
+  const validateBeforeNext = () => {
+    if (!isFirstSaveDone) {
+      toast({
+        title: "Salvar necessário",
+        description: "Salve o ranking antes de preencher o gabarito.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (!validateBeforeNext()) return;
+    handleNextTab();
+  };
+
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="titulo">Título do Concurso</Label>
-            <Input 
-              id="titulo"
-              placeholder="Ex: Concurso INSS 2023"
-              {...form.register("titulo")}
-            />
-            {form.formState.errors.titulo && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.titulo.message}
-              </p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="orgao">Órgão</Label>
-            <Input 
-              id="orgao"
-              placeholder="Ex: INSS, Receita Federal"
-              {...form.register("orgao")}
-            />
-            {form.formState.errors.orgao && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.orgao.message}
-              </p>
-            )}
-          </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="descricao">Descrição</Label>
-          <Textarea 
-            id="descricao"
-            placeholder="Descreva o concurso"
-            {...form.register("descricao")}
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="banca">Banca</Label>
-            <Select 
-              onValueChange={(value) => form.setValue("banca", value)}
-              defaultValue={form.getValues("banca")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione a banca" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CEBRASPE">CEBRASPE</SelectItem>
-                <SelectItem value="FGV">FGV</SelectItem>
-                <SelectItem value="CESPE">CESPE</SelectItem>
-                <SelectItem value="VUNESP">VUNESP</SelectItem>
-                <SelectItem value="FCC">FCC</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="vagas">Número de Vagas</Label>
-            <Input 
-              id="vagas"
-              type="number"
-              min="0"
-              {...form.register("vagas", { valueAsNumber: true })}
-            />
-          </div>
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-medium mb-2">Modalidades de Cotas</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="has_ppp"
-              render={({ field }) => (
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="has_ppp" 
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                  <Label htmlFor="has_ppp">PPP (Negros)</Label>
-                </div>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="has_pcd"
-              render={({ field }) => (
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="has_pcd" 
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                  <Label htmlFor="has_pcd">PCD</Label>
-                </div>
-              )}
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <BasicInfoSection 
+        form={form}
+        jobTitles={jobTitles}
+        isCustomTitle={isCustomTitle}
+        isCustomBanca={isCustomBanca}
+        handleJobTitleChange={handleJobTitleChange}
+        handleCustomTitleChange={handleCustomTitleChange}
+        handleBancaChange={handleBancaChange}
+        handleOrgaoChange={handleOrgaoChange}
+        selectedStates={selectedStates}
+        setSelectedStates={setSelectedStates}
+      />
+
+      <ExamStructureSection form={form} />
+
+      <ReservationQuotasSection form={form} />
+
+      <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
+        <Button 
+          type="button" 
+          onClick={handleSave}
+          variant="secondary"
+          disabled={isFirstSaveDone || isSubmitting}
+          className={isFirstSaveDone ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""}
+        >
+          Salvar Ranking
+        </Button>
+        <Button 
+          type="button"
+          onClick={handleNext}
+          disabled={!isFirstSaveDone}
+          className={isFirstSaveDone ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"}
+        >
+          Preencher Gabarito
+        </Button>
+      </div>
+    </div>
   );
 };
-

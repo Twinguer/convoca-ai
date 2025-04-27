@@ -2,6 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { UserCard } from './UserCard';
+import { UserActions } from '../Admin/UserActions';
 
 export interface User {
   id: string;
@@ -57,7 +58,11 @@ export const UsersList: React.FC<UsersListProps> = ({
               />
               {isAdminMode && (
                 <div className="absolute top-0 right-0 mt-1 mr-1">
-                  {/* Admin actions removed for simplicity */}
+                  <UserActions 
+                    userId={user.id}
+                    userName={user.name}
+                    onSuccess={() => window.location.reload()}
+                  />
                 </div>
               )}
             </div>

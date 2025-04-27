@@ -94,7 +94,7 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
               <AlertDialogTitle>Selecione os Estados</AlertDialogTitle>
               <AlertDialogDescription>
                 <div className="grid grid-cols-3 gap-4 mt-4">
-                  {ESTADOS_BRASILEIROS.map((estado) => (
+                  {ESTADOS_BRASILEIROS.map((estado, idx) => (
                     <div key={estado} className="flex items-center space-x-2">
                       <Checkbox
                         id={estado}
@@ -127,3 +127,4 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
     </FormItem>
   );
 };
+
