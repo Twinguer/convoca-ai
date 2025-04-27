@@ -18,7 +18,7 @@ export interface Ranking {
   caseStudy3Score?: number;
   reservationType: string; // Changed from optional to required to match RankingTable.tsx
   displayReservation?: string;
-  id?: string;
+  id: string; // Changed from optional to required to match RankingTable.tsx
 }
 
 // Helper function to get abbreviation for reservation type
