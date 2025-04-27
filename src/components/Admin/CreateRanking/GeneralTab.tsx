@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,9 +16,35 @@ import { Switch } from '@/components/ui/switch';
 
 interface GeneralTabProps {
   form: any;
+  jobTitles?: Array<{ id: string; title: string }>;
+  isCustomTitle?: boolean;
+  isCustomBanca?: boolean;
+  handleJobTitleChange?: (value: string) => void;
+  handleCustomTitleChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleBancaChange?: (value: string) => void;
+  handleOrgaoChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleNextTab?: () => void;
+  onSaveRanking?: () => void;
+  isSubmitting?: boolean;
+  selectedStates?: string[];
+  setSelectedStates?: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
+export const GeneralTab: React.FC<GeneralTabProps> = ({ 
+  form,
+  jobTitles = [],
+  isCustomTitle = false,
+  isCustomBanca = false,
+  handleJobTitleChange,
+  handleCustomTitleChange,
+  handleBancaChange,
+  handleOrgaoChange,
+  handleNextTab,
+  onSaveRanking,
+  isSubmitting,
+  selectedStates,
+  setSelectedStates
+}) => {
   return (
     <Card>
       <CardContent className="pt-6 space-y-4">
@@ -43,6 +69,7 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
               id="orgao"
               placeholder="Ex: INSS, Receita Federal"
               {...form.register("orgao")}
+              onChange={handleOrgaoChange}
             />
             {form.formState.errors.orgao && (
               <p className="text-sm text-red-500">
@@ -65,7 +92,10 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
           <div className="space-y-2">
             <Label htmlFor="banca">Banca</Label>
             <Select 
-              onValueChange={(value) => form.setValue("banca", value)}
+              onValueChange={(value) => {
+                form.setValue("banca", value);
+                if (handleBancaChange) handleBancaChange(value);
+              }}
               defaultValue={form.getValues("banca")}
             >
               <SelectTrigger>
@@ -80,6 +110,17 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
                 <SelectItem value="OUTRO">OUTRO</SelectItem>
               </SelectContent>
             </Select>
+            
+            {isCustomBanca && (
+              <div className="mt-2">
+                <Label htmlFor="custom_banca">Outra Banca</Label>
+                <Input 
+                  id="custom_banca"
+                  placeholder="Digite o nome da banca"
+                  {...form.register("custom_banca")}
+                />
+              </div>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -92,6 +133,44 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
             />
           </div>
         </div>
+        
+        {jobTitles?.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="predefined_job_title">Cargo</Label>
+              <Select 
+                onValueChange={(value) => {
+                  form.setValue("predefined_job_title", value);
+                  if (handleJobTitleChange) handleJobTitleChange(value);
+                }}
+                defaultValue={form.getValues("predefined_job_title")}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cargo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobTitles.map(job => (
+                    <SelectItem key={job.id} value={job.title}>
+                      {job.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {isCustomTitle && (
+                <div className="mt-2">
+                  <Label htmlFor="custom_job_title">Outro Cargo</Label>
+                  <Input 
+                    id="custom_job_title"
+                    placeholder="Digite o nome do cargo"
+                    {...form.register("custom_job_title")}
+                    onChange={handleCustomTitleChange}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         
         <div>
           <h3 className="text-lg font-medium mb-2">Modalidades de Cotas</h3>
@@ -176,5 +255,3 @@ const GeneralTab: React.FC<GeneralTabProps> = ({ form }) => {
     </Card>
   );
 };
-
-export default GeneralTab;
