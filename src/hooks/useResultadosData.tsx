@@ -1,3 +1,4 @@
+
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
@@ -5,7 +6,6 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
-import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
@@ -27,7 +27,7 @@ export function useResultadosData() {
       
       const { data, error } = await supabase
         .from('users_profiles')
-        .select('name, status_concurseiro')
+        .select('name')
         .eq('id', concurso.created_by_user_id)
         .single();
         
@@ -61,98 +61,18 @@ export function useResultadosData() {
     staleTime: 2000,
   });
   
-  // Check if any rankings need recalculation
-  const { data: recalculationNeeded } = useQuery({
-    queryKey: ['recalculation-check', id],
-    queryFn: async () => {
-      try {
-        if (!id) return false;
-        
-        // Check if any rankings for this concurso need recalculation
-        const { data, error, count } = await supabase
-          .from('user_rankings')
-          .select('id', { count: 'exact' })
-          .eq('concurso_id', id)
-          .eq('is_score_recalculated', false);
-        
-        if (error) {
-          console.error('Error checking recalculation status:', error);
-          return false;
-        }
-        
-        // If count > 0, recalculation is needed
-        return count !== null && count > 0;
-      } catch (err) {
-        console.error('Error in recalculation check:', err);
-        return false;
-      }
-    },
-    refetchInterval: 10000, // Check every 10 seconds
-    enabled: !!id,
-  });
-  
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
-  // Function to manually refresh all data - MODIFIED VERSION
-  const refreshData = async () => {
-    console.log("[useResultadosData] Atualizando rankings manualmente");
-    
-<<<<<<< HEAD
-    try {
-      // Primeiro, forçar recálculo usando a função no banco de dados
-      const { data: recalcResult, error: recalcError } = await supabase.rpc('recalculate_all_scores', {
-        p_concurso_id: id
-      });
-      
-      if (recalcError) {
-        throw recalcError;
-=======
-    if (recalculationNeeded && id) {
-      try {
-        // Trigger recalculation of all scores
-        console.log("[useResultadosData] Detectado necessidade de recálculo de pontuações");
-        const result = await recalculateAllUserScores(id);
-        console.log("[useResultadosData] Resultado do recálculo:", result);
-      } catch (error) {
-        console.error("[useResultadosData] Erro ao recalcular pontuações:", error);
->>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
-      }
-<<<<<<< HEAD
-      
-      console.log("[useResultadosData] Recalculation result:", recalcResult);
-      
-      // Forçar uma limpeza total do cache para este concurso
-      queryClient.removeQueries({ queryKey: ['rankings', id] });
-      queryClient.removeQueries({ queryKey: ['participant-count', id] });
-      
-      // Buscar dados atualizados
-      await refetchRankings();
-      await refetchCount();
-      
-      // Forçar atualização para todos os usuários
-      supabase.channel('force-refresh-rankings')
-        .send({
-          type: 'broadcast',
-          event: 'rankings-updated',
-          payload: { concursoId: id, timestamp: new Date().toISOString() }
-        });
-      
-    } catch (error) {
-      console.error("[useResultadosData] Error during recalculation:", error);
-=======
->>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
-    }
-<<<<<<< HEAD
-=======
-    
+  // Function to manually refresh all data
+  const refreshData = () => {
     if (isAuthenticated) {
+      console.log("[useResultadosData] Atualizando rankings manualmente");
       refetchRankings();
     }
     refetchCount();
->>>>>>> e46a6541ffca239642566e38b8186904f0a899a2
   };
   
   return {
@@ -164,8 +84,6 @@ export function useResultadosData() {
     user,
     refreshData,
     creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
-    userStatus: creatorInfo?.status_concurseiro,
-    inscritos: concurso?.inscritos || 0,
-    needsRecalculation: recalculationNeeded
+    inscritos: concurso?.inscritos || 0
   };
 }

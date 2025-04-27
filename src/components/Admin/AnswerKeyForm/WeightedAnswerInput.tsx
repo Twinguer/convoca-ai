@@ -3,6 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from '@/components/ui/button';
 import { Scale } from 'lucide-react';
 
 interface WeightedAnswerInputProps {
@@ -14,6 +15,7 @@ interface WeightedAnswerInputProps {
   disabled?: boolean;
   onAnswerChange: (questionNumber: number, answer: string) => void;
   onWeightChange: (questionNumber: number, weight: number) => void;
+  onNullifyQuestion: (questionNumber: number) => void;
 }
 
 export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
@@ -24,7 +26,8 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
   isNullified = false,
   disabled = false,
   onAnswerChange,
-  onWeightChange
+  onWeightChange,
+  onNullifyQuestion
 }) => {
   return (
     <div className="border p-4 rounded-lg bg-white shadow-sm">
@@ -38,6 +41,15 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
             </span>
           )}
         </div>
+        <Button
+          type="button"
+          variant={isNullified ? "destructive" : "outline"}
+          size="sm"
+          onClick={() => onNullifyQuestion(questionNumber)}
+          className="text-xs"
+        >
+          {isNullified ? "Anulada" : "Anular"}
+        </Button>
       </div>
 
       <RadioGroup

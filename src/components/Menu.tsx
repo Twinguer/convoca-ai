@@ -1,24 +1,37 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home } from 'lucide-react';
+import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { UserActions } from './Admin/UserActions';
 
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isAdminMode, setIsAdminMode] = useState(false);
+  
+  useEffect(() => {
+    // Check if admin mode is enabled via URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const adminParam = urlParams.get('admin');
+    setIsAdminMode(adminParam === 'true');
+  }, [location]);
   
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
+  };
+  
+  const isAdmin = () => {
+    return user?.email?.includes('admin') || isAdminMode;
   };
   
   return (
@@ -27,6 +40,12 @@ const Menu = () => {
         {/* User login button - Now on the left */}
         <div className="flex items-center">
           <UserMenu />
+          {isAdminMode && (
+            <div className="ml-4 bg-amber-100 text-amber-800 px-2 py-1 rounded-md flex items-center">
+              <ShieldAlert className="h-4 w-4 mr-1" />
+              <span className="text-xs font-medium">Modo Administrador</span>
+            </div>
+          )}
         </div>
         
         {/* Navigation - Now on the right */}
@@ -59,6 +78,32 @@ const Menu = () => {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
+              
+              {isAdmin() && <NavigationMenuItem>
+                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid gap-3 p-4 w-[220px]">
+                    <li>
+                      <Link to="/project/admin/man/dashboard" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                        <div className="text-sm font-medium leading-none">Dashboard</div>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/project/admin/man/concursos" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <FileText className="mr-2 h-4 w-4" />
+                        <div className="text-sm font-medium leading-none">Concursos</div>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/project/admin/man/usuarios" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <Users className="mr-2 h-4 w-4" />
+                        <div className="text-sm font-medium leading-none">Usuários</div>
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>}
             </NavigationMenuList>
           </NavigationMenu>
 
@@ -83,6 +128,23 @@ const Menu = () => {
                   <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
                   Rankings
                 </Link>
+                
+                {isAdmin() && <>
+                  <div className="h-px bg-border mt-2 mb-2"></div>
+                  <div className="font-bold text-foreground/70 mb-2">Administração</div>
+                  <Link to="/project/admin/man/dashboard" className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                  <Link to="/project/admin/man/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Concursos
+                  </Link>
+                  <Link to="/project/admin/man/usuarios" className={cn("flex items-center text-lg font-semibold", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Usuários
+                  </Link>
+                </>}
               </nav>
             </SheetContent>
           </Sheet>
