@@ -251,6 +251,50 @@ export type Database = {
         }
         Relationships: []
       }
+      official_answer_weights: {
+        Row: {
+          concurso_id: string
+          correct_answer: string
+          created_at: string
+          id: string
+          is_nullified: boolean
+          question_number: number
+          section_type: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          concurso_id: string
+          correct_answer: string
+          created_at?: string
+          id?: string
+          is_nullified?: boolean
+          question_number: number
+          section_type: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          concurso_id?: string
+          correct_answer?: string
+          created_at?: string
+          id?: string
+          is_nullified?: boolean
+          question_number?: number
+          section_type?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "official_answer_weights_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       score_calculation_logs: {
         Row: {
           calculation_details: Json | null
@@ -259,7 +303,7 @@ export type Database = {
           id: string
           new_score: number | null
           previous_score: number | null
-          user_ranking_id: string
+          user_ranking_id: string | null
         }
         Insert: {
           calculation_details?: Json | null
@@ -268,7 +312,7 @@ export type Database = {
           id?: string
           new_score?: number | null
           previous_score?: number | null
-          user_ranking_id: string
+          user_ranking_id?: string | null
         }
         Update: {
           calculation_details?: Json | null
@@ -277,7 +321,7 @@ export type Database = {
           id?: string
           new_score?: number | null
           previous_score?: number | null
-          user_ranking_id?: string
+          user_ranking_id?: string | null
         }
         Relationships: [
           {
@@ -587,6 +631,31 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      get_official_answer_weights: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      migrate_answer_keys_to_weights: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      recalculate_all_scores: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      recalculate_all_scores_with_weights: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      save_scores_transaction: {
+        Args: {
+          p_ranking_id: string
+          p_raw_scores: Json
+          p_weighted_scores: Json
+          p_subjective_scores: Json
+        }
+        Returns: Json
+      }
       save_user_answers_and_calculate_scores: {
         Args: {
           p_ranking_id: string
@@ -597,6 +666,16 @@ export type Database = {
           p_case_study_2_score?: number
           p_case_study_3_score?: number
           p_current_edit_count?: number
+        }
+        Returns: Json
+      }
+      update_answer_with_weight: {
+        Args: {
+          p_concurso_id: string
+          p_question_number: number
+          p_correct_answer: string
+          p_weight: number
+          p_is_nullified?: boolean
         }
         Returns: Json
       }
