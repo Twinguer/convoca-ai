@@ -75,6 +75,9 @@ export function useResultadosData() {
     refetchCount();
   };
   
+  // Check if user is the creator of the ranking
+  const isCreator = isAuthenticated && user?.id === concurso?.created_by_user_id;
+  
   return {
     concurso,
     rankings,
@@ -83,7 +86,8 @@ export function useResultadosData() {
     isLoading,
     user,
     refreshData,
-    creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
-    inscritos: concurso?.inscritos || 0
+    creatorName: creatorInfo?.name || 'Usuário',
+    inscritos: concurso?.inscritos || 0,
+    isCreator
   };
 }
