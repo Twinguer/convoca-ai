@@ -70,12 +70,11 @@ export function useResultadosData() {
         if (!id) return false;
         
         // Check if any rankings for this concurso need recalculation
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
           .from('user_rankings')
-          .select('count')
+          .select('id', { count: 'exact' })
           .eq('concurso_id', id)
-          .eq('is_score_recalculated', false)
-          .count();
+          .eq('is_score_recalculated', false);
         
         if (error) {
           console.error('Error checking recalculation status:', error);
@@ -83,7 +82,7 @@ export function useResultadosData() {
         }
         
         // If count > 0, recalculation is needed
-        return data && data.count > 0;
+        return count !== null && count > 0;
       } catch (err) {
         console.error('Error in recalculation check:', err);
         return false;
