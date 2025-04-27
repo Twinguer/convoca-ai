@@ -6,6 +6,7 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
@@ -27,7 +28,7 @@ export function useResultadosData() {
       
       const { data, error } = await supabase
         .from('users_profiles')
-        .select('name')
+        .select('name, status_concurseiro')
         .eq('id', concurso.created_by_user_id)
         .single();
         
@@ -61,15 +62,58 @@ export function useResultadosData() {
     staleTime: 2000,
   });
   
+  // Check if any rankings need recalculation
+  const { data: recalculationNeeded } = useQuery({
+    queryKey: ['recalculation-check', id],
+    queryFn: async () => {
+      try {
+        if (!id) return false;
+        
+        // Check if any rankings for this concurso need recalculation
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select('count')
+          .eq('concurso_id', id)
+          .eq('is_score_recalculated', false)
+          .count();
+        
+        if (error) {
+          console.error('Error checking recalculation status:', error);
+          return false;
+        }
+        
+        // If count > 0, recalculation is needed
+        return data && data.count > 0;
+      } catch (err) {
+        console.error('Error in recalculation check:', err);
+        return false;
+      }
+    },
+    refetchInterval: 10000, // Check every 10 seconds
+    enabled: !!id,
+  });
+  
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
-  const refreshData = () => {
+  const refreshData = async () => {
+    console.log("[useResultadosData] Atualizando rankings manualmente");
+    
+    if (recalculationNeeded && id) {
+      try {
+        // Trigger recalculation of all scores
+        console.log("[useResultadosData] Detectado necessidade de recálculo de pontuações");
+        const result = await recalculateAllUserScores(id);
+        console.log("[useResultadosData] Resultado do recálculo:", result);
+      } catch (error) {
+        console.error("[useResultadosData] Erro ao recalcular pontuações:", error);
+      }
+    }
+    
     if (isAuthenticated) {
-      console.log("[useResultadosData] Atualizando rankings manualmente");
       refetchRankings();
     }
     refetchCount();
@@ -84,6 +128,8 @@ export function useResultadosData() {
     user,
     refreshData,
     creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
-    inscritos: concurso?.inscritos || 0
+    userStatus: creatorInfo?.status_concurseiro,
+    inscritos: concurso?.inscritos || 0,
+    needsRecalculation: recalculationNeeded
   };
 }
