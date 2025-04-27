@@ -3,11 +3,17 @@ import { supabase } from '../client';
 import { toast } from 'sonner';
 
 // Function to create a new ranking/concurso
-export const createRanking = async (data) => {
+export const createRanking = async (data: any, userId?: string) => {
   try {
+    // Include the creator's user ID in the data
+    const dataWithUserId = {
+      ...data,
+      created_by_user_id: userId
+    };
+
     const { data: result, error } = await supabase
       .from('concursos')
-      .insert([data])
+      .insert([dataWithUserId])
       .select('id')
       .single();
     
