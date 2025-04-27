@@ -1,8 +1,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { answerKeyService } from '@/services/answerKeyService';
 
 interface AnswerWeight {
   resposta: string;
@@ -22,18 +22,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
   // Buscar gabarito oficial com pesos
   const { data: officialAnswers, isLoading } = useQuery({
     queryKey: ['official-answers-weights', concursoId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_official_answer_weights', {
-        p_concurso_id: concursoId
-      });
-
-      if (error) {
-        console.error('Erro ao buscar gabarito:', error);
-        throw error;
-      }
-
-      return data as OfficialAnswerWeights;
-    },
+    queryFn: () => answerKeyService.fetchOfficialAnswerWeights(concursoId),
   });
 
   // Mutação para atualizar resposta e peso
@@ -52,30 +41,59 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       setIsUpdating(true);
       
       try {
-        const { data, error } = await supabase.rpc('update_answer_with_weight', {
-          p_concurso_id: concursoId,
-          p_question_number: questionNumber,
-          p_correct_answer: answer,
-          p_weight: weight,
-          p_is_nullified: isNullified
+        // Usa o serviço answerKeyService para atualizar e recalcular
+        const result = await answerKeyService.updateAnswer({
+          concursoId,
+          questionNumber,
+          answer,
+          weight,
+          isNullified
         });
-
-        if (error) throw error;
-        return data;
+        
+        return result;
       } finally {
         setIsUpdating(false);
       }
     },
-    onSuccess: () => {
-      toast.success('Gabarito atualizado com sucesso');
+    onSuccess: (data) => {
+      toast.success('Gabarito atualizado e pontuações recalculadas com sucesso');
+      
+      // Invalidar os caches relacionados para garantir que os dados serão atualizados
       queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
       queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+      
+      // Invalidar todos os rankings, não apenas o do concurso específico
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      
+      console.log('Recálculo concluído:', data?.recalculationResult);
     },
     onError: (error) => {
       console.error('Erro ao atualizar gabarito:', error);
-      toast.error('Erro ao atualizar gabarito');
+      toast.error('Erro ao atualizar gabarito: ' + (error as Error).message);
     }
   });
+
+  // Função para recalcular todas as pontuações
+  const recalculateAllScores = async () => {
+    setIsUpdating(true);
+    try {
+      const result = await answerKeyService.recalculateAllScores(concursoId);
+      
+      toast.success('Pontuações recalculadas com sucesso');
+      
+      // Invalidar os caches relacionados
+      queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      
+      return result;
+    } catch (error) {
+      console.error('Erro ao recalcular pontuações:', error);
+      toast.error('Erro ao recalcular pontuações: ' + (error as Error).message);
+      throw error;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Função para atualizar uma resposta específica
   const updateAnswer = (
@@ -96,6 +114,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     officialAnswers,
     isLoading,
     isUpdating,
-    updateAnswer
+    updateAnswer,
+    recalculateAllScores
   };
 };

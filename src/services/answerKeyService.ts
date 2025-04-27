@@ -28,6 +28,7 @@ export const answerKeyService = {
     weight,
     isNullified
   }: UpdateAnswerParams) {
+    // Primeiro, atualiza a resposta e peso no banco de dados
     const { data, error } = await supabase.rpc('update_answer_with_weight', {
       p_concurso_id: concursoId,
       p_question_number: questionNumber,
@@ -37,6 +38,36 @@ export const answerKeyService = {
     });
 
     if (error) throw error;
+    
+    // Após atualizar o gabarito, recalcula as pontuações para TODOS os usuários
+    const { data: recalcData, error: recalcError } = await supabase.rpc('recalculate_all_scores_with_weights', {
+      p_concurso_id: concursoId
+    });
+    
+    if (recalcError) {
+      console.error('Erro ao recalcular pontuações:', recalcError);
+      throw recalcError;
+    }
+    
+    console.log('Recálculo de pontuações concluído:', recalcData);
+    
+    return {
+      updateResult: data,
+      recalculationResult: recalcData
+    };
+  },
+
+  // Recalcular pontuações para todos os usuários em um concurso
+  async recalculateAllScores(concursoId: string) {
+    const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', {
+      p_concurso_id: concursoId
+    });
+
+    if (error) {
+      console.error('Erro ao recalcular pontuações:', error);
+      throw error;
+    }
+    
     return data;
   },
 
