@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +20,7 @@ import { RankingManagement } from '@/components/Rankings/RankingManagement';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
 
 export default function ResultadosPage() {
+  
   const {
     concurso,
     rankings,
@@ -151,6 +151,7 @@ export default function ResultadosPage() {
           {concurso.has_indigenas && <TabsTrigger value="indigenas">Indígenas</TabsTrigger>}
           {concurso.has_transsexuais && <TabsTrigger value="trans">Pessoas Trans</TabsTrigger>}
         </TabsList>
+        
         <TabsContent value="ampla">
           <Card>
             <CardContent className="p-0 overflow-auto">
@@ -162,6 +163,7 @@ export default function ResultadosPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        
         {concurso.has_ppp && (
           <TabsContent value="ppp">
             <Card>
@@ -175,6 +177,7 @@ export default function ResultadosPage() {
             </Card>
           </TabsContent>
         )}
+        
         {concurso.has_pcd && (
           <TabsContent value="pcd">
             <Card>
@@ -188,6 +191,7 @@ export default function ResultadosPage() {
             </Card>
           </TabsContent>
         )}
+        
         {concurso.has_hipossuficientes && (
           <TabsContent value="hipossuficientes">
             <Card>
@@ -201,6 +205,7 @@ export default function ResultadosPage() {
             </Card>
           </TabsContent>
         )}
+        
         {concurso.has_indigenas && (
           <TabsContent value="indigenas">
             <Card>
@@ -214,6 +219,7 @@ export default function ResultadosPage() {
             </Card>
           </TabsContent>
         )}
+        
         {concurso.has_transsexuais && (
           <TabsContent value="trans">
             <Card>

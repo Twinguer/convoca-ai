@@ -1,117 +1,106 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { Concurso } from '@/types/concursos';
+import { supabase } from '../client';
 import { toast } from 'sonner';
 
-// Create ranking
-export const createRanking = async (rankingData: Partial<Concurso>, userId: string) => {
+// Function to create a new ranking/concurso
+export const createRanking = async (data) => {
   try {
-    // Add created_by to data
-    const data = {
-      ...rankingData,
-      created_by_user_id: userId,
-    };
-
-    const { data: newRanking, error } = await supabase
+    const { data: result, error } = await supabase
       .from('concursos')
-      .insert(data)
-      .select()
+      .insert([data])
+      .select('id')
       .single();
-
+    
     if (error) throw error;
-    return newRanking;
-  } catch (error: any) {
-    toast.error(`Erro ao criar ranking: ${error.message}`);
+    
+    return result.id;
+  } catch (error) {
+    console.error('Error creating ranking:', error);
+    toast.error('Erro ao criar ranking');
     throw error;
   }
 };
 
-// Delete ranking (only by the creator)
-export const deleteRanking = async (concursoId: string, userId: string) => {
+// Function to update concurso information
+export const updateConcurso = async (id, data) => {
   try {
-    // First check if user is the creator
-    const { data: ranking, error: fetchError } = await supabase
+    const { error } = await supabase
       .from('concursos')
-      .select('created_by_user_id')
+      .update(data)
+      .eq('id', id);
+    
+    if (error) throw error;
+    
+    toast.success('Concurso atualizado com sucesso');
+    return true;
+  } catch (error) {
+    console.error('Error updating concurso:', error);
+    toast.error('Erro ao atualizar concurso');
+    throw error;
+  }
+};
+
+// Function to delete a ranking
+export const deleteRanking = async (concursoId, userId) => {
+  try {
+    // First check if the user is authorized to delete this ranking
+    const { data: rankingData, error: rankingError } = await supabase
+      .from('concursos')
+      .select('creator_id')
       .eq('id', concursoId)
       .single();
     
-    if (fetchError) throw fetchError;
+    if (rankingError) throw rankingError;
     
-    if (ranking?.created_by_user_id !== userId) {
-      throw new Error('Você não tem permissão para excluir este ranking.');
+    if (rankingData.creator_id !== userId) {
+      toast.error('Você não tem permissão para excluir este ranking');
+      throw new Error('Unauthorized');
     }
-
-    // Delete all answers related to this concurso
-    await supabase
-      .from('user_answers')
-      .delete()
-      .in('user_ranking_id', 
-        supabase
-          .from('user_rankings')
-          .select('id')
-          .eq('concurso_id', concursoId)
-      );
-
-    // Delete all user rankings for this concurso
-    await supabase
+    
+    // Delete all user rankings associated with this concurso
+    const { error: userRankingsError } = await supabase
       .from('user_rankings')
       .delete()
       .eq('concurso_id', concursoId);
-
-    // Delete answer keys for this concurso
-    await supabase
-      .from('answer_keys')
-      .delete()
-      .eq('concurso_id', concursoId);
-      
-    // Delete weighted answers for this concurso
-    await supabase
-      .from('official_answer_weights')
-      .delete()
-      .eq('concurso_id', concursoId);
-
+    
+    if (userRankingsError) throw userRankingsError;
+    
     // Delete the concurso itself
-    const { error } = await supabase
+    const { error: concursoError } = await supabase
       .from('concursos')
       .delete()
       .eq('id', concursoId);
-
-    if (error) throw error;
-  } catch (error: any) {
-    toast.error(`Erro ao excluir ranking: ${error.message}`);
+    
+    if (concursoError) throw concursoError;
+    
+    toast.success('Ranking excluído com sucesso');
+    return true;
+  } catch (error) {
+    console.error('Error deleting ranking:', error);
+    toast.error('Erro ao excluir ranking');
     throw error;
   }
 };
 
-// Update ranking (only by the creator)
-export const updateRanking = async (concursoId: string, rankingData: Partial<Concurso>, userId: string) => {
+// Function to update answer key for a concurso
+export const updateAnswerKey = async (concursoId, answerKeyData) => {
   try {
-    // First check if user is the creator
-    const { data: ranking, error: fetchError } = await supabase
-      .from('concursos')
-      .select('created_by_user_id')
-      .eq('id', concursoId)
-      .single();
+    const { error } = await supabase
+      .from('answer_keys')
+      .upsert({
+        concurso_id: concursoId,
+        answers: answerKeyData.answers,
+        weights: answerKeyData.weights,
+        updated_at: new Date().toISOString()
+      });
     
-    if (fetchError) throw fetchError;
-    
-    if (ranking?.created_by_user_id !== userId) {
-      throw new Error('Você não tem permissão para atualizar este ranking.');
-    }
-
-    // Update the ranking
-    const { data: updatedRanking, error } = await supabase
-      .from('concursos')
-      .update(rankingData)
-      .eq('id', concursoId)
-      .select()
-      .single();
-
     if (error) throw error;
-    return updatedRanking;
-  } catch (error: any) {
-    toast.error(`Erro ao atualizar ranking: ${error.message}`);
+    
+    toast.success('Gabarito atualizado com sucesso');
+    return true;
+  } catch (error) {
+    console.error('Error updating answer key:', error);
+    toast.error('Erro ao atualizar gabarito');
     throw error;
   }
 };
