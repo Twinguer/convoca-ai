@@ -3,17 +3,16 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { createRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
-import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
-import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
+import { GeneralTab } from '@/components/RankingForm/GeneralTab';
+import { AnswerKeyTab } from '@/components/RankingForm/AnswerKeyTab';
 
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;
@@ -305,7 +304,7 @@ const CriarRanking = () => {
 
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      navigate(`/resultados/${createdConcursoId}`);
+      navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
 
