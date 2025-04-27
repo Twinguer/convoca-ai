@@ -25,7 +25,8 @@ import CriarRanking from "./pages/CriarRanking";
 
 const App = () => {
   const queryClient = new QueryClient();
-  return <React.StrictMode>
+  return (
+    <React.StrictMode>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
           <AuthProvider>
@@ -37,57 +38,57 @@ const App = () => {
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/perfil" element={<>
-                        <Menu />
-                        <UserProfile />
-                      </>} />
+                      <Menu />
+                      <UserProfile />
+                    </>} />
                     <Route path="/usuario/:id" element={<>
-                        <Menu />
-                        <PublicUserProfile />
-                      </>} />
+                      <Menu />
+                      <PublicUserProfile />
+                    </>} />
                     <Route path="/seguidores" element={<>
-                        <Menu />
-                        <UserFollowers />
-                      </>} />
+                      <Menu />
+                      <UserFollowers />
+                    </>} />
                     <Route path="/" element={<>
-                        <Menu />
-                        <Index />
-                      </>} />
+                      <Menu />
+                      <Index />
+                    </>} />
                     <Route path="/comunidade" element={<>
-                        <Menu />
-                        <Comunidade />
-                      </>} />
+                      <Menu />
+                      <Comunidade />
+                    </>} />
                     <Route path="/editais" element={<>
-                        <Menu />
-                        <Editais />
-                      </>} />
+                      <Menu />
+                      <Editais />
+                    </>} />
                     <Route path="/pre-classificacao" element={<>
-                        <Menu />
-                        <PreClassificacao />
-                      </>} />
+                      <Menu />
+                      <PreClassificacao />
+                    </>} />
                     <Route path="/criar-ranking" element={<>
-                        <Menu />
-                        <CriarRanking />
-                      </>} />
+                      <Menu />
+                      <CriarRanking />
+                    </>} />
                     <Route path="/resultado" element={<>
-                        <Menu />
-                        <Resultado />
-                      </>} />
+                      <Menu />
+                      <Resultado />
+                    </>} />
                     <Route path="/concurso/:id" element={<>
-                        <Menu />
-                        <ConcursoDetails />
-                      </>} />
+                      <Menu />
+                      <ConcursoDetails />
+                    </>} />
                     <Route path="/concurso/:id/resultados" element={<>
-                        <Menu />
-                        <ResultadosPage />
-                      </>} />
+                      <Menu />
+                      <ResultadosPage />
+                    </>} />
                     <Route path="/concurso/:id/participar" element={<>
-                        <Menu />
-                        <ConcursoParticipation />
-                      </>} />
+                      <Menu />
+                      <ConcursoParticipation />
+                    </>} />
                     <Route path="*" element={<>
-                        <Menu />
-                        <NotFound />
-                      </>} />
+                      <Menu />
+                      <NotFound />
+                    </>} />
                   </Routes>
                 </BrowserRouter>
               </div>
@@ -95,7 +96,8 @@ const App = () => {
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
-    </React.StrictMode>;
+    </React.StrictMode>
+  );
 };
 
 export default App;

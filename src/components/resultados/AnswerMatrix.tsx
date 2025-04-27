@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { QuestionCell } from './QuestionCell';
+import { Button } from '@/components/ui/button';
 
 interface AnswerMatrixProps {
   matrix: (number | null)[][];
@@ -60,16 +61,30 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     nullifiedQuestions.has(questionNumber) ? 'opacity-75' : ''
                   }`}
                 >
-                  <QuestionCell
-                    questionNumber={questionNumber}
-                    selectedAnswer={answers[questionNumber]}
-                    onAnswerChange={onAnswerChange}
-                    options={getOptionsForQuestion(questionNumber)}
-                    disabled={disabled || nullifiedQuestions.has(questionNumber)}
-                    examType={examType}
-                    onClearAnswer={onClearAnswer}
-                    isNullified={nullifiedQuestions.has(questionNumber)}
-                  />
+                  <div className="relative">
+                    <QuestionCell
+                      questionNumber={questionNumber}
+                      selectedAnswer={answers[questionNumber]}
+                      onAnswerChange={onAnswerChange}
+                      options={getOptionsForQuestion(questionNumber)}
+                      disabled={disabled || nullifiedQuestions.has(questionNumber)}
+                      examType={examType}
+                      onClearAnswer={onClearAnswer}
+                      isNullified={nullifiedQuestions.has(questionNumber)}
+                    />
+                    
+                    {onNullifyQuestion && isAdminView && (
+                      <Button
+                        type="button"
+                        variant={nullifiedQuestions.has(questionNumber) ? "destructive" : "outline"}
+                        size="sm"
+                        className="absolute top-3 right-3"
+                        onClick={() => onNullifyQuestion(questionNumber)}
+                      >
+                        {nullifiedQuestions.has(questionNumber) ? "Anulada" : "Anular"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ) : null
             )}

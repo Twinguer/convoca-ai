@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,25 +11,8 @@ import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
-
-// Temporary placeholder components until you recreate these components
-const GeneralTab = (props) => (
-  <div className="p-4">
-    <h3 className="text-lg font-medium mb-4">Informações Gerais</h3>
-    <p className="text-muted-foreground">
-      Este componente precisa ser recriado sem dependências de admin.
-    </p>
-  </div>
-);
-
-const AnswerKeyTab = (props) => (
-  <div className="p-4">
-    <h3 className="text-lg font-medium mb-4">Gabarito Oficial</h3>
-    <p className="text-muted-foreground">
-      Este componente precisa ser recriado sem dependências de admin.
-    </p>
-  </div>
-);
+import { GeneralTab } from '@/components/RankingForm/GeneralTab';
+import { AnswerKeyTab } from '@/components/RankingForm/AnswerKeyTab';
 
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;
@@ -322,7 +304,7 @@ const CriarRanking = () => {
 
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      navigate(`/resultados/${createdConcursoId}`);
+      navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
 
