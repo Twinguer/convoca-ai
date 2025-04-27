@@ -43,6 +43,7 @@ const CriarRanking = () => {
 
     try {
       const formValues = form.getValues();
+      // Fix the argument count here - only pass formValues
       await createRanking(formValues, user.id);
       
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
@@ -99,7 +100,19 @@ const CriarRanking = () => {
                 </TabsContent>
 
                 <TabsContent value="answer-key">
-                  <AnswerKeyTab />
+                  {/* Add the required props to AnswerKeyTab */}
+                  <AnswerKeyTab 
+                    hasBasicKnowledge={true}
+                    hasSpecificKnowledge1={true}
+                    hasSpecificKnowledge2={false}
+                    hasSpecificKnowledge3={false}
+                    basicKnowledgeQuestions={20}
+                    specificKnowledge1Questions={20}
+                    specificKnowledge2Questions={0}
+                    specificKnowledge3Questions={0}
+                    examType="Alternativas"
+                    alternativesCount={5}
+                  />
                 </TabsContent>
               </Tabs>
             </form>
