@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -16,9 +15,8 @@ export interface Ranking {
   caseStudy1Score?: number;
   caseStudy2Score?: number;
   caseStudy3Score?: number;
-  reservationType: string; // Changed from optional to required to match RankingTable.tsx
+  reservationType?: string;
   displayReservation?: string;
-  id?: string;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -83,8 +81,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       console.error('Error fetching concurso weights:', concursoError);
     }
       
-    const { data: rankings, error: rankingsError } = await query
-      .order('score', { ascending: false });
+    const { data: rankings, error: rankingsError } = await query.order('score', { ascending: false });
       
     if (rankingsError) {
       console.error('Error in fetchUserRankings query:', rankingsError);
@@ -130,7 +127,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         name: profile?.name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
-        id: ranking.id,
         avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore,
         specificKnowledge1Score,

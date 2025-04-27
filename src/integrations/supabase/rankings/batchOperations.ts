@@ -7,31 +7,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
   try {
     console.log(`Recalculando scores para todos os usuários no concurso: ${concursoId}`);
     
-    // Usar o RPC que foi implementado no backend para fazer o recálculo em batch
-    const { data: recalcResult, error: recalcError } = await supabase.rpc('recalculate_all_scores_with_weights', {
-      p_concurso_id: concursoId
-    });
-    
-    if (recalcError) {
-      console.error('Erro ao chamar recalculate_all_scores_with_weights:', recalcError);
-      
-      // Como fallback, vamos usar nossa implementação anterior
-      return await legacyRecalculateAllScores(concursoId);
-    }
-    
-    console.log('Resultado do recálculo em batch:', recalcResult);
-    return { success: true, updatedCount: recalcResult?.updatedCount || 0 };
-  } catch (error: any) {
-    console.error('Erro recalculando todas as pontuações de usuários:', error);
-    return { success: false, error: error.message };
-  }
-};
-
-// Função de recálculo antiga, mantida como fallback se o RPC falhar
-const legacyRecalculateAllScores = async (concursoId: string) => {
-  try {
-    console.log(`Usando implementação legada para recalcular scores para todos os usuários no concurso: ${concursoId}`);
-    
     // Busca todos os rankings de usuários para este concurso
     const { data: userRankings, error: rankingsError } = await supabase
       .from('user_rankings')
@@ -48,22 +23,18 @@ const legacyRecalculateAllScores = async (concursoId: string) => {
     console.log(`Encontrados ${userRankings.length} rankings de usuários para atualizar`);
     
     // Verifica se há questões anuladas
-    const { data: officialAnswers, error: answersError } = await supabase.rpc('get_official_answer_weights', {
-      p_concurso_id: concursoId
-    });
-    
-    if (answersError) {
-      console.error('Erro ao buscar gabarito oficial com pesos:', answersError);
-    } else {
-      // Identifica questões anuladas no novo formato
-      const nullifiedQuestions = Object.entries(officialAnswers || {})
-        .filter(([_, value]: [string, any]) => value.anulada)
-        .map(([key]: [string, any]) => key.replace('questao', ''));
+    const { data: nullifiedQuestions, error: nullifiedError } = await supabase
+      .from('answer_keys')
+      .select('question_number')
+      .eq('concurso_id', concursoId)
+      .eq('is_nullified', true);
       
-      if (nullifiedQuestions.length > 0) {
-        console.log(`Encontradas ${nullifiedQuestions.length} questões anuladas`);
-        console.log(`Questões anuladas: ${nullifiedQuestions.join(', ')}`);
-      }
+    if (nullifiedError) throw nullifiedError;
+    
+    if (nullifiedQuestions && nullifiedQuestions.length > 0) {
+      console.log(`Encontradas ${nullifiedQuestions.length} questões anuladas`);
+      const nullifiedNumbers = nullifiedQuestions.map(q => q.question_number).join(', ');
+      console.log(`Questões anuladas: ${nullifiedNumbers}`);
     }
     
     // Processa cada ranking de usuário

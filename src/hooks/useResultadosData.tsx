@@ -16,7 +16,7 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 30000, // 30 segundos - reduzido para uma atualização mais frequente
+    staleTime: 60000, // 1 minuto
   });
   
   // Fetch creator information if available
@@ -39,19 +39,20 @@ export function useResultadosData() {
       return data;
     },
     enabled: !!concurso?.created_by_user_id,
-    staleTime: 60000, // 1 minuto
+    staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings with more frequent refetching - for all users now, not just authenticated users
+  // Fetch rankings with more frequent refetching - only if user is authenticated
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
-    queryFn: () => fetchUserRankings(id),
-    refetchInterval: 5000, // 5 segundos para verificação automática
+    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
+    refetchInterval: 3000, // Reduzido para 3 segundos
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Considerado stale após 1 segundo para garantir dados atuais
+    staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
+    enabled: isAuthenticated,
   });
   
-  // Fetch participant count
+  // Fetch participant count - for all users (authenticated or not)
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
@@ -60,15 +61,17 @@ export function useResultadosData() {
     staleTime: 2000,
   });
   
-  // Find user's ranking
+  // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || isLoadingRankings || isLoadingCount || isLoadingCreator;
+  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
   const refreshData = () => {
-    console.log("[useResultadosData] Atualizando rankings e contagem manualmente");
-    refetchRankings();
+    if (isAuthenticated) {
+      console.log("[useResultadosData] Atualizando rankings manualmente");
+      refetchRankings();
+    }
     refetchCount();
   };
   

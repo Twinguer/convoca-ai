@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -192,25 +192,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
       });
       
-      const { data: recalcResult, error: recalcError } = await supabase.rpc('recalculate_all_scores_with_weights', {
-        p_concurso_id: concursoId
-      });
-      
-      if (recalcError) {
-        throw recalcError;
-      }
+      const recalculationResult = await recalculateAllUserScores(concursoId);
+      console.log('Recalculation result:', recalculationResult);
 
-      console.log('Resultado do recálculo:', recalcResult);
-
-      const queryClient = useQueryClient();
-      queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
-      queryClient.invalidateQueries({ queryKey: ['rankings'] });
-
-      if (recalcResult.success) {
+      if (recalculationResult.success) {
         setRecalculationSuccess(true);
         toast({
           title: "Recálculo completado",
-          description: `As notas de todos os usuários foram atualizadas.`,
+          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
         });
         
         setTimeout(() => {
@@ -219,7 +208,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       } else {
         toast({
           title: "Erro no recálculo",
-          description: recalcResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
+          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
           variant: "destructive"
         });
       }
@@ -301,26 +290,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         if (insertError) throw insertError;
       }
 
-      for (const answer of answersArray) {
-        const sectionType = answer.is_basic_knowledge ? 'basic' : 
-                           answer.is_specific_1 ? 'specific1' :
-                           answer.is_specific_2 ? 'specific2' : 'specific3';
-        
-        await supabase.rpc('update_answer_with_weight', {
-          p_concurso_id: concursoId,
-          p_question_number: answer.question_number,
-          p_correct_answer: answer.answer,
-          p_weight: 1.0,
-          p_is_nullified: answer.is_nullified
-        });
-      }
-
       setSavedSuccess(true);
       toast({
         title: "Gabarito salvo com sucesso",
         description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
 
+      // Iniciar automaticamente o recálculo para todos os usuários
       await performRecalculation();
       
       setTimeout(() => {
