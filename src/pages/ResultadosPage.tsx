@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,8 +9,8 @@ import { ConcursoInfoCard } from '@/components/resultados/ConcursoInfoCard';
 import { StatisticsCard } from '@/components/resultados/StatisticsCard';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { LoginButton } from '@/components/auth/LoginButton';
-import { ChartBar, RefreshCcw, Share2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChartBar, RefreshCcw, Share2, UserPlus } from 'lucide-react';
 import ConcursoChart from '@/components/resultados/ConcursoChart';
 import Loading from '@/components/Loading';
 import UserRankingCard from '@/components/resultados/UserRankingCard';
@@ -127,7 +128,12 @@ export default function ResultadosPage() {
         <Card>
           <CardContent className="p-6 flex flex-col items-center justify-center">
             <p className="text-center mb-4">Faça login para ver sua classificação nos rankings</p>
-            <LoginButton redirectUrl={window.location.href} />
+            <Button asChild>
+              <Link to="/auth" className="flex items-center">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Cadastrar-se
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       )}

@@ -7,10 +7,12 @@ import { Concurso } from '@/types/concursos';
 
 interface ConcursoInfoCardProps {
   concurso?: Concurso;
+  creatorName?: string;
 }
 
 export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
-  concurso
+  concurso,
+  creatorName
 }) => {
   // Exibe todas as localidades reais, sem "Nacional"
   const getLocationDisplay = (localidades?: string[]): string => {
@@ -39,8 +41,15 @@ export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
           <p className="text-sm">
             Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
           </p>
+          {creatorName && (
+            <p className="text-sm">
+              Criado por: <Badge variant="outline">{creatorName}</Badge>
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 };
+
+export default ConcursoInfoCard;
