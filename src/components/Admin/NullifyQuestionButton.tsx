@@ -1,44 +1,35 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import { Ban } from 'lucide-react';
 
 interface NullifyQuestionButtonProps {
   questionNumber: number;
   isNullified: boolean;
   onNullify: (questionNumber: number) => void;
+  disabled?: boolean;
 }
 
-export const NullifyQuestionButton: React.FC<NullifyQuestionButtonProps> = ({
+export const NullifyQuestionButton = ({
   questionNumber,
   isNullified,
-  onNullify
-}) => {
-  const handleToggleNullify = () => {
-    // Show toast notification before nullifying
-    if (!isNullified) {
-      toast.info(`Anulando questão ${questionNumber}. Isso recalculará as pontuações de todos os participantes.`, {
-        duration: 3000
-      });
-    } else {
-      toast.info(`Reativando questão ${questionNumber}. Isso recalculará as pontuações de todos os participantes.`, {
-        duration: 3000
-      });
-    }
-    
-    // Call the onNullify handler
-    onNullify(questionNumber);
-  };
-  
+  onNullify,
+  disabled = false
+}: NullifyQuestionButtonProps) => {
   return (
     <Button
-      type="button"
-      variant={isNullified ? "destructive" : "outline"}
+      variant="ghost"
       size="sm"
-      onClick={handleToggleNullify}
-      className={isNullified ? "border-red-300" : ""}
+      onClick={() => onNullify(questionNumber)}
+      disabled={disabled}
+      className={`mt-2 w-full gap-2 ${
+        isNullified 
+          ? 'bg-gray-100 text-gray-500' 
+          : 'hover:bg-red-50 hover:text-red-600'
+      }`}
     >
-      {isNullified ? "Anulada" : "Anular"}
+      <Ban className="h-4 w-4" />
+      {isNullified ? 'Questão Anulada' : 'Anular Questão'}
     </Button>
   );
 };

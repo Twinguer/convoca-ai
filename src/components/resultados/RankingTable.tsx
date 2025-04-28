@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import type { Ranking as RankingType } from '@/services/rankingService';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
+import { UserActions } from '../Admin/UserActions';
 
 export interface Ranking {
   position: number;
@@ -231,6 +232,11 @@ const RankingTableContent: React.FC<{
   availableQuotas,
   sectionWeights
 }) => {
+  const isAdminMode = React.useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('admin') === 'true';
+  }, []);
+
   if (!concurso) {
     return (
       <Table>
@@ -239,6 +245,7 @@ const RankingTableContent: React.FC<{
             <TableHead className="text-center w-16">#</TableHead>
             <TableHead>Candidato</TableHead>
             <TableHead className="text-right">Total</TableHead>
+            {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -258,10 +265,21 @@ const RankingTableContent: React.FC<{
                 </div>
               </TableCell>
               <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
+              {isAdminMode && (
+                <TableCell>
+                  <UserActions 
+                    userId={ranking.userId}
+                    userName={ranking.name}
+                    rankingId={ranking.id}
+                    onSuccess={() => window.location.reload()}
+                    showOnlyRankingActions={true}
+                  />
+                </TableCell>
+              )}
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={3} className="text-center py-4">
+              <TableCell colSpan={isAdminMode ? 4 : 3} className="text-center py-4">
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
             </TableRow>
@@ -285,6 +303,7 @@ const RankingTableContent: React.FC<{
               {column.label}
             </TableHead>
           ))}
+          {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -359,10 +378,21 @@ const RankingTableContent: React.FC<{
                 {(Number(ranking.caseStudy3Score || 0) * sectionWeights.caseStudy3).toFixed(2)}
               </TableCell>
             )}
+            {isAdminMode && (
+              <TableCell>
+                <UserActions 
+                  userId={ranking.userId}
+                  userName={ranking.name}
+                  rankingId={ranking.id}
+                  onSuccess={() => window.location.reload()}
+                  showOnlyRankingActions={true}
+                />
+              </TableCell>
+            )}
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={columns.length} className="text-center py-4">
+            <TableCell colSpan={isAdminMode ? columns.length + 1 : columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>
@@ -371,3 +401,4 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
+
