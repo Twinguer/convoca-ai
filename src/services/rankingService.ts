@@ -6,7 +6,6 @@ export interface Ranking {
   name: string;
   score: number;
   userId: string;
-  id: string; // Added missing id property required by RankingTable
   avatarUrl?: string | null;
   basicKnowledgeScore?: number;
   specificKnowledge1Score?: number;
@@ -17,7 +16,7 @@ export interface Ranking {
   caseStudy1Score?: number;
   caseStudy2Score?: number;
   caseStudy3Score?: number;
-  reservationType: string; // Made required to match RankingTable's interface
+  reservationType?: string;
   displayReservation?: string;
 }
 
@@ -125,7 +124,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const caseStudy3Score = ranking.case_study_3_score || 0;
       
       return {
-        id: ranking.id, // Ensure ID is included in the returned object
         position: index + 1,
         name: profile?.name || 'Usuário Anônimo',
         score: ranking.score || 0,

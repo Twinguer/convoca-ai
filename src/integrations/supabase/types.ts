@@ -22,7 +22,6 @@ export type Database = {
           is_specific_2: boolean | null
           is_specific_3: boolean | null
           question_number: number
-          question_type: string
           updated_at: string | null
         }
         Insert: {
@@ -37,7 +36,6 @@ export type Database = {
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
           question_number: number
-          question_type?: string
           updated_at?: string | null
         }
         Update: {
@@ -52,7 +50,6 @@ export type Database = {
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
           question_number?: number
-          question_type?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -261,10 +258,7 @@ export type Database = {
           created_at: string
           id: string
           is_nullified: boolean
-          points_if_correct: number | null
-          points_if_wrong: number | null
           question_number: number
-          question_type: string
           section_type: string
           updated_at: string
           weight: number
@@ -275,10 +269,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_nullified?: boolean
-          points_if_correct?: number | null
-          points_if_wrong?: number | null
           question_number: number
-          question_type?: string
           section_type: string
           updated_at?: string
           weight?: number
@@ -289,10 +280,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_nullified?: boolean
-          points_if_correct?: number | null
-          points_if_wrong?: number | null
           question_number?: number
-          question_type?: string
           section_type?: string
           updated_at?: string
           weight?: number
@@ -300,47 +288,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "official_answer_weights_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      question_blocks: {
-        Row: {
-          concurso_id: string
-          created_at: string
-          end_index: number
-          id: string
-          name: string
-          start_index: number
-          updated_at: string
-          weight: number
-        }
-        Insert: {
-          concurso_id: string
-          created_at?: string
-          end_index: number
-          id?: string
-          name: string
-          start_index: number
-          updated_at?: string
-          weight?: number
-        }
-        Update: {
-          concurso_id?: string
-          created_at?: string
-          end_index?: number
-          id?: string
-          name?: string
-          start_index?: number
-          updated_at?: string
-          weight?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "question_blocks_concurso_id_fkey"
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
@@ -668,10 +615,6 @@ export type Database = {
         Args: { operation: string; data?: Json }
         Returns: Json
       }
-      calculate_score_with_blocks: {
-        Args: { p_user_ranking_id: string }
-        Returns: number
-      }
       count_concurso_participants: {
         Args: { concurso_id: string }
         Returns: number
@@ -692,19 +635,11 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
-      manage_question_blocks: {
-        Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
-        Returns: Json
-      }
       migrate_answer_keys_to_weights: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
       recalculate_all_scores: {
-        Args: { p_concurso_id: string }
-        Returns: Json
-      }
-      recalculate_all_scores_improved: {
         Args: { p_concurso_id: string }
         Returns: Json
       }
