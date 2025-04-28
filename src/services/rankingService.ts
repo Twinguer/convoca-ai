@@ -17,7 +17,7 @@ export interface Ranking {
   caseStudy1Score?: number;
   caseStudy2Score?: number;
   caseStudy3Score?: number;
-  reservationType?: string;
+  reservationType: string; // Made required to match RankingTable's interface
   displayReservation?: string;
 }
 
