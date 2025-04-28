@@ -66,7 +66,8 @@ export function useResultadosData() {
           
         if (error) throw error;
         
-        return data.count || 0;
+        // Correctly access the count property from the returned object
+        return data?.length ?? 0;
       } catch (error) {
         console.error('Error fetching participant count:', error);
         return 0;
@@ -89,8 +90,7 @@ export function useResultadosData() {
           .from('user_rankings')
           .select('count')
           .eq('concurso_id', id)
-          .eq('is_score_recalculated', false)
-          .count();
+          .eq('is_score_recalculated', false);
         
         if (error) {
           console.error('Error checking recalculation status:', error);
@@ -98,7 +98,7 @@ export function useResultadosData() {
         }
         
         // If count > 0, recalculation is needed
-        return data && data.count > 0;
+        return data && data.length > 0;
       } catch (err) {
         console.error('Error in recalculation check:', err);
         return false;
