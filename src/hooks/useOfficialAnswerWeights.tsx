@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 interface AnswerWeight {
   resposta: string;
@@ -66,10 +67,33 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
         setIsUpdating(false);
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Gabarito atualizado com sucesso');
+      
+      // Invalidate multiple queries to ensure all components update
       queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
-      queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+      
+      // Atualize o estado de recálculo
+      queryClient.invalidateQueries({ queryKey: ['recalculation-check', concursoId] });
+      
+      // Trigger recalculation for all users
+      try {
+        toast.info('Iniciando recálculo para todos os participantes...', { duration: 3000 });
+        const result = await recalculateAllUserScores(concursoId);
+        
+        if (result.success) {
+          toast.success(`Recálculo concluído! ${result.updatedCount} rankings atualizados.`, { duration: 3000 });
+          
+          // Force refresh all rankings data after recalculation
+          queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+          queryClient.invalidateQueries({ queryKey: ['participant-count', concursoId] });
+        } else {
+          toast.error(`Erro no recálculo: ${result.message || 'Erro desconhecido'}`, { duration: 4000 });
+        }
+      } catch (error) {
+        console.error('Erro ao iniciar recálculo automático:', error);
+        toast.error('Erro ao recalcular rankings', { duration: 3000 });
+      }
     },
     onError: (error) => {
       console.error('Erro ao atualizar gabarito:', error);

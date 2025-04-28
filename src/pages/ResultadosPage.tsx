@@ -9,6 +9,8 @@ import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
@@ -21,7 +23,9 @@ const ResultadosPage = () => {
     user,
     refreshData,
     creatorName,
-    inscritos
+    inscritos,
+    needsRecalculation,
+    isRecalculating
   } = useResultadosData();
   const {
     toast
@@ -80,9 +84,19 @@ const ResultadosPage = () => {
             onClick={handleRefresh} 
             className="flex items-center gap-2 text-xs sm:text-sm" 
             size="sm"
+            disabled={isRecalculating}
           >
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
-            Atualizar
+            {isRecalculating ? (
+              <>
+                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                Recalculando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                Atualizar
+              </>
+            )}
           </Button>
           
           {concurso && !userRanking && user && (
@@ -108,6 +122,15 @@ const ResultadosPage = () => {
           )}
         </div>
       </div>
+      
+      {needsRecalculation && (
+        <Alert className="mb-4 bg-amber-50 border-amber-200 text-amber-800">
+          <AlertDescription className="flex items-center">
+            <Loader2 className="h-4 w-4 mr-2 text-amber-600 animate-spin" />
+            Atualizando pontuações de todos os participantes...
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] mb-1 sm:mb-2">
         <RankingCard 

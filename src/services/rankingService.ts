@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Ranking {
@@ -32,7 +33,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
-    // Build query depending on whether we want a specific reservation type
+    // Build query for all users, regardless of authentication status
     let query = supabase
       .from('user_rankings')
       .select(`
