@@ -205,7 +205,10 @@ export type Database = {
           created_at: string
           id: string
           is_nullified: boolean
+          points_if_correct: number | null
+          points_if_wrong: number | null
           question_number: number
+          question_type: string
           section_type: string
           updated_at: string
           weight: number
@@ -216,7 +219,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_nullified?: boolean
+          points_if_correct?: number | null
+          points_if_wrong?: number | null
           question_number: number
+          question_type?: string
           section_type: string
           updated_at?: string
           weight?: number
@@ -227,7 +233,10 @@ export type Database = {
           created_at?: string
           id?: string
           is_nullified?: boolean
+          points_if_correct?: number | null
+          points_if_wrong?: number | null
           question_number?: number
+          question_type?: string
           section_type?: string
           updated_at?: string
           weight?: number
@@ -235,6 +244,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "official_answer_weights_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_blocks: {
+        Row: {
+          concurso_id: string
+          created_at: string
+          end_index: number
+          id: string
+          name: string
+          start_index: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          concurso_id: string
+          created_at?: string
+          end_index: number
+          id?: string
+          name: string
+          start_index: number
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          concurso_id?: string
+          created_at?: string
+          end_index?: number
+          id?: string
+          name?: string
+          start_index?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_blocks_concurso_id_fkey"
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
@@ -558,9 +608,9 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
-      admin_operations: {
-        Args: { operation: string; data?: Json }
-        Returns: Json
+      calculate_score_with_blocks: {
+        Args: { p_user_ranking_id: string }
+        Returns: number
       }
       count_concurso_participants: {
         Args: { concurso_id: string }
@@ -582,16 +632,16 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
-      migrate_answer_keys_to_weights: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      manage_question_blocks: {
+        Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
+        Returns: Json
       }
-      recalculate_all_scores: {
+      recalculate_all_scores_improved: {
         Args: { p_concurso_id: string }
         Returns: Json
       }
       recalculate_all_scores_with_weights: {
-        Args: { p_concurso_id: string }
+        Args: Record<PropertyKey, never> | { p_concurso_id: string }
         Returns: Json
       }
       save_scores_transaction: {
@@ -620,11 +670,11 @@ export type Database = {
         Args: {
           p_concurso_id: string
           p_question_number: number
-          p_correct_answer: string
+          p_answer: string
           p_weight: number
-          p_is_nullified?: boolean
+          p_is_nullified: boolean
         }
-        Returns: Json
+        Returns: undefined
       }
     }
     Enums: {

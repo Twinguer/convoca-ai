@@ -55,30 +55,27 @@ export const AnswerKeyTab = ({
           return;
         }
         
+        // Usar a RPC get_official_answer_weights
         const { data, error } = await supabase.rpc(
           'get_official_answer_weights',
           {
             p_concurso_id: concursoId,
           }
-        )
-        .order('question_number', { ascending: true });
-        // const { data, error } = await supabase
-        //   .from('answer_keys')
-        //   .select('*')
-        //   .eq('concurso_id', concursoId)
-        //   .order('question_number', { ascending: true });
-
+        );
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
+        if (data && Object.keys(data).length > 0) {
           const answerMap: Record<number, string> = {};
           const nullified: number[] = [];
           
-          data.forEach(item => {
-            answerMap[item.question_number] = item.answer;
-            if (item.is_nullified) {
-              nullified.push(item.question_number);
+          Object.entries(data).forEach(([key, value]: [string, any]) => {
+            // Extract question number from key (e.g., "questao1" -> 1)
+            const questionNumber = parseInt(key.replace('questao', ''));
+            
+            answerMap[questionNumber] = value.resposta;
+            if (value.anulada) {
+              nullified.push(questionNumber);
             }
           });
           
@@ -197,10 +194,22 @@ export const AnswerKeyTab = ({
         const specific2End = specific1End + (specificKnowledge2Questions || 0);
         const specific3End = specific2End + (specificKnowledge3Questions || 0);
         
+        // Determine which section this question belongs to
+        let sectionType = 'basic';
+        if (qNum > basicEnd && qNum <= specific1End) {
+          sectionType = 'specific1';
+        } else if (qNum > specific1End && qNum <= specific2End) {
+          sectionType = 'specific2';
+        } else if (qNum > specific2End && qNum <= specific3End) {
+          sectionType = 'specific3';
+        }
+        
         return {
           concurso_id: concursoId || '',
           question_number: qNum,
-          answer: answers[qNum],
+          correct_answer: answers[qNum],
+          weight: 1.0, // Default weight
+          section_type: sectionType,
           is_nullified: nullifiedQuestions.includes(qNum),
           is_basic_knowledge: qNum <= basicEnd,
           is_specific_1: qNum > basicEnd && qNum <= specific1End,

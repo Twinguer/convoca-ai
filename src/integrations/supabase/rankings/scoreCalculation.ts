@@ -1,6 +1,7 @@
-
 import { getExamStructure } from "./examStructure";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "../client";
+
 // Calcula pontuação bruta com base nas respostas e no gabarito
 export const calculateRawScores = async (
   concursoId: string,
@@ -8,7 +9,6 @@ export const calculateRawScores = async (
 ) => {
   try {
     // Obtenha o gabarito oficial com pesos
-
     const { data: answerKey, error: keyError } = await supabase.rpc(
       'get_official_answer_weights',
       {
@@ -26,12 +26,12 @@ export const calculateRawScores = async (
     }
 
     // Logging para depuração
-    console.log(`[calculateRawScores] Número de questões no gabarito: ${answerKey.length}`);
-    const nullifiedQuestions = answerKey.filter(q => q.is_nullified);
+    console.log(`[calculateRawScores] Número de questões no gabarito: ${Object.keys(answerKey).length}`);
+    const nullifiedQuestions = Object.values(answerKey).filter((q: any) => q.anulada);
     console.log(`[calculateRawScores] Questões anuladas: ${nullifiedQuestions.length}`);
     if (nullifiedQuestions.length > 0) {
-      console.log('[calculateRawScores] Números das questões anuladas:', 
-        nullifiedQuestions.map(q => q.question_number).join(', '));
+      console.log('[calculateRawScores] Questões anuladas:', 
+        nullifiedQuestions.map((q: any, idx: number) => `questao${idx+1}`).join(', '));
     }
 
      // Carregue os dados do concurso para determinar as faixas das seções
@@ -63,34 +63,33 @@ export const calculateRawScores = async (
 
     // Calcula os acertos
     userAnswers.forEach(userAnswer => {
-      const officialAnswer = answerKey.find(
-        a => a.question_number === userAnswer.question_number,
-      );
+      const questionKey = `questao${userAnswer.question_number}`;
+      const officialAnswer = answerKey[questionKey];
 
        // Verificação detalhada para depuração
       if (officialAnswer) {
-        const isNullified = officialAnswer.is_nullified;
-        const isCorrect = officialAnswer.answer === userAnswer.answer;
+        const isNullified = officialAnswer.anulada;
+        const isCorrect = officialAnswer.resposta === userAnswer.answer;
         
         console.log(`[calculateRawScores] Questão ${userAnswer.question_number}: ` +
           `Anulada: ${isNullified}, ` +
-          `Resposta oficial: ${officialAnswer.answer}, ` +
+          `Resposta oficial: ${officialAnswer.resposta}, ` +
           `Resposta do usuário: ${userAnswer.answer}, ` +
           `Correta: ${isCorrect}`);
 
         // Contabiliza acerto se a questão é anulada ou a resposta está correta
         if (isNullified || isCorrect) {
           if (userAnswer.is_basic_knowledge) {
-            basicKnowledgeScore += 1;
+            basicKnowledgeScore += officialAnswer.peso || 1;
           } else if (userAnswer.is_specific_1) {
-            specific1Score += 1;
-            specificKnowledgeScore += 1;
+            specific1Score += officialAnswer.peso || 1;
+            specificKnowledgeScore += officialAnswer.peso || 1;
           } else if (userAnswer.is_specific_2) {
-            specific2Score += 1;
-            specificKnowledgeScore += 1;
+            specific2Score += officialAnswer.peso || 1;
+            specificKnowledgeScore += officialAnswer.peso || 1;
           } else if (userAnswer.is_specific_3) {
-            specific3Score += 1;
-            specificKnowledgeScore += 1;
+            specific3Score += officialAnswer.peso || 1;
+            specificKnowledgeScore += officialAnswer.peso || 1;
           }
         }
       } else {
@@ -200,7 +199,6 @@ export const applyWeightsToScores = async (
 // Salva todas as pontuações do usuário (brutas e ponderadas)
 export const saveUserScores = async (
   rankingId: string,
-  supabase: SupabaseClient,
   rawScores: {
     basicKnowledgeScore: number;
     specificKnowledgeScore: number;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,25 +40,28 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   });
 
   const { data: existingAnswers, isLoading: isLoadingAnswers } = useQuery({
-    queryKey: ['answer-keys', concursoId],
-      queryFn: async () => {
-        const { data, error } = await supabase.from('official_answer_weights').select('*')
-        .eq('concurso_id', concursoId);
+    queryKey: ['official-answers-weights', concursoId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_official_answer_weights', {
+        p_concurso_id: concursoId
+      });
         
       if (error) throw error;
-      return data || [];
+      return data || {};
     },
   });
 
   useEffect(() => {
-    if (existingAnswers && existingAnswers.length > 0) {
+    if (existingAnswers && Object.keys(existingAnswers).length > 0) {
       const answersMap: { [key: number]: string } = {};
       const nullifiedSet = new Set<number>();
       
-      existingAnswers.forEach((item: any) => {
-        answersMap[item.question_number] = item.answer;
-        if (item.is_nullified) {
-          nullifiedSet.add(item.question_number);
+      Object.entries(existingAnswers).forEach(([key, value]: [string, any]) => {
+        const questionNumber = parseInt(key.replace('questao', ''));
+        
+        answersMap[questionNumber] = value.resposta;
+        if (value.anulada) {
+          nullifiedSet.add(questionNumber);
         }
       });
       
@@ -241,41 +243,30 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         return;
       }
       
-      const answersArray = questions.map(qNum => {
-        let isBasic = false;
-        let isSpecific1 = false;
-        let isSpecific2 = false;
-        let isSpecific3 = false;
-
-        const basicCount = concurso.basic_knowledge_questions || 0;
-        const specific1Count = concurso.specific_knowledge_1_questions || 0;
-        const specific2Count = concurso.specific_knowledge_2_questions || 0;
-
-        if (qNum <= basicCount) {
-          isBasic = true;
-        } else if (qNum <= basicCount + specific1Count) {
-          isSpecific1 = true;
-        } else if (qNum <= basicCount + specific1Count + specific2Count) {
-          isSpecific2 = true;
-        } else {
-          isSpecific3 = true;
+      for (const qNum of questions) {
+        const isBasic = qNum <= (concurso.basic_knowledge_questions || 0);
+        const specific1End = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0);
+        const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+        
+        let sectionType = 'basic';
+        if (!isBasic && qNum <= specific1End) {
+          sectionType = 'specific1';
+        } else if (qNum > specific1End && qNum <= specific2End) {
+          sectionType = 'specific2';
+        } else if (qNum > specific2End) {
+          sectionType = 'specific3';
         }
 
-        return {
-          concurso_id: concursoId,
-          question_number: qNum,
-          answer: answers[qNum]?.toUpperCase() || "",
-          is_nullified: nullifiedQuestions.has(qNum),
-          is_basic_knowledge: isBasic,
-          is_specific_1: isSpecific1,
-          is_specific_2: isSpecific2,
-          is_specific_3: isSpecific3
-        };
-      });
-
-
-        const { error: insertError } = await supabase.from('official_answer_weights').upsert(answersArray);
-        if (insertError) throw insertError;
+        const { error } = await supabase.rpc('update_answer_with_weight', {
+          p_concurso_id: concursoId,
+          p_question_number: qNum,
+          p_correct_answer: answers[qNum],
+          p_weight: 1.0,
+          p_is_nullified: nullifiedQuestions.has(qNum),
+          p_section_type: sectionType
+        });
+        
+        if (error) throw error;
       }
 
       setSavedSuccess(true);
@@ -284,7 +275,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
 
-      // Iniciar automaticamente o recálculo para todos os usuários
       await performRecalculation();
       
       setTimeout(() => {

@@ -22,19 +22,29 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     
     console.log(`Encontrados ${userRankings.length} rankings de usuários para atualizar`);
     
-    // Verifica se há questões anuladas
-    const { data: nullifiedQuestions, error: nullifiedError } = await supabase.from('official_answer_weights')
-    .select('question_number')
-    .eq('concurso_id', concursoId)
-    .eq('is_nullified', true);
-
+    // Verifica se há questões anuladas - utilizando a RPC get_official_answer_weights
+    const { data: officialAnswers, error: answersError } = await supabase.rpc('get_official_answer_weights', {
+      p_concurso_id: concursoId
+    });
       
-    if (nullifiedError) throw nullifiedError;
+    if (answersError) throw answersError;
     
-    if (nullifiedQuestions && nullifiedQuestions.length > 0) {
-      console.log(`Encontradas ${nullifiedQuestions.length} questões anuladas`);
-      const nullifiedNumbers = nullifiedQuestions.map(q => q.question_number).join(', ');
-      console.log(`Questões anuladas: ${nullifiedNumbers}`);
+    // Processa informações de questões anuladas
+    const nullifiedQuestions = [];
+    if (officialAnswers) {
+      for (const [key, value] of Object.entries(officialAnswers)) {
+        const answer = value as any;
+        if (answer.anulada) {
+          const questionNumber = parseInt(key.replace('questao', ''));
+          nullifiedQuestions.push(questionNumber);
+        }
+      }
+      
+      if (nullifiedQuestions.length > 0) {
+        console.log(`Encontradas ${nullifiedQuestions.length} questões anuladas`);
+        const nullifiedNumbers = nullifiedQuestions.join(', ');
+        console.log(`Questões anuladas: ${nullifiedNumbers}`);
+      }
     }
     
     // Processa cada ranking de usuário
@@ -107,8 +117,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
               basic_score: logBasicScore,
               specific_score: logSpecificScore,
               total_score: logNewScore,
-
-              
             }
           });
           
