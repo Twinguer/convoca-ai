@@ -9,59 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      answer_keys: {
-        Row: {
-          answer: string
-          concurso_id: string | null
-          created_at: string | null
-          created_by_user_id: string | null
-          id: string
-          is_basic_knowledge: boolean | null
-          is_nullified: boolean | null
-          is_specific_1: boolean | null
-          is_specific_2: boolean | null
-          is_specific_3: boolean | null
-          question_number: number
-          updated_at: string | null
-        }
-        Insert: {
-          answer: string
-          concurso_id?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          id?: string
-          is_basic_knowledge?: boolean | null
-          is_nullified?: boolean | null
-          is_specific_1?: boolean | null
-          is_specific_2?: boolean | null
-          is_specific_3?: boolean | null
-          question_number: number
-          updated_at?: string | null
-        }
-        Update: {
-          answer?: string
-          concurso_id?: string | null
-          created_at?: string | null
-          created_by_user_id?: string | null
-          id?: string
-          is_basic_knowledge?: boolean | null
-          is_nullified?: boolean | null
-          is_specific_1?: boolean | null
-          is_specific_2?: boolean | null
-          is_specific_3?: boolean | null
-          question_number?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answer_keys_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       concursos: {
         Row: {
           alternatives_count: number | null

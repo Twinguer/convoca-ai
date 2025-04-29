@@ -304,21 +304,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       throw rankingsError;
     }
     
-    // 5. Delete answer_keys for this concurso
-    const { error: answersKeysError } = await supabase
-      .from('answer_keys')
-      .delete()
-      .eq('concurso_id', rankingId);
-      
-    if (answersKeysError) {
-      console.error('Error deleting answer keys:', answersKeysError);
-    }
-    
-    // 6. Finally delete the ranking itself
-    const { error } = await supabase
-      .from('concursos')
-      .delete()
-      .eq('id', rankingId);
+    const { error } = await supabase.from('concursos').delete().eq('id', rankingId);
       
     if (error) {
       console.error('Database error deleting ranking:', error);
@@ -332,24 +318,3 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
   }
 };
 
-// Function to update answer key and recalculate scores
-export const updateAnswerKey = async (concursoId: string, answerKeyData: any) => {
-  try {
-    // Begin a transaction
-    const { error: insertError } = await supabase
-      .from('answer_keys')
-      .upsert(answerKeyData, { onConflict: 'concurso_id,question_number' });
-      
-    if (insertError) {
-      throw insertError;
-    }
-    
-    // Recalculate scores for all users in this concurso
-    await recalculateAllUserScores(concursoId);
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating answer key:', error);
-    throw error;
-  }
-};

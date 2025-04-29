@@ -84,16 +84,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isLoading: isLoadingNullified,
     refetch: refetchNullified
   } = useQuery({
-    queryKey: ['nullified-questions', concurso.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('answer_keys')
-        .select('question_number')
-        .eq('concurso_id', concurso.id)
-        .eq('is_nullified', true);
-      if (error) throw error;
-      return data || [];
-    },
+      queryKey: ['nullified-questions', concurso.id],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('official_answer_weights')
+                .select("question_number")
+                .eq('concurso_id', concurso.id)
+                .eq('is_nullified', true);
+            if (error) throw error;
+            return data;
+        },
     staleTime: 1000,
     refetchInterval: 10000
   });

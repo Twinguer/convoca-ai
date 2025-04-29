@@ -36,12 +36,6 @@ export interface Concurso {
   created_by_user_id?: string;
   is_admin_created?: boolean;
   
-  // Exam structure fields
-  has_basic_knowledge?: boolean;
-  has_specific_knowledge_1?: boolean;
-  has_specific_knowledge_2?: boolean;
-  has_specific_knowledge_3?: boolean;
-  has_discursive?: boolean;
   has_case_study_1?: boolean;
   has_case_study_2?: boolean;
   has_case_study_3?: boolean;
@@ -81,28 +75,11 @@ export interface UserRankingDisplay {
   score: number;
 }
 
-export interface UserAnswer {
-  id: string;
-  user_ranking_id: string;
-  question_number: number;
-  answer: string;
-  is_basic_knowledge: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
-export interface AnswerKey {
-  id: string;
-  concurso_id: string;
-  question_number: number;
-  answer: string;
-  is_basic_knowledge: boolean;
-  is_specific_1: boolean;
-  is_specific_2: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
+
+
+  
 export interface UserProfile {
   id: string;
   name: string;
@@ -126,14 +103,14 @@ export interface Follower {
 // Helper to determine which specific knowledge sections are enabled
 export const getEnabledKnowledgeSections = (concurso: Concurso) => {
   return {
-    basicKnowledge: concurso.has_basic_knowledge !== false, // Basic knowledge is enabled by default
-    specificKnowledge1: concurso.has_specific_knowledge_1 !== false, // Specific knowledge 1 is enabled by default
-    specificKnowledge2: concurso.has_specific_knowledge_2 === true,
-    specificKnowledge3: concurso.has_specific_knowledge_3 === true,
-    discursive: concurso.has_discursive === true,
-    caseStudy1: concurso.has_case_study_1 === true,
-    caseStudy2: concurso.has_case_study_2 === true,
-    caseStudy3: concurso.has_case_study_3 === true
+    basicKnowledge: concurso.basic_knowledge_weight !== undefined, // Basic knowledge is enabled by default
+    specificKnowledge1: concurso.specific_knowledge_1_weight !== undefined, // Specific knowledge 1 is enabled by default
+    specificKnowledge2: concurso.specific_knowledge_2_weight !== undefined,
+    specificKnowledge3: concurso.specific_knowledge_3_weight !== undefined,
+    discursive: concurso.discursive_weight !== undefined,
+    caseStudy1: concurso.case_study_1_weight !== undefined,
+    caseStudy2: concurso.case_study_2_weight !== undefined,
+    caseStudy3: concurso.case_study_3_weight !== undefined
   };
 };
 

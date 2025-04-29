@@ -1,11 +1,11 @@
 
-import { supabase } from '../client';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 // Function to get rankings for a concurso with user information
-export const getRankingsWithUserInfo = async (concursoId: string) => {
+export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concursoId: string) => {
   try {
     const { data, error } = await supabase
-      .from('user_rankings')
+      .from('user_rankings')      
       .select(`
         id,
         score,

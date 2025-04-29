@@ -23,11 +23,11 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     console.log(`Encontrados ${userRankings.length} rankings de usuários para atualizar`);
     
     // Verifica se há questões anuladas
-    const { data: nullifiedQuestions, error: nullifiedError } = await supabase
-      .from('answer_keys')
-      .select('question_number')
-      .eq('concurso_id', concursoId)
-      .eq('is_nullified', true);
+    const { data: nullifiedQuestions, error: nullifiedError } = await supabase.from('official_answer_weights')
+    .select('question_number')
+    .eq('concurso_id', concursoId)
+    .eq('is_nullified', true);
+
       
     if (nullifiedError) throw nullifiedError;
     
@@ -93,16 +93,22 @@ export const recalculateAllUserScores = async (concursoId: string) => {
           await saveUserScores(ranking.id, rawScores, subjectiveScores, weightedScores);
           updatedCount++;
           
+          const logNewScore = weightedScores.totalScore !== undefined ? weightedScores.totalScore : 0;
+          const logBasicScore = rawScores.basicKnowledgeScore !== undefined ? rawScores.basicKnowledgeScore : 0;
+          const logSpecificScore = rawScores.specificKnowledgeScore !== undefined ? rawScores.specificKnowledgeScore : 0;
+
           // Registra as novas pontuações no log
           await supabase.from('score_calculation_logs').insert({
             user_ranking_id: ranking.id,
             calculation_type: 'recalculate_all_scores',
-            new_score: weightedScores.totalScore,
+            new_score: logNewScore,
             calculation_details: {
               reason: 'Recálculo após anulação de questões',
-              basic_score: rawScores.basicKnowledgeScore,
-              specific_score: rawScores.specificKnowledgeScore,
-              total_score: weightedScores.totalScore
+              basic_score: logBasicScore,
+              specific_score: logSpecificScore,
+              total_score: logNewScore,
+
+              
             }
           });
           

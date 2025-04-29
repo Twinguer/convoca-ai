@@ -1,8 +1,6 @@
 
 import { Concurso, ConcursoFilter } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchUserRankings } from './rankingService';
-import { getUserRankingPosition, fetchUserConcursoRankings, updateUserScores } from './userService';
 
 export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {
   try {
@@ -74,8 +72,6 @@ export const getParticipantCount = async (concursoId: string): Promise<number> =
 };
 
 // Export functions from other service files to maintain backward compatibility
-export { fetchUserRankings } from './rankingService';
-export { getUserRankingPosition, fetchUserConcursoRankings, updateUserScores } from './userService';
 export { scheduleScraper } from './scraperService';
 
 // Re-export types that were previously defined in this file

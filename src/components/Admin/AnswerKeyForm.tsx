@@ -42,10 +42,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
   const { data: existingAnswers, isLoading: isLoadingAnswers } = useQuery({
     queryKey: ['answer-keys', concursoId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('answer_keys')
-        .select('*')
+      queryFn: async () => {
+        const { data, error } = await supabase.from('official_answer_weights').select('*')
         .eq('concurso_id', concursoId);
         
       if (error) throw error;
@@ -275,18 +273,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         };
       });
 
-      const { error: deleteError } = await supabase
-        .from('answer_keys')
-        .delete()
-        .eq('concurso_id', concursoId);
 
-      if (deleteError) throw deleteError;
-
-      if (answersArray.length > 0) {
-        const { error: insertError } = await supabase
-          .from('answer_keys')
-          .insert(answersArray);
-
+        const { error: insertError } = await supabase.from('official_answer_weights').upsert(answersArray);
         if (insertError) throw insertError;
       }
 

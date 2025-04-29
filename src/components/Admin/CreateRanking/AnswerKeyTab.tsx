@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
-import { updateAnswerKey } from '@/integrations/supabase/rankings/concursoManager';
 import { toast } from 'sonner';
 
 interface AnswerKeyTabProps {
@@ -56,11 +55,19 @@ export const AnswerKeyTab = ({
           return;
         }
         
-        const { data, error } = await supabase
-          .from('answer_keys')
-          .select('*')
-          .eq('concurso_id', concursoId)
-          .order('question_number', { ascending: true });
+        const { data, error } = await supabase.rpc(
+          'get_official_answer_weights',
+          {
+            p_concurso_id: concursoId,
+          }
+        )
+        .order('question_number', { ascending: true });
+        // const { data, error } = await supabase
+        //   .from('answer_keys')
+        //   .select('*')
+        //   .eq('concurso_id', concursoId)
+        //   .order('question_number', { ascending: true });
+
 
         if (error) throw error;
 
@@ -204,8 +211,6 @@ export const AnswerKeyTab = ({
       
       if (onSaveFullRanking && formValues) {
         await onSaveFullRanking(formValues, answerKeyData);
-      } else if (concursoId) {
-        await updateAnswerKey(concursoId, answerKeyData);
         toast.success('Gabarito salvo com sucesso!');
       } else {
         toast.error('Não foi possível salvar o gabarito sem um ID de concurso');

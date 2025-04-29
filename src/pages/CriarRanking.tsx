@@ -274,12 +274,10 @@ const CriarRanking = () => {
         concursoIdToUse = data?.[0]?.id;
         setCreatedConcursoId(concursoIdToUse);
         toast.success("Ranking criado com sucesso!");
-      }
+      }      
 
       if (concursoIdToUse) {
         await saveAnswerKeyAndRecalculate(concursoIdToUse, answerKeyData);
-        queryClient.invalidateQueries({ queryKey: ['rankings'] });
-        setActiveTab('answer-key');
       }
 
     } catch (error) {
@@ -292,10 +290,10 @@ const CriarRanking = () => {
 
   const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
     const { supabase } = await import('@/integrations/supabase/client');
-    await supabase.from('answer_keys').delete().eq('concurso_id', concursoId);
+    await supabase.from('official_answer_weights').delete().eq('concurso_id', concursoId);
     if (answerKeyData.length > 0) {
-      const { error: insertError } = await supabase.from('answer_keys').insert(answerKeyData);
-      if (insertError) throw insertError;
+      const { error: insertError } = await supabase.from('official_answer_weights').insert(answerKeyData);
+          if (insertError) throw insertError;
     }
     const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
     await recalculateAllUserScores(concursoId);

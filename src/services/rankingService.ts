@@ -1,23 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export interface Ranking {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
-  avatarUrl?: string | null;
-  basicKnowledgeScore?: number;
-  specificKnowledge1Score?: number;
-  specificKnowledge2Score?: number;
-  specificKnowledge3Score?: number;
-  specificKnowledgeScore?: number; // For backward compatibility
-  discursiveScore?: number;
-  caseStudy1Score?: number;
-  caseStudy2Score?: number;
-  caseStudy3Score?: number;
-  reservationType?: string;
-  displayReservation?: string;
-}
+
+
+
 
 // Helper function to get abbreviation for reservation type
 const getReservationAbbreviation = (reservationType: string): string => {
