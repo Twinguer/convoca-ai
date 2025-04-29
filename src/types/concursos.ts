@@ -36,6 +36,12 @@ export interface Concurso {
   created_by_user_id?: string;
   is_admin_created?: boolean;
   
+  // Add these missing properties that components are expecting
+  has_basic_knowledge?: boolean;
+  has_specific_knowledge_1?: boolean;
+  has_specific_knowledge_2?: boolean;
+  has_specific_knowledge_3?: boolean;
+  has_discursive?: boolean;
   has_case_study_1?: boolean;
   has_case_study_2?: boolean;
   has_case_study_3?: boolean;
