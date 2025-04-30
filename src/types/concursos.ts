@@ -81,11 +81,6 @@ export interface UserRankingDisplay {
   score: number;
 }
 
-
-
-
-
-  
 export interface UserProfile {
   id: string;
   name: string;
@@ -106,17 +101,18 @@ export interface Follower {
   created_at: string;
 }
 
-// Helper to determine which specific knowledge sections are enabled
+// Fixed helper to determine which specific knowledge sections are enabled
+// Now uses has_* flags instead of weights
 export const getEnabledKnowledgeSections = (concurso: Concurso) => {
   return {
-    basicKnowledge: concurso.basic_knowledge_weight !== undefined, // Basic knowledge is enabled by default
-    specificKnowledge1: concurso.specific_knowledge_1_weight !== undefined, // Specific knowledge 1 is enabled by default
-    specificKnowledge2: concurso.specific_knowledge_2_weight !== undefined,
-    specificKnowledge3: concurso.specific_knowledge_3_weight !== undefined,
-    discursive: concurso.discursive_weight !== undefined,
-    caseStudy1: concurso.case_study_1_weight !== undefined,
-    caseStudy2: concurso.case_study_2_weight !== undefined,
-    caseStudy3: concurso.case_study_3_weight !== undefined
+    basicKnowledge: concurso.has_basic_knowledge === true,
+    specificKnowledge1: concurso.has_specific_knowledge_1 === true,
+    specificKnowledge2: concurso.has_specific_knowledge_2 === true,
+    specificKnowledge3: concurso.has_specific_knowledge_3 === true,
+    discursive: concurso.has_discursive === true,
+    caseStudy1: concurso.has_case_study_1 === true,
+    caseStudy2: concurso.has_case_study_2 === true,
+    caseStudy3: concurso.has_case_study_3 === true
   };
 };
 

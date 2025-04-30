@@ -92,18 +92,23 @@ export const fetchUserConcursoRankings = async (userId: string) => {
 
     if (error) throw error;
 
-    // Correto: Mapeia cada item individualmente e acessa as propriedades aninhadas
-    return data?.map(item => ({
-      id: item.concurso_id,
-      rankingId: item.id,
-      score: item.score,
-      titulo: item.concursos?.titulo,
-      orgao: item.concursos?.orgao,
-      banca: item.concursos?.banca,
-      etapa_atual: item.concursos?.etapa_atual,
-      data_publicacao: item.concursos?.data_publicacao,
-      status: item.concursos?.status
-    })) || [];
+    // Map each item individually and access the nested properties correctly
+    return data?.map(item => {
+      // Safely access the nested concursos object
+      const concurso = item.concursos || {};
+      
+      return {
+        id: item.concurso_id,
+        rankingId: item.id,
+        score: item.score,
+        titulo: concurso.titulo,
+        orgao: concurso.orgao,
+        banca: concurso.banca,
+        etapa_atual: concurso.etapa_atual,
+        data_publicacao: concurso.data_publicacao,
+        status: concurso.status
+      };
+    }) || [];
   } catch (error) {
     console.error('Error fetching user concurso rankings:', error);
     return [];

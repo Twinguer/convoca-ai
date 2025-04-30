@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -78,23 +79,23 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     
     const quotas = ["Ampla Concorrência"];
     
-    if (concurso.has_ppp) {
+    if (concurso.has_ppp === true) {
       quotas.push("PPP");
     }
     
-    if (concurso.has_pcd) {
+    if (concurso.has_pcd === true) {
       quotas.push("PCD");
     }
     
-    if (concurso.has_hipossuficientes) {
+    if (concurso.has_hipossuficientes === true) {
       quotas.push("Hipossuficientes");
     }
     
-    if (concurso.has_indigenas) {
+    if (concurso.has_indigenas === true) {
       quotas.push("Indígenas");
     }
     
-    if (concurso.has_transsexuais) {
+    if (concurso.has_transsexuais === true) {
       quotas.push("Pessoas Trans");
     }
     
@@ -121,7 +122,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   if (!isAuthenticated) {
     return <Card>
         <CardHeader>
-          <CardTitle>Classificação P��s-prova</CardTitle>
+          <CardTitle>Classificação Pós-prova</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
