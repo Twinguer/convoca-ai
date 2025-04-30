@@ -1,8 +1,26 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
-
-
-
+// Defining the Ranking interface to fix TypeScript errors
+export interface Ranking {
+  position: number;
+  name: string;
+  score: number;
+  userId: string;
+  avatarUrl?: string | null;
+  basicKnowledgeScore?: number | null;
+  specificKnowledgeScore?: number | null;
+  specificKnowledge1Score?: number | null;
+  specificKnowledge2Score?: number | null;
+  specificKnowledge3Score?: number | null;
+  discursiveScore?: number | null;
+  caseStudy1Score?: number | null;
+  caseStudy2Score?: number | null;
+  caseStudy3Score?: number | null;
+  reservationType: string;
+  displayReservation: string;
+  id?: string;
+}
 
 // Helper function to get abbreviation for reservation type
 const getReservationAbbreviation = (reservationType: string): string => {
@@ -122,7 +140,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy2Score,
         caseStudy3Score,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
-        displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência')
+        displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
+        id: ranking.id
       };
     });
     

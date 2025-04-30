@@ -9,6 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      answer_key: {
+        Row: {
+          concurso_id: string | null
+          correct_answer: string | null
+          id: number
+          question_number: string | null
+        }
+        Insert: {
+          concurso_id?: string | null
+          correct_answer?: string | null
+          id?: number
+          question_number?: string | null
+        }
+        Update: {
+          concurso_id?: string | null
+          correct_answer?: string | null
+          id?: number
+          question_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_key_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      answer_key_access_log: {
+        Row: {
+          access_timestamp: string | null
+          concurso_id: string | null
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          access_timestamp?: string | null
+          concurso_id?: string | null
+          id?: number
+          user_id?: string | null
+        }
+        Update: {
+          access_timestamp?: string | null
+          concurso_id?: string | null
+          id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_key_access_log_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      answer_keys: {
+        Row: {
+          access_timestamp: string | null
+          component_name: string | null
+          concurso_id: string | null
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          access_timestamp?: string | null
+          component_name?: string | null
+          concurso_id?: string | null
+          id?: number
+          user_id?: string | null
+        }
+        Update: {
+          access_timestamp?: string | null
+          component_name?: string | null
+          concurso_id?: string | null
+          id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_keys_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concursos: {
         Row: {
           alternatives_count: number | null
@@ -332,43 +422,34 @@ export type Database = {
       }
       user_answers: {
         Row: {
-          answer: string
-          created_at: string
-          id: string
-          is_basic_knowledge: boolean
-          is_nullified: boolean | null
+          answer: string | null
+          id: number
+          is_basic_knowledge: boolean | null
           is_specific_1: boolean | null
           is_specific_2: boolean | null
           is_specific_3: boolean | null
-          question_number: number
-          updated_at: string
-          user_ranking_id: string
+          question_number: string | null
+          user_ranking_id: string | null
         }
         Insert: {
-          answer: string
-          created_at?: string
-          id?: string
-          is_basic_knowledge?: boolean
-          is_nullified?: boolean | null
+          answer?: string | null
+          id?: number
+          is_basic_knowledge?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
-          question_number: number
-          updated_at?: string
-          user_ranking_id: string
+          question_number?: string | null
+          user_ranking_id?: string | null
         }
         Update: {
-          answer?: string
-          created_at?: string
-          id?: string
-          is_basic_knowledge?: boolean
-          is_nullified?: boolean | null
+          answer?: string | null
+          id?: number
+          is_basic_knowledge?: boolean | null
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
-          question_number?: number
-          updated_at?: string
-          user_ranking_id?: string
+          question_number?: string | null
+          user_ranking_id?: string | null
         }
         Relationships: [
           {
