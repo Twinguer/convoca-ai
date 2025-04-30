@@ -51,7 +51,15 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         case_study_1_score,
         case_study_2_score,
         case_study_3_score,
-        reservation_type
+        reservation_type,
+        weighted_basic_score,
+        weighted_specific_1_score,
+        weighted_specific_2_score,
+        weighted_specific_3_score,
+        weighted_discursive_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score
       `)
       .eq('concurso_id', concursoId);
     
@@ -115,15 +123,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     const formattedRankings = rankings.map((ranking, index) => {
       const profile = profiles?.find(p => p.id === ranking.user_id);
       
-      // Obter pontuações diretamente do banco de dados
-      const basicKnowledgeScore = ranking.basic_knowledge_score || 0;
-      const specificKnowledge1Score = ranking.specific_knowledge_1_score || 0;
-      const specificKnowledge2Score = ranking.specific_knowledge_2_score || 0;
-      const specificKnowledge3Score = ranking.specific_knowledge_3_score || 0;
-      const discursiveScore = ranking.discursive_score || 0;
-      const caseStudy1Score = ranking.case_study_1_score || 0;
-      const caseStudy2Score = ranking.case_study_2_score || 0;
-      const caseStudy3Score = ranking.case_study_3_score || 0;
+      // Logging para depurar pontuações
+      console.log(`[fetchUserRankings] Ranking #${index+1}:`, {
+        userId: ranking.user_id,
+        score: ranking.score,
+        basicScore: ranking.basic_knowledge_score,
+        specificScore1: ranking.specific_knowledge_1_score,
+        specificScore2: ranking.specific_knowledge_2_score,
+        weightedBasic: ranking.weighted_basic_score,
+        weightedSpecific1: ranking.weighted_specific_1_score
+      });
       
       return {
         position: index + 1,
@@ -131,14 +140,15 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore,
-        specificKnowledge1Score,
-        specificKnowledge2Score,
-        specificKnowledge3Score,
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score,
+        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
+        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
+        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
+        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
+        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
+        discursiveScore: ranking.discursive_score || 0,
+        caseStudy1Score: ranking.case_study_1_score || 0,
+        caseStudy2Score: ranking.case_study_2_score || 0,
+        caseStudy3Score: ranking.case_study_3_score || 0,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id

@@ -1,3 +1,4 @@
+
 import { getExamStructure } from "./examStructure";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../client";
@@ -63,7 +64,12 @@ export const calculateRawScores = async (
 
     // Calcula os acertos
     userAnswers.forEach(userAnswer => {
-      const questionKey = `questao${userAnswer.question_number}`;
+      // Converter question_number para número se for string
+      const questionNumber = typeof userAnswer.question_number === 'string' 
+        ? parseInt(userAnswer.question_number, 10) 
+        : userAnswer.question_number;
+        
+      const questionKey = `questao${questionNumber}`;
       const officialAnswer = answerKey[questionKey];
 
        // Verificação detalhada para depuração
@@ -71,7 +77,7 @@ export const calculateRawScores = async (
         const isNullified = officialAnswer.anulada;
         const isCorrect = officialAnswer.resposta === userAnswer.answer;
         
-        console.log(`[calculateRawScores] Questão ${userAnswer.question_number}: ` +
+        console.log(`[calculateRawScores] Questão ${questionNumber}: ` +
           `Anulada: ${isNullified}, ` +
           `Resposta oficial: ${officialAnswer.resposta}, ` +
           `Resposta do usuário: ${userAnswer.answer}, ` +
@@ -93,7 +99,7 @@ export const calculateRawScores = async (
           }
         }
       } else {
-        console.log(`[calculateRawScores] ALERTA: Questão ${userAnswer.question_number} não encontrada no gabarito oficial`);
+        console.log(`[calculateRawScores] ALERTA: Questão ${questionNumber} não encontrada no gabarito oficial`);
       }
     });
 

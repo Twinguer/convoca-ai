@@ -94,19 +94,27 @@ export const fetchUserConcursoRankings = async (userId: string) => {
 
     // Map each item individually and access the nested properties correctly
     return data?.map(item => {
-      // Safely access the nested concursos object
-      const concurso = item.concursos || {};
+      // Safely access the nested concursos object with type assertion
+      const concurso = item.concursos as {
+        id?: string;
+        titulo?: string; 
+        orgao?: string;
+        banca?: string;
+        etapa_atual?: string;
+        data_publicacao?: string;
+        status?: string;
+      } || {};
       
       return {
         id: item.concurso_id,
         rankingId: item.id,
         score: item.score,
-        titulo: concurso.titulo,
-        orgao: concurso.orgao,
-        banca: concurso.banca,
-        etapa_atual: concurso.etapa_atual,
-        data_publicacao: concurso.data_publicacao,
-        status: concurso.status
+        titulo: concurso.titulo || '',
+        orgao: concurso.orgao || '',
+        banca: concurso.banca || '',
+        etapa_atual: concurso.etapa_atual || '',
+        data_publicacao: concurso.data_publicacao || '',
+        status: concurso.status || ''
       };
     }) || [];
   } catch (error) {

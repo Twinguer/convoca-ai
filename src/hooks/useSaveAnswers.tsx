@@ -40,9 +40,9 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Preparar os dados de respostas para enviar
+      // Preparar os dados de respostas para enviar - garantindo que questionNumber seja número
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
-        questionNumber: parseInt(questionNumber),
+        questionNumber: parseInt(questionNumber, 10),
         answer,
       }));
 

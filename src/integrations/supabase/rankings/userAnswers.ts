@@ -20,7 +20,14 @@ export const fetchUserAnswers = async (rankingId: string) => {
       .eq('user_ranking_id', rankingId);
       
     if (error) throw error;
-    return data || [];
+    
+    // Ensure question_number is returned as a number for consistency
+    return data?.map(item => ({
+      ...item,
+      question_number: typeof item.question_number === 'string' 
+        ? parseInt(item.question_number, 10) 
+        : item.question_number
+    })) || [];
   } catch (error) {
     console.error('[fetchUserAnswers] Erro ao buscar respostas:', error);
     return [];
