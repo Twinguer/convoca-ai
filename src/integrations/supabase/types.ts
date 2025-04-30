@@ -67,38 +67,6 @@ export type Database = {
           },
         ]
       }
-      answer_keys: {
-        Row: {
-          access_timestamp: string | null
-          component_name: string | null
-          concurso_id: string | null
-          id: number
-          user_id: string | null
-        }
-        Insert: {
-          access_timestamp?: string | null
-          component_name?: string | null
-          concurso_id?: string | null
-          id?: number
-          user_id?: string | null
-        }
-        Update: {
-          access_timestamp?: string | null
-          component_name?: string | null
-          concurso_id?: string | null
-          id?: number
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answer_keys_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       concursos: {
         Row: {
           alternatives_count: number | null
@@ -133,6 +101,7 @@ export type Database = {
           id: string
           inscritos: number | null
           is_admin_created: boolean | null
+          knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
           orgao: string
@@ -183,6 +152,7 @@ export type Database = {
           id?: string
           inscritos?: number | null
           is_admin_created?: boolean | null
+          knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
           orgao: string
@@ -233,6 +203,7 @@ export type Database = {
           id?: string
           inscritos?: number | null
           is_admin_created?: boolean | null
+          knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
           orgao?: string

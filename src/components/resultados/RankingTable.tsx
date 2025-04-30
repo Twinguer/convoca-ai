@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -329,13 +330,13 @@ const RankingTableContent: React.FC<{
             </TableCell>
             <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
             
-            {concurso.has_basic_knowledge !== false && (
+            {concurso.has_basic_knowledge === true && (
               <TableCell className="text-right">
                 {(Number(ranking.basicKnowledgeScore || 0) * sectionWeights.basic).toFixed(2)}
               </TableCell>
             )}
             
-            {concurso.has_specific_knowledge_1 !== false && (
+            {concurso.has_specific_knowledge_1 === true && (
               <TableCell className="text-right">
                 {(Number(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore || 0) * sectionWeights.specific1).toFixed(2)}
               </TableCell>
@@ -399,3 +400,4 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
+

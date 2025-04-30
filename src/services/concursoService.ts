@@ -97,12 +97,12 @@ export const fetchUserConcursoRankings = async (userId: string) => {
       id: item.concurso_id,
       rankingId: item.id,
       score: item.score,
-      titulo: item.concursos.titulo,
-      orgao: item.concursos.orgao,
-      banca: item.concursos.banca,
-      etapa_atual: item.concursos.etapa_atual,
-      data_publicacao: item.concursos.data_publicacao,
-      status: item.concursos.status
+      titulo: item.concursos?.titulo,
+      orgao: item.concursos?.orgao,
+      banca: item.concursos?.banca,
+      etapa_atual: item.concursos?.etapa_atual,
+      data_publicacao: item.concursos?.data_publicacao,
+      status: item.concursos?.status
     })) || [];
   } catch (error) {
     console.error('Error fetching user concurso rankings:', error);
