@@ -1,3 +1,4 @@
+
 import { getExamStructure } from "./examStructure";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../client";
@@ -27,26 +28,26 @@ export const calculateRawScores = async (
 
     // Logging para depuração
     console.log(`[calculateRawScores] Número de questões no gabarito: ${Object.keys(answerKey).length}`);
-    const nullifiedQuestions = Object.values(answerKey).filter((q: any) => q.anulada);
+    const nullifiedQuestions = Object.entries(answerKey).filter(([_, q]: [string, any]) => q.anulada);
     console.log(`[calculateRawScores] Questões anuladas: ${nullifiedQuestions.length}`);
     if (nullifiedQuestions.length > 0) {
       console.log('[calculateRawScores] Questões anuladas:', 
-        nullifiedQuestions.map((q: any, idx: number) => `questao${idx+1}`).join(', '));
+        nullifiedQuestions.map(([q, _]) => q).join(', '));
     }
 
-     // Carregue os dados do concurso para determinar as faixas das seções
-     const { data: concurso, error: concursoError } = await supabase
-     .from('concursos')
-     .select(
-       `
-         basic_knowledge_questions,
-         specific_knowledge_1_questions,
-         specific_knowledge_2_questions,
-         specific_knowledge_3_questions
-       `
-     )
-     .eq('id', concursoId)
-     .single();
+    // Carregue os dados do concurso para determinar as faixas das seções
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(
+        `
+          basic_knowledge_questions,
+          specific_knowledge_1_questions,
+          specific_knowledge_2_questions,
+          specific_knowledge_3_questions
+        `
+      )
+      .eq('id', concursoId)
+      .single();
     if (concursoError) throw concursoError;
 
     const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
@@ -63,36 +64,52 @@ export const calculateRawScores = async (
 
     // Calcula os acertos
     userAnswers.forEach(userAnswer => {
-      // Já não precisamos mais converter para número, pois question_number já é integer no banco
       const questionNumber = userAnswer.question_number;
-        
       const questionKey = `questao${questionNumber}`;
       const officialAnswer = answerKey[questionKey];
 
-       // Verificação detalhada para depuração
+      // Verificação detalhada para depuração
       if (officialAnswer) {
         const isNullified = officialAnswer.anulada;
         const isCorrect = officialAnswer.resposta === userAnswer.answer;
+        const sectionType = officialAnswer.secao || 'unknown';
         
         console.log(`[calculateRawScores] Questão ${questionNumber}: ` +
           `Anulada: ${isNullified}, ` +
+          `Seção: ${sectionType}, ` +
           `Resposta oficial: ${officialAnswer.resposta}, ` +
           `Resposta do usuário: ${userAnswer.answer}, ` +
           `Correta: ${isCorrect}`);
 
         // Contabiliza acerto se a questão é anulada ou a resposta está correta
         if (isNullified || isCorrect) {
-          if (userAnswer.is_basic_knowledge) {
-            basicKnowledgeScore += officialAnswer.peso || 1;
+          // Usamos o campo secao (section_type) do gabarito oficial
+          const weight = officialAnswer.peso || 1;
+          
+          if (sectionType === 'basic') {
+            basicKnowledgeScore += weight;
+          } else if (sectionType === 'specific1') {
+            specific1Score += weight;
+            specificKnowledgeScore += weight;
+          } else if (sectionType === 'specific2') {
+            specific2Score += weight;
+            specificKnowledgeScore += weight;
+          } else if (sectionType === 'specific3') {
+            specific3Score += weight;
+            specificKnowledgeScore += weight;
+          }
+          // Caso de fallback usando as flags is_basic_knowledge, etc. (legado)
+          else if (userAnswer.is_basic_knowledge) {
+            basicKnowledgeScore += weight;
           } else if (userAnswer.is_specific_1) {
-            specific1Score += officialAnswer.peso || 1;
-            specificKnowledgeScore += officialAnswer.peso || 1;
+            specific1Score += weight;
+            specificKnowledgeScore += weight;
           } else if (userAnswer.is_specific_2) {
-            specific2Score += officialAnswer.peso || 1;
-            specificKnowledgeScore += officialAnswer.peso || 1;
+            specific2Score += weight;
+            specificKnowledgeScore += weight;
           } else if (userAnswer.is_specific_3) {
-            specific3Score += officialAnswer.peso || 1;
-            specificKnowledgeScore += officialAnswer.peso || 1;
+            specific3Score += weight;
+            specificKnowledgeScore += weight;
           }
         }
       } else {
@@ -137,21 +154,21 @@ export const applyWeightsToScores = async (
   }
 ) => {
   try {    
-      // Obtenha os pesos do concurso
-      const { data: concursoWithWeights, error: concursoWeightsError } = await supabase
-        .from('concursos')
-        .select(`
-          basic_knowledge_weight,
-          specific_knowledge_1_weight,
-          specific_knowledge_2_weight,
-          specific_knowledge_3_weight,
-          discursive_weight,
-          case_study_1_weight,
-          case_study_2_weight,
-          case_study_3_weight
-        `)
-        .eq('id', concursoId)
-        .single();
+    // Obtenha os pesos do concurso
+    const { data: concursoWithWeights, error: concursoWeightsError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight,
+        discursive_weight,
+        case_study_1_weight,
+        case_study_2_weight,
+        case_study_3_weight
+      `)
+      .eq('id', concursoId)
+      .single();
     if (concursoWeightsError) throw concursoWeightsError;
     
     // Extrai os pesos
@@ -166,6 +183,9 @@ export const applyWeightsToScores = async (
       caseStudy3: concursoWithWeights?.case_study_3_weight || 1
     };
 
+    console.log('[applyWeightsToScores] Pesos do concurso:', weights);
+    console.log('[applyWeightsToScores] Pontuações brutas:', scores);
+
     // Aplica os pesos
     const weightedScores = {
       weightedBasicScore: scores.basicKnowledgeScore * weights.basicKnowledge,
@@ -178,7 +198,9 @@ export const applyWeightsToScores = async (
       weightedCaseStudy3Score: subjectiveScores.caseStudy3Score * weights.caseStudy3
     };
 
-      // Calcula o score total
+    console.log('[applyWeightsToScores] Pontuações ponderadas:', weightedScores);
+
+    // Calcula o score total
     const totalScore =
       weightedScores.weightedBasicScore +
       weightedScores.weightedSpecific1Score +
@@ -228,6 +250,10 @@ export const saveUserScores = async (
   }
 ) => {
   try {
+    console.log('[saveUserScores] Salvando pontuações para ranking:', rankingId);
+    console.log('[saveUserScores] Pontuações brutas:', rawScores);
+    console.log('[saveUserScores] Pontuações ponderadas:', weightedScores);
+    
     // Atualiza o ranking do usuário com todas as pontuações
     const { error: updateError } = await supabase
       .from('user_rankings')
@@ -265,5 +291,112 @@ export const saveUserScores = async (
   } catch (error) {
     console.error('Error saving user scores:', error);
     throw error;
+  }
+};
+
+// Helper function to update section_type in official_answer_weights
+export const updateSectionTypeForConcurso = async (concursoId: string) => {
+  try {
+    console.log('Updating section_type for concurso:', concursoId);
+    
+    // Get concurso structure
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions
+      `)
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) throw concursoError;
+    
+    // Calculate section ranges
+    const basicEnd = concurso.basic_knowledge_questions || 0;
+    const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+    const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+    
+    // Update section_type for all answers
+    // Basic knowledge questions
+    if (basicEnd > 0) {
+      const { error: basicUpdateError } = await supabase
+        .from('official_answer_weights')
+        .update({ section_type: 'basic' })
+        .eq('concurso_id', concursoId)
+        .lte('question_number', basicEnd);
+        
+      if (basicUpdateError) {
+        console.error('Error updating basic knowledge section_type:', basicUpdateError);
+        return {
+          success: false,
+          error: basicUpdateError.message
+        };
+      }
+    }
+    
+    // Specific knowledge 1 questions
+    if (concurso.specific_knowledge_1_questions > 0) {
+      const { error: specific1UpdateError } = await supabase
+        .from('official_answer_weights')
+        .update({ section_type: 'specific1' })
+        .eq('concurso_id', concursoId)
+        .gt('question_number', basicEnd)
+        .lte('question_number', specific1End);
+        
+      if (specific1UpdateError) {
+        console.error('Error updating specific1 section_type:', specific1UpdateError);
+        return {
+          success: false,
+          error: specific1UpdateError.message
+        };
+      }
+    }
+    
+    // Specific knowledge 2 questions
+    if (concurso.specific_knowledge_2_questions > 0) {
+      const { error: specific2UpdateError } = await supabase
+        .from('official_answer_weights')
+        .update({ section_type: 'specific2' })
+        .eq('concurso_id', concursoId)
+        .gt('question_number', specific1End)
+        .lte('question_number', specific2End);
+        
+      if (specific2UpdateError) {
+        console.error('Error updating specific2 section_type:', specific2UpdateError);
+        return {
+          success: false,
+          error: specific2UpdateError.message
+        };
+      }
+    }
+    
+    // Specific knowledge 3 questions
+    if (concurso.specific_knowledge_3_questions > 0) {
+      const { error: specific3UpdateError } = await supabase
+        .from('official_answer_weights')
+        .update({ section_type: 'specific3' })
+        .eq('concurso_id', concursoId)
+        .gt('question_number', specific2End);
+        
+      if (specific3UpdateError) {
+        console.error('Error updating specific3 section_type:', specific3UpdateError);
+        return {
+          success: false,
+          error: specific3UpdateError.message
+        };
+      }
+    }
+    
+    return {
+      success: true
+    };
+  } catch (error: any) {
+    console.error('Error updating section_type:', error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 };

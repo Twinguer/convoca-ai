@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -66,6 +67,17 @@ export interface ConcursoFilter {
   status?: string;
   orgao?: string;
   banca?: string;
+}
+
+export interface UserRankingDisplay {
+  concursoId: string;
+  concursoTitle: string;
+  position: number;
+  score: number;
+  basic_knowledge_score?: number;
+  specific_knowledge_score?: number;
+  discursive_score?: number;
+  rankingId?: string;
 }
 
 export interface RankingTableColumn {

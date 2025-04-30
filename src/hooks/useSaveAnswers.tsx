@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
+import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -48,6 +49,13 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
+
+      // Certifique-se de que section_type esteja atualizado para este concurso
+      const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
+      if (!sectionTypeResult.success) {
+        console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
+        // Continuamos mesmo com erro, pois isso é apenas uma melhoria
+      }
 
       // Chamar a função RPC centralizada
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {

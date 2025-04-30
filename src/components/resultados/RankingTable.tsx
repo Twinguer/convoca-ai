@@ -16,6 +16,7 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
+  // Raw scores
   basicKnowledgeScore?: number | null;
   specificKnowledgeScore?: number | null;
   specificKnowledge1Score?: number | null;
@@ -25,6 +26,16 @@ export interface Ranking {
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
+  // Weighted scores (optional)
+  weightedBasicScore?: number | null;
+  weightedSpecific1Score?: number | null;
+  weightedSpecific2Score?: number | null;
+  weightedSpecific3Score?: number | null;
+  weightedDiscursiveScore?: number | null;
+  weightedCaseStudy1Score?: number | null;
+  weightedCaseStudy2Score?: number | null;
+  weightedCaseStudy3Score?: number | null;
+  // Additional fields
   reservationType: string;
   id: string;
 }
@@ -69,6 +80,16 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     
     if (rankings && rankings.length > 0) {
+      console.log('First ranking scores:', {
+        total: rankings[0].score,
+        basic: rankings[0].basicKnowledgeScore,
+        specific1: rankings[0].specificKnowledge1Score,
+        specific2: rankings[0].specificKnowledge2Score,
+        specific3: rankings[0].specificKnowledge3Score,
+        weightedBasic: rankings[0].weightedBasicScore,
+        weightedSpecific1: rankings[0].weightedSpecific1Score
+      });
+      
       console.log('Reservation types in rankings:', 
         [...new Set(rankings.map(r => r.reservationType))]);
     }
@@ -332,49 +353,49 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge === true && (
               <TableCell className="text-right">
-                {(Number(ranking.basicKnowledgeScore || 0) * sectionWeights.basic).toFixed(2)}
+                {(Number(ranking.basicKnowledgeScore || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge1Score || ranking.specificKnowledgeScore || 0) * sectionWeights.specific1).toFixed(2)}
+                {(Number(ranking.specificKnowledge1Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge2Score || 0) * sectionWeights.specific2).toFixed(2)}
+                {(Number(ranking.specificKnowledge2Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge3Score || 0) * sectionWeights.specific3).toFixed(2)}
+                {(Number(ranking.specificKnowledge3Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {(Number(ranking.discursiveScore || 0) * sectionWeights.discursive).toFixed(2)}
+                {(Number(ranking.discursiveScore || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy1Score || 0) * sectionWeights.caseStudy1).toFixed(2)}
+                {(Number(ranking.caseStudy1Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy2Score || 0) * sectionWeights.caseStudy2).toFixed(2)}
+                {(Number(ranking.caseStudy2Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy3Score || 0) * sectionWeights.caseStudy3).toFixed(2)}
+                {(Number(ranking.caseStudy3Score || 0)).toFixed(2)}
               </TableCell>
             )}
             {isAdminMode && (
