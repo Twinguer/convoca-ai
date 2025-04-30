@@ -92,6 +92,7 @@ export const fetchUserConcursoRankings = async (userId: string) => {
 
     if (error) throw error;
 
+    // Map through each item in the data array
     return data?.map(item => ({
       id: item.concurso_id,
       rankingId: item.id,
