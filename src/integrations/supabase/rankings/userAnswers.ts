@@ -21,13 +21,8 @@ export const fetchUserAnswers = async (rankingId: string) => {
       
     if (error) throw error;
     
-    // Ensure question_number is returned as a number for consistency
-    return data?.map(item => ({
-      ...item,
-      question_number: typeof item.question_number === 'string' 
-        ? parseInt(item.question_number, 10) 
-        : item.question_number
-    })) || [];
+    // No need to convert question_number as it's now stored as integer in the database
+    return data || [];
   } catch (error) {
     console.error('[fetchUserAnswers] Erro ao buscar respostas:', error);
     return [];

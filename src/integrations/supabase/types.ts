@@ -399,7 +399,7 @@ export type Database = {
           is_specific_1: boolean | null
           is_specific_2: boolean | null
           is_specific_3: boolean | null
-          question_number: string | null
+          question_number: number | null
           user_ranking_id: string | null
         }
         Insert: {
@@ -409,7 +409,7 @@ export type Database = {
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
-          question_number?: string | null
+          question_number?: number | null
           user_ranking_id?: string | null
         }
         Update: {
@@ -419,7 +419,7 @@ export type Database = {
           is_specific_1?: boolean | null
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
-          question_number?: string | null
+          question_number?: number | null
           user_ranking_id?: string | null
         }
         Relationships: [
@@ -431,6 +431,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_answers_backup: {
+        Row: {
+          answer: string | null
+          id: number | null
+          is_basic_knowledge: boolean | null
+          is_specific_1: boolean | null
+          is_specific_2: boolean | null
+          is_specific_3: boolean | null
+          question_number: string | null
+          user_ranking_id: string | null
+        }
+        Insert: {
+          answer?: string | null
+          id?: number | null
+          is_basic_knowledge?: boolean | null
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
+          question_number?: string | null
+          user_ranking_id?: string | null
+        }
+        Update: {
+          answer?: string | null
+          id?: number | null
+          is_basic_knowledge?: boolean | null
+          is_specific_1?: boolean | null
+          is_specific_2?: boolean | null
+          is_specific_3?: boolean | null
+          question_number?: string | null
+          user_ranking_id?: string | null
+        }
+        Relationships: []
       }
       user_followers: {
         Row: {

@@ -1,4 +1,3 @@
-
 import { getExamStructure } from "./examStructure";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "../client";
@@ -64,10 +63,8 @@ export const calculateRawScores = async (
 
     // Calcula os acertos
     userAnswers.forEach(userAnswer => {
-      // Converter question_number para número se for string
-      const questionNumber = typeof userAnswer.question_number === 'string' 
-        ? parseInt(userAnswer.question_number, 10) 
-        : userAnswer.question_number;
+      // Já não precisamos mais converter para número, pois question_number já é integer no banco
+      const questionNumber = userAnswer.question_number;
         
       const questionKey = `questao${questionNumber}`;
       const officialAnswer = answerKey[questionKey];
