@@ -92,7 +92,7 @@ export const fetchUserConcursoRankings = async (userId: string) => {
 
     if (error) throw error;
 
-    // Map through each item in the data array
+    // Correto: Mapeia cada item individualmente e acessa as propriedades aninhadas
     return data?.map(item => ({
       id: item.concurso_id,
       rankingId: item.id,

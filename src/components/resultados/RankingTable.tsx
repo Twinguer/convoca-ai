@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -122,7 +121,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   if (!isAuthenticated) {
     return <Card>
         <CardHeader>
-          <CardTitle>Classificação Pós-prova</CardTitle>
+          <CardTitle>Classificação P��s-prova</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
@@ -400,4 +399,3 @@ const RankingTableContent: React.FC<{
     </Table>
   );
 };
-
