@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Concurso } from "@/types/concursos";
+import { Concurso, ConcursoFilter } from "@/types/concursos";
 import { fetchUserRankings as fetchRankingsFromService } from "./rankingService";
 
 export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
@@ -16,6 +16,43 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
   }
 
   return data;
+};
+
+export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {
+  try {
+    let query = supabase
+      .from("concursos")
+      .select("*");
+    
+    // Add filters if provided
+    if (filters) {
+      // Filter by status if provided
+      if (filters.status && filters.status !== 'Todos') {
+        query = query.eq('status', filters.status);
+      }
+      
+      // Filter by orgao if provided
+      if (filters.orgao && filters.orgao !== 'Todos') {
+        query = query.eq('orgao', filters.orgao);
+      }
+      
+      // Filter by banca if provided
+      if (filters.banca && filters.banca !== 'Todos') {
+        query = query.eq('banca', filters.banca);
+      }
+    }
+    
+    // Order by most recent first
+    query = query.order('data_publicacao', { ascending: false });
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching concursos:', error);
+    return [];
+  }
 };
 
 export const getParticipantCount = async (concursoId: string): Promise<number> => {
@@ -78,3 +115,4 @@ export const fetchUserRankings = async (userId: string) => {
 };
 
 // More functions can be added here as needed...
+
