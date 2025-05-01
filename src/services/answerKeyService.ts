@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { recalculateAllUserScores } from "@/integrations/supabase/rankings/batchOperations";
 
 interface UpdateAnswerParams {
   concursoId: string;
@@ -42,16 +43,25 @@ export const answerKeyService = {
 
     if (error) throw error;
     
-    // Forçar o recálculo para todos os usuários do concurso
+    // Forçar o recálculo para todos os usuários do concurso usando a função otimizada
     try {
-      const recalcResult = await supabase.rpc('recalculate_all_scores', {
-        p_concurso_id: concursoId
-      });
-      console.log('[answerKeyService] Recálculo de todos os rankings:', recalcResult);
+      console.log('[answerKeyService] Recalculando pontuações para todos os usuários...');
+      const recalcResult = await recalculateAllUserScores(concursoId);
+      
+      if (recalcResult.success) {
+        console.log('[answerKeyService] Recálculo bem-sucedido para todos os usuários:', recalcResult);
+        return {
+          success: true,
+          data,
+          updatedCount: recalcResult.updatedCount
+        };
+      } else {
+        console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcResult.error);
+        throw new Error(recalcResult.error);
+      }
     } catch (recalcError) {
       console.error('[answerKeyService] Erro ao recalcular todas as pontuações:', recalcError);
+      throw recalcError;
     }
-    
-    return data;
   },
 };

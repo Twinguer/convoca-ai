@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -198,7 +197,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
       if (recalculationResult.success) {
         setRecalculationSuccess(true);
-        const updatedCount = recalculationResult.updatedCount || (recalculationResult.data ? 'todos os' : '0');
+        const updatedCount = recalculationResult.updatedCount || 0;
         
         toast({
           title: "Recálculo completado",
@@ -278,6 +277,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
       });
 
+      // Chamar explicitamente o recálculo após salvar o gabarito
       await performRecalculation();
       
       setTimeout(() => {

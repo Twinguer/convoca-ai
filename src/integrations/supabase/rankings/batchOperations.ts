@@ -12,7 +12,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     console.log("[batchOperations] Recalculando pontuações para todos os usuários do concurso", concursoId);
     
     // Chamar a função de banco de dados que força recálculo para todos os usuários
-    const { data, error } = await supabase.rpc('recalculate_all_users_scores_realtime', { 
+    const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', { 
       p_concurso_id: concursoId 
     });
     
@@ -26,7 +26,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     return { 
       success: true, 
       data,
-      updatedCount: typeof data === 'number' ? data : 0 
+      updatedCount: data?.updatedCount || 0
     };
   } catch (err) {
     console.error("[batchOperations] Erro inesperado ao recalcular pontuações:", err);
@@ -39,7 +39,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
  * 
  * @param concursoId UUID do concurso
  */
-export const updateSectionType = async (concursoId: string) => {
+export const updateSectionTypes = async (concursoId: string) => {
   try {
     console.log("[batchOperations] Atualizando tipos de seção para o concurso", concursoId);
     
