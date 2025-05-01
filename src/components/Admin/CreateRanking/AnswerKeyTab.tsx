@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -200,7 +201,6 @@ export const AnswerKeyTab = ({
         const basicEnd = basicKnowledgeQuestions || 0;
         const specific1End = basicEnd + (specificKnowledge1Questions || 0);
         const specific2End = specific1End + (specificKnowledge2Questions || 0);
-        const specific3End = specific2End + (specificKnowledge3Questions || 0);
         
         // Determine which section this question belongs to
         let sectionType = 'basic';
@@ -208,7 +208,7 @@ export const AnswerKeyTab = ({
           sectionType = 'specific1';
         } else if (qNum > specific1End && qNum <= specific2End) {
           sectionType = 'specific2';
-        } else if (qNum > specific2End && qNum <= specific3End) {
+        } else if (qNum > specific2End) {
           sectionType = 'specific3';
         }
         

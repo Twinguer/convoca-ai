@@ -28,6 +28,7 @@ export const answerKeyService = {
       answer,
       weight,
       isNullified,
+      sectionType
     }: UpdateAnswerParams
   ) {  
     const { data, error } = await supabase.rpc("update_answer_with_weight", {
@@ -36,10 +37,8 @@ export const answerKeyService = {
       p_correct_answer: answer,
       p_weight: weight,
       p_is_nullified: isNullified,
+      p_section_type: sectionType
     });
-
-    // Call the function that recalculates the scores after updating the answer
-    await supabase.rpc('recalculate_all_scores_with_weights');
 
     if (error) throw error;
     return data;

@@ -236,6 +236,28 @@ const CriarRanking = () => {
     }
   };
 
+  const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    try {
+      // Deletar gabarito existente primeiro
+      await supabase.from('official_answer_weights').delete().eq('concurso_id', concursoId);
+      
+      // Inserir novo gabarito se houver dados
+      if (answerKeyData.length > 0) {
+        const { error: insertError } = await supabase.from('official_answer_weights').insert(answerKeyData);
+        if (insertError) throw insertError;
+      }
+      
+      // Recalcular pontuações
+      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/batchOperations');
+      await recalculateAllUserScores(concursoId);
+    } catch (error) {
+      console.error('Erro ao salvar gabarito e recalcular pontuações:', error);
+      throw error;
+    }
+  };
+
   const handleSaveFullRanking = async (formValues: any, answerKeyData: any) => {
     setIsSubmitting(true);
 
@@ -286,17 +308,6 @@ const CriarRanking = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
-    const { supabase } = await import('@/integrations/supabase/client');
-    await supabase.from('official_answer_weights').delete().eq('concurso_id', concursoId);
-    if (answerKeyData.length > 0) {
-      const { error: insertError } = await supabase.from('official_answer_weights').insert(answerKeyData);
-          if (insertError) throw insertError;
-    }
-    const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/userAnswers');
-    await recalculateAllUserScores(concursoId);
   };
 
   const handleFakeSubmit = () => {};
