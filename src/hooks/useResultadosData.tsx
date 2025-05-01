@@ -43,14 +43,14 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings with more frequent refetching - only if user is authenticated
+  // Fetch rankings with more frequent refetching - removing dependence on authentication status
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
-    queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
+    queryFn: () => fetchUserRankings(id),
     refetchInterval: 30000, // Aumentado para 30 segundos
     refetchOnWindowFocus: true,
     staleTime: 15000, // Aumentado para 15 segundos
-    enabled: isAuthenticated,
+    enabled: !!id, // Removi a dependência de isAuthenticated
   });
   
   // Fetch participant count - for all users (authenticated or not)
@@ -91,10 +91,8 @@ export function useResultadosData() {
     }
     
     // Refetch dos dados atualizados
-    if (isAuthenticated) {
-      console.log("[useResultadosData] Recarregando dados de rankings para usuário autenticado");
-      await refetchRankings();
-    }
+    console.log("[useResultadosData] Recarregando dados de rankings");
+    await refetchRankings();
     
     console.log("[useResultadosData] Recarregando contagem de participantes");
     await refetchCount();
