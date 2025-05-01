@@ -7,7 +7,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     console.log('[recalculateAllUserScores] Iniciando recálculo para concurso:', concursoId);
     
     // Use the RPC function that properly handles section_type instead of is_basic_knowledge columns
-    const { data, error } = await supabase.rpc('recalculate_all_scores', {
+    const { data, error } = await supabase.rpc('recalculate_all_users_scores_realtime', {
       p_concurso_id: concursoId
     });
     

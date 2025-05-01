@@ -45,8 +45,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
-    // Buscar todos os rankings deste concurso com as respostas brutas
-    // A pontuação será calculada em tempo real pelo banco de dados
+    // Use the new get_realtime_rankings function
     const { data: rankings, error: rankingsError } = await supabase.rpc('get_realtime_rankings', {
       p_concurso_id: concursoId,
       p_reservation_type: reservationType || null
