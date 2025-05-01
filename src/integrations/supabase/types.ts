@@ -697,6 +697,10 @@ export type Database = {
         Args: { p_user_ranking_id: string }
         Returns: number
       }
+      calculate_user_score_realtime: {
+        Args: { p_ranking_id: string }
+        Returns: number
+      }
       count_concurso_participants: {
         Args: { concurso_id: string }
         Returns: number
@@ -717,6 +721,34 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
+      get_realtime_rankings: {
+        Args: { p_concurso_id: string; p_reservation_type?: string }
+        Returns: {
+          id: string
+          user_id: string
+          user_name: string
+          avatar_url: string
+          score: number
+          basic_knowledge_score: number
+          specific_knowledge_score: number
+          specific_knowledge_1_score: number
+          specific_knowledge_2_score: number
+          specific_knowledge_3_score: number
+          discursive_score: number
+          case_study_1_score: number
+          case_study_2_score: number
+          case_study_3_score: number
+          weighted_basic_score: number
+          weighted_specific_1_score: number
+          weighted_specific_2_score: number
+          weighted_specific_3_score: number
+          weighted_discursive_score: number
+          weighted_case_study_1_score: number
+          weighted_case_study_2_score: number
+          weighted_case_study_3_score: number
+          reservation_type: string
+        }[]
+      }
       manage_question_blocks: {
         Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
         Returns: Json
@@ -731,6 +763,10 @@ export type Database = {
       }
       recalculate_all_scores_with_weights: {
         Args: Record<PropertyKey, never> | { p_concurso_id: string }
+        Returns: Json
+      }
+      recalculate_all_users_scores_realtime: {
+        Args: { p_concurso_id: string }
         Returns: Json
       }
       save_scores_transaction: {
