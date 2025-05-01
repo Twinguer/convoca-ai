@@ -1,159 +1,30 @@
 
-import { supabase } from '../client';
+import { supabase } from '@/integrations/supabase/client';
 
-// Function to recalculate all user scores for a concurso
+/**
+ * Recalcula as pontuações de todos os usuários para um determinado concurso
+ * independentemente do status de autenticação
+ * 
+ * @param concursoId UUID do concurso
+ */
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
-    console.log('[recalculateAllUserScores] Iniciando recálculo para concurso:', concursoId);
+    console.log("[batchOperations] Recalculando pontuações para todos os usuários do concurso", concursoId);
     
-    // Use the RPC function that properly handles section_type instead of is_basic_knowledge columns
-    const { data, error } = await supabase.rpc('recalculate_all_users_scores_realtime', {
-      p_concurso_id: concursoId
+    // Chamar a função de banco de dados que força recálculo para todos os usuários
+    const { data, error } = await supabase.rpc('recalculate_all_users_scores_realtime', { 
+      p_concurso_id: concursoId 
     });
     
     if (error) {
-      console.error('[recalculateAllUserScores] Erro durante recálculo:', error);
-      return {
-        success: false,
-        error: error.message || 'Erro durante o recálculo das pontuações',
-        updatedCount: 0
-      };
+      console.error("[batchOperations] Erro ao recalcular pontuações:", error);
+      return { success: false, error: error.message };
     }
     
-    console.log('[recalculateAllUserScores] Recálculo concluído:', data);
-    
-    return {
-      success: true,
-      updatedCount: data.updatedCount || 0,
-      executionTimeMs: data.executionTimeMs || 0
-    };
-  } catch (error: any) {
-    console.error('[recalculateAllUserScores] Erro não tratado:', error);
-    return {
-      success: false,
-      error: error.message || 'Erro durante o recálculo das pontuações',
-      updatedCount: 0
-    };
-  }
-};
-
-// Nova função para calcular pontuação em tempo real para um ranking específico
-export const calculateRankingScoreRealtime = async (rankingId: string) => {
-  try {
-    console.log('[calculateRankingScoreRealtime] Calculando pontuação em tempo real para:', rankingId);
-    
-    const { data, error } = await supabase.rpc('calculate_user_score_realtime', {
-      p_ranking_id: rankingId
-    });
-    
-    if (error) {
-      console.error('[calculateRankingScoreRealtime] Erro durante cálculo em tempo real:', error);
-      return {
-        success: false,
-        error: error.message || 'Erro durante o cálculo da pontuação em tempo real',
-        score: null
-      };
-    }
-    
-    console.log('[calculateRankingScoreRealtime] Cálculo concluído:', data);
-    
-    return {
-      success: true,
-      score: data
-    };
-  } catch (error: any) {
-    console.error('[calculateRankingScoreRealtime] Erro não tratado:', error);
-    return {
-      success: false,
-      error: error.message || 'Erro durante o cálculo da pontuação em tempo real',
-      score: null
-    };
-  }
-};
-
-// Function to update the section_type in official_answer_weights
-export const updateSectionType = async (concursoId: string) => {
-  try {
-    console.log('[updateSectionType] Atualizando section_type para concurso:', concursoId);
-    
-    // Get concurso structure
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select(`
-        basic_knowledge_questions,
-        specific_knowledge_1_questions,
-        specific_knowledge_2_questions,
-        specific_knowledge_3_questions
-      `)
-      .eq('id', concursoId)
-      .single();
-      
-    if (concursoError) {
-      throw concursoError;
-    }
-    
-    const basicEnd = concurso.basic_knowledge_questions || 0;
-    const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
-    const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-    
-    // Update section_type for all questions
-    const updates = [];
-    
-    // Basic knowledge questions
-    if (basicEnd > 0) {
-      const { error: basicError } = await supabase
-        .from('official_answer_weights')
-        .update({ section_type: 'basic' })
-        .eq('concurso_id', concursoId)
-        .lte('question_number', basicEnd);
-        
-      if (basicError) updates.push({ section: 'basic', error: basicError.message });
-    }
-    
-    // Specific knowledge 1 questions
-    if (concurso.specific_knowledge_1_questions > 0) {
-      const { error: spec1Error } = await supabase
-        .from('official_answer_weights')
-        .update({ section_type: 'specific1' })
-        .eq('concurso_id', concursoId)
-        .gt('question_number', basicEnd)
-        .lte('question_number', specific1End);
-        
-      if (spec1Error) updates.push({ section: 'specific1', error: spec1Error.message });
-    }
-    
-    // Specific knowledge 2 questions
-    if (concurso.specific_knowledge_2_questions > 0) {
-      const { error: spec2Error } = await supabase
-        .from('official_answer_weights')
-        .update({ section_type: 'specific2' })
-        .eq('concurso_id', concursoId)
-        .gt('question_number', specific1End)
-        .lte('question_number', specific2End);
-        
-      if (spec2Error) updates.push({ section: 'specific2', error: spec2Error.message });
-    }
-    
-    // Specific knowledge 3 questions
-    if (concurso.specific_knowledge_3_questions > 0) {
-      const { error: spec3Error } = await supabase
-        .from('official_answer_weights')
-        .update({ section_type: 'specific3' })
-        .eq('concurso_id', concursoId)
-        .gt('question_number', specific2End);
-        
-      if (spec3Error) updates.push({ section: 'specific3', error: spec3Error.message });
-    }
-    
-    return {
-      success: updates.length === 0,
-      updates
-    };
-  } catch (error: any) {
-    console.error('[updateSectionType] Erro não tratado:', error);
-    return {
-      success: false,
-      error: error.message
-    };
+    console.log("[batchOperations] Resultado do recálculo:", data);
+    return { success: true, data };
+  } catch (err) {
+    console.error("[batchOperations] Erro inesperado ao recalcular pontuações:", err);
+    return { success: false, error: String(err) };
   }
 };
