@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { updateSectionType } from '@/integrations/supabase/rankings/batchOperations';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -187,6 +187,11 @@ export const AnswerKeyTab = ({
         return;
       }
 
+      // Primeiro, atualizamos os section_types no banco de dados para garantir consistência
+      if (concursoId) {
+        await updateSectionType(concursoId);
+      }
+
       const answerKeyData = allQuestions.map(questionNumber => {
         const qNum = parseInt(questionNumber.toString());
         const basicEnd = basicKnowledgeQuestions || 0;
@@ -210,11 +215,7 @@ export const AnswerKeyTab = ({
           correct_answer: answers[qNum],
           weight: 1.0, // Default weight
           section_type: sectionType,
-          is_nullified: nullifiedQuestions.includes(qNum),
-          is_basic_knowledge: qNum <= basicEnd,
-          is_specific_1: qNum > basicEnd && qNum <= specific1End,
-          is_specific_2: qNum > specific1End && qNum <= specific2End,
-          is_specific_3: qNum > specific2End && qNum <= specific3End
+          is_nullified: nullifiedQuestions.includes(qNum)
         };
       });
       
