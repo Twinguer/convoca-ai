@@ -11,7 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
-import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
+import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
 
@@ -47,7 +47,6 @@ const CriarRanking = () => {
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
-  const [pendingFormValues, setPendingFormValues] = useState<any | null>(null);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   
   const searchParams = new URLSearchParams(location.search);
@@ -216,6 +215,8 @@ const CriarRanking = () => {
       
       if (saveResult?.id) {
         setCreatedConcursoId(saveResult.id);
+        toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
+        setActiveTab('answer-key'); // Alteração: Muda automaticamente para a aba de gabarito após salvar com sucesso
       }
       
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
@@ -231,86 +232,9 @@ const CriarRanking = () => {
   const handleNextTab = async () => {
     if (activeTab === 'general-info') {
       await handleSaveRanking();
-      setPendingFormValues(form.getValues());
-      setActiveTab('answer-key');
+      // A mudança de aba agora acontece dentro do handleSaveRanking após o sucesso
     }
   };
-
-  const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
-    const { supabase } = await import('@/integrations/supabase/client');
-    
-    try {
-      // Deletar gabarito existente primeiro
-      await supabase.from('official_answer_weights').delete().eq('concurso_id', concursoId);
-      
-      // Inserir novo gabarito se houver dados
-      if (answerKeyData.length > 0) {
-        const { error: insertError } = await supabase.from('official_answer_weights').insert(answerKeyData);
-        if (insertError) throw insertError;
-      }
-      
-      // Recalcular pontuações
-      const { recalculateAllUserScores } = await import('@/integrations/supabase/rankings/batchOperations');
-      await recalculateAllUserScores(concursoId);
-    } catch (error) {
-      console.error('Erro ao salvar gabarito e recalcular pontuações:', error);
-      throw error;
-    }
-  };
-
-  const handleSaveFullRanking = async (formValues: any, answerKeyData: any) => {
-    setIsSubmitting(true);
-
-    try {
-      // Use o ID do concurso já criado ou o ID de edição
-      const existingConcursoId = createdConcursoId || editId;
-      const effectiveFormValues = pendingFormValues || formValues;
-      
-      // Sincronize as localidades
-      effectiveFormValues.localidades = selectedStates;
-      
-      const dataToSubmit = {
-        ...effectiveFormValues,
-        created_by_user_id: user?.id,
-        titulo: effectiveFormValues.custom_job_title || effectiveFormValues.predefined_job_title,
-        banca: effectiveFormValues.custom_banca || effectiveFormValues.banca,
-        localidades: selectedStates
-      };
-
-      let concursoIdToUse = existingConcursoId;
-      
-      // Atualize o ranking existente ou crie um novo se não existir
-      if (existingConcursoId) {
-        const { data, error } = await supabase
-          .from('concursos')
-          .update(dataToSubmit)
-          .eq('id', existingConcursoId)
-          .select();
-
-        if (error) throw error;
-        concursoIdToUse = existingConcursoId;
-        toast.success("Ranking atualizado com sucesso!");
-      } else {
-        const { data, error } = await supabase.from('concursos').insert(dataToSubmit).select();
-        if (error) throw error;
-        concursoIdToUse = data?.[0]?.id;
-        setCreatedConcursoId(concursoIdToUse);
-        toast.success("Ranking criado com sucesso!");
-      }      
-
-      if (concursoIdToUse) {
-        await saveAnswerKeyAndRecalculate(concursoIdToUse, answerKeyData);
-      }
-
-    } catch (error) {
-      console.error("Erro ao criar/atualizar ranking:", error);
-      toast.error("Erro ao criar/atualizar ranking: " + (error as Error).message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleFakeSubmit = () => {};
 
   const handleGoToResults = () => {
     if (createdConcursoId) {
@@ -337,7 +261,7 @@ const CriarRanking = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleFakeSubmit)}>
+            <form onSubmit={(e) => e.preventDefault()}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
@@ -363,27 +287,16 @@ const CriarRanking = () => {
                   />
                 </TabsContent>
                 <TabsContent value="answer-key">
-                  <AnswerKeyTab
-                    concursoId={createdConcursoId || editId || undefined}
-                    formValues={form.getValues()}
-                    onSaveFullRanking={handleSaveFullRanking}
-                    hasBasicKnowledge={!!form.getValues().has_basic_knowledge}
-                    hasSpecificKnowledge1={!!form.getValues().has_specific_knowledge_1}
-                    hasSpecificKnowledge2={!!form.getValues().has_specific_knowledge_2}
-                    hasSpecificKnowledge3={!!form.getValues().has_specific_knowledge_3}
-                    basicKnowledgeQuestions={form.getValues().basic_knowledge_questions}
-                    specificKnowledge1Questions={form.getValues().specific_knowledge_1_questions}
-                    specificKnowledge2Questions={form.getValues().specific_knowledge_2_questions}
-                    specificKnowledge3Questions={form.getValues().specific_knowledge_3_questions}
-                    examType={form.getValues().exam_type}
-                    alternativesCount={form.getValues().alternatives_count}
-                  />
+                  {/* Substituindo o AnswerKeyTab pelo AnswerKeyForm mais completo */}
                   {(createdConcursoId || editId) && (
-                    <div className="flex justify-end mt-6">
-                      <Button type="button" onClick={handleGoToResults}>
-                        Ir para Resultados
-                      </Button>
-                    </div>
+                    <>
+                      <AnswerKeyForm concursoId={createdConcursoId || editId || ''} />
+                      <div className="flex justify-end mt-6">
+                        <Button type="button" onClick={handleGoToResults}>
+                          Ir para Resultados
+                        </Button>
+                      </div>
+                    </>
                   )}
                 </TabsContent>
               </Tabs>

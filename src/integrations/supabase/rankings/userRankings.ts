@@ -29,24 +29,15 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
     
     // Format the data with position
     return data.map((item, index) => {
-      // Fix: Correctly access nested properties
-      const userProfile = item.users_profiles || {};
-      
-      // Safely access properties with type checking
-      const name = typeof userProfile === 'object' && userProfile !== null && 'name' in userProfile 
-        ? userProfile.name 
-        : 'Unknown User';
-        
-      const avatarUrl = typeof userProfile === 'object' && userProfile !== null && 'avatar_url' in userProfile 
-        ? userProfile.avatar_url 
-        : null;
+      // Corrigido: Acesso correto à propriedade aninhada users_profiles
+      const userProfile = item.users_profiles;
       
       return {
         position: index + 1,
-        name: name,
+        name: userProfile ? userProfile.name : 'Unknown User',
         score: item.score,
         userId: item.user_id,
-        avatarUrl: avatarUrl,
+        avatarUrl: userProfile ? userProfile.avatar_url : null,
         basicKnowledgeScore: item.basic_knowledge_score,
         specificKnowledgeScore: item.specific_knowledge_score,
         specific1Score: item.specific_knowledge_1_score,

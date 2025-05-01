@@ -64,4 +64,53 @@ export const answerKeyService = {
       throw recalcError;
     }
   },
+  
+  // Nova função para salvar o gabarito completo e recalcular pontuações
+  async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: any[]) {
+    try {
+      console.log('[answerKeyService] Salvando gabarito completo para concurso:', concursoId);
+      
+      // Opcionalmente, pode-se deletar o gabarito existente primeiro
+      const { error: deleteError } = await supabase
+        .from('official_answer_weights')
+        .delete()
+        .eq('concurso_id', concursoId);
+        
+      if (deleteError) {
+        console.error('[answerKeyService] Erro ao deletar gabarito existente:', deleteError);
+        throw deleteError;
+      }
+      
+      // Inserir novo gabarito
+      if (answerKeyData.length > 0) {
+        const { error: insertError } = await supabase
+          .from('official_answer_weights')
+          .insert(answerKeyData);
+          
+        if (insertError) {
+          console.error('[answerKeyService] Erro ao inserir novo gabarito:', insertError);
+          throw insertError;
+        }
+      }
+      
+      // Recalcular pontuações
+      console.log('[answerKeyService] Iniciando recálculo de pontuações...');
+      const recalcResult = await recalculateAllUserScores(concursoId);
+      
+      if (!recalcResult.success) {
+        console.error('[answerKeyService] Erro no recálculo:', recalcResult.error);
+        throw new Error(recalcResult.error);
+      }
+      
+      console.log('[answerKeyService] Recálculo concluído com sucesso:', recalcResult);
+      return {
+        success: true,
+        updatedCount: recalcResult.updatedCount
+      };
+      
+    } catch (error) {
+      console.error('[answerKeyService] Erro ao salvar gabarito e recalcular pontuações:', error);
+      throw error;
+    }
+  }
 };
