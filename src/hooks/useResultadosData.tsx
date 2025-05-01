@@ -70,9 +70,15 @@ export function useResultadosData() {
   // Function to manually refresh all data
   const refreshData = async () => {
     console.log("[useResultadosData] Atualizando rankings manualmente");
+    
+    if (!id) {
+      console.error("[useResultadosData] ID do concurso não fornecido");
+      return;
+    }
       
     // Recalcular pontuações para todos os usuários independentemente do status de autenticação
     try {
+      console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
       const result = await recalculateAllUserScores(id);
       
       if (!result.success) {
@@ -86,8 +92,11 @@ export function useResultadosData() {
     
     // Refetch dos dados atualizados
     if (isAuthenticated) {
+      console.log("[useResultadosData] Recarregando dados de rankings para usuário autenticado");
       await refetchRankings();
     }
+    
+    console.log("[useResultadosData] Recarregando contagem de participantes");
     await refetchCount();
   };
   

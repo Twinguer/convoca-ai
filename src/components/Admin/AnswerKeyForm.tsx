@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -197,9 +198,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
       if (recalculationResult.success) {
         setRecalculationSuccess(true);
+        const updatedCount = recalculationResult.updatedCount || (recalculationResult.data ? 'todos os' : '0');
+        
         toast({
           title: "Recálculo completado",
-          description: `As notas de ${recalculationResult.updatedCount} usuários foram atualizadas.`,
+          description: `As notas de ${updatedCount} usuários foram atualizadas.`,
         });
         
         setTimeout(() => {

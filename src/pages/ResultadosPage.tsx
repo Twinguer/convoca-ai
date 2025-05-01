@@ -8,7 +8,7 @@ import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/components/ui/use-toast';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
@@ -23,9 +23,7 @@ const ResultadosPage = () => {
     creatorName,
     inscritos
   } = useResultadosData();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const isAuthenticated = !!user;
   
   useEffect(() => {
@@ -49,22 +47,24 @@ const ResultadosPage = () => {
   // Force a refresh of data when component mounts
   useEffect(() => {
     if (concurso?.id) {
+      console.log("Forcing ranking recalculation on component mount");
       refreshData();
     }
-  }, [concurso?.id, refreshData]);
+  }, [concurso?.id]);
   
   const handleRefresh = async () => {
+    console.log("Manual refresh initiated by user");
     toast({
       title: "Atualizando ranking",
       description: "As pontuações estão sendo recalculadas em tempo real...",
-      duration: 2000
+      duration: 3000
     });
     
     await refreshData();
     
     toast({
       title: "Ranking atualizado",
-      description: "As pontuações foram recalculadas com sucesso!",
+      description: "As pontuações foram recalculadas com sucesso para todos os usuários!",
       duration: 3000
     });
   };

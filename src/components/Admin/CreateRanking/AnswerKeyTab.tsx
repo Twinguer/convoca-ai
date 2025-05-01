@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { updateSectionType } from '@/integrations/supabase/rankings/batchOperations';
+import { updateSectionTypes } from '@/integrations/supabase/rankings/sectionUtils';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -193,7 +192,7 @@ export const AnswerKeyTab = ({
 
       // Primeiro, atualizamos os section_types no banco de dados para garantir consistência
       if (concursoId) {
-        await updateSectionType(concursoId);
+        await updateSectionTypes(concursoId);
       }
 
       const answerKeyData = allQuestions.map(questionNumber => {

@@ -22,9 +22,40 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     }
     
     console.log("[batchOperations] Resultado do recálculo:", data);
-    return { success: true, data };
+    // Add updatedCount property based on data
+    return { 
+      success: true, 
+      data,
+      updatedCount: typeof data === 'number' ? data : 0 
+    };
   } catch (err) {
     console.error("[batchOperations] Erro inesperado ao recalcular pontuações:", err);
+    return { success: false, error: String(err) };
+  }
+};
+
+/**
+ * Atualiza os tipos de seção para um determinado concurso
+ * 
+ * @param concursoId UUID do concurso
+ */
+export const updateSectionType = async (concursoId: string) => {
+  try {
+    console.log("[batchOperations] Atualizando tipos de seção para o concurso", concursoId);
+    
+    const { data, error } = await supabase.rpc('update_section_types', {
+      p_concurso_id: concursoId
+    });
+    
+    if (error) {
+      console.error("[batchOperations] Erro ao atualizar tipos de seção:", error);
+      return { success: false, error: error.message };
+    }
+    
+    console.log("[batchOperations] Tipos de seção atualizados com sucesso:", data);
+    return { success: true, data };
+  } catch (err) {
+    console.error("[batchOperations] Erro inesperado ao atualizar tipos de seção:", err);
     return { success: false, error: String(err) };
   }
 };

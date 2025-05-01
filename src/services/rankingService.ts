@@ -70,7 +70,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         reservation_type,
-        users_profiles:user_id(name, avatar_url)
+        users_profiles(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -98,8 +98,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     // Formatar os dados do ranking com posições
     const formattedRankings = data.map((ranking, index) => {
-      // Extrair o perfil do usuário
-      const profile = ranking.users_profiles;
+      // Extrair o perfil do usuário - garantindo que é um objeto e não um array
+      const profile = ranking.users_profiles && 
+                      Array.isArray(ranking.users_profiles) ? 
+                      ranking.users_profiles[0] : 
+                      ranking.users_profiles;
       
       return {
         position: index + 1,
