@@ -8,6 +8,7 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
+  // Raw scores
   basicKnowledgeScore?: number | null;
   specificKnowledgeScore?: number | null;
   specificKnowledge1Score?: number | null;
@@ -28,7 +29,7 @@ export interface Ranking {
   weightedCaseStudy3Score?: number | null;
   reservationType: string;
   displayReservation: string;
-  id?: string;
+  id: string;
 }
 
 // Helper function to get abbreviation for reservation type
