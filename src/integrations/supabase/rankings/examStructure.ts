@@ -1,22 +1,19 @@
 
 /**
- * Get the exam structure based on the concurso configuration
- * @param concurso The concurso object with question counts
- * @returns Object with indices marking the end of each section
+ * Calcula a estrutura (faixas) do exame com base nas configurações do concurso
  */
 export const getExamStructure = (concurso: any) => {
-  const basicKnowledgeQuestions = concurso?.basic_knowledge_questions || 0;
-  const specific1Questions = concurso?.specific_knowledge_1_questions || 0;
-  const specific2Questions = concurso?.specific_knowledge_2_questions || 0;
-  
-  // Calculate the end of each section
-  const basicEnd = basicKnowledgeQuestions;
-  const specific1End = basicEnd + specific1Questions;
-  const specific2End = specific1End + specific2Questions;
+  // Calcula o fim de cada seção
+  const basicEnd = concurso.basic_knowledge_questions || 0;
+  const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+  const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+  const specific3End = specific2End + (concurso.specific_knowledge_3_questions || 0);
   
   return {
     basicEnd,
     specific1End,
-    specific2End
+    specific2End,
+    specific3End,
+    totalQuestions: specific3End
   };
 };
