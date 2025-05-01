@@ -34,16 +34,12 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
         ? item.users_profiles[0] 
         : item.users_profiles;
       
-      // Safely access properties
-      const profileName = userProfile ? userProfile.name : undefined;
-      const profileAvatar = userProfile ? userProfile.avatar_url : undefined;
-      
       return {
         position: index + 1,
-        name: profileName || 'Unknown User',
+        name: userProfile ? userProfile.name : 'Unknown User',
         score: item.score,
         userId: item.user_id,
-        avatarUrl: profileAvatar || null,
+        avatarUrl: userProfile ? userProfile.avatar_url : null,
         basicKnowledgeScore: item.basic_knowledge_score,
         specificKnowledgeScore: item.specific_knowledge_score,
         specific1Score: item.specific_knowledge_1_score,
