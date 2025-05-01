@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -45,89 +44,45 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
-    // Build query depending on whether we want a specific reservation type
-    let query = supabase
-      .from('user_rankings')
-      .select(`
-        id,
-        user_id,
-        score,
-        basic_knowledge_score,
-        specific_knowledge_1_score,
-        specific_knowledge_2_score,
-        specific_knowledge_3_score,
-        specific_knowledge_score,
-        discursive_score,
-        case_study_1_score,
-        case_study_2_score,
-        case_study_3_score,
-        reservation_type,
-        weighted_basic_score,
-        weighted_specific_1_score,
-        weighted_specific_2_score,
-        weighted_specific_3_score,
-        weighted_discursive_score,
-        weighted_case_study_1_score,
-        weighted_case_study_2_score,
-        weighted_case_study_3_score
-      `)
-      .eq('concurso_id', concursoId);
-    
-    // If a specific reservation type is requested, filter by it
-    if (reservationType && reservationType !== 'Ampla Concorrência') {
-      query = query.eq('reservation_type', reservationType);
-    } else if (reservationType === 'Ampla Concorrência') {
-      // For Ampla Concorrência, include all users, as they all participate in this list
-      // No additional filter needed
-    }
-    
-    const { data: rankings, error: rankingsError } = await query.order('score', { ascending: false });
+    // Buscar todos os rankings deste concurso com as respostas brutas
+    // A pontuação será calculada em tempo real pelo banco de dados
+    const { data: rankings, error: rankingsError } = await supabase.rpc('get_realtime_rankings', {
+      p_concurso_id: concursoId,
+      p_reservation_type: reservationType || null
+    });
       
     if (rankingsError) {
-      console.error('Error in fetchUserRankings query:', rankingsError);
+      console.error('Error in get_realtime_rankings RPC call:', rankingsError);
       throw rankingsError;
     }
     
-    // If no rankings, return empty array
+    // Se não há rankings, retornar array vazio
     if (!rankings || rankings.length === 0) {
       return [];
-    }
-    
-    // Now fetch the user profiles separately
-    const userIds = rankings.map(ranking => ranking.user_id);
-    const { data: profiles, error: profilesError } = await supabase
-      .from('users_profiles')
-      .select('id, name, avatar_url')
-      .in('id', userIds);
-      
-    if (profilesError) {
-      console.error('Error fetching user profiles:', profilesError);
-      throw profilesError;
     }
     
     // Log data for debugging
     if (rankings.length > 0) {
       const firstRanking = rankings[0];
-      console.log('First ranking data:', {
+      console.log('First ranking data from realtime calculation:', {
+        id: firstRanking.id,
+        user_id: firstRanking.user_id,
+        score: firstRanking.score,
         basic_score: firstRanking.basic_knowledge_score,
         specific1_score: firstRanking.specific_knowledge_1_score,
-        specific2_score: firstRanking.specific_knowledge_2_score,
-        specific3_score: firstRanking.specific_knowledge_3_score,
         weighted_basic: firstRanking.weighted_basic_score,
         weighted_specific1: firstRanking.weighted_specific_1_score
       });
     }
     
-    // Map the rankings with profile information and scores
+    // Formatar os dados do ranking com posições
     const formattedRankings = rankings.map((ranking, index) => {
-      const profile = profiles?.find(p => p.id === ranking.user_id);
-      
       return {
         position: index + 1,
-        name: profile?.name || 'Usuário Anônimo',
+        name: ranking.user_name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
-        avatarUrl: profile?.avatar_url || null,
+        avatarUrl: ranking.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
@@ -154,7 +109,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     return formattedRankings;
   } catch (error) {
-    console.error('Error fetching rankings:', error);
+    console.error('Error fetching rankings with realtime calculation:', error);
     return [];
   }
 };

@@ -37,6 +37,40 @@ export const recalculateAllUserScores = async (concursoId: string) => {
   }
 };
 
+// Nova função para calcular pontuação em tempo real para um ranking específico
+export const calculateRankingScoreRealtime = async (rankingId: string) => {
+  try {
+    console.log('[calculateRankingScoreRealtime] Calculando pontuação em tempo real para:', rankingId);
+    
+    const { data, error } = await supabase.rpc('calculate_user_score_realtime', {
+      p_ranking_id: rankingId
+    });
+    
+    if (error) {
+      console.error('[calculateRankingScoreRealtime] Erro durante cálculo em tempo real:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro durante o cálculo da pontuação em tempo real',
+        score: null
+      };
+    }
+    
+    console.log('[calculateRankingScoreRealtime] Cálculo concluído:', data);
+    
+    return {
+      success: true,
+      score: data
+    };
+  } catch (error: any) {
+    console.error('[calculateRankingScoreRealtime] Erro não tratado:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro durante o cálculo da pontuação em tempo real',
+      score: null
+    };
+  }
+};
+
 // Function to update the section_type in official_answer_weights
 export const updateSectionType = async (concursoId: string) => {
   try {

@@ -43,12 +43,13 @@ export function useResultadosData() {
   });
   
   // Fetch rankings with more frequent refetching - only if user is authenticated
+  // Agora usa a nova abordagem de cálculo em tempo real
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    refetchInterval: 3000, // Reduzido para 3 segundos
+    refetchInterval: 30000, // Aumentado para 30 segundos, pois o cálculo é feito em tempo real
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Considerado stale após 1 segundo para garantir atualizações frequentes
+    staleTime: 15000, // Aumentado para 15 segundos
     enabled: isAuthenticated,
   });
   
@@ -56,9 +57,9 @@ export function useResultadosData() {
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 5000,
+    refetchInterval: 60000, // 1 minuto
     refetchOnWindowFocus: true,
-    staleTime: 2000,
+    staleTime: 30000, // 30 segundos
   });
   
   // Find user's ranking - only if user is authenticated
@@ -67,12 +68,29 @@ export function useResultadosData() {
   const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
-  const refreshData = () => {
+  const refreshData = async () => {
     if (isAuthenticated) {
       console.log("[useResultadosData] Atualizando rankings manualmente");
-      refetchRankings();
+      
+      // Primeiro, forçar o recálculo para todos os usuários do concurso
+      try {
+        const { data, error } = await supabase.rpc('recalculate_all_users_scores_realtime', {
+          p_concurso_id: id
+        });
+        
+        if (error) {
+          console.error("[useResultadosData] Erro ao recalcular pontuações:", error);
+        } else {
+          console.log("[useResultadosData] Pontuações recalculadas com sucesso:", data);
+        }
+      } catch (err) {
+        console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);
+      }
+      
+      // Agora refetch dos dados atualizados
+      await refetchRankings();
     }
-    refetchCount();
+    await refetchCount();
   };
   
   return {
