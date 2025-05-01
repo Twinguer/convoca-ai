@@ -99,6 +99,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     // Formatar os dados do ranking com posições
     const formattedRankings = data.map((ranking, index) => {
       // Extrair o perfil do usuário - garantindo que é um objeto e não um array
+      // Corretamente verifica se users_profiles é um array ou objeto
       const profile = ranking.users_profiles && 
                       Array.isArray(ranking.users_profiles) ? 
                       ranking.users_profiles[0] : 

@@ -29,8 +29,10 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
     
     // Format the data with position
     return data.map((item, index) => {
-      // Corrigido: Acesso correto à propriedade aninhada users_profiles
-      const userProfile = item.users_profiles;
+      // Correctly handle users_profiles which can be an object or array
+      const userProfile = Array.isArray(item.users_profiles) 
+        ? item.users_profiles[0] 
+        : item.users_profiles;
       
       return {
         position: index + 1,

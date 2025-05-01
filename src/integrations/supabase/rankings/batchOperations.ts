@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -22,7 +21,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     }
     
     console.log("[batchOperations] Resultado do recálculo:", data);
-    // Add updatedCount property based on data
     return { 
       success: true, 
       data,

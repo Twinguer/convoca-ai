@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
@@ -43,14 +42,14 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings with more frequent refetching - removing dependence on authentication status
+  // Fetch rankings with more frequent refetching - no longer depends on authentication status
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 30000, // Aumentado para 30 segundos
+    refetchInterval: 30000, // 30 segundos
     refetchOnWindowFocus: true,
-    staleTime: 15000, // Aumentado para 15 segundos
-    enabled: !!id, // Removi a dependência de isAuthenticated
+    staleTime: 15000, // 15 segundos
+    enabled: !!id, // Só depende do ID estar disponível
   });
   
   // Fetch participant count - for all users (authenticated or not)
@@ -65,7 +64,7 @@ export function useResultadosData() {
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || (isAuthenticated && isLoadingRankings) || isLoadingCount || isLoadingCreator;
+  const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator;
   
   // Function to manually refresh all data
   const refreshData = async () => {
