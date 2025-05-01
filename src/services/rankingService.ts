@@ -105,12 +105,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
                       ranking.users_profiles[0] : 
                       ranking.users_profiles;
       
+      // Usar operador de acesso seguro para evitar erros de runtime
+      const profileName = profile ? profile.name : undefined;
+      const profileAvatar = profile ? profile.avatar_url : undefined;
+      
       return {
         position: index + 1,
-        name: profile?.name || 'Usuário Anônimo',
+        name: profileName || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
-        avatarUrl: profile?.avatar_url || null,
+        avatarUrl: profileAvatar || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
