@@ -43,11 +43,10 @@ export function useResultadosData() {
   });
   
   // Fetch rankings with more frequent refetching - only if user is authenticated
-  // Agora usa a nova abordagem de cálculo em tempo real
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => isAuthenticated ? fetchUserRankings(id) : Promise.resolve([]),
-    refetchInterval: 30000, // Aumentado para 30 segundos, pois o cálculo é feito em tempo real
+    refetchInterval: 30000, // Aumentado para 30 segundos
     refetchOnWindowFocus: true,
     staleTime: 15000, // Aumentado para 15 segundos
     enabled: isAuthenticated,

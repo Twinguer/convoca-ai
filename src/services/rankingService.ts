@@ -45,44 +45,68 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
     
-    // Use the new get_realtime_rankings function
-    const { data: rankings, error: rankingsError } = await supabase.rpc('get_realtime_rankings', {
-      p_concurso_id: concursoId,
-      p_reservation_type: reservationType || null
-    });
+    // Modificando para usar uma abordagem alternativa que evite a ambiguidade de ID
+    const { data, error } = await supabase
+      .from('user_rankings')
+      .select(`
+        id,
+        user_id,
+        score,
+        basic_knowledge_score,
+        specific_knowledge_score,
+        specific_knowledge_1_score,
+        specific_knowledge_2_score,
+        specific_knowledge_3_score,
+        discursive_score,
+        case_study_1_score,
+        case_study_2_score,
+        case_study_3_score,
+        weighted_basic_score,
+        weighted_specific_1_score,
+        weighted_specific_2_score,
+        weighted_specific_3_score,
+        weighted_discursive_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score,
+        reservation_type,
+        users_profiles!inner(name, avatar_url)
+      `)
+      .eq('concurso_id', concursoId)
+      .order('score', { ascending: false });
       
-    if (rankingsError) {
-      console.error('Error in get_realtime_rankings RPC call:', rankingsError);
-      throw rankingsError;
+    if (error) {
+      console.error('Error fetching rankings:', error);
+      return [];
     }
     
     // Se não há rankings, retornar array vazio
-    if (!rankings || rankings.length === 0) {
+    if (!data || data.length === 0) {
       return [];
     }
     
     // Log data for debugging
-    if (rankings.length > 0) {
-      const firstRanking = rankings[0];
-      console.log('First ranking data from realtime calculation:', {
+    if (data.length > 0) {
+      const firstRanking = data[0];
+      console.log('First ranking data:', {
         id: firstRanking.id,
         user_id: firstRanking.user_id,
         score: firstRanking.score,
-        basic_score: firstRanking.basic_knowledge_score,
-        specific1_score: firstRanking.specific_knowledge_1_score,
-        weighted_basic: firstRanking.weighted_basic_score,
-        weighted_specific1: firstRanking.weighted_specific_1_score
+        profile: firstRanking.users_profiles
       });
     }
     
     // Formatar os dados do ranking com posições
-    const formattedRankings = rankings.map((ranking, index) => {
+    const formattedRankings = data.map((ranking, index) => {
+      // Extrair o perfil do usuário
+      const profile = ranking.users_profiles;
+      
       return {
         position: index + 1,
-        name: ranking.user_name || 'Usuário Anônimo',
+        name: profile.name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
-        avatarUrl: ranking.avatar_url || null,
+        avatarUrl: profile.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
@@ -92,7 +116,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy1Score: ranking.case_study_1_score || 0,
         caseStudy2Score: ranking.case_study_2_score || 0,
         caseStudy3Score: ranking.case_study_3_score || 0,
-        // Add weighted scores
+        // Weighted scores
         weightedBasicScore: ranking.weighted_basic_score || 0,
         weightedSpecific1Score: ranking.weighted_specific_1_score || 0,
         weightedSpecific2Score: ranking.weighted_specific_2_score || 0,
@@ -109,7 +133,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     return formattedRankings;
   } catch (error) {
-    console.error('Error fetching rankings with realtime calculation:', error);
+    console.error('Error fetching rankings:', error);
     return [];
   }
 };
