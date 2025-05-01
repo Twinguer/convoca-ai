@@ -11,6 +11,9 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
         score,
         basic_knowledge_score,
         specific_knowledge_score,
+        specific_knowledge_1_score,
+        specific_knowledge_2_score,
+        specific_knowledge_3_score,
         discursive_score,
         user_id,
         users_profiles!inner(name, avatar_url)
@@ -46,6 +49,9 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
         avatarUrl: avatarUrl,
         basicKnowledgeScore: item.basic_knowledge_score,
         specificKnowledgeScore: item.specific_knowledge_score,
+        specific1Score: item.specific_knowledge_1_score,
+        specific2Score: item.specific_knowledge_2_score,
+        specific3Score: item.specific_knowledge_3_score,
         discursiveScore: item.discursive_score
       };
     });

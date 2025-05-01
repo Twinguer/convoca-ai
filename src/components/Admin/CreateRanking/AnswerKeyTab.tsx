@@ -81,6 +81,9 @@ export const AnswerKeyTab = ({
           
           setAnswers(answerMap);
           setNullifiedQuestions(nullified);
+          console.log('Gabarito carregado:', answerMap);
+        } else {
+          console.log('Nenhum gabarito encontrado para este concurso');
         }
       } catch (error) {
         console.error('Error fetching answer key:', error);
