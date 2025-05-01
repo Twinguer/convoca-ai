@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -37,6 +36,7 @@ export interface Ranking {
   weightedCaseStudy3Score?: number | null;
   // Additional fields
   reservationType: string;
+  displayReservation: string;
   id: string;
 }
 
@@ -353,49 +353,57 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge === true && (
               <TableCell className="text-right">
-                {(Number(ranking.basicKnowledgeScore || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedBasicScore || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge1Score || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedSpecific1Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge2Score || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedSpecific2Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.specificKnowledge3Score || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedSpecific3Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {(Number(ranking.discursiveScore || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedDiscursiveScore || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy1Score || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedCaseStudy1Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy2Score || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedCaseStudy2Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {(Number(ranking.caseStudy3Score || 0)).toFixed(2)}
+                {/* Usar pontuação ponderada ao invés da bruta */}
+                {(Number(ranking.weightedCaseStudy3Score || 0)).toFixed(2)}
               </TableCell>
             )}
             {isAdminMode && (

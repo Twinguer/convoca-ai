@@ -1,5 +1,4 @@
 
-
 import { supabase } from '../client';
 
 // Esta função será substituída pela stored procedure, mantemos apenas para compatibilidade
