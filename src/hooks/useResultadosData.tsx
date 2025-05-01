@@ -43,14 +43,17 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings com refetch mais frequente - independente do status de autenticação
+  // Fetch rankings com refetch mais frequente para TODOS os usuários
+  // Independente do status de autenticação
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 15000, // 15 segundos - mais frequente para todos os usuários
+    refetchInterval: 10000, // 10 segundos - mais frequente para qualquer usuário
     refetchOnWindowFocus: true,
-    staleTime: 5000, // 5 segundos - tempo menor para considerar os dados "stale"
+    staleTime: 3000, // 3 segundos - tempo menor para considerar os dados "stale"
     enabled: !!id, // Só depende do ID estar disponível
+    retry: 3, // Aumentar o número de tentativas em caso de falha
+    refetchOnMount: 'always' // Sempre refetch ao montar o componente
   });
   
   // Fetch participant count - for all users (authenticated or not)

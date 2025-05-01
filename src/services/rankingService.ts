@@ -104,6 +104,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
                         ranking.users_profiles[0] : 
                         ranking.users_profiles;
       
+      // Usando optional chaining para evitar erros
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
       

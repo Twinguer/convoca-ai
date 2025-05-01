@@ -15,7 +15,19 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
         specific_knowledge_2_score,
         specific_knowledge_3_score,
         discursive_score,
+        weighted_basic_score,
+        weighted_specific_1_score,
+        weighted_specific_2_score,
+        weighted_specific_3_score,
+        weighted_discursive_score,
+        case_study_1_score,
+        case_study_2_score,
+        case_study_3_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score,
         user_id,
+        reservation_type,
         users_profiles!inner(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
@@ -49,7 +61,22 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
         specific1Score: item.specific_knowledge_1_score,
         specific2Score: item.specific_knowledge_2_score,
         specific3Score: item.specific_knowledge_3_score,
-        discursiveScore: item.discursive_score
+        discursiveScore: item.discursive_score,
+        caseStudy1Score: item.case_study_1_score,
+        caseStudy2Score: item.case_study_2_score,
+        caseStudy3Score: item.case_study_3_score,
+        // Add weighted scores
+        weightedBasicScore: item.weighted_basic_score,
+        weightedSpecific1Score: item.weighted_specific_1_score,
+        weightedSpecific2Score: item.weighted_specific_2_score,
+        weightedSpecific3Score: item.weighted_specific_3_score,
+        weightedDiscursiveScore: item.weighted_discursive_score,
+        weightedCaseStudy1Score: item.weighted_case_study_1_score,
+        weightedCaseStudy2Score: item.weighted_case_study_2_score,
+        weightedCaseStudy3Score: item.weighted_case_study_3_score,
+        reservationType: item.reservation_type || 'Ampla Concorrência',
+        displayReservation: getReservationAbbreviation(item.reservation_type || 'Ampla Concorrência'),
+        id: item.id
       };
     });
     
@@ -57,4 +84,13 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
     console.error('Error fetching rankings with user info:', error);
     return [];
   }
+};
+
+// Helper function to get abbreviation for reservation type
+const getReservationAbbreviation = (reservationType: string): string => {
+  if (!reservationType || reservationType === 'Ampla Concorrência') return '';
+  
+  // Get first three letters as abbreviation
+  const abbr = reservationType.substring(0, 3).toUpperCase();
+  return abbr;
 };
