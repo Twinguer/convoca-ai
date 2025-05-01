@@ -6,6 +6,7 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
@@ -68,25 +69,23 @@ export function useResultadosData() {
   
   // Function to manually refresh all data
   const refreshData = async () => {
-    if (isAuthenticated) {
-      console.log("[useResultadosData] Atualizando rankings manualmente");
+    console.log("[useResultadosData] Atualizando rankings manualmente");
       
-      // Primeiro, forçar o recálculo para todos os usuários do concurso
-      try {
-        const { data, error } = await supabase.rpc('recalculate_all_users_scores_realtime', {
-          p_concurso_id: id
-        });
-        
-        if (error) {
-          console.error("[useResultadosData] Erro ao recalcular pontuações:", error);
-        } else {
-          console.log("[useResultadosData] Pontuações recalculadas com sucesso:", data);
-        }
-      } catch (err) {
-        console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);
+    // Recalcular pontuações para todos os usuários independentemente do status de autenticação
+    try {
+      const result = await recalculateAllUserScores(id);
+      
+      if (!result.success) {
+        console.error("[useResultadosData] Erro ao recalcular pontuações:", result.error);
+      } else {
+        console.log("[useResultadosData] Pontuações recalculadas com sucesso:", result);
       }
-      
-      // Agora refetch dos dados atualizados
+    } catch (err) {
+      console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);
+    }
+    
+    // Refetch dos dados atualizados
+    if (isAuthenticated) {
       await refetchRankings();
     }
     await refetchCount();

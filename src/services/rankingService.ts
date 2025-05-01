@@ -70,7 +70,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         reservation_type,
-        users_profiles!inner(name, avatar_url)
+        users_profiles:user_id(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -103,10 +103,10 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       
       return {
         position: index + 1,
-        name: profile.name || 'Usuário Anônimo',
+        name: profile?.name || 'Usuário Anônimo',
         score: ranking.score || 0,
         userId: ranking.user_id,
-        avatarUrl: profile.avatar_url || null,
+        avatarUrl: profile?.avatar_url || null,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
