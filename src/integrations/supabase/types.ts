@@ -721,6 +721,10 @@ export type Database = {
         Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
         Returns: Json
       }
+      recalculate_all_scores: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       recalculate_all_scores_improved: {
         Args: { p_concurso_id: string }
         Returns: Json
