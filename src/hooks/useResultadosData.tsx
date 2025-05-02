@@ -17,7 +17,7 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 60000, // 1 minuto
+    staleTime: 30000, // 30 segundos - reduzido para atualizar mais frequentemente
   });
   
   // Fetch creator information if available
@@ -47,19 +47,19 @@ export function useResultadosData() {
   const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 10000, // Reduzido para 10 segundos para atualizar mais frequentemente
+    refetchInterval: 5000, // Reduzido para 5 segundos para atualizar mais frequentemente
     refetchOnWindowFocus: true,
-    staleTime: 2000, // Reduzido para 2 segundos - dados considerados "stale" mais rapidamente
-    enabled: !!id, // Só depende do ID estar disponível, não mais da autenticação
+    staleTime: 1000, // Reduzido para 1 segundo - dados considerados "stale" mais rapidamente
+    enabled: !!id, // Só depende do ID estar disponível, não da autenticação
   });
   
   // Fetch participant count - for all users (authenticated or not)
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 10000, // Reduzido para 10 segundos também
+    refetchInterval: 5000, // Reduzido para 5 segundos também
     refetchOnWindowFocus: true,
-    staleTime: 2000, // 2 segundos
+    staleTime: 1000, // 1 segundo
   });
   
   // Find user's ranking - only if user is authenticated

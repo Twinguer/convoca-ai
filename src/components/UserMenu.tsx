@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -56,68 +57,65 @@ const UserMenu: React.FC = () => {
   };
 
   if (!user) {
-    return <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
-        Fazer Login
-      </Button>;
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+          {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
+          Fazer Login
+        </Button>
+      </div>
+    );
   }
 
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
-  return <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            {profile?.avatar_url ? <AvatarImage src={profile?.avatar_url} alt={userName} /> : <AvatarFallback>{getInitials(userName)}</AvatarFallback>}
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="flex flex-col space-y-1 p-2">
-          <p className="text-sm font-medium leading-none">{userName}</p>
-          <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
-            <Users className="mr-2 h-4 w-4" />
-            <span>Meus Seguidores</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/comunidade" className="flex w-full cursor-pointer items-center">
-            <Users className="mr-2 h-4 w-4" />
-            <span>Comunidade</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/perfil" className="flex w-full cursor-pointer items-center">
-            <User className="mr-2 h-4 w-4" />
-            <span>Meu Perfil</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
-          {theme === "light" ? (
-            <>
-              <Moon className="mr-2 h-4 w-4" />
-              <span>Modo escuro</span>
-            </>
-          ) : (
-            <>
-              <Sun className="mr-2 h-4 w-4" />
-              <span>Modo claro</span>
-            </>
-          )}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>;
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+        {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              {profile?.avatar_url ? <AvatarImage src={profile?.avatar_url} alt={userName} /> : <AvatarFallback>{getInitials(userName)}</AvatarFallback>}
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <div className="flex flex-col space-y-1 p-2">
+            <p className="text-sm font-medium leading-none">{userName}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
+              <Users className="mr-2 h-4 w-4" />
+              <span>Meus Seguidores</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/comunidade" className="flex w-full cursor-pointer items-center">
+              <Users className="mr-2 h-4 w-4" />
+              <span>Comunidade</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/perfil" className="flex w-full cursor-pointer items-center">
+              <User className="mr-2 h-4 w-4" />
+              <span>Meu Perfil</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Sair</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
 };
 
 export default UserMenu;
