@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 interface AnswerWeight {
   resposta: string;
@@ -73,6 +74,10 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
         });
 
         if (error) throw error;
+        
+        // Força recálculo para todos os usuários após atualização do gabarito
+        await recalculateAllUserScores(concursoId);
+        
         return data;
       } finally {
         setIsUpdating(false);

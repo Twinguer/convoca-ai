@@ -12,6 +12,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     console.log("[batchOperations] Recalculando pontuações para todos os usuários do concurso", concursoId);
     
     // Chamar a função de banco de dados que força recálculo para todos os usuários
+    // Usando a função RPC que tem permissões SECURITY DEFINER para ignorar RLS
     const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', { 
       p_concurso_id: concursoId 
     });
