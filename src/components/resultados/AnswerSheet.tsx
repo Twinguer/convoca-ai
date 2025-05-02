@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -111,7 +110,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy1Score,
     caseStudy2Score,
     caseStudy3Score,
-    editCount: userRankingData?.edit_count || 0
+    editCount: userRankingData?.edit_count || 0,
+    nullifiedQuestions // Passar as questões anuladas para o hook
   });
   
   useEffect(() => {
@@ -165,14 +165,31 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
+    
+    // Considerar também as questões anuladas como "respondidas" para a validação
+    const effectivelyAnsweredQuestions = answeredQuestions + 
+      Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
-    if (answeredQuestions < totalQuestions) {
-      toast({
-        title: "Atenção",
-        description: "Todas as questões devem ser respondidas antes de salvar.",
-        variant: "destructive"
-      });
-      return;
+    if (effectivelyAnsweredQuestions < totalQuestions) {
+      // Identificar quais questões ainda não foram respondidas (excluindo as anuladas)
+      const unansweredQuestions = [];
+      const allQuestions = getAllQuestionsFromAllSections();
+      
+      // Para cada questão, verificar se está respondida ou anulada
+      for (const qNum of allQuestions) {
+        if (!answers[qNum] && !nullifiedQuestions.has(qNum)) {
+          unansweredQuestions.push(qNum);
+        }
+      }
+      
+      if (unansweredQuestions.length > 0) {
+        toast({
+          title: "Atenção",
+          description: `Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     try {
@@ -245,6 +262,43 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
   
   const objectiveSections = getObjectiveSectionList();
+  
+  // Função utilitária para obter todas as questões de todas as seções
+  const getAllQuestionsFromAllSections = () => {
+    const allQuestions: number[] = [];
+    
+    let currentQuestionNumber = 1;
+    
+    // Básico
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 1
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 2
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 3
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    return allQuestions;
+  };
   
   return (
     <Card className="shadow-lg">

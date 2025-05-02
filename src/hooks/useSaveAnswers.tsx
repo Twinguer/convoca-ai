@@ -17,6 +17,7 @@ interface UseSaveAnswersProps {
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
   editCount: number;
+  nullifiedQuestions?: Set<number>;
 }
 
 export const useSaveAnswers = ({
@@ -31,7 +32,8 @@ export const useSaveAnswers = ({
   caseStudy1Score,
   caseStudy2Score,
   caseStudy3Score,
-  editCount
+  editCount,
+  nullifiedQuestions = new Set()
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
 
@@ -46,6 +48,21 @@ export const useSaveAnswers = ({
         questionNumber: parseInt(questionNumber, 10),
         answer,
       }));
+      
+      // Adicionar todas as questões anuladas com uma resposta padrão (se ainda não existirem na lista de respostas)
+      if (nullifiedQuestions && nullifiedQuestions.size > 0) {
+        nullifiedQuestions.forEach(questionNumber => {
+          // Verificar se a questão anulada já tem uma resposta
+          if (!answers[questionNumber]) {
+            // Adicionar uma resposta padrão para questões anuladas ("A" ou "C" dependendo do tipo de prova)
+            const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
+            answersArray.push({
+              questionNumber,
+              answer: defaultAnswer
+            });
+          }
+        });
+      }
 
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);

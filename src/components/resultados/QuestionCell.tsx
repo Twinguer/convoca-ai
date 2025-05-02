@@ -37,7 +37,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
           )}
         </div>
         
-        {selectedAnswer && onClearAnswer && (
+        {selectedAnswer && onClearAnswer && !isNullified && (
           <Button 
             variant="ghost" 
             size="sm" 
@@ -58,7 +58,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             option={option}
             isSelected={selectedAnswer === option}
             onClick={() => onAnswerChange(questionNumber, option)}
-            disabled={disabled}
+            disabled={disabled || isNullified}
             examType={examType}
           />
         ))}
@@ -66,7 +66,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
       
       {isNullified && (
         <div className="mt-2 text-xs text-amber-700 italic">
-          Esta questão foi anulada. Todos os candidatos recebem a pontuação.
+          Esta questão foi anulada. Você receberá a pontuação automaticamente.
         </div>
       )}
     </div>
