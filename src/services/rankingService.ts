@@ -70,7 +70,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         reservation_type,
-        users_profiles(name, avatar_url)
+        users_profiles!inner(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
