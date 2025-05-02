@@ -98,19 +98,21 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     // Formatar os dados do ranking com posições
     const formattedRankings = data.map((ranking, index) => {
-      // Extrair o perfil do usuário - garantindo que é um objeto e não um array
-      // Corretamente verifica se users_profiles é um array ou objeto
-      const profile = ranking.users_profiles && 
-                      Array.isArray(ranking.users_profiles) ? 
-                      ranking.users_profiles[0] : 
-                      ranking.users_profiles;
+      // Corrigir o problema de TypeScript aqui
+      // Verificando corretamente se users_profiles é um array ou um objeto individual
+      const userProfile = Array.isArray(ranking.users_profiles) ? 
+                        ranking.users_profiles[0] : 
+                        ranking.users_profiles;
+      
+      const name = userProfile?.name || 'Usuário Anônimo';
+      const avatarUrl = userProfile?.avatar_url || null;
       
       return {
         position: index + 1,
-        name: profile?.name || 'Usuário Anônimo',
+        name: name,
         score: ranking.score || 0,
         userId: ranking.user_id,
-        avatarUrl: profile?.avatar_url || null,
+        avatarUrl: avatarUrl,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
