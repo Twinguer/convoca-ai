@@ -18,7 +18,7 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 10000, // 10 segundos - reduzido para atualizar ainda mais frequentemente
+    staleTime: 10000, // 10 segundos
   });
   
   // Fetch creator information if available
@@ -44,7 +44,7 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Configuração para atualização frequente dos rankings para todos os usuários
+  // Configuração para rankings, sem atualização automática frequente
   const { 
     data: rankings = [], 
     isLoading: isLoadingRankings, 
@@ -53,9 +53,8 @@ export function useResultadosData() {
   } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 3000, // Reduzido para 3 segundos para atualização ainda mais frequente
     refetchOnWindowFocus: true,
-    staleTime: 500, // Reduzido para 500ms - dados considerados "stale" mais rapidamente
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
     enabled: !!id,
   });
   
@@ -63,9 +62,7 @@ export function useResultadosData() {
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 3000, // Reduzido para corresponder ao refetch dos rankings
-    refetchOnWindowFocus: true,
-    staleTime: 500, // 500ms para manter consistência
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
   
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
@@ -109,10 +106,25 @@ export function useResultadosData() {
     
     if (!id) {
       console.error("[useResultadosData] ID do concurso não fornecido");
-      return;
+      return {
+        success: false,
+        error: "ID do concurso não fornecido"
+      };
+    }
+
+    // Verifica se o usuário está autenticado
+    if (!isAuthenticated) {
+      console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
+      await refetchRankings();
+      await refetchCount();
+      
+      return {
+        success: true,
+        message: "Dados atualizados localmente"
+      };
     }
       
-    // Recalcular pontuações para todos os usuários independentemente do status de autenticação
+    // Recalcular pontuações para todos os usuários apenas se autenticado
     try {
       console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
       const result = await recalculateAllUserScores(id);
@@ -135,17 +147,8 @@ export function useResultadosData() {
     }
   };
   
-  // Auto-refresh on component mount to ensure data is up to date
-  useEffect(() => {
-    if (id) {
-      // Atraso pequeno para permitir que a página carregue primeiro
-      const timer = setTimeout(() => {
-        refreshData();
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [id]);
+  // Remover auto-refresh ao montar o componente
+  // Agora o usuário precisa clicar no botão de atualizar explicitamente
   
   return {
     concurso,

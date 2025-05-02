@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
 import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
-import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+// Removemos a importação de recalculateAllUserScores pois não vamos mais recalcular todas as pontuações
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -98,27 +98,14 @@ export const useSaveAnswers = ({
         throw new Error(data.error || "Erro ao salvar respostas");
       }
       
-      // Após salvar com sucesso, forçar uma atualização de todas as pontuações
-      // para garantir que todos os usuários vejam os dados atualizados
-      try {
-        console.log('[useSaveAnswers] Forçando recálculo de todas as pontuações');
-        const recalcResult = await recalculateAllUserScores(concurso.id);
-        
-        if (!recalcResult.success) {
-          console.warn('[useSaveAnswers] Aviso: Não foi possível recalcular todas as pontuações:', recalcResult.error);
-        } else {
-          console.log('[useSaveAnswers] Pontuações recalculadas com sucesso para todos os usuários. Total atualizado:', recalcResult.updatedCount);
-        }
-      } catch (recalcError) {
-        console.warn('[useSaveAnswers] Erro ao tentar recalcular pontuações:', recalcError);
-        // Continuamos mesmo com erro, pois o salvamento principal já foi concluído
-      }
+      // Removemos o recálculo automático de todas as pontuações
+      // Cada usuário verá apenas sua pontuação atualizada
 
       // Atualizar estado da UI
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada com as questões anuladas.",
+        description: "Sua pontuação foi recalculada.",
         duration: 5000
       });
 

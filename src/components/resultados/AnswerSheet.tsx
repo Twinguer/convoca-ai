@@ -84,17 +84,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     refetch: refetchNullified
   } = useQuery({
       queryKey: ['nullified-questions', concurso.id],
-        queryFn: async () => {
-            const { data, error } = await supabase
-                .from('official_answer_weights')
-                .select("question_number")
-                .eq('concurso_id', concurso.id)
-                .eq('is_nullified', true);
-            if (error) throw error;
-            return data;
-        },
-    staleTime: 1000,
-    refetchInterval: 10000
+      queryFn: async () => {
+          const { data, error } = await supabase
+              .from('official_answer_weights')
+              .select("question_number")
+              .eq('concurso_id', concurso.id)
+              .eq('is_nullified', true);
+          if (error) throw error;
+          return data;
+      },
+      staleTime: 30000, // Aumentado para reduzir consultas desnecessárias
+      refetchOnWindowFocus: true
   });
   
   // Renomeie a função importada de useSaveAnswers para saveAnswersService
@@ -142,17 +142,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
         
-        // Se não estiver salvando e o usuário pode editar, salvar automaticamente
-        // para atualizar os cálculos das pontuações
-        if (!isSaving && canEdit) {
-          toast({
-            title: "Atualização automática",
-            description: "Detectamos alterações no gabarito. Suas pontuações serão atualizadas.",
-            variant: "default"
-          });
-          
-          handleSaveAnswers();
-        }
+        // Removemos o salvamento automático quando questões anuladas mudam
+        // Agora o usuário precisa salvar manualmente para ver suas pontuações atualizadas
+        toast({
+          title: "Questões anuladas atualizadas",
+          description: "Algumas questões foram anuladas. Salve suas respostas para ver sua pontuação atualizada.",
+          variant: "default"
+        });
       }
     }
   }, [nullifiedData]);

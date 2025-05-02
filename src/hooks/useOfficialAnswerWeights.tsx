@@ -35,7 +35,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
 
       return data as OfficialAnswerWeights;
     },
-    staleTime: 5000, // Reduzido para 5 segundos para garantir dados atualizados
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir consultas
   });
 
   // Mutação para atualizar resposta e peso
@@ -77,6 +77,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
         if (error) throw error;
         
         // Força recálculo para todos os usuários após atualização do gabarito
+        // Esta é a única parte onde devemos ter atualização automática
         const recalcResult = await recalculateAllUserScores(concursoId);
         
         if (!recalcResult.success) {

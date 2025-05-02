@@ -54,6 +54,7 @@ export const answerKeyService = {
     if (error) throw error;
     
     // Forçar o recálculo para todos os usuários do concurso usando a função otimizada
+    // Mantemos essa atualização automática aqui, pois é quando o gabarito oficial é atualizado
     try {
       console.log('[answerKeyService] Recalculando pontuações para todos os usuários...');
       const recalcResult = await recalculateAllUserScores(concursoId);
@@ -128,6 +129,7 @@ export const answerKeyService = {
       }
       
       // Recalcular pontuações
+      // Mantemos essa atualização automática aqui, pois é quando o gabarito oficial é salvo/atualizado completamente
       console.log('[answerKeyService] Iniciando recálculo de pontuações...');
       const recalcResult = await recalculateAllUserScores(concursoId);
       

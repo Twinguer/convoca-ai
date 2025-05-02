@@ -1,96 +1,97 @@
 
 # Ranking Update Flow Documentation
 
-This document describes the complete flow for updating rankings in the system, explaining how score calculations are propagated to all users.
+Este documento descreve o fluxo completo de atualização de rankings no sistema, explicando como as pontuações são calculadas e quando são propagadas para todos os usuários.
 
-## Database Structure
+## Estrutura do Banco de Dados
 
-### Key Tables
-- `user_rankings`: Stores user rankings for each concurso
-- `user_answers`: Stores user answers for each ranking
-- `official_answer_weights`: Stores the official answer key with weights for each concurso
-- `score_calculation_logs`: Logs all score calculation operations
+### Tabelas Principais
+- `user_rankings`: Armazena os rankings dos usuários para cada concurso
+- `user_answers`: Armazena as respostas dos usuários para cada ranking
+- `official_answer_weights`: Armazena o gabarito oficial com pesos para cada concurso
+- `score_calculation_logs`: Registra todas as operações de cálculo de pontuação
 
-### Key Database Functions
-- `recalculate_all_scores_with_weights`: Main function to recalculate all scores for a concurso (with SECURITY DEFINER)
-- `recalculate_all_users_scores_realtime`: Marks all rankings for a concurso for recalculation (with SECURITY DEFINER)
-- `update_answer_with_weight`: Updates an answer in the official answer key (with SECURITY DEFINER)
-- `save_user_answers_and_calculate_scores`: Saves user answers and calculates scores (with SECURITY DEFINER)
-- `calculate_user_score_realtime`: Calculates scores for a single user (with SECURITY DEFINER)
+### Funções Principais do Banco de Dados
+- `recalculate_all_scores_with_weights`: Função principal para recalcular todas as pontuações de um concurso (com SECURITY DEFINER)
+- `recalculate_all_users_scores_realtime`: Marca todos os rankings de um concurso para recálculo (com SECURITY DEFINER)
+- `update_answer_with_weight`: Atualiza uma resposta no gabarito oficial (com SECURITY DEFINER)
+- `save_user_answers_and_calculate_scores`: Salva as respostas do usuário e calcula pontuações (com SECURITY DEFINER)
+- `calculate_user_score_realtime`: Calcula pontuações para um único usuário (com SECURITY DEFINER)
 
-## Update Flow Sequence
+## Sequência de Fluxo de Atualização
 
-1. **Trigger Points**:
-   - When official answers are updated (via `useOfficialAnswerWeights`)
-   - When a user saves their answers (via `useSaveAnswers`)
-   - Manual refresh (via button in `ResultadosPage`)
+1. **Pontos de Gatilho**:
+   - Quando o gabarito oficial é atualizado (via `useOfficialAnswerWeights`)
+   - Quando o usuário clica no botão de atualização manual (via botão na `ResultadosPage`)
 
-2. **Score Recalculation Process**:
-   - Frontend calls `recalculateAllUserScores` from `batchOperations.ts`
-   - This calls the database function `recalculate_all_scores_with_weights` with SECURITY DEFINER privileges
-   - The database function updates all user rankings for the concurso, bypassing RLS
+2. **Processo de Recálculo de Pontuação**:
+   - O frontend chama `recalculateAllUserScores` em `batchOperations.ts`
+   - Isso chama a função de banco de dados `recalculate_all_scores_with_weights` com privilégios SECURITY DEFINER
+   - A função de banco de dados atualiza todos os rankings de usuário para o concurso, ignorando o RLS
 
-3. **Realtime Updates**:
-   - After recalculation, `is_score_recalculated` flag is set to false via `recalculate_all_users_scores_realtime`
-   - Frontend listens to database changes via Supabase channels
-   - When changes are detected, rankings are refetched automatically
+3. **Atualizações em Tempo Real**:
+   - Após o recálculo, a flag `is_score_recalculated` é definida como false via `recalculate_all_users_scores_realtime`
+   - O frontend escuta alterações no banco de dados via canais Supabase
+   - Quando alterações são detectadas, os rankings são automaticamente buscados novamente
 
-## Key Components and Their Roles
+## Componentes Principais e seus Papéis
 
-### Frontend Components
-- `ResultadosPage`: Main page displaying rankings, includes refresh button
-- `RankingTable`: Displays user rankings with scores
-- `AnswerSheet`: Interface for users to input their answers
+### Componentes Frontend
+- `ResultadosPage`: Página principal que exibe rankings, inclui botão de atualização
+- `RankingTable`: Exibe rankings de usuário com pontuações
+- `AnswerSheet`: Interface para usuários entrarem com suas respostas
 
-### Frontend Hooks
-- `useResultadosData`: Fetches and manages ranking data
-- `useOfficialAnswerWeights`: Manages official answer keys
-- `useSaveAnswers`: Handles answer saving and score calculation
+### Hooks Frontend
+- `useResultadosData`: Busca e gerencia dados de ranking
+- `useOfficialAnswerWeights`: Gerencia gabaritos oficiais
+- `useSaveAnswers`: Lida com salvamento de respostas e cálculo de pontuação
 
-### Backend Operations
-- `batchOperations.ts`: Contains functions for bulk operations like `recalculateAllUserScores`
-- `answerKeyService.ts`: Services for answer key management
-- `scoreCalculation.ts`: Functions for calculating user scores
+### Operações Backend
+- `batchOperations.ts`: Contém funções para operações em massa como `recalculateAllUserScores`
+- `answerKeyService.ts`: Serviços para gerenciamento de gabarito
+- `scoreCalculation.ts`: Funções para calcular pontuações de usuário
 
-## Detailed Update Flow
+## Fluxo de Atualização Detalhado
 
-1. **Official Answer Update**: 
-   - Admin updates an answer via `useOfficialAnswerWeights.updateAnswer`
-   - This calls `update_answer_with_weight` database function
-   - After update, `recalculateAllUserScores` is called
-   - All user scores are recalculated in the database with SECURITY DEFINER privileges
+1. **Atualização de Gabarito Oficial**: 
+   - Admin atualiza uma resposta via `useOfficialAnswerWeights.updateAnswer`
+   - Isso chama a função de banco de dados `update_answer_with_weight`
+   - Após a atualização, `recalculateAllUserScores` é chamado automaticamente
+   - Todas as pontuações de usuário são recalculadas no banco de dados com privilégios SECURITY DEFINER
 
-2. **User Answer Save**:
-   - User saves answers via `useSaveAnswers.handleSaveAnswers`
-   - This calls `save_user_answers_and_calculate_scores` database function
-   - After save, `recalculateAllUserScores` is called to update all users
-   - Scores are recalculated with SECURITY DEFINER privileges
+2. **Salvamento de Resposta de Usuário**:
+   - Usuário salva respostas via `useSaveAnswers.handleSaveAnswers`
+   - Isso chama a função de banco de dados `save_user_answers_and_calculate_scores`
+   - A pontuação do usuário é calculada individualmente
+   - Não há recálculo automático para todos os usuários após o salvamento de respostas individuais
 
-3. **Manual Refresh**:
-   - User clicks refresh button in `ResultadosPage`
-   - `refreshData` function is called
-   - This calls `recalculateAllUserScores` from `batchOperations.ts`
-   - All user scores are recalculated in the database
+3. **Atualização Manual**:
+   - Usuário clica no botão atualizar em `ResultadosPage`
+   - A função `refreshData` é chamada
+   - Se o usuário estiver autenticado, isso chama `recalculateAllUserScores` de `batchOperations.ts`
+   - Todas as pontuações de usuário são recalculadas no banco de dados
 
-4. **Realtime Updates**:
-   - `useResultadosData` hook sets up a Supabase channel listener
-   - When rankings are updated, data is automatically refetched
-   - Users see updates in real-time without refreshing the page
+4. **Atualizações em Tempo Real**:
+   - Hook `useResultadosData` configura um listener de canal Supabase
+   - Quando rankings são atualizados, dados são automaticamente buscados novamente
+   - Os usuários veem atualizações em tempo real sem recarregar a página
 
-## Security and Performance
+## Segurança e Performance
 
-- SECURITY DEFINER is used for key database functions to bypass RLS
-- This allows admins and ranking creators to update all users' scores
-- Public RLS policies are set to allow anyone to read rankings
-- Batch operations are used for efficiency when updating many users
-- Realtime updates use efficient Supabase channels for immediate propagation
+- SECURITY DEFINER é usado para funções importantes do banco de dados para contornar o RLS
+- Isso permite que administradores e criadores de ranking atualizem pontuações de todos os usuários
+- Políticas RLS públicas são configuradas para permitir que qualquer pessoa leia os rankings
+- Operações em lote são usadas para eficiência ao atualizar muitos usuários
+- Atualizações em tempo real usam canais Supabase eficientes para propagação imediata
 
-## Troubleshooting
+## Solução de Problemas
 
-If ranking updates aren't propagating:
+Se as atualizações de ranking não estiverem sendo propagadas:
 
-1. Check that database functions have SECURITY DEFINER flag
-2. Verify RLS policies allow appropriate access
-3. Ensure realtime channels are correctly configured
-4. Look for errors in score calculation logs
-5. Test manual refresh via the refresh button in ResultadosPage
+1. Verifique se as funções do banco de dados têm a flag SECURITY DEFINER
+2. Verifique se as políticas RLS permitem acesso apropriado
+3. Certifique-se de que canais em tempo real estão configurados corretamente
+4. Procure erros nos logs de cálculo de pontuação
+5. Teste a atualização manual via botão de atualização em ResultadosPage
+6. Verifique se o usuário está logado ao tentar iniciar atualizações manuais
+
