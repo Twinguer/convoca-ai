@@ -44,14 +44,6 @@ const ResultadosPage = () => {
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
-
-  // Force a refresh of data when component mounts - para todos os usuários
-  useEffect(() => {
-    if (concurso?.id) {
-      console.log("Forcing ranking recalculation on component mount for all users");
-      refreshData();
-    }
-  }, [concurso?.id]);
   
   const handleRefresh = async () => {
     console.log("Manual refresh initiated by user");

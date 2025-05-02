@@ -135,6 +135,18 @@ export function useResultadosData() {
     }
   };
   
+  // Auto-refresh on component mount to ensure data is up to date
+  useEffect(() => {
+    if (id) {
+      // Atraso pequeno para permitir que a página carregue primeiro
+      const timer = setTimeout(() => {
+        refreshData();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [id]);
+  
   return {
     concurso,
     rankings,

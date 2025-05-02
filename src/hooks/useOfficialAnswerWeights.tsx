@@ -35,6 +35,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
 
       return data as OfficialAnswerWeights;
     },
+    staleTime: 5000, // Reduzido para 5 segundos para garantir dados atualizados
   });
 
   // Mutação para atualizar resposta e peso
@@ -76,7 +77,13 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
         if (error) throw error;
         
         // Força recálculo para todos os usuários após atualização do gabarito
-        await recalculateAllUserScores(concursoId);
+        const recalcResult = await recalculateAllUserScores(concursoId);
+        
+        if (!recalcResult.success) {
+          console.warn('Aviso: Recálculo de pontuações falhou após atualização do gabarito:', recalcResult.error);
+        } else {
+          console.log(`Pontuações recalculadas para ${recalcResult.updatedCount} usuários após atualização do gabarito`);
+        }
         
         return data;
       } finally {
@@ -87,6 +94,9 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       toast.success('Gabarito atualizado com sucesso');
       queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
       queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+      
+      // Invalidar também nullified-questions para atualizar a UI
+      queryClient.invalidateQueries({ queryKey: ['nullified-questions', concursoId] });
     },
     onError: (error) => {
       console.error('Erro ao atualizar gabarito:', error);

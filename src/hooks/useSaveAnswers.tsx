@@ -107,7 +107,7 @@ export const useSaveAnswers = ({
         if (!recalcResult.success) {
           console.warn('[useSaveAnswers] Aviso: Não foi possível recalcular todas as pontuações:', recalcResult.error);
         } else {
-          console.log('[useSaveAnswers] Pontuações recalculadas com sucesso para todos os usuários');
+          console.log('[useSaveAnswers] Pontuações recalculadas com sucesso para todos os usuários. Total atualizado:', recalcResult.updatedCount);
         }
       } catch (recalcError) {
         console.warn('[useSaveAnswers] Erro ao tentar recalcular pontuações:', recalcError);
