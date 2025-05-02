@@ -106,7 +106,13 @@ const ResultadosPage = () => {
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
-      <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={true} />
+      {/* Passando isAuthenticated explicitamente, sempre mostrando o ranking */}
+      <RankingTable 
+        rankings={rankings} 
+        concurso={concurso} 
+        currentUserId={user?.id} 
+        isAuthenticated={isAuthenticated} 
+      />
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
           <p className="text-center text-gray-600">

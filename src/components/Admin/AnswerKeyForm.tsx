@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+import { answerKeyService } from '@/services/answerKeyService';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -94,6 +96,42 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     );
   }
 
+  const getAllQuestionsFromAllSections = () => {
+    const allQuestions: number[] = [];
+    
+    let currentQuestionNumber = 1;
+    
+    // Básico
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 1
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 2
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 3
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    return allQuestions;
+  };
+
   const getQuestionsCount = (section: 'basic' | 'specific1' | 'specific2' | 'specific3') => {
     if (section === 'basic' && concurso.has_basic_knowledge) {
       return concurso.basic_knowledge_questions || 0;
@@ -107,6 +145,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     return 0;
   };
 
+  // Método modificado para buscar questões apenas da seção atual (para exibição)
   const getQuestionsRange = () => {
     if (selectedSection === 'basic') {
       return Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1);
@@ -128,15 +167,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       }
     }
     return [];
-  };
-
-  const getOptionsForQuestion = () => {
-    if (concurso.exam_type === 'Certo ou Errado') {
-      return ['C', 'E'];
-    }
-    
-    const count = concurso.alternatives_count || 5;
-    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
   };
 
   const handleAnswerChange = (questionNumber: number, answer: string) => {
@@ -232,8 +262,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setError(null);
       setSavedSuccess(false);
       
-      const questions = getQuestionsRange();
-      const unansweredQuestions = questions.filter(q => !answers[q]);
+      // Verificar todas as questões em todas as seções, não apenas a aba atual
+      const allQuestions = getAllQuestionsFromAllSections();
+      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
       
       if (unansweredQuestions.length > 0) {
         setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
@@ -245,45 +276,57 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         return;
       }
       
-      for (const qNum of questions) {
-        const isBasic = qNum <= (concurso.basic_knowledge_questions || 0);
-        const specific1End = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0);
-        const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-        
+      // Preparar dados para salvar o gabarito completo de uma vez
+      const answerKeyData = allQuestions.map(qNum => {
+        // Determinar o tipo de seção para cada questão
         let sectionType = 'basic';
-        if (!isBasic && qNum <= specific1End) {
+        let startNumber = 1;
+        
+        // Calcular o número base de cada seção
+        const basicEnd = concurso.basic_knowledge_questions || 0;
+        
+        if (qNum > basicEnd) {
+          startNumber = basicEnd + 1;
           sectionType = 'specific1';
-        } else if (qNum > specific1End && qNum <= specific2End) {
-          sectionType = 'specific2';
-        } else if (qNum > specific2End) {
-          sectionType = 'specific3';
+          
+          const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+          if (qNum > specific1End) {
+            startNumber = specific1End + 1;
+            sectionType = 'specific2';
+            
+            const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+            if (qNum > specific2End) {
+              sectionType = 'specific3';
+            }
+          }
         }
 
-        const { error } = await supabase.rpc('update_answer_with_weight', {
-          p_concurso_id: concursoId,
-          p_question_number: qNum,
-          p_correct_answer: answers[qNum],
-          p_weight: 1.0,
-          p_is_nullified: nullifiedQuestions.has(qNum),
-          p_section_type: sectionType
-        });
-        
-        if (error) throw error;
-      }
-
-      setSavedSuccess(true);
-      toast({
-        title: "Gabarito salvo com sucesso",
-        description: "O gabarito oficial foi atualizado. Iniciando recálculo das pontuações...",
+        return {
+          concurso_id: concursoId,
+          question_number: qNum,
+          correct_answer: answers[qNum],
+          weight: 1.0,
+          section_type: sectionType,
+          is_nullified: nullifiedQuestions.has(qNum)
+        };
       });
 
-      // Chamar explicitamente o recálculo após salvar o gabarito
-      await performRecalculation();
-      
-      setTimeout(() => {
-        setSavedSuccess(false);
-      }, 3000);
-      
+      // Salvar gabarito completo de uma vez usando o serviço
+      const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
+
+      if (saveResult.success) {
+        setSavedSuccess(true);
+        toast({
+          title: "Gabarito salvo com sucesso",
+          description: `O gabarito oficial foi atualizado. ${saveResult.updatedCount || 0} pontuações foram recalculadas.`,
+        });
+        
+        setTimeout(() => {
+          setSavedSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error("Erro ao salvar gabarito");
+      }
     } catch (error: any) {
       console.error('Error saving answer key:', error);
       setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
@@ -298,6 +341,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }
   };
 
+  const getOptionsForQuestion = () => {
+    if (concurso.exam_type === 'Certo ou Errado') {
+      return ['C', 'E'];
+    }
+    
+    const count = concurso.alternatives_count || 5;
+    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
+  };
+
   const getObjectiveSectionList = () => {
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
@@ -308,6 +360,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   };
 
   const objectiveSections = getObjectiveSectionList();
+  
+  // Contar o total de questões que ainda não foram respondidas
+  const totalQuestions = getAllQuestionsFromAllSections().length;
+  const answeredQuestions = Object.keys(answers).length;
+  const percentageComplete = totalQuestions > 0 ? Math.floor((answeredQuestions / totalQuestions) * 100) : 0;
 
   return (
     <Card>
@@ -356,6 +413,25 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         </div>
         
+        {/* Barra de progresso de preenchimento do gabarito */}
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="flex flex-col">
+            <h4 className="font-medium text-blue-800">Progresso do preenchimento</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              {answeredQuestions} de {totalQuestions} questões respondidas ({percentageComplete}%)
+            </p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{width: `${percentageComplete}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              Todas as questões precisam ser respondidas antes de salvar o gabarito.
+            </p>
+          </div>
+        </div>
+        
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
@@ -391,6 +467,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                                       onClick={() => handleAnswerChange(questionNumber, option)}
                                       disabled={nullifiedQuestions.has(questionNumber)}
+                                      type="button"
                                     >
                                       {option}
                                     </button>

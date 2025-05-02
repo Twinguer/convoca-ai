@@ -137,29 +137,23 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   };
   
   const handleUserClick = (userId: string) => {
-    navigate(`/usuario/${userId}`);
+    if (!isAuthenticated) {
+      navigate(`/auth?redirect=/usuario/${userId}`);
+    } else {
+      navigate(`/usuario/${userId}`);
+    }
   };
 
-  if (!isAuthenticated) {
-    return <Card>
-        <CardHeader>
-          <CardTitle>Classificação Pós-prova</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-gray-600 mb-6">Você precisa estar cadastrado para ver o Ranking.</p>
-          <Button asChild>
-            <Link to="/auth" className="flex items-center">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Cadastrar-se
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>;
-  }
-  
   return <Card>
       <CardHeader>
         <CardTitle>Classificação Pós-prova</CardTitle>
+        {!isAuthenticated && (
+          <div className="text-sm text-muted-foreground mt-1">
+            <Link to="/auth" className="text-primary hover:underline">
+              Faça login
+            </Link> para participar deste ranking ou para acessar perfis completos.
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {availableQuotas.length > 1 ? (
@@ -180,6 +174,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   isAmpla={quota === "Ampla Concorrência"}
                   availableQuotas={availableQuotas}
                   sectionWeights={getSectionWeights(concurso)}
+                  isAuthenticated={isAuthenticated}
                 />
               </TabsContent>
             ))}
@@ -193,6 +188,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             isAmpla={true}
             availableQuotas={availableQuotas}
             sectionWeights={getSectionWeights(concurso)}
+            isAuthenticated={isAuthenticated}
           />
         )}
       </CardContent>
@@ -242,7 +238,8 @@ const RankingTableContent: React.FC<{
     caseStudy1: number,
     caseStudy2: number,
     caseStudy3: number,
-  }
+  };
+  isAuthenticated: boolean;
 }> = ({
   rankings,
   currentUserId,
@@ -250,7 +247,8 @@ const RankingTableContent: React.FC<{
   concurso,
   isAmpla,
   availableQuotas,
-  sectionWeights
+  sectionWeights,
+  isAuthenticated
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -265,7 +263,7 @@ const RankingTableContent: React.FC<{
             <TableHead className="text-center w-16">#</TableHead>
             <TableHead>Candidato</TableHead>
             <TableHead className="text-right">Total</TableHead>
-            {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
+            {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -285,7 +283,7 @@ const RankingTableContent: React.FC<{
                 </div>
               </TableCell>
               <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-              {isAdminMode && (
+              {isAdminMode && isAuthenticated && (
                 <TableCell>
                   <UserActions 
                     userId={ranking.userId}
@@ -299,7 +297,7 @@ const RankingTableContent: React.FC<{
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={isAdminMode ? 4 : 3} className="text-center py-4">
+              <TableCell colSpan={isAdminMode && isAuthenticated ? 4 : 3} className="text-center py-4">
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
             </TableRow>
@@ -323,7 +321,7 @@ const RankingTableContent: React.FC<{
               {column.label}
             </TableHead>
           ))}
-          {isAdminMode && <TableHead className="w-24">Ações</TableHead>}
+          {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -353,60 +351,52 @@ const RankingTableContent: React.FC<{
             
             {concurso.has_basic_knowledge === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedBasicScore || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_1 === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedSpecific1Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_2 === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedSpecific2Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_specific_knowledge_3 === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedSpecific3Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_discursive === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedDiscursiveScore || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_1 === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedCaseStudy1Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_2 === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedCaseStudy2Score || 0)).toFixed(2)}
               </TableCell>
             )}
             
             {concurso.has_case_study_3 === true && (
               <TableCell className="text-right">
-                {/* Usar pontuação ponderada ao invés da bruta */}
                 {(Number(ranking.weightedCaseStudy3Score || 0)).toFixed(2)}
               </TableCell>
             )}
-            {isAdminMode && (
+            {isAdminMode && isAuthenticated && (
               <TableCell>
                 <UserActions 
                   userId={ranking.userId}
@@ -420,7 +410,7 @@ const RankingTableContent: React.FC<{
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={isAdminMode ? columns.length + 1 : columns.length} className="text-center py-4">
+            <TableCell colSpan={isAdminMode && isAuthenticated ? columns.length + 1 : columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>
