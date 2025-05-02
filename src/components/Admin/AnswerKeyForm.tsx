@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -280,18 +279,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       const answerKeyData = allQuestions.map(qNum => {
         // Determinar o tipo de seção para cada questão
         let sectionType = 'basic';
-        let startNumber = 1;
         
         // Calcular o número base de cada seção
         const basicEnd = concurso.basic_knowledge_questions || 0;
         
         if (qNum > basicEnd) {
-          startNumber = basicEnd + 1;
           sectionType = 'specific1';
           
           const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
           if (qNum > specific1End) {
-            startNumber = specific1End + 1;
             sectionType = 'specific2';
             
             const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
@@ -301,6 +297,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           }
         }
 
+        // Antes de destruir toda a tabela, vamos fazer uma tentativa de atualização individual
+        // answerKeyService cuida da lógica de upsert (update ou insert conforme necessário)
         return {
           concurso_id: concursoId,
           question_number: qNum,
@@ -311,7 +309,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         };
       });
 
-      // Salvar gabarito completo de uma vez usando o serviço
+      // Usar o método que evita recrear toda a tabela
       const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
 
       if (saveResult.success) {

@@ -762,7 +762,7 @@ export type Database = {
         Returns: Json
       }
       recalculate_all_scores_with_weights: {
-        Args: Record<PropertyKey, never> | { p_concurso_id: string }
+        Args: { p_concurso_id: string }
         Returns: Json
       }
       recalculate_all_users_scores_realtime: {
@@ -792,22 +792,14 @@ export type Database = {
         Returns: Json
       }
       update_answer_with_weight: {
-        Args:
-          | {
-              p_concurso_id: string
-              p_question_number: number
-              p_answer: string
-              p_weight: number
-              p_is_nullified: boolean
-            }
-          | {
-              p_concurso_id: string
-              p_question_number: number
-              p_correct_answer: string
-              p_weight: number
-              p_is_nullified: boolean
-              p_section_type?: string
-            }
+        Args: {
+          p_concurso_id: string
+          p_question_number: number
+          p_correct_answer: string
+          p_weight: number
+          p_is_nullified: boolean
+          p_section_type?: string
+        }
         Returns: undefined
       }
     }

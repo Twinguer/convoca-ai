@@ -75,31 +75,55 @@ export const answerKeyService = {
     }
   },
   
-  // Nova função para salvar o gabarito completo e recalcular pontuações
+  // Nova função para salvar o gabarito completo evitando conflitos de chave primária
   async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: any[]) {
     try {
       console.log('[answerKeyService] Salvando gabarito completo para concurso:', concursoId);
       
-      // Opcionalmente, pode-se deletar o gabarito existente primeiro
-      const { error: deleteError } = await supabase
-        .from('official_answer_weights')
-        .delete()
-        .eq('concurso_id', concursoId);
-        
-      if (deleteError) {
-        console.error('[answerKeyService] Erro ao deletar gabarito existente:', deleteError);
-        throw deleteError;
-      }
-      
-      // Inserir novo gabarito
-      if (answerKeyData.length > 0) {
-        const { error: insertError } = await supabase
+      // Em vez de deletar tudo e reinserir, vamos atualizar cada questão individualmente
+      // para evitar o erro de duplicação
+      for (const item of answerKeyData) {
+        // Verificar se já existe esta questão para este concurso
+        const { data: existingData, error: checkError } = await supabase
           .from('official_answer_weights')
-          .insert(answerKeyData);
-          
-        if (insertError) {
-          console.error('[answerKeyService] Erro ao inserir novo gabarito:', insertError);
-          throw insertError;
+          .select('id')
+          .eq('concurso_id', concursoId)
+          .eq('question_number', item.question_number)
+          .single();
+        
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = não encontrado, que é esperado
+          console.error('[answerKeyService] Erro ao verificar existência da questão:', checkError);
+        }
+        
+        // Se a questão já existe, atualize-a
+        if (existingData) {
+          const { error: updateError } = await supabase
+            .from('official_answer_weights')
+            .update({
+              correct_answer: item.correct_answer,
+              weight: item.weight,
+              section_type: item.section_type,
+              is_nullified: item.is_nullified,
+              updated_at: new Date().toISOString()
+            })
+            .eq('concurso_id', concursoId)
+            .eq('question_number', item.question_number);
+            
+          if (updateError) {
+            console.error('[answerKeyService] Erro ao atualizar questão existente:', updateError);
+            throw updateError;
+          }
+        }
+        // Senão, insira uma nova questão
+        else {
+          const { error: insertError } = await supabase
+            .from('official_answer_weights')
+            .insert(item);
+            
+          if (insertError) {
+            console.error('[answerKeyService] Erro ao inserir nova questão:', insertError);
+            throw insertError;
+          }
         }
       }
       
