@@ -73,9 +73,6 @@ const ResultadosPage = () => {
     return <LoadingState />;
   }
   
-  // Verifica se o usuário atual é o criador do concurso para mostrar opções adicionais
-  const isCreator = user?.id === concurso?.created_by_user_id;
-  
   return (
     <div className="container mx-auto p-2 sm:p-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">

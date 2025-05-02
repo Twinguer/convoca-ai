@@ -59,7 +59,7 @@ const UserMenu: React.FC = () => {
   if (!user) {
     return (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+        <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")} className="text-gray-700 dark:text-gray-300">
           {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
         </Button>
         <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
@@ -72,7 +72,7 @@ const UserMenu: React.FC = () => {
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
   return (
     <div className="flex items-center gap-2">
-      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")} className="text-gray-700 dark:text-gray-300">
         {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
       </Button>
       <DropdownMenu>
