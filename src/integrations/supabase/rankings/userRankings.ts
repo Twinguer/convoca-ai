@@ -27,7 +27,7 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
         weighted_case_study_3_score,
         user_id,
         reservation_type,
-        users_profiles!inner(name, avatar_url)
+        users_profiles(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
