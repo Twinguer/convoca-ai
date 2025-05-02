@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
 import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -95,6 +96,22 @@ export const useSaveAnswers = ({
 
       if (!data.success) {
         throw new Error(data.error || "Erro ao salvar respostas");
+      }
+      
+      // Após salvar com sucesso, forçar uma atualização de todas as pontuações
+      // para garantir que todos os usuários vejam os dados atualizados
+      try {
+        console.log('[useSaveAnswers] Forçando recálculo de todas as pontuações');
+        const recalcResult = await recalculateAllUserScores(concurso.id);
+        
+        if (!recalcResult.success) {
+          console.warn('[useSaveAnswers] Aviso: Não foi possível recalcular todas as pontuações:', recalcResult.error);
+        } else {
+          console.log('[useSaveAnswers] Pontuações recalculadas com sucesso para todos os usuários');
+        }
+      } catch (recalcError) {
+        console.warn('[useSaveAnswers] Erro ao tentar recalcular pontuações:', recalcError);
+        // Continuamos mesmo com erro, pois o salvamento principal já foi concluído
       }
 
       // Atualizar estado da UI

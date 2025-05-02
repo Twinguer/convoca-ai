@@ -21,7 +21,27 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       return { success: false, error: error.message };
     }
     
+    // Verifica se foram recalculadas as pontuações
     console.log("[batchOperations] Resultado do recálculo:", data);
+    
+    // Chama a função para atualizar a flag `is_score_recalculated` para falso,
+    // forçando a interface a buscar os dados novamente
+    try {
+      console.log("[batchOperations] Forçando recálculo em tempo real");
+      const realtimeResult = await supabase.rpc('recalculate_all_users_scores_realtime', {
+        p_concurso_id: concursoId
+      });
+      
+      if (realtimeResult.error) {
+        console.error("[batchOperations] Erro ao forçar recálculo em tempo real:", realtimeResult.error);
+      } else {
+        console.log("[batchOperations] Recálculo em tempo real ativado:", realtimeResult.data);
+      }
+    } catch (realtimeError) {
+      console.warn("[batchOperations] Erro ao forçar recálculo em tempo real:", realtimeError);
+      // Continuamos mesmo com erro
+    }
+    
     return { 
       success: true, 
       data,

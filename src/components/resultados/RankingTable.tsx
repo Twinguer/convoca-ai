@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
@@ -45,13 +45,15 @@ interface RankingTableProps {
   concurso?: Concurso;
   currentUserId?: string | null;
   isAuthenticated: boolean;
+  isRefetching?: boolean;
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
   currentUserId,
-  isAuthenticated
+  isAuthenticated,
+  isRefetching = false
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
@@ -145,8 +147,14 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   };
 
   return <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
+        {isRefetching && (
+          <div className="flex items-center text-xs text-amber-600 gap-1">
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            <span>Atualizando dados...</span>
+          </div>
+        )}
         {!isAuthenticated && (
           <div className="text-sm text-muted-foreground mt-1">
             <Link to="/auth" className="text-primary hover:underline">
@@ -175,6 +183,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   availableQuotas={availableQuotas}
                   sectionWeights={getSectionWeights(concurso)}
                   isAuthenticated={isAuthenticated}
+                  isRefetching={isRefetching}
                 />
               </TabsContent>
             ))}
@@ -189,6 +198,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             availableQuotas={availableQuotas}
             sectionWeights={getSectionWeights(concurso)}
             isAuthenticated={isAuthenticated}
+            isRefetching={isRefetching}
           />
         )}
       </CardContent>
@@ -240,6 +250,7 @@ const RankingTableContent: React.FC<{
     caseStudy3: number,
   };
   isAuthenticated: boolean;
+  isRefetching?: boolean;
 }> = ({
   rankings,
   currentUserId,
@@ -248,14 +259,35 @@ const RankingTableContent: React.FC<{
   isAmpla,
   availableQuotas,
   sectionWeights,
-  isAuthenticated
+  isAuthenticated,
+  isRefetching = false
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('admin') === 'true';
   }, []);
 
+  // Estado para armazenar as pontuações ao carregar a tabela
+  const [initialScores, setInitialScores] = useState<{[key: string]: number}>({});
+  
+  // Inicializar as pontuações iniciais na primeira renderização
+  useEffect(() => {
+    const scores: {[key: string]: number} = {};
+    rankings.forEach(ranking => {
+      scores[ranking.id] = ranking.score;
+    });
+    setInitialScores(scores);
+  }, []);
+  
+  // Função para verificar se uma pontuação foi atualizada
+  const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
+    return initialScores[rankingId] !== undefined && 
+           initialScores[rankingId] !== currentScore && 
+           !isRefetching;
+  };
+
   if (!concurso) {
+    // ... keep existing code (simplified table rendering when no concurso)
     return (
       <Table>
         <TableHeader>
@@ -325,90 +357,104 @@ const RankingTableContent: React.FC<{
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rankings.length > 0 ? rankings.map(ranking => (
-          <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
-            <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
-            <TableCell>
-              <div 
-                className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" 
-                onClick={() => handleUserClick(ranking.userId)}
-              >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                  <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span>
-                  {ranking.name}
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
-                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      ({getQuotaAbbreviation(ranking.reservationType)})
-                    </span>
-                  )}
-                </span>
-              </div>
-            </TableCell>
-            <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-            
-            {concurso.has_basic_knowledge === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedBasicScore || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_specific_knowledge_1 === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedSpecific1Score || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_specific_knowledge_2 === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedSpecific2Score || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_specific_knowledge_3 === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedSpecific3Score || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_discursive === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedDiscursiveScore || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_case_study_1 === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedCaseStudy1Score || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_case_study_2 === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedCaseStudy2Score || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_case_study_3 === true && (
-              <TableCell className="text-right">
-                {(Number(ranking.weightedCaseStudy3Score || 0)).toFixed(2)}
-              </TableCell>
-            )}
-            {isAdminMode && isAuthenticated && (
+        {rankings.length > 0 ? rankings.map(ranking => {
+          const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
+          
+          return (
+            <TableRow 
+              key={ranking.userId} 
+              className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}
+            >
+              <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
               <TableCell>
-                <UserActions 
-                  userId={ranking.userId}
-                  userName={ranking.name}
-                  rankingId={ranking.id}
-                  onSuccess={() => window.location.reload()}
-                  showOnlyRankingActions={true}
-                />
+                <div 
+                  className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" 
+                  onClick={() => handleUserClick(ranking.userId)}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
+                    <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span>
+                    {ranking.name}
+                    {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
+                      <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                        ({getQuotaAbbreviation(ranking.reservationType)})
+                      </span>
+                    )}
+                  </span>
+                </div>
               </TableCell>
-            )}
-          </TableRow>
-        )) : (
+              <TableCell className={`text-right font-medium ${scoreChanged ? 'text-emerald-600' : ''}`}>
+                {ranking.score.toFixed(2)}
+                {scoreChanged && (
+                  <span className="ml-1 text-xs text-emerald-600">
+                    (atualizado)
+                  </span>
+                )}
+              </TableCell>
+              
+              {concurso.has_basic_knowledge === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedBasicScore || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_specific_knowledge_1 === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedSpecific1Score || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_specific_knowledge_2 === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedSpecific2Score || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_specific_knowledge_3 === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedSpecific3Score || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_discursive === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedDiscursiveScore || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_case_study_1 === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedCaseStudy1Score || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_case_study_2 === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedCaseStudy2Score || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              
+              {concurso.has_case_study_3 === true && (
+                <TableCell className="text-right">
+                  {(Number(ranking.weightedCaseStudy3Score || 0)).toFixed(2)}
+                </TableCell>
+              )}
+              {isAdminMode && isAuthenticated && (
+                <TableCell>
+                  <UserActions 
+                    userId={ranking.userId}
+                    userName={ranking.name}
+                    rankingId={ranking.id}
+                    onSuccess={() => window.location.reload()}
+                    showOnlyRankingActions={true}
+                  />
+                </TableCell>
+              )}
+            </TableRow>
+          );
+        }) : (
           <TableRow>
             <TableCell colSpan={isAdminMode && isAuthenticated ? columns.length + 1 : columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda

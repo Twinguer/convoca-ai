@@ -18,6 +18,7 @@ const ResultadosPage = () => {
     participantCount,
     userRanking,
     isLoading,
+    isRefetching,
     user,
     refreshData,
     creatorName,
@@ -60,13 +61,28 @@ const ResultadosPage = () => {
       duration: 3000
     });
     
-    await refreshData();
+    const result = await refreshData();
     
-    toast({
-      title: "Ranking atualizado",
-      description: "As pontuações foram recalculadas com sucesso para todos os usuários!",
-      duration: 3000
-    });
+    if (result?.success) {
+      toast({
+        title: "Ranking atualizado",
+        description: `As pontuações foram recalculadas com sucesso para ${result.updatedCount} usuário(s)!`,
+        duration: 4000
+      });
+    } else if (result?.error) {
+      toast({
+        title: "Erro na atualização",
+        description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
+        variant: "destructive",
+        duration: 5000
+      });
+    } else {
+      toast({
+        title: "Ranking atualizado",
+        description: "As pontuações foram recalculadas com sucesso!",
+        duration: 3000
+      });
+    }
   };
   
   if (isLoading) {
@@ -81,9 +97,14 @@ const ResultadosPage = () => {
         </h1>
         
         <div className="flex gap-1 sm:gap-2 flex-wrap">
-          <Button onClick={handleRefresh} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
-            <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
-            Atualizar Pontuações
+          <Button 
+            onClick={handleRefresh} 
+            className="flex items-center gap-2 text-xs sm:text-sm" 
+            size="sm"
+            disabled={isRefetching}
+          >
+            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isRefetching ? 'animate-spin' : ''}`} />
+            {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
           </Button>
           
           {concurso && !userRanking && user && (
@@ -115,12 +136,19 @@ const ResultadosPage = () => {
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
+      {isRefetching && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-md mb-2 text-center text-sm">
+          Atualizando dados em tempo real... As pontuações estão sendo recalculadas.
+        </div>
+      )}
+      
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
       <RankingTable 
         rankings={rankings} 
         concurso={concurso} 
         currentUserId={user?.id} 
-        isAuthenticated={isAuthenticated} 
+        isAuthenticated={isAuthenticated}
+        isRefetching={isRefetching}
       />
       
       {!isAuthenticated && (

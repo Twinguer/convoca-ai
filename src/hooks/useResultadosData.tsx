@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+import { useEffect } from 'react';
 
 export function useResultadosData() {
   const { id } = useParams() as { id: string };
@@ -17,7 +18,7 @@ export function useResultadosData() {
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 30000, // 30 segundos - reduzido para atualizar mais frequentemente
+    staleTime: 10000, // 10 segundos - reduzido para atualizar ainda mais frequentemente
   });
   
   // Fetch creator information if available
@@ -43,24 +44,59 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Fetch rankings mais frequentemente para todos os usuários
-  const { data: rankings = [], isLoading: isLoadingRankings, refetch: refetchRankings } = useQuery({
+  // Configuração para atualização frequente dos rankings para todos os usuários
+  const { 
+    data: rankings = [], 
+    isLoading: isLoadingRankings, 
+    refetch: refetchRankings,
+    isRefetching
+  } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchInterval: 5000, // Reduzido para 5 segundos para atualizar mais frequentemente
+    refetchInterval: 3000, // Reduzido para 3 segundos para atualização ainda mais frequente
     refetchOnWindowFocus: true,
-    staleTime: 1000, // Reduzido para 1 segundo - dados considerados "stale" mais rapidamente
-    enabled: !!id, // Só depende do ID estar disponível, não da autenticação
+    staleTime: 500, // Reduzido para 500ms - dados considerados "stale" mais rapidamente
+    enabled: !!id,
   });
   
   // Fetch participant count - for all users (authenticated or not)
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    refetchInterval: 5000, // Reduzido para 5 segundos também
+    refetchInterval: 3000, // Reduzido para corresponder ao refetch dos rankings
     refetchOnWindowFocus: true,
-    staleTime: 1000, // 1 segundo
+    staleTime: 500, // 500ms para manter consistência
   });
+  
+  // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
+  useEffect(() => {
+    if (!id) return;
+
+    // Configura um canal para escutar atualizações na tabela user_rankings
+    const channel = supabase
+      .channel('rankings-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'user_rankings',
+          filter: `concurso_id=eq.${id}`
+        },
+        (payload) => {
+          console.log('[useResultadosData] Detected change in user_rankings:', payload);
+          // Força atualização dos rankings quando houver mudanças
+          refetchRankings();
+          refetchCount();
+        }
+      )
+      .subscribe();
+
+    // Cleanup: remover inscrição quando o componente for desmontado
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, refetchRankings, refetchCount]);
   
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
@@ -83,19 +119,20 @@ export function useResultadosData() {
       
       if (!result.success) {
         console.error("[useResultadosData] Erro ao recalcular pontuações:", result.error);
+        return { success: false, error: result.error };
       } else {
         console.log("[useResultadosData] Pontuações recalculadas com sucesso:", result);
+        
+        // Força imediatamente uma atualização dos dados
+        await refetchRankings();
+        await refetchCount();
+        
+        return { success: true, updatedCount: result.updatedCount };
       }
     } catch (err) {
       console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);
+      return { success: false, error: String(err) };
     }
-    
-    // Refetch dos dados atualizados
-    console.log("[useResultadosData] Recarregando dados de rankings");
-    await refetchRankings();
-    
-    console.log("[useResultadosData] Recarregando contagem de participantes");
-    await refetchCount();
   };
   
   return {
@@ -104,6 +141,7 @@ export function useResultadosData() {
     participantCount,
     userRanking,
     isLoading,
+    isRefetching,
     user,
     refreshData,
     creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
