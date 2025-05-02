@@ -42,22 +42,34 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       questionNumber, 
       answer, 
       weight, 
-      isNullified 
+      isNullified,
+      sectionType 
     }: { 
       questionNumber: number; 
       answer: string; 
       weight: number;
       isNullified: boolean;
+      sectionType?: string;
     }) => {
       setIsUpdating(true);
       
       try {
+        console.log('Atualizando gabarito:', {
+          concursoId,
+          questionNumber,
+          answer,
+          weight,
+          isNullified,
+          sectionType
+        });
+
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: concursoId,
           p_question_number: questionNumber,
           p_correct_answer: answer,
           p_weight: weight,
-          p_is_nullified: isNullified
+          p_is_nullified: isNullified,
+          p_section_type: sectionType
         });
 
         if (error) throw error;
@@ -82,13 +94,15 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     questionNumber: number, 
     answer: string, 
     weight: number = 1.0,
-    isNullified: boolean = false
+    isNullified: boolean = false,
+    sectionType?: string
   ) => {
     return updateAnswerMutation.mutate({ 
       questionNumber, 
       answer, 
       weight,
-      isNullified 
+      isNullified,
+      sectionType 
     });
   };
 

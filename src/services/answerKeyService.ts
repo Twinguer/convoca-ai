@@ -32,6 +32,16 @@ export const answerKeyService = {
       sectionType
     }: UpdateAnswerParams
   ) {  
+    console.log('[answerKeyService] Atualizando resposta:', {
+      concursoId,
+      questionNumber,
+      answer,
+      weight,
+      isNullified,
+      sectionType
+    });
+    
+    // Usamos a versão atualizada da função com 6 parâmetros que usa correct_answer
     const { data, error } = await supabase.rpc("update_answer_with_weight", {
       p_concurso_id: concursoId,
       p_question_number: questionNumber,

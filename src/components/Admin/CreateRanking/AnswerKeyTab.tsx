@@ -7,7 +7,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { updateSectionTypes } from '@/integrations/supabase/rankings/sectionUtils';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -190,26 +189,30 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      // Primeiro, atualizamos os section_types no banco de dados para garantir consistência
-      if (concursoId) {
-        await updateSectionTypes(concursoId);
-      }
-
-      const answerKeyData = allQuestions.map(questionNumber => {
-        const qNum = parseInt(questionNumber.toString());
+      // Diretamente determinamos os section_types no código em vez de chamar updateSectionTypes
+      const calculateSectionType = (questionNumber: number) => {
+        // Calcular o número base de cada seção
         const basicEnd = basicKnowledgeQuestions || 0;
-        const specific1End = basicEnd + (specificKnowledge1Questions || 0);
-        const specific2End = specific1End + (specificKnowledge2Questions || 0);
         
-        // Determine which section this question belongs to
-        let sectionType = 'basic';
-        if (qNum > basicEnd && qNum <= specific1End) {
-          sectionType = 'specific1';
-        } else if (qNum > specific1End && qNum <= specific2End) {
-          sectionType = 'specific2';
-        } else if (qNum > specific2End) {
-          sectionType = 'specific3';
+        if (questionNumber <= basicEnd) {
+          return 'basic';
         }
+        
+        const specific1End = basicEnd + (specificKnowledge1Questions || 0);
+        if (questionNumber <= specific1End) {
+          return 'specific1';
+        }
+        
+        const specific2End = specific1End + (specificKnowledge2Questions || 0);
+        if (questionNumber <= specific2End) {
+          return 'specific2';
+        }
+        
+        return 'specific3';
+      };
+
+      const answerKeyData = allQuestions.map(qNum => {
+        const sectionType = calculateSectionType(qNum);
         
         return {
           concurso_id: concursoId || '',

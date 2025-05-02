@@ -18,7 +18,7 @@ export const calculateRawScores = async (
     );
 
     if (keyError) throw keyError;
-    if (!answerKey || answerKey.length === 0) {
+    if (!answerKey || Object.keys(answerKey).length === 0) {
       console.error(
         '[calculateRawScores] Gabarito oficial não encontrado para este concurso'
       );
