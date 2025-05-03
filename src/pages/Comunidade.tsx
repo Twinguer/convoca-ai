@@ -113,9 +113,7 @@ const Comunidade: React.FC = () => {
   return <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Comunidade</h1>
-        <p className="text-muted-foreground mt-1">
-          Conecte-se com outros concurseiros e acompanhe seus progressos
-        </p>
+        
       </div>
       
       {showDemoUsers && <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
