@@ -1,84 +1,71 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { CalendarDays, MapPin, FileText, User, Clock } from 'lucide-react';
-import { Concurso } from '@/types/concursos';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Card, CardContent } from '@/components/ui/card';
+import { Concurso } from '@/types/concursos';
+import { Building2, Calendar, MapPin, Users } from 'lucide-react';
 
 interface ConcursoInfoCardProps {
   concurso: Concurso;
 }
 
-export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso }) => {
-  const hasDate = concurso.data_prova && new Date(concurso.data_prova).getTime() > 0;
-  
-  // Format locations to display them nicely
-  const formatLocations = () => {
+const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({ concurso }) => {
+  const formattedDate = concurso.data_publicacao 
+    ? format(new Date(concurso.data_publicacao), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+    : 'Data não informada';
+
+  const getLocalidadesText = () => {
     if (!concurso.localidades || concurso.localidades.length === 0) {
-      return "Não especificado";
+      return 'Nacional';
     }
     
-    // Check if 'Nacional' is in the locations
     if (concurso.localidades.includes('Nacional')) {
       return 'Nacional';
     }
     
-    return concurso.localidades.slice(0, 3).join(', ') + 
-           (concurso.localidades.length > 3 ? ` e mais ${concurso.localidades.length - 3}` : '');
+    // If more than 3 localities, show the first 3 and indicate there are more
+    if (concurso.localidades.length > 3) {
+      return `${concurso.localidades.slice(0, 3).join(', ')} e outras`;
+    }
+    
+    return concurso.localidades.join(', ');
   };
-  
+
   return (
-    <Card>
-      <CardContent className="p-3 sm:p-4">
-        <div className="flex flex-col gap-3">
-          <h3 className="text-base sm:text-lg font-medium mb-1">Informações do Concurso</h3>
-          
-          {concurso.banca && (
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-gray-500" />
-              <div>
-                <span className="text-sm font-medium">Banca:</span>{" "}
-                <span className="text-sm text-gray-600 dark:text-gray-300">{concurso.banca}</span>
-              </div>
+    <Card className="mb-6">
+      <CardContent className="pt-6">
+        <div className="grid gap-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold">{concurso.titulo}</h2>
+            <p className="text-muted-foreground">{concurso.orgao}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center">
+              <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Banca: {concurso.banca || concurso.custom_banca || 'Não informada'}</span>
             </div>
-          )}
-          
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-gray-500" />
-            <div>
-              <span className="text-sm font-medium">Localidades:</span>{" "}
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                {formatLocations()}
-              </span>
+
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Data: {formattedDate}</span>
+            </div>
+
+            <div className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Localidade: {getLocalidadesText()}</span>
+            </div>
+
+            <div className="flex items-center">
+              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Vagas: {concurso.vagas || 'Não informado'}</span>
             </div>
           </div>
-          
-          {hasDate && (
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-gray-500" />
-              <div>
-                <span className="text-sm font-medium">Data da Prova:</span>{" "}
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {format(new Date(concurso.data_prova), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </span>
-              </div>
-            </div>
-          )}
-          
-          {concurso.created_at && (
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <div>
-                <span className="text-sm font-medium">Criado em:</span>{" "}
-                <span className="text-sm text-gray-600 dark:text-gray-300">
-                  {format(new Date(concurso.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
   );
 };
+
+export default ConcursoInfoCard;
