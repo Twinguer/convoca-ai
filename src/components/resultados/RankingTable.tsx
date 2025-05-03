@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
-
 export interface Ranking {
   position: number;
   name: string;
@@ -39,7 +38,6 @@ export interface Ranking {
   displayReservation: string;
   id: string;
 }
-
 interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
@@ -47,7 +45,6 @@ interface RankingTableProps {
   isAuthenticated: boolean;
   isRefetching?: boolean;
 }
-
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
@@ -57,7 +54,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
-  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -68,7 +64,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         indigenas: concurso.has_indigenas,
         transsexuais: concurso.has_transsexuais
       });
-      
       console.log('Exam structure in concurso:', {
         hasBasic: concurso.has_basic_knowledge,
         hasSpecific1: concurso.has_specific_knowledge_1,
@@ -80,7 +75,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         hasCaseStudy3: concurso.has_case_study_3
       });
     }
-    
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
@@ -91,53 +85,38 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         weightedBasic: rankings[0].weightedBasicScore,
         weightedSpecific1: rankings[0].weightedSpecific1Score
       });
-      
-      console.log('Reservation types in rankings:', 
-        [...new Set(rankings.map(r => r.reservationType))]);
+      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
-  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
-    
     const quotas = ["Ampla Concorrência"];
-    
     if (concurso.has_ppp === true) {
       quotas.push("PPP");
     }
-    
     if (concurso.has_pcd === true) {
       quotas.push("PCD");
     }
-    
     if (concurso.has_hipossuficientes === true) {
       quotas.push("Hipossuficientes");
     }
-    
     if (concurso.has_indigenas === true) {
       quotas.push("Indígenas");
     }
-    
     if (concurso.has_transsexuais === true) {
       quotas.push("Pessoas Trans");
     }
-    
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
-  
   const availableQuotas = getAvailableQuotas();
-  
   const filterRankingsByQuota = (quota: string) => {
     if (!rankings) return [];
-    
     if (quota === "Ampla Concorrência") {
       return rankings;
     }
-    
     return rankings.filter(ranking => ranking.reservationType === quota);
   };
-  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -145,69 +124,34 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
-
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
-        {isRefetching && (
-          <div className="flex items-center text-xs text-amber-600 gap-1">
+        {isRefetching && <div className="flex items-center text-xs text-amber-600 gap-1">
             <RefreshCw className="h-3 w-3 animate-spin" />
             <span>Atualizando dados...</span>
-          </div>
-        )}
-        {!isAuthenticated && (
-          <div className="text-sm text-muted-foreground mt-1">
+          </div>}
+        {!isAuthenticated && <div className="text-sm text-muted-foreground mt-1">
             <Link to="/auth" className="text-primary hover:underline">
               Faça login
             </Link> para participar deste ranking ou para acessar perfis completos.
-          </div>
-        )}
+          </div>}
       </CardHeader>
       <CardContent>
-        {availableQuotas.length > 1 ? (
-          <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {availableQuotas.length > 1 ? <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4 flex flex-wrap h-auto">
-              {availableQuotas.map(quota => (
-                <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>
-              ))}
+              {availableQuotas.map(quota => <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>)}
             </TabsList>
             
-            {availableQuotas.map(quota => (
-              <TabsContent key={quota} value={quota}>
-                <RankingTableContent 
-                  rankings={filterRankingsByQuota(quota)} 
-                  currentUserId={currentUserId} 
-                  handleUserClick={handleUserClick}
-                  concurso={concurso}
-                  isAmpla={quota === "Ampla Concorrência"}
-                  availableQuotas={availableQuotas}
-                  sectionWeights={getSectionWeights(concurso)}
-                  isAuthenticated={isAuthenticated}
-                  isRefetching={isRefetching}
-                />
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <RankingTableContent 
-            rankings={rankings || []} 
-            currentUserId={currentUserId} 
-            handleUserClick={handleUserClick}
-            concurso={concurso}
-            isAmpla={true}
-            availableQuotas={availableQuotas}
-            sectionWeights={getSectionWeights(concurso)}
-            isAuthenticated={isAuthenticated}
-            isRefetching={isRefetching}
-          />
-        )}
+            {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
+                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />
+              </TabsContent>)}
+          </Tabs> : <RankingTableContent rankings={rankings || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />}
       </CardContent>
     </Card>;
 };
-
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "";
-  
   const abbreviations: Record<string, string> = {
     "PPP": "PPP",
     "PCD": "PCD",
@@ -215,10 +159,8 @@ const getQuotaAbbreviation = (quota: string): string => {
     "Indígenas": "Ind",
     "Pessoas Trans": "Tra"
   };
-  
   return abbreviations[quota] || quota.substring(0, 3);
 };
-
 const getSectionWeights = (concurso?: Concurso) => {
   return {
     basic: concurso?.basic_knowledge_weight ?? 1,
@@ -228,10 +170,9 @@ const getSectionWeights = (concurso?: Concurso) => {
     discursive: concurso?.discursive_weight ?? 1,
     caseStudy1: concurso?.case_study_1_weight ?? 1,
     caseStudy2: concurso?.case_study_2_weight ?? 1,
-    caseStudy3: concurso?.case_study_3_weight ?? 1,
+    caseStudy3: concurso?.case_study_3_weight ?? 1
   };
 };
-
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -240,14 +181,14 @@ const RankingTableContent: React.FC<{
   isAmpla: boolean;
   availableQuotas: string[];
   sectionWeights: {
-    basic: number,
-    specific1: number,
-    specific2: number,
-    specific3: number,
-    discursive: number,
-    caseStudy1: number,
-    caseStudy2: number,
-    caseStudy3: number,
+    basic: number;
+    specific1: number;
+    specific2: number;
+    specific3: number;
+    discursive: number;
+    caseStudy1: number;
+    caseStudy2: number;
+    caseStudy3: number;
   };
   isAuthenticated: boolean;
   isRefetching?: boolean;
@@ -268,28 +209,28 @@ const RankingTableContent: React.FC<{
   }, []);
 
   // Estado para armazenar as pontuações ao carregar a tabela
-  const [initialScores, setInitialScores] = useState<{[key: string]: number}>({});
-  
+  const [initialScores, setInitialScores] = useState<{
+    [key: string]: number;
+  }>({});
+
   // Inicializar as pontuações iniciais na primeira renderização
   useEffect(() => {
-    const scores: {[key: string]: number} = {};
+    const scores: {
+      [key: string]: number;
+    } = {};
     rankings.forEach(ranking => {
       scores[ranking.id] = ranking.score;
     });
     setInitialScores(scores);
   }, []);
-  
+
   // Função para verificar se uma pontuação foi atualizada
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
-    return initialScores[rankingId] !== undefined && 
-           initialScores[rankingId] !== currentScore && 
-           !isRefetching;
+    return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
-
   if (!concurso) {
     // ... keep existing code (simplified table rendering when no concurso)
-    return (
-      <Table>
+    return <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="text-center w-16">#</TableHead>
@@ -299,14 +240,10 @@ const RankingTableContent: React.FC<{
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rankings.length > 0 ? rankings.map(ranking => (
-            <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
+          {rankings.length > 0 ? rankings.map(ranking => <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
               <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
               <TableCell>
-                <div 
-                  className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" 
-                  onClick={() => handleUserClick(ranking.userId)}
-                >
+                <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                     <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -315,153 +252,91 @@ const RankingTableContent: React.FC<{
                 </div>
               </TableCell>
               <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-              {isAdminMode && isAuthenticated && (
-                <TableCell>
-                  <UserActions 
-                    userId={ranking.userId}
-                    userName={ranking.name}
-                    rankingId={ranking.id}
-                    onSuccess={() => window.location.reload()}
-                    showOnlyRankingActions={true}
-                  />
-                </TableCell>
-              )}
-            </TableRow>
-          )) : (
-            <TableRow>
+              {isAdminMode && isAuthenticated && <TableCell>
+                  <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
+                </TableCell>}
+            </TableRow>) : <TableRow>
               <TableCell colSpan={isAdminMode && isAuthenticated ? 4 : 3} className="text-center py-4">
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
-            </TableRow>
-          )}
+            </TableRow>}
         </TableBody>
-      </Table>
-    );
+      </Table>;
   }
-  
   const columns = getRankingTableColumns(concurso);
-  
-  return (
-    <Table>
+  return <Table>
       <TableHeader>
         <TableRow>
-          {columns.map(column => (
-            <TableHead 
-              key={column.id} 
-              className={`${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''} ${column.width ? `w-${column.width}` : ''}`}
-            >
+          {columns.map(column => <TableHead key={column.id} className={`${column.align === 'center' ? 'text-center' : column.align === 'right' ? 'text-right' : ''} ${column.width ? `w-${column.width}` : ''}`}>
               {column.label}
-            </TableHead>
-          ))}
+            </TableHead>)}
           {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {rankings.length > 0 ? rankings.map(ranking => {
-          const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
-          
-          return (
-            <TableRow 
-              key={ranking.userId} 
-              className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}
-            >
+        const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
+        return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
               <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
               <TableCell>
-                <div 
-                  className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" 
-                  onClick={() => handleUserClick(ranking.userId)}
-                >
+                <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                     <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <span>
                     {ranking.name}
-                    {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
-                      <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                    {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                         ({getQuotaAbbreviation(ranking.reservationType)})
-                      </span>
-                    )}
+                      </span>}
                   </span>
                 </div>
               </TableCell>
               <TableCell className={`text-right font-medium ${scoreChanged ? 'text-emerald-600' : ''}`}>
                 {ranking.score.toFixed(2)}
-                {scoreChanged && (
-                  <span className="ml-1 text-xs text-emerald-600">
-                    (atualizado)
-                  </span>
-                )}
+                {scoreChanged}
               </TableCell>
               
-              {concurso.has_basic_knowledge === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedBasicScore || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_basic_knowledge === true && <TableCell className="text-right">
+                  {Number(ranking.weightedBasicScore || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_specific_knowledge_1 === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedSpecific1Score || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_specific_knowledge_1 === true && <TableCell className="text-right">
+                  {Number(ranking.weightedSpecific1Score || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_specific_knowledge_2 === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedSpecific2Score || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_specific_knowledge_2 === true && <TableCell className="text-right">
+                  {Number(ranking.weightedSpecific2Score || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_specific_knowledge_3 === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedSpecific3Score || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_specific_knowledge_3 === true && <TableCell className="text-right">
+                  {Number(ranking.weightedSpecific3Score || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_discursive === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedDiscursiveScore || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_discursive === true && <TableCell className="text-right">
+                  {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_case_study_1 === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedCaseStudy1Score || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_case_study_1 === true && <TableCell className="text-right">
+                  {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_case_study_2 === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedCaseStudy2Score || 0)).toFixed(2)}
-                </TableCell>
-              )}
+              {concurso.has_case_study_2 === true && <TableCell className="text-right">
+                  {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
+                </TableCell>}
               
-              {concurso.has_case_study_3 === true && (
-                <TableCell className="text-right">
-                  {(Number(ranking.weightedCaseStudy3Score || 0)).toFixed(2)}
-                </TableCell>
-              )}
-              {isAdminMode && isAuthenticated && (
-                <TableCell>
-                  <UserActions 
-                    userId={ranking.userId}
-                    userName={ranking.name}
-                    rankingId={ranking.id}
-                    onSuccess={() => window.location.reload()}
-                    showOnlyRankingActions={true}
-                  />
-                </TableCell>
-              )}
-            </TableRow>
-          );
-        }) : (
-          <TableRow>
+              {concurso.has_case_study_3 === true && <TableCell className="text-right">
+                  {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
+                </TableCell>}
+              {isAdminMode && isAuthenticated && <TableCell>
+                  <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
+                </TableCell>}
+            </TableRow>;
+      }) : <TableRow>
             <TableCell colSpan={isAdminMode && isAuthenticated ? columns.length + 1 : columns.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
-          </TableRow>
-        )}
+          </TableRow>}
       </TableBody>
-    </Table>
-  );
+    </Table>;
 };
