@@ -14,6 +14,7 @@ import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
+import { checkIsAdmin } from '@/utils/adminUtils';
 
 const fetchRankingData = async (rankingId) => {
   if (!rankingId) return null;
@@ -48,9 +49,22 @@ const CriarRanking = () => {
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
+  
+  // Verifica se o usuário é administrador
+  useEffect(() => {
+    const verifyAdminStatus = async () => {
+      if (user) {
+        const isUserAdmin = await checkIsAdmin(user.id);
+        setIsAdmin(isUserAdmin);
+      }
+    };
+    
+    verifyAdminStatus();
+  }, [user]);
   
   const [jobTitles] = useState([
     { id: '1', title: 'AUDITOR' },
@@ -161,11 +175,12 @@ const CriarRanking = () => {
   }, [editId, form, jobTitles]);
   
   useEffect(() => {
-    if (!user) {
+    // Permitir acesso se o usuário estiver logado OU se for administrador
+    if (!user && !isAdmin) {
       toast.error("Você precisa estar logado para criar um ranking");
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, navigate, isAdmin]);
   
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
@@ -201,6 +216,12 @@ const CriarRanking = () => {
     setIsSubmitting(true);
 
     try {
+      // Se for administrador, adicionar flag is_admin_update para dar permissões extras
+      if (isAdmin) {
+        formValues.is_admin_created = true;
+        formValues.is_admin_update = true;
+      }
+      
       const saveResult = await saveRanking({
         formValues,
         userId: user?.id,
@@ -257,6 +278,7 @@ const CriarRanking = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
             {editId ? 'Editar Ranking' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+            {isAdmin && <span className="ml-2 text-sm text-emerald-600">(Modo Administrador)</span>}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -284,13 +306,17 @@ const CriarRanking = () => {
                     isSubmitting={isSubmitting}
                     selectedStates={selectedStates}
                     setSelectedStates={setSelectedStates}
+                    isAdmin={isAdmin}
                   />
                 </TabsContent>
                 <TabsContent value="answer-key">
                   {/* Substituindo o AnswerKeyTab pelo AnswerKeyForm mais completo */}
                   {(createdConcursoId || editId) && (
                     <>
-                      <AnswerKeyForm concursoId={createdConcursoId || editId || ''} />
+                      <AnswerKeyForm 
+                        concursoId={createdConcursoId || editId || ''} 
+                        isAdmin={isAdmin}
+                      />
                       <div className="flex justify-end mt-6">
                         <Button type="button" onClick={handleGoToResults}>
                           Ir para Resultados

@@ -13,9 +13,10 @@ import { answerKeyService } from '@/services/answerKeyService';
 
 interface AnswerKeyFormProps {
   concursoId: string;
+  isAdmin?: boolean;
 }
 
-export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
+export const AnswerKeyForm = ({ concursoId, isAdmin = false }: AnswerKeyFormProps) => {
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);

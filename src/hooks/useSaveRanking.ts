@@ -38,10 +38,12 @@ export const useSaveRanking = () => {
 
       const dataToSubmit = {
         ...formValues,
-        created_by_user_id: userId,
+        created_by_user_id: userId || formValues.created_by_user_id,
         titulo: title,
         banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades
+        localidades: formValues.localidades,
+        // Preservar flag de criação por admin se for um update pelo admin
+        is_admin_created: formValues.is_admin_created || false,
       };
 
       let result;

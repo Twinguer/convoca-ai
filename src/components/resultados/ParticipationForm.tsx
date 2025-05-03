@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -68,10 +69,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       queryClient.invalidateQueries({
         queryKey: ['participating', concurso.id, user.id]
       });
-      toast({
-        title: "Inscrição iniciada!",
-        description: "Preencha o cartão de respostas para participar oficialmente do ranking."
-      });
+      
+      // Removido o toast conforme solicitado
 
       // Just reload the page to show the answer sheet
       setTimeout(() => {
