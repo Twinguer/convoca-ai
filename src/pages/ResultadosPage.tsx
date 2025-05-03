@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
-import { ConcursoInfoCard } from '@/components/resultados/ConcursoInfoCard';
+import ConcursoInfoCard from '@/components/resultados/ConcursoInfoCard';
 import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
