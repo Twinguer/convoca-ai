@@ -109,29 +109,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               </div>
             </div>
             
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-1">
-                <div className="p-3 bg-emerald-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Pontuação Total</p>
-                  <p className="text-xl font-bold text-emerald-700">{Number(ranking.score || 0).toFixed(1)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Conhecimentos Básicos</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.basic_knowledge_score || 0).toFixed(1)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Conhecimentos Específicos</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.specific_knowledge_score || 0).toFixed(1)}</p>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-md text-center">
-                  <p className="text-sm font-medium text-gray-600">Discursiva/Estudo de Caso</p>
-                  <p className="text-lg font-bold text-gray-700">{Number(ranking.discursive_score || 0).toFixed(1)}</p>
-                </div>
-              </div>
-            </CardContent>
+            
           </Card>)}
         
         {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
