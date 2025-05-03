@@ -94,4 +94,3 @@ Se as atualizações de ranking não estiverem sendo propagadas:
 4. Procure erros nos logs de cálculo de pontuação
 5. Teste a atualização manual via botão de atualização em ResultadosPage
 6. Verifique se o usuário está logado ao tentar iniciar atualizações manuais
-
