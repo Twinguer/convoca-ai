@@ -8,12 +8,10 @@ import { ParticipationForm } from '@/components/resultados/ParticipationForm';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
 
 const ConcursoParticipation = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { toast } = useToast();
 
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
