@@ -188,7 +188,7 @@ const Comunidade: React.FC = () => {
                   <div className="grid grid-cols-3 gap-2 mt-6 text-center">
                     <div className="flex flex-col items-center">
                       <span className="font-semibold text-lg">{user.postCount}</span>
-                      <span className="text-xs text-muted-foreground">Concursos</span>
+                      <span className="text-xs text-muted-foreground">Rankings</span>
                     </div>
                     
                     <div className="flex flex-col items-center">
