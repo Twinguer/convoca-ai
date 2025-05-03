@@ -34,7 +34,7 @@ const App = () => {
         <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
           <AuthProvider>
             <TooltipProvider>
-              <div className="min-h-screen text-foreground bg-green-50">
+              <div className="min-h-screen text-foreground bg-gray-100">
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
