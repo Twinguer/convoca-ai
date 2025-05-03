@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,7 +18,9 @@ import { CommunityEmptyState } from '@/components/community/CommunityEmptyState'
  */
 const Comunidade: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [rankingFilter, setRankingFilter] = useState('todos');
@@ -70,7 +71,6 @@ const Comunidade: React.FC = () => {
   // Filter users based on selected filters
   const filteredUsers = React.useMemo(() => {
     let filtered = users && users.length > 0 ? users : showDemoUsers ? demoUsers : [];
-
     if (statusFilter !== 'todos') {
       filtered = filtered.filter(user => user.status_concurseiro === statusFilter);
     }
@@ -93,33 +93,24 @@ const Comunidade: React.FC = () => {
   // Get status badges for user cards
   const getUserStatusBadge = (status: string | null) => {
     if (!status) return null;
-    
-    switch(status) {
+    switch (status) {
       case 'Aprovado':
-        return (
-          <div className="absolute top-4 right-4 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">
+        return <div className="absolute top-4 right-4 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">
             Aprovado
-          </div>
-        );
+          </div>;
       case 'Estudante':
-        return (
-          <div className="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+        return <div className="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
             Estudante
-          </div>
-        );
+          </div>;
       case 'Nomeado':
-        return (
-          <div className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-1 rounded-full">
+        return <div className="absolute top-4 right-4 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-1 rounded-full">
             Nomeado
-          </div>
-        );
+          </div>;
       default:
         return null;
     }
   };
-
-  return (
-    <div className="container mx-auto px-4 py-8">
+  return <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Comunidade</h1>
         <p className="text-muted-foreground mt-1">
@@ -127,24 +118,16 @@ const Comunidade: React.FC = () => {
         </p>
       </div>
       
-      {showDemoUsers && (
-        <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+      {showDemoUsers && <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-yellow-700 text-sm">
             <strong>Nota:</strong> Exibindo usuários de demonstração. Estes são exemplos e não refletem contas reais.
           </p>
-        </div>
-      )}
+        </div>}
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
           <div className="relative flex-1">
-            <Input 
-              type="text"
-              placeholder="Buscar usuários..." 
-              value={searchQuery} 
-              onChange={handleSearchChange}
-              className="w-full pl-10"
-            />
+            <Input type="text" placeholder="Buscar usuários..." value={searchQuery} onChange={handleSearchChange} className="w-full pl-10" />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <User className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -179,21 +162,14 @@ const Comunidade: React.FC = () => {
         </div>
       </div>
       
-      {filteredUsers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((user) => {
-            // Format location (city, state)
-            const cityState = user.bio?.match(/(?:de |em |do |da )([^,.]+)/i)?.[1] || '';
-            
-            return (
-              <Card 
-                key={user.id} 
-                className="overflow-hidden relative hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => handleUserClick(user.id)}
-              >
+      {filteredUsers.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredUsers.map(user => {
+        // Format location (city, state)
+        const cityState = user.bio?.match(/(?:de |em |do |da )([^,.]+)/i)?.[1] || '';
+        return <Card key={user.id} className="overflow-hidden relative hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleUserClick(user.id)}>
                 {user.status_concurseiro && getUserStatusBadge(user.status_concurseiro)}
                 
-                <CardContent className="p-6">
+                <CardContent className="p-6 bg-slate-50">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
                       <AvatarImage src={user.avatar_url || undefined} alt={user.name} />
@@ -204,12 +180,10 @@ const Comunidade: React.FC = () => {
                     
                     <div>
                       <h2 className="font-semibold text-lg">{user.name}</h2>
-                      {cityState && (
-                        <div className="flex items-center text-sm text-muted-foreground">
+                      {cityState && <div className="flex items-center text-sm text-muted-foreground">
                           <MapPin className="h-3.5 w-3.5 mr-1" />
                           <span>{cityState}</span>
-                        </div>
-                      )}
+                        </div>}
                     </div>
                   </div>
                   
@@ -230,23 +204,14 @@ const Comunidade: React.FC = () => {
                     </div>
                   </div>
                   
-                  <Button 
-                    variant="outline" 
-                    className="w-full mt-4 border-emerald-600 text-emerald-600 hover:bg-emerald-50"
-                  >
+                  <Button variant="outline" className="w-full mt-4 border-emerald-600 text-emerald-600 hover:bg-emerald-50">
                     <User className="h-4 w-4 mr-2" />
                     Ver Perfil
                   </Button>
                 </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <CommunityEmptyState onRefresh={handleRefresh} />
-      )}
-    </div>
-  );
+              </Card>;
+      })}
+        </div> : <CommunityEmptyState onRefresh={handleRefresh} />}
+    </div>;
 };
-
 export default Comunidade;
