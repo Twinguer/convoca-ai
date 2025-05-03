@@ -327,7 +327,7 @@ const PublicUserProfile: React.FC = () => {
                         <div className="bg-emerald-100 p-2 rounded-full mr-3">
                           <Trophy className="h-4 w-4 text-emerald-600" />
                         </div>
-                        <p>{concurso}</p>
+                        <p className="text-gray-500">{concurso}</p>
                       </div>
                     </div>)}
                 </div> : <div className="text-center py-6">
