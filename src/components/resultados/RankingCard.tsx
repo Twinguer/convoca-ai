@@ -15,7 +15,7 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   userRanking,
   inscritos = 0
 }) => {
-  return <Card>
+  return <Card className="my-[30px]">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl flex items-center">
           <Trophy className="mr-2 h-5 w-5 text-yellow-500" />

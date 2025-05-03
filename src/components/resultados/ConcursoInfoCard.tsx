@@ -1,46 +1,63 @@
-
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Card, CardContent } from '@/components/ui/card';
 import { Concurso } from '@/types/concursos';
-
+import { Building2, Calendar, MapPin, Users } from 'lucide-react';
 interface ConcursoInfoCardProps {
-  concurso?: Concurso;
+  concurso: Concurso;
 }
-
-export const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
+const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso
 }) => {
-  // Exibe todas as localidades reais, sem "Nacional"
-  const getLocationDisplay = (localidades?: string[]): string => {
-    if (!localidades || localidades.length === 0) return '-';
-    // remove "Nacional" e mostra somente as localidades escolhidas (Estados)
-    const filtered = localidades.filter(loc => loc !== 'Nacional');
-    if (filtered.length === 0 && localidades.includes('Nacional')) {
-      return '-';
+  const formattedDate = concurso.data_publicacao ? format(new Date(concurso.data_publicacao), "dd 'de' MMMM 'de' yyyy", {
+    locale: ptBR
+  }) : 'Data não informada';
+  const getLocalidadesText = () => {
+    if (!concurso.localidades || concurso.localidades.length === 0) {
+      return 'Nacional';
     }
-    return filtered.join(', ');
-  };
+    if (concurso.localidades.includes('Nacional')) {
+      return 'Nacional';
+    }
 
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl flex items-center">
-          <Users className="mr-2 h-5 w-5 text-blue-500" />
-          Informações do Concurso
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          <p className="text-sm">
-            Vagas: <Badge variant="outline">{concurso?.vagas}</Badge>
-          </p>
-          <p className="text-sm">
-            Localidades: <Badge variant="outline">{getLocationDisplay(concurso?.localidades)}</Badge>
-          </p>
+    // If more than 3 localities, show the first 3 and indicate there are more
+    if (concurso.localidades.length > 3) {
+      return `${concurso.localidades.slice(0, 3).join(', ')} e outras`;
+    }
+    return concurso.localidades.join(', ');
+  };
+  return <Card className="mb-6 my-[30px]">
+      <CardContent className="pt-6 py-[15px]">
+        <div className="grid gap-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold">{concurso.titulo}</h2>
+            <p className="text-muted-foreground">{concurso.orgao}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center">
+              <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm font-normal">Banca: {concurso.banca || concurso.custom_banca || 'Não informada'}</span>
+            </div>
+
+            <div className="flex items-center">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm">Data: {formattedDate}</span>
+            </div>
+
+            <div className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm">Localidade: {getLocalidadesText()}</span>
+            </div>
+
+            <div className="flex items-center">
+              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span className="text-sm">Vagas: {concurso.vagas || 'Não informado'}</span>
+            </div>
+          </div>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
+export default ConcursoInfoCard;
