@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +52,7 @@ const CriarRanking = () => {
   
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
+  const isAdmin = searchParams.get('admin') === 'true';
   
   const [jobTitles] = useState([
     { id: '1', title: 'AUDITOR' },
@@ -161,11 +163,12 @@ const CriarRanking = () => {
   }, [editId, form, jobTitles]);
   
   useEffect(() => {
-    if (!user) {
+    // Se não for admin, verifica login
+    if (!isAdmin && !user) {
       toast.error("Você precisa estar logado para criar um ranking");
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, navigate, isAdmin]);
   
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
@@ -197,6 +200,12 @@ const CriarRanking = () => {
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, { shouldDirty: true });
     formValues.localidades = selectedStates;
+    
+    // Adicionar flags de admin se necessário
+    if (isAdmin) {
+      formValues.is_admin_created = true;
+      formValues.is_admin_update = true;
+    }
     
     setIsSubmitting(true);
 
@@ -242,15 +251,23 @@ const CriarRanking = () => {
     }
   };
 
+  const handleBack = () => {
+    if (isAdmin) {
+      navigate('/project/admin/man/concursos');
+    } else {
+      navigate('/pre-classificacao');
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <Button 
         variant="ghost" 
         className="mb-4 flex items-center gap-2" 
-        onClick={() => navigate('/pre-classificacao')}
+        onClick={handleBack}
       >
         <ArrowLeft className="h-4 w-4" />
-        Voltar para Rankings
+        {isAdmin ? 'Voltar para Dashboard' : 'Voltar para Rankings'}
       </Button>
       
       <Card>

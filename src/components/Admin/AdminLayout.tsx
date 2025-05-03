@@ -1,7 +1,8 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, ListChecks, LogOut, ArrowLeft, Users } from 'lucide-react';
+import { Home, ListChecks, LogOut, ArrowLeft, Users, Plus } from 'lucide-react';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ const AdminLayout: React.FC = () => {
     window.open('/?admin=true', '_blank');
   };
   
+  const handleCreateRanking = () => {
+    // Redirecionar para o formulário de criação de ranking com flag de admin
+    navigate('/criar-ranking?admin=true');
+  };
+  
   return <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
       <header className="bg-white shadow-sm">
@@ -32,6 +38,10 @@ const AdminLayout: React.FC = () => {
             <h1 className="text-xl font-bold text-gray-800">Convoca AI Admin</h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleCreateRanking} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Criar Ranking
+            </Button>
             <Button variant="outline" onClick={handleVisitSite} className="flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Visualizar Site

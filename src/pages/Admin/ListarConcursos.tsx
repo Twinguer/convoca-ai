@@ -76,11 +76,16 @@ const ListarConcursos: React.FC = () => {
   };
 
   const handleCreateRanking = () => {
-    navigate('/criar-ranking');
+    navigate('/criar-ranking?admin=true');
   };
   
   const handleViewRanking = (id: string) => {
     window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
+  };
+  
+  const handleEditRanking = (id: string) => {
+    // Redirecionar para o formulário de edição com flag de admin
+    navigate(`/criar-ranking?edit=${id}&admin=true`);
   };
   
   const filteredConcursos = concursos?.filter(concurso =>
@@ -231,7 +236,7 @@ const ListarConcursos: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => navigate(`/project/admin/man/concursos/editar/${concurso.id}`)}
+                          onClick={() => handleEditRanking(concurso.id)}
                         >
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Editar</span>

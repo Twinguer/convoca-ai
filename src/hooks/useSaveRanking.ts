@@ -41,7 +41,10 @@ export const useSaveRanking = () => {
         created_by_user_id: userId,
         titulo: title,
         banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades
+        localidades: formValues.localidades,
+        // Adicionando suporte às flags de admin
+        is_admin_created: formValues.is_admin_created || false,
+        is_admin_update: formValues.is_admin_update || false
       };
 
       let result;

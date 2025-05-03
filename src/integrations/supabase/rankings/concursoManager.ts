@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { recalculateAllUserScores } from './userAnswers';
 
@@ -43,6 +44,7 @@ export const createRanking = async (rankingData: any) => {
       // Add user ID if provided
       created_by_user_id: rankingData.created_by_user_id,
       is_admin_created: rankingData.is_admin_created || false,
+      is_admin_update: rankingData.is_admin_update || false,
       
       // Add custom fields
       custom_banca: rankingData.custom_banca,
@@ -317,4 +319,3 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
     throw error;
   }
 };
-
