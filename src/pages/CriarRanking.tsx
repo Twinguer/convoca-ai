@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -203,6 +202,7 @@ const CriarRanking = () => {
     
     // Adicionar flags de admin se necessário
     if (isAdmin) {
+      // Definir explicitamente como campos de objeto para evitar o erro de tipo
       formValues.is_admin_created = true;
       formValues.is_admin_update = true;
     }

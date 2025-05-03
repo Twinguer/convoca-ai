@@ -36,16 +36,23 @@ export const useSaveRanking = () => {
         return { duplicated: true };
       }
 
-      const dataToSubmit = {
+      // Criar um objeto limpo com os dados para submissão
+      const dataToSubmit: Record<string, any> = {
         ...formValues,
         created_by_user_id: userId,
         titulo: title,
         banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades,
-        // Adicionando suporte às flags de admin
-        is_admin_created: formValues.is_admin_created || false,
-        is_admin_update: formValues.is_admin_update || false
+        localidades: formValues.localidades
       };
+
+      // Adicionar flags de admin se forem fornecidas
+      if (formValues.is_admin_created !== undefined) {
+        dataToSubmit.is_admin_created = formValues.is_admin_created;
+      }
+      
+      if (formValues.is_admin_update !== undefined) {
+        dataToSubmit.is_admin_update = formValues.is_admin_update;
+      }
 
       let result;
       let concursoIdToUse = editId;
