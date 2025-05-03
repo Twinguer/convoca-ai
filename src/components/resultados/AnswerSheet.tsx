@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,6 @@ import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
 import { useSaveAnswers } from '@/hooks/useSaveAnswers';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
@@ -27,7 +25,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
-  const { toast } = useToast();
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   
@@ -143,13 +140,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
         
-        // Removemos o salvamento automático quando questões anuladas mudam
-        // Agora o usuário precisa salvar manualmente para ver suas pontuações atualizadas
-        toast({
-          title: "Questões anuladas atualizadas",
-          description: "Algumas questões foram anuladas. Salve suas respostas para ver sua pontuação atualizada.",
-          variant: "default"
-        });
+        // Removemos o toast quando questões anuladas mudam
+        // e também o auto-salvamento
       }
     }
   }, [nullifiedData]);
@@ -180,11 +172,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
       
       if (unansweredQuestions.length > 0) {
-        toast({
-          title: "Atenção",
-          description: `Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`,
-          variant: "destructive"
-        });
+        setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
         return;
       }
     }
@@ -202,11 +190,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       console.error("[AnswerSheet] Erro durante o salvamento:", error);
       setIsSaving(false);
       setError(error.message || "Erro ao salvar respostas");
-      toast({
-        title: "Erro ao salvar",
-        description: error.message || "Ocorreu um erro ao salvar suas respostas. Por favor, tente novamente.",
-        variant: "destructive"
-      });
     }
   };
   
@@ -224,11 +207,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (isNaN(numberValue)) return;
     
     if (numberValue < 0 || numberValue > 100) {
-      toast({
-        title: "Valor inválido",
-        description: `A nota da ${scoreName} deve estar entre 0 e 100.`,
-        variant: "destructive"
-      });
+      setError(`A nota da ${scoreName} deve estar entre 0 e 100.`);
       return;
     }
     
