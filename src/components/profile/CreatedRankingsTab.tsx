@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,23 +10,31 @@ import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
-
 interface CreatedRankingsTabProps {
   userId: string;
 }
-
-const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
-  const { user } = useAuth();
+const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
+  userId
+}) => {
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [showAllRankings, setShowAllRankings] = useState(false);
-  
-  const { data: rankings, isLoading, refetch } = useQuery({
+  const {
+    data: rankings,
+    isLoading,
+    refetch
+  } = useQuery({
     queryKey: ['user-created-rankings', userId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('concursos')
-        .select(`
+      const {
+        data,
+        error
+      } = await supabase.from('concursos').select(`
           id, 
           titulo,
           orgao,
@@ -35,35 +42,33 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
           data_publicacao,
           created_at,
           is_admin_created
-        `)
-        .eq('created_by_user_id', userId)
-        .order('created_at', { ascending: false });
-        
+        `).eq('created_by_user_id', userId).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       return data || [];
     },
-    enabled: !!userId,
+    enabled: !!userId
   });
-  
-  const { data: participantCounts = {} } = useQuery({
+  const {
+    data: participantCounts = {}
+  } = useQuery({
     queryKey: ['participant-counts', rankings],
     queryFn: async () => {
       if (!rankings || rankings.length === 0) return {};
-      
       const counts = {};
-      await Promise.all(
-        rankings.map(async (ranking) => {
-          const { data } = await supabase
-            .rpc('count_concurso_participants', { concurso_id: ranking.id });
-          counts[ranking.id] = data || 0;
-        })
-      );
-      
+      await Promise.all(rankings.map(async ranking => {
+        const {
+          data
+        } = await supabase.rpc('count_concurso_participants', {
+          concurso_id: ranking.id
+        });
+        counts[ranking.id] = data || 0;
+      }));
       return counts;
     },
-    enabled: !!rankings && rankings.length > 0,
+    enabled: !!rankings && rankings.length > 0
   });
-  
   const handleDeleteRanking = async (rankingId: string) => {
     try {
       if (!user) {
@@ -74,14 +79,11 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
         });
         return;
       }
-      
       await deleteRanking(rankingId, user.id);
-      
       toast({
         title: "Ranking excluído",
         description: "O ranking foi excluído com sucesso"
       });
-      
       refetch();
     } catch (error: any) {
       toast({
@@ -91,24 +93,19 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
       });
     }
   };
-  
+
   // Display only top 3 if not showing all
   const displayRankings = showAllRankings ? rankings : rankings?.slice(0, 3);
   const hasMoreRankings = rankings?.length > 3;
-  
   if (isLoading) {
-    return (
-      <div className="space-y-4">
+    return <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-24 w-full" />
-      </div>
-    );
+      </div>;
   }
-  
   if (!rankings || rankings.length === 0) {
-    return (
-      <Card>
+    return <Card>
         <CardContent className="p-6 text-center">
           <p className="text-muted-foreground mb-4">
             Você ainda não criou nenhum ranking.
@@ -117,21 +114,17 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
             Criar meu primeiro ranking
           </Button>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-  
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       <h3 className="text-lg font-medium">Rankings Criados ({rankings.length})</h3>
       
       <div className="grid gap-4">
-        {displayRankings?.map((ranking: any) => (
-          <Card key={ranking.id} className="overflow-hidden">
+        {displayRankings?.map((ranking: any) => <Card key={ranking.id} className="overflow-hidden">
             <div className="bg-gradient-to-r from-blue-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
               <div>
                 <h4 className="font-bold">{ranking.titulo}</h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-gray-500 text-sm font-bold">
                   {ranking.orgao} • {ranking.banca}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
@@ -143,33 +136,19 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
               </div>
               
               <div className="flex items-center gap-2 self-end">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="flex items-center gap-1"
-                  onClick={() => navigate(`/concurso/${ranking.id}/resultados`)}
-                >
+                <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.id}/resultados`)}>
                   <Trophy className="h-4 w-4" />
                   <span>Ver Ranking</span>
                 </Button>
                 
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex items-center gap-1"
-                  onClick={() => navigate(`/criar-ranking?edit=${ranking.id}`)}
-                >
+                <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/criar-ranking?edit=${ranking.id}`)}>
                   <PencilLine className="h-4 w-4" />
                   <span>Editar</span>
                 </Button>
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="flex items-center gap-1"
-                    >
+                    <Button size="sm" variant="destructive" className="flex items-center gap-1">
                       <Trash2 className="h-4 w-4" />
                       <span>Excluir</span>
                     </Button>
@@ -191,31 +170,18 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({ userId }) => {
                 </AlertDialog>
               </div>
             </div>
-          </Card>
-        ))}
+          </Card>)}
         
-        {hasMoreRankings && (
-          <Button 
-            variant="ghost" 
-            onClick={() => setShowAllRankings(!showAllRankings)}
-            className="mt-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          >
-            {showAllRankings ? (
-              <>
+        {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+            {showAllRankings ? <>
                 <ChevronUp className="h-4 w-4 mr-2" />
                 Mostrar menos
-              </>
-            ) : (
-              <>
+              </> : <>
                 <ChevronDown className="h-4 w-4 mr-2" />
                 Ver mais rankings ({rankings.length - 3})
-              </>
-            )}
-          </Button>
-        )}
+              </>}
+          </Button>}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CreatedRankingsTab;
