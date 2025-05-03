@@ -32,11 +32,6 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  const truncateBio = (bio: string | null) => {
-    if (!bio) return '';
-    return bio.length > 15 ? bio.substring(0, 15) + '...' : bio;
-  };
-
   // Generate a fallback avatar URL if none exists or if the original has an error
   const fallbackAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userProfile.name || 'user')}`;
   
@@ -59,23 +54,23 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
   return (
     <Card 
       key={userProfile.id} 
-      className="overflow-hidden hover:shadow-md transition-shadow h-full cursor-pointer w-[80%] mx-auto border border-emerald-100 dark:border-emerald-800 shadow-sm rounded-xl"
+      className="overflow-hidden hover:shadow-md transition-shadow h-full cursor-pointer"
       onClick={handleCardClick}
     >
       <CardHeader className="pb-2 flex flex-col items-center text-center">
-        <Avatar className="h-16 w-16 mb-2 ring-2 ring-emerald-100 dark:ring-emerald-700">
+        <Avatar className="h-20 w-20 mb-2">
           <AvatarImage 
             src={avatarUrl} 
             alt={userProfile.name} 
             onError={() => setAvatarError(true)}
           />
-          <AvatarFallback className="text-lg bg-emerald-50 text-emerald-600">{getInitials(userProfile.name)}</AvatarFallback>
+          <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
         </Avatar>
         <div className="space-y-1">
           <p className="font-semibold text-sm">{userProfile.name || 'Usuário'}</p>
           {userProfile.bio && (
             <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-              {truncateBio(userProfile.bio)}
+              {userProfile.bio}
             </p>
           )}
         </div>

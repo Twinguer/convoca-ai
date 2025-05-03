@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -6,8 +5,8 @@ import { useCommunityUsers } from '@/hooks/useCommunityUsers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserCard } from '@/components/community/UserCard';
-import { UserGrid } from '@/components/community/UserGrid';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MapPin, User, Users, BookOpen } from 'lucide-react';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
@@ -163,11 +162,56 @@ const Comunidade: React.FC = () => {
         </div>
       </div>
       
-      {filteredUsers.length > 0 ? <UserGrid className="gap-1">
-          {filteredUsers.map(user => (
-            <UserCard key={user.id} userProfile={user} onClick={handleUserClick} />
-          ))}
-        </UserGrid> : <CommunityEmptyState onRefresh={handleRefresh} />}
+      {filteredUsers.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredUsers.map(user => {
+        // Format location (city, state)
+        const cityState = user.bio?.match(/(?:de |em |do |da )([^,.]+)/i)?.[1] || '';
+        return <Card key={user.id} className="overflow-hidden relative hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleUserClick(user.id)}>
+                {user.status_concurseiro && getUserStatusBadge(user.status_concurseiro)}
+                
+                <CardContent className="p-6 bg-slate-50">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.name} />
+                      <AvatarFallback>
+                        {user.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div>
+                      <h2 className="font-semibold text-lg">{user.name}</h2>
+                      {cityState && <div className="flex items-center text-sm text-muted-foreground">
+                          <MapPin className="h-3.5 w-3.5 mr-1" />
+                          <span>{cityState}</span>
+                        </div>}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-2 mt-6 text-center">
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-lg">{user.postCount}</span>
+                      <span className="text-xs text-muted-foreground">Concursos</span>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-lg">{user.followerCount}</span>
+                      <span className="text-xs text-muted-foreground">Seguidores</span>
+                    </div>
+                    
+                    <div className="flex flex-col items-center">
+                      <span className="font-semibold text-lg">{user.approvalCount || 0}</span>
+                      <span className="text-xs text-muted-foreground">Seguindo</span>
+                    </div>
+                  </div>
+                  
+                  <Button variant="outline" className="w-full mt-4 border-emerald-600 text-emerald-600 hover:bg-emerald-50">
+                    <User className="h-4 w-4 mr-2" />
+                    Ver Perfil
+                  </Button>
+                </CardContent>
+              </Card>;
+      })}
+        </div> : <CommunityEmptyState onRefresh={handleRefresh} />}
     </div>;
 };
 export default Comunidade;
