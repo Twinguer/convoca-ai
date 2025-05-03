@@ -75,7 +75,7 @@ const ResultadosPage = () => {
   if (isLoading) {
     return <LoadingState />;
   }
-  return <div className="container mx-auto p-2 sm:p-4">
+  return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         
         
