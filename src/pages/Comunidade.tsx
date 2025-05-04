@@ -30,25 +30,15 @@ const Comunidade: React.FC = () => {
   // Fetch community users using the custom hook
   const {
     users,
-    demoUsers,
     isLoading,
     isError,
-    showDemoUsers,
     refetch
   } = useCommunityUsers(searchQuery);
 
   // Handle user card click - navigate to user profile
   const handleUserClick = useCallback((userId: string) => {
-    if (showDemoUsers) {
-      // For demo users, show a toast instead of navigating
-      toast({
-        title: 'Demonstração',
-        description: 'Este é um usuário de demonstração. Em uma conta real, você seria redirecionado para o perfil.'
-      });
-    } else {
-      navigate(`/usuario/${userId}`);
-    }
-  }, [navigate, showDemoUsers, toast]);
+    navigate(`/usuario/${userId}`);
+  }, [navigate]);
 
   // Handle refresh button click
   const handleRefresh = useCallback(async () => {
@@ -74,7 +64,7 @@ const Comunidade: React.FC = () => {
 
   // Filter users based on selected filters
   const filteredUsers = React.useMemo(() => {
-    let filtered = users && users.length > 0 ? users : showDemoUsers ? demoUsers : [];
+    let filtered = users || [];
     
     // Filter by status if not "todos"
     if (statusFilter !== 'todos') {
@@ -94,7 +84,7 @@ const Comunidade: React.FC = () => {
     filtered = [...filtered].sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0));
 
     return filtered;
-  }, [users, demoUsers, showDemoUsers, statusFilter, rankingFilter]);
+  }, [users, statusFilter, rankingFilter]);
 
   // Get users to display - either all or just the first 6
   const displayUsers = showAllUsers ? filteredUsers : filteredUsers.slice(0, 6);
@@ -105,9 +95,9 @@ const Comunidade: React.FC = () => {
     return <CommunityLoadingState />;
   }
 
-  // Error state - show error component with demo users as fallback
+  // Error state - show error component with empty array as fallback
   if (isError) {
-    return <CommunityErrorState demoUsers={demoUsers} handleUserClick={handleUserClick} />;
+    return <CommunityErrorState handleUserClick={handleUserClick} />;
   }
 
   // Main component render
@@ -119,14 +109,6 @@ const Comunidade: React.FC = () => {
           description="Conheça outros concurseiros, veja rankings e siga perfis"
         />
       </div>
-      
-      {showDemoUsers && (
-        <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-yellow-700 text-sm">
-            <strong>Nota:</strong> Exibindo usuários de demonstração. Estes são exemplos e não refletem contas reais.
-          </p>
-        </div>
-      )}
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">

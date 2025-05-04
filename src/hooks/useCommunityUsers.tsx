@@ -1,7 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getDemoUsers } from '@/integrations/supabase/community';
 import { useDebounce } from '@/hooks/useDebounce';
 
 // Hook to fetch community users
@@ -15,13 +14,12 @@ export const useCommunityUsers = (searchQuery: string = '') => {
       try {
         console.log('Fetching community users with query:', debouncedSearchQuery);
         
-        // Fetching users with additional metadata
+        // Fetching users with additional metadata - removendo username que não existe
         let query = supabase
           .from('users_profiles')
           .select(`
             id,
             name,
-            username,
             email,
             bio,
             avatar_url,
@@ -32,10 +30,10 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           
         // Apply search filter if provided
         if (debouncedSearchQuery) {
-          query = query.or(`name.ilike.%${debouncedSearchQuery}%,username.ilike.%${debouncedSearchQuery}%`);
+          query = query.or(`name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%`);
         }
         
-        // Execute the query with pagination
+        // Execute the query with pagination - aumentando o limite para garantir que temos usuários suficientes
         const { data: profiles, error } = await query.limit(100);
 
         if (error) {
@@ -66,10 +64,15 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             const approvalCount = profile.concursos_aprovados 
               ? profile.concursos_aprovados.split(',').filter(Boolean).length 
               : 0;
+              
+            // Gerar um email de usuário com base no email
+            const emailParts = profile.email.split('@');
+            const usernameFromEmail = emailParts[0].toLowerCase().replace(/[^a-z0-9]/g, '');
 
             // Store the counts directly in the object to ensure persistence
             return {
               ...profile,
+              username: usernameFromEmail, // Criar username como fallback
               followerCount: followerCount || 0,
               postCount: postCount || 0,
               approvalCount
@@ -86,18 +89,10 @@ export const useCommunityUsers = (searchQuery: string = '') => {
     staleTime: 60000 // Cache for 1 minute to reduce repeated fetches
   });
 
-  // Get demo users as fallback
-  const demoUsers = getDemoUsers();
-  
-  // Determine if we should show demo users based on whether real data was fetched
-  const showDemoUsers = isError || !data || data.length === 0;
-
   return {
     users: data || [],
-    demoUsers,
     isLoading,
     isError,
-    showDemoUsers,
     refetch
   };
 };

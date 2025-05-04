@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 interface UserProfile {
   id: string;
   name: string;
-  username?: string; // Nome de usuário único
+  username?: string; // Nome de usuário único (será adicionado futuramente no banco)
   avatar_url: string | null;
   bio: string | null;
   email: string;
@@ -49,7 +49,7 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
 
   // Get the number of approvals from concursos_aprovados (if it's a comma-separated string)
   const approvalCount = userProfile.concursos_aprovados 
-    ? userProfile.concursos_aprovados.split('\n').filter(Boolean).length 
+    ? userProfile.concursos_aprovados.split(',').filter(Boolean).length 
     : userProfile.approvalCount || 0;
 
   return (
@@ -76,9 +76,10 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
         </Avatar>
         <div className="space-y-1">
           <p className="font-semibold text-sm">{userProfile.name || 'Usuário'}</p>
-          {userProfile.username && (
+          {/* Quando existir username no banco, será exibido aqui */}
+          {userProfile.email && (
             <p className="text-xs text-muted-foreground">
-              @{userProfile.username}
+              @{userProfile.username || userProfile.email.split('@')[0]}
             </p>
           )}
           {userProfile.bio && (
