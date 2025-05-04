@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -183,14 +182,34 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
       
-      // Chamando o serviço correto renomeado
-      await saveAnswersService();
-      await refetchNullified();
-      console.log("[AnswerSheet] Salvamento concluído com sucesso");
+      // Adicionando tratamento de erros mais robusto
+      try {
+        // Chamar o serviço de salvamento
+        await saveAnswersService();
+        await refetchNullified();
+        console.log("[AnswerSheet] Salvamento concluído com sucesso");
+      } catch (saveError: any) {
+        console.error("[AnswerSheet] Erro durante o salvamento:", saveError);
+        
+        // Tentar novamente após uma pequena espera se for um erro de rede
+        if (saveError.message?.includes('network') || saveError.message?.includes('conexão')) {
+          toast({
+            title: "Falha na conexão",
+            description: "Tentando novamente em alguns segundos...",
+            variant: "default"
+          });
+          
+          // Esperar 2 segundos e tentar novamente
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          await saveAnswersService();
+        } else {
+          throw saveError;
+        }
+      }
     } catch (error: any) {
       console.error("[AnswerSheet] Erro durante o salvamento:", error);
       setIsSaving(false);
-      setError(error.message || "Erro ao salvar respostas");
+      setError(error.message || "Erro ao salvar respostas. Tente novamente.");
     }
   };
   
