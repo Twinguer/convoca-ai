@@ -53,11 +53,11 @@ const ListarConcursos: React.FC = () => {
         users_profiles (name)
       `);
       
-      if (filter.banca) {
+      if (filter.banca && filter.banca !== 'all') {
         query = query.eq('banca', filter.banca);
       }
       
-      if (filter.status) {
+      if (filter.status && filter.status !== 'all') {
         query = query.eq('status', filter.status);
       }
       
