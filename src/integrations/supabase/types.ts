@@ -101,7 +101,6 @@ export type Database = {
           id: string
           inscritos: number | null
           is_admin_created: boolean | null
-          is_admin_update: boolean | null
           knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
@@ -153,7 +152,6 @@ export type Database = {
           id?: string
           inscritos?: number | null
           is_admin_created?: boolean | null
-          is_admin_update?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
@@ -205,7 +203,6 @@ export type Database = {
           id?: string
           inscritos?: number | null
           is_admin_created?: boolean | null
-          is_admin_update?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null

@@ -128,13 +128,26 @@ export const fetchUserRankings = async (userId: string) => {
   return fetchUserConcursoRankings(userId);
 };
 
-// Replace the scheduleScraper function with a dummy function that doesn't call the edge function
+// Add the scheduleScraper function that's being imported in main.tsx
 export const scheduleScraper = async () => {
   try {
-    console.log('Scraper functionality has been removed');
-    return { success: true, message: 'Scraper functionality has been removed' };
+    // Call the edge function to scrape concursos data
+    const { data, error } = await supabase.functions.invoke('scrape-cebraspe', {
+      method: 'POST',
+      body: {}
+    });
+    
+    if (error) {
+      console.error('Error scheduling scraper:', error);
+      throw error;
+    }
+    
+    console.log('Scraper scheduled successfully:', data);
+    return data;
   } catch (error) {
     console.error('Failed to schedule scraper:', error);
     return { success: false, message: 'Failed to schedule scraper' };
   }
 };
+
+// More functions can be added here as needed...
