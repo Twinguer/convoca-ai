@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -46,17 +45,8 @@ const ListarConcursos: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este ranking?')) {
       try {
-        if (!user) {
-          toast({
-            title: 'Erro ao excluir ranking',
-            description: 'Você precisa estar logado para excluir um ranking.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        
-        // Use the deleteRanking function and pass isAdmin=true
-        await deleteRanking(id, user.id, true);
+        // For admin mode, we force isAdmin=true
+        await deleteRanking(id, user?.id || 'admin-user', true);
         
         toast({
           title: 'Ranking excluído com sucesso!',

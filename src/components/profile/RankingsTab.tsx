@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,11 +10,13 @@ import { PencilLine, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+
 interface RankingsTabProps {
   userId: string;
   userRankings?: UserRankingDisplay[];
   isAuthenticated?: boolean;
 }
+
 const RankingsTab: React.FC<RankingsTabProps> = ({
   userId,
   userRankings,
@@ -41,10 +44,12 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           discursive_score,
           created_at,
           position,
-          concursos (id, titulo, orgao, banca)
+          concurso_id,
+          concursos:concurso_id (id, titulo, orgao, banca)
         `).eq('user_id', userId).order('score', {
         ascending: false
       });
+      
       if (error) throw error;
 
       // Para cada ranking, calcular a posição real
@@ -59,7 +64,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         }
 
         // Buscar pontuações de todos os participantes deste concurso
-        const concursoId = ranking.concursos?.id;
+        const concursoId = ranking.concurso_id;
         if (!concursoId) {
           console.error('No concurso ID found for ranking:', ranking);
           return {
@@ -67,12 +72,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             position: null
           };
         }
+        
         const {
           data: allScores,
           error: scoresError
         } = await supabase.from('user_rankings').select('score').eq('concurso_id', concursoId).order('score', {
           ascending: false
         });
+        
         if (scoresError) {
           console.error('Erro ao buscar pontuações:', scoresError);
           return {
@@ -88,6 +95,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           position
         };
       }));
+      
       return rankingsWithPositions || [];
     },
     enabled: !userRankings && !!userId // Only fetch if userRankings is not provided and userId exists
@@ -106,6 +114,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
   // Verifica se o usuário atual é o dono do perfil
   const isOwnProfile = user?.id === userId;
+  
   if (showSkeleton) {
     return <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
@@ -113,6 +122,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         <Skeleton className="h-24 w-full" />
       </div>;
   }
+  
   if (!allRankings || allRankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -125,6 +135,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         </CardContent>
       </Card>;
   }
+  
   return <div className="space-y-4">
       <h3 className="text-lg font-medium">Rankings ({allRankings.length})</h3>
       
@@ -132,15 +143,18 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         {displayRankings.map((ranking: any) => <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
             <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
               <div>
-                <h4 className="font-bold text-gray-500">
+                <h4 className="font-bold text-gray-500 text-sm truncate max-w-[200px]">
                   {ranking.concursos?.titulo || ranking.concursoTitle}
                 </h4>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                   {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
                 </p>
                 
                 {/* Posição e Pontuação */}
                 <div className="mt-2 flex flex-wrap gap-2">
+                  <Badge variant="outline" className="flex items-center">
+                    Posição: {ranking.position ? `${ranking.position}º` : 'Calculando...'}
+                  </Badge>
                   
                   <Badge variant="secondary" className="flex items-center">
                     Pontuação: {typeof ranking.score === 'number' ? ranking.score.toFixed(2) : 'Calculando...'}
@@ -174,4 +188,5 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       </div>
     </div>;
 };
+
 export default RankingsTab;

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { Calendar } from 'lucide-react';
+
 export interface RankingItemProps {
   id: string;
   examDate: string;
@@ -17,10 +18,12 @@ export interface RankingItemProps {
   isAdminCreated?: boolean;
   status?: string;
 }
+
 export interface RankingListProps {
   rankings: RankingItemProps[];
   isLoading: boolean;
 }
+
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -38,12 +41,13 @@ export const RankingItem: React.FC<RankingItemProps> = ({
     }
     return '';
   };
+  
   return <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <p className="text-lg font-bold mx-0 px-0 my-0 py-0 text-emerald-600">{banca}: {concursoTitle}</p>
+              <p className="text-sm font-bold mx-0 px-0 my-0 py-0 text-emerald-600 truncate max-w-[200px]">{banca}: {concursoTitle}</p>
               <div className="flex flex-col gap-1 items-end">
                 <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
@@ -56,19 +60,16 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             </div>
             
             <div className="mb-2">
-              
-              <h3 className="text-lg font-bold">{cargoTitle}</h3>
+              <h3 className="text-sm font-bold truncate max-w-[250px]">{cargoTitle}</h3>
             </div>
 
             <div className="flex items-center justify-between mt-2">
-              <p className="text-sm text-emerald-600 font-bold">
-                
+              <p className="text-xs text-emerald-600 font-bold">
                 {participantCount.toLocaleString()} participantes
               </p>
               
               {(creatorName || isAdminCreated) && <div className="flex items-center text-xs text-gray-500">
-                  
-                  <span className="text-right mx-0 text-xs">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  <span className="text-right mx-0 text-xs truncate max-w-[120px]">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
                   {!isAdminCreated}
                 </div>}
             </div>
@@ -77,12 +78,13 @@ export const RankingItem: React.FC<RankingItemProps> = ({
       </Card>
     </Link>;
 };
+
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
   isLoading
 }) => {
   if (isLoading) {
-    return <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[1, 2, 3, 4, 5, 6].map(i => <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
               <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
@@ -93,6 +95,7 @@ export const RankingList: React.FC<RankingListProps> = ({
           </Card>)}
       </div>;
   }
+  
   if (rankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -100,7 +103,8 @@ export const RankingList: React.FC<RankingListProps> = ({
         </CardContent>
       </Card>;
   }
-  return <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  
+  return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>;
 };

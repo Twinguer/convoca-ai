@@ -16,7 +16,18 @@ export const useSaveRanking = () => {
       // Normalize strings for uniqueness check (handling case and spaces)
       const normalize = (str: string) => (str || "").replace(/\s+/g, " ").trim().toUpperCase();
 
-      const title = formValues.custom_job_title || formValues.predefined_job_title;
+      // Truncate long titles for better display
+      let title = formValues.custom_job_title || formValues.predefined_job_title;
+      if (title && title.length > 30) {
+        title = title.substring(0, 30) + '...';
+      }
+      
+      // Truncate long orgão for better display
+      let orgao = formValues.orgao;
+      if (orgao && orgao.length > 30) {
+        orgao = orgao.substring(0, 30) + '...';
+      }
+
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
         .from('concursos')
@@ -25,9 +36,12 @@ export const useSaveRanking = () => {
 
       if (findError) throw findError;
 
-      const isDuplicate = !editId && founds?.some(item =>
+      // Don't check for duplicates when editing as admin
+      const isAdminEditing = editId && formValues.is_admin_update;
+      
+      const isDuplicate = !editId && !isAdminEditing && founds?.some(item =>
         normalize(item.titulo) === normalize(title) &&
-        normalize(item.orgao) === normalize(formValues.orgao) &&
+        normalize(item.orgao) === normalize(orgao) &&
         normalize(item.banca) === normalize(formValues.custom_banca || formValues.banca)
       );
 
@@ -39,8 +53,9 @@ export const useSaveRanking = () => {
       // Criar um objeto limpo com os dados para submissão
       const dataToSubmit: Record<string, any> = {
         ...formValues,
-        created_by_user_id: userId,
+        created_by_user_id: formValues.created_by_user_id || userId, // Keep original creator when admin is editing
         titulo: title,
+        orgao: orgao,
         banca: formValues.custom_banca || formValues.banca,
         localidades: formValues.localidades
       };

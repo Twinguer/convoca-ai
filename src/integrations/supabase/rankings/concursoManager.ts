@@ -253,6 +253,8 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
     
     // Allow admins to delete any ranking, or users to delete their own
     const isCreator = rankingCheck.created_by_user_id === userId;
+    
+    // For admin check, if isAdmin is explicitly set to true, bypass the user check
     if (!isAdmin && !isCreator) {
       throw new Error('Você não tem permissão para excluir este ranking');
     }

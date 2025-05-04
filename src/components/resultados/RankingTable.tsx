@@ -54,6 +54,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -88,6 +89,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
+  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -109,6 +111,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
+  
   const availableQuotas = getAvailableQuotas();
   const filterRankingsByQuota = (quota: string) => {
     if (!rankings) return [];
@@ -117,6 +120,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankings.filter(ranking => ranking.reservationType === quota);
   };
+  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -124,6 +128,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
+  
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -228,6 +233,7 @@ const RankingTableContent: React.FC<{
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
+  
   if (!concurso) {
     // ... keep existing code (simplified table rendering when no concurso)
     return <Table>
@@ -263,7 +269,9 @@ const RankingTableContent: React.FC<{
         </TableBody>
       </Table>;
   }
+  
   const columns = getRankingTableColumns(concurso);
+  
   return <Table>
       <TableHeader>
         <TableRow>
@@ -273,7 +281,7 @@ const RankingTableContent: React.FC<{
           {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
-      <TableBody>
+      <TableBody className="space-y-0.5">
         {rankings.length > 0 ? rankings.map(ranking => {
         const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
         return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>

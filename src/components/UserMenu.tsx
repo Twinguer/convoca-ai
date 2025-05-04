@@ -1,14 +1,15 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, LogOut, Award, Users, Moon, Sun } from 'lucide-react';
+import { User, LogOut, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useTheme } from '@/components/theme-provider';
+
 const UserMenu: React.FC = () => {
   const {
     user,
@@ -19,10 +20,7 @@ const UserMenu: React.FC = () => {
     toast
   } = useToast();
   const queryClient = useQueryClient();
-  const {
-    theme,
-    setTheme
-  } = useTheme();
+
   const {
     data: profile
   } = useQuery({
@@ -38,6 +36,7 @@ const UserMenu: React.FC = () => {
     },
     enabled: !!user
   });
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -57,21 +56,23 @@ const UserMenu: React.FC = () => {
       });
     }
   };
+
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
   if (!user) {
     return <div className="flex items-center gap-2">
-        
         <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
           Fazer Login
         </Button>
       </div>;
   }
+
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
+
   return <div className="flex items-center gap-2">
-      
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -113,4 +114,5 @@ const UserMenu: React.FC = () => {
       </DropdownMenu>
     </div>;
 };
+
 export default UserMenu;
