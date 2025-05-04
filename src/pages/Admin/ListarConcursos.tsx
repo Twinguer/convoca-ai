@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,54 +20,95 @@ const ListarConcursos: React.FC = () => {
   const { user } = useAuth();
   const [filter, setFilter] = useState<ConcursoFilter>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    // Verificar se o usuário está autenticado
+    const checkAuth = () => {
+      const adminAuth = localStorage.getItem('adminAuth') === 'true';
+      const urlParams = new URLSearchParams(window.location.search);
+      const adminParam = urlParams.get('admin') === 'true';
+      
+      setIsAuthenticated(adminAuth || adminParam);
+      
+      if (!(adminAuth || adminParam)) {
+        toast({
+          title: "Acesso negado",
+          description: "Você precisa estar autenticado para acessar esta página",
+          variant: "destructive",
+        });
+        navigate('/project/admin/man/login');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
   
   const fetchConcursos = async () => {
-    let query = supabase.from('concursos').select(`
-      *,
-      created_by_user_id,
-      is_admin_created,
-      users_profiles (name)
-    `);
-    
-    if (filter.banca) {
-      query = query.eq('banca', filter.banca);
-    }
-    
-    if (filter.status) {
-      query = query.eq('status', filter.status);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
-    if (error) throw error;
-
-    // Para cada concurso, buscar o número de participantes
-    const concursosWithParticipants = await Promise.all(data.map(async (concurso) => {
-      const { data: countData, error: countError } = await supabase
-        .rpc('count_concurso_participants', { concurso_id: concurso.id });
+    try {
+      let query = supabase.from('concursos').select(`
+        *,
+        created_by_user_id,
+        is_admin_created,
+        users_profiles (name)
+      `);
       
-      if (countError) {
-        console.error('Erro ao buscar número de participantes:', countError);
-        return {
-          ...concurso,
-          participant_count: 0,
-          creator_name: concurso.is_admin_created ? 'Admin' : concurso.users_profiles?.name || 'Desconhecido'
-        };
+      if (filter.banca) {
+        query = query.eq('banca', filter.banca);
+      }
+      
+      if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Erro ao buscar concursos:', error);
+        throw error;
       }
 
-      return {
-        ...concurso,
-        participant_count: countData || 0,
-        creator_name: concurso.is_admin_created ? 'Admin' : concurso.users_profiles?.name || 'Desconhecido'
-      };
-    }));
-    
-    return concursosWithParticipants as (Concurso & { participant_count: number, creator_name: string })[];
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // Para cada concurso, buscar o número de participantes
+      const concursosWithParticipants = await Promise.all(data.map(async (concurso) => {
+        const { data: countData, error: countError } = await supabase
+          .rpc('count_concurso_participants', { concurso_id: concurso.id });
+        
+        if (countError) {
+          console.error('Erro ao buscar número de participantes:', countError);
+          return {
+            ...concurso,
+            participant_count: 0,
+            creator_name: concurso.is_admin_created ? 'Admin' : concurso.users_profiles?.name || 'Desconhecido'
+          };
+        }
+
+        return {
+          ...concurso,
+          participant_count: countData || 0,
+          creator_name: concurso.is_admin_created ? 'Admin' : concurso.users_profiles?.name || 'Desconhecido'
+        };
+      }));
+      
+      return concursosWithParticipants as (Concurso & { participant_count: number, creator_name: string })[];
+    } catch (err) {
+      console.error('Erro na função fetchConcursos:', err);
+      toast({
+        title: 'Erro ao carregar rankings',
+        description: 'Não foi possível carregar a lista de rankings. Por favor, tente novamente.',
+        variant: 'destructive',
+      });
+      return [];
+    }
   };
   
   const { data: concursos, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-concursos', filter],
-    queryFn: fetchConcursos
+    queryFn: fetchConcursos,
+    enabled: isAuthenticated
   });
   
   const handleDelete = async (id: string) => {
@@ -110,6 +151,24 @@ const ListarConcursos: React.FC = () => {
     concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="flex justify-center items-center h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Acesso Restrito</CardTitle>
+            <CardDescription>Você precisa estar autenticado para acessar esta página</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={() => navigate('/project/admin/man/login')}>
+              Ir para o Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   return (
     <div>
