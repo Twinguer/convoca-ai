@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -10,29 +9,35 @@ import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme } from '@/components/theme-provider';
-
 const UserMenu: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const {
+    user,
+    signOut
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useTheme();
-
-  const { data: profile } = useQuery({
+  const {
+    theme,
+    setTheme
+  } = useTheme();
+  const {
+    data: profile
+  } = useQuery({
     queryKey: ['user-profile-menu', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
-        .from('users_profiles')
-        .select('name, avatar_url')
-        .eq('id', user.id)
-        .single();
+      const {
+        data,
+        error
+      } = await supabase.from('users_profiles').select('name, avatar_url').eq('id', user.id).single();
       if (error) return null;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user
   });
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -41,7 +46,9 @@ const UserMenu: React.FC = () => {
         title: 'Desconectado com sucesso',
         description: 'Você foi desconectado da sua conta.'
       });
-      navigate('/', { replace: true });
+      navigate('/', {
+        replace: true
+      });
     } catch (error) {
       toast({
         title: 'Erro ao desconectar',
@@ -50,31 +57,23 @@ const UserMenu: React.FC = () => {
       });
     }
   };
-
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-
   if (!user) {
-    return (
-      <div className="flex items-center gap-2">
+    return <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")} className="text-gray-700 dark:text-gray-300">
           {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
         </Button>
         <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
           Fazer Login
         </Button>
-      </div>
-    );
+      </div>;
   }
-
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
-  return (
-    <div className="flex items-center gap-2">
-      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "light" ? "dark" : "light")} className="text-gray-700 dark:text-gray-300">
-        {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-      </Button>
+  return <div className="flex items-center gap-2">
+      
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -114,8 +113,6 @@ const UserMenu: React.FC = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
-  );
+    </div>;
 };
-
 export default UserMenu;
