@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
-
 export interface Ranking {
   position: number;
   name: string;
@@ -41,7 +39,6 @@ export interface Ranking {
   id: string;
   quotaPosition?: number; // Position within quota
 }
-
 interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
@@ -49,7 +46,6 @@ interface RankingTableProps {
   isAuthenticated: boolean;
   isRefetching?: boolean;
 }
-
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
@@ -59,7 +55,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
-  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -94,11 +89,11 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
-  
+
   // Calculate quota positions for each ranking
   const rankingsWithQuotaPositions = React.useMemo(() => {
     if (!rankings) return [];
-    
+
     // Group rankings by reservation type
     const groupedByQuota: Record<string, Ranking[]> = {};
     rankings.forEach(ranking => {
@@ -107,7 +102,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       }
       groupedByQuota[ranking.reservationType].push(ranking);
     });
-    
+
     // Calculate position within each quota group
     return rankings.map(ranking => {
       const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
@@ -118,7 +113,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
-  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -140,7 +134,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
-  
   const availableQuotas = getAvailableQuotas();
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
@@ -149,7 +142,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
-  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -157,7 +149,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
-  
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -178,35 +169,14 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent 
-                  rankings={filterRankingsByQuota(quota)} 
-                  currentUserId={currentUserId} 
-                  handleUserClick={handleUserClick} 
-                  concurso={concurso} 
-                  isAmpla={quota === "Ampla Concorrência"} 
-                  availableQuotas={availableQuotas} 
-                  sectionWeights={getSectionWeights(concurso)} 
-                  isAuthenticated={isAuthenticated} 
-                  isRefetching={isRefetching}
-                  activeTab={quota} // Pass the activeTab as a prop
-                />
+                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} // Pass the activeTab as a prop
+          />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent 
-              rankings={rankingsWithQuotaPositions || []} 
-              currentUserId={currentUserId} 
-              handleUserClick={handleUserClick} 
-              concurso={concurso} 
-              isAmpla={true} 
-              availableQuotas={availableQuotas} 
-              sectionWeights={getSectionWeights(concurso)} 
-              isAuthenticated={isAuthenticated} 
-              isRefetching={isRefetching}
-              activeTab="Ampla Concorrência" // Pass a default value
-            />}
+          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" // Pass a default value
+      />}
       </CardContent>
     </Card>;
 };
-
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
@@ -218,7 +188,6 @@ const getQuotaAbbreviation = (quota: string): string => {
   };
   return abbreviations[quota] || quota.substring(0, 3);
 };
-
 const getSectionWeights = (concurso?: Concurso) => {
   return {
     basic: concurso?.basic_knowledge_weight ?? 1,
@@ -231,7 +200,6 @@ const getSectionWeights = (concurso?: Concurso) => {
     caseStudy3: concurso?.case_study_3_weight ?? 1
   };
 };
-
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -289,7 +257,6 @@ const RankingTableContent: React.FC<{
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
-  
   if (!concurso) {
     return <Table>
         <TableHeader>
@@ -314,11 +281,9 @@ const RankingTableContent: React.FC<{
                     <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <span>{ranking.name}</span>
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
-                    <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
                       {getQuotaAbbreviation(ranking.reservationType)}
-                    </span>
-                  )}
+                    </span>}
                 </div>
               </TableCell>
               <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
@@ -326,16 +291,14 @@ const RankingTableContent: React.FC<{
                   <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
                 </TableCell>}
             </TableRow>) : <TableRow>
-              <TableCell colSpan={isAdminMode && isAuthenticated ? (isAmpla ? 5 : 4) : (isAmpla ? 4 : 3)} className="text-center py-4">
+              <TableCell colSpan={isAdminMode && isAuthenticated ? isAmpla ? 5 : 4 : isAmpla ? 4 : 3} className="text-center py-4">
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
             </TableRow>}
         </TableBody>
       </Table>;
   }
-  
   const columns = getRankingTableColumns(concurso);
-  
   return <Table>
       <TableHeader>
         <TableRow>
@@ -343,7 +306,7 @@ const RankingTableContent: React.FC<{
           {!isAmpla && <TableHead className="text-center w-16">
             {getQuotaAbbreviation(activeTab)}
           </TableHead>}
-          {isAmpla && <TableHead className="text-center w-16">AP</TableHead>}
+          {isAmpla}
           <TableHead>Candidato</TableHead>
           <TableHead className="text-right">Total</TableHead>
           
@@ -389,9 +352,7 @@ const RankingTableContent: React.FC<{
               {!isAmpla && <TableCell className="text-center font-bold">
                 {ranking.quotaPosition}º
               </TableCell>}
-              {isAmpla && <TableCell className="text-center font-bold">
-                {ranking.reservationType === "Ampla Concorrência" ? ranking.position + "º" : ""}
-              </TableCell>}
+              {isAmpla}
               <TableCell>
                 <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
                   <Avatar className="h-8 w-8">
@@ -454,4 +415,3 @@ const RankingTableContent: React.FC<{
       </TableBody>
     </Table>;
 };
-
