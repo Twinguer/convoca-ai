@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -200,40 +201,73 @@ const CriarRanking = () => {
     form.setValue('localidades', selectedStates, { shouldDirty: true });
     formValues.localidades = selectedStates;
     
-    // Adicionar flags de admin se necessário
+    // Adicionar flags de admin se necessário - corrigir o tipo aqui
     if (isAdmin) {
-      // Definir explicitamente como campos de objeto para evitar o erro de tipo
-      formValues.is_admin_created = true;
-      formValues.is_admin_update = true;
-    }
-    
-    setIsSubmitting(true);
+      // Usar um tipo de interseção ou criar um novo objeto
+      const formValuesWithAdminFlags = {
+        ...formValues,
+        is_admin_created: true,
+        is_admin_update: true
+      };
+      
+      setIsSubmitting(true);
 
-    try {
-      const saveResult = await saveRanking({
-        formValues,
-        userId: user?.id,
-        editId,
-        jobTitles,
-      });
-      
-      if (saveResult?.duplicated) {
+      try {
+        const saveResult = await saveRanking({
+          formValues: formValuesWithAdminFlags, // Usar a versão com flags
+          userId: user?.id,
+          editId,
+          jobTitles,
+        });
+        
+        if (saveResult?.duplicated) {
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (saveResult?.id) {
+          setCreatedConcursoId(saveResult.id);
+          toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
+          setActiveTab('answer-key');
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      } catch (error) {
+        console.error("Erro ao salvar ranking:", error);
+        toast.error("Erro ao salvar ranking: " + (error as Error).message);
+      } finally {
         setIsSubmitting(false);
-        return;
       }
-      
-      if (saveResult?.id) {
-        setCreatedConcursoId(saveResult.id);
-        toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
-        setActiveTab('answer-key'); // Alteração: Muda automaticamente para a aba de gabarito após salvar com sucesso
+    } else {
+      // Para usuários não-admin, manter o fluxo original
+      setIsSubmitting(true);
+
+      try {
+        const saveResult = await saveRanking({
+          formValues,
+          userId: user?.id,
+          editId,
+          jobTitles,
+        });
+        
+        if (saveResult?.duplicated) {
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (saveResult?.id) {
+          setCreatedConcursoId(saveResult.id);
+          toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
+          setActiveTab('answer-key');
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      } catch (error) {
+        console.error("Erro ao salvar ranking:", error);
+        toast.error("Erro ao salvar ranking: " + (error as Error).message);
+      } finally {
+        setIsSubmitting(false);
       }
-      
-      queryClient.invalidateQueries({ queryKey: ['rankings'] });
-    } catch (error) {
-      console.error("Erro ao salvar ranking:", error);
-      toast.error("Erro ao salvar ranking: " + (error as Error).message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

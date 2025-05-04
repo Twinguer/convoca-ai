@@ -13,6 +13,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
     queryKey: ['community-users', debouncedSearchQuery],
     queryFn: async () => {
       try {
+        console.log('Fetching community users with query:', debouncedSearchQuery);
+        
         // Fetching users with additional metadata
         let query = supabase
           .from('users_profiles')
@@ -34,10 +36,15 @@ export const useCommunityUsers = (searchQuery: string = '') => {
         }
         
         // Execute the query with pagination
-        const { data: profiles, error } = await query.limit(50);
+        const { data: profiles, error } = await query.limit(100);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching profiles:', error);
+          throw error;
+        }
 
+        console.log(`Fetched ${profiles.length} community profiles`);
+        
         // Add follower and rankings counts for each user
         const usersWithCounts = await Promise.all(
           profiles.map(async (profile) => {
@@ -75,7 +82,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
         console.error('Error fetching community users:', error);
         throw error;
       }
-    }
+    },
+    staleTime: 60000 // Cache for 1 minute to reduce repeated fetches
   });
 
   // Get demo users as fallback

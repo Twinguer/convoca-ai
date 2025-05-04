@@ -6,14 +6,13 @@ import { useCommunityUsers } from '@/hooks/useCommunityUsers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MapPin, User, Users, BookOpen } from 'lucide-react';
+import { User, RefreshCw } from 'lucide-react';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
 import { CommunityEmptyState } from '@/components/community/CommunityEmptyState';
 import { UserCard } from '@/components/community/UserCard';
 import { UserGrid } from '@/components/community/UserGrid';
+import { CommunitySectionHeader } from '@/components/community/CommunitySectionHeader';
 
 /**
  * Comunidade page component
@@ -26,6 +25,7 @@ const Comunidade: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [rankingFilter, setRankingFilter] = useState('todos');
   const [showAllUsers, setShowAllUsers] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch community users using the custom hook
   const {
@@ -51,12 +51,14 @@ const Comunidade: React.FC = () => {
   }, [navigate, showDemoUsers, toast]);
 
   // Handle refresh button click
-  const handleRefresh = useCallback(() => {
-    refetch();
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refetch();
     toast({
-      title: 'Atualizando',
-      description: 'Buscando usuários mais recentes...'
+      title: 'Atualizado',
+      description: 'Lista de usuários atualizada com sucesso.'
     });
+    setIsRefreshing(false);
   }, [refetch, toast]);
 
   // Handle search query change
@@ -73,15 +75,26 @@ const Comunidade: React.FC = () => {
   // Filter users based on selected filters
   const filteredUsers = React.useMemo(() => {
     let filtered = users && users.length > 0 ? users : showDemoUsers ? demoUsers : [];
+    
+    // Filter by status if not "todos"
     if (statusFilter !== 'todos') {
       filtered = filtered.filter(user => user.status_concurseiro === statusFilter);
+    }
+    
+    // Filter by ranking participation if needed
+    if (rankingFilter !== 'todos') {
+      const hasRankings = rankingFilter === '1';
+      filtered = filtered.filter(user => {
+        const userHasRankings = (user.postCount || 0) > 0;
+        return hasRankings ? userHasRankings : !userHasRankings;
+      });
     }
 
     // Sort users by follower count (descending order)
     filtered = [...filtered].sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0));
 
     return filtered;
-  }, [users, demoUsers, showDemoUsers, statusFilter]);
+  }, [users, demoUsers, showDemoUsers, statusFilter, rankingFilter]);
 
   // Get users to display - either all or just the first 6
   const displayUsers = showAllUsers ? filteredUsers : filteredUsers.slice(0, 6);
@@ -101,8 +114,10 @@ const Comunidade: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        
-        
+        <CommunitySectionHeader 
+          title="Comunidade Concurseiros" 
+          description="Conheça outros concurseiros, veja rankings e siga perfis"
+        />
       </div>
       
       {showDemoUsers && (
@@ -127,7 +142,23 @@ const Comunidade: React.FC = () => {
               <User className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
-          <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">Buscar</Button>
+          <Button 
+            type="submit" 
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            Buscar
+          </Button>
+          
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-1"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+          </Button>
         </form>
         
         <div className="flex gap-2">
@@ -176,7 +207,7 @@ const Comunidade: React.FC = () => {
                 onClick={() => setShowAllUsers(!showAllUsers)} 
                 className="px-8"
               >
-                {showAllUsers ? "Mostrar menos" : "Ver mais usuários"}
+                {showAllUsers ? "Mostrar menos" : `Ver mais usuários (${filteredUsers.length - 6})`}
               </Button>
             </div>
           )}
