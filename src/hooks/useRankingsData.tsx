@@ -16,7 +16,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
         etapa_atual,
         created_by_user_id,
         is_admin_created,
-        localidade
+        localidades
       `)
       .order('data_publicacao', { ascending: false });
 
@@ -48,6 +48,12 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           }
         }
 
+        // Obter a primeira localidade (para compatibilidade com versões anteriores)
+        let localidade = null;
+        if (concurso.localidades && Array.isArray(concurso.localidades) && concurso.localidades.length > 0) {
+          localidade = concurso.localidades[0];
+        }
+
         return {
           id: concurso.id,
           examDate: concurso.data_publicacao || new Date().toISOString(),
@@ -58,7 +64,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           createdByUserId: concurso.created_by_user_id || null,
           creatorName: creatorName,
           isAdminCreated: concurso.is_admin_created,
-          localidade: concurso.localidade
+          localidade: localidade
         };
       })
     );

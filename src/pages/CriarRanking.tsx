@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { createRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
@@ -271,17 +270,16 @@ const CriarRanking = () => {
     }
   };
 
-  // Garante que a aba Gabarito só aparece depois do ranking existir
+  // Atualizado para permitir edição antes de salvar o gabarito
   const handleNextTab = async () => {
     if (activeTab === 'general-info') {
       await handleSaveRanking();
-      // A mudança de aba agora acontece dentro do handleSaveRanking após o sucesso
     }
   };
 
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      navigate(`/resultados/${createdConcursoId}`);
+      navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
 
@@ -338,16 +336,25 @@ const CriarRanking = () => {
                   />
                 </TabsContent>
                 <TabsContent value="answer-key">
-                  {/* Substituindo o AnswerKeyTab pelo AnswerKeyForm mais completo */}
+                  {/* Modificado para permitir edição do ranking mesmo enquanto edita gabarito */}
+                  <div className="mb-4 flex justify-between items-center">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setActiveTab('general-info')}
+                    >
+                      Voltar às Informações Gerais
+                    </Button>
+                    <Button 
+                      type="button" 
+                      onClick={handleGoToResults}
+                    >
+                      Ir para Resultados
+                    </Button>
+                  </div>
+                  
                   {(createdConcursoId || editId) && (
-                    <>
-                      <AnswerKeyForm concursoId={createdConcursoId || editId || ''} />
-                      <div className="flex justify-end mt-6">
-                        <Button type="button" onClick={handleGoToResults}>
-                          Ir para Resultados
-                        </Button>
-                      </div>
-                    </>
+                    <AnswerKeyForm concursoId={createdConcursoId || editId || ''} />
                   )}
                 </TabsContent>
               </Tabs>
