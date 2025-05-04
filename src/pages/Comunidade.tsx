@@ -12,7 +12,6 @@ import { CommunityErrorState } from '@/components/community/CommunityErrorState'
 import { CommunityEmptyState } from '@/components/community/CommunityEmptyState';
 import { UserCard } from '@/components/community/UserCard';
 import { UserGrid } from '@/components/community/UserGrid';
-import { CommunitySectionHeader } from '@/components/community/CommunitySectionHeader';
 
 /**
  * Comunidade page component
@@ -104,10 +103,8 @@ const Comunidade: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <CommunitySectionHeader 
-          title="Comunidade Concurseiros" 
-          description="Conheça outros concurseiros, veja rankings e siga perfis"
-        />
+        <h1 className="text-2xl font-bold">Comunidade</h1>
+        <p className="text-muted-foreground mt-1">Conecte-se com outros concurseiros e acompanhe seus progressos</p>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -172,7 +169,7 @@ const Comunidade: React.FC = () => {
       
       {displayUsers.length > 0 ? (
         <>
-          <UserGrid className="gap-1">
+          <UserGrid>
             {displayUsers.map(user => (
               <UserCard 
                 key={user.id} 

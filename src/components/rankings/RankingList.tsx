@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -81,8 +82,8 @@ export const RankingList: React.FC<RankingListProps> = ({
   isLoading
 }) => {
   if (isLoading) {
-    return <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px]">
-        {[1, 2, 3, 4].map(i => <Card key={i} className="animate-pulse">
+    return <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6].map(i => <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
               <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
@@ -99,7 +100,7 @@ export const RankingList: React.FC<RankingListProps> = ({
         </CardContent>
       </Card>;
   }
-  return <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px]">
+  return <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>;
 };

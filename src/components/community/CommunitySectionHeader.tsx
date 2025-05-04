@@ -2,14 +2,14 @@
 import React from 'react';
 
 export interface CommunitySectionHeaderProps {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   showDemoUsers?: boolean;
 }
 
 export const CommunitySectionHeader: React.FC<CommunitySectionHeaderProps> = ({
-  title,
-  description,
+  title = "Comunidade",
+  description = "Conecte-se com outros concurseiros e acompanhe seus progressos",
   showDemoUsers = false
 }) => {
   return (

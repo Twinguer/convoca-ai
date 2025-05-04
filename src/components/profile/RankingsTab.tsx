@@ -60,7 +60,12 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         }
 
         // Buscar pontuações de todos os participantes deste concurso
-        const concursoId = ranking.concursos.id;
+        const concursoId = ranking.concursos?.id;
+        if (!concursoId) {
+          console.error('No concurso ID found for ranking:', ranking);
+          return { ...ranking, position: null };
+        }
+        
         const { data: allScores, error: scoresError } = await supabase
           .from('user_rankings')
           .select('score')

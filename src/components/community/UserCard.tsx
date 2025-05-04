@@ -1,14 +1,13 @@
 
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Trophy, Users, BookOpen, Pen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { User } from 'lucide-react';
 
 interface UserProfile {
   id: string;
   name: string;
-  username?: string; // Nome de usuário único (será adicionado futuramente no banco)
+  username?: string;
   avatar_url: string | null;
   bio: string | null;
   email: string;
@@ -26,7 +25,6 @@ interface UserCardProps {
 
 export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
   const [avatarError, setAvatarError] = useState(false);
-  const navigate = useNavigate();
   
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -42,89 +40,80 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
   const handleCardClick = () => {
     if (onClick) {
       onClick(userProfile.id);
-    } else {
-      navigate(`/usuario/${userProfile.id}`);
     }
   };
 
-  // Get the number of approvals from concursos_aprovados (if it's a comma-separated string)
-  const approvalCount = userProfile.concursos_aprovados 
-    ? userProfile.concursos_aprovados.split(',').filter(Boolean).length 
-    : userProfile.approvalCount || 0;
+  // Get status badge styling
+  const getStatusBadgeClass = (status?: string | null) => {
+    switch (status) {
+      case 'Aprovado':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'Estudante':
+        return 'bg-blue-100 text-blue-800';
+      case 'Nomeado': 
+        return 'bg-amber-100 text-amber-800';
+      case 'Na Ativa':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
-    <Card 
-      key={userProfile.id} 
-      className="overflow-hidden hover:shadow-md transition-shadow h-full cursor-pointer relative"
-      onClick={handleCardClick}
-    >
-      {/* Status Badge */}
-      {userProfile.status_concurseiro && (
-        <div className="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
-          {userProfile.status_concurseiro}
-        </div>
-      )}
-      
-      <CardHeader className="pb-2 flex flex-col items-center text-center">
-        <Avatar className="h-20 w-20 mb-2">
-          <AvatarImage 
-            src={avatarUrl} 
-            alt={userProfile.name} 
-            onError={() => setAvatarError(true)}
-          />
-          <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
-        </Avatar>
-        <div className="space-y-1">
-          <p className="font-semibold text-sm">{userProfile.name || 'Usuário'}</p>
-          {/* Quando existir username no banco, será exibido aqui */}
+    <div className="border rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
+      <div className="relative p-4">
+        {userProfile.status_concurseiro && (
+          <div className={`absolute top-4 right-4 text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClass(userProfile.status_concurseiro)}`}>
+            {userProfile.status_concurseiro}
+          </div>
+        )}
+        
+        <div className="flex flex-col items-center mb-4">
+          <Avatar className="h-20 w-20 mb-3">
+            <AvatarImage 
+              src={avatarUrl} 
+              alt={userProfile.name} 
+              onError={() => setAvatarError(true)}
+            />
+            <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
+          </Avatar>
+          
+          <h3 className="font-medium text-center">{userProfile.name || 'Usuário'}</h3>
           {userProfile.email && (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500">
               @{userProfile.username || userProfile.email.split('@')[0]}
             </p>
           )}
-          {userProfile.bio && (
-            <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-              {userProfile.bio}
-            </p>
-          )}
+          <p className="text-xs text-gray-500 mb-2 text-center">
+            {userProfile.bio?.substring(0, 60) || ''}
+            {userProfile.bio && userProfile.bio.length > 60 ? '...' : ''}
+          </p>
         </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-1 gap-1 text-center">
-          <div className="flex justify-between items-center py-1">
-            <div className="flex items-center text-amber-500">
-              <Trophy className="h-4 w-4 mr-1" />
-              <span className="text-xs">Rankings</span>
-            </div>
-            <span className="text-sm font-bold">{userProfile.postCount}</span>
+        
+        <div className="grid grid-cols-3 text-center border-t border-b py-2 mb-3">
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">{userProfile.postCount}</span>
+            <span className="text-xs text-gray-500">Concursos</span>
           </div>
-          
-          <div className="flex justify-between items-center py-1">
-            <div className="flex items-center text-blue-500">
-              <Users className="h-4 w-4 mr-1" />
-              <span className="text-xs">Seguidores</span>
-            </div>
-            <span className="text-sm font-bold">{userProfile.followerCount}</span>
+          <div className="flex flex-col border-x">
+            <span className="text-sm font-semibold">{userProfile.followerCount}</span>
+            <span className="text-xs text-gray-500">Seguidores</span>
           </div>
-          
-          <div className="flex justify-between items-center py-1">
-            <div className="flex items-center text-green-500">
-              <BookOpen className="h-4 w-4 mr-1" />
-              <span className="text-xs">Aprovações</span>
-            </div>
-            <span className="text-sm font-bold">{approvalCount}</span>
-          </div>
-          
-          <div className="flex justify-between items-center py-1">
-            <div className="flex items-center text-purple-500">
-              <Pen className="h-4 w-4 mr-1" />
-              <span className="text-xs">Status</span>
-            </div>
-            <span className="text-sm font-bold">{userProfile.status_concurseiro || 'Na Ativa'}</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">{userProfile.approvalCount || 0}</span>
+            <span className="text-xs text-gray-500">Seguindo</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        
+        <Button 
+          onClick={handleCardClick} 
+          variant="outline" 
+          className="w-full"
+        >
+          <User className="h-4 w-4 mr-2" />
+          Ver Perfil
+        </Button>
+      </div>
+    </div>
   );
 };
