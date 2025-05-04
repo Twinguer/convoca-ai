@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -27,11 +28,12 @@ import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
+
 const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
+        <ThemeProvider>
           <AuthProvider>
             <TooltipProvider>
               <div className="min-h-screen text-foreground bg-gray-100">

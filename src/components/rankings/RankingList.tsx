@@ -24,6 +24,12 @@ export interface RankingListProps {
   isLoading: boolean;
 }
 
+// Function to truncate text to a specific length
+const truncateText = (text: string, maxLength: number) => {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -42,12 +48,18 @@ export const RankingItem: React.FC<RankingItemProps> = ({
     return '';
   };
   
+  const truncatedBanca = truncateText(banca, 30);
+  const truncatedConcursoTitle = truncateText(concursoTitle, 30);
+  const truncatedCargoTitle = truncateText(cargoTitle, 100);
+  
   return <Link to={`/concurso/${id}/resultados`}>
       <Card className="hover:shadow-md transition-shadow duration-200">
         <CardContent className="p-6">
           <div>
             <div className="flex justify-between items-start mb-2">
-              <p className="text-sm font-bold mx-0 px-0 my-0 py-0 text-emerald-600 truncate max-w-[200px]">{banca}: {concursoTitle}</p>
+              <p className="text-sm font-medium mx-0 px-0 my-0 py-0 text-emerald-600 line-clamp-2 max-w-[200px]">
+                {truncatedBanca}: {truncatedConcursoTitle}
+              </p>
               <div className="flex flex-col gap-1 items-end">
                 <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
@@ -60,16 +72,20 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             </div>
             
             <div className="mb-2">
-              <h3 className="text-sm font-bold truncate max-w-[250px]">{cargoTitle}</h3>
+              <h3 className="text-sm font-medium break-words whitespace-normal max-w-[250px]">
+                {truncatedCargoTitle}
+              </h3>
             </div>
 
             <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-emerald-600 font-bold">
+              <p className="text-xs text-emerald-600 font-medium">
                 {participantCount.toLocaleString()} participantes
               </p>
               
               {(creatorName || isAdminCreated) && <div className="flex items-center text-xs text-gray-500">
-                  <span className="text-right mx-0 text-xs truncate max-w-[120px]">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  <span className="text-right mx-0 text-xs truncate max-w-[120px]">
+                    Criado por: {isAdminCreated ? 'Admin' : truncateText(creatorName || '', 10)}
+                  </span>
                   {!isAdminCreated}
                 </div>}
             </div>
