@@ -14,7 +14,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
       try {
         console.log('Fetching community users with query:', debouncedSearchQuery);
         
-        // Fetching users with additional metadata - removendo username que não existe
+        // Fetching users with additional metadata - incluindo novos campos
         let query = supabase
           .from('users_profiles')
           .select(`

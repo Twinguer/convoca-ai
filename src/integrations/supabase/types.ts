@@ -640,41 +640,62 @@ export type Database = {
       }
       users_profiles: {
         Row: {
+          area_estudos: string | null
           avatar_url: string | null
           bio: string | null
+          cargo_atual: string | null
           concursos_aprovados: string | null
           concursos_participando: string | null
           created_at: string
+          curso_preparatorio: string | null
           email: string
+          especialidade: string | null
+          estado: string | null
+          formacao: string | null
           id: string
           name: string
           profile_text: string | null
+          rotina_estudos: string | null
           status_concurseiro: string | null
           updated_at: string
         }
         Insert: {
+          area_estudos?: string | null
           avatar_url?: string | null
           bio?: string | null
+          cargo_atual?: string | null
           concursos_aprovados?: string | null
           concursos_participando?: string | null
           created_at?: string
+          curso_preparatorio?: string | null
           email: string
+          especialidade?: string | null
+          estado?: string | null
+          formacao?: string | null
           id: string
           name: string
           profile_text?: string | null
+          rotina_estudos?: string | null
           status_concurseiro?: string | null
           updated_at?: string
         }
         Update: {
+          area_estudos?: string | null
           avatar_url?: string | null
           bio?: string | null
+          cargo_atual?: string | null
           concursos_aprovados?: string | null
           concursos_participando?: string | null
           created_at?: string
+          curso_preparatorio?: string | null
           email?: string
+          especialidade?: string | null
+          estado?: string | null
+          formacao?: string | null
           id?: string
           name?: string
           profile_text?: string | null
+          rotina_estudos?: string | null
           status_concurseiro?: string | null
           updated_at?: string
         }
