@@ -31,10 +31,10 @@ const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
           <AuthProvider>
             <TooltipProvider>
-              <div className="">
+              <div className="min-h-screen text-foreground bg-gray-100">
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>

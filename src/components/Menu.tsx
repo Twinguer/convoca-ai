@@ -71,15 +71,6 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/editais">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Editais
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
                 <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
@@ -132,10 +123,6 @@ const Menu = () => {
                 <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
-                </Link>
-                <Link to="/editais" className={cn("flex items-center text-lg font-semibold", isActive('/editais') ? "text-primary" : "text-foreground/70")}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  Editais
                 </Link>
                 <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-yellow-500" />

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Calendar, User, Building, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
 interface ConcursoCardProps {
   id: string;
   titulo: string;
@@ -12,12 +13,6 @@ interface ConcursoCardProps {
   path?: string;
 }
 
-// Helper function to truncate text
-const truncateText = (text: string, maxLength: number) => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
-
 const ConcursoCard: React.FC<ConcursoCardProps> = ({
   id,
   titulo,
@@ -25,20 +20,23 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
   data,
   vagas,
   status = "Em andamento",
-  path
+  path,
 }) => {
   // If no custom path is provided, use the concurso/:id path
   const detailsPath = path || `/concurso/${id}`;
   const resultsPath = `/concurso/${id}/resultados`;
   
-  // Truncate text to fit within card
-  const truncatedTitulo = truncateText(titulo, 30);
-  const truncatedOrgao = truncateText(orgao, 30);
-  
-  return <div className="concurso-card bg-slate-100">
+  return (
+    <div className="concurso-card">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{truncatedTitulo}</h3>
-        <span className={`text-xs px-2 py-1 rounded-full ${status === "Em andamento" ? "bg-green-100 text-green-800" : status === "Finalizado" ? "bg-blue-100 text-blue-800" : "bg-yellow-100 text-yellow-800"}`}>
+        <h3 className="text-lg font-semibold text-gray-800">{titulo}</h3>
+        <span className={`text-xs px-2 py-1 rounded-full ${
+          status === "Em andamento" 
+            ? "bg-green-100 text-green-800" 
+            : status === "Finalizado" 
+              ? "bg-blue-100 text-blue-800" 
+              : "bg-yellow-100 text-yellow-800"
+        }`}>
           {status}
         </span>
       </div>
@@ -46,7 +44,7 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
       <div className="space-y-2 mb-4">
         <div className="flex items-center text-gray-600">
           <Building className="h-4 w-4 mr-2" />
-          <span className="text-sm">{truncatedOrgao}</span>
+          <span className="text-sm">{orgao}</span>
         </div>
         
         <div className="flex items-center text-gray-600">
@@ -61,17 +59,24 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
       </div>
       
       <div className="flex space-x-4">
-        <Link to={detailsPath} className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium">
+        <Link 
+          to={detailsPath}
+          className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
+        >
           Ver detalhes
           <ChevronRight className="h-4 w-4 ml-1" />
         </Link>
         
-        <Link to={resultsPath} className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium">
+        <Link 
+          to={resultsPath}
+          className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
+        >
           Resultados
           <ChevronRight className="h-4 w-4 ml-1" />
         </Link>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default ConcursoCard;

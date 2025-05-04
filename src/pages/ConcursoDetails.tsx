@@ -7,9 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/resultados/LoadingState';
-import { Trophy, ArrowRight, AlertCircle, UserPlus, Users } from 'lucide-react';
-import { RankingItem } from '@/components/rankings/RankingList';
-import { supabase } from '@/integrations/supabase/client';
+import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
 
 const ConcursoDetails = () => {
   const { id } = useParams<{ id: string; }>();
@@ -17,56 +15,6 @@ const ConcursoDetails = () => {
   const { data: concurso, isLoading } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id!)
-  });
-
-  // Fetch ranking data (participant count, creator info)
-  const { data: rankingData, isLoading: isRankingLoading } = useQuery({
-    queryKey: ['ranking-details', id],
-    queryFn: async () => {
-      // Count participants
-      const { data: countData, error: countError } = await supabase
-        .rpc('count_concurso_participants', { concurso_id: id });
-      
-      if (countError) {
-        console.error('Error fetching participant count:', countError);
-        return null;
-      }
-      
-      // Get creator info if available
-      const { data: concursoData, error: concursoError } = await supabase
-        .from('concursos')
-        .select(`
-          created_by_user_id,
-          is_admin_created
-        `)
-        .eq('id', id)
-        .single();
-      
-      if (concursoError) {
-        console.error('Error fetching concurso creator data:', concursoError);
-        return { participantCount: countData || 0 };
-      }
-      
-      // If there's a creator and it's not admin-created, fetch their name
-      let creatorName = null;
-      if (concursoData.created_by_user_id && !concursoData.is_admin_created) {
-        const { data: userData, error: userError } = await supabase
-          .from('users_profiles')
-          .select('name')
-          .eq('id', concursoData.created_by_user_id)
-          .single();
-        
-        if (!userError && userData) {
-          creatorName = userData.name;
-        }
-      }
-      
-      return {
-        participantCount: countData || 0,
-        creatorName,
-        isAdminCreated: concursoData.is_admin_created
-      };
-    }
   });
 
   if (isLoading) {
@@ -214,42 +162,35 @@ const ConcursoDetails = () => {
           </CardFooter>
         </Card>
         
-        {/* Replacing Resources card with Ranking card */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
-              Informações do Ranking
+              <FileText className="mr-2 h-5 w-5" />
+              Recursos
             </CardTitle>
             <CardDescription>
-              Estatísticas e detalhes sobre o ranking deste concurso
+              Acesse recursos e informações adicionais sobre o concurso
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Users className="mr-2 h-5 w-5 text-gray-600" />
-                <p className="text-sm">
-                  Participantes: <Badge variant="outline">{isRankingLoading ? '...' : rankingData?.participantCount || 0}</Badge>
-                </p>
-              </div>
-              
-              {rankingData && (rankingData.creatorName || rankingData.isAdminCreated) && (
-                <div className="flex items-center text-xs text-gray-500 mt-2">
-                  <span className="text-right mx-0 text-xs truncate max-w-[200px]">
-                    Criado por: {rankingData.isAdminCreated ? 'Admin' : rankingData.creatorName}
-                  </span>
-                </div>
-              )}
-            </div>
-          </CardContent>
           <CardFooter>
-            <Button variant="outline" asChild>
-              <Link to={`/concurso/${id}/resultados`} className="flex items-center">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Ver Ranking Completo
-              </Link>
-            </Button>
+            {concurso.link ? (
+              <Button asChild>
+                <a 
+                  href={concurso.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Acessar Edital
+                </a>
+              </Button>
+            ) : (
+              <div className="flex items-center text-gray-500">
+                <AlertCircle className="mr-2 h-4 w-4" />
+                Edital não disponível
+              </div>
+            )}
           </CardFooter>
         </Card>
       </div>

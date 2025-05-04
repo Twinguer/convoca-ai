@@ -4,9 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
-import { Calendar, Users } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { Calendar } from 'lucide-react';
 
 export interface RankingItemProps {
   id: string;
@@ -26,12 +24,6 @@ export interface RankingListProps {
   isLoading: boolean;
 }
 
-// Function to truncate text to a specific length
-const truncateText = (text: string, maxLength: number) => {
-  if (!text) return '';
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-};
-
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -49,67 +41,42 @@ export const RankingItem: React.FC<RankingItemProps> = ({
     }
     return '';
   };
-
-  // Buscar o número de participantes se não foi fornecido
-  const { data: fetchedParticipantCount } = useQuery({
-    queryKey: ['participant-count', id],
-    queryFn: async () => {
-      if (participantCount > 0) return participantCount;
-      
-      const { count, error } = await supabase
-        .from('user_rankings')
-        .select('*', { count: 'exact', head: true })
-        .eq('ranking_id', id);
-        
-      if (error) {
-        console.error('Error fetching participant count:', error);
-        return 0;
-      }
-      
-      return count || 0;
-    },
-    enabled: id !== undefined
-  });
-
-  const truncatedBanca = truncateText(banca, 30);
-  const truncatedConcursoTitle = truncateText(concursoTitle, 30);
-  const truncatedCargoTitle = truncateText(cargoTitle, 100);
-  const currentParticipantCount = fetchedParticipantCount || participantCount || 0;
-
-  return (
-    <Link to={`/concurso/${id}/resultados`}>
-      <Card className={`transition-all hover:shadow-md ${getStatusColor(status)}`}>
-        <CardContent className="p-4">
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center gap-1 text-xs text-gray-500">
-              <Calendar className="h-3 w-3" />
-              <span>{examDate ? formatDate(examDate) : 'Data não definida'}</span>
-            </div>
-            
-            <div className="text-xs text-gray-500">
-              <span>{truncatedBanca}</span>
-            </div>
-            
-            <div className="font-medium">{truncatedConcursoTitle}</div>
-            <div className="text-sm">{truncatedCargoTitle}</div>
-            
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <Users className="h-3 w-3" />
-                <span>{currentParticipantCount} participante{currentParticipantCount !== 1 ? 's' : ''}</span>
+  
+  return <Link to={`/concurso/${id}/resultados`}>
+      <Card className="hover:shadow-md transition-shadow duration-200">
+        <CardContent className="p-6">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+              <p className="text-sm font-bold mx-0 px-0 my-0 py-0 text-emerald-600 truncate max-w-[200px]">{banca}: {concursoTitle}</p>
+              <div className="flex flex-col gap-1 items-end">
+                <Badge variant="outline" className={`text-xs w-fit ${getStatusColor(status)}`}>
+                  {status || 'Em andamento'}
+                </Badge>
+                {examDate && <div className="flex items-center text-xs text-gray-500 mx-[5px]">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    {formatDate(examDate)}
+                  </div>}
               </div>
+            </div>
+            
+            <div className="mb-2">
+              <h3 className="text-sm font-bold truncate max-w-[250px]">{cargoTitle}</h3>
+            </div>
+
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs text-emerald-600 font-bold">
+                {participantCount.toLocaleString()} participantes
+              </p>
               
-              {creatorName && (
-                <div className="text-xs text-gray-500">
-                  {isAdminCreated ? 'Oficial' : `Criado por ${creatorName}`}
-                </div>
-              )}
+              {(creatorName || isAdminCreated) && <div className="flex items-center text-xs text-gray-500">
+                  <span className="text-right mx-0 text-xs truncate max-w-[120px]">Criado por: {isAdminCreated ? 'Admin' : creatorName}</span>
+                  {!isAdminCreated}
+                </div>}
             </div>
           </div>
         </CardContent>
       </Card>
-    </Link>
-  );
+    </Link>;
 };
 
 export const RankingList: React.FC<RankingListProps> = ({
@@ -128,6 +95,7 @@ export const RankingList: React.FC<RankingListProps> = ({
           </Card>)}
       </div>;
   }
+  
   if (rankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -135,6 +103,7 @@ export const RankingList: React.FC<RankingListProps> = ({
         </CardContent>
       </Card>;
   }
+  
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>;
