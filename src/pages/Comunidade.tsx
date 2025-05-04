@@ -102,7 +102,7 @@ const Comunidade: React.FC = () => {
   // Main component render
   return <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Comunidade</h1>
+        
         
       </div>
       
