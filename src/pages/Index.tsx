@@ -65,7 +65,7 @@ const Index = () => {
           <Carousel className="w-full max-w-5xl mx-auto">
             <CarouselContent>
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
-                <div className="feature-card group p-1 h-full">
+                <div className="feature-card group p-1 h-full bg-slate-50">
                   <div className="relative overflow-hidden h-48">
                     <img src="https://tibizurada.store/img-03.png" alt="Tempo TBC" className="feature-card-image group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -81,7 +81,7 @@ const Index = () => {
               </CarouselItem>
               
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
-                <div className="feature-card group p-1 h-full">
+                <div className="feature-card group p-1 h-full bg-slate-50">
                   <div className="relative overflow-hidden h-48">
                     <img src="https://tibizurada.store/img-04.png" alt="Dia da Prova" className="feature-card-image group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -97,7 +97,7 @@ const Index = () => {
               </CarouselItem>
               
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
-                <div className="feature-card group p-1 h-full">
+                <div className="feature-card group p-1 h-full bg-slate-50">
                   <div className="relative overflow-hidden h-48">
                     <img src="https://tibizurada.store/img-05.png" alt="Resultado" className="feature-card-image group-hover:scale-105 transition-transform duration-300" />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
