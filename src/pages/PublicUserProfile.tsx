@@ -322,7 +322,7 @@ const PublicUserProfile: React.FC = () => {
             </CardHeader>
             <CardContent>
               {profile.concursos_aprovados ? <div className="space-y-2">
-                  {profile.concursos_aprovados.split('\n').filter(Boolean).map((concurso, index) => <div key={index} className="p-3 bg-emerald-50 rounded-md">
+                  {profile.concursos_aprovados.split('\n').filter(Boolean).map((concurso, index) => <div key={index} className="p-3 rounded-md bg-emerald-100">
                       <div className="flex items-start">
                         <div className="bg-emerald-100 p-2 rounded-full mr-3">
                           <Trophy className="h-4 w-4 text-emerald-600" />
