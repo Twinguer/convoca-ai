@@ -112,8 +112,8 @@ const Index = () => {
                 </div>
               </CarouselItem>
             </CarouselContent>
-            <CarouselPrevious className="left-0" />
-            <CarouselNext className="right-0" />
+            
+            
           </Carousel>
         </div>
       </section>
