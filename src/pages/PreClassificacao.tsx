@@ -24,23 +24,31 @@ const PreClassificacao = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold flex items-center">
-          <Trophy className="mr-2 h-6 w-6 text-yellow-500" />
-          Rankings
-        </h1>
+    <div className="container mx-auto p-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center text-slate-800">
+            <Trophy className="mr-3 h-7 w-7 text-yellow-500" />
+            Rankings
+          </h1>
+          <p className="text-slate-500 ml-10 mt-1">
+            Acompanhe e compare seu desempenho em concursos
+          </p>
+        </div>
         
         <Button 
-          className="flex items-center gap-2" 
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700" 
           onClick={handleCreateRanking}
+          size="lg"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-5 w-5" />
           Criar Ranking
         </Button>
       </div>
       
-      <RankingList rankings={rankings} isLoading={isLoading} />
+      <div className="bg-gray-50/70 p-6 rounded-xl">
+        <RankingList rankings={rankings} isLoading={isLoading} />
+      </div>
     </div>
   );
 };
