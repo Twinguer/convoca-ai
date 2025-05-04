@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { formatDate } from '@/lib/utils';
 import { Calendar, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
 export interface RankingItemProps {
   id: string;
   examDate: string;
@@ -18,6 +20,7 @@ export interface RankingItemProps {
   isAdminCreated?: boolean;
   status?: string;
 }
+
 export interface RankingListProps {
   rankings: RankingItemProps[];
   isLoading: boolean;
@@ -28,6 +31,7 @@ const truncateText = (text: string, maxLength: number) => {
   if (!text) return '';
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
+
 export const RankingItem: React.FC<RankingItemProps> = ({
   id,
   examDate,
@@ -47,35 +51,67 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   };
 
   // Buscar o número de participantes se não foi fornecido
-  const {
-    data: fetchedParticipantCount
-  } = useQuery({
+  const { data: fetchedParticipantCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: async () => {
       if (participantCount > 0) return participantCount;
-      const {
-        count,
-        error
-      } = await supabase.from('user_rankings').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('ranking_id', id);
+      
+      const { count, error } = await supabase
+        .from('user_rankings')
+        .select('*', { count: 'exact', head: true })
+        .eq('ranking_id', id);
+        
       if (error) {
         console.error('Error fetching participant count:', error);
         return 0;
       }
+      
       return count || 0;
     },
     enabled: id !== undefined
   });
+
   const truncatedBanca = truncateText(banca, 30);
   const truncatedConcursoTitle = truncateText(concursoTitle, 30);
   const truncatedCargoTitle = truncateText(cargoTitle, 100);
   const currentParticipantCount = fetchedParticipantCount || participantCount || 0;
-  return <Link to={`/concurso/${id}/resultados`}>
-      
-    </Link>;
+
+  return (
+    <Link to={`/concurso/${id}/resultados`}>
+      <Card className={`transition-all hover:shadow-md ${getStatusColor(status)}`}>
+        <CardContent className="p-4">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-1 text-xs text-gray-500">
+              <Calendar className="h-3 w-3" />
+              <span>{examDate ? formatDate(examDate) : 'Data não definida'}</span>
+            </div>
+            
+            <div className="text-xs text-gray-500">
+              <span>{truncatedBanca}</span>
+            </div>
+            
+            <div className="font-medium">{truncatedConcursoTitle}</div>
+            <div className="text-sm">{truncatedCargoTitle}</div>
+            
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-1 text-xs text-gray-600">
+                <Users className="h-3 w-3" />
+                <span>{currentParticipantCount} participante{currentParticipantCount !== 1 ? 's' : ''}</span>
+              </div>
+              
+              {creatorName && (
+                <div className="text-xs text-gray-500">
+                  {isAdminCreated ? 'Oficial' : `Criado por ${creatorName}`}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
 };
+
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
   isLoading
