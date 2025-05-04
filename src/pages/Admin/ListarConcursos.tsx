@@ -10,9 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Building, Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
+import { getParticipantCount } from '@/services/concursoService';
+import { useRankingCreatorInfo } from '@/hooks/useRankingCreatorInfo';
 
 const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
@@ -52,13 +54,15 @@ const ListarConcursos: React.FC = () => {
     queryKey: ['admin-concursos', filter],
     queryFn: fetchConcursos,
     retry: 1,
-    onError: (err) => {
-      console.error('Query error:', err);
-      toast({
-        title: 'Erro ao carregar rankings',
-        description: 'Não foi possível carregar a lista de rankings.',
-        variant: 'destructive',
-      });
+    meta: {
+      onError: (err: any) => {
+        console.error('Query error:', err);
+        toast({
+          title: 'Erro ao carregar rankings',
+          description: 'Não foi possível carregar a lista de rankings.',
+          variant: 'destructive',
+        });
+      }
     }
   });
   
@@ -204,6 +208,8 @@ const ListarConcursos: React.FC = () => {
                     <TableHead>Ranking</TableHead>
                     <TableHead>Banca</TableHead>
                     <TableHead>Vagas</TableHead>
+                    <TableHead>Participantes</TableHead>
+                    <TableHead>Criado por</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -211,56 +217,13 @@ const ListarConcursos: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredConcursos?.map((concurso) => (
-                    <TableRow key={concurso.id}>
-                      <TableCell className="font-medium">{concurso.titulo}</TableCell>
-                      <TableCell>{concurso.orgao}</TableCell>
-                      <TableCell>{concurso.banca}</TableCell>
-                      <TableCell>{concurso.vagas}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            concurso.status === 'Aberto'
-                              ? 'bg-green-100 text-green-800'
-                              : concurso.status === 'Em andamento'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {concurso.status}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {concurso.data_publicacao
-                          ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')
-                          : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleViewRanking(concurso.id)}
-                        >
-                          <Eye className="h-4 w-4 text-blue-500" />
-                          <span className="sr-only">Ver</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEditRanking(concurso.id)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                          <span className="sr-only">Editar</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDelete(concurso.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                          <span className="sr-only">Excluir</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                    <ConcursoTableRow 
+                      key={concurso.id} 
+                      concurso={concurso} 
+                      onDelete={handleDelete} 
+                      onView={handleViewRanking}
+                      onEdit={handleEditRanking}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -269,6 +232,89 @@ const ListarConcursos: React.FC = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+interface ConcursoTableRowProps {
+  concurso: Concurso;
+  onDelete: (id: string) => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+}
+
+const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete, onView, onEdit }) => {
+  // Use hooks for getting participant count and creator info
+  const { participantCount, isLoading: isLoadingCount } = useParticipantCount(concurso.id);
+  const { creatorName, isAdmin } = useRankingCreatorInfo(concurso);
+  
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{concurso.titulo}</TableCell>
+      <TableCell>{concurso.orgao}</TableCell>
+      <TableCell>{concurso.banca}</TableCell>
+      <TableCell>{concurso.vagas}</TableCell>
+      <TableCell>
+        {isLoadingCount ? (
+          <span className="text-gray-400">Carregando...</span>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5 text-gray-500" />
+            <span>{participantCount}</span>
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        {isAdmin ? (
+          <span className="text-blue-600 font-medium">Admin</span>
+        ) : (
+          <span>{creatorName || "Desconhecido"}</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            concurso.status === 'Aberto'
+              ? 'bg-green-100 text-green-800'
+              : concurso.status === 'Em andamento'
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-gray-100 text-gray-800'
+          }`}
+        >
+          {concurso.status}
+        </span>
+      </TableCell>
+      <TableCell>
+        {concurso.data_publicacao
+          ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')
+          : 'N/A'}
+      </TableCell>
+      <TableCell className="text-right space-x-1">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onView(concurso.id)}
+        >
+          <Eye className="h-4 w-4 text-blue-500" />
+          <span className="sr-only">Ver</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onEdit(concurso.id)}
+        >
+          <Pencil className="h-4 w-4" />
+          <span className="sr-only">Editar</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onDelete(concurso.id)}
+        >
+          <Trash2 className="h-4 w-4 text-red-500" />
+          <span className="sr-only">Excluir</span>
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 };
 
