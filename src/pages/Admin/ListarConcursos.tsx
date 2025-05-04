@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Building, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Building, Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,7 +22,12 @@ const ListarConcursos: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
   const fetchConcursos = async () => {
-    let query = supabase.from('concursos').select('*');
+    let query = supabase.from('concursos').select(`
+      *,
+      created_by_user_id,
+      is_admin_created,
+      users_profiles (name)
+    `);
     
     if (filter.banca) {
       query = query.eq('banca', filter.banca);
@@ -34,7 +40,29 @@ const ListarConcursos: React.FC = () => {
     const { data, error } = await query.order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data as Concurso[];
+
+    // Para cada concurso, buscar o número de participantes
+    const concursosWithParticipants = await Promise.all(data.map(async (concurso) => {
+      const { data: countData, error: countError } = await supabase
+        .rpc('count_concurso_participants', { concurso_id: concurso.id });
+      
+      if (countError) {
+        console.error('Erro ao buscar número de participantes:', countError);
+        return {
+          ...concurso,
+          participant_count: 0,
+          creator_name: concurso.is_admin_created ? 'Admin' : concurso.users_profiles?.name || 'Desconhecido'
+        };
+      }
+
+      return {
+        ...concurso,
+        participant_count: countData || 0,
+        creator_name: concurso.is_admin_created ? 'Admin' : concurso.users_profiles?.name || 'Desconhecido'
+      };
+    }));
+    
+    return concursosWithParticipants as (Concurso & { participant_count: number, creator_name: string })[];
   };
   
   const { data: concursos, isLoading, isError, refetch } = useQuery({
@@ -184,6 +212,8 @@ const ListarConcursos: React.FC = () => {
                     <TableHead>Ranking</TableHead>
                     <TableHead>Banca</TableHead>
                     <TableHead>Vagas</TableHead>
+                    <TableHead>Participantes</TableHead>
+                    <TableHead>Criador</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -196,6 +226,13 @@ const ListarConcursos: React.FC = () => {
                       <TableCell>{concurso.orgao}</TableCell>
                       <TableCell>{concurso.banca}</TableCell>
                       <TableCell>{concurso.vagas}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-1 text-blue-500" />
+                          {concurso.participant_count}
+                        </div>
+                      </TableCell>
+                      <TableCell>{concurso.creator_name}</TableCell>
                       <TableCell>
                         <span
                           className={`px-2 py-1 rounded-full text-xs ${
