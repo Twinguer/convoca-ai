@@ -62,7 +62,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
             // Determine the number of concursos aprovados
             const approvalCount = profile.concursos_aprovados 
-              ? profile.concursos_aprovados.split(',').filter(Boolean).length 
+              ? profile.concursos_aprovados.split('\n').filter(Boolean).length 
               : 0;
               
             // Gerar um email de usuário com base no email

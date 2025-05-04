@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Plus, X } from 'lucide-react';
 import StatusSelect from './StatusSelect';
 
 interface ProfileInfoTabProps {
@@ -36,11 +38,34 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
   concursosParticipando,
   setConcursosParticipando
 }) => {
+  // Estado para nova aprovação
+  const [novaAprovacao, setNovaAprovacao] = useState('');
+  
+  // Lista de aprovações
+  const listaAprovacoes = concursosAprovados 
+    ? concursosAprovados.split('\n').filter(Boolean)
+    : [];
+  
   // Limitar o tamanho do texto de perfil
   const handleProfileTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (e.target.value.length <= 100) {
       setProfileText(e.target.value);
     }
+  };
+  
+  // Adicionar nova aprovação
+  const adicionarAprovacao = () => {
+    if (novaAprovacao.trim()) {
+      const novaLista = [...listaAprovacoes, novaAprovacao.trim()].join('\n');
+      setConcursosAprovados(novaLista);
+      setNovaAprovacao('');
+    }
+  };
+  
+  // Remover uma aprovação
+  const removerAprovacao = (index: number) => {
+    const novaLista = listaAprovacoes.filter((_, i) => i !== index);
+    setConcursosAprovados(novaLista.join('\n'));
   };
   
   return (
@@ -87,17 +112,48 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="concursos-aprovados">Concursos em que foi aprovado</Label>
-          <Textarea 
-            id="concursos-aprovados" 
-            value={concursosAprovados} 
-            onChange={(e) => setConcursosAprovados(e.target.value)}
-            placeholder="Liste os concursos em que você foi aprovado (um por linha)"
-            rows={5}
-          />
+        <div className="space-y-3 border p-4 rounded-md bg-gray-50">
+          <Label className="text-lg font-medium">Concursos em que foi aprovado</Label>
+          
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Adicionar aprovação (ex: Analista Administrativo - TCU)"
+              value={novaAprovacao}
+              onChange={(e) => setNovaAprovacao(e.target.value)}
+              maxLength={50}
+              className="flex-grow"
+            />
+            <Button 
+              onClick={adicionarAprovacao}
+              type="button" 
+              className="bg-emerald-600 hover:bg-emerald-700 flex items-center"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Adicionar
+            </Button>
+          </div>
+          
+          <div className="space-y-2 mt-3">
+            {listaAprovacoes.length > 0 ? (
+              listaAprovacoes.map((aprovacao, index) => (
+                <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                  <span className="text-sm break-words flex-grow">{aprovacao}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => removerAprovacao(index)} 
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 italic">Nenhuma aprovação adicionada ainda</p>
+            )}
+          </div>
+          
           <p className="text-sm text-muted-foreground">
-            Dica: Liste um por linha, incluindo o nome do concurso, órgão, ano e sua classificação
+            Suas aprovações serão exibidas em seu perfil público e contabilizadas no seu card na comunidade
           </p>
         </div>
         

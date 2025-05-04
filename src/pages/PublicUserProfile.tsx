@@ -207,6 +207,7 @@ const PublicUserProfile: React.FC = () => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
   if (profileLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
         <div className="animate-spin h-8 w-8 border-emerald-600 rounded-full border-t-transparent"></div>
@@ -224,7 +225,13 @@ const PublicUserProfile: React.FC = () => {
         </div>
       </div>;
   }
-  const approvalCount = profile.concursos_aprovados ? profile.concursos_aprovados.split('\n').filter(Boolean).length : 0;
+
+  // Processar as aprovações do usuário
+  const aprovacoesList = profile.concursos_aprovados 
+    ? profile.concursos_aprovados.split('\n').filter(Boolean)
+    : [];
+  const approvalCount = aprovacoesList.length;
+
   return <div className="container mx-auto p-4 py-8">
       <Button variant="ghost" onClick={() => navigate('/comunidade')} className="mb-4">
         <ArrowLeft className="mr-2 h-4 w-4" />
@@ -318,16 +325,16 @@ const PublicUserProfile: React.FC = () => {
           
           <Card>
             <CardHeader className="pb-3">
-              <h3 className="text-xl font-bold">Concursos aprovados</h3>
+              <h3 className="text-xl font-bold">Concursos aprovados ({approvalCount})</h3>
             </CardHeader>
             <CardContent>
-              {profile.concursos_aprovados ? <div className="space-y-2">
-                  {profile.concursos_aprovados.split('\n').filter(Boolean).map((concurso, index) => <div key={index} className="p-3 rounded-md bg-emerald-100">
+              {aprovacoesList.length > 0 ? <div className="space-y-2">
+                  {aprovacoesList.map((concurso, index) => <div key={index} className="p-3 rounded-md bg-emerald-100">
                       <div className="flex items-start">
-                        <div className="bg-emerald-100 p-2 rounded-full mr-3">
+                        <div className="bg-emerald-200 p-2 rounded-full mr-3">
                           <Trophy className="h-4 w-4 text-emerald-600" />
                         </div>
-                        <p className="text-slate-700">{concurso}</p>
+                        <p className="text-slate-700 break-words">{concurso}</p>
                       </div>
                     </div>)}
                 </div> : <div className="text-center py-6">

@@ -88,7 +88,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{userProfile.approvalCount || 0}</span>
-            <span className="text-xs text-gray-500">Seguindo</span>
+            <span className="text-xs text-gray-500">Aprovações</span>
           </div>
         </div>
         
