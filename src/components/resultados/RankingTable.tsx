@@ -178,9 +178,31 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />
+                <RankingTableContent 
+                  rankings={filterRankingsByQuota(quota)} 
+                  currentUserId={currentUserId} 
+                  handleUserClick={handleUserClick} 
+                  concurso={concurso} 
+                  isAmpla={quota === "Ampla Concorrência"} 
+                  availableQuotas={availableQuotas} 
+                  sectionWeights={getSectionWeights(concurso)} 
+                  isAuthenticated={isAuthenticated} 
+                  isRefetching={isRefetching}
+                  activeTab={quota} // Pass the activeTab as a prop
+                />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />}
+          </Tabs> : <RankingTableContent 
+              rankings={rankingsWithQuotaPositions || []} 
+              currentUserId={currentUserId} 
+              handleUserClick={handleUserClick} 
+              concurso={concurso} 
+              isAmpla={true} 
+              availableQuotas={availableQuotas} 
+              sectionWeights={getSectionWeights(concurso)} 
+              isAuthenticated={isAuthenticated} 
+              isRefetching={isRefetching}
+              activeTab="Ampla Concorrência" // Pass a default value
+            />}
       </CardContent>
     </Card>;
 };
@@ -229,6 +251,7 @@ const RankingTableContent: React.FC<{
   };
   isAuthenticated: boolean;
   isRefetching?: boolean;
+  activeTab: string; // Add the activeTab prop here
 }> = ({
   rankings,
   currentUserId,
@@ -238,7 +261,8 @@ const RankingTableContent: React.FC<{
   availableQuotas,
   sectionWeights,
   isAuthenticated,
-  isRefetching = false
+  isRefetching = false,
+  activeTab // Destructure the activeTab prop
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -430,3 +454,4 @@ const RankingTableContent: React.FC<{
       </TableBody>
     </Table>;
 };
+
