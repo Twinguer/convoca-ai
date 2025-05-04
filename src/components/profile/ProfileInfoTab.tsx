@@ -76,14 +76,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
         
         <StatusSelect value={statusConcurseiro} onChange={setStatusConcurseiro} />
         
-        <div className="space-y-2">
-          <Label htmlFor="profileText">Texto de perfil</Label>
-          <Textarea id="profileText" value={profileText} onChange={handleProfileTextChange} placeholder="Digite uma frase ou mensagem para mostrar em seu perfil" rows={2} maxLength={100} />
-          <p className="text-xs text-muted-foreground">
-            Este texto será exibido no seu cartão de perfil para outros usuários (máximo 100 caracteres)
-            <span className="ml-1 font-medium">{profileText.length}/100</span>
-          </p>
-        </div>
+        
 
         <div className="space-y-3 border p-4 rounded-md bg-gray-50">
           <Label className="text-lg font-medium">Concursos em que foi aprovado</Label>
@@ -104,17 +97,12 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
                 </div>) : <p className="text-sm text-gray-500 italic">Nenhuma aprovação adicionada ainda</p>}
           </div>
           
-          <p className="text-sm text-muted-foreground">
-            Suas aprovações serão exibidas em seu perfil público e contabilizadas no seu card na comunidade
-          </p>
+          
         </div>
         
         
         
-        <div className="space-y-2">
-          <Label htmlFor="bio">Biografia</Label>
-          <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="Conte um pouco sobre você e sua jornada nos concursos públicos" rows={4} />
-        </div>
+        
       </div>
     </div>;
 };
