@@ -293,17 +293,17 @@ const PublicUserProfile: React.FC = () => {
                   {rankings.map((ranking, index) => <Card key={ranking.concursoId} className="overflow-hidden">
                       <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
                         <div>
-                          <h3 className="font-medium text-gray-500">{ranking.concursoTitle}</h3>
+                          <h3 className="font-medium text-slate-700">{ranking.concursoTitle}</h3>
                           <div className="flex items-center mt-1">
                             <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-slate-700">
                               {ranking.position > 0 ? `Posição: ${ranking.position}º` : 'Posição não definida'}
                             </span>
                           </div>
                         </div>
                         <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
-                          <span className="text-lg font-bold text-gray-500">{ranking.score}</span>
-                          <span className="text-xs ml-1 text-gray-500">pts</span>
+                          <span className="text-lg font-bold text-slate-700">{ranking.score}</span>
+                          <span className="text-xs ml-1 text-slate-700">pts</span>
                         </div>
                       </div>
                     </Card>)}
@@ -327,7 +327,7 @@ const PublicUserProfile: React.FC = () => {
                         <div className="bg-emerald-100 p-2 rounded-full mr-3">
                           <Trophy className="h-4 w-4 text-emerald-600" />
                         </div>
-                        <p className="text-gray-500">{concurso}</p>
+                        <p className="text-slate-700">{concurso}</p>
                       </div>
                     </div>)}
                 </div> : <div className="text-center py-6">
