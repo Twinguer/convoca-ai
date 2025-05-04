@@ -3,7 +3,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { scheduleScraper } from './services/concursoService.ts'
+import { scheduleScraper } from './services/scraperService.ts'
 
 // Initialize data fetching for concursos
 const initializeConcursos = async () => {

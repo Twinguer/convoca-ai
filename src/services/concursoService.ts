@@ -128,25 +128,15 @@ export const fetchUserRankings = async (userId: string) => {
   return fetchUserConcursoRankings(userId);
 };
 
-// Add the scheduleScraper function that's being imported in main.tsx
+// Modified scheduleScraper to work without the edge function
 export const scheduleScraper = async () => {
   try {
-    // Call the edge function to scrape concursos data
-    const { data, error } = await supabase.functions.invoke('scrape-cebraspe', {
-      method: 'POST',
-      body: {}
-    });
-    
-    if (error) {
-      console.error('Error scheduling scraper:', error);
-      throw error;
-    }
-    
-    console.log('Scraper scheduled successfully:', data);
-    return data;
+    console.log('Scraper functionality has been deprecated');
+    // Return mock success response since the function has been removed
+    return { success: true, message: 'Scraper functionality deprecated but system continues to work' };
   } catch (error) {
-    console.error('Failed to schedule scraper:', error);
-    return { success: false, message: 'Failed to schedule scraper' };
+    console.error('Error in scraper service:', error);
+    return { success: false, message: 'Error in scraper service' };
   }
 };
 

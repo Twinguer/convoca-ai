@@ -33,6 +33,3 @@ file_size_limit = "50MiB"
 
 [vector]
 port = 54327
-
-[functions.scrape-cebraspe]
-verify_jwt = false

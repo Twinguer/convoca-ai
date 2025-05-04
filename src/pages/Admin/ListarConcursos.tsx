@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -20,26 +21,45 @@ const ListarConcursos: React.FC = () => {
   const [filter, setFilter] = useState<ConcursoFilter>({});
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Modified to catch and handle errors gracefully
   const fetchConcursos = async () => {
-    let query = supabase.from('concursos').select('*');
-    
-    if (filter.banca) {
-      query = query.eq('banca', filter.banca);
+    try {
+      let query = supabase.from('concursos').select('*');
+      
+      if (filter.banca) {
+        query = query.eq('banca', filter.banca);
+      }
+      
+      if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching concursos:', error);
+        throw error;
+      }
+      
+      return data as Concurso[];
+    } catch (err) {
+      console.error('Error in fetchConcursos:', err);
+      throw err;
     }
-    
-    if (filter.status) {
-      query = query.eq('status', filter.status);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
-    
-    if (error) throw error;
-    return data as Concurso[];
   };
   
   const { data: concursos, isLoading, isError, refetch } = useQuery({
     queryKey: ['admin-concursos', filter],
-    queryFn: fetchConcursos
+    queryFn: fetchConcursos,
+    retry: 1,
+    onError: (err) => {
+      console.error('Query error:', err);
+      toast({
+        title: 'Erro ao carregar rankings',
+        description: 'Não foi possível carregar a lista de rankings.',
+        variant: 'destructive',
+      });
+    }
   });
   
   const handleDelete = async (id: string) => {

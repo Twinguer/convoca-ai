@@ -2,10 +2,10 @@
 // Function to schedule scraper for concursos
 export const scheduleScraper = async (): Promise<void> => {
   try {
-    console.log('Scheduling scraper for concursos...');
-    // This would typically make an API call to schedule scraping
-    // For now, we'll just log that it was called
+    console.log('Scraper functionality has been deprecated');
+    // This is just a placeholder since the actual scrape-cebraspe function has been removed
+    // The system will continue to work with existing data
   } catch (error) {
-    console.error('Error scheduling scraper:', error);
+    console.error('Error with scraper service:', error);
   }
 };
