@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
@@ -8,6 +9,7 @@ import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+
 const ResultadosPage = () => {
   const navigate = useNavigate();
   const {
@@ -26,6 +28,7 @@ const ResultadosPage = () => {
     toast
   } = useToast();
   const isAuthenticated = !!user;
+
   useEffect(() => {
     if (concurso) {
       console.log('Concurso data:', concurso);
@@ -43,6 +46,7 @@ const ResultadosPage = () => {
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
+
   const handleRefresh = async () => {
     console.log("Manual refresh initiated by user");
     toast({
@@ -72,9 +76,11 @@ const ResultadosPage = () => {
       });
     }
   };
+
   if (isLoading) {
     return <LoadingState />;
   }
+
   return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         
@@ -97,7 +103,7 @@ const ResultadosPage = () => {
         </div>
       </div>
       
-      <div className="">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] mb-1 sm:mb-2">
         <RankingCard participantCount={participantCount} userRanking={userRanking} inscritos={concurso?.inscritos} />
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
@@ -116,4 +122,5 @@ const ResultadosPage = () => {
         </div>}
     </div>;
 };
+
 export default ResultadosPage;
