@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-interface CommunitySectionHeaderProps {
+export interface CommunitySectionHeaderProps {
   title: string;
   description: string;
   showDemoUsers?: boolean;

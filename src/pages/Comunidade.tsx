@@ -172,7 +172,7 @@ const Comunidade: React.FC = () => {
       
       {displayUsers.length > 0 ? (
         <>
-          <UserGrid>
+          <UserGrid className="gap-1">
             {displayUsers.map(user => (
               <UserCard 
                 key={user.id} 
