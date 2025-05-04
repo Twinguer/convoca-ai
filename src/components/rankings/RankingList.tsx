@@ -72,7 +72,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             </div>
             
             <div className="mb-2">
-              <h3 className="text-sm font-medium break-words whitespace-normal max-w-[250px]">
+              <h3 className="text-sm font-medium break-words whitespace-normal">
                 {truncatedCargoTitle}
               </h3>
             </div>
