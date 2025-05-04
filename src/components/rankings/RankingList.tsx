@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
-import { Calendar, Trophy, Users } from 'lucide-react';
+import { Calendar, Trophy, Users, MapPin } from 'lucide-react';
 
 export interface RankingItemProps {
   id: string;
@@ -17,6 +17,7 @@ export interface RankingItemProps {
   creatorName?: string;
   isAdminCreated?: boolean;
   status?: string;
+  localidade?: string;
 }
 
 export interface RankingListProps {
@@ -33,19 +34,14 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   participantCount,
   creatorName,
   isAdminCreated,
-  status
+  status,
+  localidade
 }) => {
   const getStatusColor = (status?: string) => {
     if (!status || status === 'Em andamento') {
       return 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200';
     }
     return '';
-  };
-  
-  // Função para truncar texto com ellipsis se passar do limite de caracteres
-  const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text;
-    return `${text.substring(0, maxLength)}...`;
   };
   
   return (
@@ -56,7 +52,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-1">
                 <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 font-medium text-xs px-2 py-0.5">
-                  {truncateText(banca, 20)}
+                  {banca}
                 </Badge>
               </div>
               
@@ -74,12 +70,19 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             </div>
             
             <div>
-              <h3 className="text-base font-bold leading-tight line-clamp-2 text-slate-800 mb-1">
-                {truncateText(concursoTitle, 100)}
+              <h3 className="text-base font-bold leading-tight text-slate-800 mb-1">
+                {concursoTitle}
               </h3>
-              <p className="text-sm text-emerald-700 font-semibold line-clamp-2 mb-2">
-                {truncateText(cargoTitle, 100)}
+              <p className="text-sm text-emerald-700 font-semibold mb-2 break-words">
+                {cargoTitle}
               </p>
+              
+              {localidade && (
+                <div className="flex items-center text-xs text-gray-600 mb-2">
+                  <MapPin className="h-3 w-3 mr-1" />
+                  {localidade}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-gray-100">
@@ -92,7 +95,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               
               {(creatorName || isAdminCreated) && (
                 <div className="flex items-center text-xs text-gray-500">
-                  <span className="text-right text-xs truncate max-w-[150px]">
+                  <span className="text-right text-xs">
                     Criado por: {isAdminCreated ? 'Admin' : creatorName}
                   </span>
                 </div>

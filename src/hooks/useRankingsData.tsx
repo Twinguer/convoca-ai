@@ -15,7 +15,8 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
         data_publicacao,
         etapa_atual,
         created_by_user_id,
-        is_admin_created
+        is_admin_created,
+        localidade
       `)
       .order('data_publicacao', { ascending: false });
 
@@ -56,7 +57,8 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           participantCount: countData || 0,
           createdByUserId: concurso.created_by_user_id || null,
           creatorName: creatorName,
-          isAdminCreated: concurso.is_admin_created
+          isAdminCreated: concurso.is_admin_created,
+          localidade: concurso.localidade
         };
       })
     );

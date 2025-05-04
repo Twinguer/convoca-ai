@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -71,9 +72,8 @@ export const UserCard: React.FC<UserCardProps> = ({
           {userProfile.email && <p className="text-xs text-gray-500">
               @{userProfile.username || userProfile.email.split('@')[0]}
             </p>}
-          <p className="text-xs text-gray-500 mb-2 text-center">
-            {userProfile.bio?.substring(0, 60) || ''}
-            {userProfile.bio && userProfile.bio.length > 60 ? '...' : ''}
+          <p className="text-xs text-gray-500 mb-2 text-center break-words mx-2">
+            {userProfile.bio || ''}
           </p>
         </div>
         
