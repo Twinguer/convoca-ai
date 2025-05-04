@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 interface UserProfile {
   id: string;
   name: string;
+  username?: string; // Nome de usuário único
   avatar_url: string | null;
   bio: string | null;
   email: string;
@@ -54,9 +55,16 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
   return (
     <Card 
       key={userProfile.id} 
-      className="overflow-hidden hover:shadow-md transition-shadow h-full cursor-pointer"
+      className="overflow-hidden hover:shadow-md transition-shadow h-full cursor-pointer relative"
       onClick={handleCardClick}
     >
+      {/* Status Badge */}
+      {userProfile.status_concurseiro && (
+        <div className="absolute top-4 right-4 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+          {userProfile.status_concurseiro}
+        </div>
+      )}
+      
       <CardHeader className="pb-2 flex flex-col items-center text-center">
         <Avatar className="h-20 w-20 mb-2">
           <AvatarImage 
@@ -68,6 +76,11 @@ export const UserCard: React.FC<UserCardProps> = ({ userProfile, onClick }) => {
         </Avatar>
         <div className="space-y-1">
           <p className="font-semibold text-sm">{userProfile.name || 'Usuário'}</p>
+          {userProfile.username && (
+            <p className="text-xs text-muted-foreground">
+              @{userProfile.username}
+            </p>
+          )}
           {userProfile.bio && (
             <p className="text-xs text-muted-foreground truncate max-w-[200px]">
               {userProfile.bio}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,11 +9,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PencilLine, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
+import { Badge } from '@/components/ui/badge';
+
 interface RankingsTabProps {
   userId: string;
   userRankings?: UserRankingDisplay[];
   isAuthenticated?: boolean;
 }
+
 const RankingsTab: React.FC<RankingsTabProps> = ({
   userId,
   userRankings,
@@ -23,6 +27,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   } = useAuth();
   const navigate = useNavigate();
   const [showAllRankings, setShowAllRankings] = useState(false);
+  
   const {
     data: rankings,
     isLoading
@@ -39,6 +44,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           specific_knowledge_score,
           discursive_score,
           created_at,
+          position,
           concursos (id, titulo, orgao, banca)
         `).eq('user_id', userId).order('score', {
         ascending: false
@@ -62,6 +68,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
   // Verifica se o usuário atual é o dono do perfil
   const isOwnProfile = user?.id === userId;
+  
   if (showSkeleton) {
     return <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
@@ -69,6 +76,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         <Skeleton className="h-24 w-full" />
       </div>;
   }
+  
   if (!allRankings || allRankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -81,6 +89,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         </CardContent>
       </Card>;
   }
+  
   return <div className="space-y-4">
       <h3 className="text-lg font-medium">Rankings ({allRankings.length})</h3>
       
@@ -94,6 +103,17 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 <p className="text-sm text-muted-foreground">
                   {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
                 </p>
+                
+                {/* Posição e Pontuação */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Trophy className="h-3 w-3" />
+                    <span>Posição: {ranking.position || '?'}º</span>
+                  </Badge>
+                  <Badge variant="secondary" className="flex items-center">
+                    Pontuação: {typeof ranking.score === 'number' ? ranking.score.toFixed(2) : '?'}
+                  </Badge>
+                </div>
               </div>
               
               <div className="flex items-center gap-2 self-end">
@@ -108,8 +128,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                   </Button>}
               </div>
             </div>
-            
-            
           </Card>)}
         
         {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
@@ -124,4 +142,5 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       </div>
     </div>;
 };
+
 export default RankingsTab;

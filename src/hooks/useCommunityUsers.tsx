@@ -19,6 +19,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           .select(`
             id,
             name,
+            username,
             email,
             bio,
             avatar_url,
@@ -29,11 +30,11 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           
         // Apply search filter if provided
         if (debouncedSearchQuery) {
-          query = query.ilike('name', `%${debouncedSearchQuery}%`);
+          query = query.or(`name.ilike.%${debouncedSearchQuery}%,username.ilike.%${debouncedSearchQuery}%`);
         }
         
         // Execute the query with pagination
-        const { data: profiles, error } = await query.limit(20);
+        const { data: profiles, error } = await query.limit(50);
 
         if (error) throw error;
 
