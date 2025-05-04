@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Building, Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
 import { useAuth } from '@/hooks/useAuth';
-import { getParticipantCount } from '@/services/concursoService';
+import { useParticipantCount } from '@/hooks/useParticipantCount';
 import { useRankingCreatorInfo } from '@/hooks/useRankingCreatorInfo';
 
 const ListarConcursos: React.FC = () => {
