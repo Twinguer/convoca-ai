@@ -25,7 +25,14 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             avatar_url,
             concursos_aprovados,
             concursos_participando,
-            status_concurseiro
+            status_concurseiro,
+            estado,
+            formacao,
+            cargo_atual,
+            area_estudos,
+            especialidade,
+            curso_preparatorio,
+            rotina_estudos
           `);
           
         // Apply search filter if provided

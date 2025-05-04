@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
+
 interface UserProfile {
   id: string;
   name: string;
@@ -16,15 +17,18 @@ interface UserProfile {
   approvalCount: number;
   status_concurseiro?: string | null;
 }
+
 interface UserCardProps {
   userProfile: UserProfile;
   onClick?: (userId: string) => void;
 }
+
 export const UserCard: React.FC<UserCardProps> = ({
   userProfile,
   onClick
 }) => {
   const [avatarError, setAvatarError] = useState(false);
+
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
@@ -35,6 +39,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 
   // Use the user's avatar_url if available and not erroring, otherwise use fallback
   const avatarUrl = avatarError || !userProfile.avatar_url ? fallbackAvatarUrl : userProfile.avatar_url;
+
   const handleCardClick = () => {
     if (onClick) {
       onClick(userProfile.id);
@@ -56,11 +61,15 @@ export const UserCard: React.FC<UserCardProps> = ({
         return 'bg-gray-100 text-gray-800';
     }
   };
-  return <div className="border rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
+
+  return (
+    <div className="border rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
       <div className="relative p-4">
-        {userProfile.status_concurseiro && <div className={`absolute top-4 right-4 text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClass(userProfile.status_concurseiro)}`}>
+        {userProfile.status_concurseiro && (
+          <div className={`absolute top-4 right-4 text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClass(userProfile.status_concurseiro)}`}>
             {userProfile.status_concurseiro}
-          </div>}
+          </div>
+        )}
         
         <div className="flex flex-col items-center mb-4">
           <Avatar className="h-20 w-20 mb-3">
@@ -69,9 +78,11 @@ export const UserCard: React.FC<UserCardProps> = ({
           </Avatar>
           
           <h3 className="font-medium text-center">{userProfile.name || 'Usuário'}</h3>
-          {userProfile.email && <p className="text-xs text-gray-500">
+          {userProfile.email && (
+            <p className="text-xs text-gray-500">
               @{userProfile.username || userProfile.email.split('@')[0]}
-            </p>}
+            </p>
+          )}
           <p className="text-xs text-gray-500 mb-2 text-center break-words mx-2">
             {userProfile.bio || ''}
           </p>
@@ -97,5 +108,6 @@ export const UserCard: React.FC<UserCardProps> = ({
           Ver Perfil
         </Button>
       </div>
-    </div>;
+    </div>
+  );
 };

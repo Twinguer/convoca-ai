@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -32,13 +33,9 @@ interface Follower {
 }
 
 const UserProfile = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [concursosAprovados, setConcursosAprovados] = useState('');
@@ -50,6 +47,15 @@ const UserProfile = () => {
   const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
+  
+  // Novos estados para os campos adicionais
+  const [estado, setEstado] = useState('');
+  const [formacao, setFormacao] = useState('');
+  const [cargoAtual, setCargoAtual] = useState('');
+  const [areaEstudos, setAreaEstudos] = useState('');
+  const [especialidade, setEspecialidade] = useState('');
+  const [cursoPreparatorio, setCursoPreparatorio] = useState('');
+  const [rotinaEstudos, setRotinaEstudos] = useState('');
 
   const {
     data: profile,
@@ -180,6 +186,15 @@ const UserProfile = () => {
       setAvatarUrl(profile.avatar_url);
       setStatusConcurseiro(profile.status_concurseiro || 'Na Ativa');
       setProfileText(profile.profile_text || '');
+      
+      // Novos campos
+      setEstado(profile.estado || '');
+      setFormacao(profile.formacao || '');
+      setCargoAtual(profile.cargo_atual || '');
+      setAreaEstudos(profile.area_estudos || '');
+      setEspecialidade(profile.especialidade || '');
+      setCursoPreparatorio(profile.curso_preparatorio || '');
+      setRotinaEstudos(profile.rotina_estudos || '');
     }
   }, [profile]);
 
@@ -252,7 +267,14 @@ const UserProfile = () => {
         concursosParticipando,
         avatarUrl,
         statusConcurseiro,
-        profileText
+        profileText,
+        estado,
+        formacao,
+        cargoAtual,
+        areaEstudos,
+        especialidade,
+        cursoPreparatorio,
+        rotinaEstudos
       });
       const currentAvatarUrl = avatarUrl;
       const {
@@ -266,6 +288,13 @@ const UserProfile = () => {
         avatar_url: currentAvatarUrl,
         status_concurseiro: statusConcurseiro,
         profile_text: profileText,
+        estado: estado,
+        formacao: formacao,
+        cargo_atual: cargoAtual,
+        area_estudos: areaEstudos,
+        especialidade: especialidade,
+        curso_preparatorio: cursoPreparatorio,
+        rotina_estudos: rotinaEstudos,
         updated_at: new Date().toISOString()
       }).eq('id', user!.id).select().single();
       if (error) {
@@ -315,7 +344,7 @@ const UserProfile = () => {
   return (
     <div className="container mx-auto p-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
-        <div className="md:col-span-3">
+        <div className="md:col-span-3 space-y-4">
           <Card>
             <CardContent className="pt-6">
               <ProfileHeader 
@@ -329,13 +358,81 @@ const UserProfile = () => {
               />
             </CardContent>
           </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <h3 className="text-lg font-semibold">Sobre mim</h3>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2 text-sm">
+                {estado && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Estado:</span>
+                    <span className="text-gray-600">{estado}</span>
+                  </div>
+                )}
+                
+                {formacao && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Formação:</span>
+                    <span className="text-gray-600">{formacao}</span>
+                  </div>
+                )}
+                
+                {cargoAtual && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Cargo atual:</span>
+                    <span className="text-gray-600">{cargoAtual}</span>
+                  </div>
+                )}
+                
+                {areaEstudos && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Área de Estudos:</span>
+                    <span className="text-gray-600">{areaEstudos}</span>
+                  </div>
+                )}
+                
+                {especialidade && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Especialidade:</span>
+                    <span className="text-gray-600">{especialidade}</span>
+                  </div>
+                )}
+                
+                {cursoPreparatorio && (
+                  <div className="flex justify-between">
+                    <span className="font-medium">Curso Preparatório:</span>
+                    <span className="text-gray-600">{cursoPreparatorio}</span>
+                  </div>
+                )}
+                
+                {!estado && !formacao && !cargoAtual && !areaEstudos && !especialidade && !cursoPreparatorio && (
+                  <p className="text-gray-500 italic text-center">Adicione informações sobre você na aba 'Perfil'</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
         <div className="md:col-span-6">
-          <Card>
+          <Card className="mb-4">
             <CardHeader>
               <CardTitle className="text-2xl">Meu Perfil</CardTitle>
             </CardHeader>
+            
+            {rotinaEstudos && (
+              <CardContent className="pt-0 pb-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <h3 className="text-lg font-semibold">Rotina de estudos</h3>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <p className="text-sm whitespace-pre-line">{rotinaEstudos}</p>
+                  </CardContent>
+                </Card>
+              </CardContent>
+            )}
             
             <Tabs defaultValue="profile">
               <div className="px-6">
@@ -361,6 +458,20 @@ const UserProfile = () => {
                     setConcursosAprovados={setConcursosAprovados}
                     concursosParticipando={concursosParticipando}
                     setConcursosParticipando={setConcursosParticipando}
+                    estado={estado}
+                    setEstado={setEstado}
+                    formacao={formacao}
+                    setFormacao={setFormacao}
+                    cargoAtual={cargoAtual}
+                    setCargoAtual={setCargoAtual}
+                    areaEstudos={areaEstudos}
+                    setAreaEstudos={setAreaEstudos}
+                    especialidade={especialidade}
+                    setEspecialidade={setEspecialidade}
+                    cursoPreparatorio={cursoPreparatorio}
+                    setCursoPreparatorio={setCursoPreparatorio}
+                    rotinaEstudos={rotinaEstudos}
+                    setRotinaEstudos={setRotinaEstudos}
                   />
                 </CardContent>
               </TabsContent>
