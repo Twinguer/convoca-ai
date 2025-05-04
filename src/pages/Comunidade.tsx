@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,7 +18,9 @@ import { UserGrid } from '@/components/community/UserGrid';
  */
 const Comunidade: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [rankingFilter, setRankingFilter] = useState('todos');
@@ -64,12 +65,12 @@ const Comunidade: React.FC = () => {
   // Filter users based on selected filters
   const filteredUsers = React.useMemo(() => {
     let filtered = users || [];
-    
+
     // Filter by status if not "todos"
     if (statusFilter !== 'todos') {
       filtered = filtered.filter(user => user.status_concurseiro === statusFilter);
     }
-    
+
     // Filter by ranking participation if needed
     if (rankingFilter !== 'todos') {
       const hasRankings = rankingFilter === '1';
@@ -81,7 +82,6 @@ const Comunidade: React.FC = () => {
 
     // Sort users by follower count (descending order)
     filtered = [...filtered].sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0));
-
     return filtered;
   }, [users, statusFilter, rankingFilter]);
 
@@ -100,41 +100,25 @@ const Comunidade: React.FC = () => {
   }
 
   // Main component render
-  return (
-    <div className="container mx-auto px-4 py-8">
+  return <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Comunidade</h1>
-        <p className="text-muted-foreground mt-1">Conecte-se com outros concurseiros e acompanhe seus progressos</p>
+        
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
           <div className="relative flex-1">
-            <Input 
-              type="text" 
-              placeholder="Buscar usuários..." 
-              value={searchQuery} 
-              onChange={handleSearchChange} 
-              className="w-full pl-10" 
-            />
+            <Input type="text" placeholder="Buscar usuários..." value={searchQuery} onChange={handleSearchChange} className="w-full pl-10" />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <User className="h-4 w-4 text-muted-foreground" />
             </div>
           </div>
-          <Button 
-            type="submit" 
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
+          <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
             Buscar
           </Button>
           
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1"
-          >
+          <Button type="button" variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="flex items-center gap-1">
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? 'Atualizando...' : 'Atualizar'}
           </Button>
@@ -167,35 +151,17 @@ const Comunidade: React.FC = () => {
         </div>
       </div>
       
-      {displayUsers.length > 0 ? (
-        <>
+      {displayUsers.length > 0 ? <>
           <UserGrid>
-            {displayUsers.map(user => (
-              <UserCard 
-                key={user.id} 
-                userProfile={user} 
-                onClick={handleUserClick}
-              />
-            ))}
+            {displayUsers.map(user => <UserCard key={user.id} userProfile={user} onClick={handleUserClick} />)}
           </UserGrid>
           
-          {hasMoreUsers && (
-            <div className="mt-8 flex justify-center">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowAllUsers(!showAllUsers)} 
-                className="px-8"
-              >
+          {hasMoreUsers && <div className="mt-8 flex justify-center">
+              <Button variant="outline" onClick={() => setShowAllUsers(!showAllUsers)} className="px-8">
                 {showAllUsers ? "Mostrar menos" : `Ver mais usuários (${filteredUsers.length - 6})`}
               </Button>
-            </div>
-          )}
-        </>
-      ) : (
-        <CommunityEmptyState onRefresh={handleRefresh} />
-      )}
-    </div>
-  );
+            </div>}
+        </> : <CommunityEmptyState onRefresh={handleRefresh} />}
+    </div>;
 };
-
 export default Comunidade;
