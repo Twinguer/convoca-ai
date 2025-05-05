@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MinimumScoreSection } from './MinimumScoreSection';
 import { KnowledgeAreaSelector } from './KnowledgeAreaSelector';
+import { Switch } from '@/components/ui/switch';
 
 interface ExamStructureSectionProps {
   form: UseFormReturn<any>;
@@ -302,11 +303,113 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
       </div>
       
       {/* Minimum Score Configuration - Global settings */}
-      <MinimumScoreSection 
-        form={form} 
-        sectionId="global"
-        label="Configuração de Nota Mínima"
-      />
+      <div className="space-y-4 p-4 border rounded-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-md font-medium">Nota Mínima</h3>
+          
+          <FormField
+            control={form.control}
+            name="has_minimum_score"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-sm">
+                    Habilitar nota de corte
+                  </FormLabel>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        {hasMinimumScore && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="minimum_score_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de nota mínima</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      value={field.value || 'knowledge'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="knowledge">Por Conhecimento</SelectItem>
+                        <SelectItem value="subject">Por Matéria</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Define como a nota mínima será calculada
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="minimum_score_unit_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unidade da nota mínima</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange}
+                      value={field.value || 'percentage'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a unidade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentual (%)</SelectItem>
+                        <SelectItem value="points">Pontos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Total minimum score */}
+            <FormField
+              control={form.control}
+              name="total_minimum_score"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Nota mínima total {form.watch('minimum_score_unit_type') === 'percentage' ? '(%)' : '(pontos)'}
+                  </FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      min={0} 
+                      max={form.watch('minimum_score_unit_type') === 'percentage' ? 100 : undefined}
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Nota mínima geral para classificação
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </>
+        )}
+      </div>
 
       {/* Render all enabled sections */}
       {renderSectionCard(

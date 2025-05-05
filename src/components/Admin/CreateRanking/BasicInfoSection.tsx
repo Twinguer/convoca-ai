@@ -1,13 +1,13 @@
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { StateSelector } from '../FormSections/StateSelector';
+import { Button } from '@/components/ui/button';
+import { StateSelector } from '@/components/Admin/FormSections/StateSelector';
 
 interface BasicInfoSectionProps {
   form: any;
-  jobTitles: Array<{id: string, title: string}>;
+  jobTitles: { id: string; title: string }[];
   isCustomTitle: boolean;
   isCustomBanca: boolean;
   handleJobTitleChange: (value: string) => void;
@@ -15,7 +15,7 @@ interface BasicInfoSectionProps {
   handleBancaChange: (value: string) => void;
   handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedStates: string[];
-  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
+  setSelectedStates: (states: string[]) => void;
 }
 
 export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
@@ -30,270 +30,279 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   selectedStates,
   setSelectedStates
 }) => {
+  const handleCustomBancaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    form.setValue('banca', e.target.value.toUpperCase());
+  };
+  
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Cargo */}
-          <div>
-            <FormField
-              control={form.control}
-              name="predefined_job_title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cargo</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleJobTitleChange(value);
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cargo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {jobTitles
-                        .filter(job => job.title !== 'OUTRO')
-                        .sort((a, b) => a.title.localeCompare(b.title))
-                        .map(job => (
-                          <SelectItem key={job.id} value={job.title}>
-                            {job.title}
-                          </SelectItem>
-                      ))}
-                      <SelectItem value="OUTRO">OUTRO</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            
-            {isCustomTitle && (
-              <FormField
-                control={form.control}
-                name="custom_job_title"
-                render={({ field }) => (
-                  <FormItem className="mt-2">
-                    <FormLabel>Cargo personalizado</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Digite o cargo"
-                        onChange={(e) => {
-                          const up = e.target.value.toUpperCase();
-                          field.onChange(up);
-                          handleCustomTitleChange({ ...e, target: { ...e.target, value: up } });
-                        }}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
-          </div>
-          
-          {/* Órgão */}
-          <FormField
-            control={form.control}
-            name="orgao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Órgão</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Ex: MINISTÉRIO DA ECONOMIA"
-                    onChange={(e) => {
-                      const up = e.target.value.toUpperCase();
-                      field.onChange(up);
-                      handleOrgaoChange({ ...e, target: { ...e.target, value: up } });
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          {/* Localidade */}
-          <div className="col-span-2">
-            <StateSelector 
-              form={form} 
-              selectedStates={selectedStates} 
-              setSelectedStates={setSelectedStates} 
-            />
-          </div>
-          
-          {/* Banca */}
-          <div>
-            <FormField
-              control={form.control}
-              name="banca"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Banca</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleBancaChange(value);
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma banca" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Cebraspe">Cebraspe</SelectItem>
-                      <SelectItem value="FGV">FGV</SelectItem>
-                      <SelectItem value="VUNESP">VUNESP</SelectItem>
-                      <SelectItem value="FCC">FCC</SelectItem>
-                      <SelectItem value="FUNDATEC">FUNDATEC</SelectItem>
-                      <SelectItem value="OUTRO">Outro (especificar)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-            
-            {isCustomBanca && (
-              <FormField
-                control={form.control}
-                name="custom_banca"
-                render={({ field }) => (
-                  <FormItem className="mt-2">
-                    <FormLabel>Banca personalizada</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Digite o nome da banca" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
-          </div>
-          
-          {/* Data da Prova */}
-          <FormField
-            control={form.control}
-            name="data_publicacao"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data da Prova</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          {/* Status do Concurso */}
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status do Concurso</FormLabel>
-                <Select defaultValue={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Em andamento">Em andamento</SelectItem>
-                    <SelectItem value="Concluído">Concluído</SelectItem>
-                    <SelectItem value="Suspenso">Suspenso</SelectItem>
-                    <SelectItem value="Cancelado">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          
-          {/* Etapa Atual */}
-          <FormField
-            control={form.control}
-            name="etapa_atual"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Etapa Atual</FormLabel>
-                <Select defaultValue={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a etapa" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Inscrições">Inscrições</SelectItem>
-                    <SelectItem value="Prova Objetiva">Prova Objetiva</SelectItem>
-                    <SelectItem value="Prova Discursiva">Prova Discursiva</SelectItem>
-                    <SelectItem value="Avaliação de Títulos">Avaliação de Títulos</SelectItem>
-                    <SelectItem value="Curso de Formação">Curso de Formação</SelectItem>
-                    <SelectItem value="Resultado Final">Resultado Final</SelectItem>
-                    <SelectItem value="Nomeação">Nomeação</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          
-          {/* Link do Edital */}
-          <FormField
-            control={form.control}
-            name="link"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Link do Edital</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="https://..." />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          {/* Vagas */}
-          <FormField
-            control={form.control}
-            name="vagas"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantidade de Vagas</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
-                    min="0"
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          
-          {/* Inscritos */}
-          <FormField
-            control={form.control}
-            name="inscritos"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantidade de Inscritos</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
-                    min="0"
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      {/* Título do Cargo */}
+      <FormField
+        control={form.control}
+        name="predefined_job_title"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Título do Cargo</FormLabel>
+            <Select onValueChange={(value) => {
+              field.onChange(value);
+              handleJobTitleChange(value);
+            }}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cargo" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {jobTitles.map((jobTitle) => (
+                  <SelectItem key={jobTitle.id} value={jobTitle.title}>
+                    {jobTitle.title}
+                  </SelectItem>
+                ))}
+                <SelectItem value="OUTRO">Outro</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Selecione o título do cargo ou escolha "Outro" para inserir um título personalizado.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {isCustomTitle && (
+        <FormField
+          control={form.control}
+          name="custom_job_title"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Título do Cargo Personalizado</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Digite o título do cargo" 
+                  {...field} 
+                  onChange={handleCustomTitleChange}
+                />
+              </FormControl>
+              <FormDescription>
+                Insira o título do cargo desejado.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+      
+      {/* Órgão */}
+      <FormField
+        control={form.control}
+        name="orgao"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Órgão</FormLabel>
+            <FormControl>
+              <Input placeholder="Nome do órgão" {...field} onChange={handleOrgaoChange} />
+            </FormControl>
+            <FormDescription>
+              Nome do órgão responsável pelo concurso.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Banca */}
+      <FormField
+        control={form.control}
+        name="banca"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Banca</FormLabel>
+            <Select onValueChange={(value) => {
+              field.onChange(value);
+              handleBancaChange(value);
+            }}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a banca" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Cebraspe">Cebraspe</SelectItem>
+                <SelectItem value="FGV">FGV</SelectItem>
+                <SelectItem value="VUNESP">VUNESP</SelectItem>
+                <SelectItem value="FCC">FCC</SelectItem>
+                <SelectItem value="FUNDATEC">FUNDATEC</SelectItem>
+                <SelectItem value="OUTRO">Outra</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Selecione a banca organizadora do concurso ou escolha "Outra" para inserir uma banca personalizada.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {isCustomBanca && (
+        <FormField
+          control={form.control}
+          name="custom_banca"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Banca Personalizada</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="Digite o nome da banca" 
+                  {...field} 
+                  onChange={handleCustomBancaChange}
+                />
+              </FormControl>
+              <FormDescription>
+                Insira o nome da banca organizadora do concurso.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      )}
+      
+      {/* Data de Publicação */}
+      <FormField
+        control={form.control}
+        name="data_publicacao"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Data de Publicação</FormLabel>
+            <FormControl>
+              <Input type="date" {...field} />
+            </FormControl>
+            <FormDescription>
+              Data em que o edital foi publicado.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Etapa Atual */}
+      <FormField
+        control={form.control}
+        name="etapa_atual"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Etapa Atual</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a etapa" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Prova Objetiva">Prova Objetiva</SelectItem>
+                <SelectItem value="Prova Discursiva">Prova Discursiva</SelectItem>
+                <SelectItem value="Prova de Títulos">Prova de Títulos</SelectItem>
+                <SelectItem value="TAF">TAF (Teste de Aptidão Física)</SelectItem>
+                <SelectItem value="Investigação Social">Investigação Social</SelectItem>
+                <SelectItem value="Curso de Formação">Curso de Formação</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Selecione a etapa atual do concurso.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Status */}
+      <FormField
+        control={form.control}
+        name="status"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Status</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="Em andamento">Em andamento</SelectItem>
+                <SelectItem value="Publicado">Publicado</SelectItem>
+                <SelectItem value="Finalizado">Finalizado</SelectItem>
+                <SelectItem value="Previsto">Previsto</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Selecione o status atual do concurso.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Link */}
+      <FormField
+        control={form.control}
+        name="link"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Link</FormLabel>
+            <FormControl>
+              <Input placeholder="Link para o edital" {...field} />
+            </FormControl>
+            <FormDescription>
+              Link para o edital do concurso.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Vagas */}
+      <FormField
+        control={form.control}
+        name="vagas"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Vagas</FormLabel>
+            <FormControl>
+              <Input type="number" placeholder="Número de vagas" {...field} />
+            </FormControl>
+            <FormDescription>
+              Número de vagas disponíveis no concurso.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Inscritos */}
+      <FormField
+        control={form.control}
+        name="inscritos"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Inscritos</FormLabel>
+            <FormControl>
+              <Input type="number" placeholder="Número de inscritos" {...field} />
+            </FormControl>
+            <FormDescription>
+              Número de inscritos no concurso.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Localidades */}
+      <div className="space-y-2">
+        <StateSelector
+          selectedStates={selectedStates}
+          setSelectedStates={setSelectedStates}
+        />
+      </div>
+    </div>
   );
 };

@@ -10,7 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { fetchUserRankings } from '@/services/rankingService';
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Link } from 'react-router-dom';
@@ -19,7 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 const RankingsTab: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [rankings, setRankings] = useState([]);
+  const [rankings, setRankings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -64,6 +63,7 @@ const RankingsTab: React.FC = () => {
       const userRankings = data.map(item => ({
         concursoId: item.concurso_id,
         concursoTitle: item.concursos ? item.concursos.titulo : 'Título não encontrado',
+        isDisqualified: false // Default value, can be updated based on minimum score checks
       }));
 
       return userRankings;
