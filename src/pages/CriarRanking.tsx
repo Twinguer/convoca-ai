@@ -118,24 +118,7 @@ const CriarRanking = () => {
       has_hipossuficientes: false,
       has_indigenas: false,
       has_transsexuais: false,
-      localidades: [],
-      
-      // Campos de notas de corte
-      has_minimum_score: false,
-      minimum_score_type: 'knowledge',
-      minimum_score_unit_type: 'percentage',
-      total_minimum_score: 0,
-      basic_knowledge_minimum_score: 0,
-      specific_knowledge_1_minimum_score: 0,
-      specific_knowledge_2_minimum_score: 0,
-      specific_knowledge_3_minimum_score: 0,
-      discursive_minimum_score: 0,
-      case_study_1_minimum_score: 0,
-      case_study_2_minimum_score: 0,
-      case_study_3_minimum_score: 0,
-      
-      // Knowledge Areas
-      knowledgeAreas: []
+      localidades: []
     }
   });
   
@@ -166,22 +149,6 @@ const CriarRanking = () => {
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
               data_publicacao: data.data_publicacao ? new Date(data.data_publicacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-              
-              // Set default values for minimum score if they don't exist
-              has_minimum_score: data.has_minimum_score || false,
-              minimum_score_type: data.minimum_score_type || 'knowledge',
-              minimum_score_unit_type: data.minimum_score_unit_type || 'percentage',
-              total_minimum_score: data.total_minimum_score || 0,
-              basic_knowledge_minimum_score: data.basic_knowledge_minimum_score || 0,
-              specific_knowledge_1_minimum_score: data.specific_knowledge_1_minimum_score || 0,
-              specific_knowledge_2_minimum_score: data.specific_knowledge_2_minimum_score || 0,
-              specific_knowledge_3_minimum_score: data.specific_knowledge_3_minimum_score || 0,
-              discursive_minimum_score: data.discursive_minimum_score || 0,
-              case_study_1_minimum_score: data.case_study_1_minimum_score || 0,
-              case_study_2_minimum_score: data.case_study_2_minimum_score || 0,
-              case_study_3_minimum_score: data.case_study_3_minimum_score || 0,
-              
-              knowledgeAreas: data.knowledgeAreas || []
             });
           }
         } catch (error) {
