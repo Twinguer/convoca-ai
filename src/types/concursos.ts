@@ -1,74 +1,59 @@
 
+// Add this to your existing types.ts file or create a new one
+
 export interface Concurso {
   id: string;
   titulo: string;
   orgao: string;
   banca: string;
-  data_publicacao: string | null;
-  etapa_atual?: string;
-  created_at: string;
-  updated_at: string;
-  link?: string | null;
-  inscritos?: number | null;
-  vagas?: number | null;
-  knowledgeAreas?: string[] | null;
-  localidades?: string[] | null;
+  etapa_atual: string | null;
   status: string;
+  link: string | null;
+  vagas: number | null;
+  inscritos: number | null;
+  data_publicacao: string | null;
+  wrong_answer_penalty: number | null;
+  alternatives_count: number | null;
+  basic_knowledge_weight: number | null;
+  specific_knowledge_weight: number | null;
+  specific_knowledge_1_weight: number | null;
+  specific_knowledge_2_weight: number | null;
+  specific_knowledge_3_weight: number | null;
+  discursive_weight: number | null;
+  case_study_1_weight: number | null;
+  case_study_2_weight: number | null;
+  case_study_3_weight: number | null;
+  basic_knowledge_questions: number | null;
+  specific_knowledge_1_questions: number | null;
+  specific_knowledge_2_questions: number | null;
+  specific_knowledge_3_questions: number | null;
+  has_basic_knowledge: boolean;
+  has_specific_knowledge_1: boolean;
+  has_specific_knowledge_2: boolean;
+  has_specific_knowledge_3: boolean;
+  has_discursive: boolean;
+  has_case_study_1: boolean;
+  has_case_study_2: boolean;
+  has_case_study_3: boolean;
+  has_ampla_concorrencia: boolean;
+  has_ppp: boolean;
+  has_pcd: boolean;
+  has_indigenas: boolean;
+  has_hipossuficientes: boolean;
+  has_transsexuais: boolean;
+  exam_type: string;
+  created_by_user_id: string | null;
+  is_admin_created: boolean;
+  is_admin_update: boolean;
+  // Campos adicionados
   custom_banca?: string | null;
-  is_admin_created?: boolean;
-  created_by_user_id?: string | null;
-  
-  // Exam structure configuration
-  has_basic_knowledge?: boolean;
-  has_specific_knowledge_1?: boolean;
-  has_specific_knowledge_2?: boolean;
-  has_specific_knowledge_3?: boolean;
-  has_discursive?: boolean;
-  has_case_study_1?: boolean;
-  has_case_study_2?: boolean;
-  has_case_study_3?: boolean;
-  
-  // Question counts
-  basic_knowledge_questions?: number;
-  specific_knowledge_1_questions?: number;
-  specific_knowledge_2_questions?: number;
-  specific_knowledge_3_questions?: number;
-  
-  // Section weights
-  basic_knowledge_weight?: number;
-  specific_knowledge_weight?: number;
-  specific_knowledge_1_weight?: number;
-  specific_knowledge_2_weight?: number;
-  specific_knowledge_3_weight?: number;
-  discursive_weight?: number;
-  case_study_1_weight?: number;
-  case_study_2_weight?: number;
-  case_study_3_weight?: number;
-  
-  // Exam configuration
-  alternatives_count?: number;
-  wrong_answer_penalty?: number;
-  exam_type?: string;
-  
-  // Predefined job information
-  predefined_job_title?: string | null;
-  custom_job_title?: string | null;
-  
-  // Reservation types
-  has_ampla_concorrencia?: boolean;
-  has_ppp?: boolean;
-  has_pcd?: boolean;
-  has_hipossuficientes?: boolean;
-  has_indigenas?: boolean;
-  has_transsexuais?: boolean;
-  
-  // Minimum score settings
+  localidades?: string[];
+  knowledgeAreas?: string[];
+  // Campos de nota mínima
   has_minimum_score?: boolean;
   minimum_score_type?: 'knowledge' | 'subject';
-  minimum_score_unit_type?: 'percentage' | 'points';
+  minimum_score_unit_type?: 'percentage' | 'absolute';
   total_minimum_score?: number;
-  
-  // Knowledge area minimum scores
   basic_knowledge_minimum_score?: number;
   specific_knowledge_1_minimum_score?: number;
   specific_knowledge_2_minimum_score?: number;
@@ -79,85 +64,54 @@ export interface Concurso {
   case_study_3_minimum_score?: number;
 }
 
+export interface UserRankingDisplay {
+  id: string;
+  score: number;
+  basic_knowledge_score: number;
+  specific_knowledge_score: number;
+  discursive_score: number;
+  created_at: string;
+  position?: number;
+  concurso_id: string;
+  isClassified?: boolean; // Novo campo que indica se o candidato está classificado
+  concursos?: {
+    id: string;
+    titulo: string;
+    orgao: string;
+    banca: string;
+    has_minimum_score?: boolean;
+  };
+  concursoId?: string;
+  concursoTitle?: string;
+}
+
 export interface ConcursoFilter {
   status?: string;
   orgao?: string;
   banca?: string;
 }
 
-export interface UserRankingDisplay {
-  concursoId: string;
-  concursoTitle: string;
-  position: number;
-  score: number;
-  basic_knowledge_score?: number;
-  specific_knowledge_score?: number;
-  discursive_score?: number;
-  rankingId?: string;
-}
-
-export interface RankingTableColumn {
-  id: string;
-  label: string;
-  align?: 'left' | 'right' | 'center';
-  width?: string;
-}
-
-// Fixed helper to determine which specific knowledge sections are enabled
-// Now uses has_* flags instead of weights
-export const getEnabledKnowledgeSections = (concurso: Concurso) => {
-  return {
-    basicKnowledge: concurso.has_basic_knowledge === true,
-    specificKnowledge1: concurso.has_specific_knowledge_1 === true,
-    specificKnowledge2: concurso.has_specific_knowledge_2 === true,
-    specificKnowledge3: concurso.has_specific_knowledge_3 === true,
-    discursive: concurso.has_discursive === true,
-    caseStudy1: concurso.has_case_study_1 === true,
-    caseStudy2: concurso.has_case_study_2 === true,
-    caseStudy3: concurso.has_case_study_3 === true
-  };
-};
-
-// Function to get the table columns for a ranking based on the concurso structure
-export const getRankingTableColumns = (concurso: Concurso) => {
-  const columns = [
-    { id: 'position', label: '#', align: 'center', width: '16' },
-    { id: 'name', label: 'Candidato', align: 'left' },
-    { id: 'score', label: 'Total', align: 'right' }
-  ];
+export function getRankingTableColumns(concurso: Concurso): string[] {
+  const columns = [];
   
-  // Add columns based on enabled sections
-  if (concurso.has_basic_knowledge) {
-    columns.push({ id: 'basicScore', label: 'Básica', align: 'right' });
-  }
+  // Posição e nome do candidato são sempre incluídos
+  columns.push('position', 'name');
   
-  if (concurso.has_specific_knowledge_1) {
-    columns.push({ id: 'specific1Score', label: 'Específica 1', align: 'right' });
-  }
+  // Score total
+  columns.push('score');
   
-  if (concurso.has_specific_knowledge_2) {
-    columns.push({ id: 'specific2Score', label: 'Específica 2', align: 'right' });
-  }
+  // Pontuações específicas
+  if (concurso.has_basic_knowledge) columns.push('basic');
+  if (concurso.has_specific_knowledge_1) columns.push('specific1');
+  if (concurso.has_specific_knowledge_2) columns.push('specific2');
+  if (concurso.has_specific_knowledge_3) columns.push('specific3');
+  if (concurso.has_discursive) columns.push('discursive');
+  if (concurso.has_case_study_1) columns.push('caseStudy1');
+  if (concurso.has_case_study_2) columns.push('caseStudy2');
+  if (concurso.has_case_study_3) columns.push('caseStudy3');
   
-  if (concurso.has_specific_knowledge_3) {
-    columns.push({ id: 'specific3Score', label: 'Específica 3', align: 'right' });
-  }
-  
-  if (concurso.has_discursive) {
-    columns.push({ id: 'discursiveScore', label: 'Discursiva', align: 'right' });
-  }
-  
-  if (concurso.has_case_study_1) {
-    columns.push({ id: 'case1Score', label: 'Estudo 1', align: 'right' });
-  }
-  
-  if (concurso.has_case_study_2) {
-    columns.push({ id: 'case2Score', label: 'Estudo 2', align: 'right' });
-  }
-  
-  if (concurso.has_case_study_3) {
-    columns.push({ id: 'case3Score', label: 'Estudo 3', align: 'right' });
-  }
+  // Status de classificação
+  if (concurso.has_minimum_score) columns.push('status');
   
   return columns;
-};
+}

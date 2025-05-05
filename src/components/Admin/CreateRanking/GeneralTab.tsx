@@ -1,17 +1,16 @@
 
 import React from 'react';
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { BasicInfoSection } from './BasicInfoSection';
-import { ReservationQuotasSection } from './ReservationQuotasSection';
+import { GeneralInfoSection } from '@/components/Admin/FormSections/GeneralInfoSection';
 import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
+import { ReservationQuotasSection } from '@/components/Admin/FormSections/ReservationQuotasSection';
 import { StateSelector } from '@/components/Admin/FormSections/StateSelector';
+import { MinimumScoreSection } from '@/components/Admin/FormSections/MinimumScoreSection';
 
 interface GeneralTabProps {
-  form: any;
-  jobTitles: { id: string; title: string }[];
+  form: UseFormReturn<any>;
+  jobTitles: Array<{id: string, title: string}>;
   isCustomTitle: boolean;
   isCustomBanca: boolean;
   handleJobTitleChange: (value: string) => void;
@@ -22,7 +21,7 @@ interface GeneralTabProps {
   onSaveRanking: () => void;
   isSubmitting: boolean;
   selectedStates: string[];
-  setSelectedStates: (states: string[]) => void;
+  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({
@@ -41,8 +40,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   setSelectedStates
 }) => {
   return (
-    <div className="space-y-8">
-      <BasicInfoSection
+    <div className="space-y-6">
+      <GeneralInfoSection 
         form={form}
         jobTitles={jobTitles}
         isCustomTitle={isCustomTitle}
@@ -51,30 +50,35 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         handleCustomTitleChange={handleCustomTitleChange}
         handleBancaChange={handleBancaChange}
         handleOrgaoChange={handleOrgaoChange}
+      />
+      
+      <StateSelector 
         selectedStates={selectedStates}
         setSelectedStates={setSelectedStates}
       />
       
-      {/* Seção de Estrutura da Prova */}
       <ExamStructureSection form={form} />
       
-      {/* Seção de Reserva de Vagas */}
-      <ReservationQuotasSection form={form} />
+      <MinimumScoreSection form={form} />
       
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button
-          type="button"
+      <ReservationQuotasSection form={form} />
+
+      <div className="flex justify-end gap-2">
+        <Button 
+          type="button" 
+          variant="outline" 
+          disabled={isSubmitting} 
           onClick={onSaveRanking}
-          disabled={isSubmitting}
         >
-          {isSubmitting ? 'Salvando...' : 'Salvar'}
+          Salvar informações
         </Button>
-        <Button
+        <Button 
           type="button"
-          onClick={handleNextTab}
           disabled={isSubmitting}
+          onClick={handleNextTab}
         >
-          Próximo: Gabarito Oficial
+          Continuar para Gabarito
+          {isSubmitting && <div className="ml-2 w-4 h-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div>}
         </Button>
       </div>
     </div>
