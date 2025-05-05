@@ -1,9 +1,11 @@
 
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Alterar apenas a importação do RankingTable
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RankingCard } from '@/components/resultados/RankingCard';
 import ConcursoInfoCard from '@/components/resultados/ConcursoInfoCard';
-import { RankingTable } from '@/components/resultados/RankingTable';
+import RankingTable from '@/components/resultados/RankingTable'; // Corrigido para importação padrão
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { Button } from '@/components/ui/button';

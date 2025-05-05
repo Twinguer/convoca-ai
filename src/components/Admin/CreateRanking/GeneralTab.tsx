@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ReservationQuotasSection } from './ReservationQuotasSection';
-import { ExamStructureSection } from './ExamStructureSection';
+import { ExamStructureSection } from '@/components/Admin/FormSections/ExamStructureSection';
 import { StateSelector } from '@/components/Admin/FormSections/StateSelector';
 
 interface GeneralTabProps {

@@ -8,11 +8,13 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 interface StateSelectorProps {
   selectedStates: string[];
   setSelectedStates: (states: string[]) => void;
+  onStateChange?: (states: string[]) => void; // Adicionando esta prop opcional para compatibilidade
 }
 
 export const StateSelector: React.FC<StateSelectorProps> = ({
   selectedStates,
-  setSelectedStates
+  setSelectedStates,
+  onStateChange
 }) => {
   const STATES = [
     'Nacional',
@@ -21,31 +23,47 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
     'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
   ];
   
-  // Handler for checkbox changes
+  // Handler para mudanças no checkbox
   const handleStateChange = (state: string, checked: boolean) => {
+    let newStates: string[];
+    
     if (state === 'Nacional' && checked) {
-      // If "Nacional" is selected, deselect all other states
-      setSelectedStates(['Nacional']);
+      // Se "Nacional" for selecionado, desselecione todos os outros estados
+      newStates = ['Nacional'];
     } else if (checked) {
-      // If "Nacional" was already selected and another state is now selected,
-      // remove "Nacional" and add the new state
+      // Se "Nacional" já estava selecionado e outro estado foi agora selecionado,
+      // remova "Nacional" e adicione o novo estado
       if (selectedStates.includes('Nacional')) {
-        setSelectedStates([state]);
+        newStates = [state];
       } else {
-        setSelectedStates([...selectedStates, state]);
+        newStates = [...selectedStates, state];
       }
     } else {
-      // If a state is deselected, remove it from the array
-      setSelectedStates(selectedStates.filter(s => s !== state));
+      // Se um estado for desselecionado, remova-o do array
+      newStates = selectedStates.filter(s => s !== state);
+    }
+    
+    setSelectedStates(newStates);
+    
+    // Chama o callback onStateChange se estiver definido
+    if (onStateChange) {
+      onStateChange(newStates);
     }
   };
   
   const selectAll = () => {
-    setSelectedStates(STATES.filter(state => state !== 'Nacional'));
+    const allStates = STATES.filter(state => state !== 'Nacional');
+    setSelectedStates(allStates);
+    if (onStateChange) {
+      onStateChange(allStates);
+    }
   };
   
   const clearAll = () => {
     setSelectedStates([]);
+    if (onStateChange) {
+      onStateChange([]);
+    }
   };
 
   return (

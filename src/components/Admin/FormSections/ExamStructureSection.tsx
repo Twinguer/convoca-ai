@@ -21,7 +21,7 @@ interface ExamStructureSectionProps {
 }
 
 export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form }) => {
-  // Helper function to render weight select component
+  // Helper para renderizar o componente de seleção de peso
   const renderWeightSelect = (name: string) => (
     <FormField
       control={form.control}
@@ -53,7 +53,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     />
   );
 
-  // Helper function for questions count inputs
+  // Helper para inputs de quantidade de questões
   const renderQuestionsInput = (name: string) => (
     <FormField 
       control={form.control} 
@@ -75,7 +75,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     />
   );
 
-  // Render wrong answer penalty select
+  // Renderizar dropdown de penalidade para erros
   const renderPenaltySelect = () => (
     <FormField
       control={form.control}
@@ -112,7 +112,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     />
   );
 
-  // Check which sections are enabled
+  // Verificar quais seções estão habilitadas
   const basicKnowledgeEnabled = form.watch('has_basic_knowledge');
   const specificKnowledge1Enabled = form.watch('has_specific_knowledge_1');
   const specificKnowledge2Enabled = form.watch('has_specific_knowledge_2');
@@ -122,16 +122,16 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
   const caseStudy2Enabled = form.watch('has_case_study_2');
   const caseStudy3Enabled = form.watch('has_case_study_3');
   
-  // Check minimum score settings
+  // Verificar configurações de pontuação mínima
   const hasMinimumScore = form.watch('has_minimum_score');
   const minimumScoreType = form.watch('minimum_score_type') || 'knowledge';
 
-  // Toggle a section on/off
+  // Alternar uma seção ligada/desligada
   const toggleSection = (name: string, value: boolean) => {
     form.setValue(name, value);
   };
 
-  // Render a section card with its inputs
+  // Renderizar um card de seção com seus inputs
   const renderSectionCard = (
     title: string, 
     enabledFlag: string, 
@@ -162,14 +162,14 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
           {weightField && renderWeightSelect(weightField)}
         </div>
         
-        {/* Knowledge Areas Selector - Only show for the appropriate sections if minimum_score_type === 'subject' */}
+        {/* Knowledge Areas Selector - Mostrar apenas para as seções apropriadas se minimum_score_type === 'subject' */}
         {hasMinimumScore && minimumScoreType === 'subject' && sectionId && (
           <div className="mt-4 pt-4 border-t">
             <KnowledgeAreaSelector form={form} sectionId={sectionId} />
           </div>
         )}
         
-        {/* Minimum Score Section */}
+        {/* Seção de Pontuação Mínima */}
         {hasMinimumScore && minimumScoreType === 'knowledge' && sectionId && (
           <div className="mt-4">
             <MinimumScoreSection 
@@ -248,7 +248,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         </DropdownMenu>
       </div>
       
-      {/* Exam Configuration */}
+      {/* Configuração do Exame */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 border rounded-md">
         <FormField
           control={form.control}
@@ -302,7 +302,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         {renderPenaltySelect()}
       </div>
       
-      {/* Minimum Score Configuration - Global settings */}
+      {/* Configuração de Pontuação Mínima - Configurações globais */}
       <div className="space-y-4 p-4 border rounded-md">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-md font-medium">Nota Mínima</h3>
@@ -383,7 +383,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
               />
             </div>
             
-            {/* Total minimum score */}
+            {/* Pontuação mínima total */}
             <FormField
               control={form.control}
               name="total_minimum_score"
@@ -411,7 +411,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         )}
       </div>
 
-      {/* Render all enabled sections */}
+      {/* Renderizar todas as seções habilitadas */}
       {renderSectionCard(
         "Conhecimentos Básicos", 
         "has_basic_knowledge", 

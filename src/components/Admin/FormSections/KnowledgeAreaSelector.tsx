@@ -46,7 +46,7 @@ export const KnowledgeAreaSelector: React.FC<KnowledgeAreaSelectorProps> = ({
     setSelectedSubject(subject);
     
     if (subject !== 'Outros') {
-      // Add the selected subject to knowledgeAreas if not already present
+      // Adicionar a matéria selecionada a knowledgeAreas se ainda não estiver presente
       if (!currentKnowledgeAreas.includes(subject)) {
         form.setValue('knowledgeAreas', [...currentKnowledgeAreas, subject]);
       }
