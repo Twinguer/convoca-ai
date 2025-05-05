@@ -44,6 +44,10 @@ export interface Concurso {
   exam_type: string;
   created_by_user_id: string | null;
   is_admin_created: boolean;
+  // Campos adicionados
+  custom_banca?: string | null;
+  localidades?: string[];
+  knowledgeAreas?: string[];
   // Campos de nota mínima
   has_minimum_score?: boolean;
   minimum_score_type?: 'knowledge' | 'subject';
@@ -78,6 +82,12 @@ export interface UserRankingDisplay {
   };
   concursoId?: string;
   concursoTitle?: string;
+}
+
+export interface ConcursoFilter {
+  status?: string;
+  orgao?: string;
+  banca?: string;
 }
 
 export function getRankingTableColumns(concurso: Concurso): string[] {
