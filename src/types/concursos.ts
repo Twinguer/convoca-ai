@@ -61,6 +61,22 @@ export interface Concurso {
   has_hipossuficientes?: boolean;
   has_indigenas?: boolean;
   has_transsexuais?: boolean;
+  
+  // Minimum score settings
+  has_minimum_score?: boolean;
+  minimum_score_type?: 'knowledge' | 'subject';
+  minimum_score_unit_type?: 'percentage' | 'points';
+  total_minimum_score?: number;
+  
+  // Knowledge area minimum scores
+  basic_knowledge_minimum_score?: number;
+  specific_knowledge_1_minimum_score?: number;
+  specific_knowledge_2_minimum_score?: number;
+  specific_knowledge_3_minimum_score?: number;
+  discursive_minimum_score?: number;
+  case_study_1_minimum_score?: number;
+  case_study_2_minimum_score?: number;
+  case_study_3_minimum_score?: number;
 }
 
 export interface ConcursoFilter {

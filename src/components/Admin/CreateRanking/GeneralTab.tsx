@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { BasicInfoSection } from './BasicInfoSection';
+import React from 'react';
+import { FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { Textarea } from "@/components/ui/textarea"
+import { UseFormReturn } from 'react-hook-form';
 import { ExamStructureSection } from './ExamStructureSection';
-import { ReservationQuotasSection } from './ReservationQuotasSection';
-import { useToast } from '@/hooks/use-toast';
+import { StateSelector } from './StateSelector';
 
 interface GeneralTabProps {
-  form: any;
-  jobTitles: Array<{id: string, title: string}>;
+  form: UseFormReturn<any>;
+  jobTitles: { id: string; title: string }[];
   isCustomTitle: boolean;
   isCustomBanca: boolean;
   handleJobTitleChange: (value: string) => void;
@@ -15,8 +18,8 @@ interface GeneralTabProps {
   handleBancaChange: (value: string) => void;
   handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleNextTab: () => void;
-  onSaveRanking?: () => Promise<void>;
-  isSubmitting?: boolean;
+  onSaveRanking: () => void;
+  isSubmitting: boolean;
   selectedStates: string[];
   setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
@@ -36,193 +39,439 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   selectedStates,
   setSelectedStates
 }) => {
-  const [rankingSaved, setRankingSaved] = useState<boolean>(false);
-  const { toast } = useToast();
-  const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
-
-  useEffect(() => {
-    setIsFirstSaveDone(false);
-  }, [form]);
-
-  useEffect(() => {
-    const formValues = form.getValues();
-    if (formValues.localidades && Array.isArray(formValues.localidades) && formValues.localidades.length > 0) {
-      setSelectedStates(formValues.localidades);
-    }
-  }, [form, setSelectedStates]);
-
-  const validateBeforeSave = () => {
-    const currentValues = form.getValues();
-
-    if (!currentValues.predefined_job_title) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione um cargo.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (currentValues.predefined_job_title === "OUTRO" && !currentValues.custom_job_title) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe o cargo personalizado.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!currentValues.orgao) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe o órgão.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (selectedStates.length === 0) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione pelo menos um estado.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!currentValues.banca) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione uma banca.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (currentValues.banca === "OUTRO" && !currentValues.custom_banca) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, informe a banca personalizada.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const hasAnyKnowledgeArea = 
-      currentValues.has_basic_knowledge || 
-      currentValues.has_specific_knowledge_1 || 
-      currentValues.has_specific_knowledge_2 || 
-      currentValues.has_specific_knowledge_3 ||
-      currentValues.has_discursive ||
-      currentValues.has_case_study_1 ||
-      currentValues.has_case_study_2 ||
-      currentValues.has_case_study_3;
-
-    if (!hasAnyKnowledgeArea) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, adicione pelo menos uma área de conhecimento.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    const hasAnyQuota = 
-      currentValues.has_ampla_concorrencia || 
-      currentValues.has_ppp || 
-      currentValues.has_pcd ||
-      currentValues.has_hipossuficientes ||
-      currentValues.has_indigenas ||
-      currentValues.has_transsexuais;
-
-    if (!hasAnyQuota) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, selecione pelo menos uma cota de reserva.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (
-      (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
-      (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
-      (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
-      (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
-    ) {
-      toast({
-        title: "Erro de validação",
-        description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSave = async () => {
-    if (validateBeforeSave() && onSaveRanking) {
-      form.setValue('localidades', selectedStates, { shouldDirty: true });
-      await onSaveRanking();
-      setIsFirstSaveDone(true);
-    }
-  };
-
-  const validateBeforeNext = () => {
-    if (!isFirstSaveDone) {
-      toast({
-        title: "Salvar necessário",
-        description: "Salve o ranking antes de preencher o gabarito.",
-        variant: "destructive"
-      });
-      return false;
-    }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (!validateBeforeNext()) return;
-    handleNextTab();
-  };
-
   return (
-    <div className="space-y-6">
-      <BasicInfoSection 
-        form={form}
-        jobTitles={jobTitles}
-        isCustomTitle={isCustomTitle}
-        isCustomBanca={isCustomBanca}
-        handleJobTitleChange={handleJobTitleChange}
-        handleCustomTitleChange={handleCustomTitleChange}
-        handleBancaChange={handleBancaChange}
-        handleOrgaoChange={handleOrgaoChange}
-        selectedStates={selectedStates}
-        setSelectedStates={setSelectedStates}
-      />
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Predefined Job Title */}
+            <FormField
+              control={form.control}
+              name="predefined_job_title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cargo</FormLabel>
+                  <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      handleJobTitleChange(value);
+                    }} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o cargo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {jobTitles.map((job) => (
+                        <SelectItem key={job.id} value={job.title}>
+                          {job.title}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="OUTRO">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o cargo ou escolha "Outro" para inserir um
+                    cargo não listado
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
 
+            {/* Custom Job Title */}
+            {isCustomTitle && (
+              <FormField
+                control={form.control}
+                name="custom_job_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cargo (Outro)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Digite o cargo"
+                        {...field}
+                        onChange={handleCustomTitleChange}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Informe o nome do cargo caso não encontre na lista
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Organ */}
+            <FormField
+              control={form.control}
+              name="orgao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Órgão</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Informe o nome do órgão"
+                      {...field}
+                      onChange={handleOrgaoChange}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Informe o nome do órgão responsável pelo concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Banca */}
+            <FormField
+              control={form.control}
+              name="banca"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Banca</FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleBancaChange(value);
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a banca" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Cebraspe">Cebraspe</SelectItem>
+                      <SelectItem value="FGV">FGV</SelectItem>
+                      <SelectItem value="VUNESP">VUNESP</SelectItem>
+                      <SelectItem value="FCC">FCC</SelectItem>
+                      <SelectItem value="FUNDATEC">FUNDATEC</SelectItem>
+                      <SelectItem value="OUTRO">Outra</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione a banca organizadora do concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Custom Banca */}
+            {isCustomBanca && (
+              <FormField
+                control={form.control}
+                name="custom_banca"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Banca (Outra)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Digite o nome da banca"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Informe o nome da banca caso não encontre na lista
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Publication Date */}
+            <FormField
+              control={form.control}
+              name="data_publicacao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data de Publicação</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Informe a data de publicação do edital
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Current Stage */}
+            <FormField
+              control={form.control}
+              name="etapa_atual"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Etapa Atual</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a etapa" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Edital Aberto">Edital Aberto</SelectItem>
+                      <SelectItem value="Prova Objetiva">Prova Objetiva</SelectItem>
+                      <SelectItem value="Prova Discursiva">Prova Discursiva</SelectItem>
+                      <SelectItem value="Prova de Títulos">Prova de Títulos</SelectItem>
+                      <SelectItem value="TAF">TAF</SelectItem>
+                      <SelectItem value="Curso de Formação">Curso de Formação</SelectItem>
+                      <SelectItem value="Homologação">Homologação</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione a etapa atual do concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Status */}
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Em andamento">Em andamento</SelectItem>
+                      <SelectItem value="Finalizado">Finalizado</SelectItem>
+                      <SelectItem value="Previsto">Previsto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Selecione o status atual do concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Vacancies */}
+            <FormField
+              control={form.control}
+              name="vagas"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Vagas</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Informe o número de vagas"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Informe o número de vagas disponíveis
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Subscribers */}
+            <FormField
+              control={form.control}
+              name="inscritos"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Inscritos</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Informe o número de inscritos"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Informe o número de inscritos no concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* Link */}
+            <FormField
+              control={form.control}
+              name="link"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Link</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Informe o link do edital"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Informe o link para o edital do concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+            
+            {/* Localidades */}
+            <FormField
+              control={form.control}
+              name="localidades"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Localidades</FormLabel>
+                  <FormControl>
+                    <StateSelector
+                      selectedStates={selectedStates}
+                      setSelectedStates={setSelectedStates}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Selecione as localidades do concurso
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          {/* Reservation Types */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="has_ampla_concorrencia"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">
+                      Ampla Concorrência
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Candidatos da ampla concorrência
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="has_ppp"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">
+                      PPP
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Candidatos que se autodeclaram pretos, pardos ou
+                      indígenas
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="has_pcd"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">
+                      PCD
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Pessoas com deficiência
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="has_hipossuficientes"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">
+                      Hipossuficientes
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Candidatos de baixa renda
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="has_indigenas"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">
+                      Indígenas
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Candidatos indígenas
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="has_transsexuais"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-sm">
+                      Pessoas Trans
+                    </FormLabel>
+                    <FormDescription className="text-xs">
+                      Candidatos transsexuais
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Exam Structure Section */}
       <ExamStructureSection form={form} />
 
-      <ReservationQuotasSection form={form} />
-
-      <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
-        <Button 
-          type="button" 
-          onClick={handleSave}
-          variant="secondary"
-          disabled={isFirstSaveDone || isSubmitting}
-          className={isFirstSaveDone ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""}
-        >
-          Salvar Ranking
-        </Button>
-        <Button 
+      <div className="flex justify-end">
+        <button
           type="button"
-          onClick={handleNext}
-          disabled={!isFirstSaveDone}
-          className={isFirstSaveDone ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+          onClick={onSaveRanking}
+          disabled={isSubmitting}
         >
-          Preencher Gabarito
-        </Button>
+          {isSubmitting ? "Salvando..." : "Salvar e Continuar"}
+        </button>
       </div>
     </div>
   );

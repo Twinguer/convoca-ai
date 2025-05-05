@@ -30,6 +30,16 @@ export interface Ranking {
   reservationType: string;
   displayReservation: string;
   id: string;
+  // Minimum score flags
+  isDisqualified?: boolean;
+  basicScoreFailed?: boolean;
+  specific1ScoreFailed?: boolean;
+  specific2ScoreFailed?: boolean;
+  specific3ScoreFailed?: boolean;
+  discursiveScoreFailed?: boolean;
+  caseStudy1Failed?: boolean;
+  caseStudy2Failed?: boolean;
+  caseStudy3Failed?: boolean;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -44,6 +54,48 @@ const getReservationAbbreviation = (reservationType: string): string => {
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
+    
+    // Get concurso settings first to check minimum scores
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        has_minimum_score,
+        minimum_score_type,
+        minimum_score_unit_type,
+        total_minimum_score,
+        basic_knowledge_minimum_score,
+        specific_knowledge_1_minimum_score,
+        specific_knowledge_2_minimum_score,
+        specific_knowledge_3_minimum_score,
+        discursive_minimum_score,
+        case_study_1_minimum_score,
+        case_study_2_minimum_score,
+        case_study_3_minimum_score,
+        
+        basic_knowledge_weight,
+        specific_knowledge_1_weight,
+        specific_knowledge_2_weight,
+        specific_knowledge_3_weight,
+        discursive_weight,
+        case_study_1_weight,
+        case_study_2_weight,
+        case_study_3_weight,
+        
+        has_basic_knowledge,
+        has_specific_knowledge_1,
+        has_specific_knowledge_2,
+        has_specific_knowledge_3,
+        has_discursive,
+        has_case_study_1,
+        has_case_study_2,
+        has_case_study_3
+      `)
+      .eq('id', concursoId)
+      .single();
+    
+    if (concursoError) {
+      console.error('Error fetching concurso details:', concursoError);
+    }
     
     // Modificando para usar uma abordagem alternativa que evite a ambiguidade de ID
     const { data, error } = await supabase
@@ -107,6 +159,95 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
       
+      // Check if candidate meets minimum score requirements (if enabled)
+      let isDisqualified = false;
+      let basicScoreFailed = false;
+      let specific1ScoreFailed = false;
+      let specific2ScoreFailed = false;
+      let specific3ScoreFailed = false;
+      let discursiveScoreFailed = false;
+      let caseStudy1Failed = false;
+      let caseStudy2Failed = false;
+      let caseStudy3Failed = false;
+      
+      if (concurso?.has_minimum_score) {
+        const totalScore = ranking.score || 0;
+        
+        // Check total minimum score
+        if (concurso.total_minimum_score > 0) {
+          const minimumRequired = concurso.total_minimum_score;
+          
+          if (totalScore < minimumRequired) {
+            isDisqualified = true;
+          }
+        }
+        
+        // Check section-specific minimum scores
+        if (concurso.has_basic_knowledge && concurso.basic_knowledge_minimum_score > 0) {
+          const sectionScore = ranking.weighted_basic_score || 0;
+          if (sectionScore < concurso.basic_knowledge_minimum_score) {
+            basicScoreFailed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_minimum_score > 0) {
+          const sectionScore = ranking.weighted_specific_1_score || 0;
+          if (sectionScore < concurso.specific_knowledge_1_minimum_score) {
+            specific1ScoreFailed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_minimum_score > 0) {
+          const sectionScore = ranking.weighted_specific_2_score || 0;
+          if (sectionScore < concurso.specific_knowledge_2_minimum_score) {
+            specific2ScoreFailed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_minimum_score > 0) {
+          const sectionScore = ranking.weighted_specific_3_score || 0;
+          if (sectionScore < concurso.specific_knowledge_3_minimum_score) {
+            specific3ScoreFailed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_discursive && concurso.discursive_minimum_score > 0) {
+          const sectionScore = ranking.weighted_discursive_score || 0;
+          if (sectionScore < concurso.discursive_minimum_score) {
+            discursiveScoreFailed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_case_study_1 && concurso.case_study_1_minimum_score > 0) {
+          const sectionScore = ranking.weighted_case_study_1_score || 0;
+          if (sectionScore < concurso.case_study_1_minimum_score) {
+            caseStudy1Failed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_case_study_2 && concurso.case_study_2_minimum_score > 0) {
+          const sectionScore = ranking.weighted_case_study_2_score || 0;
+          if (sectionScore < concurso.case_study_2_minimum_score) {
+            caseStudy2Failed = true;
+            isDisqualified = true;
+          }
+        }
+        
+        if (concurso.has_case_study_3 && concurso.case_study_3_minimum_score > 0) {
+          const sectionScore = ranking.weighted_case_study_3_score || 0;
+          if (sectionScore < concurso.case_study_3_minimum_score) {
+            caseStudy3Failed = true;
+            isDisqualified = true;
+          }
+        }
+      }
+      
       return {
         position: index + 1,
         name: name,
@@ -133,7 +274,17 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
-        id: ranking.id
+        id: ranking.id,
+        // Add minimum score status flags
+        isDisqualified,
+        basicScoreFailed,
+        specific1ScoreFailed,
+        specific2ScoreFailed,
+        specific3ScoreFailed,
+        discursiveScoreFailed,
+        caseStudy1Failed,
+        caseStudy2Failed,
+        caseStudy3Failed
       };
     });
     

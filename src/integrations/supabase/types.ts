@@ -67,20 +67,76 @@ export type Database = {
           },
         ]
       }
+      concurso_subjects: {
+        Row: {
+          concurso_id: string
+          created_at: string | null
+          id: string
+          knowledge_section: string
+          minimum_score: number | null
+          minimum_score_unit_type: string | null
+          question_count: number
+          subject_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          concurso_id: string
+          created_at?: string | null
+          id?: string
+          knowledge_section: string
+          minimum_score?: number | null
+          minimum_score_unit_type?: string | null
+          question_count?: number
+          subject_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          concurso_id?: string
+          created_at?: string | null
+          id?: string
+          knowledge_section?: string
+          minimum_score?: number | null
+          minimum_score_unit_type?: string | null
+          question_count?: number
+          subject_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concurso_subjects_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "concurso_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concursos: {
         Row: {
           alternatives_count: number | null
           banca: string
+          basic_knowledge_minimum_score: number | null
           basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
+          case_study_1_minimum_score: number | null
           case_study_1_weight: number | null
+          case_study_2_minimum_score: number | null
           case_study_2_weight: number | null
+          case_study_3_minimum_score: number | null
           case_study_3_weight: number | null
           created_at: string
           created_by_user_id: string | null
           custom_banca: string | null
           custom_job_title: string | null
           data_publicacao: string | null
+          discursive_minimum_score: number | null
           discursive_weight: number | null
           etapa_atual: string | null
           exam_type: string | null
@@ -92,6 +148,7 @@ export type Database = {
           has_discursive: boolean | null
           has_hipossuficientes: boolean | null
           has_indigenas: boolean | null
+          has_minimum_score: boolean | null
           has_pcd: boolean | null
           has_ppp: boolean | null
           has_specific_knowledge_1: boolean | null
@@ -105,17 +162,23 @@ export type Database = {
           knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
+          minimum_score_type: string | null
+          minimum_score_unit_type: string | null
           orgao: string
           predefined_job_title: string | null
+          specific_knowledge_1_minimum_score: number | null
           specific_knowledge_1_questions: number | null
           specific_knowledge_1_weight: number | null
+          specific_knowledge_2_minimum_score: number | null
           specific_knowledge_2_questions: number | null
           specific_knowledge_2_weight: number | null
+          specific_knowledge_3_minimum_score: number | null
           specific_knowledge_3_questions: number | null
           specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
           status: string
           titulo: string
+          total_minimum_score: number | null
           updated_at: string
           vagas: number | null
           wrong_answer_penalty: number | null
@@ -123,16 +186,21 @@ export type Database = {
         Insert: {
           alternatives_count?: number | null
           banca?: string
+          basic_knowledge_minimum_score?: number | null
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
+          case_study_1_minimum_score?: number | null
           case_study_1_weight?: number | null
+          case_study_2_minimum_score?: number | null
           case_study_2_weight?: number | null
+          case_study_3_minimum_score?: number | null
           case_study_3_weight?: number | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
+          discursive_minimum_score?: number | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
@@ -144,6 +212,7 @@ export type Database = {
           has_discursive?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
+          has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
           has_specific_knowledge_1?: boolean | null
@@ -157,17 +226,23 @@ export type Database = {
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
+          minimum_score_type?: string | null
+          minimum_score_unit_type?: string | null
           orgao: string
           predefined_job_title?: string | null
+          specific_knowledge_1_minimum_score?: number | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_1_weight?: number | null
+          specific_knowledge_2_minimum_score?: number | null
           specific_knowledge_2_questions?: number | null
           specific_knowledge_2_weight?: number | null
+          specific_knowledge_3_minimum_score?: number | null
           specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo: string
+          total_minimum_score?: number | null
           updated_at?: string
           vagas?: number | null
           wrong_answer_penalty?: number | null
@@ -175,16 +250,21 @@ export type Database = {
         Update: {
           alternatives_count?: number | null
           banca?: string
+          basic_knowledge_minimum_score?: number | null
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
+          case_study_1_minimum_score?: number | null
           case_study_1_weight?: number | null
+          case_study_2_minimum_score?: number | null
           case_study_2_weight?: number | null
+          case_study_3_minimum_score?: number | null
           case_study_3_weight?: number | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
+          discursive_minimum_score?: number | null
           discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
@@ -196,6 +276,7 @@ export type Database = {
           has_discursive?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
+          has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
           has_specific_knowledge_1?: boolean | null
@@ -209,17 +290,23 @@ export type Database = {
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
+          minimum_score_type?: string | null
+          minimum_score_unit_type?: string | null
           orgao?: string
           predefined_job_title?: string | null
+          specific_knowledge_1_minimum_score?: number | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_1_weight?: number | null
+          specific_knowledge_2_minimum_score?: number | null
           specific_knowledge_2_questions?: number | null
           specific_knowledge_2_weight?: number | null
+          specific_knowledge_3_minimum_score?: number | null
           specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           titulo?: string
+          total_minimum_score?: number | null
           updated_at?: string
           vagas?: number | null
           wrong_answer_penalty?: number | null
@@ -274,6 +361,7 @@ export type Database = {
           question_number: number
           question_type: string
           section_type: string
+          subject_id: string | null
           updated_at: string
           weight: number
         }
@@ -288,6 +376,7 @@ export type Database = {
           question_number: number
           question_type?: string
           section_type: string
+          subject_id?: string | null
           updated_at?: string
           weight?: number
         }
@@ -302,6 +391,7 @@ export type Database = {
           question_number?: number
           question_type?: string
           section_type?: string
+          subject_id?: string | null
           updated_at?: string
           weight?: number
         }
@@ -311,6 +401,13 @@ export type Database = {
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "official_answer_weights_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -393,6 +490,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subjects: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_predefined: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_predefined?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_predefined?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       user_answers: {
         Row: {
@@ -741,6 +862,17 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      get_candidate_subject_scores: {
+        Args: { p_ranking_id: string }
+        Returns: {
+          subject_name: string
+          score: number
+          question_count: number
+          minimum_required: number
+          is_passing: boolean
+          knowledge_section: string
+        }[]
+      }
       get_official_answer_weights: {
         Args: { p_concurso_id: string }
         Returns: Json
@@ -771,7 +903,12 @@ export type Database = {
           weighted_case_study_2_score: number
           weighted_case_study_3_score: number
           reservation_type: string
+          is_classified: boolean
         }[]
+      }
+      is_candidate_classified: {
+        Args: { p_ranking_id: string; p_concurso_id: string }
+        Returns: boolean
       }
       manage_question_blocks: {
         Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
