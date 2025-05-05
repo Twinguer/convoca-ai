@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { KnowledgeAreas } from './KnowledgeAreas';
 
 interface ExamStructureSectionProps {
   form: UseFormReturn<any>;
@@ -184,6 +185,91 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Exam Type and Penalties */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Tipo de Prova */}
+        <FormField
+          control={form.control}
+          name="exam_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Prova</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
+                  <SelectItem value="Certo-Errado">Certo ou Errado</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+        
+        {/* Quantidade de Alternativas */}
+        <FormField
+          control={form.control}
+          name="alternatives_count"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Quantidade de Alternativas</FormLabel>
+              <Select 
+                value={String(field.value)} 
+                onValueChange={(value) => field.onChange(Number(value))}
+                disabled={form.watch('exam_type') !== 'Alternativas'}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="4">4 (A-D)</SelectItem>
+                  <SelectItem value="5">5 (A-E)</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+        
+        {/* Penalidade para Erro */}
+        <FormField
+          control={form.control}
+          name="wrong_answer_penalty"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Penalidade para Erro</FormLabel>
+              <Select 
+                value={String(field.value)} 
+                onValueChange={(value) => field.onChange(Number(value))}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="0">Sem penalidade</SelectItem>
+                  <SelectItem value="0.25">0.25 pontos</SelectItem>
+                  <SelectItem value="0.33">0.33 pontos</SelectItem>
+                  <SelectItem value="0.5">0.5 pontos</SelectItem>
+                  <SelectItem value="1">1 ponto</SelectItem>
+                  <SelectItem value="1.5">1,5 pontos</SelectItem>
+                  <SelectItem value="2.5">2,5 pontos</SelectItem>
+                  <SelectItem value="3">3 pontos</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+      </div>
+      
+      {/* Knowledge areas / subjects selection */}
+      <KnowledgeAreas form={form} examStructureForm={true} />
 
       {/* Render all enabled sections */}
       {renderSectionCard(

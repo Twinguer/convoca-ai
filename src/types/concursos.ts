@@ -44,6 +44,7 @@ export interface Concurso {
   exam_type: string;
   created_by_user_id: string | null;
   is_admin_created: boolean;
+  is_admin_update: boolean;
   // Campos adicionados
   custom_banca?: string | null;
   localidades?: string[];
