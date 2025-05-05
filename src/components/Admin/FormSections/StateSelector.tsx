@@ -1,130 +1,110 @@
 
-import React, { useEffect } from 'react';
-import { FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import React, { useState } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MapPin } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface StateSelectorProps {
-  form?: any;
   selectedStates: string[];
-  setSelectedStates?: React.Dispatch<React.SetStateAction<string[]>>;
-  onStateChange?: (states: string[]) => void;
+  setSelectedStates: (states: string[]) => void;
 }
 
-const ESTADOS_BRASILEIROS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-  'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-  'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
-  // "Nacional" sempre no final:
-  'Nacional'
-];
-
 export const StateSelector: React.FC<StateSelectorProps> = ({
-  form,
   selectedStates,
-  setSelectedStates,
-  onStateChange
+  setSelectedStates
 }) => {
-  // Sincroniza com o formulário quando o componente é montado
-  useEffect(() => {
-    if (form) {
-      const formLocalidades = form.getValues('localidades');
-      if (formLocalidades && Array.isArray(formLocalidades)) {
-        if (setSelectedStates) {
-          setSelectedStates(formLocalidades);
-        }
-        if (onStateChange) {
-          onStateChange(formLocalidades);
-        }
-      }
-    }
-    // eslint-disable-next-line
-  }, [form, setSelectedStates, onStateChange]);
-
-  const handleStateSelection = (estado: string) => {
-    let newStates: string[] = [];
-
-    if (estado === 'Nacional') {
-      // Selecionando ou desselecionando "Nacional"
+  const STATES = [
+    'Nacional',
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
+    'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
+    'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
+  
+  // Handler for checkbox changes
+  const handleStateChange = (state: string, checked: boolean) => {
+    if (state === 'Nacional' && checked) {
+      // If "Nacional" is selected, deselect all other states
+      setSelectedStates(['Nacional']);
+    } else if (checked) {
+      // If "Nacional" was already selected and another state is now selected,
+      // remove "Nacional" and add the new state
       if (selectedStates.includes('Nacional')) {
-        newStates = [];
+        setSelectedStates([state]);
       } else {
-        newStates = ['Nacional'];
+        setSelectedStates([...selectedStates, state]);
       }
     } else {
-      // Selecionando estados comuns
-      if (selectedStates.includes(estado)) {
-        newStates = selectedStates.filter(s => s !== estado && s !== 'Nacional');
-      } else {
-        newStates = selectedStates.filter(s => s !== 'Nacional'); // nunca pode ter Nacional + estado
-        newStates = [...newStates, estado];
-      }
+      // If a state is deselected, remove it from the array
+      setSelectedStates(selectedStates.filter(s => s !== state));
     }
-
-    // Atualiza o estado local
-    if (setSelectedStates) setSelectedStates(newStates);
-    // Atualiza o formulário diretamente
-    if (form) {
-      form.setValue('localidades', newStates, { shouldDirty: true, shouldValidate: true });
-    }
-    // Chama o callback externo, se fornecido
-    if (onStateChange) onStateChange(newStates);
+  };
+  
+  const selectAll = () => {
+    setSelectedStates(STATES.filter(state => state !== 'Nacional'));
+  };
+  
+  const clearAll = () => {
+    setSelectedStates([]);
   };
 
   return (
-    <FormItem>
-      <FormLabel>Localidade</FormLabel>
-      <div className="flex flex-wrap gap-2">
-        {selectedStates.map(estado => (
-          <div key={estado} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">
-            {estado}
-          </div>
-        ))}
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <MapPin className="h-4 w-4" />
-              {selectedStates.length > 0 ? "Editar Estados" : "Adicionar Estados"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="max-w-2xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Selecione os Estados</AlertDialogTitle>
-              <AlertDialogDescription>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  {ESTADOS_BRASILEIROS.map((estado, idx) => (
-                    <div key={estado} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={estado}
-                        checked={selectedStates.includes(estado)}
-                        onCheckedChange={() => handleStateSelection(estado)}
-                        disabled={estado === 'Nacional'
-                          ? selectedStates.length > 0 && !selectedStates.includes('Nacional')
-                          : selectedStates.includes('Nacional')}
-                      />
-                      <label 
-                        htmlFor={estado} 
-                        className={`text-sm font-medium leading-none cursor-pointer ${estado === 'Nacional' ? "font-semibold text-blue-700" : ''}`}
-                      >
-                        {estado}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 text-xs text-muted-foreground">
-                  A opção Nacional é exclusiva. Não pode ser selecionada junto a outros estados.
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Fechar</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+    <div className="space-y-4">
+      <div className="flex justify-between mb-2">
+        <Label className="text-base">Localidades</Label>
+        <div className="space-x-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={selectAll}
+          >
+            Todas
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={clearAll}
+          >
+            Limpar
+          </Button>
+        </div>
       </div>
-    </FormItem>
+      
+      <ScrollArea className="h-[200px] rounded-md border p-4">
+        <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+          {STATES.map((state) => (
+            <div key={state} className="flex items-center space-x-2">
+              <Checkbox 
+                id={`state-${state}`} 
+                checked={selectedStates.includes(state)}
+                onCheckedChange={(checked) => 
+                  handleStateChange(state, checked as boolean)
+                }
+              />
+              <Label 
+                htmlFor={`state-${state}`}
+                className="text-sm cursor-pointer"
+              >
+                {state}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+      
+      {selectedStates.length > 0 && (
+        <div className="mt-2">
+          <p className="text-sm text-muted-foreground">
+            {selectedStates.includes('Nacional') ? 
+              'Nacional' : 
+              `${selectedStates.length} localidade(s) selecionada(s)`}
+          </p>
+        </div>
+      )}
+    </div>
   );
 };
 
+export default StateSelector;

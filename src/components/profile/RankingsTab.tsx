@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +14,7 @@ import { fetchUserRankings } from '@/services/rankingService';
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const RankingsTab: React.FC = () => {
   const { user } = useAuth();
