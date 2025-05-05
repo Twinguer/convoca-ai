@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserPlus, RefreshCw } from 'lucide-react';
+import { UserPlus, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
@@ -38,6 +39,7 @@ export interface Ranking {
   displayReservation: string;
   id: string;
   quotaPosition?: number; // Position within quota
+  isClassified?: boolean; // New field to indicate if the candidate is classified
 }
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -55,6 +57,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -75,7 +78,21 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         hasCaseStudy2: concurso.has_case_study_2,
         hasCaseStudy3: concurso.has_case_study_3
       });
+
+      // Log minimum score requirements
+      if (concurso.has_minimum_score) {
+        console.log('Minimum score requirements:', {
+          type: concurso.minimum_score_type,
+          unitType: concurso.minimum_score_unit_type,
+          total: concurso.total_minimum_score,
+          basic: concurso.basic_knowledge_minimum_score,
+          specific1: concurso.specific_knowledge_1_minimum_score,
+          specific2: concurso.specific_knowledge_2_minimum_score,
+          specific3: concurso.specific_knowledge_3_minimum_score,
+        });
+      }
     }
+    
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
@@ -86,7 +103,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         weightedBasic: rankings[0].weightedBasicScore,
         weightedSpecific1: rankings[0].weightedSpecific1Score
       });
-      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
+      
+      console.log('Classification status in rankings:', 
+        [...new Set(rankings.map(r => r.isClassified ? 'Classified' : 'Not Classified'))]);
+      
+      console.log('Reservation types in rankings:', 
+        [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
 
@@ -113,6 +135,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
+  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -134,6 +157,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
+  
   const availableQuotas = getAvailableQuotas();
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
@@ -142,6 +166,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
+  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -149,6 +174,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
+
+  // Check if concurso has minimum score requirements
+  const hasMinimumScoreRequirements = concurso?.has_minimum_score === true;
+  
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -163,20 +192,28 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           </div>}
       </CardHeader>
       <CardContent>
+        {hasMinimumScoreRequirements && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-700 font-medium">
+              Este concurso possui nota de corte. Candidatos que não atingiram a pontuação mínima exigida 
+              estão marcados em cinza.
+            </p>
+          </div>
+        )}
+        
         {availableQuotas.length > 1 ? <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4 flex flex-wrap h-auto">
               {availableQuotas.map(quota => <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>)}
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} // Pass the activeTab as a prop
-          />
+                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} hasMinimumScoreRequirements={hasMinimumScoreRequirements} />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" // Pass a default value
-      />}
+          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" hasMinimumScoreRequirements={hasMinimumScoreRequirements} />}
       </CardContent>
     </Card>;
 };
+
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
@@ -188,6 +225,7 @@ const getQuotaAbbreviation = (quota: string): string => {
   };
   return abbreviations[quota] || quota.substring(0, 3);
 };
+
 const getSectionWeights = (concurso?: Concurso) => {
   return {
     basic: concurso?.basic_knowledge_weight ?? 1,
@@ -200,6 +238,7 @@ const getSectionWeights = (concurso?: Concurso) => {
     caseStudy3: concurso?.case_study_3_weight ?? 1
   };
 };
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -219,7 +258,8 @@ const RankingTableContent: React.FC<{
   };
   isAuthenticated: boolean;
   isRefetching?: boolean;
-  activeTab: string; // Add the activeTab prop here
+  activeTab: string;
+  hasMinimumScoreRequirements: boolean;
 }> = ({
   rankings,
   currentUserId,
@@ -230,7 +270,8 @@ const RankingTableContent: React.FC<{
   sectionWeights,
   isAuthenticated,
   isRefetching = false,
-  activeTab // Destructure the activeTab prop
+  activeTab,
+  hasMinimumScoreRequirements
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -257,6 +298,7 @@ const RankingTableContent: React.FC<{
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
+  
   if (!concurso) {
     return <Table>
         <TableHeader>
@@ -298,7 +340,9 @@ const RankingTableContent: React.FC<{
         </TableBody>
       </Table>;
   }
+  
   const columns = getRankingTableColumns(concurso);
+  
   return <Table>
       <TableHeader>
         <TableRow>
@@ -341,13 +385,26 @@ const RankingTableContent: React.FC<{
           {concurso.has_case_study_3 === true && <TableHead className="text-right">
               Estudo 3
             </TableHead>}
+            
+          {hasMinimumScoreRequirements && (
+            <TableHead className="text-center w-24">Status</TableHead>
+          )}
+            
           {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody className="space-y-0.5">
         {rankings.length > 0 ? rankings.map(ranking => {
         const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
-        return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
+        const isNotClassified = hasMinimumScoreRequirements && ranking.isClassified === false;
+        
+        return <TableRow 
+              key={ranking.userId} 
+              className={`
+                ${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}
+                ${isNotClassified ? 'bg-gray-50 text-gray-500' : (scoreChanged ? 'bg-green-50' : '')}
+              `}
+            >
               <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
               {!isAmpla && <TableCell className="text-center font-bold">
                 {ranking.quotaPosition}º
@@ -403,12 +460,29 @@ const RankingTableContent: React.FC<{
               {concurso.has_case_study_3 === true && <TableCell className="text-right">
                   {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
                 </TableCell>}
+                
+              {hasMinimumScoreRequirements && (
+                <TableCell className="text-center">
+                  {ranking.isClassified ? (
+                    <div className="flex items-center justify-center text-emerald-600">
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Classificado</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center text-gray-400">
+                      <XCircle className="h-4 w-4 mr-1" />
+                      <span className="text-xs">Não classificado</span>
+                    </div>
+                  )}
+                </TableCell>
+              )}
+              
               {isAdminMode && isAuthenticated && <TableCell>
                   <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
                 </TableCell>}
             </TableRow>;
       }) : <TableRow>
-            <TableCell colSpan={columns.length + (isAdminMode && isAuthenticated ? 3 : 2)} className="text-center py-4">
+            <TableCell colSpan={(columns.length + (hasMinimumScoreRequirements ? 1 : 0) + (isAdminMode && isAuthenticated ? 1 : 0)) + (isAmpla ? 1 : 1)} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,35 +6,32 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { PencilLine, Trophy, ChevronDown, ChevronUp, CheckCircle, XCircle } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+
 interface RankingsTabProps {
   userId: string;
   userRankings?: UserRankingDisplay[];
   isAuthenticated?: boolean;
 }
+
 const RankingsTab: React.FC<RankingsTabProps> = ({
   userId,
   userRankings,
   isAuthenticated = false
 }) => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [showAllRankings, setShowAllRankings] = useState(false);
-  const {
-    data: rankings,
-    isLoading
-  } = useQuery({
+  
+  const { data: rankings, isLoading } = useQuery({
     queryKey: ['user-rankings', userId],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.from('user_rankings').select(`
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select(`
           id, 
           score,
           basic_knowledge_score,
@@ -42,54 +40,50 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           created_at,
           position,
           concurso_id,
-          concursos:concurso_id (id, titulo, orgao, banca)
-        `).eq('user_id', userId).order('score', {
-        ascending: false
-      });
+          is_score_recalculated,
+          concursos:concurso_id (
+            id, 
+            titulo, 
+            orgao, 
+            banca,
+            has_minimum_score
+          )
+        `)
+        .eq('user_id', userId)
+        .order('score', { ascending: false });
+        
       if (error) throw error;
 
-      // Para cada ranking, calcular a posição real
-      const rankingsWithPositions = await Promise.all((data || []).map(async ranking => {
-        // Verificar se concursos existe e é um objeto válido
-        if (!ranking.concursos || typeof ranking.concursos !== 'object') {
-          console.error('Invalid concurso data for ranking:', ranking);
-          return {
-            ...ranking,
-            position: null
-          };
+      // Para cada ranking com nota de corte, verificar se o candidato está classificado
+      const rankingsWithClassification = await Promise.all((data || []).map(async ranking => {
+        // Verificar se o concurso tem nota de corte
+        const hasMinimumScore = ranking.concursos?.has_minimum_score || false;
+        let isClassified = true; // Por padrão, assume-se que está classificado
+        
+        if (hasMinimumScore) {
+          // Verificar a classificação usando a função
+          const { data: classificationData, error: classificationError } = await supabase.rpc(
+            'is_candidate_classified',
+            {
+              p_ranking_id: ranking.id,
+              p_concurso_id: ranking.concurso_id
+            }
+          );
+          
+          if (classificationError) {
+            console.error('Error checking classification:', classificationError);
+          } else {
+            isClassified = classificationData;
+          }
         }
-
-        // Buscar pontuações de todos os participantes deste concurso
-        const concursoId = ranking.concurso_id;
-        if (!concursoId) {
-          console.error('No concurso ID found for ranking:', ranking);
-          return {
-            ...ranking,
-            position: null
-          };
-        }
-        const {
-          data: allScores,
-          error: scoresError
-        } = await supabase.from('user_rankings').select('score').eq('concurso_id', concursoId).order('score', {
-          ascending: false
-        });
-        if (scoresError) {
-          console.error('Erro ao buscar pontuações:', scoresError);
-          return {
-            ...ranking,
-            position: null
-          };
-        }
-
-        // Encontrar a posição do usuário
-        const position = allScores ? allScores.findIndex(s => s.score >= ranking.score) + 1 : 0;
+        
         return {
           ...ranking,
-          position
+          isClassified
         };
       }));
-      return rankingsWithPositions || [];
+
+      return rankingsWithClassification || [];
     },
     enabled: !userRankings && !!userId // Only fetch if userRankings is not provided and userId exists
   });
@@ -99,7 +93,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   const showSkeleton = isLoading && !userRankings;
 
   // Sort rankings by score (highest first)
-  const sortedRankings = [...(allRankings || [])].sort((a, b) => (typeof b.score === 'number' ? b.score : 0) - (typeof a.score === 'number' ? a.score : 0));
+  const sortedRankings = [...(allRankings || [])].sort((a, b) => 
+    (typeof b.score === 'number' ? b.score : 0) - (typeof a.score === 'number' ? a.score : 0));
 
   // Display only top 2 if not showing all
   const displayRankings = showAllRankings ? sortedRankings : sortedRankings?.slice(0, 2);
@@ -107,6 +102,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
   // Verifica se o usuário atual é o dono do perfil
   const isOwnProfile = user?.id === userId;
+  
   if (showSkeleton) {
     return <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
@@ -114,6 +110,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         <Skeleton className="h-24 w-full" />
       </div>;
   }
+  
   if (!allRankings || allRankings.length === 0) {
     return <Card>
         <CardContent className="p-6 text-center">
@@ -126,12 +123,16 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         </CardContent>
       </Card>;
   }
+  
   return <div className="space-y-4">
       <h3 className="text-lg font-medium">Rankings ({allRankings.length})</h3>
       
       <div className="grid gap-1">
         {displayRankings.map((ranking: any) => <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
+            <div className={`p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b
+              ${ranking.concursos?.has_minimum_score && !ranking.isClassified 
+                ? 'bg-gradient-to-r from-gray-50 to-white' 
+                : 'bg-gradient-to-r from-emerald-50 to-white'}`}>
               <div>
                 <h4 className="font-bold text-gray-500 text-sm truncate max-w-[200px]">
                   {ranking.concursos?.titulo || ranking.concursoTitle}
@@ -140,10 +141,25 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                   {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
                 </p>
                 
-                {/* Posição e Pontuação */}
+                {/* Status de classificação (exibido se o concurso tiver nota de corte) */}
+                {ranking.concursos?.has_minimum_score && (
+                  <div className="mt-2">
+                    {ranking.isClassified ? (
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 border-emerald-200 flex items-center gap-1 w-fit">
+                        <CheckCircle className="h-3 w-3" />
+                        <span>Classificado</span>
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 flex items-center gap-1 w-fit">
+                        <XCircle className="h-3 w-3" />
+                        <span>Não classificado</span>
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                
+                {/* Pontuação */}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  
-                  
                   <Badge variant="secondary" className="flex items-center">
                     Pontuação: {typeof ranking.score === 'number' ? ranking.score.toFixed(2) : 'Calculando...'}
                   </Badge>
@@ -176,4 +192,5 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       </div>
     </div>;
 };
+
 export default RankingsTab;
