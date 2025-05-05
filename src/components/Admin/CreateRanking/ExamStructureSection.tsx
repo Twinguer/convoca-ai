@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -7,12 +8,15 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, Trash2 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ExamStructureSectionProps {
   form: any;
 }
 
 export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form }) => {
+  const [minimumScoreType, setMinimumScoreType] = useState<'percentage' | 'points'>('percentage');
+  
   // Helper function to render weight select component
   const renderWeightSelect = (name: string) => (
     <FormField
@@ -61,6 +65,49 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
       )}
     />
   );
+  
+  // Helper function for minimum score inputs
+  const renderMinimumScoreInput = (name: string, questionsFieldName: string) => {
+    const questionsValue = form.watch(questionsFieldName) || 0;
+    
+    return (
+      <FormField 
+        control={form.control} 
+        name={name} 
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nota Mínima {minimumScoreType === 'percentage' ? '(%)' : '(pontos)'}</FormLabel>
+            <div className="flex space-x-2">
+              <div className="flex-1">
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    min="0"
+                    max={minimumScoreType === 'percentage' ? 100 : questionsValue} 
+                    {...field} 
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+              </div>
+              <Tabs 
+                defaultValue={minimumScoreType} 
+                className="w-[140px]"
+                onValueChange={(value) => {
+                  setMinimumScoreType(value as 'percentage' | 'points');
+                  form.setValue('minimum_score_unit_type', value as 'percentage' | 'points');
+                }}
+              >
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="percentage">%</TabsTrigger>
+                  <TabsTrigger value="points">Pontos</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </FormItem>
+        )} 
+      />
+    );
+  };
 
   // Helper to add knowledge area
   const handleAddKnowledgeArea = (type: string) => {
@@ -211,6 +258,23 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
           </div>
         </div>
         
+        {/* Define tipo de unidade para nota mínima */}
+        <FormField
+          control={form.control}
+          name="minimum_score_unit_type"
+          render={({ field }) => (
+            <FormItem className="hidden">
+              <FormControl>
+                <Input 
+                  type="hidden" 
+                  {...field} 
+                  value={minimumScoreType}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+        
         {/* Áreas de Conhecimento */}
         <div className="flex justify-between items-center mb-4">
           <h4 className="font-medium">Áreas de Conhecimento</h4>
@@ -298,9 +362,10 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderQuestionsInput("basic_knowledge_questions")}
                 {renderWeightSelect("basic_knowledge_weight")}
+                {renderMinimumScoreInput("basic_knowledge_minimum_score", "basic_knowledge_questions")}
               </div>
             </div>
           )}
@@ -321,9 +386,10 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderQuestionsInput("specific_knowledge_1_questions")}
                 {renderWeightSelect("specific_knowledge_1_weight")}
+                {renderMinimumScoreInput("specific_knowledge_1_minimum_score", "specific_knowledge_1_questions")}
               </div>
             </div>
           )}
@@ -344,9 +410,10 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderQuestionsInput("specific_knowledge_2_questions")}
                 {renderWeightSelect("specific_knowledge_2_weight")}
+                {renderMinimumScoreInput("specific_knowledge_2_minimum_score", "specific_knowledge_2_questions")}
               </div>
             </div>
           )}
@@ -367,9 +434,10 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderQuestionsInput("specific_knowledge_3_questions")}
                 {renderWeightSelect("specific_knowledge_3_weight")}
+                {renderMinimumScoreInput("specific_knowledge_3_minimum_score", "specific_knowledge_3_questions")}
               </div>
             </div>
           )}
@@ -390,8 +458,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderWeightSelect("discursive_weight")}
+                {renderMinimumScoreInput("discursive_minimum_score", "discursive_weight")}
               </div>
             </div>
           )}
@@ -412,8 +481,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderWeightSelect("case_study_1_weight")}
+                {renderMinimumScoreInput("case_study_1_minimum_score", "case_study_1_weight")}
               </div>
             </div>
           )}
@@ -434,8 +504,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderWeightSelect("case_study_2_weight")}
+                {renderMinimumScoreInput("case_study_2_minimum_score", "case_study_2_weight")}
               </div>
             </div>
           )}
@@ -456,8 +527,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {renderWeightSelect("case_study_3_weight")}
+                {renderMinimumScoreInput("case_study_3_minimum_score", "case_study_3_weight")}
               </div>
             </div>
           )}

@@ -45,6 +45,20 @@ export interface Concurso {
   case_study_2_weight?: number;
   case_study_3_weight?: number;
   
+  // Minimum scores
+  has_minimum_score?: boolean;
+  minimum_score_unit_type?: 'percentage' | 'points';
+  minimum_score_type?: 'knowledge' | 'subject';
+  total_minimum_score?: number;
+  basic_knowledge_minimum_score?: number;
+  specific_knowledge_1_minimum_score?: number;
+  specific_knowledge_2_minimum_score?: number;
+  specific_knowledge_3_minimum_score?: number;
+  discursive_minimum_score?: number;
+  case_study_1_minimum_score?: number;
+  case_study_2_minimum_score?: number;
+  case_study_3_minimum_score?: number;
+  
   // Exam configuration
   alternatives_count?: number;
   wrong_answer_penalty?: number;
@@ -144,4 +158,18 @@ export const getRankingTableColumns = (concurso: Concurso) => {
   }
   
   return columns;
+};
+
+// Utility to check if a score meets the minimum requirement
+export const isScoreBelowMinimum = (score: number, minimumScore: number, totalQuestions: number, unitType: 'percentage' | 'points') => {
+  if (minimumScore <= 0) {
+    return false;
+  }
+  
+  if (unitType === 'percentage') {
+    const percentageScore = (score / totalQuestions) * 100;
+    return percentageScore < minimumScore;
+  }
+  
+  return score < minimumScore;
 };
