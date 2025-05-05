@@ -1,30 +1,28 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UseFormReturn } from 'react-hook-form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StateSelector } from './StateSelector';
 
 interface GeneralInfoSectionProps {
   form: UseFormReturn<any>;
-  jobTitles: Array<{id: string, title: string}>;
+  jobTitles: { id: string; title: string; }[];
   isCustomTitle: boolean;
   isCustomBanca: boolean;
   handleJobTitleChange: (value: string) => void;
   handleCustomTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleBancaChange: (value: string) => void;
-  handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
-  form,
-  jobTitles,
-  isCustomTitle,
+export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({ 
+  form, 
+  jobTitles, 
+  isCustomTitle, 
   isCustomBanca,
-  handleJobTitleChange,
+  handleJobTitleChange, 
   handleCustomTitleChange,
-  handleBancaChange,
-  handleOrgaoChange
+  handleBancaChange
 }) => {
   return (
     <div className="space-y-6">
@@ -94,7 +92,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
             <FormItem>
               <FormLabel>Orgão</FormLabel>
               <FormControl>
-                <Input {...field} onChange={handleOrgaoChange} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
