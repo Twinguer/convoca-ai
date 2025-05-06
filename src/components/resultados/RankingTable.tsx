@@ -8,16 +8,22 @@ import { Concurso } from '@/types/concursos';
 
 interface RankingTableProps {
   rankings: any[];
-  isLoading: boolean;
-  showReservation?: boolean;
   concurso: Concurso | null;
+  currentUserId?: string; // Added this prop to fix the type error
+  isAuthenticated?: boolean;
+  isRefetching?: boolean;
+  isLoading?: boolean;
+  showReservation?: boolean;
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({ 
   rankings, 
-  isLoading,
-  showReservation = false,
-  concurso 
+  concurso,
+  currentUserId,
+  isAuthenticated = false,
+  isRefetching = false,
+  isLoading = false,
+  showReservation = false
 }) => {
   const [columns, setColumns] = useState<any[]>([
     { id: 'position', label: '#', align: 'center', width: '16' },
@@ -134,7 +140,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           {rankings.map((ranking) => (
             <TableRow 
               key={ranking.id}
-              className={ranking.is_classified === false ? 'bg-red-50' : ''}
+              className={`${ranking.is_classified === false ? 'bg-red-50' : ''} 
+                         ${currentUserId && ranking.userId === currentUserId ? 'bg-blue-50' : ''}`}
             >
               <TableCell className="text-center font-medium">
                 {ranking.position}

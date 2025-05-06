@@ -1,5 +1,4 @@
 
-import { supabaseAdmin } from '@/integrations/supabase/admin';
 import { supabase } from '@/integrations/supabase/client';
 import { getRankingTableColumns } from '@/types/concursos';
 
