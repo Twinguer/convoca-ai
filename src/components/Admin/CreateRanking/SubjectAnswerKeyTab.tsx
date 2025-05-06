@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -181,43 +180,14 @@ export const SubjectAnswerKeyTab = ({
         await onSaveFullRanking(formValues, answerKeyData);
         toast.success('Gabarito salvo com sucesso!');
       } else if (concursoId) {
-        // Salvar diretamente na tabela de gabarito oficial
-        // Primeiro apagar respostas existentes
-        const { error: deleteError } = await supabase
-          .from('official_answer_weights')
-          .delete()
-          .eq('concurso_id', concursoId);
+        // Use the answerKeyService to save the answer key
+        const result = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
         
-        if (deleteError) {
-          console.error('Erro ao apagar gabarito anterior:', deleteError);
-          toast.error('Erro ao atualizar gabarito');
-          setIsSaving(false);
-          return;
-        }
-        
-        // Inserir novas respostas
-        const { error: insertError } = await supabase
-          .from('official_answer_weights')
-          .insert(answerKeyData);
-        
-        if (insertError) {
-          console.error('Erro ao salvar gabarito:', insertError);
+        if (result.success) {
+          toast.success('Gabarito salvo com sucesso!');
+        } else {
           toast.error('Erro ao salvar gabarito');
-          setIsSaving(false);
-          return;
         }
-        
-        // Forçar recálculo de pontuações
-        try {
-          await supabase.rpc('recalculate_all_scores', {
-            p_concurso_id: concursoId
-          });
-        } catch (recalcError) {
-          console.error('Erro ao recalcular pontuações:', recalcError);
-          // Não interromper o fluxo, apenas logar o erro
-        }
-        
-        toast.success('Gabarito salvo com sucesso!');
       } else {
         toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
       }

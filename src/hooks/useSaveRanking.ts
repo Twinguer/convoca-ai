@@ -65,9 +65,17 @@ export const useSaveRanking = () => {
         }
       }
       
-      // Validação adicional para disciplinas quando o modo de pontuação mínima é por disciplina
-      if (formValues.minimum_score_type === 'subject' && 
-          (!processedSubjects || (Array.isArray(processedSubjects) && processedSubjects.length === 0))) {
+      // Validação adicional para estrutura por conhecimento ou por disciplina
+      if (formValues.minimum_score_type === 'knowledge' && 
+          !((formValues.has_basic_knowledge && formValues.basic_knowledge_questions > 0) || 
+            (formValues.has_specific_knowledge_1 && formValues.specific_knowledge_1_questions > 0) || 
+            (formValues.has_specific_knowledge_2 && formValues.specific_knowledge_2_questions > 0) || 
+            (formValues.has_specific_knowledge_3 && formValues.specific_knowledge_3_questions > 0))) {
+        toast.error("Pelo menos uma seção de conhecimento deve estar habilitada e ter um número de questões maior que zero");
+        setIsLoading(false);
+        return { error: "Configuração de conhecimentos inválida" };
+      } else if (formValues.minimum_score_type === 'subject' && 
+                (!processedSubjects || !Array.isArray(processedSubjects) || processedSubjects.length === 0)) {
         toast.error("Pelo menos uma disciplina deve ser adicionada quando o modo por disciplina é selecionado");
         setIsLoading(false);
         return { error: "Disciplinas não configuradas" };
