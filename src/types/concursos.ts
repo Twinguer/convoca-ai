@@ -58,12 +58,12 @@ export interface Concurso {
   case_study_2_minimum_score?: number;
   case_study_3_minimum_score?: number;
   
-  // Quota minimum scores (new)
+  // Quota minimum scores
   has_quota_minimum_score?: boolean;
   quota_minimum_score?: number;
   quota_minimum_score_unit_type?: 'percentage' | 'points';
   
-  // Subject-level configuration (new)
+  // Subject-level configuration
   subjects?: SubjectConfig[];
   
   // Exam configuration
