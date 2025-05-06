@@ -151,6 +151,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions
   };
 };

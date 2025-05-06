@@ -10,12 +10,13 @@ import { Badge } from '../components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import { fetchConcursos } from '../services/concursoService';
 import { Concurso } from '../types/concursos';
+import { ConcursoFilter } from '@/types/concursos';
 
 const CebraspeConcursos: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewType, setViewType] = useState<'cards' | 'table'>('cards');
   const [filter, setFilter] = useState<ConcursoFilter>({
-    banca: ['CEBRASPE'] // Use array format
+    banca: ['Cebraspe']  // Usando array para corresponder ao tipo esperado
   });
   
   // Fetch concursos em andamento - Updated to pass filter object correctly

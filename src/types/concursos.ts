@@ -40,7 +40,7 @@ export interface ConcursoFilter {
   orgao?: string[];
   banca?: string[];
   cargo?: string[];
-  status?: string; // Adding status as string
+  status?: string | string[]; // Updating status to accept both string and string[] for compatibility
   mostrarStatus?: string[];
   mostrarBanca?: string[];
   mostrarCargo?: string[];

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -80,7 +81,7 @@ const Home: React.FC = () => {
   const setStatusFilter = (status: string) => {
     setFilter(prev => ({
       ...prev,
-      status: [status] // Always use array format
+      status: [status] // Usando array para corresponder ao tipo esperado
     }));
   };
 
@@ -131,7 +132,9 @@ const Home: React.FC = () => {
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {filter.status ? (
-                format(new Date(filter.status), "PPP", { locale: ptBR })
+                Array.isArray(filter.status) ? 
+                  format(new Date(filter.status[0]), "PPP", { locale: ptBR }) :
+                  format(new Date(filter.status), "PPP", { locale: ptBR })
               ) : (
                 <span>Selecionar Data</span>
               )}
@@ -140,7 +143,6 @@ const Home: React.FC = () => {
           <PopoverContent className="w-auto p-0" align="center" side="bottom">
             <Calendar
               mode="single"
-              // selected={filter.status}
               onSelect={handleDateChange}
               disabled={(date) =>
                 date > new Date() || date < new Date("1900-01-01")

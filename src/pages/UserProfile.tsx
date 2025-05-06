@@ -113,7 +113,7 @@ const UserProfile = () => {
   });
 
   const {
-    data: rankings
+    data: rankingsData
   } = useQuery({
     queryKey: ['user-rankings', user?.id],
     queryFn: async () => {
@@ -128,31 +128,33 @@ const UserProfile = () => {
           concursos(titulo)
         `).eq('user_id', user.id);
       if (error) throw error;
-      const userRankings = data?.map(ranking => ({
-        id: ranking.concursoId,
-        name: ranking.concursoTitle,
-        position: ranking.position,
+      const formattedRankings: UserRankingDisplay[] = rankingsData?.map((ranking: any) => ({
+        id: ranking.id,
+        position: ranking.position || 0, // Fornecendo um valor padrão
+        name: profile?.name || '',
+        userId: ranking.user_id,
         score: ranking.score,
-        userId: user?.id || '',
-        avatarUrl: user?.user_metadata?.avatar_url || null,
-        basicKnowledgeScore: 0,
-        specificKnowledgeScore: 0,
-        specific1Score: 0,
-        specific2Score: 0,
-        specific3Score: 0,
-        discursiveScore: 0,
-        weightedBasicScore: 0,
-        weightedSpecific1Score: 0,
-        weightedSpecific2Score: 0,
-        weightedSpecific3Score: 0,
-        weightedDiscursiveScore: 0,
-        weightedCaseStudy1Score: 0,
-        weightedCaseStudy2Score: 0,
-        weightedCaseStudy3Score: 0,
-        reservationType: 'Ampla Concorrência',
-        displayReservation: ''
-      })) as UserRankingDisplay[];
-      return userRankings;
+        avatarUrl: profile?.avatar_url || null,
+        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
+        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
+        specific1Score: ranking.specific_knowledge_1_score || 0,
+        specific2Score: ranking.specific_knowledge_2_score || 0,
+        specific3Score: ranking.specific_knowledge_3_score || 0,
+        discursiveScore: ranking.discursive_score || 0,
+        weightedBasicScore: ranking.weighted_basic_score || 0,
+        weightedSpecific1Score: ranking.weighted_specific_1_score || 0,
+        weightedSpecific2Score: ranking.weighted_specific_2_score || 0,
+        weightedSpecific3Score: ranking.weighted_specific_3_score || 0,
+        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
+        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
+        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
+        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
+        reservationType: ranking.reservation_type || 'Ampla Concorrência',
+        displayReservation: ranking.reservation_type || 'Ampla Concorrência',
+        concursoId: ranking.concurso_id,
+        concursoTitle: ranking.concursos?.titulo || 'Concurso'
+      })) || [];
+      return formattedRankings;
     },
     enabled: !!user
   });
@@ -185,10 +187,10 @@ const UserProfile = () => {
   }, [followerData]);
 
   useEffect(() => {
-    if (rankings && rankings.length > 0) {
-      setUserRankings(rankings);
+    if (rankingsData && rankingsData.length > 0) {
+      setUserRankings(rankingsData);
     }
-  }, [rankings]);
+  }, [rankingsData]);
 
   useEffect(() => {
     if (profile) {
