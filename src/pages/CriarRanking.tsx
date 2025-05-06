@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,7 +83,7 @@ const CriarRanking = () => {
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
-      has_basic_knowledge: true,
+      has_basic_knowledge: false,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
       basic_knowledge_minimum_score: 0,
@@ -124,6 +123,8 @@ const CriarRanking = () => {
       minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
       minimum_score_type: 'knowledge' as 'knowledge' | 'subject',
       total_minimum_score: 0,
+      
+      subjects: [],
       
       has_ampla_concorrencia: true,
       has_ppp: false,
@@ -212,6 +213,16 @@ const CriarRanking = () => {
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, { shouldDirty: true });
     formValues.localidades = selectedStates;
+    
+    // Processar as disciplinas se estiver no formato string
+    if (typeof formValues.subjects === 'string') {
+      try {
+        formValues.subjects = JSON.parse(formValues.subjects);
+      } catch (error) {
+        console.error("Erro ao processar disciplinas:", error);
+        formValues.subjects = [];
+      }
+    }
     
     // Adicionar flags de admin se necessário - corrigir o tipo aqui
     if (isAdmin) {

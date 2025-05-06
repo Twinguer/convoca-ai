@@ -9,6 +9,18 @@ export const getExamStructure = (concurso: any) => {
   const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
   const specific3End = specific2End + (concurso.specific_knowledge_3_questions || 0);
   
+  // Prepara informações das disciplinas (se existirem)
+  const subjectsInfo = concurso.subjects && Array.isArray(concurso.subjects) 
+    ? concurso.subjects.map((subject: any) => ({
+        name: subject.name,
+        code: subject.code,
+        questions: subject.questions || 0,
+        weight: subject.weight || 1,
+        minimumScore: subject.minimum_score || 0,
+        unitType: subject.minimum_score_unit_type || 'percentage'
+      }))
+    : [];
+  
   return {
     basicEnd,
     specific1End,
@@ -26,7 +38,11 @@ export const getExamStructure = (concurso: any) => {
       caseStudy1: concurso.case_study_1_minimum_score || 0,
       caseStudy2: concurso.case_study_2_minimum_score || 0,
       caseStudy3: concurso.case_study_3_minimum_score || 0
-    }
+    },
+    // Informações das disciplinas
+    subjects: subjectsInfo,
+    // Tipo de nota mínima (conhecimento ou disciplina)
+    minimumScoreType: concurso.minimum_score_type || 'knowledge'
   };
 };
 

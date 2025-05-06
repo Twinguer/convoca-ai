@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -59,6 +58,9 @@ export interface Concurso {
   case_study_2_minimum_score?: number;
   case_study_3_minimum_score?: number;
   
+  // Subject-level configuration (new)
+  subjects?: SubjectConfig[];
+  
   // Exam configuration
   alternatives_count?: number;
   wrong_answer_penalty?: number;
@@ -75,6 +77,17 @@ export interface Concurso {
   has_hipossuficientes?: boolean;
   has_indigenas?: boolean;
   has_transsexuais?: boolean;
+}
+
+export interface SubjectConfig {
+  id?: string;
+  concurso_id?: string;
+  name: string;
+  code: string;
+  questions: number;
+  weight: number;
+  minimum_score: number;
+  minimum_score_unit_type: 'percentage' | 'points';
 }
 
 export interface ConcursoFilter {
@@ -173,3 +186,78 @@ export const isScoreBelowMinimum = (score: number, minimumScore: number, totalQu
   
   return score < minimumScore;
 };
+
+// Gera uma sigla (código) baseado no nome da disciplina
+export const generateSubjectCode = (name: string): string => {
+  if (!name) return 'SUB';
+  
+  // Para nomes já conhecidos, retorna a sigla predefinida
+  const knownSubjects: Record<string, string> = {
+    'Português': 'LPT',
+    'Inglês': 'ING',
+    'Matemática': 'MAT',
+    'RLM': 'RLM',
+    'Estatística': 'EST',
+    'Constitucional': 'COS',
+    'Administrativo': 'ADM',
+    'Administração': 'ADO',
+    'Contabilidade': 'COT',
+    'Contabilidade Custos': 'COC',
+    'Economia': 'ECO',
+    'Tributário': 'TRI',
+    'AFO': 'AFO',
+    'Legislação Tributária': 'LTC',
+    'Tecnologia da informação': 'TIC',
+    'Estatuto': 'ETT',
+    'Auditoria': 'AUD',
+    'Civil': 'CIV',
+    'Penal': 'PEN',
+    'Informática': 'INF',
+    'Empresarial': 'EMP'
+  };
+  
+  if (knownSubjects[name]) {
+    return knownSubjects[name];
+  }
+  
+  // Para nomes personalizados, gera uma sigla de 3 letras
+  const words = name.split(' ');
+  if (words.length === 1) {
+    // Uma palavra única - primeiras 3 letras
+    return name.substring(0, 3).toUpperCase();
+  } else {
+    // Múltiplas palavras - primeira letra de cada palavra (até 3)
+    let code = '';
+    for (let i = 0; i < Math.min(3, words.length); i++) {
+      if (words[i] && words[i].length > 0) {
+        code += words[i][0];
+      }
+    }
+    return code.toUpperCase();
+  }
+};
+
+// Lista de disciplinas para o seletor
+export const availableSubjects = [
+  { name: 'Português', code: 'LPT' },
+  { name: 'Inglês', code: 'ING' },
+  { name: 'Matemática', code: 'MAT' },
+  { name: 'RLM', code: 'RLM' },
+  { name: 'Estatística', code: 'EST' },
+  { name: 'Constitucional', code: 'COS' },
+  { name: 'Administrativo', code: 'ADM' },
+  { name: 'Administração', code: 'ADO' },
+  { name: 'Contabilidade', code: 'COT' },
+  { name: 'Contabilidade Custos', code: 'COC' },
+  { name: 'Economia', code: 'ECO' },
+  { name: 'Tributário', code: 'TRI' },
+  { name: 'AFO', code: 'AFO' },
+  { name: 'Legislação Tributária', code: 'LTC' },
+  { name: 'Tecnologia da informação', code: 'TIC' },
+  { name: 'Estatuto', code: 'ETT' },
+  { name: 'Auditoria', code: 'AUD' },
+  { name: 'Civil', code: 'CIV' },
+  { name: 'Penal', code: 'PEN' },
+  { name: 'Informática', code: 'INF' },
+  { name: 'Empresarial', code: 'EMP' }
+];
