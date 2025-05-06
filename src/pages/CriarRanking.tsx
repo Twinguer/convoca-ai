@@ -124,6 +124,11 @@ const CriarRanking = () => {
       minimum_score_type: 'knowledge' as 'knowledge' | 'subject',
       total_minimum_score: 0,
       
+      // Novos campos para notas mínimas de cotistas
+      has_quota_minimum_score: false,
+      quota_minimum_score: 0,
+      quota_minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
+      
       subjects: [],
       
       has_ampla_concorrencia: true,

@@ -39,6 +39,12 @@ export const getExamStructure = (concurso: any) => {
       caseStudy2: concurso.case_study_2_minimum_score || 0,
       caseStudy3: concurso.case_study_3_minimum_score || 0
     },
+    // Adicionar informações de nota mínima para cotistas
+    quotaMinimumScore: {
+      enabled: concurso.has_quota_minimum_score || false,
+      score: concurso.quota_minimum_score || 0,
+      unitType: concurso.quota_minimum_score_unit_type || 'percentage'
+    },
     // Informações das disciplinas
     subjects: subjectsInfo,
     // Tipo de nota mínima (conhecimento ou disciplina)
@@ -63,6 +69,33 @@ export const isScoreBelowMinimum = (
   if (minimumScore <= 0) {
     return false;
   }
+  
+  if (unitType === 'percentage') {
+    const scorePercentage = (score / totalQuestions) * 100;
+    return scorePercentage < minimumScore;
+  }
+  
+  return score < minimumScore;
+};
+
+/**
+ * Verifica se uma pontuação é menor que a pontuação mínima requerida para cotistas
+ * @param score Pontuação a ser verificada
+ * @param concurso Configurações do concurso
+ * @param totalQuestions Total de questões
+ * @returns True se a pontuação estiver abaixo do mínimo para cotistas
+ */
+export const isQuotaScoreBelowMinimum = (
+  score: number,
+  concurso: any,
+  totalQuestions: number
+): boolean => {
+  if (!concurso.has_quota_minimum_score || !concurso.quota_minimum_score || concurso.quota_minimum_score <= 0) {
+    return false;
+  }
+  
+  const unitType = concurso.quota_minimum_score_unit_type || 'percentage';
+  const minimumScore = concurso.quota_minimum_score;
   
   if (unitType === 'percentage') {
     const scorePercentage = (score / totalQuestions) * 100;

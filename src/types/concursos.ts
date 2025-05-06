@@ -58,6 +58,11 @@ export interface Concurso {
   case_study_2_minimum_score?: number;
   case_study_3_minimum_score?: number;
   
+  // Quota minimum scores (new)
+  has_quota_minimum_score?: boolean;
+  quota_minimum_score?: number;
+  quota_minimum_score_unit_type?: 'percentage' | 'points';
+  
   // Subject-level configuration (new)
   subjects?: SubjectConfig[];
   
@@ -261,3 +266,29 @@ export const availableSubjects = [
   { name: 'Informática', code: 'INF' },
   { name: 'Empresarial', code: 'EMP' }
 ];
+
+/**
+ * Verifica se uma pontuação é menor que a pontuação mínima requerida para cotistas
+ * @param score Pontuação a ser verificada
+ * @param minimumScore Pontuação mínima requerida 
+ * @param totalQuestions Total de questões da seção
+ * @param unitType Tipo de unidade (porcentagem ou pontos absolutos)
+ * @returns True se a pontuação estiver abaixo do mínimo
+ */
+export const isQuotaScoreBelowMinimum = (
+  score: number, 
+  minimumScore: number, 
+  totalQuestions: number, 
+  unitType: 'percentage' | 'points'
+): boolean => {
+  if (minimumScore <= 0) {
+    return false;
+  }
+  
+  if (unitType === 'percentage') {
+    const scorePercentage = (score / totalQuestions) * 100;
+    return scorePercentage < minimumScore;
+  }
+  
+  return score < minimumScore;
+};
