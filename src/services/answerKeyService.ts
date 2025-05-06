@@ -81,6 +81,50 @@ export const answerKeyService = {
     try {
       console.log('[answerKeyService] Salvando gabarito completo para concurso:', concursoId);
       
+      // Get concurso to determine if it's subject-based or knowledge-based
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('minimum_score_type, subjects')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao buscar informações do concurso:', concursoError);
+        throw concursoError;
+      }
+      
+      // For subject-based exams, set the section_type property appropriately
+      if (concurso.minimum_score_type === 'subject') {
+        // Parse subjects
+        let subjects = [];
+        try {
+          subjects = typeof concurso.subjects === 'string' 
+            ? JSON.parse(concurso.subjects) 
+            : concurso.subjects || [];
+        } catch (e) {
+          console.error('[answerKeyService] Erro ao processar disciplinas:', e);
+        }
+        
+        // Helper function to determine which subject a question belongs to
+        const getSubjectForQuestion = (questionNumber: number) => {
+          let currentQuestion = 1;
+          for (const subject of subjects) {
+            if (questionNumber >= currentQuestion && 
+                questionNumber < currentQuestion + subject.questions) {
+              return subject.code;
+            }
+            currentQuestion += subject.questions;
+          }
+          return null;
+        };
+        
+        // Update section_type for each answer
+        answerKeyData = answerKeyData.map(item => ({
+          ...item,
+          section_type: getSubjectForQuestion(item.question_number) || item.section_type
+        }));
+      }
+      
       // Em vez de deletar tudo e reinserir, vamos atualizar cada questão individualmente
       // para evitar o erro de duplicação
       for (const item of answerKeyData) {

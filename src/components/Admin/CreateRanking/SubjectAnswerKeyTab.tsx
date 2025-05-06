@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SubjectConfig } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -143,10 +142,11 @@ export const SubjectAnswerKeyTab = ({
       setIsSaving(true);
       
       const allQuestions = getAllQuestions();
-      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
+      const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.includes(q));
       
       if (unansweredQuestions.length > 0) {
-        toast.error(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        toast.error(`Todas as questões devem ser respondidas ou anuladas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        setIsSaving(false);
         return;
       }
 
@@ -170,7 +170,7 @@ export const SubjectAnswerKeyTab = ({
         return {
           concurso_id: concursoId || '',
           question_number: qNum,
-          correct_answer: answers[qNum],
+          correct_answer: answers[qNum] || '',
           weight: 1.0, // Default weight
           section_type: subjectCode, // Use subject code as section_type
           is_nullified: nullifiedQuestions.includes(qNum)
@@ -179,6 +179,44 @@ export const SubjectAnswerKeyTab = ({
       
       if (onSaveFullRanking && formValues) {
         await onSaveFullRanking(formValues, answerKeyData);
+        toast.success('Gabarito salvo com sucesso!');
+      } else if (concursoId) {
+        // Salvar diretamente na tabela de gabarito oficial
+        // Primeiro apagar respostas existentes
+        const { error: deleteError } = await supabase
+          .from('official_answer_weights')
+          .delete()
+          .eq('concurso_id', concursoId);
+        
+        if (deleteError) {
+          console.error('Erro ao apagar gabarito anterior:', deleteError);
+          toast.error('Erro ao atualizar gabarito');
+          setIsSaving(false);
+          return;
+        }
+        
+        // Inserir novas respostas
+        const { error: insertError } = await supabase
+          .from('official_answer_weights')
+          .insert(answerKeyData);
+        
+        if (insertError) {
+          console.error('Erro ao salvar gabarito:', insertError);
+          toast.error('Erro ao salvar gabarito');
+          setIsSaving(false);
+          return;
+        }
+        
+        // Forçar recálculo de pontuações
+        try {
+          await supabase.rpc('recalculate_all_scores', {
+            p_concurso_id: concursoId
+          });
+        } catch (recalcError) {
+          console.error('Erro ao recalcular pontuações:', recalcError);
+          // Não interromper o fluxo, apenas logar o erro
+        }
+        
         toast.success('Gabarito salvo com sucesso!');
       } else {
         toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
@@ -311,6 +349,7 @@ export const SubjectAnswerKeyTab = ({
             type="button" 
             onClick={handleSaveAnswerKey}
             disabled={isSaving}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             {isSaving ? 'Salvando...' : 'Salvar Gabarito'}
           </Button>

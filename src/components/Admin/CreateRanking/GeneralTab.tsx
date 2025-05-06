@@ -144,6 +144,20 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         });
         return false;
       }
+      
+      // Verificar se as disciplinas têm questões
+      const hasInvalidSubject = subjectsArray.some((subject: any) => 
+        !subject.questions || subject.questions <= 0
+      );
+      
+      if (hasInvalidSubject) {
+        toast({
+          title: "Erro de validação",
+          description: "Todas as disciplinas devem ter pelo menos uma questão.",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     const hasAnyQuota = 

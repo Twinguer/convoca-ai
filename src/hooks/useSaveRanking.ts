@@ -65,6 +65,14 @@ export const useSaveRanking = () => {
         }
       }
       
+      // Validação adicional para disciplinas quando o modo de pontuação mínima é por disciplina
+      if (formValues.minimum_score_type === 'subject' && 
+          (!processedSubjects || (Array.isArray(processedSubjects) && processedSubjects.length === 0))) {
+        toast.error("Pelo menos uma disciplina deve ser adicionada quando o modo por disciplina é selecionado");
+        setIsLoading(false);
+        return { error: "Disciplinas não configuradas" };
+      }
+      
       // Dados para inserção
       const concursoData = {
         titulo: finalTitle,
