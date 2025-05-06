@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
+import { SubjectAnswerComparison } from './SubjectAnswerComparison';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -28,6 +28,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 }) => {
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
+  const [officialAnswers, setOfficialAnswers] = useState<{ [key: number]: { answer: string; weight: number; isNullified: boolean; } }>({});
+  const [subjectData, setSubjectData] = useState<Array<{code: string; name: string; questions: number;}>>([]);
   
   const {
     answers,
@@ -71,6 +73,84 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       return data || {};
     },
     staleTime: 1000
+  });
+
+  // Get subject data if this is a subject-based exam
+  useEffect(() => {
+    if (concurso && concurso.minimum_score_type === 'subject') {
+      try {
+        let subjects = [];
+        if (typeof concurso.subjects === 'string') {
+          subjects = JSON.parse(concurso.subjects);
+        } else if (Array.isArray(concurso.subjects)) {
+          subjects = concurso.subjects;
+        }
+        setSubjectData(subjects);
+      } catch (e) {
+        console.error('Error parsing subjects:', e);
+      }
+    }
+  }, [concurso]);
+  
+  // Fetch official answers for answer comparison
+  const { isLoading: isLoadingOfficialAnswers } = useQuery({
+    queryKey: ['official-answers', concurso.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_official_answer_weights', {
+        p_concurso_id: concurso.id,
+      });
+      
+      if (error) throw error;
+      
+      // Transform the data into a more usable format
+      const formattedAnswers: { [key: number]: any } = {};
+      if (data) {
+        Object.keys(data).forEach(key => {
+          if (key.startsWith('questao')) {
+            const questionNumber = parseInt(key.replace('questao', ''));
+            formattedAnswers[questionNumber] = {
+              answer: data[key].resposta,
+              weight: data[key].peso,
+              isNullified: data[key].anulada,
+              section: data[key].secao
+            };
+          }
+        });
+        setOfficialAnswers(formattedAnswers);
+      }
+      return data;
+    },
+    enabled: !!concurso.id,
+    staleTime: 30000
+  });
+  
+  // Fetch user's subject scores if applicable
+  const { data: subjectScores } = useQuery({
+    queryKey: ['subject-scores', rankingId],
+    queryFn: async () => {
+      if (concurso.minimum_score_type !== 'subject') return null;
+      
+      const { data, error } = await supabase.rpc('get_candidate_subject_scores', {
+        p_ranking_id: rankingId
+      });
+      
+      if (error) throw error;
+      
+      // Transform into a more usable format: { subjectCode: score }
+      const scores: Record<string, number> = {};
+      if (data) {
+        data.forEach((item: any) => {
+          if (item.subject_name) {
+            // For backwards compatibility, we're using the name as the key
+            // Later we can update this to use subject codes
+            scores[item.subject_name] = item.score;
+          }
+        });
+      }
+      return scores;
+    },
+    enabled: !!rankingId && concurso.minimum_score_type === 'subject',
+    staleTime: 30000
   });
   
   // Definir a variável editsLeft e canEdit antes de useEffect
@@ -140,9 +220,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
-        
-        // Removemos o toast quando questões anuladas mudam
-        // e também o auto-salvamento
       }
     }
   }, [nullifiedData]);
@@ -215,7 +292,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  if (isLoadingRanking || isLoadingNullified) {
+  if (isLoadingRanking || isLoadingNullified || isLoadingOfficialAnswers) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -230,6 +307,15 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
   const getObjectiveSectionList = () => {
+    // For subject-based concursos
+    if (concurso.minimum_score_type === 'subject' && subjectData.length > 0) {
+      return subjectData.map(subject => ({
+        key: subject.code,
+        label: subject.name
+      }));
+    }
+    
+    // For traditional knowledge-based concursos
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
     if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
@@ -244,6 +330,18 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
     
+    // For subject-based concursos
+    if (concurso.minimum_score_type === 'subject' && subjectData.length > 0) {
+      let currentQuestionNumber = 1;
+      for (const subject of subjectData) {
+        for (let i = 0; i < subject.questions; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
+      }
+      return allQuestions;
+    }
+    
+    // For traditional knowledge-based concursos
     let currentQuestionNumber = 1;
     
     // Básico
@@ -276,6 +374,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     return allQuestions;
   };
+
+  // Determine whether to show the subject-based comparison component
+  const showSubjectComparison = 
+    concurso.minimum_score_type === 'subject' && 
+    subjectData.length > 0 && 
+    Object.keys(officialAnswers).length > 0 &&
+    userRankingData?.edit_count !== undefined;
   
   return (
     <Card className="shadow-lg">
@@ -345,7 +450,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
               className="w-full"
             >
-              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
+              <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
@@ -384,6 +489,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             setCaseStudy2Score={setCaseStudy2Score}
             setCaseStudy3Score={setCaseStudy3Score}
             canEdit={canEdit}
+          />
+        )}
+        
+        {/* Show the subject comparison if we're on a subject-based exam and data is available */}
+        {showSubjectComparison && userRankingData?.edit_count > 0 && (
+          <SubjectAnswerComparison
+            concurso={concurso}
+            userAnswers={answers}
+            officialAnswers={officialAnswers}
+            subjectScores={subjectScores}
+            subjects={subjectData}
           />
         )}
       </CardContent>

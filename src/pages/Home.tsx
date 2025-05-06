@@ -1,203 +1,175 @@
-import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Search, Filter } from 'lucide-react';
-import ConcursoCard from '../components/ConcursoCard';
-import { Input } from '../components/ui/input';
-import { Button } from '../components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { fetchConcursos } from '../services/concursoService';
-import { Concurso, ConcursoFilter } from '../types/concursos';
-import { Label } from '../components/ui/label';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
-import { Badge } from '../components/ui/badge';
-import { useToast } from '../hooks/use-toast';
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Slider } from "@/components/ui/slider"
+import { Link } from 'react-router-dom';
+import { ConcursoFilter } from '@/types/concursos';
+import { fetchConcursos } from '@/services/concursoService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 const Home: React.FC = () => {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState<ConcursoFilter>({
-    status: 'Em andamento'
-  });
-  
-  // Fetch concursos with React Query
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['concursos', filters],
-    queryFn: () => fetchConcursos(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Filter concursos based on search term
-  const filteredConcursos = data?.filter(concurso => 
-    concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
-
-  // Get unique values for filter dropdowns
-  const uniqueOrgaos = [...new Set(data?.map(c => c.orgao) || [])];
-  const uniqueBancas = [...new Set(data?.map(c => c.banca) || [])];
-  const statusOptions = ['Em andamento', 'Finalizado', 'Todos'];
-
-  // Handle filter changes
-  const handleFilterChange = (key: keyof ConcursoFilter, value: string) => {
-    if (value === 'Todos') {
-      const newFilters = { ...filters };
-      delete newFilters[key];
-      setFilters(newFilters);
-    } else {
-      setFilters({ ...filters, [key]: value });
-    }
-  };
-
-  // Clear all filters
-  const clearFilters = () => {
-    setFilters({ status: 'Em andamento' });
-    setSearchTerm('');
-  };
-
-  // Count active filters
-  const activeFilterCount = Object.keys(filters).length;
+  const [filter, setFilter] = useState<ConcursoFilter>({});
+  const [concursos, setConcursos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast()
 
   useEffect(() => {
-    // Initial fetch to populate data
-    refetch();
-  }, [refetch]);
+    const loadConcursos = async () => {
+      setLoading(true);
+      const concursosData = await fetchConcursos(filter);
+      setConcursos(concursosData);
+      setLoading(false);
+    };
+
+    loadConcursos();
+  }, [filter]);
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleOrgaoFilter = (orgao: string) => {
+    setFilter(prev => ({
+      ...prev,
+      orgao: [orgao]
+    }));
+  };
+
+  const handleBancaFilter = (banca: string) => {
+    setFilter(prev => ({
+      ...prev,
+      banca: [banca]
+    }));
+  };
+
+  const handleCargoFilter = (cargo: string) => {
+    setFilter(prev => ({
+      ...prev,
+      cargo: [cargo]
+    }));
+  };
+
+  const setStatusFilter = (status: string) => {
+    setFilter(prev => ({
+      ...prev,
+      status: [status] // Always use array format
+    }));
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      const formattedDate = format(date, 'dd/MM/yyyy', { locale: ptBR });
+      toast({
+        title: "Data selecionada",
+        description: `Você selecionou a data: ${formattedDate}.`,
+      })
+    }
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Editais de Concursos</h1>
-        <p className="text-gray-600">
-          Confira os concursos abertos e em andamento dos últimos 5 anos
-        </p>
-      </div>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-4">Concursos Abertos</h1>
 
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Buscar concurso ou órgão..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2" onClick={() => setShowFilters(true)}>
-              <Filter className="h-4 w-4" />
-              Filtros
-              {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="ml-1">{activeFilterCount}</Badge>
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
+        <Input
+          type="text"
+          placeholder="Pesquisar concurso..."
+          value={searchTerm}
+          onChange={handleSearch}
+          className="flex-grow"
+        />
+
+        <Select onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filtrar por Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Aberto">Aberto</SelectItem>
+            <SelectItem value="Previsto">Previsto</SelectItem>
+            <SelectItem value="Autorizado">Autorizado</SelectItem>
+            <SelectItem value="Publicado">Publicado</SelectItem>
+            <SelectItem value="Nomeado">Nomeado</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[280px] justify-start text-left font-normal",
+                !filter.status && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {filter.status ? (
+                format(new Date(filter.status), "PPP", { locale: ptBR })
+              ) : (
+                <span>Selecionar Data</span>
               )}
             </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Filtros</SheetTitle>
-            </SheetHeader>
-            <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={filters.status || 'Todos'} 
-                  onValueChange={(value) => handleFilterChange('status', value)}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((status) => (
-                      <SelectItem key={status} value={status}>{status}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="orgao">Órgão</Label>
-                <Select 
-                  value={filters.orgao || 'Todos'} 
-                  onValueChange={(value) => handleFilterChange('orgao', value)}
-                >
-                  <SelectTrigger id="orgao">
-                    <SelectValue placeholder="Órgão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todos</SelectItem>
-                    {uniqueOrgaos.map((orgao) => (
-                      <SelectItem key={orgao} value={orgao}>{orgao}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="banca">Banca</Label>
-                <Select 
-                  value={filters.banca || 'Todos'} 
-                  onValueChange={(value) => handleFilterChange('banca', value)}
-                >
-                  <SelectTrigger id="banca">
-                    <SelectValue placeholder="Banca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Todos">Todos</SelectItem>
-                    {uniqueBancas.map((banca) => (
-                      <SelectItem key={banca} value={banca}>{banca}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                className="w-full mt-6" 
-                onClick={clearFilters}
-              >
-                Limpar Filtros
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="center" side="bottom">
+            <Calendar
+              mode="single"
+              // selected={filter.status}
+              onSelect={handleDateChange}
+              disabled={(date) =>
+                date > new Date() || date < new Date("1900-01-01")
+              }
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-          {[...Array(6)].map((_, index) => (
-            <div key={index} className="bg-gray-100 rounded-lg shadow p-6 h-48"></div>
-          ))}
-        </div>
-      ) : isError ? (
-        <div className="text-center py-10">
-          <p className="text-red-500">Erro ao carregar concursos. Tente novamente mais tarde.</p>
-          <Button variant="outline" className="mt-4" onClick={() => refetch()}>
-            Tentar novamente
-          </Button>
-        </div>
-      ) : filteredConcursos.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-gray-500">Nenhum concurso encontrado com os filtros selecionados.</p>
-          <Button variant="outline" className="mt-4" onClick={clearFilters}>
-            Limpar filtros
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredConcursos.map((concurso) => (
-            <ConcursoCard
-              key={concurso.id}
-              id={concurso.id}
-              titulo={concurso.titulo}
-              orgao={concurso.orgao}
-              data={new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')}
-              vagas={concurso.vagas}
-              status={concurso.status}
-            />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {concursos.map((concurso: any) => (
+          <Link key={concurso.id} to={`/resultados/${concurso.id}`}>
+            <Card className="bg-white shadow-md rounded-md overflow-hidden">
+              <CardHeader className="p-4">
+                <CardTitle className="text-lg font-semibold text-gray-800">{concurso.titulo}</CardTitle>
+                <CardDescription className="text-sm text-gray-500">{concurso.orgao} - {concurso.banca}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4">
+                <div className="flex items-center mb-2">
+                  <Badge variant="secondary" className="mr-2">{concurso.status}</Badge>
+                  <span className="text-xs text-gray-600">Publicado em: {concurso.data_publicacao}</span>
+                </div>
+                <p className="text-gray-700">Vagas: {concurso.vagas}</p>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 };

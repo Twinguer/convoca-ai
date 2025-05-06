@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -129,16 +128,31 @@ const UserProfile = () => {
           concursos(titulo)
         `).eq('user_id', user.id);
       if (error) throw error;
-      return data.map(item => {
-        const concursoData = item.concursos || {};
-        const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
-        return {
-          concursoId: item.concurso_id,
-          concursoTitle: titulo,
-          position: 0,
-          score: item.score
-        };
-      }) as UserRankingDisplay[];
+      const userRankings = data?.map(ranking => ({
+        id: ranking.concursoId,
+        name: ranking.concursoTitle,
+        position: ranking.position,
+        score: ranking.score,
+        userId: user?.id || '',
+        avatarUrl: user?.user_metadata?.avatar_url || null,
+        basicKnowledgeScore: 0,
+        specificKnowledgeScore: 0,
+        specific1Score: 0,
+        specific2Score: 0,
+        specific3Score: 0,
+        discursiveScore: 0,
+        weightedBasicScore: 0,
+        weightedSpecific1Score: 0,
+        weightedSpecific2Score: 0,
+        weightedSpecific3Score: 0,
+        weightedDiscursiveScore: 0,
+        weightedCaseStudy1Score: 0,
+        weightedCaseStudy2Score: 0,
+        weightedCaseStudy3Score: 0,
+        reservationType: 'Ampla Concorrência',
+        displayReservation: ''
+      })) as UserRankingDisplay[];
+      return userRankings;
     },
     enabled: !!user
   });

@@ -30,6 +30,8 @@ export interface UserRankingDisplay {
   displayReservation: string;
   isQuotaDisqualified?: boolean;
   subjectScores?: Record<string, number>;
+  concursoId?: string;
+  concursoTitle?: string;
 }
 
 // Define a ConcursoFilter type since it's being imported in other files
@@ -38,7 +40,7 @@ export interface ConcursoFilter {
   orgao?: string[];
   banca?: string[];
   cargo?: string[];
-  status?: string; // Adicionado status como string
+  status?: string; // Adding status as string
   mostrarStatus?: string[];
   mostrarBanca?: string[];
   mostrarCargo?: string[];
