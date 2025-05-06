@@ -4,7 +4,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/
 import { Checkbox } from '@/components/ui/checkbox';
 import { UseFormReturn } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Percent, CircleDollarSign } from 'lucide-react';
 
 interface ReservationQuotasSectionProps {
   form: UseFormReturn<any>;
@@ -15,16 +16,22 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
 }) => {
   const quotaMinimumScoreType = form.watch('quota_minimum_score_unit_type') || 'percentage';
   
+  const toggleScoreType = () => {
+    const currentType = form.getValues('quota_minimum_score_unit_type');
+    const newType = currentType === 'percentage' ? 'points' : 'percentage';
+    form.setValue('quota_minimum_score_unit_type', newType);
+  };
+  
   return (
     <div className="space-y-4 border p-4 rounded-md">
       <h3 className="text-lg font-medium">Reserva de Vagas</h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="mb-4">
         <FormField
           control={form.control}
           name="has_quota_minimum_score"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mb-4">
               <FormControl>
                 <Checkbox 
                   checked={field.value} 
@@ -44,59 +51,48 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
         />
         
         {form.watch('has_quota_minimum_score') && (
-          <>
+          <div className="flex items-center gap-3">
             <FormField
               control={form.control}
               name="quota_minimum_score"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nota Mínima para Cotistas</FormLabel>
+                <FormItem className="flex-grow">
+                  <FormLabel>Nota Mínima {quotaMinimumScoreType === 'percentage' ? '(%)' : '(Pontos)'}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       min="0"
                       step={quotaMinimumScoreType === 'percentage' ? "0.1" : "0.01"}
-                      placeholder={quotaMinimumScoreType === 'percentage' ? "Ex: 40 para 40%" : "Ex: 5 pontos"}
+                      placeholder={quotaMinimumScoreType === 'percentage' ? "Ex: 40" : "Ex: 5"}
                       {...field}
                       onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                     />
                   </FormControl>
-                  <FormDescription>
-                    {quotaMinimumScoreType === 'percentage' 
-                      ? 'Valor em porcentagem (0-100)' 
-                      : 'Valor absoluto em pontos'}
-                  </FormDescription>
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="quota_minimum_score_unit_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Valor</FormLabel>
-                  <Select 
-                    value={field.value} 
-                    onValueChange={field.onChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="percentage">Porcentagem (%)</SelectItem>
-                      <SelectItem value="points">Pontos (valor absoluto)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Escolha se a nota mínima é um percentual ou valor absoluto
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-          </>
+            
+            <div className="flex space-x-1 mt-7">
+              <Button 
+                type="button"
+                variant={quotaMinimumScoreType === 'percentage' ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleScoreType}
+                className="px-3"
+              >
+                <Percent size={16} />
+              </Button>
+              <Button 
+                type="button"
+                variant={quotaMinimumScoreType === 'points' ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleScoreType}
+                className="px-3"
+              >
+                <CircleDollarSign size={16} />
+              </Button>
+            </div>
+          </div>
         )}
       </div>
       
