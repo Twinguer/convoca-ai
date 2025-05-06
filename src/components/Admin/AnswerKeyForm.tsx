@@ -44,7 +44,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               ? JSON.parse(data.subjects) 
               : data.subjects || [];
             
-            setSubjects(subjectsData);
+            // Ensure subjects is an array
+            setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
           } catch (e) {
             console.error('Error parsing subjects:', e);
             setSubjects([]);
@@ -115,6 +116,22 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         examType={concurso.exam_type || 'Alternativas'}
         alternativesCount={concurso.alternatives_count || 5}
       />
+    );
+  }
+
+  // Check if subjects were loaded correctly
+  console.log("Subjects for answer key:", subjects);
+  
+  if (!subjects || subjects.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="mb-4">Nenhuma disciplina configurada para este concurso.</p>
+            <p>Volte à aba "Informações Gerais" e adicione disciplinas na seção "Estrutura da Prova".</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 

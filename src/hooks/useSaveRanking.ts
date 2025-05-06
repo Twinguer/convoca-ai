@@ -17,14 +17,14 @@ export const useSaveRanking = () => {
     setIsLoading(true);
     
     try {
-      // Validação básica
+      // Basic validation
       if (!formValues.titulo || !formValues.orgao || !formValues.banca) {
         toast.error("Preencha todos os campos obrigatórios");
         setIsLoading(false);
         return { error: "Dados incompletos" };
       }
       
-      // Verificar se já existe um concurso com o mesmo título e órgão
+      // Check if a ranking with the same title and organization already exists
       if (!editId) {
         const { data: existingConcurso, error: existingError } = await supabase
           .from('concursos')
@@ -40,7 +40,7 @@ export const useSaveRanking = () => {
         }
       }
       
-      // Ajustar título do cargo
+      // Adjust job title
       let finalTitle = formValues.titulo;
       if (formValues.predefined_job_title === 'OUTRO' && formValues.custom_job_title) {
         finalTitle = formValues.custom_job_title.toUpperCase();
@@ -48,40 +48,63 @@ export const useSaveRanking = () => {
         finalTitle = formValues.predefined_job_title;
       }
       
-      // Ajustar banca examinadora
+      // Adjust exam board
       let finalBanca = formValues.banca;
       if (formValues.banca === 'OUTRO' && formValues.custom_banca) {
         finalBanca = 'OUTRO';
       }
       
-      // Processar disciplinas
+      // Process subjects
       let processedSubjects = formValues.subjects;
       if (typeof formValues.subjects === 'string') {
         try {
           processedSubjects = JSON.parse(formValues.subjects);
         } catch (error) {
-          console.error("Erro ao processar disciplinas:", error);
+          console.error("Error processing subjects:", error);
           processedSubjects = [];
         }
       }
       
-      // Validação adicional para estrutura por conhecimento ou por disciplina
-      if (formValues.minimum_score_type === 'knowledge' && 
-          !((formValues.has_basic_knowledge && formValues.basic_knowledge_questions > 0) || 
-            (formValues.has_specific_knowledge_1 && formValues.specific_knowledge_1_questions > 0) || 
-            (formValues.has_specific_knowledge_2 && formValues.specific_knowledge_2_questions > 0) || 
-            (formValues.has_specific_knowledge_3 && formValues.specific_knowledge_3_questions > 0))) {
-        toast.error("Pelo menos uma seção de conhecimento deve estar habilitada e ter um número de questões maior que zero");
-        setIsLoading(false);
-        return { error: "Configuração de conhecimentos inválida" };
-      } else if (formValues.minimum_score_type === 'subject' && 
-                (!processedSubjects || !Array.isArray(processedSubjects) || processedSubjects.length === 0)) {
-        toast.error("Pelo menos uma disciplina deve ser adicionada quando o modo por disciplina é selecionado");
-        setIsLoading(false);
-        return { error: "Disciplinas não configuradas" };
+      // Make sure processedSubjects is an array
+      if (!Array.isArray(processedSubjects)) {
+        processedSubjects = [];
       }
       
-      // Dados para inserção
+      // Additional validation for knowledge or subject structure
+      if (formValues.minimum_score_type === 'knowledge') {
+        // At least one knowledge section must be enabled and have questions
+        const hasValidKnowledgeSection = 
+          (formValues.has_basic_knowledge && formValues.basic_knowledge_questions > 0) || 
+          (formValues.has_specific_knowledge_1 && formValues.specific_knowledge_1_questions > 0) || 
+          (formValues.has_specific_knowledge_2 && formValues.specific_knowledge_2_questions > 0) || 
+          (formValues.has_specific_knowledge_3 && formValues.specific_knowledge_3_questions > 0);
+          
+        if (!hasValidKnowledgeSection) {
+          toast.error("Pelo menos uma seção de conhecimento deve estar habilitada e ter um número de questões maior que zero");
+          setIsLoading(false);
+          return { error: "Configuração de conhecimentos inválida" };
+        }
+      } else if (formValues.minimum_score_type === 'subject') {
+        // For subject-based structure
+        if (processedSubjects.length === 0) {
+          toast.error("Pelo menos uma disciplina deve ser adicionada quando o modo por disciplina é selecionado");
+          setIsLoading(false);
+          return { error: "Disciplinas não configuradas" };
+        }
+        
+        // Check if each subject has questions
+        const hasInvalidSubject = processedSubjects.some((subject: any) => 
+          !subject.questions || subject.questions <= 0
+        );
+        
+        if (hasInvalidSubject) {
+          toast.error("Todas as disciplinas devem ter pelo menos uma questão");
+          setIsLoading(false);
+          return { error: "Configuração de disciplinas inválida" };
+        }
+      }
+      
+      // Data for insertion
       const concursoData = {
         titulo: finalTitle,
         orgao: formValues.orgao,
@@ -96,12 +119,12 @@ export const useSaveRanking = () => {
         created_by_user_id: userId,
         localidades: formValues.localidades,
         
-        // Configuração da prova
+        // Exam configuration
         exam_type: formValues.exam_type,
         alternatives_count: formValues.alternatives_count,
         wrong_answer_penalty: formValues.wrong_answer_penalty,
         
-        // Estrutura de conhecimentos
+        // Knowledge structure
         has_basic_knowledge: formValues.has_basic_knowledge,
         basic_knowledge_questions: formValues.basic_knowledge_questions,
         basic_knowledge_weight: formValues.basic_knowledge_weight,
@@ -138,21 +161,21 @@ export const useSaveRanking = () => {
         case_study_3_weight: formValues.case_study_3_weight,
         case_study_3_minimum_score: formValues.case_study_3_minimum_score,
         
-        // Configuração de nota mínima
+        // Minimum score configuration
         has_minimum_score: formValues.has_minimum_score,
         minimum_score_unit_type: formValues.minimum_score_unit_type,
         minimum_score_type: formValues.minimum_score_type,
         total_minimum_score: formValues.total_minimum_score,
         
-        // Configuração de nota mínima para cotistas
+        // Quota minimum score configuration
         has_quota_minimum_score: formValues.has_quota_minimum_score,
         quota_minimum_score: formValues.quota_minimum_score,
         quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type,
         
-        // Disciplinas
+        // Subjects
         subjects: processedSubjects,
         
-        // Configuração de cotas de reserva
+        // Reservation quota configuration
         has_ampla_concorrencia: formValues.has_ampla_concorrencia,
         has_ppp: formValues.has_ppp,
         has_pcd: formValues.has_pcd,
@@ -160,7 +183,7 @@ export const useSaveRanking = () => {
         has_indigenas: formValues.has_indigenas,
         has_transsexuais: formValues.has_transsexuais,
         
-        // Se for admin
+        // Admin flags
         is_admin_created: formValues.is_admin_created,
         is_admin_update: formValues.is_admin_update
       };
@@ -168,7 +191,7 @@ export const useSaveRanking = () => {
       let result;
       
       if (editId) {
-        // Atualização de ranking existente
+        // Update existing ranking
         const { data, error } = await supabase
           .from('concursos')
           .update(concursoData)
@@ -177,16 +200,16 @@ export const useSaveRanking = () => {
           .single();
           
         if (error) {
-          console.error("Erro ao atualizar ranking:", error);
-          toast.error("Erro ao atualizar ranking: " + error.message);
+          console.error("Error updating ranking:", error);
+          toast.error("Error updating ranking: " + error.message);
           setIsLoading(false);
           return { error: error.message };
         }
         
         result = { id: editId, data };
-        toast.success("Ranking atualizado com sucesso!");
+        toast.success("Ranking updated successfully!");
       } else {
-        // Criar novo ranking
+        // Create new ranking
         const { data, error } = await supabase
           .from('concursos')
           .insert(concursoData)
@@ -194,21 +217,21 @@ export const useSaveRanking = () => {
           .single();
           
         if (error) {
-          console.error("Erro ao criar ranking:", error);
-          toast.error("Erro ao criar ranking: " + error.message);
+          console.error("Error creating ranking:", error);
+          toast.error("Error creating ranking: " + error.message);
           setIsLoading(false);
           return { error: error.message };
         }
         
         result = { id: data.id, data };
-        toast.success("Ranking criado com sucesso!");
+        toast.success("Ranking created successfully!");
       }
       
       setIsLoading(false);
       return result;
     } catch (error) {
-      console.error("Erro ao salvar ranking:", error);
-      toast.error("Erro ao salvar ranking: " + (error as Error).message);
+      console.error("Error saving ranking:", error);
+      toast.error("Error saving ranking: " + (error as Error).message);
       setIsLoading(false);
       return { error: (error as Error).message };
     }
