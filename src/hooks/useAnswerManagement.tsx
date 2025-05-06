@@ -10,6 +10,7 @@ export const useAnswerManagement = (
       ...prev,
       [questionNumber]: answer
     }));
+    console.log(`Questão ${questionNumber} respondida: ${answer}`);
   };
   
   const handleClearAnswer = (questionNumber: number) => {
@@ -18,6 +19,7 @@ export const useAnswerManagement = (
       delete newAnswers[questionNumber];
       return newAnswers;
     });
+    console.log(`Resposta da questão ${questionNumber} limpa`);
   };
 
   return {

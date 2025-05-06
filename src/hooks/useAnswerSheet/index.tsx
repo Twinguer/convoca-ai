@@ -7,7 +7,7 @@ import { initializeQuestionTypes } from './initializeQuestionTypes';
 import { getAnsweredQuestionsCount, getTotalQuestions } from './questionCountUtils';
 import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
-import { useAnswerManagement } from './useAnswerManagement';
+import { useAnswerManagement } from '../useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {

@@ -1,5 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
+import React from 'react';
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
