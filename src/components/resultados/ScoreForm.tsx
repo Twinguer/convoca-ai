@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,8 +56,13 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, onSuc
     fetchExistingScores();
   }, [rankingId]);
 
-  const updateScoresMutation = useMutation(
-    async (scores: {
+  const updateScoresMutation = useMutation({
+    mutationFn: async ({
+      discursiveScore,
+      caseStudy1Score,
+      caseStudy2Score,
+      caseStudy3Score,
+    }: {
       discursiveScore: number | null;
       caseStudy1Score: number | null;
       caseStudy2Score: number | null;
@@ -65,10 +71,10 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, onSuc
       const { data, error } = await supabase
         .from('user_rankings')
         .update({
-          discursive_score: scores.discursiveScore,
-          case_study_1_score: scores.caseStudy1Score,
-          case_study_2_score: scores.caseStudy2Score,
-          case_study_3_score: scores.caseStudy3Score,
+          discursive_score: discursiveScore,
+          case_study_1_score: caseStudy1Score,
+          case_study_2_score: caseStudy2Score,
+          case_study_3_score: caseStudy3Score,
         })
         .eq('id', rankingId);
 
@@ -78,29 +84,27 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, onSuc
 
       return data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['rankings', concurso.id]);
-        toast({
-          title: "Notas Salvas",
-          description: "Suas notas foram salvas com sucesso!",
-          duration: 3000,
-        });
-        onSuccess();
-      },
-      onError: (error: any) => {
-        toast({
-          title: "Erro",
-          description: `Ocorreu um erro ao salvar as notas: ${error.message}`,
-          variant: "destructive",
-        });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+      toast({
+        title: "Notas Salvas",
+        description: "Suas notas foram salvas com sucesso!",
+        duration: 3000,
+      });
+      onSuccess();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: `Ocorreu um erro ao salvar as notas: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSaveScores = async () => {
     try {
-      await updateScoresMutation.mutateAsync({
+      await updateScoresMutation.mutate({
         discursiveScore,
         caseStudy1Score,
         caseStudy2Score,
@@ -169,8 +173,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, onSuc
         </div>
       )}
 
-      <Button onClick={handleSaveScores} disabled={updateScoresMutation.isLoading} className="bg-emerald-600 hover:bg-emerald-700">
-        {updateScoresMutation.isLoading ? (
+      <Button onClick={handleSaveScores} disabled={updateScoresMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700">
+        {updateScoresMutation.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Salvando...

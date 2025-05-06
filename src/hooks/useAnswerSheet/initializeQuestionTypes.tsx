@@ -6,7 +6,7 @@ export const initializeQuestionTypes = (
   questionType: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' },
   setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>>
 ) => {
-  if (concurso && Object.keys(questionType).length === 0) {
+  if (Object.keys(questionType).length === 0) {
     const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
     let questionNumber = 1;
     

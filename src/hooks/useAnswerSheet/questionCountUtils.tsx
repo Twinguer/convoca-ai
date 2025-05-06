@@ -1,7 +1,7 @@
 
 import { Concurso } from '@/types/concursos';
 
-export const getTotalQuestions = (concurso: Concurso | null) => {
+export const getTotalQuestions = (concurso: Concurso) => {
   if (!concurso) return 0;
   
   let total = 0;

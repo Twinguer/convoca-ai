@@ -49,13 +49,15 @@ const ConcursoParticipation = () => {
       return data;
     },
     enabled: !!user && !!id,
-    onSuccess: (data) => {
-      console.log('Verificação de participação concluída:', data);
-      if (data) {
-        toast({
-          title: "Participação encontrada",
-          description: "Você já está participando deste concurso. Seu cartão de respostas está disponível."
-        });
+    meta: {
+      onSuccess: (data: any) => {
+        console.log('Verificação de participação concluída:', data);
+        if (data) {
+          toast({
+            title: "Participação encontrada",
+            description: "Você já está participando deste concurso. Seu cartão de respostas está disponível."
+          });
+        }
       }
     }
   });
