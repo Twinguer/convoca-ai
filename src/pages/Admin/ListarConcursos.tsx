@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -28,8 +27,8 @@ const ListarConcursos: React.FC = () => {
     try {
       let query = supabase.from('concursos').select('*');
       
-      if (filter.banca) {
-        query = query.eq('banca', filter.banca);
+      if (filter.banca && Array.isArray(filter.banca) && filter.banca.length > 0) {
+        query = query.eq('banca', filter.banca[0]);
       }
       
       if (filter.status) {
@@ -139,8 +138,8 @@ const ListarConcursos: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Banca</label>
               <Select
-                onValueChange={(value) => setFilter({ ...filter, banca: value || undefined })}
-                value={filter.banca || undefined}
+                onValueChange={(value) => setFilter({ ...filter, banca: [value] })}
+                value={filter.banca && filter.banca.length > 0 ? filter.banca[0] : undefined}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as bancas" />
@@ -162,8 +161,8 @@ const ListarConcursos: React.FC = () => {
             <div>
               <label className="text-sm font-medium mb-1 block">Status</label>
               <Select
-                onValueChange={(value) => setFilter({ ...filter, status: value || undefined })}
-                value={filter.status || undefined}
+                onValueChange={(value) => setFilter({ ...filter, status: value })}
+                value={filter.status}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os status" />

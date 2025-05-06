@@ -65,7 +65,6 @@ export const SubjectAnswerKeyTab: React.FC<SubjectAnswerKeyTabProps> = ({
         const existingAnswerKey = { ...answerKey };
         
         // Process the fetched data
-        // The response format is { questao1: { resposta: 'A', peso: 1, ... }, questao2: {...} }
         Object.keys(data || {}).forEach(key => {
           const questionNumber = parseInt(key.replace('questao', ''));
           if (!isNaN(questionNumber)) {
@@ -129,7 +128,17 @@ export const SubjectAnswerKeyTab: React.FC<SubjectAnswerKeyTabProps> = ({
       setSaving(true);
       
       // Convert answer key object to array for saving
-      const answerKeyArray = Object.values(answerKey);
+      const answerKeyArray = Object.values(answerKey).map(item => ({
+        concurso_id: concursoId,
+        question_number: item.question_number,
+        correct_answer: item.correct_answer,
+        weight: item.weight,
+        is_nullified: item.is_nullified,
+        section_type: item.section_type,
+        question_type: 'MULTIPLE_CHOICE'
+      }));
+
+      console.log('Saving answer key:', answerKeyArray);
       
       // Ensure all questions have section_type
       let questionNumber = 1;
@@ -162,7 +171,7 @@ export const SubjectAnswerKeyTab: React.FC<SubjectAnswerKeyTabProps> = ({
       const result = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyWithSections);
       
       if (result.success) {
-        toast.success(`Gabarito salvo com sucesso. ${result.updatedCount} candidatos atualizados.`);
+        toast.success(`Gabarito salvo com sucesso. ${result.updatedCount || 0} candidatos atualizados.`);
       } else {
         throw new Error('Erro ao salvar gabarito');
       }

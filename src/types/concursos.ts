@@ -38,6 +38,7 @@ export interface ConcursoFilter {
   orgao?: string[];
   banca?: string[];
   cargo?: string[];
+  status?: string; // Adicionado status como string
   mostrarStatus?: string[];
   mostrarBanca?: string[];
   mostrarCargo?: string[];

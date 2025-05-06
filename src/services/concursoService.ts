@@ -32,13 +32,13 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
       }
       
       // Filter by orgao if provided
-      if (filters.orgao && filters.orgao !== 'Todos') {
-        query = query.eq('orgao', filters.orgao);
+      if (filters.orgao && Array.isArray(filters.orgao) && filters.orgao.length > 0) {
+        query = query.eq('orgao', filters.orgao[0]);
       }
       
       // Filter by banca if provided
-      if (filters.banca && filters.banca !== 'Todos') {
-        query = query.eq('banca', filters.banca);
+      if (filters.banca && Array.isArray(filters.banca) && filters.banca.length > 0) {
+        query = query.eq('banca', filters.banca[0]);
       }
     }
     
