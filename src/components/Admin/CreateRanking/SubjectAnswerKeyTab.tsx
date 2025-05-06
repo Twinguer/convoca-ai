@@ -1,329 +1,309 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { SubjectConfig } from '@/types/concursos';
-import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { answerKeyService } from '@/services/answerKeyService';
+import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
+import { SubjectConfig } from '@/types/concursos';
 
 interface SubjectAnswerKeyTabProps {
-  concursoId?: string;
-  formValues?: any;
-  onSaveFullRanking?: (formValues: any, answerKeyData: any) => Promise<void>;
+  concursoId: string;
   subjects: SubjectConfig[];
   examType: string;
   alternativesCount: number;
 }
 
-export const SubjectAnswerKeyTab = ({
+export const SubjectAnswerKeyTab: React.FC<SubjectAnswerKeyTabProps> = ({
   concursoId,
-  formValues,
-  onSaveFullRanking,
   subjects,
   examType,
   alternativesCount
-}: SubjectAnswerKeyTabProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
-
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [answerKey, setAnswerKey] = useState<Record<number, any>>({});
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  
+  // Calculate total questions from subjects
   useEffect(() => {
-    // Set the first subject as selected by default
-    if (subjects && subjects.length > 0 && !selectedSubject) {
-      setSelectedSubject(subjects[0].code);
-    }
-  }, [subjects, selectedSubject]);
-
+    const total = subjects.reduce((acc, subject) => acc + subject.questions, 0);
+    setTotalQuestions(total);
+    
+    // Initialize answer key with empty values
+    const initialAnswerKey: Record<number, any> = {};
+    let questionNumber = 1;
+    
+    subjects.forEach(subject => {
+      for (let i = 0; i < subject.questions; i++) {
+        initialAnswerKey[questionNumber] = {
+          question_number: questionNumber,
+          correct_answer: '',
+          weight: 1,
+          is_nullified: false,
+          section_type: subject.code
+        };
+        questionNumber++;
+      }
+    });
+    
+    setAnswerKey(initialAnswerKey);
+  }, [subjects]);
+  
+  // Fetch existing answer key
   useEffect(() => {
     const fetchAnswerKey = async () => {
       try {
-        setIsLoading(true);
-        if (!concursoId) {
-          setIsLoading(false);
-          return;
-        }
+        setLoading(true);
+        const data = await answerKeyService.fetchOfficialAnswerWeights(concursoId);
         
-        // Use the get_official_answer_weights RPC
-        const { data, error } = await supabase.rpc(
-          'get_official_answer_weights',
-          {
-            p_concurso_id: concursoId,
-          }
-        );
-
-        if (error) throw error;
-
-        if (data && Object.keys(data).length > 0) {
-          const answerMap: Record<number, string> = {};
-          const nullified: number[] = [];
-          
-          Object.entries(data).forEach(([key, value]: [string, any]) => {
-            // Extract question number from key (e.g., "questao1" -> 1)
-            const questionNumber = parseInt(key.replace('questao', ''));
+        const existingAnswerKey = { ...answerKey };
+        
+        // Process the fetched data
+        // The response format is { questao1: { resposta: 'A', peso: 1, ... }, questao2: {...} }
+        Object.keys(data || {}).forEach(key => {
+          const questionNumber = parseInt(key.replace('questao', ''));
+          if (!isNaN(questionNumber)) {
+            const questionData = data[key];
             
-            answerMap[questionNumber] = value.resposta;
-            if (value.anulada) {
-              nullified.push(questionNumber);
-            }
-          });
-          
-          setAnswers(answerMap);
-          setNullifiedQuestions(nullified);
-        } else {
-          console.log('No answer key found for this exam');
-        }
+            existingAnswerKey[questionNumber] = {
+              ...existingAnswerKey[questionNumber],
+              question_number: questionNumber,
+              correct_answer: questionData.resposta || '',
+              weight: questionData.peso || 1,
+              is_nullified: questionData.anulada || false,
+              section_type: questionData.secao || existingAnswerKey[questionNumber]?.section_type
+            };
+          }
+        });
+        
+        setAnswerKey(existingAnswerKey);
       } catch (error) {
         console.error('Error fetching answer key:', error);
-        toast.error('Erro ao carregar gabarito existente');
+        toast.error('Erro ao carregar o gabarito');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
+    
     fetchAnswerKey();
   }, [concursoId]);
-
-  const getQuestionsForSubject = (subjectCode: string) => {
-    const subject = subjects.find(s => s.code === subjectCode);
-    if (!subject) return [];
-    
-    // Calculate the starting question number for this subject
-    let startNumber = 1;
-    for (const s of subjects) {
-      if (s.code === subjectCode) break;
-      startNumber += s.questions;
-    }
-    
-    return Array.from(
-      { length: subject.questions },
-      (_, i) => startNumber + i
-    );
-  };
-
+  
   const handleAnswerChange = (questionNumber: number, answer: string) => {
-    setAnswers(prev => ({
+    setAnswerKey(prev => ({
       ...prev,
-      [questionNumber]: answer
+      [questionNumber]: {
+        ...prev[questionNumber],
+        correct_answer: answer.toUpperCase()
+      }
     }));
   };
-
-  const handleToggleNullified = (questionNumber: number) => {
-    setNullifiedQuestions(prev => {
-      if (prev.includes(questionNumber)) {
-        return prev.filter(q => q !== questionNumber);
-      } else {
-        return [...prev, questionNumber];
+  
+  const handleWeightChange = (questionNumber: number, weight: number) => {
+    setAnswerKey(prev => ({
+      ...prev,
+      [questionNumber]: {
+        ...prev[questionNumber],
+        weight: weight
       }
-    });
+    }));
   };
-
-  const getAllQuestions = () => {
-    let allQuestions: number[] = [];
-    let startNumber = 1;
-    
-    for (const subject of subjects) {
-      allQuestions = [...allQuestions, ...Array.from(
-        { length: subject.questions },
-        (_, i) => startNumber + i
-      )];
-      startNumber += subject.questions;
-    }
-    
-    return allQuestions;
+  
+  const handleNullifyToggle = (questionNumber: number, isNullified: boolean) => {
+    setAnswerKey(prev => ({
+      ...prev,
+      [questionNumber]: {
+        ...prev[questionNumber],
+        is_nullified: isNullified
+      }
+    }));
   };
-
+  
   const handleSaveAnswerKey = async () => {
     try {
-      setIsSaving(true);
+      setSaving(true);
       
-      const allQuestions = getAllQuestions();
-      const unansweredQuestions = allQuestions.filter(q => !answers[q] && !nullifiedQuestions.includes(q));
+      // Convert answer key object to array for saving
+      const answerKeyArray = Object.values(answerKey);
       
-      if (unansweredQuestions.length > 0) {
-        toast.error(`Todas as questões devem ser respondidas ou anuladas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
-        setIsSaving(false);
-        return;
-      }
-
-      // Determine which subject each question belongs to
-      const getSubjectForQuestion = (questionNumber: number) => {
-        let currentQuestion = 1;
-        
-        for (const subject of subjects) {
-          if (questionNumber >= currentQuestion && questionNumber < currentQuestion + subject.questions) {
-            return subject.code;
+      // Ensure all questions have section_type
+      let questionNumber = 1;
+      const answerKeyWithSections = answerKeyArray.map(item => {
+        // If no section_type, determine it from subjects
+        if (!item.section_type) {
+          let currentQuestion = 1;
+          let sectionType = '';
+          
+          // Find which subject this question belongs to
+          for (const subject of subjects) {
+            const subjectEndQuestion = currentQuestion + subject.questions - 1;
+            if (item.question_number >= currentQuestion && item.question_number <= subjectEndQuestion) {
+              sectionType = subject.code;
+              break;
+            }
+            currentQuestion += subject.questions;
           }
-          currentQuestion += subject.questions;
+          
+          return { ...item, section_type: sectionType };
         }
         
-        return null;
-      };
-
-      const answerKeyData = allQuestions.map(qNum => {
-        const subjectCode = getSubjectForQuestion(qNum);
-        
-        return {
-          concurso_id: concursoId || '',
-          question_number: qNum,
-          correct_answer: answers[qNum] || '',
-          weight: 1.0, // Default weight
-          section_type: subjectCode, // Use subject code as section_type
-          is_nullified: nullifiedQuestions.includes(qNum)
-        };
+        return item;
       });
       
-      if (onSaveFullRanking && formValues) {
-        await onSaveFullRanking(formValues, answerKeyData);
-        toast.success('Gabarito salvo com sucesso!');
-      } else if (concursoId) {
-        // Use the answerKeyService to save the answer key
-        const result = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
-        
-        if (result.success) {
-          toast.success('Gabarito salvo com sucesso!');
-        } else {
-          toast.error('Erro ao salvar gabarito');
-        }
+      // First ensure all section_types are properly set in the database
+      await updateSectionTypeForConcurso(concursoId);
+      
+      // Then save the full answer key
+      const result = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyWithSections);
+      
+      if (result.success) {
+        toast.success(`Gabarito salvo com sucesso. ${result.updatedCount} candidatos atualizados.`);
       } else {
-        toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
+        throw new Error('Erro ao salvar gabarito');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving answer key:', error);
-      toast.error('Erro ao salvar gabarito');
+      toast.error('Erro ao salvar o gabarito');
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
-
-  if (isLoading && concursoId) {
-    return <div className="py-4">Carregando gabarito...</div>;
-  }
-
-  if (!subjects || subjects.length === 0) {
+  
+  // Generate answer options based on alternativesCount
+  const generateAnswerOptions = () => {
+    const options = [];
+    for (let i = 0; i < alternativesCount; i++) {
+      options.push(String.fromCharCode(65 + i)); // 65 = ASCII for 'A'
+    }
+    return options;
+  };
+  
+  const answerOptions = generateAnswerOptions();
+  
+  if (loading) {
     return (
       <Card>
-        <CardContent className="pt-6">
-          <div className="text-center p-8">
-            Nenhuma disciplina configurada. Por favor, adicione disciplinas na etapa anterior.
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p>Carregando gabarito...</p>
+            <Progress className="mt-4" value={100} />
           </div>
         </CardContent>
       </Card>
     );
   }
-
+  
   return (
     <Card>
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-semibold mb-4">Gabarito Oficial por Disciplina</h3>
-        
-        <Tabs 
-          value={selectedSubject} 
-          onValueChange={setSelectedSubject}
-          className="w-full"
-        >
-          <TabsList className="grid w-full" style={{
-            gridTemplateColumns: `repeat(${Math.min(subjects.length, 4)}, minmax(0, 1fr))`
-          }}>
-            {subjects.map(subject => (
-              <TabsTrigger key={subject.code} value={subject.code}>
-                {subject.code}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {subjects.map(subject => (
-            <TabsContent key={subject.code} value={subject.code}>
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
-                    Digite o gabarito para a disciplina {subject.name} ({subject.code}).
-                  </p>
-                  <p className="text-sm font-medium">
-                    {subject.questions} questões
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {getQuestionsForSubject(subject.code).map(questionNumber => (
-                    <div key={questionNumber} className="border p-3 rounded-md">
-                      <div className="flex justify-between items-center mb-2">
-                        <Label className="font-medium">Questão {questionNumber}</Label>
-                        <Button
-                          type="button"
-                          variant={nullifiedQuestions.includes(questionNumber) ? "destructive" : "outline"}
-                          size="sm"
-                          onClick={() => handleToggleNullified(questionNumber)}
-                        >
-                          {nullifiedQuestions.includes(questionNumber) ? "Anulada" : "Anular"}
-                        </Button>
-                      </div>
-                      
-                      {examType === 'Alternativas' ? (
-                        <RadioGroup
-                          value={answers[questionNumber] || ''}
-                          onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                          className="flex flex-row space-x-2 mt-2"
-                        >
-                          {Array.from(
-                            { length: alternativesCount || 5 },
-                            (_, i) => String.fromCharCode(65 + i)
-                          ).map((option) => (
-                            <div key={option} className="flex items-center space-x-1">
-                              <RadioGroupItem
-                                value={option}
-                                id={`q${questionNumber}-${option}`}
-                                disabled={nullifiedQuestions.includes(questionNumber)}
-                              />
-                              <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      ) : (
-                        <RadioGroup
-                          value={answers[questionNumber] || ''}
-                          onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                          className="flex space-x-4 mt-2"
-                        >
-                          <div className="flex items-center space-x-1">
-                            <RadioGroupItem
-                              value="C"
-                              id={`q${questionNumber}-C`}
-                              disabled={nullifiedQuestions.includes(questionNumber)}
-                            />
-                            <Label htmlFor={`q${questionNumber}-C`}>C</Label>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <RadioGroupItem
-                              value="E"
-                              id={`q${questionNumber}-E`}
-                              disabled={nullifiedQuestions.includes(questionNumber)}
-                            />
-                            <Label htmlFor={`q${questionNumber}-E`}>E</Label>
-                          </div>
-                        </RadioGroup>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-        
-        <div className="flex justify-end mt-6">
+      <CardHeader>
+        <CardTitle className="text-xl">Gabarito Oficial por Disciplina</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="mb-4">
           <Button 
-            type="button" 
-            onClick={handleSaveAnswerKey}
-            disabled={isSaving}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={handleSaveAnswerKey} 
+            disabled={saving}
+            className="w-full md:w-auto"
           >
-            {isSaving ? 'Salvando...' : 'Salvar Gabarito'}
+            {saving ? 'Salvando...' : 'Salvar Gabarito Completo'}
+          </Button>
+        </div>
+        
+        {subjects.map((subject, subjectIndex) => {
+          // Calculate question range for this subject
+          let startQuestion = 1;
+          for (let i = 0; i < subjectIndex; i++) {
+            startQuestion += subjects[i].questions;
+          }
+          const endQuestion = startQuestion + subject.questions - 1;
+          
+          // Create an array of question numbers for this subject
+          const questions = Array.from(
+            { length: subject.questions },
+            (_, i) => startQuestion + i
+          );
+          
+          return (
+            <div key={subject.code} className="mb-8">
+              <h3 className="text-lg font-semibold mb-2">
+                {subject.name} ({subject.code})
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Questões {startQuestion} a {endQuestion} - Peso: {subject.weight}
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {questions.map(questionNumber => (
+                  <div key={questionNumber} className="border p-4 rounded-md">
+                    <div className="flex justify-between items-center mb-2">
+                      <Label htmlFor={`q${questionNumber}`} className="font-semibold">
+                        Questão {questionNumber}
+                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`nullify-${questionNumber}`}
+                          checked={answerKey[questionNumber]?.is_nullified}
+                          onCheckedChange={(checked) => 
+                            handleNullifyToggle(questionNumber, checked === true)
+                          }
+                        />
+                        <Label htmlFor={`nullify-${questionNumber}`} className="text-sm">
+                          Anulada
+                        </Label>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 mb-2">
+                      {answerOptions.map(option => (
+                        <Button
+                          key={option}
+                          type="button"
+                          size="sm"
+                          variant={answerKey[questionNumber]?.correct_answer === option ? "default" : "outline"}
+                          onClick={() => handleAnswerChange(questionNumber, option)}
+                          disabled={answerKey[questionNumber]?.is_nullified}
+                          className="w-9 h-9 p-0"
+                        >
+                          {option}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor={`weight-${questionNumber}`} className="text-sm">
+                        Peso:
+                      </Label>
+                      <Input
+                        id={`weight-${questionNumber}`}
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={answerKey[questionNumber]?.weight || 1}
+                        onChange={(e) => handleWeightChange(questionNumber, parseFloat(e.target.value))}
+                        className="w-20"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <Separator className="my-4" />
+            </div>
+          );
+        })}
+        
+        <div className="mt-4">
+          <Button 
+            onClick={handleSaveAnswerKey} 
+            disabled={saving}
+            className="w-full md:w-auto"
+          >
+            {saving ? 'Salvando...' : 'Salvar Gabarito Completo'}
           </Button>
         </div>
       </CardContent>
