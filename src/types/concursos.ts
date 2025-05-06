@@ -1,5 +1,48 @@
 
-import { Concurso } from './concursos.d';
+import { Concurso, SubjectConfig } from './concursos.d';
+
+// Re-export types from the .d.ts file
+export type { Concurso, SubjectConfig };
+
+// Also define a UserRankingDisplay type since it's being imported in other files
+export interface UserRankingDisplay {
+  position: number;
+  name: string;
+  score: number;
+  userId: string;
+  id: string;
+  avatarUrl: string | null;
+  basicKnowledgeScore: number;
+  specificKnowledgeScore: number;
+  specific1Score: number;
+  specific2Score: number;
+  specific3Score: number;
+  discursiveScore: number;
+  weightedBasicScore: number;
+  weightedSpecific1Score: number;
+  weightedSpecific2Score: number;
+  weightedSpecific3Score: number;
+  weightedDiscursiveScore: number;
+  weightedCaseStudy1Score: number;
+  weightedCaseStudy2Score: number;
+  weightedCaseStudy3Score: number;
+  reservationType: string;
+  displayReservation: string;
+  isQuotaDisqualified?: boolean;
+  subjectScores?: Record<string, number>;
+}
+
+// Define a ConcursoFilter type since it's being imported in other files
+export interface ConcursoFilter {
+  searchTerm?: string;
+  orgao?: string[];
+  banca?: string[];
+  cargo?: string[];
+  mostrarStatus?: string[];
+  mostrarBanca?: string[];
+  mostrarCargo?: string[];
+  mostrarOrgao?: string[];
+}
 
 // Colunas padrão da tabela de ranking
 export const getRankingTableColumns = (concurso: Concurso) => {

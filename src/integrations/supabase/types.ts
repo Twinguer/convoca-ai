@@ -372,7 +372,7 @@ export type Database = {
           points_if_wrong: number | null
           question_number: number
           question_type: string
-          section_type: string
+          section_type: string | null
           subject_id: string | null
           updated_at: string
           weight: number
@@ -387,7 +387,7 @@ export type Database = {
           points_if_wrong?: number | null
           question_number: number
           question_type?: string
-          section_type: string
+          section_type?: string | null
           subject_id?: string | null
           updated_at?: string
           weight?: number
@@ -402,7 +402,7 @@ export type Database = {
           points_if_wrong?: number | null
           question_number?: number
           question_type?: string
-          section_type?: string
+          section_type?: string | null
           subject_id?: string | null
           updated_at?: string
           weight?: number
@@ -642,6 +642,7 @@ export type Database = {
           specific_knowledge_2_score: number | null
           specific_knowledge_3_score: number | null
           specific_knowledge_score: number | null
+          subject_scores: Json | null
           updated_at: string
           user_id: string
           weighted_basic_score: number | null
@@ -672,6 +673,7 @@ export type Database = {
           specific_knowledge_2_score?: number | null
           specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
+          subject_scores?: Json | null
           updated_at?: string
           user_id: string
           weighted_basic_score?: number | null
@@ -702,6 +704,7 @@ export type Database = {
           specific_knowledge_2_score?: number | null
           specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
+          subject_scores?: Json | null
           updated_at?: string
           user_id?: string
           weighted_basic_score?: number | null
