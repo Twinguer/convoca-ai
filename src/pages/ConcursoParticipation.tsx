@@ -48,19 +48,17 @@ const ConcursoParticipation = () => {
       }
       return data;
     },
-    enabled: !!user && !!id,
-    meta: {
-      onSuccess: (data: any) => {
-        console.log('Verificação de participação concluída:', data);
-        if (data) {
-          toast({
-            title: "Participação encontrada",
-            description: "Você já está participando deste concurso. Seu cartão de respostas está disponível."
-          });
-        }
-      }
-    }
+    enabled: !!user && !!id
   });
+
+  // Log para debugging
+  useEffect(() => {
+    if (userRanking) {
+      console.log("Usuário já está participando, rankingId:", userRanking.id);
+    } else {
+      console.log("Usuário não está participando ainda");
+    }
+  }, [userRanking]);
 
   if (isLoadingConcurso || isCheckingParticipation) {
     return <LoadingState />;

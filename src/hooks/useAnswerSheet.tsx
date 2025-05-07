@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
+import { useAnswerManagement } from './useAnswerManagement';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -13,6 +15,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [caseStudy1Score, setCaseStudy1Score] = useState<number | null>(null);
   const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
   const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
+
+  const {
+    handleAnswerChange,
+    handleClearAnswer
+  } = useAnswerManagement(answers, setAnswers);
 
   // Initialize with the first available section
   useEffect(() => {
@@ -152,21 +159,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     initializeQuestionTypes();
   }, [concurso]);
 
-  const handleAnswerChange = (questionNumber: number, answer: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionNumber]: answer
-    }));
-  };
-  
-  const handleClearAnswer = (questionNumber: number) => {
-    setAnswers((prev) => {
-      const newAnswers = { ...prev };
-      delete newAnswers[questionNumber];
-      return newAnswers;
-    });
-  };
-
   const getTotalQuestions = () => {
     if (!concurso) return 0;
     
@@ -202,6 +194,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
            selectedSection === 'case_study3';
   };
 
+  // Adicionando a função getSectionQuestions que estava faltando
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
@@ -210,16 +203,42 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     const questions: number[] = [];
     
-    Object.entries(questionType).forEach(([num, type]) => {
-      if (
-        (selectedSection === 'basic' && type === 'basic') ||
-        (selectedSection === 'specific1' && type === 'specific1') ||
-        (selectedSection === 'specific2' && type === 'specific2') ||
-        (selectedSection === 'specific3' && type === 'specific3')
-      ) {
-        questions.push(parseInt(num));
+    // Verificando se o objeto questionType tem alguma propriedade
+    if (Object.keys(questionType).length === 0) {
+      // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
+      if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+        for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+          questions.push(i);
+        }
       }
-    });
+    } else {
+      // Se tiver, usamos o mapeamento existente
+      Object.entries(questionType).forEach(([num, type]) => {
+        if (
+          (selectedSection === 'basic' && type === 'basic') ||
+          (selectedSection === 'specific1' && type === 'specific1') ||
+          (selectedSection === 'specific2' && type === 'specific2') ||
+          (selectedSection === 'specific3' && type === 'specific3')
+        ) {
+          questions.push(parseInt(num));
+        }
+      });
+    }
     
     console.log('Questions for section', selectedSection, ':', questions);
     return questions.sort((a, b) => a - b);
@@ -287,6 +306,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions
   };
 };

@@ -25,7 +25,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAnswerSheet, setShowAnswerSheet] = useState(isAlreadyParticipating); // Default to true if already participating
+  const [showAnswerSheet, setShowAnswerSheet] = useState(isAlreadyParticipating);
   const [showScoreForm, setShowScoreForm] = useState(false);
   const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
   const { toast } = useToast();
@@ -40,6 +40,12 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       setShowScoreForm(false);
     }
   }, []);
+
+  // Debugging para verificar se temos o ID do ranking
+  useEffect(() => {
+    console.log("ParticipationForm - userRankingId:", userRankingId);
+    console.log("ParticipationForm - isAlreadyParticipating:", isAlreadyParticipating);
+  }, [userRankingId, isAlreadyParticipating]);
 
   const handleParticipate = async () => {
     if (!user) {
@@ -100,8 +106,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       </div>;
   }
 
-  // Show the answer sheet if selected and we have a ranking ID
+  // Show the answer sheet if we have a ranking ID
   if (userRankingId) {
+    console.log("Renderizando AnswerSheet com rankingId:", userRankingId);
     return <AnswerSheet 
       concurso={concurso} 
       rankingId={userRankingId} 
