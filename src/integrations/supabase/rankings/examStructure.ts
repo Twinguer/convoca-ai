@@ -81,3 +81,33 @@ export const generateSubjectCode = (name: string): string => {
   
   return 'XXX';
 };
+
+// Add this function for subject-based exams to handle their structure
+export const getSubjectExamStructure = (concurso: any) => {
+  if (!concurso.subjects || !Array.isArray(concurso.subjects) || concurso.subjects.length === 0) {
+    return { totalQuestions: 0, subjectRanges: {} };
+  }
+  
+  let startQuestion = 1;
+  const subjectRanges: Record<string, { start: number, end: number, count: number }> = {};
+  
+  concurso.subjects.forEach(subject => {
+    if (subject.question_count && subject.question_count > 0) {
+      const start = startQuestion;
+      const end = startQuestion + (subject.question_count - 1);
+      
+      subjectRanges[subject.code] = {
+        start,
+        end,
+        count: subject.question_count
+      };
+      
+      startQuestion = end + 1;
+    }
+  });
+  
+  return {
+    totalQuestions: startQuestion - 1,
+    subjectRanges
+  };
+};

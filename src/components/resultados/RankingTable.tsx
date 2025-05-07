@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
+
 export interface Ranking {
   position: number;
   name: string;
@@ -39,6 +40,7 @@ export interface Ranking {
   id: string;
   quotaPosition?: number; // Position within quota
 }
+
 interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
@@ -46,6 +48,7 @@ interface RankingTableProps {
   isAuthenticated: boolean;
   isRefetching?: boolean;
 }
+
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
@@ -177,6 +180,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       </CardContent>
     </Card>;
 };
+
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
@@ -188,10 +192,11 @@ const getQuotaAbbreviation = (quota: string): string => {
   };
   return abbreviations[quota] || quota.substring(0, 3);
 };
+
 const getSectionWeights = (concurso?: Concurso) => {
   return {
     basic: concurso?.basic_knowledge_weight ?? 1,
-    specific1: concurso?.specific_knowledge_1_weight ?? concurso?.specific_knowledge_weight ?? 1,
+    specific1: concurso?.specific_knowledge_1_weight ?? 1,
     specific2: concurso?.specific_knowledge_2_weight ?? 1,
     specific3: concurso?.specific_knowledge_3_weight ?? 1,
     discursive: concurso?.discursive_weight ?? 1,
@@ -200,6 +205,7 @@ const getSectionWeights = (concurso?: Concurso) => {
     caseStudy3: concurso?.case_study_3_weight ?? 1
   };
 };
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;

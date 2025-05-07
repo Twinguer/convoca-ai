@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -95,3 +96,66 @@ export interface Concurso {
   predefined_job_title?: string;
   custom_job_title?: string;
 }
+
+// Add the missing interfaces/types that are being imported
+export interface UserRankingDisplay {
+  id?: string;
+  concursoId?: string;
+  concursoTitle?: string;
+  score?: number;
+  position?: number;
+  editCount?: number;
+  basicKnowledgeScore?: number;
+  specificKnowledgeScore?: number;
+  discursiveScore?: number;
+  caseStudy1Score?: number;
+  caseStudy2Score?: number;
+  caseStudy3Score?: number;
+}
+
+export interface ConcursoFilter {
+  status?: string;
+  orgao?: string;
+  banca?: string;
+}
+
+// Add the missing function for getting ranking table columns
+export const getRankingTableColumns = (concurso: Concurso) => {
+  const columns = [];
+  
+  if (concurso) {
+    if (concurso.has_basic_knowledge) {
+      columns.push('basic_knowledge');
+    }
+    
+    if (concurso.has_specific_knowledge_1) {
+      columns.push('specific_knowledge_1');
+    }
+    
+    if (concurso.has_specific_knowledge_2) {
+      columns.push('specific_knowledge_2');
+    }
+    
+    if (concurso.has_specific_knowledge_3) {
+      columns.push('specific_knowledge_3');
+    }
+    
+    if (concurso.has_discursive) {
+      columns.push('discursive');
+    }
+    
+    if (concurso.has_case_study_1) {
+      columns.push('case_study_1');
+    }
+    
+    if (concurso.has_case_study_2) {
+      columns.push('case_study_2');
+    }
+    
+    if (concurso.has_case_study_3) {
+      columns.push('case_study_3');
+    }
+  }
+  
+  return columns;
+};
