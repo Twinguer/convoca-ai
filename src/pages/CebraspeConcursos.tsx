@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import ConcursoCard from '@/components/ConcursoCard';
+import { ConcursoCard } from '@/components/ConcursoCard';
 import { ConcursoFilter } from '@/types/concursos';
 import { fetchConcursos } from '@/services/concursoService';
 import { Input } from "@/components/ui/input"
@@ -49,7 +49,7 @@ const CebraspeConcursos = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {concursos.map((concurso: any) => (
-          <ConcursoCard key={concurso.id} concurso={concurso} />
+          <ConcursoCard key={concurso.id} concursoData={concurso} />
         ))}
       </div>
       <Link to="/" className="text-blue-500 mt-4 block">Voltar para a página inicial</Link>

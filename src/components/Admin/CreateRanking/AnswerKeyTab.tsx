@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { answerKeyService } from '@/services/answerKeyService';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -227,6 +229,14 @@ export const AnswerKeyTab = ({
       if (onSaveFullRanking && formValues) {
         await onSaveFullRanking(formValues, answerKeyData);
         toast.success('Gabarito salvo com sucesso!');
+      } else if (concursoId) {
+        // Use o serviço para salvar o gabarito diretamente se tivermos um ID de concurso
+        const result = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
+        if (result.success) {
+          toast.success('Gabarito salvo com sucesso!');
+        } else {
+          toast.error('Erro ao salvar gabarito');
+        }
       } else {
         toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
       }
