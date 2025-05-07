@@ -19,6 +19,12 @@ interface Answer {
  */
 export const fetchOfficialAnswerWeights = async (concursoId: string) => {
   try {
+    // Verificação para evitar chamadas desnecessárias
+    if (!concursoId) {
+      console.error('ID do concurso não fornecido para fetchOfficialAnswerWeights');
+      return {};
+    }
+    
     // Buscar o concurso primeiro para determinar seu tipo
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
@@ -26,12 +32,25 @@ export const fetchOfficialAnswerWeights = async (concursoId: string) => {
       .eq('id', concursoId)
       .single();
     
-    if (concursoError) throw concursoError;
+    if (concursoError) {
+      console.error('Erro ao buscar concurso:', concursoError);
+      throw concursoError;
+    }
+    
+    if (!concurso) {
+      console.error('Concurso não encontrado:', concursoId);
+      return {};
+    }
     
     // Verificar se o concurso é baseado em disciplinas e se precisa de setup
     if (concurso.minimum_score_type === 'subject') {
-      // Garantir que a estrutura do gabarito para disciplinas exista
-      await calculateOfficialAnswersForSubjectBased(concursoId);
+      try {
+        // Garantir que a estrutura do gabarito para disciplinas exista
+        await calculateOfficialAnswersForSubjectBased(concursoId);
+      } catch (error) {
+        console.error('Erro ao calcular gabarito oficial por disciplinas:', error);
+        // Continuar mesmo se houver erro para tentar buscar o que existir
+      }
     }
     
     // Buscar o gabarito oficial
@@ -41,12 +60,15 @@ export const fetchOfficialAnswerWeights = async (concursoId: string) => {
       .eq('concurso_id', concursoId)
       .order('question_number', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao buscar gabarito oficial:', error);
+      throw error;
+    }
     
     // Formatar o resultado
     const result: Record<string, any> = {};
     
-    if (data) {
+    if (data && data.length > 0) {
       data.forEach(answer => {
         result[`questao${answer.question_number}`] = {
           resposta: answer.correct_answer,

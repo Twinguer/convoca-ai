@@ -23,8 +23,8 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState('basic');
   
-  // Instanciando o hook sem parâmetros, pois é um uso independente para o form de gabarito
-  const { answers, setAnswers, initializeAnswers } = useAnswerSheet();
+  // Usando um objeto literal para armazenar respostas ao invés de useAnswerSheet
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   
   const isSubjectBased = concurso?.minimum_score_type === 'subject';
   
@@ -62,11 +62,11 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
           }
         });
         
-        initializeAnswers(initialAnswers);
+        setAnswers(initialAnswers);
         setNullifiedQuestions(nullified);
         
         // Set initial active tab
-        if (concursoData.minimum_score_type === 'subject' && concursoData.subjects && concursoData.subjects.length > 0) {
+        if (concursoData.minimum_score_type === 'subject' && concursoData.subjects) {
           try {
             // Tente parsear subjects caso seja uma string
             const subjectsArray = typeof concursoData.subjects === 'string' 
@@ -103,8 +103,10 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
       }
     };
     
-    fetchData();
-  }, [concursoId, initializeAnswers]);
+    if (concursoId) {
+      fetchData();
+    }
+  }, [concursoId]);
   
   const handleSaveAnswers = async () => {
     try {
