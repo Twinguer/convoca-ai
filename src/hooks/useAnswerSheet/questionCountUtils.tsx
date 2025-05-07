@@ -1,9 +1,17 @@
 
 import { Concurso } from '@/types/concursos';
+import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/examStructure';
 
-export const getTotalQuestions = (concurso: Concurso | null) => {
+export const getTotalQuestions = (concurso?: Concurso) => {
   if (!concurso) return 0;
   
+  // Para concursos baseados em disciplinas
+  if (concurso.minimum_score_type === 'subject') {
+    // Usar a função getAllQuestionsForConcurso que lida corretamente com disciplinas
+    return getAllQuestionsForConcurso(concurso).length;
+  }
+  
+  // Para concursos baseados em conhecimentos
   let total = 0;
   
   if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {

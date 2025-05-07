@@ -9,6 +9,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
+import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -77,25 +78,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     console.log('Getting questions for section:', selectedSection);
     
-    // Para concursos baseados em disciplinas, mostrar todas as questões sob a seção básica
+    // Para concursos baseados em disciplinas, usar função específica para retornar todas as questões
     if (concurso.minimum_score_type === 'subject' && selectedSection === 'basic') {
-      console.log('Concurso baseado em disciplinas, retornando todas as questões');
-      const allQuestions: number[] = [];
-      
-      // Verificar se o objeto subjects existe e é um array
-      if (concurso.subjects && Array.isArray(concurso.subjects)) {
-        let currentQuestion = 1;
-        
-        concurso.subjects.forEach(subject => {
-          const questionCount = subject.question_count || 0;
-          for (let i = 0; i < questionCount; i++) {
-            allQuestions.push(currentQuestion++);
-          }
-        });
-      }
-      
-      console.log('Total de questões para concurso baseado em disciplinas:', allQuestions.length);
-      return allQuestions.sort((a, b) => a - b);
+      // Usar a função getAllQuestionsForConcurso que já lida corretamente com disciplinas
+      const allQuestions = getAllQuestionsForConcurso(concurso);
+      console.log('Concurso baseado em disciplinas, retornando todas as questões:', allQuestions);
+      return allQuestions;
     }
     
     // Código existente para concursos baseados em conhecimentos
@@ -178,6 +166,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions
   };
 };
