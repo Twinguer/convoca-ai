@@ -77,9 +77,13 @@ export const useSaveAnswers = ({
       
       // Se for concurso baseado em disciplinas, garantir que a estrutura esteja criada
       if (concurso.minimum_score_type === 'subject') {
-        const subjectSetupResult = await calculateOfficialAnswersForSubjectBased(concurso.id);
-        if (!subjectSetupResult.success) {
-          console.warn('[useSaveAnswers] Aviso: Não foi possível configurar a estrutura de disciplinas:', subjectSetupResult.error);
+        try {
+          const subjectSetupResult = await calculateOfficialAnswersForSubjectBased(concurso.id);
+          if (!subjectSetupResult.success) {
+            console.warn('[useSaveAnswers] Aviso: Não foi possível configurar a estrutura de disciplinas:', subjectSetupResult.error);
+          }
+        } catch (error) {
+          console.error('[useSaveAnswers] Erro ao configurar estrutura de disciplinas:', error);
           // Continuamos mesmo com erro, tentaremos salvar as respostas de qualquer forma
         }
       }
@@ -106,9 +110,6 @@ export const useSaveAnswers = ({
       if (!data.success) {
         throw new Error(data.error || "Erro ao salvar respostas");
       }
-      
-      // Removemos o recálculo automático de todas as pontuações
-      // Cada usuário verá apenas sua pontuação atualizada
 
       // Atualizar estado da UI
       setSavedSuccess(true);

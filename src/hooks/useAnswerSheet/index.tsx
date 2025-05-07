@@ -39,18 +39,24 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      await fetchExistingAnswers(
-        rankingId, 
-        setAnswers, 
-        setQuestionType, 
-        setDiscursiveScore, 
-        setCaseStudy1Score, 
-        setCaseStudy2Score, 
-        setCaseStudy3Score
-      );
+      try {
+        await fetchExistingAnswers(
+          rankingId, 
+          setAnswers, 
+          setQuestionType, 
+          setDiscursiveScore, 
+          setCaseStudy1Score, 
+          setCaseStudy2Score, 
+          setCaseStudy3Score
+        );
+      } catch (error) {
+        console.error("Erro ao buscar respostas existentes:", error);
+      }
     };
     
-    fetchData();
+    if (rankingId) {
+      fetchData();
+    }
   }, [rankingId]);
 
   useEffect(() => {
@@ -70,8 +76,29 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (!concurso) return [];
     
     console.log('Getting questions for section:', selectedSection);
-    console.log('Question type mapping:', questionType);
     
+    // Para concursos baseados em disciplinas, mostrar todas as questões sob a seção básica
+    if (concurso.minimum_score_type === 'subject' && selectedSection === 'basic') {
+      console.log('Concurso baseado em disciplinas, retornando todas as questões');
+      const allQuestions: number[] = [];
+      
+      // Verificar se o objeto subjects existe e é um array
+      if (concurso.subjects && Array.isArray(concurso.subjects)) {
+        let currentQuestion = 1;
+        
+        concurso.subjects.forEach(subject => {
+          const questionCount = subject.question_count || 0;
+          for (let i = 0; i < questionCount; i++) {
+            allQuestions.push(currentQuestion++);
+          }
+        });
+      }
+      
+      console.log('Total de questões para concurso baseado em disciplinas:', allQuestions.length);
+      return allQuestions.sort((a, b) => a - b);
+    }
+    
+    // Código existente para concursos baseados em conhecimentos
     const questions: number[] = [];
     
     // Verificando se o objeto questionType tem alguma propriedade

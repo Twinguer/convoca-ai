@@ -229,19 +229,24 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  const getObjectiveSectionList = () => {
-    const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
-    return sections;
-  };
-  
-  const objectiveSections = getObjectiveSectionList();
-  
   // Função utilitária para obter todas as questões de todas as seções
   const getAllQuestionsFromAllSections = () => {
+    // Para concursos baseados em disciplinas
+    if (concurso.minimum_score_type === 'subject') {
+      const allQuestions: number[] = [];
+      if (concurso.subjects && Array.isArray(concurso.subjects)) {
+        let currentQuestion = 1;
+        concurso.subjects.forEach(subject => {
+          const questionCount = subject.question_count || 0;
+          for (let i = 0; i < questionCount; i++) {
+            allQuestions.push(currentQuestion++);
+          }
+        });
+      }
+      return allQuestions;
+    }
+    
+    // Para concursos baseados em conhecimentos
     const allQuestions: number[] = [];
     
     let currentQuestionNumber = 1;
@@ -276,6 +281,26 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     return allQuestions;
   };
+
+  // Determinar se devemos mostrar seções baseadas em conhecimentos ou uma lista unificada
+  const isSubjectBased = concurso.minimum_score_type === 'subject';
+
+  // Gerar uma lista única de seções para exibição na interface
+  const getObjectiveSectionList = () => {
+    if (isSubjectBased) {
+      return [{ key: 'basic', label: 'Todas as Questões' }];
+    }
+    
+    // Lógica original para provas baseadas em conhecimentos
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    return sections;
+  };
+  
+  const objectiveSections = getObjectiveSectionList();
   
   return (
     <Card className="shadow-lg">
