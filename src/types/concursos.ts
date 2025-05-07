@@ -28,6 +28,15 @@ export interface Concurso {
   has_case_study_2?: boolean;
   has_case_study_3?: boolean;
   
+  // Disciplines configuration
+  disciplines?: Array<{
+    name: string;
+    sigla: string;
+    questions: number;
+    weight: number;
+    minimumScore: number;
+  }>;
+  
   // Question counts
   basic_knowledge_questions?: number;
   specific_knowledge_1_questions?: number;
@@ -112,7 +121,8 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
     discursive: concurso.has_discursive === true,
     caseStudy1: concurso.has_case_study_1 === true,
     caseStudy2: concurso.has_case_study_2 === true,
-    caseStudy3: concurso.has_case_study_3 === true
+    caseStudy3: concurso.has_case_study_3 === true,
+    hasDisciplines: Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0
   };
 };
 
@@ -155,6 +165,17 @@ export const getRankingTableColumns = (concurso: Concurso) => {
   
   if (concurso.has_case_study_3) {
     columns.push({ id: 'case3Score', label: 'Estudo 3', align: 'right' });
+  }
+  
+  // Add discipline columns if available
+  if (concurso.disciplines && concurso.disciplines.length > 0) {
+    concurso.disciplines.forEach(discipline => {
+      columns.push({ 
+        id: `discipline_${discipline.sigla}`, 
+        label: discipline.name, 
+        align: 'right' 
+      });
+    });
   }
   
   return columns;

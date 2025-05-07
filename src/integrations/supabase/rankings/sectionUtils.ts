@@ -1,70 +1,68 @@
 
-import { supabase } from '@/integrations/supabase/client';
+// Export all functions from the sub-modules
+export const DISCIPLINES = [
+  { name: 'Português', sigla: 'LPT' },
+  { name: 'Inglês', sigla: 'ING' },
+  { name: 'Matemática', sigla: 'MAT' },
+  { name: 'RLM', sigla: 'RLM' },
+  { name: 'Estatística', sigla: 'EST' },
+  { name: 'Constitucional', sigla: 'COS' },
+  { name: 'Administrativo', sigla: 'ADM' },
+  { name: 'Administração', sigla: 'ADO' },
+  { name: 'Contabilidade', sigla: 'COT' },
+  { name: 'Contabilidade Custos', sigla: 'COC' },
+  { name: 'Economia', sigla: 'ECO' },
+  { name: 'Tributário', sigla: 'TRI' },
+  { name: 'AFO', sigla: 'AFO' },
+  { name: 'Legislação Tributária', sigla: 'LTC' },
+  { name: 'Tecnologia da informação', sigla: 'TIC' },
+  { name: 'Estatuto', sigla: 'ETT' },
+  { name: 'Auditoria', sigla: 'AUD' },
+  { name: 'Civil', sigla: 'CIV' },
+  { name: 'Penal', sigla: 'PEN' },
+  { name: 'Informática', sigla: 'INF' },
+  { name: 'Empresarial', sigla: 'EMP' },
+  { name: 'Mat. Financeira', sigla: 'MTF' },
+  { name: 'Outro...', sigla: 'OUT' },
+];
 
-/**
- * Atualiza os tipos de seções para um gabarito
- */
-export const updateSectionTypes = async (concursoId: string) => {
-  try {
-    const { data, error } = await supabase.rpc('update_section_types', {
-      p_concurso_id: concursoId
-    });
-    
-    if (error) {
-      console.error('Error updating section types:', error);
-      return { success: false, error: error.message };
-    }
-    
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error updating section types:', error);
-    return { success: false, error: String(error) };
-  }
-};
+// Types for section management
+export enum SectionType {
+  BASIC = 'basic',
+  SPECIFIC1 = 'specific1',
+  SPECIFIC2 = 'specific2',
+  SPECIFIC3 = 'specific3',
+  DISCURSIVE = 'discursive',
+  CASE_STUDY1 = 'case_study1',
+  CASE_STUDY2 = 'case_study2',
+  CASE_STUDY3 = 'case_study3',
+  DISCIPLINE = 'discipline',
+}
 
-/**
- * Verifica as seções disponíveis em um concurso
- */
-export const getExamSections = async (concursoId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('concursos')
-      .select(`
-        has_basic_knowledge,
-        has_specific_knowledge_1,
-        has_specific_knowledge_2,
-        has_specific_knowledge_3,
-        basic_knowledge_questions,
-        specific_knowledge_1_questions,
-        specific_knowledge_2_questions,
-        specific_knowledge_3_questions
-      `)
-      .eq('id', concursoId)
-      .single();
-      
-    if (error) throw error;
-    
-    return {
-      hasBasic: data.has_basic_knowledge,
-      hasSpecific1: data.has_specific_knowledge_1,
-      hasSpecific2: data.has_specific_knowledge_2, 
-      hasSpecific3: data.has_specific_knowledge_3,
-      basicCount: data.basic_knowledge_questions,
-      specific1Count: data.specific_knowledge_1_questions,
-      specific2Count: data.specific_knowledge_2_questions,
-      specific3Count: data.specific_knowledge_3_questions
-    };
-  } catch (error) {
-    console.error('Error fetching exam sections:', error);
-    return {
-      hasBasic: false,
-      hasSpecific1: false,
-      hasSpecific2: false,
-      hasSpecific3: false,
-      basicCount: 0,
-      specific1Count: 0,
-      specific2Count: 0,
-      specific3Count: 0
-    };
+export interface Discipline {
+  name: string;
+  sigla: string;
+}
+
+export const handleQuestionSectionSelection = (
+  concurso: any,
+  setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>
+) => {
+  if (concurso.has_basic_knowledge) {
+    setSelectedSection('basic');
+  } else if (concurso.has_specific_knowledge_1) {
+    setSelectedSection('specific1');
+  } else if (concurso.has_specific_knowledge_2) {
+    setSelectedSection('specific2');
+  } else if (concurso.has_specific_knowledge_3) {
+    setSelectedSection('specific3');
+  } else if (concurso.has_discursive) {
+    setSelectedSection('discursive');
+  } else if (concurso.has_case_study_1) {
+    setSelectedSection('case_study1');
+  } else if (concurso.has_case_study_2) {
+    setSelectedSection('case_study2');
+  } else if (concurso.has_case_study_3) {
+    setSelectedSection('case_study3');
   }
 };

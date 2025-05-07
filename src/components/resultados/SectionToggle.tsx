@@ -22,6 +22,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   const hasCaseStudy1 = concurso.has_case_study_1;
   const hasCaseStudy2 = concurso.has_case_study_2;
   const hasCaseStudy3 = concurso.has_case_study_3;
+  const disciplines = concurso.disciplines || [];
 
   return (
     <div className="bg-gray-100 border-b overflow-x-auto">
@@ -125,6 +126,17 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             Estudo de Caso 3
           </button>
         )}
+
+        {/* Render discipline buttons if present */}
+        {disciplines && disciplines.length > 0 && disciplines.map((discipline: any, index: number) => (
+          <button
+            key={discipline.sigla || index}
+            onClick={() => onSectionChange('basic')} // Need to update this to handle discipline sections
+            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap text-gray-600 hover:bg-gray-200`}
+          >
+            {discipline.name} {discipline.weight && discipline.weight > 1 ? `(Peso ${discipline.weight})` : ''}
+          </button>
+        ))}
       </div>
     </div>
   );

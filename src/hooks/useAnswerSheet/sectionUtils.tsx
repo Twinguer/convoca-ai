@@ -13,5 +13,31 @@ export const handleQuestionSectionSelection = (
     setSelectedSection('specific2');
   } else if (concurso.has_specific_knowledge_3) {
     setSelectedSection('specific3');
+  } else if (concurso.has_discursive) {
+    setSelectedSection('discursive');
+  } else if (concurso.has_case_study_1) {
+    setSelectedSection('case_study1');
+  } else if (concurso.has_case_study_2) {
+    setSelectedSection('case_study2');
+  } else if (concurso.has_case_study_3) {
+    setSelectedSection('case_study3');
+  } else if (concurso.disciplines && concurso.disciplines.length > 0) {
+    // If no standard sections but disciplines exist, we could handle it here if needed
+    // For now, default to basic if available
+    setSelectedSection('basic');
   }
+};
+
+// Helper function to get discipline by sigla
+export const getDisciplineBySigla = (concurso: Concurso, sigla: string) => {
+  if (!concurso.disciplines) return null;
+  
+  return concurso.disciplines.find(
+    (discipline: any) => discipline.sigla === sigla
+  );
+};
+
+// Helper function to get all disciplines
+export const getDisciplines = (concurso: Concurso) => {
+  return concurso.disciplines || [];
 };

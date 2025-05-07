@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -120,6 +119,8 @@ const CriarRanking = () => {
       case_study_3_weight: 1,
       case_study_3_minimum_score: 0,
       
+      disciplines: [],
+      
       has_minimum_score: false,
       minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
       minimum_score_type: 'knowledge' as 'knowledge' | 'subject',
@@ -162,6 +163,7 @@ const CriarRanking = () => {
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
               data_publicacao: data.data_publicacao ? new Date(data.data_publicacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              disciplines: data.disciplines || []
             });
           }
         } catch (error) {
