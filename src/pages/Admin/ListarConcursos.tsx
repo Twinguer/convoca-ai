@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Table,
@@ -46,7 +47,7 @@ import {
 } from "@/components/ui/select"
 
 const formSchema = z.object({
-  status: z.string().array().optional(),
+  status: z.string().optional(),
 })
 
 const ListarConcursos = () => {
@@ -58,38 +59,32 @@ const ListarConcursos = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      status: [],
+      status: undefined,
     },
   })
 
-  const { data: concursos, isLoading, isError } = useQuery(
-    ['concursos', search, form.watch().status],
-    () => fetchConcursos({ searchTerm: search, status: form.watch().status }),
-    {
-      onError: (error: any) => {
-        toast({
-          title: "Erro ao carregar concursos",
-          description: error.message,
-          variant: "destructive",
-        })
-      }
-    }
-  );
+  const { data: concursos, isLoading, isError } = useQuery({
+    queryKey: ['concursos', search, form.watch().status],
+    queryFn: () => fetchConcursos({ searchTerm: search, status: form.watch().status }),
+  });
 
-  const deleteMutation = useMutation(deleteConcurso, {
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteConcurso(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['concursos', search, form.watch().status]);
+      queryClient.invalidateQueries({
+        queryKey: ['concursos', search, form.watch().status]
+      });
       toast({
         title: "Concurso excluído",
         description: "O concurso foi excluído com sucesso.",
-      })
+      });
     },
     onError: (error: any) => {
       toast({
         title: "Erro ao excluir concurso",
         description: error.message,
         variant: "destructive",
-      })
+      });
     }
   });
 

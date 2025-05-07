@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { ConcursoCard } from '@/components/ConcursoCard';
+import ConcursoCard from '@/components/ConcursoCard';
 import { ConcursoFilter } from '@/types/concursos';
 import { fetchConcursos } from '@/services/concursoService';
 import { Input } from "@/components/ui/input"
@@ -8,7 +9,7 @@ import { Link } from 'react-router-dom';
 
 const CebraspeConcursos = () => {
   const [concursos, setConcursos] = useState([]);
-  const [filter, setFilter] = useState<ConcursoFilter>({ status: ['publicado', 'em_andamento'] });
+  const [filter, setFilter] = useState<ConcursoFilter>({ status: 'publicado' });
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -23,7 +24,7 @@ const CebraspeConcursos = () => {
   useEffect(() => {
     setFilter({
       ...filter,
-      status: ['publicado', 'em_andamento']
+      status: 'publicado'
     });
   }, []);
 
