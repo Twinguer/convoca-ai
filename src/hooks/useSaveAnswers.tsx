@@ -92,7 +92,7 @@ export const useSaveAnswers = ({
             toast({
               title: "Aviso de configuração",
               description: "Continuando o salvamento, mas houve um problema na configuração das disciplinas.",
-              variant: "warning",
+              variant: "destructive", // Alterado de "warning" para "destructive" para corresponder aos tipos permitidos
               duration: 3000
             });
           } else {

@@ -1,4 +1,40 @@
 
+import { supabase } from '../client';
+
+// Define constantes e tipos para disciplinas
+export const DEFAULT_SUBJECTS = [
+  { code: 'PTG', name: 'Língua Portuguesa' },
+  { code: 'MAT', name: 'Matemática' },
+  { code: 'DIR', name: 'Direito' },
+  { code: 'INF', name: 'Informática' },
+  { code: 'RLM', name: 'Raciocínio Lógico-Matemático' },
+  { code: 'LEG', name: 'Legislação' },
+  { code: 'ADM', name: 'Administração' },
+  { code: 'CON', name: 'Contabilidade' },
+  { code: 'ECO', name: 'Economia' },
+  { code: 'EST', name: 'Estatística' },
+  { code: 'AFO', name: 'AFO' },
+  { code: 'DCO', name: 'Direito Constitucional' },
+  { code: 'DAD', name: 'Direito Administrativo' },
+  { code: 'DCI', name: 'Direito Civil' },
+  { code: 'DPE', name: 'Direito Penal' },
+  { code: 'DPR', name: 'Direito Processual' },
+  { code: 'DTR', name: 'Direito Tributário' },
+  { code: 'AUD', name: 'Auditoria' }
+];
+
+// Função para gerar código de disciplina a partir do nome
+export const generateSubjectCode = (name: string): string => {
+  // Extrair iniciais e limitar a 3 caracteres
+  const initials = name
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase())
+    .join('')
+    .substring(0, 3);
+  
+  return initials || 'SUB'; // Código padrão se não for possível gerar
+};
+
 // Esta função pega um concurso e retorna a estrutura de questões por disciplinas
 export const getSubjectExamStructure = (concurso: any) => {
   // Inicializar objeto para armazenar intervalos de questões por disciplina
@@ -94,4 +130,25 @@ export const getAllQuestionsForConcurso = (concurso: any): number[] => {
   }
   
   return allQuestions;
+};
+
+// Função para obter a estrutura de exame por tipos de conhecimento
+export const getExamStructure = (concurso: any) => {
+  const basicQuestions = concurso.basic_knowledge_questions || 0;
+  const specific1Questions = concurso.specific_knowledge_1_questions || 0;
+  const specific2Questions = concurso.specific_knowledge_2_questions || 0;
+  const specific3Questions = concurso.specific_knowledge_3_questions || 0;
+
+  const basicEnd = basicQuestions;
+  const specific1End = basicEnd + specific1Questions;
+  const specific2End = specific1End + specific2Questions;
+  const specific3End = specific2End + specific3Questions;
+
+  return {
+    basicEnd,
+    specific1End,
+    specific2End,
+    specific3End,
+    totalQuestions: specific3End
+  };
 };
