@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,6 +35,8 @@ export interface Ranking {
   weightedCaseStudy1Score?: number | null;
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
+  // Subject scores for subject-based exams
+  subjectScores?: Record<string, number>;
   // Additional fields
   reservationType: string;
   displayReservation: string;
@@ -58,6 +61,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -76,9 +80,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         hasDiscursive: concurso.has_discursive,
         hasCaseStudy1: concurso.has_case_study_1,
         hasCaseStudy2: concurso.has_case_study_2,
-        hasCaseStudy3: concurso.has_case_study_3
+        hasCaseStudy3: concurso.has_case_study_3,
+        minimum_score_type: concurso.minimum_score_type,
+        subjects: concurso.subjects
       });
     }
+    
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
@@ -87,7 +94,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         specific2: rankings[0].specificKnowledge2Score,
         specific3: rankings[0].specificKnowledge3Score,
         weightedBasic: rankings[0].weightedBasicScore,
-        weightedSpecific1: rankings[0].weightedSpecific1Score
+        weightedSpecific1: rankings[0].weightedSpecific1Score,
+        subjectScores: rankings[0].subjectScores
       });
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
@@ -116,6 +124,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
+  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -137,7 +146,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
+  
   const availableQuotas = getAvailableQuotas();
+  
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
     if (quota === "Ampla Concorrência") {
@@ -145,6 +156,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
+  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -152,6 +164,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
+  
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -206,6 +219,33 @@ const getSectionWeights = (concurso?: Concurso) => {
   };
 };
 
+// Extrair disciplinas de um concurso
+const getSubjects = (concurso?: Concurso): {code: string, name: string}[] => {
+  if (!concurso || concurso.minimum_score_type !== 'subject' || !concurso.subjects) {
+    return [];
+  }
+  
+  try {
+    // Verificar se subjects é uma string JSON ou um objeto já parseado
+    const subjectsArray = typeof concurso.subjects === 'string' 
+      ? JSON.parse(concurso.subjects) 
+      : concurso.subjects;
+    
+    if (!Array.isArray(subjectsArray)) {
+      console.warn('Subjects não é um array:', subjectsArray);
+      return [];
+    }
+    
+    return subjectsArray.map(subject => ({
+      code: subject.code || '',
+      name: subject.name || subject.code || 'Disciplina'
+    }));
+  } catch (error) {
+    console.error('Erro ao processar disciplinas do concurso:', error);
+    return [];
+  }
+};
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -225,7 +265,7 @@ const RankingTableContent: React.FC<{
   };
   isAuthenticated: boolean;
   isRefetching?: boolean;
-  activeTab: string; // Add the activeTab prop here
+  activeTab: string;
 }> = ({
   rankings,
   currentUserId,
@@ -236,7 +276,7 @@ const RankingTableContent: React.FC<{
   sectionWeights,
   isAuthenticated,
   isRefetching = false,
-  activeTab // Destructure the activeTab prop
+  activeTab
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -263,6 +303,13 @@ const RankingTableContent: React.FC<{
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
+  
+  // Determinar se o concurso é baseado em disciplinas
+  const isSubjectBased = concurso?.minimum_score_type === 'subject';
+  
+  // Obter lista de disciplinas se for concurso baseado em disciplinas
+  const subjects = isSubjectBased ? getSubjects(concurso) : [];
+  
   if (!concurso) {
     return <Table>
         <TableHeader>
@@ -304,49 +351,64 @@ const RankingTableContent: React.FC<{
         </TableBody>
       </Table>;
   }
-  const columns = getRankingTableColumns(concurso);
+  
+  // Determinar colunas com base no tipo de concurso
+  const getTableColumns = () => {
+    if (isSubjectBased) {
+      // Colunas para concursos baseados em disciplinas
+      const columns = [
+        { key: 'position', label: 'AC' },
+        { key: 'quotaPosition', label: activeTab !== "Ampla Concorrência" ? getQuotaAbbreviation(activeTab) : '' },
+        { key: 'candidate', label: 'Candidato' },
+        { key: 'total', label: 'Total' }
+      ];
+      
+      // Adicionar coluna para cada disciplina
+      subjects.forEach(subject => {
+        columns.push({ key: `subject_${subject.code}`, label: subject.name });
+      });
+      
+      // Adicionar colunas para provas discursivas se necessário
+      if (concurso.has_discursive) columns.push({ key: 'discursive', label: 'Discursiva' });
+      if (concurso.has_case_study_1) columns.push({ key: 'caseStudy1', label: 'Estudo 1' });
+      if (concurso.has_case_study_2) columns.push({ key: 'caseStudy2', label: 'Estudo 2' });
+      if (concurso.has_case_study_3) columns.push({ key: 'caseStudy3', label: 'Estudo 3' });
+      
+      return columns;
+    } else {
+      // Colunas tradicionais para concursos baseados em conhecimentos
+      const columns = [
+        { key: 'position', label: 'AC' },
+        { key: 'quotaPosition', label: activeTab !== "Ampla Concorrência" ? getQuotaAbbreviation(activeTab) : '' },
+        { key: 'candidate', label: 'Candidato' },
+        { key: 'total', label: 'Total' }
+      ];
+      
+      if (concurso.has_basic_knowledge) columns.push({ key: 'basic', label: 'Básica' });
+      if (concurso.has_specific_knowledge_1) columns.push({ key: 'specific1', label: 'Específica 1' });
+      if (concurso.has_specific_knowledge_2) columns.push({ key: 'specific2', label: 'Específica 2' });
+      if (concurso.has_specific_knowledge_3) columns.push({ key: 'specific3', label: 'Específica 3' });
+      if (concurso.has_discursive) columns.push({ key: 'discursive', label: 'Discursiva' });
+      if (concurso.has_case_study_1) columns.push({ key: 'caseStudy1', label: 'Estudo 1' });
+      if (concurso.has_case_study_2) columns.push({ key: 'caseStudy2', label: 'Estudo 2' });
+      if (concurso.has_case_study_3) columns.push({ key: 'caseStudy3', label: 'Estudo 3' });
+      
+      return columns;
+    }
+  };
+  
+  const columns = getTableColumns();
+  
   return <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-center w-16">AC</TableHead>
-          {!isAmpla && <TableHead className="text-center w-16">
-            {getQuotaAbbreviation(activeTab)}
-          </TableHead>}
-          {isAmpla}
-          <TableHead>Candidato</TableHead>
-          <TableHead className="text-right">Total</TableHead>
-          
-          {concurso.has_basic_knowledge === true && <TableHead className="text-right">
-              Básica
-            </TableHead>}
-          
-          {concurso.has_specific_knowledge_1 === true && <TableHead className="text-right">
-              Específica 1
-            </TableHead>}
-          
-          {concurso.has_specific_knowledge_2 === true && <TableHead className="text-right">
-              Específica 2
-            </TableHead>}
-          
-          {concurso.has_specific_knowledge_3 === true && <TableHead className="text-right">
-              Específica 3
-            </TableHead>}
-          
-          {concurso.has_discursive === true && <TableHead className="text-right">
-              Discursiva
-            </TableHead>}
-          
-          {concurso.has_case_study_1 === true && <TableHead className="text-right">
-              Estudo 1
-            </TableHead>}
-          
-          {concurso.has_case_study_2 === true && <TableHead className="text-right">
-              Estudo 2
-            </TableHead>}
-          
-          {concurso.has_case_study_3 === true && <TableHead className="text-right">
-              Estudo 3
-            </TableHead>}
+          {columns.map((column, index) => (
+            column.label ? 
+              <TableHead key={column.key} className={column.key === 'position' || column.key === 'quotaPosition' ? "text-center w-16" : column.key === 'total' || column.key.startsWith('subject_') || ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'caseStudy1', 'caseStudy2', 'caseStudy3'].includes(column.key) ? "text-right" : ""}>
+                {column.label}
+              </TableHead>
+            : null
+          ))}
           {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
@@ -355,7 +417,7 @@ const RankingTableContent: React.FC<{
         const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
         return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
               <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
-              {!isAmpla && <TableCell className="text-center font-bold">
+              {activeTab !== "Ampla Concorrência" && <TableCell className="text-center font-bold">
                 {ranking.quotaPosition}º
               </TableCell>}
               {isAmpla}
@@ -375,46 +437,56 @@ const RankingTableContent: React.FC<{
               </TableCell>
               <TableCell className={`text-right font-medium ${scoreChanged ? 'text-emerald-600' : ''}`}>
                 {ranking.score.toFixed(2)}
-                {scoreChanged}
               </TableCell>
               
-              {concurso.has_basic_knowledge === true && <TableCell className="text-right">
-                  {Number(ranking.weightedBasicScore || 0).toFixed(2)}
-                </TableCell>}
+              {/* Renderizar colunas de pontuações por disciplinas para concursos baseados em disciplinas */}
+              {isSubjectBased && subjects.map(subject => (
+                <TableCell key={`score_${subject.code}`} className="text-right">
+                  {ranking.subjectScores && ranking.subjectScores[subject.code] 
+                    ? Number(ranking.subjectScores[subject.code]).toFixed(2)
+                    : "0.00"}
+                </TableCell>
+              ))}
               
-              {concurso.has_specific_knowledge_1 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedSpecific1Score || 0).toFixed(2)}
-                </TableCell>}
+              {/* Renderizar colunas de conhecimentos para concursos baseados em conhecimentos */}
+              {!isSubjectBased && concurso.has_basic_knowledge === true && <TableCell className="text-right">
+                {Number(ranking.weightedBasicScore || 0).toFixed(2)}
+              </TableCell>}
               
-              {concurso.has_specific_knowledge_2 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedSpecific2Score || 0).toFixed(2)}
-                </TableCell>}
+              {!isSubjectBased && concurso.has_specific_knowledge_1 === true && <TableCell className="text-right">
+                {Number(ranking.weightedSpecific1Score || 0).toFixed(2)}
+              </TableCell>}
               
-              {concurso.has_specific_knowledge_3 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedSpecific3Score || 0).toFixed(2)}
-                </TableCell>}
+              {!isSubjectBased && concurso.has_specific_knowledge_2 === true && <TableCell className="text-right">
+                {Number(ranking.weightedSpecific2Score || 0).toFixed(2)}
+              </TableCell>}
+              
+              {!isSubjectBased && concurso.has_specific_knowledge_3 === true && <TableCell className="text-right">
+                {Number(ranking.weightedSpecific3Score || 0).toFixed(2)}
+              </TableCell>}
               
               {concurso.has_discursive === true && <TableCell className="text-right">
-                  {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
-                </TableCell>}
+                {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
+              </TableCell>}
               
               {concurso.has_case_study_1 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
-                </TableCell>}
+                {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
+              </TableCell>}
               
               {concurso.has_case_study_2 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
-                </TableCell>}
+                {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
+              </TableCell>}
               
               {concurso.has_case_study_3 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
-                </TableCell>}
+                {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
+              </TableCell>}
+              
               {isAdminMode && isAuthenticated && <TableCell>
-                  <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
-                </TableCell>}
+                <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
+              </TableCell>}
             </TableRow>;
       }) : <TableRow>
-            <TableCell colSpan={columns.length + (isAdminMode && isAuthenticated ? 3 : 2)} className="text-center py-4">
+            <TableCell colSpan={columns.length + (isAdminMode && isAuthenticated ? 1 : 0)} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>}

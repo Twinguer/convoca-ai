@@ -27,6 +27,8 @@ export interface Ranking {
   weightedCaseStudy1Score?: number | null;
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
+  // Subject scores for subject-based exams
+  subjectScores?: Record<string, number>;
   reservationType: string;
   displayReservation: string;
   id: string;
@@ -39,6 +41,28 @@ const getReservationAbbreviation = (reservationType: string): string => {
   // Get first three letters as abbreviation
   const abbr = reservationType.substring(0, 3).toUpperCase();
   return abbr;
+};
+
+// Função para processar pontuações de disciplinas
+const processSubjectScores = (subjectScores: any): Record<string, number> => {
+  if (!subjectScores) return {};
+  
+  try {
+    // Se já é um objeto, retorne-o diretamente
+    if (typeof subjectScores === 'object' && !Array.isArray(subjectScores)) {
+      return subjectScores;
+    }
+    
+    // Se for uma string JSON, tente fazer o parse
+    if (typeof subjectScores === 'string') {
+      return JSON.parse(subjectScores);
+    }
+    
+    return {};
+  } catch (error) {
+    console.error('Erro ao processar pontuações de disciplinas:', error);
+    return {};
+  }
 };
 
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
@@ -70,6 +94,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         reservation_type,
+        subject_scores,
         users_profiles(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
@@ -92,7 +117,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id: firstRanking.id,
         user_id: firstRanking.user_id,
         score: firstRanking.score,
-        profile: firstRanking.users_profiles
+        profile: firstRanking.users_profiles,
+        subject_scores: firstRanking.subject_scores
       });
     }
     
@@ -106,6 +132,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
+      const subjectScores = processSubjectScores(ranking.subject_scores);
       
       return {
         position: index + 1,
@@ -133,6 +160,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
+        subjectScores,
         id: ranking.id
       };
     });
