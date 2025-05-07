@@ -1,366 +1,531 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { useAnswerSheet } from '@/hooks/useAnswerSheet';
-import { NullifyQuestionButton } from './NullifyQuestionButton';
-import { WeightedAnswerInput } from './AnswerKeyForm/WeightedAnswerInput';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { fetchOfficialAnswerWeights, saveAnswerKeyAndRecalculate } from '@/services/answerKeyService';
-import { getExamStructure, getSubjectExamStructure } from '@/integrations/supabase/rankings/examStructure';
+import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Concurso } from '@/types/concursos';
+import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
+import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+import { answerKeyService } from '@/services/answerKeyService';
 
 interface AnswerKeyFormProps {
   concursoId: string;
 }
 
-export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
-  const [concurso, setConcurso] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [officialAnswers, setOfficialAnswers] = useState<Record<string, any>>({});
+export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [recalculationSuccess, setRecalculationSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState('basic');
-  
-  // Usando um objeto literal para armazenar respostas ao invés de useAnswerSheet
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  
-  const isSubjectBased = concurso?.minimum_score_type === 'subject';
-  
-  // Fetch concurso and official answers
+  const { toast } = useToast();
+
+  const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
+    queryKey: ['concurso-details', concursoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (error) throw error;
+      return data as Concurso;
+    },
+  });
+
+  const { data: existingAnswers, isLoading: isLoadingAnswers } = useQuery({
+    queryKey: ['official-answers-weights', concursoId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_official_answer_weights', {
+        p_concurso_id: concursoId
+      });
+        
+      if (error) throw error;
+      return data || {};
+    },
+  });
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+    if (existingAnswers && Object.keys(existingAnswers).length > 0) {
+      const answersMap: { [key: number]: string } = {};
+      const nullifiedSet = new Set<number>();
+      
+      Object.entries(existingAnswers).forEach(([key, value]: [string, any]) => {
+        const questionNumber = parseInt(key.replace('questao', ''));
         
-        // Get concurso data
-        const { data: concursoData, error: concursoError } = await supabase
-          .from('concursos')
-          .select('*')
-          .eq('id', concursoId)
-          .single();
-          
-        if (concursoError) throw concursoError;
-        
-        setConcurso(concursoData);
-        
-        // Get official answers
-        const officialAnswers = await fetchOfficialAnswerWeights(concursoId);
-        setOfficialAnswers(officialAnswers);
-        
-        // Initialize form with existing answers
-        const initialAnswers: Record<number, string> = {};
-        const nullified = new Set<number>();
-        
-        Object.entries(officialAnswers).forEach(([key, value]) => {
-          const questionNumber = parseInt(key.replace('questao', ''));
-          initialAnswers[questionNumber] = value.resposta;
-          
-          if (value.anulada) {
-            nullified.add(questionNumber);
-          }
-        });
-        
-        setAnswers(initialAnswers);
-        setNullifiedQuestions(nullified);
-        
-        // Set initial active tab
-        if (concursoData.minimum_score_type === 'subject' && concursoData.subjects) {
-          try {
-            // Tente parsear subjects caso seja uma string
-            const subjectsArray = typeof concursoData.subjects === 'string' 
-              ? JSON.parse(concursoData.subjects) 
-              : concursoData.subjects;
-            
-            if (Array.isArray(subjectsArray) && subjectsArray.length > 0 && subjectsArray[0].code) {
-              setActiveTab(subjectsArray[0].code);
-            } else if (concursoData.has_basic_knowledge) {
-              setActiveTab('basic');
-            } else if (concursoData.has_specific_knowledge_1) {
-              setActiveTab('specific1');
-            }
-          } catch (e) {
-            console.error('Error parsing subjects:', e);
-            // Fallback to default tabs
-            if (concursoData.has_basic_knowledge) {
-              setActiveTab('basic');
-            } else if (concursoData.has_specific_knowledge_1) {
-              setActiveTab('specific1');
-            }
-          }
-        } else if (concursoData.has_basic_knowledge) {
-          setActiveTab('basic');
-        } else if (concursoData.has_specific_knowledge_1) {
-          setActiveTab('specific1');
+        answersMap[questionNumber] = value.resposta;
+        if (value.anulada) {
+          nullifiedSet.add(questionNumber);
         }
-        
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Erro ao carregar dados do gabarito');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (concursoId) {
-      fetchData();
-    }
-  }, [concursoId]);
-  
-  const handleSaveAnswers = async () => {
-    try {
-      setSaving(true);
-      
-      // Format answers for saving
-      const formattedAnswers: Record<string, any> = {};
-      
-      Object.entries(answers).forEach(([questionNumber, answer]) => {
-        const question = parseInt(questionNumber);
-        formattedAnswers[`questao${question}`] = {
-          resposta: answer,
-          anulada: nullifiedQuestions.has(question)
-        };
       });
       
-      // Save answer key and recalculate scores
-      const { success, error } = await saveAnswerKeyAndRecalculate(concursoId, formattedAnswers, true);
-      
-      if (!success) {
-        throw error;
-      }
-      
-      toast.success('Gabarito salvo com sucesso!');
-      
-      // Refresh official answers
-      const updatedAnswers = await fetchOfficialAnswerWeights(concursoId);
-      setOfficialAnswers(updatedAnswers);
-      
-    } catch (error) {
-      console.error('Error saving answer key:', error);
-      toast.error('Erro ao salvar gabarito');
-    } finally {
-      setSaving(false);
+      setAnswers(answersMap);
+      setNullifiedQuestions(nullifiedSet);
     }
-  };
-  
-  const handleToggleNullified = (questionNumber: number) => {
-    const newNullified = new Set(nullifiedQuestions);
-    
-    if (newNullified.has(questionNumber)) {
-      newNullified.delete(questionNumber);
-    } else {
-      newNullified.add(questionNumber);
-    }
-    
-    setNullifiedQuestions(newNullified);
-  };
-  
-  const renderQuestionsForKnowledgeTab = (tab: string) => {
-    if (!concurso) return null;
-    
-    const { basicEnd, specific1End, specific2End, specific3End } = getExamStructure(concurso);
-    
-    let startQ = 1;
-    let endQ = basicEnd;
-    
-    if (tab === 'specific1') {
-      startQ = basicEnd + 1;
-      endQ = specific1End;
-    } else if (tab === 'specific2') {
-      startQ = specific1End + 1;
-      endQ = specific2End;
-    } else if (tab === 'specific3') {
-      startQ = specific2End + 1;
-      endQ = specific3End;
-    }
-    
-    return renderQuestionRange(startQ, endQ);
-  };
-  
-  const renderQuestionsForSubjectTab = (subjectCode: string) => {
-    if (!concurso || !concurso.subjects) return null;
-    
-    try {
-      const { subjectRanges } = getSubjectExamStructure(concurso);
-      const range = subjectRanges[subjectCode];
-      
-      if (!range) {
-        console.error(`No range found for subject code: ${subjectCode}`);
-        return null;
-      }
-      
-      return renderQuestionRange(range.start, range.end);
-    } catch (error) {
-      console.error('Error rendering questions for subject tab:', error);
-      return <div className="p-4 text-center">Erro ao carregar questões para esta disciplina</div>;
-    }
-  };
-  
-  const renderQuestionRange = (startQ: number, endQ: number) => {
-    const questions = [];
-    
-    for (let i = startQ; i <= endQ; i++) {
-      questions.push(
-        <div key={i} className="flex items-center gap-2 mb-2">
-          <WeightedAnswerInput
-            questionNumber={i}
-            value={answers[i] || ''}
-            onChange={(value) => {
-              setAnswers({...answers, [i]: value});
-            }}
-            isNullified={nullifiedQuestions.has(i)}
-          />
-          <NullifyQuestionButton 
-            questionNumber={i}
-            isNullified={nullifiedQuestions.has(i)} 
-            toggleNullified={handleToggleNullified}
-          />
-        </div>
-      );
-    }
-    
-    return questions;
-  };
-  
-  const renderSubjectTabs = () => {
-    if (!concurso || !concurso.subjects) {
-      return (
-        <div className="p-4 text-center">
-          Nenhuma disciplina configurada para este concurso
-        </div>
-      );
-    }
-    
-    let subjects: any[] = [];
-    
-    try {
-      subjects = typeof concurso.subjects === 'string' 
-        ? JSON.parse(concurso.subjects) 
-        : concurso.subjects;
-        
-      if (!Array.isArray(subjects)) {
-        throw new Error('Subjects is not an array');
-      }
-    } catch (e) {
-      console.error('Error parsing subjects:', e);
-      return (
-        <div className="p-4 text-center">
-          Erro ao carregar disciplinas. Formato inválido.
-        </div>
-      );
-    }
-    
-    if (subjects.length === 0) {
-      return (
-        <div className="p-4 text-center">
-          Nenhuma disciplina configurada para este concurso
-        </div>
-      );
-    }
-    
-    return (
-      <>
-        <TabsList className="mb-4">
-          {subjects.map((subject: any) => (
-            <TabsTrigger 
-              key={subject.code} 
-              value={subject.code}
-              className="min-w-[100px]"
-            >
-              {subject.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        
-        {subjects.map((subject: any) => (
-          <TabsContent key={subject.code} value={subject.code}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {renderQuestionsForSubjectTab(subject.code)}
-            </div>
-          </TabsContent>
-        ))}
-      </>
-    );
-  };
-  
-  const renderKnowledgeTabs = () => {
-    return (
-      <>
-        <TabsList className="mb-4">
-          {concurso?.has_basic_knowledge && <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>}
-          {concurso?.has_specific_knowledge_1 && <TabsTrigger value="specific1">Conhecimentos Específicos</TabsTrigger>}
-          {concurso?.has_specific_knowledge_2 && <TabsTrigger value="specific2">Conhecimentos Específicos 2</TabsTrigger>}
-          {concurso?.has_specific_knowledge_3 && <TabsTrigger value="specific3">Conhecimentos Específicos 3</TabsTrigger>}
-        </TabsList>
-        
-        {concurso?.has_basic_knowledge && (
-          <TabsContent value="basic">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {renderQuestionsForKnowledgeTab('basic')}
-            </div>
-          </TabsContent>
-        )}
-        
-        {concurso?.has_specific_knowledge_1 && (
-          <TabsContent value="specific1">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {renderQuestionsForKnowledgeTab('specific1')}
-            </div>
-          </TabsContent>
-        )}
-        
-        {concurso?.has_specific_knowledge_2 && (
-          <TabsContent value="specific2">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {renderQuestionsForKnowledgeTab('specific2')}
-            </div>
-          </TabsContent>
-        )}
-        
-        {concurso?.has_specific_knowledge_3 && (
-          <TabsContent value="specific3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {renderQuestionsForKnowledgeTab('specific3')}
-            </div>
-          </TabsContent>
-        )}
-      </>
-    );
-  };
-  
-  if (loading) {
+  }, [existingAnswers]);
+
+  if (isLoadingConcurso || isLoadingAnswers) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Gabarito Oficial</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <p className="text-center text-gray-600">Carregando informações do gabarito...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!concurso) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center text-destructive space-x-2">
+            <AlertTriangle className="h-5 w-5" />
+            <p>Não foi possível carregar as informações do concurso.</p>
           </div>
         </CardContent>
       </Card>
     );
   }
+
+  const getAllQuestionsFromAllSections = () => {
+    const allQuestions: number[] = [];
+    
+    let currentQuestionNumber = 1;
+    
+    // Básico
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 1
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 2
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 3
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    return allQuestions;
+  };
+
+  const getQuestionsCount = (section: 'basic' | 'specific1' | 'specific2' | 'specific3') => {
+    if (section === 'basic' && concurso.has_basic_knowledge) {
+      return concurso.basic_knowledge_questions || 0;
+    } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
+      return concurso.specific_knowledge_1_questions || 0;
+    } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
+      return concurso.specific_knowledge_2_questions || 0;
+    } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
+      return concurso.specific_knowledge_3_questions || 0;
+    }
+    return 0;
+  };
+
+  // Método modificado para buscar questões apenas da seção atual (para exibição)
+  const getQuestionsRange = () => {
+    if (selectedSection === 'basic') {
+      return Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1);
+    } else {
+      let startNumber = 1;
+      
+      if (concurso.has_basic_knowledge) {
+        startNumber += (concurso.basic_knowledge_questions || 0);
+      }
+      
+      if (selectedSection === 'specific1') {
+        return Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i);
+      } else if (selectedSection === 'specific2') {
+        startNumber += (concurso.specific_knowledge_1_questions || 0);
+        return Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i);
+      } else if (selectedSection === 'specific3') {
+        startNumber += (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0);
+        return Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i);
+      }
+    }
+    return [];
+  };
+
+  const handleAnswerChange = (questionNumber: number, answer: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionNumber]: answer
+    }));
+  };
+
+  const handleNullifyQuestion = (questionNumber: number) => {
+    setNullifiedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionNumber)) {
+        newSet.delete(questionNumber);
+      } else {
+        newSet.add(questionNumber);
+      }
+      return newSet;
+    });
+  };
+
+  const createAnswerMatrix = () => {
+    const questions = getQuestionsRange();
+    if (questions.length === 0) return [];
+    
+    const QUESTIONS_PER_ROW = 4;
+    const rows = Math.ceil(questions.length / QUESTIONS_PER_ROW);
+    
+    const matrix = [];
+    
+    for (let row = 0; row < rows; row++) {
+      const rowData = [];
+      for (let col = 0; col < QUESTIONS_PER_ROW; col++) {
+        const index = row * QUESTIONS_PER_ROW + col;
+        if (index < questions.length) {
+          rowData.push(questions[index]);
+        } else {
+          rowData.push(null);
+        }
+      }
+      matrix.push(rowData);
+    }
+    
+    return matrix;
+  };
+
+  const performRecalculation = async () => {
+    try {
+      setIsRecalculating(true);
+      
+      toast({
+        title: "Recalculando pontuações",
+        description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo.",
+      });
+      
+      const recalculationResult = await recalculateAllUserScores(concursoId);
+      console.log('Recalculation result:', recalculationResult);
+
+      if (recalculationResult.success) {
+        setRecalculationSuccess(true);
+        const updatedCount = recalculationResult.updatedCount || 0;
+        
+        toast({
+          title: "Recálculo completado",
+          description: `As notas de ${updatedCount} usuários foram atualizadas.`,
+        });
+        
+        setTimeout(() => {
+          setRecalculationSuccess(false);
+        }, 5000);
+      } else {
+        toast({
+          title: "Erro no recálculo",
+          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Error during recalculation:', error);
+      toast({
+        title: "Erro no recálculo",
+        description: error.message || "Ocorreu um erro durante o recálculo das pontuações.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
+  const handleSaveAnswerKey = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSavedSuccess(false);
+      
+      // Verificar todas as questões em todas as seções, não apenas a aba atual
+      const allQuestions = getAllQuestionsFromAllSections();
+      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
+      
+      if (unansweredQuestions.length > 0) {
+        setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        toast({
+          title: "Erro ao salvar gabarito",
+          description: "Todas as questões devem ser respondidas antes de salvar o gabarito.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Preparar dados para salvar o gabarito completo de uma vez
+      const answerKeyData = allQuestions.map(qNum => {
+        // Determinar o tipo de seção para cada questão
+        let sectionType = 'basic';
+        
+        // Calcular o número base de cada seção
+        const basicEnd = concurso.basic_knowledge_questions || 0;
+        
+        if (qNum > basicEnd) {
+          sectionType = 'specific1';
+          
+          const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
+          if (qNum > specific1End) {
+            sectionType = 'specific2';
+            
+            const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
+            if (qNum > specific2End) {
+              sectionType = 'specific3';
+            }
+          }
+        }
+
+        // Antes de destruir toda a tabela, vamos fazer uma tentativa de atualização individual
+        // answerKeyService cuida da lógica de upsert (update ou insert conforme necessário)
+        return {
+          concurso_id: concursoId,
+          question_number: qNum,
+          correct_answer: answers[qNum],
+          weight: 1.0,
+          section_type: sectionType,
+          is_nullified: nullifiedQuestions.has(qNum)
+        };
+      });
+
+      // Usar o método que evita recrear toda a tabela
+      const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
+
+      if (saveResult.success) {
+        setSavedSuccess(true);
+        toast({
+          title: "Gabarito salvo com sucesso",
+          description: `O gabarito oficial foi atualizado. ${saveResult.updatedCount || 0} pontuações foram recalculadas.`,
+        });
+        
+        setTimeout(() => {
+          setSavedSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error("Erro ao salvar gabarito");
+      }
+    } catch (error: any) {
+      console.error('Error saving answer key:', error);
+      setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
+      
+      toast({
+        title: "Erro ao salvar gabarito",
+        description: error.message || "Ocorreu um erro ao salvar o gabarito oficial. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getOptionsForQuestion = () => {
+    if (concurso.exam_type === 'Certo ou Errado') {
+      return ['C', 'E'];
+    }
+    
+    const count = concurso.alternatives_count || 5;
+    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
+  };
+
+  const getObjectiveSectionList = () => {
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    return sections;
+  };
+
+  const objectiveSections = getObjectiveSectionList();
   
+  // Contar o total de questões que ainda não foram respondidas
+  const totalQuestions = getAllQuestionsFromAllSections().length;
+  const answeredQuestions = Object.keys(answers).length;
+  const percentageComplete = totalQuestions > 0 ? Math.floor((answeredQuestions / totalQuestions) * 100) : 0;
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>Gabarito Oficial</span>
-          <Button 
-            onClick={handleSaveAnswers} 
-            disabled={saving}
-          >
-            {saving ? 'Salvando...' : 'Salvar Gabarito'}
-          </Button>
-        </CardTitle>
+        <CardTitle>Gabarito Oficial - {concurso?.titulo}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {isSubjectBased ? renderSubjectTabs() : renderKnowledgeTabs()}
-        </Tabs>
+      <CardContent className="space-y-6">
+        {error && (
+          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <p>{error}</p>
+          </div>
+        )}
+        
+        {savedSuccess && (
+          <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
+            <CheckCircle className="h-4 w-4" />
+            <p>Gabarito salvo com sucesso!</p>
+          </div>
+        )}
+        
+        {recalculationSuccess && (
+          <div className="bg-blue-100 p-3 rounded-md flex items-center gap-2 text-blue-800">
+            <CheckCircle className="h-4 w-4" />
+            <p>Recálculo de pontuações concluído com sucesso!</p>
+          </div>
+        )}
+        
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div>
+              <h4 className="font-medium text-amber-800">Questões Anuladas</h4>
+              <p className="text-sm text-amber-700 mt-1">
+                Este concurso possui {nullifiedQuestions.size} {nullifiedQuestions.size === 1 ? 'questão anulada' : 'questões anuladas'}.
+                {nullifiedQuestions.size > 0 && (
+                  <span className="block mt-1">
+                    Questões anuladas: {Array.from(nullifiedQuestions).sort((a, b) => a - b).join(', ')}
+                  </span>
+                )}
+              </p>
+              <p className="text-xs text-amber-600 mt-2">
+                Ao anular questões, as pontuações de todos os usuários serão recalculadas automaticamente após salvar.
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Barra de progresso de preenchimento do gabarito */}
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="flex flex-col">
+            <h4 className="font-medium text-blue-800">Progresso do preenchimento</h4>
+            <p className="text-sm text-blue-700 mt-1">
+              {answeredQuestions} de {totalQuestions} questões respondidas ({percentageComplete}%)
+            </p>
+            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{width: `${percentageComplete}%`}}
+              ></div>
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              Todas as questões precisam ser respondidas antes de salvar o gabarito.
+            </p>
+          </div>
+        </div>
+        
+        {objectiveSections.length > 0 && (
+          <div className="border rounded-md overflow-hidden shadow-sm">
+            <Tabs 
+              value={selectedSection} 
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              className="w-full"
+            >
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
+                {objectiveSections.map(section => (
+                  <TabsTrigger key={section.key} value={section.key}>
+                    {section.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              
+              {objectiveSections.map(section => (
+                <TabsContent key={section.key} value={section.key}>
+                  <div className="p-4 bg-gray-50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {createAnswerMatrix().map((row, rowIndex) => (
+                        <React.Fragment key={rowIndex}>
+                          {row.map((questionNumber, colIndex) => (
+                            questionNumber !== null && (
+                              <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
+                                <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
+                                <div className="flex flex-wrap gap-2">
+                                  {getOptionsForQuestion().map((option) => (
+                                    <button
+                                      key={option}
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
+                                        ${answers[questionNumber] === option 
+                                          ? 'bg-emerald-600 text-white'
+                                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                      onClick={() => handleAnswerChange(questionNumber, option)}
+                                      disabled={nullifiedQuestions.has(questionNumber)}
+                                      type="button"
+                                    >
+                                      {option}
+                                    </button>
+                                  ))}
+                                </div>
+                                <NullifyQuestionButton
+                                  questionNumber={questionNumber}
+                                  isNullified={nullifiedQuestions.has(questionNumber)}
+                                  onNullify={handleNullifyQuestion}
+                                />
+                              </div>
+                            )
+                          ))}
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          </div>
+        )}
+        
+        <div className="flex justify-between mt-4">
+          <Button 
+            onClick={performRecalculation}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={isSaving || isRecalculating}
+          >
+            {isRecalculating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Recalculando...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Recalcular Pontuações
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            onClick={handleSaveAnswerKey}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            disabled={isSaving || isRecalculating}
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Salvar Gabarito
+              </>
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

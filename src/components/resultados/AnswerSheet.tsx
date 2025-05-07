@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -53,8 +53,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score,
-    getSectionQuestions
+    setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
   
   const {
@@ -133,12 +132,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
+      console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
       
+      // Verificar se houve alteração no número de questões anuladas
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
         console.log('[AnswerSheet] Alteração detectada nas questões anuladas:', 
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
+        
+        // Removemos o toast quando questões anuladas mudam
+        // e também o auto-salvamento
       }
     }
   }, [nullifiedData]);
@@ -179,6 +183,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
       
+      // Chamando o serviço correto renomeado
       await saveAnswersService();
       await refetchNullified();
       console.log("[AnswerSheet] Salvamento concluído com sucesso");
@@ -224,21 +229,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  // Função utilitária para obter todas as questões de todas as seções
-  const getAllQuestionsFromAllSections = () => {
-    return getAllQuestionsForConcurso(concurso);
-  };
-
-  // Determinar se devemos mostrar seções baseadas em conhecimentos ou uma lista unificada
-  const isSubjectBased = concurso.minimum_score_type === 'subject';
-
-  // Gerar uma lista única de seções para exibição na interface
   const getObjectiveSectionList = () => {
-    if (isSubjectBased) {
-      return [{ key: 'basic', label: 'Todas as Questões' }];
-    }
-    
-    // Lógica original para provas baseadas em conhecimentos
     const sections = [];
     if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
     if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
@@ -248,6 +239,43 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
   
   const objectiveSections = getObjectiveSectionList();
+  
+  // Função utilitária para obter todas as questões de todas as seções
+  const getAllQuestionsFromAllSections = () => {
+    const allQuestions: number[] = [];
+    
+    let currentQuestionNumber = 1;
+    
+    // Básico
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 1
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 2
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 3
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    return allQuestions;
+  };
   
   return (
     <Card className="shadow-lg">
@@ -314,10 +342,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as any)}
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
               className="w-full"
             >
-              <TabsList className={`grid w-full ${objectiveSections.length > 0 ? `grid-cols-${objectiveSections.length}` : ''}`}>
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}

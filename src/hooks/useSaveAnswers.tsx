@@ -2,7 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-import { updateSectionTypeForConcurso, calculateOfficialAnswersForSubjectBased } from '@/integrations/supabase/rankings/scoreCalculation';
+import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
+// Removemos a importação de recalculateAllUserScores pois não vamos mais recalcular todas as pontuações
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -66,42 +67,12 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
-      console.log('[useSaveAnswers] Tipo de concurso:', concurso.minimum_score_type);
-      
-      // Log detalhado das respostas que serão enviadas
-      if (concurso.minimum_score_type === 'subject') {
-        console.log('[useSaveAnswers] Concurso baseado em disciplinas, detalhando respostas:');
-        console.log('[useSaveAnswers] Estrutura de disciplinas:', concurso.subjects);
-      }
 
       // Certifique-se de que section_type esteja atualizado para este concurso
       const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
       if (!sectionTypeResult.success) {
         console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
         // Continuamos mesmo com erro, pois isso é apenas uma melhoria
-      }
-      
-      // Se for concurso baseado em disciplinas, garantir que a estrutura esteja criada
-      if (concurso.minimum_score_type === 'subject') {
-        try {
-          console.log('[useSaveAnswers] Configurando estrutura para concurso baseado em disciplinas');
-          const subjectSetupResult = await calculateOfficialAnswersForSubjectBased(concurso.id);
-          if (!subjectSetupResult.success) {
-            console.warn('[useSaveAnswers] Aviso: Não foi possível configurar a estrutura de disciplinas:', subjectSetupResult.error);
-            // Continuamos, mas logamos o erro para depuração
-            toast({
-              title: "Aviso de configuração",
-              description: "Continuando o salvamento, mas houve um problema na configuração das disciplinas.",
-              variant: "destructive", // Alterado de "warning" para "destructive" para corresponder aos tipos permitidos
-              duration: 3000
-            });
-          } else {
-            console.log('[useSaveAnswers] Estrutura de disciplinas configurada com sucesso');
-          }
-        } catch (error) {
-          console.error('[useSaveAnswers] Erro ao configurar estrutura de disciplinas:', error);
-          // Continuamos mesmo com erro, tentaremos salvar as respostas de qualquer forma
-        }
       }
 
       // Chamar a função RPC centralizada
@@ -126,6 +97,9 @@ export const useSaveAnswers = ({
       if (!data.success) {
         throw new Error(data.error || "Erro ao salvar respostas");
       }
+      
+      // Removemos o recálculo automático de todas as pontuações
+      // Cada usuário verá apenas sua pontuação atualizada
 
       // Atualizar estado da UI
       setSavedSuccess(true);

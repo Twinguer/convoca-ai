@@ -1,46 +1,87 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from '@/components/ui/button';
+import { Scale } from 'lucide-react';
 
-export interface WeightedAnswerInputProps {
+interface WeightedAnswerInputProps {
   questionNumber: number;
-  value: string;
-  onChange: (value: string) => void;
-  isNullified: boolean;
+  selectedAnswer?: string;
+  weight?: number;
+  options: string[];
+  isNullified?: boolean;
+  disabled?: boolean;
+  onAnswerChange: (questionNumber: number, answer: string) => void;
+  onWeightChange: (questionNumber: number, weight: number) => void;
+  onNullifyQuestion: (questionNumber: number) => void;
 }
 
-export const WeightedAnswerInput = ({
+export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
   questionNumber,
-  value,
-  onChange,
-  isNullified
-}: WeightedAnswerInputProps) => {
-  const options = ['A', 'B', 'C', 'D', 'E'];
-  
-  const handleAnswerClick = (answer: string) => {
-    onChange(answer);
-  };
-  
+  selectedAnswer = '',
+  weight = 1,
+  options,
+  isNullified = false,
+  disabled = false,
+  onAnswerChange,
+  onWeightChange,
+  onNullifyQuestion
+}) => {
   return (
-    <div className={`flex flex-col p-2 rounded-md border ${isNullified ? 'bg-gray-100' : ''}`} style={{ minWidth: '120px' }}>
-      <Label className="mb-1 text-sm font-bold">Questão {questionNumber}</Label>
-      
-      <div className="flex flex-wrap gap-1 mt-1">
+    <div className="border p-4 rounded-lg bg-white shadow-sm">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <Label className="text-sm font-medium">Questão {questionNumber}</Label>
+          {weight !== 1 && (
+            <span className="ml-2 text-xs text-emerald-600 flex items-center">
+              <Scale className="h-3 w-3 mr-1" />
+              Peso {weight}
+            </span>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant={isNullified ? "destructive" : "outline"}
+          size="sm"
+          onClick={() => onNullifyQuestion(questionNumber)}
+          className="text-xs"
+        >
+          {isNullified ? "Anulada" : "Anular"}
+        </Button>
+      </div>
+
+      <RadioGroup
+        value={selectedAnswer}
+        onValueChange={(value) => onAnswerChange(questionNumber, value)}
+        className="flex flex-wrap gap-2 mb-3"
+        disabled={disabled || isNullified}
+      >
         {options.map((option) => (
-          <Button
-            key={option}
-            type="button"
-            size="sm"
-            variant={value === option ? "default" : "outline"}
-            className={`px-2 py-0 h-8 w-8 text-xs ${isNullified ? 'opacity-50' : ''}`}
-            onClick={() => handleAnswerClick(option)}
-            disabled={isNullified}
-          >
-            {option}
-          </Button>
+          <div key={option} className="flex items-center space-x-1">
+            <RadioGroupItem
+              value={option}
+              id={`q${questionNumber}-${option}`}
+            />
+            <Label htmlFor={`q${questionNumber}-${option}`} className="text-sm">
+              {option}
+            </Label>
+          </div>
         ))}
+      </RadioGroup>
+
+      <div className="mt-2">
+        <Label className="text-xs text-gray-500 mb-1">Peso da questão</Label>
+        <Input
+          type="number"
+          min="0.1"
+          step="0.1"
+          value={weight}
+          onChange={(e) => onWeightChange(questionNumber, parseFloat(e.target.value) || 1)}
+          className="w-24 text-sm"
+          disabled={disabled || isNullified}
+        />
       </div>
     </div>
   );

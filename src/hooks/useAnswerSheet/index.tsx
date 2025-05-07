@@ -6,15 +6,14 @@ import { fetchExistingAnswers } from './fetchExistingAnswers';
 import { initializeQuestionTypes } from './initializeQuestionTypes';
 import { getAnsweredQuestionsCount, getTotalQuestions } from './questionCountUtils';
 import { createAnswerMatrix } from './matrixUtils';
-import { handleQuestionSectionSelection, SectionType } from './sectionUtils';
+import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -40,24 +39,18 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        await fetchExistingAnswers(
-          rankingId, 
-          setAnswers, 
-          setQuestionType, 
-          setDiscursiveScore, 
-          setCaseStudy1Score, 
-          setCaseStudy2Score, 
-          setCaseStudy3Score
-        );
-      } catch (error) {
-        console.error("Erro ao buscar respostas existentes:", error);
-      }
+      await fetchExistingAnswers(
+        rankingId, 
+        setAnswers, 
+        setQuestionType, 
+        setDiscursiveScore, 
+        setCaseStudy1Score, 
+        setCaseStudy2Score, 
+        setCaseStudy3Score
+      );
     };
     
-    if (rankingId) {
-      fetchData();
-    }
+    fetchData();
   }, [rankingId]);
 
   useEffect(() => {
@@ -73,55 +66,53 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
            selectedSection === 'case_study3';
   };
 
-  // Função unificada para obter questões da seção selecionada
   const getSectionQuestions = () => {
     if (!concurso) return [];
-
-    // Para ambos os tipos de concurso (conhecimentos e disciplinas), usamos a mesma lógica
-    if (selectedSection === 'basic') {
-      // Para a seção 'basic', retornamos todas as questões apropriadas
-      if (concurso.minimum_score_type === 'subject') {
-        // Para concursos baseados em disciplinas, retornamos todas as questões em uma única seção
-        return getAllQuestionsForConcurso(concurso);
-      } else if (Object.keys(questionType).length > 0) {
-        // Para concursos baseados em conhecimentos, filtramos pelas questões básicas
-        return Object.entries(questionType)
-          .filter(([_, type]) => type === 'basic')
-          .map(([num]) => parseInt(num))
-          .sort((a, b) => a - b);
-      }
-    } else if (selectedSection === 'specific1') {
-      // Para specific1, filtramos as questões de conhecimento específico 1
-      return Object.entries(questionType)
-        .filter(([_, type]) => type === 'specific1')
-        .map(([num]) => parseInt(num))
-        .sort((a, b) => a - b);
-    } else if (selectedSection === 'specific2') {
-      // Para specific2, filtramos as questões de conhecimento específico 2
-      return Object.entries(questionType)
-        .filter(([_, type]) => type === 'specific2')
-        .map(([num]) => parseInt(num))
-        .sort((a, b) => a - b);
-    } else if (selectedSection === 'specific3') {
-      // Para specific3, filtramos as questões de conhecimento específico 3
-      return Object.entries(questionType)
-        .filter(([_, type]) => type === 'specific3')
-        .map(([num]) => parseInt(num))
-        .sort((a, b) => a - b);
-    }
     
-    // Lógica de fallback comum para ambos os tipos de concurso
+    console.log('Getting questions for section:', selectedSection);
+    console.log('Question type mapping:', questionType);
+    
     const questions: number[] = [];
-    const totalQuestions = getTotalQuestions(concurso);
     
-    if (totalQuestions > 0 && selectedSection === 'basic') {
-      // Se estamos na seção básica, retornamos todas as questões
-      for (let i = 1; i <= totalQuestions; i++) {
-        questions.push(i);
+    // Verificando se o objeto questionType tem alguma propriedade
+    if (Object.keys(questionType).length === 0) {
+      // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
+      if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+        for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+          questions.push(i);
+        }
       }
+    } else {
+      // Se tiver, usamos o mapeamento existente
+      Object.entries(questionType).forEach(([num, type]) => {
+        if (
+          (selectedSection === 'basic' && type === 'basic') ||
+          (selectedSection === 'specific1' && type === 'specific1') ||
+          (selectedSection === 'specific2' && type === 'specific2') ||
+          (selectedSection === 'specific3' && type === 'specific3')
+        ) {
+          questions.push(parseInt(num));
+        }
+      });
     }
     
-    return questions;
+    console.log('Questions for section', selectedSection, ':', questions);
+    return questions.sort((a, b) => a - b);
   };
 
   const getOptionsForQuestion = (questionNumber: number) => {
@@ -160,7 +151,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection,
-    getSectionQuestions
+    isDiscursiveSection
   };
 };

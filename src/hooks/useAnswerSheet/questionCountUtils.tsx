@@ -1,14 +1,30 @@
 
 import { Concurso } from '@/types/concursos';
-import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/examStructure';
 
-// Função simplificada que funciona para ambos os tipos de concurso
-export const getTotalQuestions = (concurso?: Concurso) => {
+export const getTotalQuestions = (concurso: Concurso | null) => {
   if (!concurso) return 0;
-  return getAllQuestionsForConcurso(concurso).length;
+  
+  let total = 0;
+  
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    total += concurso.basic_knowledge_questions;
+  }
+  
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    total += concurso.specific_knowledge_1_questions;
+  }
+  
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    total += concurso.specific_knowledge_2_questions;
+  }
+  
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    total += concurso.specific_knowledge_3_questions;
+  }
+  
+  return total;
 };
 
-// Contador de respostas respondidas
 export const getAnsweredQuestionsCount = (answers: { [key: number]: string }) => {
   return Object.keys(answers).length;
 };

@@ -1,308 +1,152 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { getExamStructure, getSubjectExamStructure } from '@/integrations/supabase/rankings/examStructure';
-import { calculateOfficialAnswersForSubjectBased } from '@/integrations/supabase/rankings/scoreCalculation';
+import { supabase } from "@/integrations/supabase/client";
+import { recalculateAllUserScores } from "@/integrations/supabase/rankings/batchOperations";
 
-interface Answer {
-  id?: string;
-  question_number: number;
-  correct_answer: string;
-  weight?: number;
-  section_type?: string;
-  is_nullified?: boolean;
+interface UpdateAnswerParams {
+  concursoId: string;
+  questionNumber: number;
+  answer: string;
+  weight: number;
+  sectionType?: string;
+  isNullified: boolean;
 }
 
-/**
- * Busca o gabarito oficial de um concurso
- * @param concursoId ID do concurso
- * @returns Um objeto com as respostas oficiais
- */
-export const fetchOfficialAnswerWeights = async (concursoId: string) => {
-  try {
-    // Verificação para evitar chamadas desnecessárias
-    if (!concursoId) {
-      console.error('ID do concurso não fornecido para fetchOfficialAnswerWeights');
-      return {};
-    }
+export const answerKeyService = {
+  // Buscar gabarito oficial com pesos
+  async fetchOfficialAnswerWeights(concursoId: string) {
+    const { data, error } = await supabase.rpc('get_official_answer_weights', {
+      p_concurso_id: concursoId,
+    });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async updateAnswer(
+    {
+      concursoId,
+      questionNumber,
+      answer,
+      weight,
+      isNullified,
+      sectionType
+    }: UpdateAnswerParams
+  ) {  
+    console.log('[answerKeyService] Atualizando resposta:', {
+      concursoId,
+      questionNumber,
+      answer,
+      weight,
+      isNullified,
+      sectionType
+    });
     
-    // Buscar o concurso primeiro para determinar seu tipo
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('*')
-      .eq('id', concursoId)
-      .single();
+    // Usamos a versão atualizada da função com 6 parâmetros que usa correct_answer
+    const { data, error } = await supabase.rpc("update_answer_with_weight", {
+      p_concurso_id: concursoId,
+      p_question_number: questionNumber,
+      p_correct_answer: answer,
+      p_weight: weight,
+      p_is_nullified: isNullified,
+      p_section_type: sectionType
+    });
+
+    if (error) throw error;
     
-    if (concursoError) {
-      console.error('Erro ao buscar concurso:', concursoError);
-      throw concursoError;
-    }
-    
-    if (!concurso) {
-      console.error('Concurso não encontrado:', concursoId);
-      return {};
-    }
-    
-    // Verificar se o concurso é baseado em disciplinas e se precisa de setup
-    if (concurso.minimum_score_type === 'subject') {
-      try {
-        // Garantir que a estrutura do gabarito para disciplinas exista
-        await calculateOfficialAnswersForSubjectBased(concursoId);
-      } catch (error) {
-        console.error('Erro ao calcular gabarito oficial por disciplinas:', error);
-        // Continuar mesmo se houver erro para tentar buscar o que existir
+    // Forçar o recálculo para todos os usuários do concurso usando a função otimizada
+    // Mantemos essa atualização automática aqui, pois é quando o gabarito oficial é atualizado
+    try {
+      console.log('[answerKeyService] Recalculando pontuações para todos os usuários...');
+      const recalcResult = await recalculateAllUserScores(concursoId);
+      
+      if (recalcResult.success) {
+        console.log('[answerKeyService] Recálculo bem-sucedido para todos os usuários:', recalcResult);
+        return {
+          success: true,
+          data,
+          updatedCount: recalcResult.updatedCount
+        };
+      } else {
+        console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcResult.error);
+        throw new Error(recalcResult.error);
       }
+    } catch (recalcError) {
+      console.error('[answerKeyService] Erro ao recalcular todas as pontuações:', recalcError);
+      throw recalcError;
     }
-    
-    // Buscar o gabarito oficial
-    const { data, error } = await supabase
-      .from('official_answer_weights')
-      .select('*')
-      .eq('concurso_id', concursoId)
-      .order('question_number', { ascending: true });
-    
-    if (error) {
-      console.error('Erro ao buscar gabarito oficial:', error);
+  },
+  
+  // Nova função para salvar o gabarito completo evitando conflitos de chave primária
+  async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: any[]) {
+    try {
+      console.log('[answerKeyService] Salvando gabarito completo para concurso:', concursoId);
+      
+      // Em vez de deletar tudo e reinserir, vamos atualizar cada questão individualmente
+      // para evitar o erro de duplicação
+      for (const item of answerKeyData) {
+        // Verificar se já existe esta questão para este concurso
+        const { data: existingData, error: checkError } = await supabase
+          .from('official_answer_weights')
+          .select('id')
+          .eq('concurso_id', concursoId)
+          .eq('question_number', item.question_number)
+          .single();
+        
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = não encontrado, que é esperado
+          console.error('[answerKeyService] Erro ao verificar existência da questão:', checkError);
+        }
+        
+        // Se a questão já existe, atualize-a
+        if (existingData) {
+          const { error: updateError } = await supabase
+            .from('official_answer_weights')
+            .update({
+              correct_answer: item.correct_answer,
+              weight: item.weight,
+              section_type: item.section_type,
+              is_nullified: item.is_nullified,
+              updated_at: new Date().toISOString()
+            })
+            .eq('concurso_id', concursoId)
+            .eq('question_number', item.question_number);
+            
+          if (updateError) {
+            console.error('[answerKeyService] Erro ao atualizar questão existente:', updateError);
+            throw updateError;
+          }
+        }
+        // Senão, insira uma nova questão
+        else {
+          const { error: insertError } = await supabase
+            .from('official_answer_weights')
+            .insert(item);
+            
+          if (insertError) {
+            console.error('[answerKeyService] Erro ao inserir nova questão:', insertError);
+            throw insertError;
+          }
+        }
+      }
+      
+      // Recalcular pontuações
+      // Mantemos essa atualização automática aqui, pois é quando o gabarito oficial é salvo/atualizado completamente
+      console.log('[answerKeyService] Iniciando recálculo de pontuações...');
+      const recalcResult = await recalculateAllUserScores(concursoId);
+      
+      if (!recalcResult.success) {
+        console.error('[answerKeyService] Erro no recálculo:', recalcResult.error);
+        throw new Error(recalcResult.error);
+      }
+      
+      console.log('[answerKeyService] Recálculo concluído com sucesso:', recalcResult);
+      return {
+        success: true,
+        updatedCount: recalcResult.updatedCount
+      };
+      
+    } catch (error) {
+      console.error('[answerKeyService] Erro ao salvar gabarito e recalcular pontuações:', error);
       throw error;
     }
-    
-    // Formatar o resultado
-    const result: Record<string, any> = {};
-    
-    if (data && data.length > 0) {
-      data.forEach(answer => {
-        result[`questao${answer.question_number}`] = {
-          resposta: answer.correct_answer,
-          peso: answer.weight,
-          secao: answer.section_type,
-          anulada: answer.is_nullified
-        };
-      });
-    }
-    
-    return result;
-  } catch (error) {
-    console.error('Error fetching official answer weights:', error);
-    throw error;
-  }
-};
-
-/**
- * Atualiza uma resposta no gabarito oficial
- * @param concursoId ID do concurso
- * @param questionNumber Número da questão
- * @param answer Resposta correta
- * @param isNullified Se a questão está anulada
- * @returns Status da operação
- */
-export const updateAnswer = async (
-  concursoId: string,
-  questionNumber: number,
-  answer: string,
-  isNullified: boolean = false
-) => {
-  try {
-    // Buscar o concurso para determinar o tipo de estrutura
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('*')
-      .eq('id', concursoId)
-      .single();
-    
-    if (concursoError) throw concursoError;
-    
-    let sectionType = '';
-    
-    if (concurso.minimum_score_type === 'subject') {
-      // Determinar a disciplina com base no número da questão
-      const { subjectRanges } = getSubjectExamStructure(concurso);
-      
-      for (const [code, range] of Object.entries(subjectRanges)) {
-        if (questionNumber >= range.start && questionNumber <= range.end) {
-          sectionType = code;
-          break;
-        }
-      }
-    } else {
-      // Usar a estrutura padrão por conhecimentos
-      const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
-      
-      if (questionNumber <= basicEnd) {
-        sectionType = 'basic';
-      } else if (questionNumber <= specific1End) {
-        sectionType = 'specific1';
-      } else if (questionNumber <= specific2End) {
-        sectionType = 'specific2';
-      } else {
-        sectionType = 'specific3';
-      }
-    }
-    
-    // Buscar se já existe uma resposta para esta questão
-    const { data: existingAnswers } = await supabase
-      .from('official_answer_weights')
-      .select('id')
-      .eq('concurso_id', concursoId)
-      .eq('question_number', questionNumber);
-    
-    if (existingAnswers && existingAnswers.length > 0) {
-      // Atualizar resposta existente
-      const { error } = await supabase
-        .from('official_answer_weights')
-        .update({
-          correct_answer: answer,
-          is_nullified: isNullified,
-          section_type: sectionType
-        })
-        .eq('id', existingAnswers[0].id);
-      
-      if (error) throw error;
-    } else {
-      // Criar nova resposta
-      const { error } = await supabase
-        .from('official_answer_weights')
-        .insert({
-          concurso_id: concursoId,
-          question_number: questionNumber,
-          correct_answer: answer,
-          weight: 1,
-          is_nullified: isNullified,
-          section_type: sectionType,
-          question_type: concurso.exam_type === 'Certo-Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE'
-        });
-      
-      if (error) throw error;
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating answer:', error);
-    return { success: false, error };
-  }
-};
-
-/**
- * Salva todo o gabarito de uma vez e recalcula as pontuações
- * @param concursoId ID do concurso
- * @param answers Objeto com as respostas (formato: {questao1: {resposta: 'A'}, ...})
- * @param recalculateScores Se deve recalcular as pontuações dos usuários
- * @returns Status da operação
- */
-export const saveAnswerKeyAndRecalculate = async (
-  concursoId: string,
-  answers: Record<string, { resposta: string; anulada?: boolean }>,
-  recalculateScores: boolean = true
-) => {
-  try {
-    // Buscar o concurso para determinar o tipo de estrutura
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('*')
-      .eq('id', concursoId)
-      .single();
-    
-    if (concursoError) throw concursoError;
-    
-    // Determinar a estrutura baseada no tipo de concurso
-    let questionSectionMap: Record<number, string> = {};
-    
-    if (concurso.minimum_score_type === 'subject') {
-      // Usar a estrutura por disciplinas
-      const { subjectRanges } = getSubjectExamStructure(concurso);
-      
-      for (const [code, range] of Object.entries(subjectRanges)) {
-        for (let i = range.start; i <= range.end; i++) {
-          questionSectionMap[i] = code;
-        }
-      }
-    } else {
-      // Usar a estrutura padrão por conhecimentos
-      const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
-      
-      for (let i = 1; i <= basicEnd; i++) {
-        questionSectionMap[i] = 'basic';
-      }
-      
-      for (let i = basicEnd + 1; i <= specific1End; i++) {
-        questionSectionMap[i] = 'specific1';
-      }
-      
-      for (let i = specific1End + 1; i <= specific2End; i++) {
-        questionSectionMap[i] = 'specific2';
-      }
-      
-      for (let i = specific2End + 1; i <= concurso.specific_knowledge_3_questions + specific2End; i++) {
-        questionSectionMap[i] = 'specific3';
-      }
-    }
-    
-    // Preparar os registros para upsert
-    const answersToUpsert = Object.entries(answers).map(([key, value]) => {
-      const questionNumber = parseInt(key.replace('questao', ''));
-      return {
-        concurso_id: concursoId,
-        question_number: questionNumber,
-        correct_answer: value.resposta,
-        weight: 1, // Peso padrão
-        is_nullified: !!value.anulada,
-        section_type: questionSectionMap[questionNumber] || 'unknown',
-        question_type: concurso.exam_type === 'Certo-Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE'
-      };
-    });
-    
-    // Remover existentes e inserir novos
-    const { data: existingAnswers } = await supabase
-      .from('official_answer_weights')
-      .select('id, question_number')
-      .eq('concurso_id', concursoId);
-    
-    // Criar mapa de respostas existentes
-    const existingMap = new Map();
-    if (existingAnswers) {
-      existingAnswers.forEach(answer => {
-        existingMap.set(answer.question_number, answer.id);
-      });
-    }
-    
-    // Separar em inserções e atualizações
-    const toUpdate = [];
-    const toInsert = [];
-    
-    answersToUpsert.forEach(answer => {
-      if (existingMap.has(answer.question_number)) {
-        toUpdate.push({
-          ...answer,
-          id: existingMap.get(answer.question_number)
-        });
-      } else {
-        toInsert.push(answer);
-      }
-    });
-    
-    // Executar as operações
-    if (toUpdate.length > 0) {
-      const { error: updateError } = await supabase
-        .from('official_answer_weights')
-        .upsert(toUpdate);
-      
-      if (updateError) throw updateError;
-    }
-    
-    if (toInsert.length > 0) {
-      const { error: insertError } = await supabase
-        .from('official_answer_weights')
-        .insert(toInsert);
-      
-      if (insertError) throw insertError;
-    }
-    
-    // Recalcular pontuações se necessário
-    if (recalculateScores) {
-      await supabase.rpc('recalculate_all_scores', { p_concurso_id: concursoId });
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error saving answer key:', error);
-    return { success: false, error };
   }
 };

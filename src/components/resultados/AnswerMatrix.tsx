@@ -75,7 +75,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
                     <NullifyQuestionButton
                       questionNumber={questionNumber}
                       isNullified={nullifiedQuestions.has(questionNumber)}
-                      toggleNullified={onNullifyQuestion}
+                      onNullify={onNullifyQuestion}
                     />
                   )}
                 </div>

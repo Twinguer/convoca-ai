@@ -122,7 +122,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       // Use weights from state if available, otherwise fall back to concurso prop
       const actualWeights = weights || {
         basicKnowledge: concurso.basic_knowledge_weight || 1,
-        specificKnowledge1: concurso.specific_knowledge_1_weight || 1, // Removed reference to specific_knowledge_weight
+        specificKnowledge1: concurso.specific_knowledge_1_weight || concurso.specific_knowledge_weight || 1,
         specificKnowledge2: concurso.specific_knowledge_2_weight || 1,
         specificKnowledge3: concurso.specific_knowledge_3_weight || 1,
         discursive: concurso.discursive_weight || 1,

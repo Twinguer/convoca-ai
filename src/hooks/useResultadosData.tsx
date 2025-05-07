@@ -44,28 +44,6 @@ export function useResultadosData() {
     staleTime: 300000, // 5 minutos
   });
   
-  // Log importante: mostra o tipo de concurso para ajudar na depuração
-  useEffect(() => {
-    if (concurso) {
-      console.log('Concurso details:', {
-        id: concurso.id,
-        titulo: concurso.titulo,
-        minimum_score_type: concurso.minimum_score_type,
-        has_subjects: concurso.subjects && Array.isArray(concurso.subjects) && concurso.subjects.length > 0
-      });
-      
-      if (concurso.minimum_score_type === 'subject' && concurso.subjects) {
-        try {
-          const subjects = typeof concurso.subjects === 'string' ? 
-            JSON.parse(concurso.subjects) : concurso.subjects;
-          console.log('Disciplinas configuradas:', subjects);
-        } catch (e) {
-          console.error('Erro ao processar disciplinas:', e);
-        }
-      }
-    }
-  }, [concurso]);
-  
   // Configuração para rankings, sem atualização automática frequente
   const { 
     data: rankings = [], 
@@ -168,6 +146,9 @@ export function useResultadosData() {
       return { success: false, error: String(err) };
     }
   };
+  
+  // Remover auto-refresh ao montar o componente
+  // Agora o usuário precisa clicar no botão de atualizar explicitamente
   
   return {
     concurso,

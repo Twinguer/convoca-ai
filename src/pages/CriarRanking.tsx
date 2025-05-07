@@ -87,30 +87,43 @@ const CriarRanking = () => {
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
+      basic_knowledge_minimum_score: 0,
       
       has_specific_knowledge_1: false,
       specific_knowledge_1_questions: 0,
       specific_knowledge_1_weight: 1,
+      specific_knowledge_1_minimum_score: 0,
       
       has_specific_knowledge_2: false,
       specific_knowledge_2_questions: 0,
       specific_knowledge_2_weight: 1,
+      specific_knowledge_2_minimum_score: 0,
       
       has_specific_knowledge_3: false,
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
+      specific_knowledge_3_minimum_score: 0,
       
       has_discursive: false,
       discursive_weight: 1,
+      discursive_minimum_score: 0,
       
       has_case_study_1: false,
       case_study_1_weight: 1,
+      case_study_1_minimum_score: 0,
       
       has_case_study_2: false,
       case_study_2_weight: 1,
+      case_study_2_minimum_score: 0,
       
       has_case_study_3: false,
       case_study_3_weight: 1,
+      case_study_3_minimum_score: 0,
+      
+      has_minimum_score: false,
+      minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
+      minimum_score_type: 'knowledge' as 'knowledge' | 'subject',
+      total_minimum_score: 0,
       
       has_ampla_concorrencia: true,
       has_ppp: false,
