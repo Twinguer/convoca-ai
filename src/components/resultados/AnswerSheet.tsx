@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -449,7 +448,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              onValueChange={(value) => setSelectedSection(value as any)}
               className="w-full"
             >
               <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-4">

@@ -44,12 +44,31 @@ export const getSectionTitle = (
   }
 };
 
-// Adicionar a função que falta
+// Função para selecionar a seção inicial com base no concurso
 export const handleQuestionSectionSelection = (
   concurso: any,
   setSelectedSection: React.Dispatch<React.SetStateAction<"basic" | "specific1" | "specific2" | "specific3" | "discursive" | "case_study1" | "case_study2" | "case_study3">>
 ) => {
   if (concurso) {
+    // Verificar se o concurso usa modelo de disciplinas
+    if (concurso.minimum_score_type === 'subject' && concurso.subjects) {
+      try {
+        // Tenta obter a primeira disciplina definida
+        const subjects = typeof concurso.subjects === 'string' 
+          ? JSON.parse(concurso.subjects) 
+          : concurso.subjects;
+          
+        if (Array.isArray(subjects) && subjects.length > 0) {
+          // Seleciona a primeira disciplina como seção ativa
+          setSelectedSection(subjects[0].code as any);
+          return;
+        }
+      } catch (e) {
+        console.error('Erro ao processar disciplinas ao selecionar seção inicial:', e);
+      }
+    }
+    
+    // Fallback para o modelo baseado em conhecimentos se não for possível usar disciplinas
     if (concurso.has_basic_knowledge) {
       setSelectedSection('basic');
     } else if (concurso.has_specific_knowledge_1) {
