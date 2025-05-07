@@ -340,6 +340,44 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_sections: {
+        Row: {
+          concurso_id: string
+          created_at: string
+          display_name: string
+          id: string
+          section_type: string
+          sigla: string
+          updated_at: string
+        }
+        Insert: {
+          concurso_id: string
+          created_at?: string
+          display_name: string
+          id?: string
+          section_type: string
+          sigla: string
+          updated_at?: string
+        }
+        Update: {
+          concurso_id?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          section_type?: string
+          sigla?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_sections_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_titles: {
         Row: {
           created_at: string | null
