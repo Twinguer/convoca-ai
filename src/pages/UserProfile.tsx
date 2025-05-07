@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -113,7 +114,7 @@ const UserProfile = () => {
   });
 
   const {
-    data: rankingsData
+    data: rankings
   } = useQuery({
     queryKey: ['user-rankings', user?.id],
     queryFn: async () => {
@@ -128,33 +129,16 @@ const UserProfile = () => {
           concursos(titulo)
         `).eq('user_id', user.id);
       if (error) throw error;
-      const formattedRankings: UserRankingDisplay[] = rankingsData?.map((ranking: any) => ({
-        id: ranking.id,
-        position: ranking.position || 0, // Fornecendo um valor padrão
-        name: profile?.name || '',
-        userId: ranking.user_id,
-        score: ranking.score,
-        avatarUrl: profile?.avatar_url || null,
-        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
-        specific1Score: ranking.specific_knowledge_1_score || 0,
-        specific2Score: ranking.specific_knowledge_2_score || 0,
-        specific3Score: ranking.specific_knowledge_3_score || 0,
-        discursiveScore: ranking.discursive_score || 0,
-        weightedBasicScore: ranking.weighted_basic_score || 0,
-        weightedSpecific1Score: ranking.weighted_specific_1_score || 0,
-        weightedSpecific2Score: ranking.weighted_specific_2_score || 0,
-        weightedSpecific3Score: ranking.weighted_specific_3_score || 0,
-        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
-        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
-        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
-        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
-        reservationType: ranking.reservation_type || 'Ampla Concorrência',
-        displayReservation: ranking.reservation_type || 'Ampla Concorrência',
-        concursoId: ranking.concurso_id,
-        concursoTitle: ranking.concursos?.titulo || 'Concurso'
-      })) || [];
-      return formattedRankings;
+      return data.map(item => {
+        const concursoData = item.concursos || {};
+        const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
+        return {
+          concursoId: item.concurso_id,
+          concursoTitle: titulo,
+          position: 0,
+          score: item.score
+        };
+      }) as UserRankingDisplay[];
     },
     enabled: !!user
   });
@@ -187,10 +171,10 @@ const UserProfile = () => {
   }, [followerData]);
 
   useEffect(() => {
-    if (rankingsData && rankingsData.length > 0) {
-      setUserRankings(rankingsData);
+    if (rankings && rankings.length > 0) {
+      setUserRankings(rankings);
     }
-  }, [rankingsData]);
+  }, [rankings]);
 
   useEffect(() => {
     if (profile) {

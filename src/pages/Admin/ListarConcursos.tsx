@@ -1,191 +1,320 @@
 
-import React, { useState, useEffect } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Plus } from 'lucide-react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchConcursos, deleteConcurso } from '@/services/concursoService';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Concurso, ConcursoFilter } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Building, Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
+import { deleteRanking } from '@/integrations/supabase/rankings/concursoManager';
+import { useAuth } from '@/hooks/useAuth';
+import { useParticipantCount } from '@/hooks/useParticipantCount';
+import { useRankingCreatorInfo } from '@/hooks/useRankingCreatorInfo';
 
-const formSchema = z.object({
-  status: z.string().optional(),
-})
-
-const ListarConcursos = () => {
-  const [search, setSearch] = useState('');
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
+const ListarConcursos: React.FC = () => {
   const { toast } = useToast();
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      status: undefined,
-    },
-  })
-
-  const { data: concursos, isLoading, isError } = useQuery({
-    queryKey: ['concursos', search, form.watch().status],
-    queryFn: () => fetchConcursos({ searchTerm: search, status: form.watch().status }),
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteConcurso(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['concursos', search, form.watch().status]
-      });
-      toast({
-        title: "Concurso excluído",
-        description: "O concurso foi excluído com sucesso.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro ao excluir concurso",
-        description: error.message,
-        variant: "destructive",
-      });
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [filter, setFilter] = useState<ConcursoFilter>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modified to catch and handle errors gracefully
+  const fetchConcursos = async () => {
+    try {
+      let query = supabase.from('concursos').select('*');
+      
+      if (filter.banca) {
+        query = query.eq('banca', filter.banca);
+      }
+      
+      if (filter.status) {
+        query = query.eq('status', filter.status);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching concursos:', error);
+        throw error;
+      }
+      
+      return data as Concurso[];
+    } catch (err) {
+      console.error('Error in fetchConcursos:', err);
+      throw err;
+    }
+  };
+  
+  const { data: concursos, isLoading, isError, refetch } = useQuery({
+    queryKey: ['admin-concursos', filter],
+    queryFn: fetchConcursos,
+    retry: 1,
+    meta: {
+      onError: (err: any) => {
+        console.error('Query error:', err);
+        toast({
+          title: 'Erro ao carregar rankings',
+          description: 'Não foi possível carregar a lista de rankings.',
+          variant: 'destructive',
+        });
+      }
     }
   });
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
+  
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este ranking?')) {
+      try {
+        // For admin mode, we force isAdmin=true
+        await deleteRanking(id, user?.id || 'admin-user', true);
+        
+        toast({
+          title: 'Ranking excluído com sucesso!',
+          variant: 'default',
+        });
+        
+        refetch();
+      } catch (error: any) {
+        console.error('Erro ao excluir ranking:', error);
+        toast({
+          title: 'Erro ao excluir ranking',
+          description: error.message || 'Ocorreu um erro ao tentar excluir o ranking.',
+          variant: 'destructive',
+        });
+      }
+    }
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+  const handleCreateRanking = () => {
+    navigate('/criar-ranking?admin=true');
   };
-
-  if (isLoading) return <div>Carregando concursos...</div>;
-  if (isError) return <div>Erro ao carregar concursos.</div>;
-
+  
+  const handleViewRanking = (id: string) => {
+    window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
+  };
+  
+  const handleEditRanking = (id: string) => {
+    // Redirecionar para o formulário de edição com flag de admin
+    navigate(`/criar-ranking?edit=${id}&admin=true`);
+  };
+  
+  const filteredConcursos = concursos?.filter(concurso =>
+    concurso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    concurso.orgao.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex items-center justify-between mb-4">
-        <Input
-          type="search"
-          placeholder="Buscar concurso..."
-          value={search}
-          onChange={handleSearch}
-          className="max-w-md"
-        />
-        <Button onClick={() => navigate('/admin/criar-concurso')}><Plus className="mr-2" /> Criar Concurso</Button>
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Rankings Cadastrados</h1>
+        <Button onClick={handleCreateRanking}>
+          <Plus className="mr-2 h-4 w-4" /> Novo Ranking
+        </Button>
       </div>
-
-      <Form {...form}>
-        <form className="flex items-center space-x-4 mb-4" onSubmit={(e) => e.preventDefault()}>
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="publicado">Publicado</SelectItem>
-                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                    <SelectItem value="finalizado">Finalizado</SelectItem>
-                    <SelectItem value="suspenso">Suspenso</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </form>
-      </Form>
-
-      <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="px-6 py-3">Título</TableHead>
-              <TableHead className="px-6 py-3">Órgão</TableHead>
-              <TableHead className="px-6 py-3">Status</TableHead>
-              <TableHead className="px-6 py-3">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {concursos?.map((concurso) => (
-              <TableRow key={concurso.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                <TableCell className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                  <Link to={`/concurso/${concurso.id}`} className="hover:underline">{concurso.titulo}</Link>
-                </TableCell>
-                <TableCell className="px-6 py-4">{concurso.orgao}</TableCell>
-                <TableCell className="px-6 py-4">{concurso.status}</TableCell>
-                <TableCell className="px-6 py-4">
-                  <div className="flex space-x-2">
-                    <Button size="icon" onClick={() => navigate(`/admin/editar-concurso/${concurso.id}`)}><Edit className="h-4 w-4" /></Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação é irreversível. Tem certeza de que deseja excluir este concurso?
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(concurso.id)}>Excluir</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>Filtre os rankings por diferentes critérios</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Buscar</label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Buscar rankings..."
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-1 block">Banca</label>
+              <Select
+                onValueChange={(value) => setFilter({ ...filter, banca: value || undefined })}
+                value={filter.banca || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as bancas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as bancas</SelectItem>
+                  <SelectItem value="Cebraspe">Cebraspe</SelectItem>
+                  <SelectItem value="FGV">FGV</SelectItem>
+                  <SelectItem value="FCC">FCC</SelectItem>
+                  <SelectItem value="Vunesp">Vunesp</SelectItem>
+                  <SelectItem value="Cesgranrio">Cesgranrio</SelectItem>
+                  <SelectItem value="IBFC">IBFC</SelectItem>
+                  <SelectItem value="IDECAN">IDECAN</SelectItem>
+                  <SelectItem value="QUADRIX">QUADRIX</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-1 block">Status</label>
+              <Select
+                onValueChange={(value) => setFilter({ ...filter, status: value || undefined })}
+                value={filter.status || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="Aberto">Aberto</SelectItem>
+                  <SelectItem value="Em andamento">Em andamento</SelectItem>
+                  <SelectItem value="Encerrado">Encerrado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex justify-center items-center p-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : isError ? (
+            <div className="text-center text-red-500 p-6">
+              Erro ao carregar os rankings. Por favor, tente novamente.
+            </div>
+          ) : filteredConcursos?.length === 0 ? (
+            <div className="text-center p-8 text-gray-500">
+              <Building className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+              <h3 className="font-medium text-lg">Nenhum ranking encontrado</h3>
+              <p className="mt-1">Tente ajustar os filtros ou adicione um novo ranking.</p>
+              <Button onClick={handleCreateRanking} variant="outline" className="mt-4">
+                <Plus className="mr-2 h-4 w-4" /> Adicionar Ranking
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Ranking</TableHead>
+                    <TableHead>Banca</TableHead>
+                    <TableHead>Vagas</TableHead>
+                    <TableHead>Participantes</TableHead>
+                    <TableHead>Criado por</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredConcursos?.map((concurso) => (
+                    <ConcursoTableRow 
+                      key={concurso.id} 
+                      concurso={concurso} 
+                      onDelete={handleDelete} 
+                      onView={handleViewRanking}
+                      onEdit={handleEditRanking}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
+  );
+};
+
+interface ConcursoTableRowProps {
+  concurso: Concurso;
+  onDelete: (id: string) => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+}
+
+const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete, onView, onEdit }) => {
+  // Use hooks for getting participant count and creator info
+  const { participantCount, isLoading: isLoadingCount } = useParticipantCount(concurso.id);
+  const { creatorName, isAdmin } = useRankingCreatorInfo(concurso);
+  
+  return (
+    <TableRow>
+      <TableCell className="font-medium">{concurso.titulo}</TableCell>
+      <TableCell>{concurso.orgao}</TableCell>
+      <TableCell>{concurso.banca}</TableCell>
+      <TableCell>{concurso.vagas}</TableCell>
+      <TableCell>
+        {isLoadingCount ? (
+          <span className="text-gray-400">Carregando...</span>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Users className="h-3.5 w-3.5 text-gray-500" />
+            <span>{participantCount}</span>
+          </div>
+        )}
+      </TableCell>
+      <TableCell>
+        {isAdmin ? (
+          <span className="text-blue-600 font-medium">Admin</span>
+        ) : (
+          <span>{creatorName || "Desconhecido"}</span>
+        )}
+      </TableCell>
+      <TableCell>
+        <span
+          className={`px-2 py-1 rounded-full text-xs ${
+            concurso.status === 'Aberto'
+              ? 'bg-green-100 text-green-800'
+              : concurso.status === 'Em andamento'
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-gray-100 text-gray-800'
+          }`}
+        >
+          {concurso.status}
+        </span>
+      </TableCell>
+      <TableCell>
+        {concurso.data_publicacao
+          ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')
+          : 'N/A'}
+      </TableCell>
+      <TableCell className="text-right space-x-1">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onView(concurso.id)}
+        >
+          <Eye className="h-4 w-4 text-blue-500" />
+          <span className="sr-only">Ver</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onEdit(concurso.id)}
+        >
+          <Pencil className="h-4 w-4" />
+          <span className="sr-only">Editar</span>
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onDelete(concurso.id)}
+        >
+          <Trash2 className="h-4 w-4 text-red-500" />
+          <span className="sr-only">Excluir</span>
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 };
 

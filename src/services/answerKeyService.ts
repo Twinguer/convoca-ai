@@ -80,73 +80,20 @@ export const answerKeyService = {
   async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: any[]) {
     try {
       console.log('[answerKeyService] Salvando gabarito completo para concurso:', concursoId);
-      console.log('[answerKeyService] Dados do gabarito:', answerKeyData);
-      
-      // Get concurso to determine if it's subject-based or knowledge-based
-      const { data: concurso, error: concursoError } = await supabase
-        .from('concursos')
-        .select('minimum_score_type, subjects')
-        .eq('id', concursoId)
-        .single();
-        
-      if (concursoError) {
-        console.error('[answerKeyService] Erro ao buscar informações do concurso:', concursoError);
-        throw concursoError;
-      }
-      
-      // For subject-based exams, set the section_type property appropriately
-      if (concurso.minimum_score_type === 'subject') {
-        // Parse subjects
-        let subjects = [];
-        try {
-          subjects = typeof concurso.subjects === 'string' 
-            ? JSON.parse(concurso.subjects) 
-            : concurso.subjects || [];
-        } catch (e) {
-          console.error('[answerKeyService] Erro ao processar disciplinas:', e);
-        }
-        
-        // Helper function to determine which subject a question belongs to
-        const getSubjectForQuestion = (questionNumber: number) => {
-          let currentQuestion = 1;
-          for (const subject of subjects) {
-            if (questionNumber >= currentQuestion && 
-                questionNumber < currentQuestion + subject.questions) {
-              return subject.code;
-            }
-            currentQuestion += subject.questions;
-          }
-          return null;
-        };
-        
-        // Update section_type for each answer if not already set
-        answerKeyData = answerKeyData.map(item => {
-          if (!item.section_type) {
-            return {
-              ...item,
-              section_type: getSubjectForQuestion(item.question_number) || 'basic'
-            };
-          }
-          return item;
-        });
-      }
       
       // Em vez de deletar tudo e reinserir, vamos atualizar cada questão individualmente
       // para evitar o erro de duplicação
       for (const item of answerKeyData) {
-        console.log(`[answerKeyService] Processando questão ${item.question_number} com section_type ${item.section_type}`);
-        
         // Verificar se já existe esta questão para este concurso
         const { data: existingData, error: checkError } = await supabase
           .from('official_answer_weights')
           .select('id')
           .eq('concurso_id', concursoId)
           .eq('question_number', item.question_number)
-          .maybeSingle();
+          .single();
         
-        if (checkError) {
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = não encontrado, que é esperado
           console.error('[answerKeyService] Erro ao verificar existência da questão:', checkError);
-          continue; // Continue with the next question
         }
         
         // Se a questão já existe, atualize-a
@@ -172,15 +119,7 @@ export const answerKeyService = {
         else {
           const { error: insertError } = await supabase
             .from('official_answer_weights')
-            .insert({
-              concurso_id: concursoId,
-              question_number: item.question_number,
-              correct_answer: item.correct_answer,
-              weight: item.weight,
-              section_type: item.section_type,
-              is_nullified: item.is_nullified,
-              question_type: 'MULTIPLE_CHOICE'
-            });
+            .insert(item);
             
           if (insertError) {
             console.error('[answerKeyService] Erro ao inserir nova questão:', insertError);

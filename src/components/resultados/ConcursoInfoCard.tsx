@@ -1,22 +1,18 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Concurso } from '@/types/concursos';
 import { Building2, Calendar, MapPin, Users } from 'lucide-react';
-
 interface ConcursoInfoCardProps {
   concurso: Concurso;
 }
-
 const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso
 }) => {
   const formattedDate = concurso.data_publicacao ? format(new Date(concurso.data_publicacao), "dd 'de' MMMM 'de' yyyy", {
     locale: ptBR
   }) : 'Data não informada';
-
   const getLocalidadesText = () => {
     if (!concurso.localidades || concurso.localidades.length === 0) {
       return 'Nacional';
@@ -31,7 +27,6 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
     }
     return concurso.localidades.join(', ');
   };
-
   return <Card className="mb-6 my-[30px]">
       <CardContent className="pt-6 py-[15px]">
         <div className="grid gap-4">
@@ -65,5 +60,4 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
       </CardContent>
     </Card>;
 };
-
 export default ConcursoInfoCard;

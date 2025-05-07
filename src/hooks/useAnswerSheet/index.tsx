@@ -7,7 +7,7 @@ import { initializeQuestionTypes } from './initializeQuestionTypes';
 import { getAnsweredQuestionsCount, getTotalQuestions } from './questionCountUtils';
 import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
-import { useAnswerManagement } from '../useAnswerManagement';
+import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
@@ -66,83 +66,49 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
            selectedSection === 'case_study3';
   };
 
-  // Função aprimorada para obter as questões da seção selecionada
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
     console.log('Getting questions for section:', selectedSection);
+    console.log('Question type mapping:', questionType);
     
     const questions: number[] = [];
     
-    // Verifica se o concurso utiliza o modelo de disciplinas
-    if (concurso.minimum_score_type === 'subject' && concurso.subjects) {
-      // Parse subjects se for uma string JSON
-      let subjects = [];
-      try {
-        subjects = typeof concurso.subjects === 'string' 
-          ? JSON.parse(concurso.subjects) 
-          : concurso.subjects;
-      } catch (e) {
-        console.error('Erro ao fazer parse das disciplinas:', e);
-        return [];
-      }
-      
-      // Se a seção selecionada corresponder ao código de uma disciplina
-      if (subjects && Array.isArray(subjects)) {
-        // Encontrar o índice da disciplina que corresponde à seção selecionada
-        const subjectIndex = subjects.findIndex(s => s.code === selectedSection);
-        
-        if (subjectIndex !== -1) {
-          // Calcular o intervalo de números de questão para esta disciplina
-          let startQuestionNumber = 1;
-          for (let i = 0; i < subjectIndex; i++) {
-            startQuestionNumber += (subjects[i].questions || 0);
-          }
-          
-          // Adicionar números de questão para esta disciplina
-          const questionCount = subjects[subjectIndex].questions || 0;
-          for (let i = 0; i < questionCount; i++) {
-            questions.push(startQuestionNumber + i);
-          }
+    // Verificando se o objeto questionType tem alguma propriedade
+    if (Object.keys(questionType).length === 0) {
+      // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
+      if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+        for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
+          questions.push(i);
+        }
+      } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+          questions.push(i);
         }
       }
     } else {
-      // Se não estiver usando o modelo de disciplinas, use o modelo antigo baseado em conhecimentos
-      if (Object.keys(questionType).length === 0) {
-        // Se o mapa de tipos de questão estiver vazio, inicialize com base na configuração do concurso
-        if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-          for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
-            questions.push(i);
-          }
-        } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-          const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
-          for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
-            questions.push(i);
-          }
-        } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-          const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
-          for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
-            questions.push(i);
-          }
-        } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-          const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
-          for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
-            questions.push(i);
-          }
+      // Se tiver, usamos o mapeamento existente
+      Object.entries(questionType).forEach(([num, type]) => {
+        if (
+          (selectedSection === 'basic' && type === 'basic') ||
+          (selectedSection === 'specific1' && type === 'specific1') ||
+          (selectedSection === 'specific2' && type === 'specific2') ||
+          (selectedSection === 'specific3' && type === 'specific3')
+        ) {
+          questions.push(parseInt(num));
         }
-      } else {
-        // Use o mapeamento existente de tipos de questão
-        Object.entries(questionType).forEach(([num, type]) => {
-          if (
-            (selectedSection === 'basic' && type === 'basic') ||
-            (selectedSection === 'specific1' && type === 'specific1') ||
-            (selectedSection === 'specific2' && type === 'specific2') ||
-            (selectedSection === 'specific3' && type === 'specific3')
-          ) {
-            questions.push(parseInt(num));
-          }
-        });
-      }
+      });
     }
     
     console.log('Questions for section', selectedSection, ':', questions);
@@ -185,7 +151,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection,
-    getSectionQuestions
+    isDiscursiveSection
   };
 };

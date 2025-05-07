@@ -1,6 +1,6 @@
 
-import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById } from '@/services/concursoService';
 import { LoadingState } from '@/components/resultados/LoadingState';
@@ -8,23 +8,10 @@ import { ParticipationForm } from '@/components/resultados/ParticipationForm';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
 
 const ConcursoParticipation = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { toast } = useToast();
-  
-  // Verificar parâmetros de URL
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const showAnswerSheet = searchParams.get('showAnswerSheet');
-    if (showAnswerSheet === 'true') {
-      console.log('Exibindo cartão de respostas por parâmetro URL');
-    }
-  }, [location.search]);
 
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -50,15 +37,6 @@ const ConcursoParticipation = () => {
     },
     enabled: !!user && !!id
   });
-
-  // Log para debugging
-  useEffect(() => {
-    if (userRanking) {
-      console.log("Usuário já está participando, rankingId:", userRanking.id);
-    } else {
-      console.log("Usuário não está participando ainda");
-    }
-  }, [userRanking]);
 
   if (isLoadingConcurso || isCheckingParticipation) {
     return <LoadingState />;

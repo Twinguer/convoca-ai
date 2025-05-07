@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 export const createAnswerMatrix = (sectionQuestions: number[]) => {
   if (sectionQuestions.length === 0) return [];
   

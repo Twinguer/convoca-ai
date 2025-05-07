@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,24 +10,26 @@ import { ScoreForm } from './ScoreForm';
 import { ArrowDown, PencilLine, CheckCircle, Loader2 } from 'lucide-react';
 import { AnswerSheet } from './AnswerSheet';
 import { QuotaSelector, QuotaType } from './QuotaSelector';
-
 interface ParticipationFormProps {
   concurso: Concurso;
   isAlreadyParticipating: boolean;
   userRankingId?: string;
 }
-
 export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   concurso,
   isAlreadyParticipating,
   userRankingId
 }) => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [showAnswerSheet, setShowAnswerSheet] = useState(isAlreadyParticipating);
+  const [showAnswerSheet, setShowAnswerSheet] = useState(true); // Default to true to show answer sheet
   const [showScoreForm, setShowScoreForm] = useState(false);
   const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -40,13 +41,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       setShowScoreForm(false);
     }
   }, []);
-
-  // Debugging para verificar se temos o ID do ranking
-  useEffect(() => {
-    console.log("ParticipationForm - userRankingId:", userRankingId);
-    console.log("ParticipationForm - isAlreadyParticipating:", isAlreadyParticipating);
-  }, [userRankingId, isAlreadyParticipating]);
-
   const handleParticipate = async () => {
     if (!user) {
       toast({
@@ -57,10 +51,12 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       navigate('/auth');
       return;
     }
-
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.from('user_rankings').insert({
+      const {
+        data,
+        error
+      } = await supabase.from('user_rankings').insert({
         user_id: user.id,
         concurso_id: concurso.id,
         score: 0,
@@ -68,13 +64,10 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         all_questions_answered: false,
         reservation_type: selectedQuota
       }).select('id').single();
-
       if (error) throw error;
-
       queryClient.invalidateQueries({
         queryKey: ['participating', concurso.id, user.id]
       });
-
       toast({
         title: "Inscrição iniciada!",
         description: "Preencha o cartão de respostas para participar oficialmente do ranking."
@@ -97,7 +90,6 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       });
     }
   };
-
   if (!user) {
     return <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
@@ -106,24 +98,19 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       </div>;
   }
 
-  // Show the answer sheet if we have a ranking ID
-  if (userRankingId) {
-    console.log("Renderizando AnswerSheet com rankingId:", userRankingId);
-    return <AnswerSheet 
-      concurso={concurso} 
-      rankingId={userRankingId} 
-      onSuccess={() => {
-        setShowAnswerSheet(false);
-        queryClient.invalidateQueries({
-          queryKey: ['rankings', concurso.id]
-        });
-        navigate(`/concurso/${concurso.id}/resultados`);
-        toast({
-          title: "Cartão de Respostas Processado",
-          description: "Suas respostas foram processadas e seu ranking foi atualizado."
-        });
-      }} 
-    />;
+  // Show the answer sheet if selected and we have a ranking ID
+  if ((showAnswerSheet || isAlreadyParticipating) && userRankingId) {
+    return <AnswerSheet concurso={concurso} rankingId={userRankingId} onSuccess={() => {
+      setShowAnswerSheet(false);
+      queryClient.invalidateQueries({
+        queryKey: ['rankings', concurso.id]
+      });
+      navigate(`/concurso/${concurso.id}/resultados`);
+      toast({
+        title: "Cartão de Respostas Processado",
+        description: "Suas respostas foram processadas e seu ranking foi atualizado."
+      });
+    }} />;
   }
 
   // Default view for non-participating users

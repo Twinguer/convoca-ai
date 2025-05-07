@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (
   rankingId: string,
@@ -60,26 +60,21 @@ export const fetchExistingAnswers = async (
     console.log('Fetched ranking data:', rankingData);
     
     if (rankingData) {
-      setDiscursiveScore(
-        rankingData.discursive_score !== null && rankingData.discursive_score !== undefined
-          ? rankingData.discursive_score
-          : null
-      );
-      setCaseStudy1Score(
-        rankingData.case_study_1_score !== null && rankingData.case_study_1_score !== undefined
-          ? rankingData.case_study_1_score
-          : null
-      );
-      setCaseStudy2Score(
-        rankingData.case_study_2_score !== null && rankingData.case_study_2_score !== undefined
-          ? rankingData.case_study_2_score
-          : null
-      );
-      setCaseStudy3Score(
-        rankingData.case_study_3_score !== null && rankingData.case_study_3_score !== undefined
-          ? rankingData.case_study_3_score
-          : null
-      );
+      if (rankingData.discursive_score !== null && rankingData.discursive_score !== undefined) {
+        setDiscursiveScore(rankingData.discursive_score);
+      }
+      
+      if (rankingData.case_study_1_score !== undefined) {
+        setCaseStudy1Score(rankingData.case_study_1_score);
+      }
+      
+      if (rankingData.case_study_2_score !== undefined) {
+        setCaseStudy2Score(rankingData.case_study_2_score);
+      }
+      
+      if (rankingData.case_study_3_score !== undefined) {
+        setCaseStudy3Score(rankingData.case_study_3_score);
+      }
     }
   } catch (error) {
     console.error('Error fetching answers:', error);

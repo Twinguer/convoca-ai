@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -109,65 +108,23 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    // Verify if it's by knowledge area or by subject
-    if (currentValues.minimum_score_type === 'knowledge') {
-      // Validation for exams by knowledge area
-      const hasAnyKnowledgeArea = 
-        currentValues.has_basic_knowledge || 
-        currentValues.has_specific_knowledge_1 || 
-        currentValues.has_specific_knowledge_2 || 
-        currentValues.has_specific_knowledge_3 ||
-        currentValues.has_discursive ||
-        currentValues.has_case_study_1 ||
-        currentValues.has_case_study_2 ||
-        currentValues.has_case_study_3;
+    const hasAnyKnowledgeArea = 
+      currentValues.has_basic_knowledge || 
+      currentValues.has_specific_knowledge_1 || 
+      currentValues.has_specific_knowledge_2 || 
+      currentValues.has_specific_knowledge_3 ||
+      currentValues.has_discursive ||
+      currentValues.has_case_study_1 ||
+      currentValues.has_case_study_2 ||
+      currentValues.has_case_study_3;
 
-      if (!hasAnyKnowledgeArea) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, adicione pelo menos uma área de conhecimento.",
-          variant: "destructive"
-        });
-        return false;
-      }
-    } else if (currentValues.minimum_score_type === 'subject') {
-      // Validation for exams by subject
-      let subjects: any[] = [];
-      
-      // Handle both string and array formats
-      if (typeof currentValues.subjects === 'string') {
-        try {
-          subjects = JSON.parse(currentValues.subjects);
-        } catch (error) {
-          console.error("Error parsing subjects:", error);
-          subjects = [];
-        }
-      } else if (Array.isArray(currentValues.subjects)) {
-        subjects = currentValues.subjects;
-      }
-      
-      if (subjects.length === 0) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, adicione pelo menos uma disciplina.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      // Check if subjects have questions
-      const hasInvalidSubject = subjects.some((subject: any) => 
-        !subject.questions || subject.questions <= 0
-      );
-      
-      if (hasInvalidSubject) {
-        toast({
-          title: "Erro de validação",
-          description: "Todas as disciplinas devem ter pelo menos uma questão.",
-          variant: "destructive"
-        });
-        return false;
-      }
+    if (!hasAnyKnowledgeArea) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, adicione pelo menos uma área de conhecimento.",
+        variant: "destructive"
+      });
+      return false;
     }
 
     const hasAnyQuota = 
@@ -187,21 +144,18 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    // Check if all active knowledge areas have questions (only for knowledge type)
-    if (currentValues.minimum_score_type === 'knowledge') {
-      if (
-        (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
-        (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
-        (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
-        (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
-      ) {
-        toast({
-          title: "Erro de validação",
-          description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
-          variant: "destructive"
-        });
-        return false;
-      }
+    if (
+      (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
+      (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
+      (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
+      (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
+    ) {
+      toast({
+        title: "Erro de validação",
+        description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
+        variant: "destructive"
+      });
+      return false;
     }
 
     return true;

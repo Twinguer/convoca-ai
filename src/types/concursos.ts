@@ -1,143 +1,147 @@
 
-import { Concurso, SubjectConfig } from './concursos.d';
-
-// Re-export types from the .d.ts file
-export type { Concurso, SubjectConfig };
-
-// Also define a UserRankingDisplay type since it's being imported in other files
-export interface UserRankingDisplay {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
+export interface Concurso {
   id: string;
-  avatarUrl: string | null;
-  basicKnowledgeScore: number;
-  specificKnowledgeScore: number;
-  specific1Score: number;
-  specific2Score: number;
-  specific3Score: number;
-  discursiveScore: number;
-  weightedBasicScore: number;
-  weightedSpecific1Score: number;
-  weightedSpecific2Score: number;
-  weightedSpecific3Score: number;
-  weightedDiscursiveScore: number;
-  weightedCaseStudy1Score: number;
-  weightedCaseStudy2Score: number;
-  weightedCaseStudy3Score: number;
-  reservationType: string;
-  displayReservation: string;
-  isQuotaDisqualified?: boolean;
-  subjectScores?: Record<string, number>;
-  concursoId?: string;
-  concursoTitle?: string;
+  titulo: string;
+  orgao: string;
+  banca: string;
+  data_publicacao: string | null;
+  etapa_atual?: string;
+  created_at: string;
+  updated_at: string;
+  link?: string | null;
+  inscritos?: number | null;
+  vagas?: number | null;
+  knowledgeAreas?: string[] | null;
+  localidades?: string[] | null;
+  status: string;
+  custom_banca?: string | null;
+  is_admin_created?: boolean;
+  created_by_user_id?: string | null;
+  
+  // Exam structure configuration
+  has_basic_knowledge?: boolean;
+  has_specific_knowledge_1?: boolean;
+  has_specific_knowledge_2?: boolean;
+  has_specific_knowledge_3?: boolean;
+  has_discursive?: boolean;
+  has_case_study_1?: boolean;
+  has_case_study_2?: boolean;
+  has_case_study_3?: boolean;
+  
+  // Question counts
+  basic_knowledge_questions?: number;
+  specific_knowledge_1_questions?: number;
+  specific_knowledge_2_questions?: number;
+  specific_knowledge_3_questions?: number;
+  
+  // Section weights
+  basic_knowledge_weight?: number;
+  specific_knowledge_weight?: number;
+  specific_knowledge_1_weight?: number;
+  specific_knowledge_2_weight?: number;
+  specific_knowledge_3_weight?: number;
+  discursive_weight?: number;
+  case_study_1_weight?: number;
+  case_study_2_weight?: number;
+  case_study_3_weight?: number;
+  
+  // Exam configuration
+  alternatives_count?: number;
+  wrong_answer_penalty?: number;
+  exam_type?: string;
+  
+  // Predefined job information
+  predefined_job_title?: string | null;
+  custom_job_title?: string | null;
+  
+  // Reservation types
+  has_ampla_concorrencia?: boolean;
+  has_ppp?: boolean;
+  has_pcd?: boolean;
+  has_hipossuficientes?: boolean;
+  has_indigenas?: boolean;
+  has_transsexuais?: boolean;
 }
 
-// Define a ConcursoFilter type since it's being imported in other files
 export interface ConcursoFilter {
-  searchTerm?: string;
-  orgao?: string[];
-  banca?: string[];
-  cargo?: string[];
-  status?: string | string[]; // Updating status to accept both string and string[] for compatibility
-  mostrarStatus?: string[];
-  mostrarBanca?: string[];
-  mostrarCargo?: string[];
-  mostrarOrgao?: string[];
+  status?: string;
+  orgao?: string;
+  banca?: string;
 }
 
-// Colunas padrão da tabela de ranking
+export interface UserRankingDisplay {
+  concursoId: string;
+  concursoTitle: string;
+  position: number;
+  score: number;
+  basic_knowledge_score?: number;
+  specific_knowledge_score?: number;
+  discursive_score?: number;
+  rankingId?: string;
+}
+
+export interface RankingTableColumn {
+  id: string;
+  label: string;
+  align?: 'left' | 'right' | 'center';
+  width?: string;
+}
+
+// Fixed helper to determine which specific knowledge sections are enabled
+// Now uses has_* flags instead of weights
+export const getEnabledKnowledgeSections = (concurso: Concurso) => {
+  return {
+    basicKnowledge: concurso.has_basic_knowledge === true,
+    specificKnowledge1: concurso.has_specific_knowledge_1 === true,
+    specificKnowledge2: concurso.has_specific_knowledge_2 === true,
+    specificKnowledge3: concurso.has_specific_knowledge_3 === true,
+    discursive: concurso.has_discursive === true,
+    caseStudy1: concurso.has_case_study_1 === true,
+    caseStudy2: concurso.has_case_study_2 === true,
+    caseStudy3: concurso.has_case_study_3 === true
+  };
+};
+
+// Function to get the table columns for a ranking based on the concurso structure
 export const getRankingTableColumns = (concurso: Concurso) => {
-  const baseColumns = [
+  const columns = [
     { id: 'position', label: '#', align: 'center', width: '16' },
     { id: 'name', label: 'Candidato', align: 'left' },
     { id: 'score', label: 'Total', align: 'right' }
   ];
   
-  const columns = [...baseColumns];
-  
-  // Adicionar colunas de conhecimentos básicos e específicos
+  // Add columns based on enabled sections
   if (concurso.has_basic_knowledge) {
-    columns.push({ id: 'basicKnowledgeScore', label: 'CB', align: 'right' });
+    columns.push({ id: 'basicScore', label: 'Básica', align: 'right' });
   }
   
   if (concurso.has_specific_knowledge_1) {
-    columns.push({ id: 'specific1Score', label: 'CE1', align: 'right' });
+    columns.push({ id: 'specific1Score', label: 'Específica 1', align: 'right' });
   }
   
   if (concurso.has_specific_knowledge_2) {
-    columns.push({ id: 'specific2Score', label: 'CE2', align: 'right' });
+    columns.push({ id: 'specific2Score', label: 'Específica 2', align: 'right' });
   }
   
   if (concurso.has_specific_knowledge_3) {
-    columns.push({ id: 'specific3Score', label: 'CE3', align: 'right' });
+    columns.push({ id: 'specific3Score', label: 'Específica 3', align: 'right' });
   }
   
-  // Adicionar colunas discursivas e estudos de caso
   if (concurso.has_discursive) {
-    columns.push({ id: 'discursiveScore', label: 'Disc', align: 'right' });
+    columns.push({ id: 'discursiveScore', label: 'Discursiva', align: 'right' });
   }
   
   if (concurso.has_case_study_1) {
-    columns.push({ id: 'caseStudy1Score', label: 'EC1', align: 'right' });
+    columns.push({ id: 'case1Score', label: 'Estudo 1', align: 'right' });
   }
   
   if (concurso.has_case_study_2) {
-    columns.push({ id: 'caseStudy2Score', label: 'EC2', align: 'right' });
+    columns.push({ id: 'case2Score', label: 'Estudo 2', align: 'right' });
   }
   
   if (concurso.has_case_study_3) {
-    columns.push({ id: 'caseStudy3Score', label: 'EC3', align: 'right' });
+    columns.push({ id: 'case3Score', label: 'Estudo 3', align: 'right' });
   }
   
   return columns;
-};
-
-// Lista de códigos de disciplina disponíveis
-export const availableSubjectCodes = [
-  'DIR', 'PORT', 'MAT', 'INFO', 'RLM', 'HIST', 'GEO', 'FIS', 'QUI', 'BIO',
-  'ING', 'ESP', 'CONT', 'ADM', 'ECO', 'ESTAT', 'POL', 'SOC', 'FIL'
-];
-
-// Lista de disciplinas pré-definidas
-export const availableSubjects = [
-  { code: 'DIR', name: 'Direito' },
-  { code: 'PORT', name: 'Português' },
-  { code: 'MAT', name: 'Matemática' },
-  { code: 'INFO', name: 'Informática' },
-  { code: 'RLM', name: 'Raciocínio Lógico-Matemático' },
-  { code: 'HIST', name: 'História' },
-  { code: 'GEO', name: 'Geografia' },
-  { code: 'FIS', name: 'Física' },
-  { code: 'QUI', name: 'Química' },
-  { code: 'BIO', name: 'Biologia' },
-  { code: 'ING', name: 'Inglês' },
-  { code: 'ESP', name: 'Espanhol' },
-  { code: 'CONT', name: 'Contabilidade' },
-  { code: 'ADM', name: 'Administração' },
-  { code: 'ECO', name: 'Economia' },
-  { code: 'ESTAT', name: 'Estatística' },
-  { code: 'POL', name: 'Ciência Política' },
-  { code: 'SOC', name: 'Sociologia' },
-  { code: 'FIL', name: 'Filosofia' }
-];
-
-// Função para gerar um código de disciplina
-export const generateSubjectCode = (name: string): string => {
-  // Remover acentos
-  const normalizedName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  
-  // Pegar 3-4 primeiras letras e converter para maiúsculas
-  let code = normalizedName.substring(0, 4).toUpperCase();
-  
-  // Remover caracteres especiais
-  code = code.replace(/[^A-Z]/g, '');
-  
-  // Garantir que o código tem pelo menos 2 caracteres
-  if (code.length < 2) {
-    code = code.padEnd(2, 'X');
-  }
-  
-  return code;
 };

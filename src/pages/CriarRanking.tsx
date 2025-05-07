@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,53 +84,33 @@ const CriarRanking = () => {
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
-      has_basic_knowledge: false,
+      has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
-      basic_knowledge_minimum_score: 0,
       
       has_specific_knowledge_1: false,
       specific_knowledge_1_questions: 0,
       specific_knowledge_1_weight: 1,
-      specific_knowledge_1_minimum_score: 0,
       
       has_specific_knowledge_2: false,
       specific_knowledge_2_questions: 0,
       specific_knowledge_2_weight: 1,
-      specific_knowledge_2_minimum_score: 0,
       
       has_specific_knowledge_3: false,
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
-      specific_knowledge_3_minimum_score: 0,
       
       has_discursive: false,
       discursive_weight: 1,
-      discursive_minimum_score: 0,
       
       has_case_study_1: false,
       case_study_1_weight: 1,
-      case_study_1_minimum_score: 0,
       
       has_case_study_2: false,
       case_study_2_weight: 1,
-      case_study_2_minimum_score: 0,
       
       has_case_study_3: false,
       case_study_3_weight: 1,
-      case_study_3_minimum_score: 0,
-      
-      has_minimum_score: false,
-      minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
-      minimum_score_type: 'knowledge' as 'knowledge' | 'subject',
-      total_minimum_score: 0,
-      
-      // Novos campos para notas mínimas de cotistas
-      has_quota_minimum_score: false,
-      quota_minimum_score: 0,
-      quota_minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
-      
-      subjects: [],
       
       has_ampla_concorrencia: true,
       has_ppp: false,
@@ -218,16 +199,6 @@ const CriarRanking = () => {
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, { shouldDirty: true });
     formValues.localidades = selectedStates;
-    
-    // Processar as disciplinas se estiver no formato string
-    if (typeof formValues.subjects === 'string') {
-      try {
-        formValues.subjects = JSON.parse(formValues.subjects);
-      } catch (error) {
-        console.error("Erro ao processar disciplinas:", error);
-        formValues.subjects = [];
-      }
-    }
     
     // Adicionar flags de admin se necessário - corrigir o tipo aqui
     if (isAdmin) {
