@@ -6,7 +6,7 @@ import { fetchExistingAnswers } from './fetchExistingAnswers';
 import { initializeQuestionTypes } from './initializeQuestionTypes';
 import { getAnsweredQuestionsCount, getTotalQuestions } from './questionCountUtils';
 import { createAnswerMatrix } from './matrixUtils';
-import { handleQuestionSectionSelection } from './sectionUtils';
+import { handleQuestionSectionSelection, SectionType } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/examStructure';
@@ -14,7 +14,7 @@ import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/exa
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
+  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -73,14 +73,15 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
            selectedSection === 'case_study3';
   };
 
+  // Função unificada para obter questões da seção selecionada
   const getSectionQuestions = () => {
     if (!concurso) return [];
-    
-    // Usar a mesma lógica independentemente do tipo de concurso (conhecimentos ou disciplinas)
+
+    // Para ambos os tipos de concurso (conhecimentos e disciplinas), usamos a mesma lógica
     if (selectedSection === 'basic') {
-      // Para a seção 'basic' (independente do tipo de concurso), retornamos todas as questões apropriadas
+      // Para a seção 'basic', retornamos todas as questões apropriadas
       if (concurso.minimum_score_type === 'subject') {
-        // Para concursos baseados em disciplinas, retornamos todas as questões
+        // Para concursos baseados em disciplinas, retornamos todas as questões em uma única seção
         return getAllQuestionsForConcurso(concurso);
       } else if (Object.keys(questionType).length > 0) {
         // Para concursos baseados em conhecimentos, filtramos pelas questões básicas
@@ -109,27 +110,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         .sort((a, b) => a - b);
     }
     
-    // Se não encontramos questões pelo mapeamento de tipos, construímos com base na configuração
+    // Lógica de fallback comum para ambos os tipos de concurso
     const questions: number[] = [];
+    const totalQuestions = getTotalQuestions(concurso);
     
-    // Lógica para construir sequência de questões baseada na configuração do concurso
-    if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
-        questions.push(i);
-      }
-    } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
-      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
-        questions.push(i);
-      }
-    } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
-      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
-        questions.push(i);
-      }
-    } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
-      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+    if (totalQuestions > 0 && selectedSection === 'basic') {
+      // Se estamos na seção básica, retornamos todas as questões
+      for (let i = 1; i <= totalQuestions; i++) {
         questions.push(i);
       }
     }
