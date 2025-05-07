@@ -7,6 +7,28 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { 
+  SectionType,
+  disciplineSiglas, 
+  generateSiglaFromName,
+  getSectionDisplayName
+} from '@/hooks/useAnswerSheet/sectionUtils';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  BookOpen,
+  GraduationCap,
+  PenSquare,
+  FileText,
+  Plus
+} from 'lucide-react';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -42,8 +64,10 @@ export const AnswerKeyTab = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
+  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customSectionName, setCustomSectionName] = useState('');
 
   useEffect(() => {
     const fetchAnswerKey = async () => {
@@ -94,6 +118,58 @@ export const AnswerKeyTab = ({
 
     fetchAnswerKey();
   }, [concursoId]);
+
+  const getSectionOptions = () => {
+    // Agrupa as opções por categorias
+    const knowledgeSections: SectionType[] = [];
+    const disciplineSections: SectionType[] = [
+      'portugues', 'ingles', 'matematica', 'rlm', 'estatistica',
+      'constitucional', 'administrativo', 'administracao', 'contabilidade',
+      'contabilidade_custos', 'economia', 'tributario', 'afo',
+      'legislacao_tributaria', 'tecnologia_informacao', 'estatuto',
+      'auditoria', 'civil', 'penal', 'informatica', 'empresarial',
+      'matematica_financeira'
+    ];
+    const essaySections: SectionType[] = [];
+    const caseStudySections: SectionType[] = [];
+    
+    // Adiciona conhecimentos
+    if (hasBasicKnowledge) knowledgeSections.push('basic');
+    if (hasSpecificKnowledge1) knowledgeSections.push('specific1');
+    if (hasSpecificKnowledge2) knowledgeSections.push('specific2');
+    if (hasSpecificKnowledge3) knowledgeSections.push('specific3');
+    
+    return {
+      knowledgeSections,
+      disciplineSections,
+      essaySections,
+      caseStudySections
+    };
+  };
+  
+  const handleSectionChange = (value: string) => {
+    if (value === 'outro') {
+      setShowCustomInput(true);
+    } else {
+      setSelectedSection(value as SectionType);
+      setShowCustomInput(false);
+    }
+  };
+  
+  const handleCustomSectionSave = () => {
+    if (customSectionName.trim()) {
+      // Criar um ID de seção a partir do nome (remover acentos, espacos, etc)
+      const sectionId = customSectionName.trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_') as SectionType;
+      
+      setSelectedSection(sectionId);
+      setShowCustomInput(false);
+      setCustomSectionName('');
+    }
+  };
 
   const getQuestionRange = () => {
     let questions: number[] = [];
@@ -246,14 +322,82 @@ export const AnswerKeyTab = ({
     return <div className="py-4">Carregando gabarito...</div>;
   }
 
+  const sectionOptions = getSectionOptions();
+
   return (
     <Card>
       <CardContent className="pt-6">
         <h3 className="text-lg font-semibold mb-4">Gabarito Oficial</h3>
         
+        {/* Dropdown para seleção de seções */}
+        <div className="space-y-4 mb-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Selecione a seção ou disciplina</label>
+            <Select
+              value={showCustomInput ? 'outro' : selectedSection}
+              onValueChange={handleSectionChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione uma seção" />
+              </SelectTrigger>
+              <SelectContent>
+                {sectionOptions.knowledgeSections.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      Conhecimentos
+                    </SelectLabel>
+                    {sectionOptions.knowledgeSections.map((section) => (
+                      <SelectItem key={section} value={section}>
+                        {getSectionDisplayName(section)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+
+                <SelectGroup>
+                  <SelectLabel className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Disciplinas
+                  </SelectLabel>
+                  {sectionOptions.disciplineSections.map((section) => (
+                    <SelectItem key={section} value={section}>
+                      {getSectionDisplayName(section)} ({disciplineSiglas[section] || section.substring(0, 3).toUpperCase()})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+
+                <SelectItem value="outro" className="text-blue-600 font-medium">
+                  <span className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Outro...
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showCustomInput && (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da disciplina"
+                value={customSectionName}
+                onChange={(e) => setCustomSectionName(e.target.value)}
+              />
+              <Button
+                onClick={handleCustomSectionSave}
+                disabled={!customSectionName.trim()}
+              >
+                Adicionar
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {/* Tabs original mantido para compatibilidade */}
         <Tabs 
           value={selectedSection} 
-          onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+          onValueChange={(value) => setSelectedSection(value as SectionType)}
           className="w-full"
         >
           <TabsList className="grid w-full" style={{

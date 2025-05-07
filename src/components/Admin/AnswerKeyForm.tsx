@@ -10,13 +10,35 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { answerKeyService } from '@/services/answerKeyService';
+import { 
+  Select, 
+  SelectContent, 
+  SelectGroup, 
+  SelectItem, 
+  SelectLabel, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import {
+  BookOpen,
+  GraduationCap,
+  PenSquare,
+  FileText,
+  Plus
+} from 'lucide-react';
+import { 
+  SectionType,
+  disciplineSiglas, 
+  generateSiglaFromName,
+  getSectionDisplayName
+} from '@/hooks/useAnswerSheet/sectionUtils';
 
 interface AnswerKeyFormProps {
   concursoId: string;
 }
 
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
+  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -25,6 +47,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
+  const [customSectionName, setCustomSectionName] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso-details', concursoId],
@@ -70,6 +94,66 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       setNullifiedQuestions(nullifiedSet);
     }
   }, [existingAnswers]);
+
+  const getSectionOptions = () => {
+    // Agrupa as opções por categorias
+    const knowledgeSections: SectionType[] = [];
+    const disciplineSections: SectionType[] = [
+      'portugues', 'ingles', 'matematica', 'rlm', 'estatistica',
+      'constitucional', 'administrativo', 'administracao', 'contabilidade',
+      'contabilidade_custos', 'economia', 'tributario', 'afo',
+      'legislacao_tributaria', 'tecnologia_informacao', 'estatuto',
+      'auditoria', 'civil', 'penal', 'informatica', 'empresarial',
+      'matematica_financeira'
+    ];
+    const essaySections: SectionType[] = [];
+    const caseStudySections: SectionType[] = [];
+    
+    // Adiciona conhecimentos
+    if (concurso?.has_basic_knowledge) knowledgeSections.push('basic');
+    if (concurso?.has_specific_knowledge_1) knowledgeSections.push('specific1');
+    if (concurso?.has_specific_knowledge_2) knowledgeSections.push('specific2');
+    if (concurso?.has_specific_knowledge_3) knowledgeSections.push('specific3');
+    
+    // Adiciona discursiva e estudos de caso
+    if (concurso?.has_discursive) essaySections.push('discursive');
+    if (concurso?.has_case_study_1) caseStudySections.push('case_study1');
+    if (concurso?.has_case_study_2) caseStudySections.push('case_study2');
+    if (concurso?.has_case_study_3) caseStudySections.push('case_study3');
+    
+    return {
+      knowledgeSections,
+      disciplineSections,
+      essaySections,
+      caseStudySections
+    };
+  };
+  
+  const handleSectionChange = (value: string) => {
+    if (value === 'outro') {
+      setShowCustomInput(true);
+    } else {
+      setSelectedSection(value as SectionType);
+      setShowCustomInput(false);
+    }
+  };
+  
+  const handleCustomSectionSave = () => {
+    if (customSectionName.trim()) {
+      // Criar um ID de seção a partir do nome (remover acentos, espacos, etc)
+      const sectionId = customSectionName.trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_') as SectionType;
+      
+      setSelectedSection(sectionId);
+      setShowCustomInput(false);
+      setCustomSectionName('');
+      
+      // Poderia salvar esta seção personalizada no banco de dados se necessário
+    }
+  };
 
   if (isLoadingConcurso || isLoadingAnswers) {
     return (
@@ -364,6 +448,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const answeredQuestions = Object.keys(answers).length;
   const percentageComplete = totalQuestions > 0 ? Math.floor((answeredQuestions / totalQuestions) * 100) : 0;
 
+  const sectionOptions = getSectionOptions();
+
   return (
     <Card>
       <CardHeader>
@@ -428,6 +514,99 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               Todas as questões precisam ser respondidas antes de salvar o gabarito.
             </p>
           </div>
+        </div>
+        
+        {/* Dropdown para seleção de seções */}
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1 block">Selecione a seção ou disciplina</label>
+            <Select
+              value={showCustomInput ? 'outro' : selectedSection}
+              onValueChange={handleSectionChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione uma seção" />
+              </SelectTrigger>
+              <SelectContent>
+                {sectionOptions.knowledgeSections.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      Conhecimentos
+                    </SelectLabel>
+                    {sectionOptions.knowledgeSections.map((section) => (
+                      <SelectItem key={section} value={section}>
+                        {getSectionDisplayName(section)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+
+                <SelectGroup>
+                  <SelectLabel className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4" />
+                    Disciplinas
+                  </SelectLabel>
+                  {sectionOptions.disciplineSections.map((section) => (
+                    <SelectItem key={section} value={section}>
+                      {getSectionDisplayName(section)} ({disciplineSiglas[section] || section.substring(0, 3).toUpperCase()})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+
+                {sectionOptions.essaySections.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2">
+                      <PenSquare className="h-4 w-4" />
+                      Discursivas
+                    </SelectLabel>
+                    {sectionOptions.essaySections.map((section) => (
+                      <SelectItem key={section} value={section}>
+                        {getSectionDisplayName(section)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+
+                {sectionOptions.caseStudySections.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Estudos de Caso
+                    </SelectLabel>
+                    {sectionOptions.caseStudySections.map((section) => (
+                      <SelectItem key={section} value={section}>
+                        {getSectionDisplayName(section)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
+
+                <SelectItem value="outro" className="text-blue-600 font-medium">
+                  <span className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Outro...
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showCustomInput && (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da disciplina"
+                value={customSectionName}
+                onChange={(e) => setCustomSectionName(e.target.value)}
+              />
+              <Button
+                onClick={handleCustomSectionSave}
+                disabled={!customSectionName.trim()}
+              >
+                Adicionar
+              </Button>
+            </div>
+          )}
         </div>
         
         {objectiveSections.length > 0 && (
