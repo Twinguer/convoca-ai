@@ -5,7 +5,7 @@ import { getAllQuestionsForConcurso } from '@/integrations/supabase/rankings/exa
 export const getTotalQuestions = (concurso?: Concurso) => {
   if (!concurso) return 0;
   
-  // Para concursos baseados em disciplinas ou conhecimentos, usamos a mesma função
+  // Usando a mesma função para ambos os tipos de concurso
   return getAllQuestionsForConcurso(concurso).length;
 };
 

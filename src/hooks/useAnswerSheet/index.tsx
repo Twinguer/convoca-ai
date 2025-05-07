@@ -76,60 +76,65 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
-    console.log('Getting questions for section:', selectedSection);
-    
-    // Obtém todas as questões disponíveis para o concurso
-    const allQuestions = getAllQuestionsForConcurso(concurso);
-    
-    // Para concursos baseados em disciplinas, quando estiver na seção "basic",
-    // simplesmente retorna todas as questões
-    if (concurso.minimum_score_type === 'subject' && selectedSection === 'basic') {
-      console.log('Concurso baseado em disciplinas, retornando todas as questões:', allQuestions);
-      return allQuestions;
-    }
-    
-    // Para concursos baseados em conhecimentos, filtramos pelas questões da seção selecionada
-    if (Object.keys(questionType).length > 0) {
-      // Se já temos o mapeamento de tipos de questão, usamos isso para filtrar
-      const filteredQuestions = Object.entries(questionType)
-        .filter(([_, type]) => {
-          return (selectedSection === 'basic' && type === 'basic') ||
-                 (selectedSection === 'specific1' && type === 'specific1') ||
-                 (selectedSection === 'specific2' && type === 'specific2') ||
-                 (selectedSection === 'specific3' && type === 'specific3');
-        })
-        .map(([num]) => parseInt(num));
-      
-      console.log('Filtered questions for section', selectedSection, ':', filteredQuestions);
-      return filteredQuestions.sort((a, b) => a - b);
-    } else {
-      // Caso ainda não tenha o mapeamento, construímos a sequência de questões baseada na configuração
-      const questions: number[] = [];
-      
-      if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-        for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
-          questions.push(i);
-        }
+    // Usar a mesma lógica independentemente do tipo de concurso (conhecimentos ou disciplinas)
+    if (selectedSection === 'basic') {
+      // Para a seção 'basic' (independente do tipo de concurso), retornamos todas as questões apropriadas
+      if (concurso.minimum_score_type === 'subject') {
+        // Para concursos baseados em disciplinas, retornamos todas as questões
+        return getAllQuestionsForConcurso(concurso);
+      } else if (Object.keys(questionType).length > 0) {
+        // Para concursos baseados em conhecimentos, filtramos pelas questões básicas
+        return Object.entries(questionType)
+          .filter(([_, type]) => type === 'basic')
+          .map(([num]) => parseInt(num))
+          .sort((a, b) => a - b);
       }
-      
-      console.log('Generated questions for section', selectedSection, ':', questions);
-      return questions;
+    } else if (selectedSection === 'specific1') {
+      // Para specific1, filtramos as questões de conhecimento específico 1
+      return Object.entries(questionType)
+        .filter(([_, type]) => type === 'specific1')
+        .map(([num]) => parseInt(num))
+        .sort((a, b) => a - b);
+    } else if (selectedSection === 'specific2') {
+      // Para specific2, filtramos as questões de conhecimento específico 2
+      return Object.entries(questionType)
+        .filter(([_, type]) => type === 'specific2')
+        .map(([num]) => parseInt(num))
+        .sort((a, b) => a - b);
+    } else if (selectedSection === 'specific3') {
+      // Para specific3, filtramos as questões de conhecimento específico 3
+      return Object.entries(questionType)
+        .filter(([_, type]) => type === 'specific3')
+        .map(([num]) => parseInt(num))
+        .sort((a, b) => a - b);
     }
+    
+    // Se não encontramos questões pelo mapeamento de tipos, construímos com base na configuração
+    const questions: number[] = [];
+    
+    // Lógica para construir sequência de questões baseada na configuração do concurso
+    if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
+        questions.push(i);
+      }
+    } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
+      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
+        questions.push(i);
+      }
+    } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
+      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
+        questions.push(i);
+      }
+    } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
+      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+        questions.push(i);
+      }
+    }
+    
+    return questions;
   };
 
   const getOptionsForQuestion = (questionNumber: number) => {

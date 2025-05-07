@@ -5,21 +5,17 @@ export const handleQuestionSectionSelection = (
   concurso: Concurso,
   setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>
 ) => {
-  if (concurso.minimum_score_type === 'subject') {
-    // Para provas baseadas em disciplinas, vamos exibir todas as questões juntas
-    // numa única seção por enquanto
-    setSelectedSection('basic');
-  } else {
-    // Lógica para provas baseadas em conhecimentos
-    if (concurso.has_basic_knowledge) {
-      setSelectedSection('basic');
-    } else if (concurso.has_specific_knowledge_1) {
-      setSelectedSection('specific1');
-    } else if (concurso.has_specific_knowledge_2) {
-      setSelectedSection('specific2');
-    } else if (concurso.has_specific_knowledge_3) {
-      setSelectedSection('specific3');
-    }
+  // Para ambos os tipos de concurso, vamos começar sempre pela seção 'basic'
+  // A diferença estará apenas na apresentação/nome da seção na interface
+  setSelectedSection('basic');
+  
+  // Se não tiver conhecimentos básicos, verificamos as outras seções
+  if (!concurso.has_basic_knowledge && concurso.has_specific_knowledge_1) {
+    setSelectedSection('specific1');
+  } else if (!concurso.has_basic_knowledge && !concurso.has_specific_knowledge_1 && concurso.has_specific_knowledge_2) {
+    setSelectedSection('specific2');
+  } else if (!concurso.has_basic_knowledge && !concurso.has_specific_knowledge_1 && !concurso.has_specific_knowledge_2 && concurso.has_specific_knowledge_3) {
+    setSelectedSection('specific3');
   }
 };
 
