@@ -1,6 +1,33 @@
 
 import { Concurso } from '@/types/concursos';
 
+// Define disciplines with names and siglas
+export const DISCIPLINES = [
+  { name: 'Português', sigla: 'LPT' },
+  { name: 'Inglês', sigla: 'ING' },
+  { name: 'Matemática', sigla: 'MAT' },
+  { name: 'RLM', sigla: 'RLM' },
+  { name: 'Estatística', sigla: 'EST' },
+  { name: 'Constitucional', sigla: 'COS' },
+  { name: 'Administrativo', sigla: 'ADM' },
+  { name: 'Administração', sigla: 'ADO' },
+  { name: 'Contabilidade', sigla: 'COT' },
+  { name: 'Contabilidade Custos', sigla: 'COC' },
+  { name: 'Economia', sigla: 'ECO' },
+  { name: 'Tributário', sigla: 'TRI' },
+  { name: 'AFO', sigla: 'AFO' },
+  { name: 'Legislação Tributária', sigla: 'LTC' },
+  { name: 'Tecnologia da informação', sigla: 'TIC' },
+  { name: 'Estatuto', sigla: 'ETT' },
+  { name: 'Auditoria', sigla: 'AUD' },
+  { name: 'Civil', sigla: 'CIV' },
+  { name: 'Penal', sigla: 'PEN' },
+  { name: 'Informática', sigla: 'INF' },
+  { name: 'Empresarial', sigla: 'EMP' },
+  { name: 'Mat. Financeira', sigla: 'MTF' },
+  { name: 'Outro', sigla: 'OUT' }
+];
+
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
   setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>

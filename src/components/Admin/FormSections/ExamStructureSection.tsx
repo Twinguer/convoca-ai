@@ -18,7 +18,7 @@ import {
   DropdownMenuGroup
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DISCIPLINES } from '@/integrations/supabase/rankings/sectionUtils';
+import { DISCIPLINES } from '@/hooks/useAnswerSheet/sectionUtils';
 
 interface ExamStructureSectionProps {
   form: UseFormReturn<any>;
