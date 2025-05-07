@@ -151,7 +151,6 @@ export type Database = {
           has_minimum_score: boolean | null
           has_pcd: boolean | null
           has_ppp: boolean | null
-          has_quota_minimum_score: boolean | null
           has_specific_knowledge_1: boolean | null
           has_specific_knowledge_2: boolean | null
           has_specific_knowledge_3: boolean | null
@@ -167,8 +166,6 @@ export type Database = {
           minimum_score_unit_type: string | null
           orgao: string
           predefined_job_title: string | null
-          quota_minimum_score: number | null
-          quota_minimum_score_unit_type: string | null
           specific_knowledge_1_minimum_score: number | null
           specific_knowledge_1_questions: number | null
           specific_knowledge_1_weight: number | null
@@ -180,7 +177,6 @@ export type Database = {
           specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
           status: string
-          subjects: Json | null
           titulo: string
           total_minimum_score: number | null
           updated_at: string
@@ -219,7 +215,6 @@ export type Database = {
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
-          has_quota_minimum_score?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
@@ -235,8 +230,6 @@ export type Database = {
           minimum_score_unit_type?: string | null
           orgao: string
           predefined_job_title?: string | null
-          quota_minimum_score?: number | null
-          quota_minimum_score_unit_type?: string | null
           specific_knowledge_1_minimum_score?: number | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_1_weight?: number | null
@@ -248,7 +241,6 @@ export type Database = {
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
-          subjects?: Json | null
           titulo: string
           total_minimum_score?: number | null
           updated_at?: string
@@ -287,7 +279,6 @@ export type Database = {
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
-          has_quota_minimum_score?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
@@ -303,8 +294,6 @@ export type Database = {
           minimum_score_unit_type?: string | null
           orgao?: string
           predefined_job_title?: string | null
-          quota_minimum_score?: number | null
-          quota_minimum_score_unit_type?: string | null
           specific_knowledge_1_minimum_score?: number | null
           specific_knowledge_1_questions?: number | null
           specific_knowledge_1_weight?: number | null
@@ -316,7 +305,6 @@ export type Database = {
           specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
-          subjects?: Json | null
           titulo?: string
           total_minimum_score?: number | null
           updated_at?: string
@@ -339,44 +327,6 @@ export type Database = {
           id?: number
         }
         Relationships: []
-      }
-      custom_sections: {
-        Row: {
-          concurso_id: string
-          created_at: string
-          display_name: string
-          id: string
-          section_type: string
-          sigla: string
-          updated_at: string
-        }
-        Insert: {
-          concurso_id: string
-          created_at?: string
-          display_name: string
-          id?: string
-          section_type: string
-          sigla: string
-          updated_at?: string
-        }
-        Update: {
-          concurso_id?: string
-          created_at?: string
-          display_name?: string
-          id?: string
-          section_type?: string
-          sigla?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "custom_sections_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       job_titles: {
         Row: {
@@ -410,7 +360,7 @@ export type Database = {
           points_if_wrong: number | null
           question_number: number
           question_type: string
-          section_type: string | null
+          section_type: string
           subject_id: string | null
           updated_at: string
           weight: number
@@ -425,7 +375,7 @@ export type Database = {
           points_if_wrong?: number | null
           question_number: number
           question_type?: string
-          section_type?: string | null
+          section_type: string
           subject_id?: string | null
           updated_at?: string
           weight?: number
@@ -440,7 +390,7 @@ export type Database = {
           points_if_wrong?: number | null
           question_number?: number
           question_type?: string
-          section_type?: string | null
+          section_type?: string
           subject_id?: string | null
           updated_at?: string
           weight?: number
@@ -680,7 +630,6 @@ export type Database = {
           specific_knowledge_2_score: number | null
           specific_knowledge_3_score: number | null
           specific_knowledge_score: number | null
-          subject_scores: Json | null
           updated_at: string
           user_id: string
           weighted_basic_score: number | null
@@ -711,7 +660,6 @@ export type Database = {
           specific_knowledge_2_score?: number | null
           specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
-          subject_scores?: Json | null
           updated_at?: string
           user_id: string
           weighted_basic_score?: number | null
@@ -742,7 +690,6 @@ export type Database = {
           specific_knowledge_2_score?: number | null
           specific_knowledge_3_score?: number | null
           specific_knowledge_score?: number | null
-          subject_scores?: Json | null
           updated_at?: string
           user_id?: string
           weighted_basic_score?: number | null
