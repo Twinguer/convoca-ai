@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
+import { updateSectionTypeForConcurso, calculateOfficialAnswersForSubjectBased } from '@/integrations/supabase/rankings/scoreCalculation';
 // Removemos a importação de recalculateAllUserScores pois não vamos mais recalcular todas as pontuações
 
 interface UseSaveAnswersProps {
@@ -73,6 +73,15 @@ export const useSaveAnswers = ({
       if (!sectionTypeResult.success) {
         console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
         // Continuamos mesmo com erro, pois isso é apenas uma melhoria
+      }
+      
+      // Se for concurso baseado em disciplinas, garantir que a estrutura esteja criada
+      if (concurso.minimum_score_type === 'subject') {
+        const subjectSetupResult = await calculateOfficialAnswersForSubjectBased(concurso.id);
+        if (!subjectSetupResult.success) {
+          console.warn('[useSaveAnswers] Aviso: Não foi possível configurar a estrutura de disciplinas:', subjectSetupResult.error);
+          // Continuamos mesmo com erro, tentaremos salvar as respostas de qualquer forma
+        }
       }
 
       // Chamar a função RPC centralizada

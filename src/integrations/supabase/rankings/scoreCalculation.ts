@@ -139,3 +139,89 @@ export const updateSectionTypeForConcurso = async (concursoId: string): Promise<
     return { success: false, error: `Unexpected error: ${error}` };
   }
 };
+
+// Função para calcular e estruturar o gabarito oficial para concursos baseados em disciplinas
+export const calculateOfficialAnswersForSubjectBased = async (concursoId: string): Promise<{success: boolean, error?: string}> => {
+  try {
+    // Obter as informações do concurso
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select('*')
+      .eq('id', concursoId)
+      .single();
+    
+    if (concursoError) {
+      console.error('[calculateOfficialAnswersForSubjectBased] Error fetching concurso:', concursoError);
+      return { success: false, error: concursoError.message };
+    }
+    
+    // Verificar se há disciplinas configuradas
+    if (!concurso.subjects || !Array.isArray(concurso.subjects) || concurso.subjects.length === 0) {
+      return { success: false, error: 'Nenhuma disciplina configurada para este concurso' };
+    }
+    
+    // Obter a estrutura da prova baseada em disciplinas
+    const { subjectRanges, totalQuestions } = getSubjectExamStructure(concurso);
+    
+    if (totalQuestions === 0) {
+      return { success: false, error: 'Nenhuma questão configurada para as disciplinas' };
+    }
+    
+    console.log(`[calculateOfficialAnswersForSubjectBased] Total questions: ${totalQuestions}`);
+    console.log('[calculateOfficialAnswersForSubjectBased] Subject ranges:', JSON.stringify(subjectRanges));
+    
+    // Verificar se já existem respostas oficiais para este concurso
+    const { data: existingAnswers } = await supabase
+      .from('official_answer_weights')
+      .select('question_number')
+      .eq('concurso_id', concursoId);
+    
+    const existingQuestions = new Set(existingAnswers ? existingAnswers.map(a => a.question_number) : []);
+    
+    // Preparar os registros para inserção
+    const answersToInsert = [];
+    
+    // Para cada disciplina, criar os registros de gabarito
+    for (const [subjectCode, range] of Object.entries(subjectRanges)) {
+      for (let i = range.start; i <= range.end; i++) {
+        // Pular se já existe uma resposta para esta questão
+        if (existingQuestions.has(i)) continue;
+        
+        // Encontrar o objeto de disciplina para obter o peso
+        const subjectObj = concurso.subjects.find((s: any) => s.code === subjectCode);
+        const weight = subjectObj ? subjectObj.weight || 1 : 1;
+        
+        // Adicionar à lista de inserção
+        answersToInsert.push({
+          concurso_id: concursoId,
+          question_number: i,
+          correct_answer: '',  // Será preenchido pelo administrador
+          weight: weight,
+          is_nullified: false,
+          section_type: subjectCode,  // Usar o código da disciplina como section_type
+          question_type: 'MULTIPLE_CHOICE'
+        });
+      }
+    }
+    
+    // Inserir os registros de gabarito se houver algum novo
+    if (answersToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('official_answer_weights')
+        .insert(answersToInsert);
+      
+      if (insertError) {
+        console.error('[calculateOfficialAnswersForSubjectBased] Error inserting answer weights:', insertError);
+        return { success: false, error: insertError.message };
+      }
+    }
+    
+    return { success: true };
+  } catch (error) {
+    console.error('[calculateOfficialAnswersForSubjectBased] Unexpected error:', error);
+    return { success: false, error: `Unexpected error: ${error}` };
+  }
+};
+
+// Função auxiliar para obter a estrutura da prova de um arquivo externo
+import { getSubjectExamStructure } from './examStructure';
