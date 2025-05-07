@@ -78,20 +78,34 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     console.log('Getting questions for section:', selectedSection);
     
-    // Para concursos baseados em disciplinas, usar função específica para retornar todas as questões
+    // Obtém todas as questões disponíveis para o concurso
+    const allQuestions = getAllQuestionsForConcurso(concurso);
+    
+    // Para concursos baseados em disciplinas, quando estiver na seção "basic",
+    // simplesmente retorna todas as questões
     if (concurso.minimum_score_type === 'subject' && selectedSection === 'basic') {
-      // Usar a função getAllQuestionsForConcurso que já lida corretamente com disciplinas
-      const allQuestions = getAllQuestionsForConcurso(concurso);
       console.log('Concurso baseado em disciplinas, retornando todas as questões:', allQuestions);
       return allQuestions;
     }
     
-    // Código existente para concursos baseados em conhecimentos
-    const questions: number[] = [];
-    
-    // Verificando se o objeto questionType tem alguma propriedade
-    if (Object.keys(questionType).length === 0) {
-      // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
+    // Para concursos baseados em conhecimentos, filtramos pelas questões da seção selecionada
+    if (Object.keys(questionType).length > 0) {
+      // Se já temos o mapeamento de tipos de questão, usamos isso para filtrar
+      const filteredQuestions = Object.entries(questionType)
+        .filter(([_, type]) => {
+          return (selectedSection === 'basic' && type === 'basic') ||
+                 (selectedSection === 'specific1' && type === 'specific1') ||
+                 (selectedSection === 'specific2' && type === 'specific2') ||
+                 (selectedSection === 'specific3' && type === 'specific3');
+        })
+        .map(([num]) => parseInt(num));
+      
+      console.log('Filtered questions for section', selectedSection, ':', filteredQuestions);
+      return filteredQuestions.sort((a, b) => a - b);
+    } else {
+      // Caso ainda não tenha o mapeamento, construímos a sequência de questões baseada na configuração
+      const questions: number[] = [];
+      
       if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
           questions.push(i);
@@ -112,22 +126,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           questions.push(i);
         }
       }
-    } else {
-      // Se tiver, usamos o mapeamento existente
-      Object.entries(questionType).forEach(([num, type]) => {
-        if (
-          (selectedSection === 'basic' && type === 'basic') ||
-          (selectedSection === 'specific1' && type === 'specific1') ||
-          (selectedSection === 'specific2' && type === 'specific2') ||
-          (selectedSection === 'specific3' && type === 'specific3')
-        ) {
-          questions.push(parseInt(num));
-        }
-      });
+      
+      console.log('Generated questions for section', selectedSection, ':', questions);
+      return questions;
     }
-    
-    console.log('Questions for section', selectedSection, ':', questions);
-    return questions.sort((a, b) => a - b);
   };
 
   const getOptionsForQuestion = (questionNumber: number) => {

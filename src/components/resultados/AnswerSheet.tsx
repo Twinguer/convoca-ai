@@ -350,22 +350,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             caseStudy1Score={caseStudy1Score}
             caseStudy2Score={caseStudy2Score}
             caseStudy3Score={caseStudy3Score}
-            handleScoreChange={(value, setter, name) => {
-              if (value === '') {
-                setter(null);
-                return;
-              }
-              
-              const numberValue = parseFloat(value);
-              if (isNaN(numberValue)) return;
-              
-              if (numberValue < 0 || numberValue > 100) {
-                setError(`A nota da ${name} deve estar entre 0 e 100.`);
-                return;
-              }
-              
-              setter(numberValue);
-            }}
+            handleScoreChange={handleScoreChange}
             setDiscursiveScore={setDiscursiveScore}
             setCaseStudy1Score={setCaseStudy1Score}
             setCaseStudy2Score={setCaseStudy2Score}
