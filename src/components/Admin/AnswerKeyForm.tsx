@@ -23,7 +23,8 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [activeTab, setActiveTab] = useState('basic');
   
-  const { initializeAnswers, answers, setAnswers } = useAnswerSheet();
+  // Instanciando o hook sem parâmetros, pois é um uso independente para o form de gabarito
+  const { answers, setAnswers, initializeAnswers } = useAnswerSheet();
   
   const isSubjectBased = concurso?.minimum_score_type === 'subject';
   
@@ -65,8 +66,29 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
         setNullifiedQuestions(nullified);
         
         // Set initial active tab
-        if (isSubjectBased && concursoData.subjects && concursoData.subjects.length > 0) {
-          setActiveTab(concursoData.subjects[0].code);
+        if (concursoData.minimum_score_type === 'subject' && concursoData.subjects && concursoData.subjects.length > 0) {
+          try {
+            // Tente parsear subjects caso seja uma string
+            const subjectsArray = typeof concursoData.subjects === 'string' 
+              ? JSON.parse(concursoData.subjects) 
+              : concursoData.subjects;
+            
+            if (Array.isArray(subjectsArray) && subjectsArray.length > 0 && subjectsArray[0].code) {
+              setActiveTab(subjectsArray[0].code);
+            } else if (concursoData.has_basic_knowledge) {
+              setActiveTab('basic');
+            } else if (concursoData.has_specific_knowledge_1) {
+              setActiveTab('specific1');
+            }
+          } catch (e) {
+            console.error('Error parsing subjects:', e);
+            // Fallback to default tabs
+            if (concursoData.has_basic_knowledge) {
+              setActiveTab('basic');
+            } else if (concursoData.has_specific_knowledge_1) {
+              setActiveTab('specific1');
+            }
+          }
         } else if (concursoData.has_basic_knowledge) {
           setActiveTab('basic');
         } else if (concursoData.has_specific_knowledge_1) {
@@ -157,12 +179,20 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
   const renderQuestionsForSubjectTab = (subjectCode: string) => {
     if (!concurso || !concurso.subjects) return null;
     
-    const { subjectRanges } = getSubjectExamStructure(concurso);
-    const range = subjectRanges[subjectCode];
-    
-    if (!range) return null;
-    
-    return renderQuestionRange(range.start, range.end);
+    try {
+      const { subjectRanges } = getSubjectExamStructure(concurso);
+      const range = subjectRanges[subjectCode];
+      
+      if (!range) {
+        console.error(`No range found for subject code: ${subjectCode}`);
+        return null;
+      }
+      
+      return renderQuestionRange(range.start, range.end);
+    } catch (error) {
+      console.error('Error rendering questions for subject tab:', error);
+      return <div className="p-4 text-center">Erro ao carregar questões para esta disciplina</div>;
+    }
   };
   
   const renderQuestionRange = (startQ: number, endQ: number) => {
@@ -173,16 +203,16 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
         <div key={i} className="flex items-center gap-2 mb-2">
           <WeightedAnswerInput
             questionNumber={i}
-            answer={answers[i] || ''}
+            value={answers[i] || ''}
             onChange={(value) => {
               setAnswers({...answers, [i]: value});
             }}
-            nullified={nullifiedQuestions.has(i)}
+            isNullified={nullifiedQuestions.has(i)}
           />
           <NullifyQuestionButton 
             questionNumber={i}
             isNullified={nullifiedQuestions.has(i)} 
-            onToggleNullify={handleToggleNullified}
+            toggleNullified={handleToggleNullified}
           />
         </div>
       );
@@ -192,7 +222,34 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
   };
   
   const renderSubjectTabs = () => {
-    if (!concurso || !concurso.subjects || !Array.isArray(concurso.subjects)) {
+    if (!concurso || !concurso.subjects) {
+      return (
+        <div className="p-4 text-center">
+          Nenhuma disciplina configurada para este concurso
+        </div>
+      );
+    }
+    
+    let subjects: any[] = [];
+    
+    try {
+      subjects = typeof concurso.subjects === 'string' 
+        ? JSON.parse(concurso.subjects) 
+        : concurso.subjects;
+        
+      if (!Array.isArray(subjects)) {
+        throw new Error('Subjects is not an array');
+      }
+    } catch (e) {
+      console.error('Error parsing subjects:', e);
+      return (
+        <div className="p-4 text-center">
+          Erro ao carregar disciplinas. Formato inválido.
+        </div>
+      );
+    }
+    
+    if (subjects.length === 0) {
       return (
         <div className="p-4 text-center">
           Nenhuma disciplina configurada para este concurso
@@ -203,7 +260,7 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
     return (
       <>
         <TabsList className="mb-4">
-          {concurso.subjects.map((subject: any) => (
+          {subjects.map((subject: any) => (
             <TabsTrigger 
               key={subject.code} 
               value={subject.code}
@@ -214,7 +271,7 @@ export const AnswerKeyForm = ({ concursoId }: AnswerKeyFormProps) => {
           ))}
         </TabsList>
         
-        {concurso.subjects.map((subject: any) => (
+        {subjects.map((subject: any) => (
           <TabsContent key={subject.code} value={subject.code}>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {renderQuestionsForSubjectTab(subject.code)}

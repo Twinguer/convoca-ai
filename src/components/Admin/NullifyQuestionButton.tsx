@@ -2,34 +2,36 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Ban } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-interface NullifyQuestionButtonProps {
+export interface NullifyQuestionButtonProps {
   questionNumber: number;
   isNullified: boolean;
-  onNullify: (questionNumber: number) => void;
-  disabled?: boolean;
+  toggleNullified: (questionNumber: number) => void;
 }
 
 export const NullifyQuestionButton = ({
   questionNumber,
   isNullified,
-  onNullify,
-  disabled = false
+  toggleNullified
 }: NullifyQuestionButtonProps) => {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => onNullify(questionNumber)}
-      disabled={disabled}
-      className={`mt-2 w-full gap-2 ${
-        isNullified 
-          ? 'bg-gray-100 text-gray-500' 
-          : 'hover:bg-red-50 hover:text-red-600'
-      }`}
-    >
-      <Ban className="h-4 w-4" />
-      {isNullified ? 'Questão Anulada' : 'Anular Questão'}
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={isNullified ? "destructive" : "outline"}
+            size="sm"
+            onClick={() => toggleNullified(questionNumber)}
+            className="h-8 w-8 p-0"
+          >
+            <Ban className={`h-4 w-4 ${isNullified ? 'text-white' : 'text-muted-foreground'}`} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{isNullified ? 'Remover anulação' : 'Anular questão'}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

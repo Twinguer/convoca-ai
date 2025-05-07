@@ -1,8 +1,40 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
+interface UseAnswerSheetResult {
+  answers: { [key: number]: string };
+  selectedSection: 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3';
+  setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>;
+  isSaving: boolean;
+  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>;
+  error: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  savedSuccess: boolean;
+  setSavedSuccess: React.Dispatch<React.SetStateAction<boolean>>;
+  handleAnswerChange: (questionNumber: number, answer: string) => void;
+  handleClearAnswer: (questionNumber: number) => void;
+  getTotalQuestions: () => number;
+  getAnsweredQuestionsCount: () => number;
+  getOptionsForQuestion: (questionNumber: number) => string[];
+  createAnswerMatrix: () => (number | null)[][];
+  questionType: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' };
+  discursiveScore: number | null;
+  setDiscursiveScore: React.Dispatch<React.SetStateAction<number | null>>;
+  caseStudy1Score: number | null;
+  setCaseStudy1Score: React.Dispatch<React.SetStateAction<number | null>>;
+  caseStudy2Score: number | null;
+  setCaseStudy2Score: React.Dispatch<React.SetStateAction<number | null>>;
+  caseStudy3Score: number | null;
+  setCaseStudy3Score: React.Dispatch<React.SetStateAction<number | null>>;
+  isDiscursiveSection: () => boolean;
+  getSectionQuestions: () => number[];
+  initializeAnswers: (initialAnswers: { [key: number]: string }) => void;
+  setAnswers: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>;
+}
+
+export const useAnswerSheet = (concurso?: Concurso, rankingId?: string): UseAnswerSheetResult => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
@@ -30,6 +62,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   }, [concurso]);
 
   const fetchExistingAnswers = async () => {
+    if (!rankingId) return;
+    
     try {
       console.log('Fetching existing answers for ranking ID:', rankingId);
       
@@ -69,37 +103,39 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       }
       
       // Fetch user ranking for scores
-      const { data: rankingData, error: rankingError } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
+      if (rankingId) {
+        const { data: rankingData, error: rankingError } = await supabase
+          .from('user_rankings')
+          .select('*')
+          .eq('id', rankingId)
+          .single();
+          
+        if (rankingError) throw rankingError;
         
-      if (rankingError) throw rankingError;
-      
-      console.log('Fetched ranking data:', rankingData);
-      
-      if (rankingData) {
-        setDiscursiveScore(
-          rankingData.discursive_score !== null && rankingData.discursive_score !== undefined
-            ? rankingData.discursive_score
-            : null
-        );
-        setCaseStudy1Score(
-          rankingData.case_study_1_score !== null && rankingData.case_study_1_score !== undefined
-            ? rankingData.case_study_1_score
-            : null
-        );
-        setCaseStudy2Score(
-          rankingData.case_study_2_score !== null && rankingData.case_study_2_score !== undefined
-            ? rankingData.case_study_2_score
-            : null
-        );
-        setCaseStudy3Score(
-          rankingData.case_study_3_score !== null && rankingData.case_study_3_score !== undefined
-            ? rankingData.case_study_3_score
-            : null
-        );
+        console.log('Fetched ranking data:', rankingData);
+        
+        if (rankingData) {
+          setDiscursiveScore(
+            rankingData.discursive_score !== null && rankingData.discursive_score !== undefined
+              ? rankingData.discursive_score
+              : null
+          );
+          setCaseStudy1Score(
+            rankingData.case_study_1_score !== null && rankingData.case_study_1_score !== undefined
+              ? rankingData.case_study_1_score
+              : null
+          );
+          setCaseStudy2Score(
+            rankingData.case_study_2_score !== null && rankingData.case_study_2_score !== undefined
+              ? rankingData.case_study_2_score
+              : null
+          );
+          setCaseStudy3Score(
+            rankingData.case_study_3_score !== null && rankingData.case_study_3_score !== undefined
+              ? rankingData.case_study_3_score
+              : null
+          );
+        }
       }
     } catch (error) {
       console.error('Error fetching answers:', error);
@@ -144,12 +180,21 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   };
 
+  // Adicionando a função initializeAnswers
+  const initializeAnswers = (initialAnswers: { [key: number]: string }) => {
+    setAnswers(initialAnswers);
+  };
+
   useEffect(() => {
-    fetchExistingAnswers();
+    if (rankingId) {
+      fetchExistingAnswers();
+    }
   }, [rankingId]);
 
   useEffect(() => {
-    initializeQuestionTypes();
+    if (concurso) {
+      initializeQuestionTypes();
+    }
   }, [concurso]);
 
   const handleAnswerChange = (questionNumber: number, answer: string) => {
@@ -287,6 +332,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions,
+    initializeAnswers,
+    setAnswers
   };
 };
