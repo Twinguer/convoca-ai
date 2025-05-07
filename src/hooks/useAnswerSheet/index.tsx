@@ -66,6 +66,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
            selectedSection === 'case_study3';
   };
 
+  // Implementar uma função para obter as questões da seção selecionada
   const getSectionQuestions = () => {
     if (!concurso) return [];
     

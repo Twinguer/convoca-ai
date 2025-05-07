@@ -48,7 +48,7 @@ const CebraspeConcursos = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {concursos.map((concurso) => (
+        {concursos.map((concurso: any) => (
           <ConcursoCard key={concurso.id} concurso={concurso} />
         ))}
       </div>

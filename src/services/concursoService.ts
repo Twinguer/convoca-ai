@@ -28,20 +28,16 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
     if (filters) {
       // Filter by status if provided
       if (filters.status && filters.status !== 'Todos') {
-        if (Array.isArray(filters.status) && filters.status.length > 0) {
-          query = query.eq('status', filters.status[0]);
-        } else if (typeof filters.status === 'string') {
-          query = query.eq('status', filters.status);
-        }
+        query = query.eq('status', filters.status);
       }
       
       // Filter by orgao if provided
-      if (filters.orgao && Array.isArray(filters.orgao) && filters.orgao.length > 0) {
+      if (filters.orgao && filters.orgao.length > 0) {
         query = query.eq('orgao', filters.orgao[0]);
       }
       
       // Filter by banca if provided
-      if (filters.banca && Array.isArray(filters.banca) && filters.banca.length > 0) {
+      if (filters.banca && filters.banca.length > 0) {
         query = query.eq('banca', filters.banca[0]);
       }
 
@@ -137,7 +133,7 @@ export const fetchUserRankings = async (userId: string) => {
   return fetchUserConcursoRankings(userId);
 };
 
-// Implementação da função deleteConcurso
+// Adicionar a função deleteConcurso que está faltando
 export const deleteConcurso = async (id: string): Promise<{ success: boolean; message?: string }> => {
   try {
     const { error } = await supabase
@@ -153,17 +149,5 @@ export const deleteConcurso = async (id: string): Promise<{ success: boolean; me
       success: false, 
       message: error.message || "Erro ao excluir o concurso" 
     };
-  }
-};
-
-// Modified scheduleScraper to work without the edge function
-export const scheduleScraper = async () => {
-  try {
-    console.log('Scraper functionality has been deprecated');
-    // Return mock success response since the function has been removed
-    return { success: true, message: 'Scraper functionality deprecated but system continues to work' };
-  } catch (error) {
-    console.error('Error in scraper service:', error);
-    return { success: false, message: 'Error in scraper service' };
   }
 };
