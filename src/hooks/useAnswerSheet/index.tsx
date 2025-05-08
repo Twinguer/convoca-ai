@@ -70,7 +70,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (!concurso) return [];
     
     console.log('Getting questions for section:', selectedSection);
-    console.log('Question type mapping:', questionType);
     
     const questions: number[] = [];
     

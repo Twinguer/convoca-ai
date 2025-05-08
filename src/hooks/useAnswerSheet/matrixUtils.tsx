@@ -1,23 +1,26 @@
 
-export const createAnswerMatrix = (sectionQuestions: number[]) => {
-  if (sectionQuestions.length === 0) return [];
+export const createAnswerMatrix = (questionNumbers: number[] = []) => {
+  // Se não houver questões, retorna uma matriz vazia
+  if (!questionNumbers.length) return [];
+
+  // Ordena questões para garantir que estão em ordem
+  const sortedNumbers = [...questionNumbers].sort((a, b) => a - b);
   
-  const QUESTIONS_PER_ROW = 4; // Changed from 5 to 4 for better display
-  const rows = Math.ceil(sectionQuestions.length / QUESTIONS_PER_ROW);
+  // Determina o número de questões por linha
+  const questionsPerRow = 5;
   
+  // Calcula quantas linhas são necessárias
+  const rowsCount = Math.ceil(sortedNumbers.length / questionsPerRow);
+  
+  // Cria a matriz com as questões distribuídas em linhas
   const matrix = [];
-  
-  for (let row = 0; row < rows; row++) {
-    const rowData = [];
-    for (let col = 0; col < QUESTIONS_PER_ROW; col++) {
-      const index = row * QUESTIONS_PER_ROW + col;
-      if (index < sectionQuestions.length) {
-        rowData.push(sectionQuestions[index]);
-      } else {
-        rowData.push(null);
-      }
-    }
-    matrix.push(rowData);
+  for (let i = 0; i < rowsCount; i++) {
+    // Extrai as questões para esta linha
+    const startIdx = i * questionsPerRow;
+    const row = sortedNumbers.slice(startIdx, startIdx + questionsPerRow);
+    
+    // Adiciona a linha à matriz
+    matrix.push(row);
   }
   
   return matrix;
