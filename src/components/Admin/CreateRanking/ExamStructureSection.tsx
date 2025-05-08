@@ -6,9 +6,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuGroup
+} from '@/components/ui/dropdown-menu';
 import { Plus, Trash2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DISCIPLINES } from '@/hooks/useAnswerSheet/sectionUtils';
 
 interface ExamStructureSectionProps {
   form: any;
@@ -169,6 +180,44 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     }
   };
 
+  // Helper to add discipline
+  const addDiscipline = (disciplineName: string) => {
+    const discipline = DISCIPLINES.find(d => d.name === disciplineName);
+    if (!discipline) return;
+
+    const currentDisciplines = form.watch('disciplines') || [];
+    
+    // Check if already added
+    if (currentDisciplines.some((d: any) => d.name === disciplineName)) {
+      return;
+    }
+
+    // Add the new discipline
+    form.setValue('disciplines', [...currentDisciplines, {
+      name: discipline.name,
+      sigla: discipline.sigla,
+      questions: 0,
+      weight: 1,
+      minimumScore: 0
+    }]);
+  };
+
+  // Helper to remove discipline
+  const removeDiscipline = (index: number) => {
+    const currentDisciplines = form.watch('disciplines') || [];
+    const updatedDisciplines = [...currentDisciplines];
+    updatedDisciplines.splice(index, 1);
+    form.setValue('disciplines', updatedDisciplines);
+  };
+
+  // Update discipline field
+  const updateDisciplineField = (index: number, field: string, value: any) => {
+    const currentDisciplines = form.watch('disciplines') || [];
+    const updatedDisciplines = [...currentDisciplines];
+    updatedDisciplines[index][field] = value;
+    form.setValue('disciplines', updatedDisciplines);
+  };
+
   return (
     <Card>
       <CardContent className="pt-6">
@@ -286,46 +335,63 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {!form.watch('has_basic_knowledge') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('basic')}>
-                  Conhecimentos Básicos
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_specific_knowledge_1') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific1')}>
-                  Conhecimentos Específicos
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_specific_knowledge_2') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific2')}>
-                  Conhecimentos Específicos 2
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_specific_knowledge_3') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific3')}>
-                  Conhecimentos Específicos 3
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_discursive') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('discursive')}>
-                  Dissertativa
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_case_study_1') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case1')}>
-                  Estudo de Caso
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_case_study_2') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case2')}>
-                  Estudo de Caso 2
-                </DropdownMenuItem>
-              )}
-              {!form.watch('has_case_study_3') && (
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case3')}>
-                  Estudo de Caso 3
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuGroup>
+                {!form.watch('has_basic_knowledge') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('basic')}>
+                    Conhecimentos Básicos
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_specific_knowledge_1') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific1')}>
+                    Conhecimentos Específicos
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_specific_knowledge_2') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific2')}>
+                    Conhecimentos Específicos 2
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_specific_knowledge_3') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific3')}>
+                    Conhecimentos Específicos 3
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_discursive') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('discursive')}>
+                    Dissertativa
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_case_study_1') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case1')}>
+                    Estudo de Caso
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_case_study_2') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case2')}>
+                    Estudo de Caso 2
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_case_study_3') && (
+                  <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case3')}>
+                    Estudo de Caso 3
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuGroup>
+
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Disciplinas</DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {DISCIPLINES.map((discipline) => (
+                    <DropdownMenuItem 
+                      key={discipline.sigla}
+                      onClick={() => addDiscipline(discipline.name)}
+                    >
+                      {discipline.name} ({discipline.sigla})
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -340,7 +406,8 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
            !form.watch('has_discursive') &&
            !form.watch('has_case_study_1') &&
            !form.watch('has_case_study_2') &&
-           !form.watch('has_case_study_3') && (
+           !form.watch('has_case_study_3') &&
+           (!form.watch('disciplines') || form.watch('disciplines').length === 0) && (
             <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
               Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
             </div>
@@ -532,6 +599,73 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                 {renderMinimumScoreInput("case_study_3_minimum_score", "case_study_3_weight")}
               </div>
             </div>
+          )}
+
+          {/* Disciplinas */}
+          {form.watch('disciplines') && form.watch('disciplines').length > 0 && (
+            <>
+              {form.watch('disciplines').map((discipline: any, index: number) => (
+                <div key={index} className="border p-4 rounded-md">
+                  <div className="flex justify-between items-center mb-4">
+                    <h5 className="font-medium">
+                      {discipline.name} <span className="text-sm text-gray-500">({discipline.sigla})</span>
+                    </h5>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeDiscipline(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remover
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Questões */}
+                    <div>
+                      <FormLabel>Número de Questões</FormLabel>
+                      <Input 
+                        type="number" 
+                        min="0"
+                        value={discipline.questions}
+                        onChange={(e) => updateDisciplineField(index, 'questions', Number(e.target.value))}
+                      />
+                    </div>
+                    
+                    {/* Peso */}
+                    <div>
+                      <FormLabel>Peso</FormLabel>
+                      <Select 
+                        value={String(discipline.weight)} 
+                        onValueChange={(value) => updateDisciplineField(index, 'weight', Number(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {/* Nota mínima */}
+                    <div>
+                      <FormLabel>Nota Mínima {minimumScoreType === 'percentage' ? '(%)' : '(pontos)'}</FormLabel>
+                      <Input 
+                        type="number" 
+                        min="0"
+                        max={minimumScoreType === 'percentage' ? 100 : discipline.questions} 
+                        value={discipline.minimumScore}
+                        onChange={(e) => updateDisciplineField(index, 'minimumScore', Number(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       </CardContent>
