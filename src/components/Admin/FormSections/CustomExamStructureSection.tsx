@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -351,11 +351,11 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     
     // Seções padrão
     if (!isEnabledSection('basic')) available.push({ type: 'basic', name: 'Conhecimentos Básicos' });
-    if (!isEnabledSection('specific1')) available.push({ type: 'specific1', name: 'Conhecimentos Específicos 1' });
+    if (!isEnabledSection('specific1')) available.push({ type: 'specific1', name: 'Conhecimentos Específicos' });
     if (!isEnabledSection('specific2')) available.push({ type: 'specific2', name: 'Conhecimentos Específicos 2' });
     if (!isEnabledSection('specific3')) available.push({ type: 'specific3', name: 'Conhecimentos Específicos 3' });
-    if (!isEnabledSection('discursive')) available.push({ type: 'discursive', name: 'Discursiva' });
-    if (!isEnabledSection('case_study1')) available.push({ type: 'case_study1', name: 'Estudo de Caso 1' });
+    if (!isEnabledSection('discursive')) available.push({ type: 'discursive', name: 'Dissertativa' });
+    if (!isEnabledSection('case_study1')) available.push({ type: 'case_study1', name: 'Estudo de Caso' });
     if (!isEnabledSection('case_study2')) available.push({ type: 'case_study2', name: 'Estudo de Caso 2' });
     if (!isEnabledSection('case_study3')) available.push({ type: 'case_study3', name: 'Estudo de Caso 3' });
     
@@ -369,6 +369,11 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     });
     
     return available;
+  };
+
+  // Handler para abrir o diálogo de seção customizada
+  const handleCustomSectionClick = () => {
+    setIsCustomDialogOpen(true);
   };
 
   return (
@@ -446,14 +451,67 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {getAvailableSections().map(section => (
-                <DropdownMenuItem 
-                  key={section.type}
-                  onClick={() => addSection(section.type)}
-                >
-                  {section.name}
+              {/* Seções padrão */}
+              {!isEnabledSection('basic') && (
+                <DropdownMenuItem onClick={() => addSection('basic')}>
+                  Conhecimentos Básicos
                 </DropdownMenuItem>
-              ))}
+              )}
+              {!isEnabledSection('specific1') && (
+                <DropdownMenuItem onClick={() => addSection('specific1')}>
+                  Conhecimentos Específicos
+                </DropdownMenuItem>
+              )}
+              {!isEnabledSection('specific2') && (
+                <DropdownMenuItem onClick={() => addSection('specific2')}>
+                  Conhecimentos Específicos 2
+                </DropdownMenuItem>
+              )}
+              {!isEnabledSection('specific3') && (
+                <DropdownMenuItem onClick={() => addSection('specific3')}>
+                  Conhecimentos Específicos 3
+                </DropdownMenuItem>
+              )}
+              {!isEnabledSection('discursive') && (
+                <DropdownMenuItem onClick={() => addSection('discursive')}>
+                  Dissertativa
+                </DropdownMenuItem>
+              )}
+              {!isEnabledSection('case_study1') && (
+                <DropdownMenuItem onClick={() => addSection('case_study1')}>
+                  Estudo de Caso
+                </DropdownMenuItem>
+              )}
+              {!isEnabledSection('case_study2') && (
+                <DropdownMenuItem onClick={() => addSection('case_study2')}>
+                  Estudo de Caso 2
+                </DropdownMenuItem>
+              )}
+              {!isEnabledSection('case_study3') && (
+                <DropdownMenuItem onClick={() => addSection('case_study3')}>
+                  Estudo de Caso 3
+                </DropdownMenuItem>
+              )}
+              
+              {/* Separador para opção customizada */}
+              <DropdownMenuSeparator />
+              
+              {/* Opção para adicionar conhecimento customizado */}
+              <DropdownMenuItem onClick={handleCustomSectionClick}>
+                Outro: Digite o Conhecimento
+              </DropdownMenuItem>
+              
+              {/* Disciplinas específicas pré-definidas */}
+              {Object.entries(sectionDisplayNames)
+                .filter(([type]) => !['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
+                         'case_study1', 'case_study2', 'case_study3'].includes(type))
+                .filter(([type]) => !isEnabledSection(type))
+                .map(([type, name]) => (
+                  <DropdownMenuItem key={type} onClick={() => addSection(type)}>
+                    {name}
+                  </DropdownMenuItem>
+                ))
+              }
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

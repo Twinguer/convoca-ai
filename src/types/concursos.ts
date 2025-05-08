@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -61,6 +60,18 @@ export interface Concurso {
   has_hipossuficientes?: boolean;
   has_indigenas?: boolean;
   has_transsexuais?: boolean;
+  
+  // Custom disciplines
+  disciplines?: Array<{
+    name: string;
+    type: string;
+    questionCount: number;
+    weight: number;
+    isEnabled: boolean;
+  }>;
+  
+  // Admin flag
+  is_admin_update?: boolean;
 }
 
 export interface ConcursoFilter {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +32,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
-      handleQuestionSectionSelection(concurso, setSelectedSection);
+      handleQuestionSectionSelection(concurso, (section: string) => setSelectedSection(section as any));
     }
   }, [concurso]);
 
