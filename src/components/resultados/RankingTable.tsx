@@ -1,44 +1,95 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserPlus, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
+import { getEnabledKnowledgeAreas, getDisplayLabel } from '@/services/knowledgeAreaService';
+
 export interface Ranking {
   position: number;
   name: string;
   score: number;
   userId: string;
   avatarUrl?: string | null;
-  // Raw scores
+  // Raw scores for all knowledge areas
   basicKnowledgeScore?: number | null;
   specificKnowledgeScore?: number | null;
   specificKnowledge1Score?: number | null;
   specificKnowledge2Score?: number | null;
   specificKnowledge3Score?: number | null;
+  lptScore?: number | null;
+  ingScore?: number | null;
+  matScore?: number | null;
+  rlmScore?: number | null;
+  estScore?: number | null;
+  cosScore?: number | null;
+  admScore?: number | null;
+  adoScore?: number | null;
+  cotScore?: number | null;
+  cocScore?: number | null;
+  ecoScore?: number | null;
+  triScore?: number | null;
+  afoScore?: number | null;
+  ltcScore?: number | null;
+  ticScore?: number | null;
+  ettScore?: number | null;
+  audScore?: number | null;
+  civScore?: number | null;
+  penScore?: number | null;
+  infScore?: number | null;
+  empScore?: number | null;
+  mtfScore?: number | null;
+  outScore?: number | null;
+  // Discursiva scores
   discursiveScore?: number | null;
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
-  // Weighted scores (optional)
+  // Weighted scores for all knowledge areas
   weightedBasicScore?: number | null;
   weightedSpecific1Score?: number | null;
   weightedSpecific2Score?: number | null;
   weightedSpecific3Score?: number | null;
+  weightedLptScore?: number | null;
+  weightedIngScore?: number | null;
+  weightedMatScore?: number | null;
+  weightedRlmScore?: number | null;
+  weightedEstScore?: number | null;
+  weightedCosScore?: number | null;
+  weightedAdmScore?: number | null;
+  weightedAdoScore?: number | null;
+  weightedCotScore?: number | null;
+  weightedCocScore?: number | null;
+  weightedEcoScore?: number | null;
+  weightedTriScore?: number | null;
+  weightedAfoScore?: number | null;
+  weightedLtcScore?: number | null;
+  weightedTicScore?: number | null;
+  weightedEttScore?: number | null;
+  weightedAudScore?: number | null;
+  weightedCivScore?: number | null;
+  weightedPenScore?: number | null;
+  weightedInfScore?: number | null;
+  weightedEmpScore?: number | null;
+  weightedMtfScore?: number | null;
+  weightedOutScore?: number | null;
+  // Weighted discursive scores
   weightedDiscursiveScore?: number | null;
   weightedCaseStudy1Score?: number | null;
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
-  // Additional fields
+  // Reservation type
   reservationType: string;
   displayReservation: string;
   id: string;
   quotaPosition?: number; // Position within quota
 }
+
 interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
@@ -46,6 +97,7 @@ interface RankingTableProps {
   isAuthenticated: boolean;
   isRefetching?: boolean;
 }
+
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
@@ -55,6 +107,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -65,17 +118,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         indigenas: concurso.has_indigenas,
         transsexuais: concurso.has_transsexuais
       });
-      console.log('Exam structure in concurso:', {
-        hasBasic: concurso.has_basic_knowledge,
-        hasSpecific1: concurso.has_specific_knowledge_1,
-        hasSpecific2: concurso.has_specific_knowledge_2,
-        hasSpecific3: concurso.has_specific_knowledge_3,
-        hasDiscursive: concurso.has_discursive,
-        hasCaseStudy1: concurso.has_case_study_1,
-        hasCaseStudy2: concurso.has_case_study_2,
-        hasCaseStudy3: concurso.has_case_study_3
-      });
+      
+      // Log enabled knowledge areas
+      const enabledAreas = getEnabledKnowledgeAreas(concurso);
+      console.log('Enabled knowledge areas:', enabledAreas.map(area => area.key));
     }
+    
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
@@ -113,6 +161,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
+  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -134,7 +183,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
+  
   const availableQuotas = getAvailableQuotas();
+  
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
     if (quota === "Ampla Concorrência") {
@@ -142,6 +193,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
+  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -149,6 +201,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
+  
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -169,14 +222,13 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} // Pass the activeTab as a prop
-          />
+                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" // Pass a default value
-      />}
+          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" />}
       </CardContent>
     </Card>;
 };
+
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
@@ -188,18 +240,36 @@ const getQuotaAbbreviation = (quota: string): string => {
   };
   return abbreviations[quota] || quota.substring(0, 3);
 };
+
 const getSectionWeights = (concurso?: Concurso) => {
-  return {
-    basic: concurso?.basic_knowledge_weight ?? 1,
-    specific1: concurso?.specific_knowledge_1_weight ?? concurso?.specific_knowledge_weight ?? 1,
-    specific2: concurso?.specific_knowledge_2_weight ?? 1,
-    specific3: concurso?.specific_knowledge_3_weight ?? 1,
-    discursive: concurso?.discursive_weight ?? 1,
-    caseStudy1: concurso?.case_study_1_weight ?? 1,
-    caseStudy2: concurso?.case_study_2_weight ?? 1,
-    caseStudy3: concurso?.case_study_3_weight ?? 1
-  };
+  if (!concurso) return {};
+  
+  // Obter todas as áreas de conhecimento
+  const allAreas = getEnabledKnowledgeAreas(concurso);
+  
+  // Construir um objeto com os pesos de cada área
+  const weights: Record<string, number> = {};
+  
+  // Adicionar os pesos das áreas tradicionais
+  weights.basic = concurso.basic_knowledge_weight ?? 1;
+  weights.specific1 = concurso.specific_knowledge_1_weight ?? concurso.specific_knowledge_weight ?? 1;
+  weights.specific2 = concurso.specific_knowledge_2_weight ?? 1;
+  weights.specific3 = concurso.specific_knowledge_3_weight ?? 1;
+  weights.discursive = concurso.discursive_weight ?? 1;
+  weights.caseStudy1 = concurso.case_study_1_weight ?? 1;
+  weights.caseStudy2 = concurso.case_study_2_weight ?? 1;
+  weights.caseStudy3 = concurso.case_study_3_weight ?? 1;
+  
+  // Adicionar os pesos de todas as áreas de conhecimento
+  allAreas.forEach(area => {
+    if (area.weightField) {
+      weights[area.key] = (concurso[area.weightField as keyof Concurso] as number) ?? 1;
+    }
+  });
+  
+  return weights;
 };
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -207,19 +277,10 @@ const RankingTableContent: React.FC<{
   concurso?: Concurso;
   isAmpla: boolean;
   availableQuotas: string[];
-  sectionWeights: {
-    basic: number;
-    specific1: number;
-    specific2: number;
-    specific3: number;
-    discursive: number;
-    caseStudy1: number;
-    caseStudy2: number;
-    caseStudy3: number;
-  };
+  sectionWeights: Record<string, number>;
   isAuthenticated: boolean;
   isRefetching?: boolean;
-  activeTab: string; // Add the activeTab prop here
+  activeTab: string;
 }> = ({
   rankings,
   currentUserId,
@@ -230,7 +291,7 @@ const RankingTableContent: React.FC<{
   sectionWeights,
   isAuthenticated,
   isRefetching = false,
-  activeTab // Destructure the activeTab prop
+  activeTab
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -251,12 +312,13 @@ const RankingTableContent: React.FC<{
       scores[ranking.id] = ranking.score;
     });
     setInitialScores(scores);
-  }, []);
+  }, [rankings]);
 
   // Função para verificar se uma pontuação foi atualizada
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
+  
   if (!concurso) {
     return <Table>
         <TableHeader>
@@ -298,7 +360,10 @@ const RankingTableContent: React.FC<{
         </TableBody>
       </Table>;
   }
-  const columns = getRankingTableColumns(concurso);
+
+  // Obter todas as áreas de conhecimento habilitadas para este concurso
+  const enabledKnowledgeAreas = getEnabledKnowledgeAreas(concurso).filter(area => area.questionsField);
+  
   return <Table>
       <TableHeader>
         <TableRow>
@@ -310,22 +375,17 @@ const RankingTableContent: React.FC<{
           <TableHead>Candidato</TableHead>
           <TableHead className="text-right">Total</TableHead>
           
-          {concurso.has_basic_knowledge === true && <TableHead className="text-right">
-              Básica
-            </TableHead>}
+          {/* Renderizar cabeçalhos para todas as áreas de conhecimento objetivas habilitadas */}
+          {enabledKnowledgeAreas.map(area => (
+            // Apenas áreas com questões (não discursivas)
+            concurso[area.hasField as keyof Concurso] === true && (
+              <TableHead key={area.key} className="text-right">
+                {getDisplayLabel(area, concurso)}
+              </TableHead>
+            )
+          ))}
           
-          {concurso.has_specific_knowledge_1 === true && <TableHead className="text-right">
-              Específica 1
-            </TableHead>}
-          
-          {concurso.has_specific_knowledge_2 === true && <TableHead className="text-right">
-              Específica 2
-            </TableHead>}
-          
-          {concurso.has_specific_knowledge_3 === true && <TableHead className="text-right">
-              Específica 3
-            </TableHead>}
-          
+          {/* Mostrar colunas para as discursivas */}
           {concurso.has_discursive === true && <TableHead className="text-right">
               Discursiva
             </TableHead>}
@@ -341,6 +401,7 @@ const RankingTableContent: React.FC<{
           {concurso.has_case_study_3 === true && <TableHead className="text-right">
               Estudo 3
             </TableHead>}
+          
           {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
         </TableRow>
       </TableHeader>
@@ -372,22 +433,24 @@ const RankingTableContent: React.FC<{
                 {scoreChanged}
               </TableCell>
               
-              {concurso.has_basic_knowledge === true && <TableCell className="text-right">
-                  {Number(ranking.weightedBasicScore || 0).toFixed(2)}
-                </TableCell>}
+              {/* Renderizar células de pontuação para todas as áreas de conhecimento habilitadas */}
+              {enabledKnowledgeAreas.map(area => {
+                if (concurso[area.hasField as keyof Concurso] !== true) return null;
+                
+                // Determinar o nome do campo de pontuação ponderada com base na chave da área
+                const scoreFieldName = `weighted${area.key.charAt(0).toUpperCase() + area.key.slice(1)}Score`;
+                
+                // Acessar a pontuação usando o nome do campo computado
+                const score = ranking[scoreFieldName as keyof Ranking] as number | null | undefined;
+                
+                return (
+                  <TableCell key={area.key} className="text-right">
+                    {Number(score || 0).toFixed(2)}
+                  </TableCell>
+                );
+              })}
               
-              {concurso.has_specific_knowledge_1 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedSpecific1Score || 0).toFixed(2)}
-                </TableCell>}
-              
-              {concurso.has_specific_knowledge_2 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedSpecific2Score || 0).toFixed(2)}
-                </TableCell>}
-              
-              {concurso.has_specific_knowledge_3 === true && <TableCell className="text-right">
-                  {Number(ranking.weightedSpecific3Score || 0).toFixed(2)}
-                </TableCell>}
-              
+              {/* Células para pontuações discursivas */}
               {concurso.has_discursive === true && <TableCell className="text-right">
                   {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
                 </TableCell>}
@@ -403,12 +466,19 @@ const RankingTableContent: React.FC<{
               {concurso.has_case_study_3 === true && <TableCell className="text-right">
                   {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
                 </TableCell>}
+              
               {isAdminMode && isAuthenticated && <TableCell>
                   <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
                 </TableCell>}
             </TableRow>;
       }) : <TableRow>
-            <TableCell colSpan={columns.length + (isAdminMode && isAuthenticated ? 3 : 2)} className="text-center py-4">
+            <TableCell colSpan={3 + enabledKnowledgeAreas.filter(area => concurso[area.hasField as keyof Concurso] === true).length + 
+              (concurso.has_discursive ? 1 : 0) + 
+              (concurso.has_case_study_1 ? 1 : 0) + 
+              (concurso.has_case_study_2 ? 1 : 0) + 
+              (concurso.has_case_study_3 ? 1 : 0) + 
+              (isAdminMode && isAuthenticated ? 1 : 0) +
+              (!isAmpla ? 1 : 0)} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>}
