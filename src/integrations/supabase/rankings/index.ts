@@ -1,8 +1,6 @@
 
-// Export all functions from the sub-modules
-export * from './fakeDemoData';
-export * from './userRankings';
+// Export all ranking-related functions
 export * from './scoreCalculation';
-export * from './userAnswers';
-export * from './concursoManager';
-
+export * from './examStructure';
+export * from './rankingQueries';
+export * from './rankingMutations';
