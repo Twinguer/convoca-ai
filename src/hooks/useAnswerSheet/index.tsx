@@ -168,7 +168,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           (selectedSection === 'specific1' && type === 'specific1') ||
           (selectedSection === 'specific2' && type === 'specific2') ||
           (selectedSection === 'specific3' && type === 'specific3') ||
-          (type.toUpperCase() === selectedSection.toUpperCase())
+          (type.toLowerCase() === selectedSection.toLowerCase())
         ) {
           questions.push(parseInt(num));
         }
@@ -215,6 +215,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions
   };
 };

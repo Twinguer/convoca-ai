@@ -32,6 +32,9 @@ export const fetchExistingAnswers = async (
         const questionNumber = item.question_number;
         answersMap[questionNumber] = item.answer;
         
+        // Map question types based on their flags
+        // Note: no banco atual só temos flags para basic, specific1, specific2 e specific3
+        // Os novos tipos serão determinados programaticamente em initializeQuestionTypes
         if (item.is_basic_knowledge) {
           typesMap[questionNumber] = 'basic';
         } else if (item.is_specific_1) {

@@ -71,7 +71,7 @@ export const initializeQuestionTypes = (
     if (concurso[area.has as keyof Concurso] && concurso[area.count as keyof Concurso]) {
       const questionCount = concurso[area.count as keyof Concurso] as number;
       for (let i = 0; i < questionCount; i++) {
-        newTypes[currentNumber++] = area.type;
+        newTypes[currentNumber++] = area.type.toLowerCase();
       }
     }
   }
