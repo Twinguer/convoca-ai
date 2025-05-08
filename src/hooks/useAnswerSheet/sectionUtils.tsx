@@ -36,7 +36,7 @@ export const generateCustomDisciplineSigla = () => {
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
-  setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>
+  setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3' | string>>
 ) => {
   if (concurso.has_basic_knowledge) {
     setSelectedSection('basic');
@@ -55,9 +55,8 @@ export const handleQuestionSectionSelection = (
   } else if (concurso.has_case_study_3) {
     setSelectedSection('case_study3');
   } else if (concurso.disciplines && concurso.disciplines.length > 0) {
-    // If no standard sections but disciplines exist, we could handle it here if needed
-    // For now, default to basic if available
-    setSelectedSection('basic');
+    // If there are disciplines but no standard sections, select the first discipline
+    setSelectedSection(concurso.disciplines[0].sigla);
   }
 };
 
