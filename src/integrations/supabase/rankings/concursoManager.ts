@@ -61,7 +61,7 @@ export const createRanking = async (rankingData: any) => {
       has_case_study_2: rankingData.has_case_study_2 === true,
       has_case_study_3: rankingData.has_case_study_3 === true,
       
-      // Novos campos para áreas de conhecimento
+      // Novas áreas de conhecimento - campos boolean
       has_lpt: rankingData.has_lpt === true,
       has_ing: rankingData.has_ing === true,
       has_mat: rankingData.has_mat === true,
@@ -241,7 +241,32 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         has_discursive,
         has_case_study_1,
         has_case_study_2,
-        has_case_study_3
+        has_case_study_3,
+        
+        has_lpt, lpt_questions, lpt_weight,
+        has_ing, ing_questions, ing_weight,
+        has_mat, mat_questions, mat_weight,
+        has_rlm, rlm_questions, rlm_weight,
+        has_est, est_questions, est_weight,
+        has_cos, cos_questions, cos_weight,
+        has_adm, adm_questions, adm_weight,
+        has_ado, ado_questions, ado_weight,
+        has_cot, cot_questions, cot_weight,
+        has_coc, coc_questions, coc_weight,
+        has_eco, eco_questions, eco_weight,
+        has_tri, tri_questions, tri_weight,
+        has_afo, afo_questions, afo_weight,
+        has_ltc, ltc_questions, ltc_weight,
+        has_tic, tic_questions, tic_weight,
+        has_ett, ett_questions, ett_weight,
+        has_aud, aud_questions, aud_weight,
+        has_civ, civ_questions, civ_weight,
+        has_pen, pen_questions, pen_weight,
+        has_inf, inf_questions, inf_weight,
+        has_emp, emp_questions, emp_weight,
+        has_mtf, mtf_questions, mtf_weight,
+        has_out, out_questions, out_weight,
+        out_name
       `)
       .eq('id', rankingId)
       .single();
@@ -265,6 +290,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     // Check if any exam structure or weights have changed
     let structureChanged = false;
     if (oldData) {
+      // Lista completa de campos de estrutura, incluindo novas áreas
       const structureFields = [
         'basic_knowledge_questions',
         'specific_knowledge_1_questions',
@@ -286,7 +312,33 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         'has_discursive',
         'has_case_study_1',
         'has_case_study_2',
-        'has_case_study_3'
+        'has_case_study_3',
+        
+        // Novas áreas de conhecimento
+        'has_lpt', 'lpt_questions', 'lpt_weight',
+        'has_ing', 'ing_questions', 'ing_weight',
+        'has_mat', 'mat_questions', 'mat_weight',
+        'has_rlm', 'rlm_questions', 'rlm_weight',
+        'has_est', 'est_questions', 'est_weight',
+        'has_cos', 'cos_questions', 'cos_weight',
+        'has_adm', 'adm_questions', 'adm_weight',
+        'has_ado', 'ado_questions', 'ado_weight',
+        'has_cot', 'cot_questions', 'cot_weight',
+        'has_coc', 'coc_questions', 'coc_weight',
+        'has_eco', 'eco_questions', 'eco_weight',
+        'has_tri', 'tri_questions', 'tri_weight',
+        'has_afo', 'afo_questions', 'afo_weight',
+        'has_ltc', 'ltc_questions', 'ltc_weight',
+        'has_tic', 'tic_questions', 'tic_weight',
+        'has_ett', 'ett_questions', 'ett_weight',
+        'has_aud', 'aud_questions', 'aud_weight',
+        'has_civ', 'civ_questions', 'civ_weight',
+        'has_pen', 'pen_questions', 'pen_weight',
+        'has_inf', 'inf_questions', 'inf_weight',
+        'has_emp', 'emp_questions', 'emp_weight',
+        'has_mtf', 'mtf_questions', 'mtf_weight',
+        'has_out', 'out_questions', 'out_weight',
+        'out_name'
       ];
       
       for (const field of structureFields) {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,8 @@ interface AnswerKeyFormProps {
 }
 
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
+  // Estado para a seção selecionada (agora precisa suportar todas as áreas de conhecimento)
+  const [selectedSection, setSelectedSection] = useState<string>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -100,71 +102,183 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     
     let currentQuestionNumber = 1;
     
-    // Básico
-    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
+    // Mapear todos os campos de conhecimento possíveis
+    const knowledgeFields = [
+      { has: 'has_basic_knowledge', questions: 'basic_knowledge_questions' },
+      { has: 'has_specific_knowledge_1', questions: 'specific_knowledge_1_questions' },
+      { has: 'has_specific_knowledge_2', questions: 'specific_knowledge_2_questions' },
+      { has: 'has_specific_knowledge_3', questions: 'specific_knowledge_3_questions' },
+      
+      // Novas áreas de conhecimento
+      { has: 'has_lpt', questions: 'lpt_questions' },
+      { has: 'has_ing', questions: 'ing_questions' },
+      { has: 'has_mat', questions: 'mat_questions' },
+      { has: 'has_rlm', questions: 'rlm_questions' },
+      { has: 'has_est', questions: 'est_questions' },
+      { has: 'has_cos', questions: 'cos_questions' },
+      { has: 'has_adm', questions: 'adm_questions' },
+      { has: 'has_ado', questions: 'ado_questions' },
+      { has: 'has_cot', questions: 'cot_questions' },
+      { has: 'has_coc', questions: 'coc_questions' },
+      { has: 'has_eco', questions: 'eco_questions' },
+      { has: 'has_tri', questions: 'tri_questions' },
+      { has: 'has_afo', questions: 'afo_questions' },
+      { has: 'has_ltc', questions: 'ltc_questions' },
+      { has: 'has_tic', questions: 'tic_questions' },
+      { has: 'has_ett', questions: 'ett_questions' },
+      { has: 'has_aud', questions: 'aud_questions' },
+      { has: 'has_civ', questions: 'civ_questions' },
+      { has: 'has_pen', questions: 'pen_questions' },
+      { has: 'has_inf', questions: 'inf_questions' },
+      { has: 'has_emp', questions: 'emp_questions' },
+      { has: 'has_mtf', questions: 'mtf_questions' },
+      { has: 'has_out', questions: 'out_questions' }
+    ];
     
-    // Específico 1
-    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
+    knowledgeFields.forEach(field => {
+      const hasField = concurso[field.has as keyof Concurso] as boolean;
+      const questionsCount = concurso[field.questions as keyof Concurso] as number || 0;
+      
+      if (hasField && questionsCount > 0) {
+        for (let i = 0; i < questionsCount; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
       }
-    }
-    
-    // Específico 2
-    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Específico 3
-    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
+    });
     
     return allQuestions;
   };
 
-  const getQuestionsCount = (section: 'basic' | 'specific1' | 'specific2' | 'specific3') => {
-    if (section === 'basic' && concurso.has_basic_knowledge) {
-      return concurso.basic_knowledge_questions || 0;
-    } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
-      return concurso.specific_knowledge_1_questions || 0;
-    } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
-      return concurso.specific_knowledge_2_questions || 0;
-    } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
-      return concurso.specific_knowledge_3_questions || 0;
+  const getQuestionsCount = (sectionKey: string): number => {
+    const fieldMappings: Record<string, keyof Concurso> = {
+      'basic': 'basic_knowledge_questions',
+      'specific1': 'specific_knowledge_1_questions',
+      'specific2': 'specific_knowledge_2_questions',
+      'specific3': 'specific_knowledge_3_questions',
+      
+      // Novas áreas de conhecimento
+      'lpt': 'lpt_questions',
+      'ing': 'ing_questions',
+      'mat': 'mat_questions',
+      'rlm': 'rlm_questions',
+      'est': 'est_questions',
+      'cos': 'cos_questions',
+      'adm': 'adm_questions',
+      'ado': 'ado_questions',
+      'cot': 'cot_questions',
+      'coc': 'coc_questions',
+      'eco': 'eco_questions',
+      'tri': 'tri_questions',
+      'afo': 'afo_questions',
+      'ltc': 'ltc_questions',
+      'tic': 'tic_questions',
+      'ett': 'ett_questions',
+      'aud': 'aud_questions',
+      'civ': 'civ_questions',
+      'pen': 'pen_questions',
+      'inf': 'inf_questions',
+      'emp': 'emp_questions',
+      'mtf': 'mtf_questions',
+      'out': 'out_questions'
+    };
+
+    const hasFieldMappings: Record<string, keyof Concurso> = {
+      'basic': 'has_basic_knowledge',
+      'specific1': 'has_specific_knowledge_1',
+      'specific2': 'has_specific_knowledge_2',
+      'specific3': 'has_specific_knowledge_3',
+      
+      // Novas áreas de conhecimento
+      'lpt': 'has_lpt',
+      'ing': 'has_ing',
+      'mat': 'has_mat',
+      'rlm': 'has_rlm',
+      'est': 'has_est',
+      'cos': 'has_cos',
+      'adm': 'has_adm',
+      'ado': 'has_ado',
+      'cot': 'has_cot',
+      'coc': 'has_coc',
+      'eco': 'has_eco',
+      'tri': 'has_tri',
+      'afo': 'has_afo',
+      'ltc': 'has_ltc',
+      'tic': 'has_tic',
+      'ett': 'has_ett',
+      'aud': 'has_aud',
+      'civ': 'has_civ',
+      'pen': 'has_pen',
+      'inf': 'has_inf',
+      'emp': 'has_emp',
+      'mtf': 'has_mtf',
+      'out': 'has_out'
+    };
+    
+    const hasField = concurso[hasFieldMappings[sectionKey] as keyof Concurso] as boolean;
+    if (hasField) {
+      return (concurso[fieldMappings[sectionKey] as keyof Concurso] as number) || 0;
     }
+    
     return 0;
   };
 
-  // Método modificado para buscar questões apenas da seção atual (para exibição)
   const getQuestionsRange = () => {
-    if (selectedSection === 'basic') {
-      return Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1);
-    } else {
-      let startNumber = 1;
+    if (!concurso) return [];
+    
+    // Mapear todos os campos de conhecimento
+    const knowledgeFields = [
+      { key: 'basic', has: 'has_basic_knowledge', questions: 'basic_knowledge_questions' },
+      { key: 'specific1', has: 'has_specific_knowledge_1', questions: 'specific_knowledge_1_questions' },
+      { key: 'specific2', has: 'has_specific_knowledge_2', questions: 'specific_knowledge_2_questions' },
+      { key: 'specific3', has: 'has_specific_knowledge_3', questions: 'specific_knowledge_3_questions' },
       
-      if (concurso.has_basic_knowledge) {
-        startNumber += (concurso.basic_knowledge_questions || 0);
+      // Novas áreas de conhecimento
+      { key: 'lpt', has: 'has_lpt', questions: 'lpt_questions' },
+      { key: 'ing', has: 'has_ing', questions: 'ing_questions' },
+      { key: 'mat', has: 'has_mat', questions: 'mat_questions' },
+      { key: 'rlm', has: 'has_rlm', questions: 'rlm_questions' },
+      { key: 'est', has: 'has_est', questions: 'est_questions' },
+      { key: 'cos', has: 'has_cos', questions: 'cos_questions' },
+      { key: 'adm', has: 'has_adm', questions: 'adm_questions' },
+      { key: 'ado', has: 'has_ado', questions: 'ado_questions' },
+      { key: 'cot', has: 'has_cot', questions: 'cot_questions' },
+      { key: 'coc', has: 'has_coc', questions: 'coc_questions' },
+      { key: 'eco', has: 'has_eco', questions: 'eco_questions' },
+      { key: 'tri', has: 'has_tri', questions: 'tri_questions' },
+      { key: 'afo', has: 'has_afo', questions: 'afo_questions' },
+      { key: 'ltc', has: 'has_ltc', questions: 'ltc_questions' },
+      { key: 'tic', has: 'has_tic', questions: 'tic_questions' },
+      { key: 'ett', has: 'has_ett', questions: 'ett_questions' },
+      { key: 'aud', has: 'has_aud', questions: 'aud_questions' },
+      { key: 'civ', has: 'has_civ', questions: 'civ_questions' },
+      { key: 'pen', has: 'has_pen', questions: 'pen_questions' },
+      { key: 'inf', has: 'has_inf', questions: 'inf_questions' },
+      { key: 'emp', has: 'has_emp', questions: 'emp_questions' },
+      { key: 'mtf', has: 'has_mtf', questions: 'mtf_questions' },
+      { key: 'out', has: 'has_out', questions: 'out_questions' }
+    ];
+    
+    // Encontrar a posição inicial da seção selecionada
+    let startNumber = 1;
+    
+    for (const field of knowledgeFields) {
+      const hasField = concurso[field.has as keyof Concurso] as boolean;
+      const questionsCount = concurso[field.questions as keyof Concurso] as number || 0;
+      
+      if (field.key === selectedSection) {
+        // Encontramos a seção selecionada
+        if (hasField && questionsCount > 0) {
+          return Array.from({ length: questionsCount }, (_, i) => startNumber + i);
+        }
+        return [];
       }
       
-      if (selectedSection === 'specific1') {
-        return Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i);
-      } else if (selectedSection === 'specific2') {
-        startNumber += (concurso.specific_knowledge_1_questions || 0);
-        return Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i);
-      } else if (selectedSection === 'specific3') {
-        startNumber += (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0);
-        return Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i);
+      // Incrementar o número inicial para a próxima seção
+      if (hasField && questionsCount > 0) {
+        startNumber += questionsCount;
       }
     }
+    
     return [];
   };
 
@@ -278,27 +392,56 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       // Preparar dados para salvar o gabarito completo de uma vez
       const answerKeyData = allQuestions.map(qNum => {
         // Determinar o tipo de seção para cada questão
-        let sectionType = 'basic';
+        let sectionType = '';
+        let questionIndex = qNum;
         
-        // Calcular o número base de cada seção
-        const basicEnd = concurso.basic_knowledge_questions || 0;
-        
-        if (qNum > basicEnd) {
-          sectionType = 'specific1';
+        // Mapear todos os campos de conhecimento
+        const knowledgeFields = [
+          { key: 'basic', has: 'has_basic_knowledge', questions: 'basic_knowledge_questions', type: 'basic' },
+          { key: 'specific1', has: 'has_specific_knowledge_1', questions: 'specific_knowledge_1_questions', type: 'specific1' },
+          { key: 'specific2', has: 'has_specific_knowledge_2', questions: 'specific_knowledge_2_questions', type: 'specific2' },
+          { key: 'specific3', has: 'has_specific_knowledge_3', questions: 'specific_knowledge_3_questions', type: 'specific3' },
           
-          const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
-          if (qNum > specific1End) {
-            sectionType = 'specific2';
-            
-            const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-            if (qNum > specific2End) {
-              sectionType = 'specific3';
+          // Novas áreas de conhecimento
+          { key: 'lpt', has: 'has_lpt', questions: 'lpt_questions', type: 'lpt' },
+          { key: 'ing', has: 'has_ing', questions: 'ing_questions', type: 'ing' },
+          { key: 'mat', has: 'has_mat', questions: 'mat_questions', type: 'mat' },
+          { key: 'rlm', has: 'has_rlm', questions: 'rlm_questions', type: 'rlm' },
+          { key: 'est', has: 'has_est', questions: 'est_questions', type: 'est' },
+          { key: 'cos', has: 'has_cos', questions: 'cos_questions', type: 'cos' },
+          { key: 'adm', has: 'has_adm', questions: 'adm_questions', type: 'adm' },
+          { key: 'ado', has: 'has_ado', questions: 'ado_questions', type: 'ado' },
+          { key: 'cot', has: 'has_cot', questions: 'cot_questions', type: 'cot' },
+          { key: 'coc', has: 'has_coc', questions: 'coc_questions', type: 'coc' },
+          { key: 'eco', has: 'has_eco', questions: 'eco_questions', type: 'eco' },
+          { key: 'tri', has: 'has_tri', questions: 'tri_questions', type: 'tri' },
+          { key: 'afo', has: 'has_afo', questions: 'afo_questions', type: 'afo' },
+          { key: 'ltc', has: 'has_ltc', questions: 'ltc_questions', type: 'ltc' },
+          { key: 'tic', has: 'has_tic', questions: 'tic_questions', type: 'tic' },
+          { key: 'ett', has: 'has_ett', questions: 'ett_questions', type: 'ett' },
+          { key: 'aud', has: 'has_aud', questions: 'aud_questions', type: 'aud' },
+          { key: 'civ', has: 'has_civ', questions: 'civ_questions', type: 'civ' },
+          { key: 'pen', has: 'has_pen', questions: 'pen_questions', type: 'pen' },
+          { key: 'inf', has: 'has_inf', questions: 'inf_questions', type: 'inf' },
+          { key: 'emp', has: 'has_emp', questions: 'emp_questions', type: 'emp' },
+          { key: 'mtf', has: 'has_mtf', questions: 'mtf_questions', type: 'mtf' },
+          { key: 'out', has: 'has_out', questions: 'out_questions', type: 'out' }
+        ];
+        
+        let currentIndex = 1;
+        for (const field of knowledgeFields) {
+          const hasField = concurso[field.has as keyof Concurso] as boolean;
+          const questionsCount = concurso[field.questions as keyof Concurso] as number || 0;
+          
+          if (hasField && questionsCount > 0) {
+            if (qNum >= currentIndex && qNum < currentIndex + questionsCount) {
+              sectionType = field.type;
+              break;
             }
+            currentIndex += questionsCount;
           }
         }
 
-        // Antes de destruir toda a tabela, vamos fazer uma tentativa de atualização individual
-        // answerKeyService cuida da lógica de upsert (update ou insert conforme necessário)
         return {
           concurso_id: concursoId,
           question_number: qNum,
@@ -350,10 +493,83 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
   const getObjectiveSectionList = () => {
     const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    
+    // Mapeamento de chave para rótulo legível
+    const sectionLabels: Record<string, string> = {
+      'basic': 'Conhecimentos Básicos',
+      'specific1': 'C. Específicos 1',
+      'specific2': 'C. Específicos 2',
+      'specific3': 'C. Específicos 3',
+      'lpt': 'Português',
+      'ing': 'Inglês',
+      'mat': 'Matemática',
+      'rlm': 'RLM',
+      'est': 'Estatística',
+      'cos': 'Constitucional',
+      'adm': 'Administrativo',
+      'ado': 'Administração',
+      'cot': 'Contabilidade',
+      'coc': 'Cont. Custos',
+      'eco': 'Economia',
+      'tri': 'Tributário',
+      'afo': 'AFO',
+      'ltc': 'Leg. Tributária',
+      'tic': 'TI',
+      'ett': 'Estatuto',
+      'aud': 'Auditoria',
+      'civ': 'Civil',
+      'pen': 'Penal',
+      'inf': 'Informática',
+      'emp': 'Empresarial',
+      'mtf': 'Mat. Financeira',
+      'out': 'Outro'
+    };
+    
+    // Mapear todas as seções habilitadas
+    const knowledgeFields = [
+      { key: 'basic', has: 'has_basic_knowledge' },
+      { key: 'specific1', has: 'has_specific_knowledge_1' },
+      { key: 'specific2', has: 'has_specific_knowledge_2' },
+      { key: 'specific3', has: 'has_specific_knowledge_3' },
+      
+      // Novas áreas de conhecimento
+      { key: 'lpt', has: 'has_lpt' },
+      { key: 'ing', has: 'has_ing' },
+      { key: 'mat', has: 'has_mat' },
+      { key: 'rlm', has: 'has_rlm' },
+      { key: 'est', has: 'has_est' },
+      { key: 'cos', has: 'has_cos' },
+      { key: 'adm', has: 'has_adm' },
+      { key: 'ado', has: 'has_ado' },
+      { key: 'cot', has: 'has_cot' },
+      { key: 'coc', has: 'has_coc' },
+      { key: 'eco', has: 'has_eco' },
+      { key: 'tri', has: 'has_tri' },
+      { key: 'afo', has: 'has_afo' },
+      { key: 'ltc', has: 'has_ltc' },
+      { key: 'tic', has: 'has_tic' },
+      { key: 'ett', has: 'has_ett' },
+      { key: 'aud', has: 'has_aud' },
+      { key: 'civ', has: 'has_civ' },
+      { key: 'pen', has: 'has_pen' },
+      { key: 'inf', has: 'has_inf' },
+      { key: 'emp', has: 'has_emp' },
+      { key: 'mtf', has: 'has_mtf' },
+      { key: 'out', has: 'has_out' }
+    ];
+    
+    knowledgeFields.forEach(field => {
+      const hasField = concurso[field.has as keyof Concurso] as boolean;
+      if (hasField) {
+        sections.push({ 
+          key: field.key, 
+          label: field.key === 'out' && concurso.out_name ? 
+            `${sectionLabels[field.key]} (${concurso.out_name})` : 
+            sectionLabels[field.key] 
+        });
+      }
+    });
+    
     return sections;
   };
 
@@ -434,16 +650,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              onValueChange={(value) => setSelectedSection(value)}
               className="w-full"
             >
-              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
-                {objectiveSections.map(section => (
-                  <TabsTrigger key={section.key} value={section.key}>
-                    {section.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <div className="overflow-x-auto">
+                <TabsList className="flex w-max min-w-full">
+                  {objectiveSections.map(section => (
+                    <TabsTrigger key={section.key} value={section.key}>
+                      {section.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
               
               {objectiveSections.map(section => (
                 <TabsContent key={section.key} value={section.key}>
