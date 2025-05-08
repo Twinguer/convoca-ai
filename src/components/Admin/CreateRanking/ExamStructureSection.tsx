@@ -5,14 +5,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Plus, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 
 interface ExamStructureSectionProps {
   form: any;
 }
 
 export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form }) => {
+  const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
+  const [customSectionName, setCustomSectionName] = useState('');
+  const [customSectionQuestions, setCustomSectionQuestions] = useState('0');
+  const [customSectionWeight, setCustomSectionWeight] = useState('1');
+
   // Helper function to render weight select component
   const renderWeightSelect = (name: string) => (
     <FormField
@@ -120,6 +126,38 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         form.setValue('has_case_study_3', false);
         break;
     }
+  };
+  
+  // Função para lidar com a adição de uma seção customizada
+  const handleCustomSectionClick = () => {
+    setIsCustomDialogOpen(true);
+  };
+  
+  // Função para adicionar uma seção customizada
+  const addCustomSection = () => {
+    if (!customSectionName.trim()) return;
+    
+    // Preparar os dados da disciplina customizada
+    const sectionType = customSectionName.toLowerCase().replace(/\s+/g, '_');
+    const questionCount = parseInt(customSectionQuestions) || 0;
+    const weight = parseInt(customSectionWeight) || 1;
+    
+    // Adicionar à lista de disciplinas
+    const disciplines = form.getValues('disciplines') || [];
+    disciplines.push({
+      name: customSectionName,
+      type: sectionType,
+      questionCount: questionCount,
+      weight: weight,
+      isEnabled: true
+    });
+    form.setValue('disciplines', disciplines);
+    
+    // Limpar campos
+    setCustomSectionName('');
+    setCustomSectionQuestions('0');
+    setCustomSectionWeight('1');
+    setIsCustomDialogOpen(false);
   };
 
   return (
@@ -262,6 +300,14 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                   Estudo de Caso 3
                 </DropdownMenuItem>
               )}
+              
+              {/* Separador para opção customizada */}
+              <DropdownMenuSeparator />
+              
+              {/* Opção para adicionar conhecimento customizado */}
+              <DropdownMenuItem onClick={handleCustomSectionClick}>
+                Outro: Digite o Conhecimento
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -461,7 +507,121 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
               </div>
             </div>
           )}
+          
+          {/* Disciplinas customizadas */}
+          {form.watch('disciplines')?.map((discipline: any, index: number) => (
+            <div key={`custom-${index}`} className="border p-4 rounded-md">
+              <div className="flex justify-between items-center mb-4">
+                <h5 className="font-medium">{discipline.name}</h5>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const disciplines = [...form.getValues('disciplines')];
+                    disciplines.splice(index, 1);
+                    form.setValue('disciplines', disciplines);
+                  }}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remover
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <FormLabel>Número de Questões</FormLabel>
+                  <Input 
+                    type="number" 
+                    min="0"
+                    value={discipline.questionCount}
+                    onChange={(e) => {
+                      const disciplines = [...form.getValues('disciplines')];
+                      disciplines[index].questionCount = Number(e.target.value);
+                      form.setValue('disciplines', disciplines);
+                    }}
+                  />
+                </div>
+                <div>
+                  <FormLabel>Peso</FormLabel>
+                  <Select 
+                    value={String(discipline.weight)} 
+                    onValueChange={(value) => {
+                      const disciplines = [...form.getValues('disciplines')];
+                      disciplines[index].weight = Number(value);
+                      form.setValue('disciplines', disciplines);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+        
+        {/* Diálogo para adicionar conhecimento customizado */}
+        <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Adicionar Conhecimento Customizado</DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 gap-2">
+                <FormLabel htmlFor="customName">Nome do Conhecimento</FormLabel>
+                <Input
+                  id="customName"
+                  placeholder="Ex: Direito Administrativo"
+                  value={customSectionName}
+                  onChange={(e) => setCustomSectionName(e.target.value)}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <FormLabel htmlFor="customQuestions">Quantidade de Questões</FormLabel>
+                  <Input
+                    id="customQuestions"
+                    type="number"
+                    min="0"
+                    value={customSectionQuestions}
+                    onChange={(e) => setCustomSectionQuestions(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <FormLabel htmlFor="customWeight">Peso</FormLabel>
+                  <Select
+                    value={customSectionWeight}
+                    onValueChange={setCustomSectionWeight}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>Cancelar</Button>
+              <Button onClick={addCustomSection}>Adicionar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

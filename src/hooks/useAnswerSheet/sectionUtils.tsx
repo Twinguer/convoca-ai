@@ -70,3 +70,4 @@ export const handleQuestionSectionSelection = (
   // Caso não encontre nenhuma seção disponível
   setSelectedSection('basic');
 };
+

@@ -33,6 +33,7 @@ export type SectionType =
   | 'lpt' | 'ing' | 'mat' | 'rlm' | 'est' | 'cos' | 'adm' | 'ado'
   | 'cot' | 'coc' | 'eco' | 'tri' | 'afo' | 'ltc' | 'tic' | 'ett'
   | 'aud' | 'civ' | 'pen' | 'inf' | 'emp' | 'mtf' | 'out'
+  | 'custom' // Tipo para seções customizáveis
   | string; // Para tipos customizados digitados pelo usuário
 
 // Mapeamento de seções para nomes de exibição
@@ -67,5 +68,7 @@ export const sectionDisplayNames: Record<string, string> = {
   inf: 'Informática',
   emp: 'Empreendedorismo',
   mtf: 'Matemática Financeira',
-  out: 'Outros'
+  out: 'Outros',
+  custom: 'Conhecimento Customizado' // Adicionando a opção para conhecimento customizado
 };
+

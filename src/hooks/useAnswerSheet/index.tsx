@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,11 +9,14 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
+import { SectionType } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
+  type AnswerSheetSectionType = 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3' | string;
+  
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>({});
+  const [selectedSection, setSelectedSection] = useState<AnswerSheetSectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -32,7 +36,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
-      handleQuestionSectionSelection(concurso, (section: string) => setSelectedSection(section as any));
+      handleQuestionSectionSelection(
+        concurso,
+        (section: string) => setSelectedSection(section as AnswerSheetSectionType)
+      );
     }
   }, [concurso]);
 
@@ -95,6 +102,22 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
           questions.push(i);
         }
+      } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        // Procurar disciplina customizada correspondente
+        const customDiscipline = concurso.disciplines.find(d => d.type === selectedSection);
+        if (customDiscipline) {
+          // Calcular o índice de início para esta disciplina
+          let startIndex = (concurso.basic_knowledge_questions || 0) + 
+                          (concurso.specific_knowledge_1_questions || 0) +
+                          (concurso.specific_knowledge_2_questions || 0) +
+                          (concurso.specific_knowledge_3_questions || 0) + 1;
+                          
+          // Adicionar questões para esta disciplina
+          const questionCount = customDiscipline.questionCount || 0;
+          for (let i = startIndex; i < startIndex + questionCount; i++) {
+            questions.push(i);
+          }
+        }
       }
     } else {
       // Se tiver, usamos o mapeamento existente
@@ -103,7 +126,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           (selectedSection === 'basic' && type === 'basic') ||
           (selectedSection === 'specific1' && type === 'specific1') ||
           (selectedSection === 'specific2' && type === 'specific2') ||
-          (selectedSection === 'specific3' && type === 'specific3')
+          (selectedSection === 'specific3' && type === 'specific3') ||
+          (type === selectedSection) // Para tipos customizados
         ) {
           questions.push(parseInt(num));
         }
@@ -153,3 +177,4 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     isDiscursiveSection
   };
 };
+
