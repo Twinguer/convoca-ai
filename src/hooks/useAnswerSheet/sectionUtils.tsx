@@ -28,6 +28,12 @@ export const DISCIPLINES = [
   { name: 'Outro', sigla: 'OUT' }
 ];
 
+// Generate a unique sigla for custom disciplines
+export const generateCustomDisciplineSigla = () => {
+  const randomChars = Math.random().toString(36).substring(2, 5).toUpperCase();
+  return `C${randomChars}`;
+};
+
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
   setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>

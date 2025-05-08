@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,7 +84,7 @@ const CriarRanking = () => {
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
-      has_basic_knowledge: true,
+      has_basic_knowledge: false,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
       basic_knowledge_minimum_score: 0,
@@ -210,6 +211,23 @@ const CriarRanking = () => {
 
   const handleSaveRanking = async () => {
     const formValues = form.getValues();
+    
+    // Verificar se a estrutura da prova está vazia
+    const isStructureEmpty = 
+      !formValues.has_basic_knowledge && 
+      !formValues.has_specific_knowledge_1 && 
+      !formValues.has_specific_knowledge_2 && 
+      !formValues.has_specific_knowledge_3 && 
+      !formValues.has_discursive && 
+      !formValues.has_case_study_1 && 
+      !formValues.has_case_study_2 && 
+      !formValues.has_case_study_3 && 
+      (!formValues.disciplines || formValues.disciplines.length === 0);
+    
+    if (isStructureEmpty) {
+      toast.error("A estrutura da prova não pode estar vazia. Adicione ao menos uma seção ou disciplina.");
+      return;
+    }
     
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, { shouldDirty: true });

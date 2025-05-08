@@ -17,9 +17,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuGroup
 } from '@/components/ui/dropdown-menu';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DISCIPLINES } from '@/hooks/useAnswerSheet/sectionUtils';
+import { DISCIPLINES, generateCustomDisciplineSigla } from '@/hooks/useAnswerSheet/sectionUtils';
 
 interface ExamStructureSectionProps {
   form: any;
@@ -27,6 +27,8 @@ interface ExamStructureSectionProps {
 
 export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form }) => {
   const [minimumScoreType, setMinimumScoreType] = useState<'percentage' | 'points'>('percentage');
+  const [isAddingCustomDiscipline, setIsAddingCustomDiscipline] = useState(false);
+  const [customDisciplineName, setCustomDisciplineName] = useState('');
   
   // Helper function to render weight select component
   const renderWeightSelect = (name: string) => (
@@ -182,6 +184,11 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
 
   // Helper to add discipline
   const addDiscipline = (disciplineName: string) => {
+    if (disciplineName === 'Outro') {
+      setIsAddingCustomDiscipline(true);
+      return;
+    }
+    
     const discipline = DISCIPLINES.find(d => d.name === disciplineName);
     if (!discipline) return;
 
@@ -201,6 +208,27 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
       minimumScore: 0
     }]);
   };
+  
+  // Add custom discipline
+  const addCustomDiscipline = () => {
+    if (!customDisciplineName.trim()) return;
+    
+    const currentDisciplines = form.watch('disciplines') || [];
+    const sigla = generateCustomDisciplineSigla();
+    
+    // Add the custom discipline
+    form.setValue('disciplines', [...currentDisciplines, {
+      name: customDisciplineName.trim(),
+      sigla: sigla,
+      questions: 0,
+      weight: 1,
+      minimumScore: 0
+    }]);
+    
+    // Reset custom discipline state
+    setCustomDisciplineName('');
+    setIsAddingCustomDiscipline(false);
+  };
 
   // Helper to remove discipline
   const removeDiscipline = (index: number) => {
@@ -216,6 +244,23 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     const updatedDisciplines = [...currentDisciplines];
     updatedDisciplines[index][field] = value;
     form.setValue('disciplines', updatedDisciplines);
+  };
+
+  // Check if structure is empty
+  const isStructureEmpty = () => {
+    const hasKnowledgeAreas = 
+      form.watch('has_basic_knowledge') || 
+      form.watch('has_specific_knowledge_1') || 
+      form.watch('has_specific_knowledge_2') || 
+      form.watch('has_specific_knowledge_3') || 
+      form.watch('has_discursive') || 
+      form.watch('has_case_study_1') || 
+      form.watch('has_case_study_2') || 
+      form.watch('has_case_study_3');
+    
+    const hasDisciplines = (form.watch('disciplines') || []).length > 0;
+    
+    return !hasKnowledgeAreas && !hasDisciplines;
   };
 
   return (
@@ -386,8 +431,12 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                     <DropdownMenuItem 
                       key={discipline.sigla}
                       onClick={() => addDiscipline(discipline.name)}
+                      disabled={
+                        discipline.name !== 'Outro' &&
+                        (form.watch('disciplines') || []).some((d: any) => d.name === discipline.name)
+                      }
                     >
-                      {discipline.name} ({discipline.sigla})
+                      {discipline.name} {discipline.name !== 'Outro' && `(${discipline.sigla})`}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuSubContent>
@@ -396,18 +445,37 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
           </DropdownMenu>
         </div>
         
+        {/* UI para adicionar disciplina customizada */}
+        {isAddingCustomDiscipline && (
+          <div className="mb-4 p-4 border rounded-md bg-muted/30">
+            <div className="flex justify-between items-center mb-2">
+              <h5 className="text-sm font-medium">Adicionar Disciplina Personalizada</h5>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsAddingCustomDiscipline(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Nome da disciplina"
+                value={customDisciplineName}
+                onChange={(e) => setCustomDisciplineName(e.target.value)}
+                className="flex-1"
+              />
+              <Button onClick={addCustomDiscipline} disabled={!customDisciplineName.trim()}>
+                Adicionar
+              </Button>
+            </div>
+          </div>
+        )}
+        
         {/* Áreas de conhecimento - cards */}
         <div className="space-y-4">
           {/* Área vazia se não tiver nenhuma seção */}
-          {!form.watch('has_basic_knowledge') && 
-           !form.watch('has_specific_knowledge_1') && 
-           !form.watch('has_specific_knowledge_2') && 
-           !form.watch('has_specific_knowledge_3') &&
-           !form.watch('has_discursive') &&
-           !form.watch('has_case_study_1') &&
-           !form.watch('has_case_study_2') &&
-           !form.watch('has_case_study_3') &&
-           (!form.watch('disciplines') || form.watch('disciplines').length === 0) && (
+          {isStructureEmpty() && (
             <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
               Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
             </div>
