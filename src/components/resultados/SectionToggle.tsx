@@ -2,9 +2,36 @@
 import React from 'react';
 import { Concurso } from '@/types/concursos';
 
+// Definir nomes de exibição para as seções de conhecimento
+const KNOWLEDGE_DISPLAY_NAMES: Record<string, string> = {
+  'LPT': 'Português',
+  'ING': 'Inglês',
+  'MAT': 'Matemática',
+  'RLM': 'RLM',
+  'EST': 'Estatística',
+  'COS': 'Constitucional',
+  'ADM': 'Administrativo',
+  'ADO': 'Administração',
+  'COT': 'Contabilidade',
+  'COC': 'Contabilidade Custos',
+  'ECO': 'Economia',
+  'TRI': 'Tributário',
+  'AFO': 'AFO',
+  'LTC': 'Leg. Tributária',
+  'TIC': 'Tecnologia da Informação',
+  'ETT': 'Estatuto',
+  'AUD': 'Auditoria',
+  'CIV': 'Civil',
+  'PEN': 'Penal',
+  'INF': 'Informática',
+  'EMP': 'Empresarial',
+  'MTF': 'Mat. Financeira',
+  'OUT': 'Outro'
+};
+
 interface SectionToggleProps {
-  selectedSection: 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3';
-  onSectionChange: (section: 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3') => void;
+  selectedSection: string;
+  onSectionChange: (section: string) => void;
   concurso: Concurso;
 }
 
@@ -13,7 +40,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   onSectionChange,
   concurso
 }) => {
-  // Determine which sections are enabled based on the concurso configuration
+  // Determinar quais seções estão habilitadas com base na configuração do concurso
   const hasBasic = concurso.has_basic_knowledge;
   const hasSpecific1 = concurso.has_specific_knowledge_1;
   const hasSpecific2 = concurso.has_specific_knowledge_2;
@@ -23,108 +50,82 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   const hasCaseStudy2 = concurso.has_case_study_2;
   const hasCaseStudy3 = concurso.has_case_study_3;
 
+  // Obter informações sobre as novas áreas de conhecimento
+  const knowledgeAreas = [
+    'lpt', 'ing', 'mat', 'rlm', 'est', 'cos', 'adm', 'ado',
+    'cot', 'coc', 'eco', 'tri', 'afo', 'ltc', 'tic', 'ett',
+    'aud', 'civ', 'pen', 'inf', 'emp', 'mtf', 'out'
+  ];
+  
+  // Criar lista de todas as seções habilitadas para exibição
+  const enabledSections = [];
+  
+  // Adicionar seções padrão
+  if (hasBasic) {
+    enabledSections.push({ key: 'basic', label: 'C. Básicos', weight: concurso.basic_knowledge_weight });
+  }
+  if (hasSpecific1) {
+    enabledSections.push({ key: 'specific1', label: 'C. Específicos 1', weight: concurso.specific_knowledge_1_weight });
+  }
+  if (hasSpecific2) {
+    enabledSections.push({ key: 'specific2', label: 'C. Específicos 2', weight: concurso.specific_knowledge_2_weight });
+  }
+  if (hasSpecific3) {
+    enabledSections.push({ key: 'specific3', label: 'C. Específicos 3', weight: concurso.specific_knowledge_3_weight });
+  }
+  
+  // Adicionar novas áreas de conhecimento
+  for (const area of knowledgeAreas) {
+    const hasKey = `has_${area}` as keyof Concurso;
+    const weightKey = `${area}_weight` as keyof Concurso;
+    
+    if (concurso[hasKey]) {
+      const areaUpperCase = area.toUpperCase();
+      let label = KNOWLEDGE_DISPLAY_NAMES[areaUpperCase] || areaUpperCase;
+      
+      // Para o tipo OUT, usar nome customizado se disponível
+      if (area === 'out' && concurso.out_name) {
+        label = concurso.out_name;
+      }
+      
+      enabledSections.push({ 
+        key: areaUpperCase, 
+        label, 
+        weight: concurso[weightKey] as number | undefined 
+      });
+    }
+  }
+  
+  // Adicionar seções discursivas
+  if (hasDiscursive) {
+    enabledSections.push({ key: 'discursive', label: 'Discursiva', weight: concurso.discursive_weight });
+  }
+  if (hasCaseStudy1) {
+    enabledSections.push({ key: 'case_study1', label: 'Estudo de Caso 1', weight: concurso.case_study_1_weight });
+  }
+  if (hasCaseStudy2) {
+    enabledSections.push({ key: 'case_study2', label: 'Estudo de Caso 2', weight: concurso.case_study_2_weight });
+  }
+  if (hasCaseStudy3) {
+    enabledSections.push({ key: 'case_study3', label: 'Estudo de Caso 3', weight: concurso.case_study_3_weight });
+  }
+
   return (
     <div className="bg-gray-100 border-b overflow-x-auto">
       <div className="flex flex-nowrap min-w-full">
-        {hasBasic && (
+        {enabledSections.map(section => (
           <button
-            onClick={() => onSectionChange('basic')}
+            key={section.key}
+            onClick={() => onSectionChange(section.key)}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'basic' 
+              ${selectedSection === section.key
                 ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
-            C. Básicos {concurso.basic_knowledge_weight && concurso.basic_knowledge_weight > 1 ? 
-              `(Peso ${concurso.basic_knowledge_weight})` : ''}
+            {section.label} {section.weight && section.weight > 1 ? 
+              `(Peso ${section.weight})` : ''}
           </button>
-        )}
-        
-        {hasSpecific1 && (
-          <button
-            onClick={() => onSectionChange('specific1')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'specific1' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            C. Específicos 1 {concurso.specific_knowledge_1_weight && concurso.specific_knowledge_1_weight > 1 ? 
-              `(Peso ${concurso.specific_knowledge_1_weight})` : ''}
-          </button>
-        )}
-        
-        {hasSpecific2 && (
-          <button
-            onClick={() => onSectionChange('specific2')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'specific2' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            C. Específicos 2 {concurso.specific_knowledge_2_weight && concurso.specific_knowledge_2_weight > 1 ? 
-              `(Peso ${concurso.specific_knowledge_2_weight})` : ''}
-          </button>
-        )}
-        
-        {hasSpecific3 && (
-          <button
-            onClick={() => onSectionChange('specific3')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'specific3' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            C. Específicos 3 {concurso.specific_knowledge_3_weight && concurso.specific_knowledge_3_weight > 1 ? 
-              `(Peso ${concurso.specific_knowledge_3_weight})` : ''}
-          </button>
-        )}
-        
-        {hasDiscursive && (
-          <button
-            onClick={() => onSectionChange('discursive')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'discursive' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            Discursiva
-          </button>
-        )}
-        
-        {hasCaseStudy1 && (
-          <button
-            onClick={() => onSectionChange('case_study1')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'case_study1' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            Estudo de Caso 1
-          </button>
-        )}
-        
-        {hasCaseStudy2 && (
-          <button
-            onClick={() => onSectionChange('case_study2')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'case_study2' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            Estudo de Caso 2
-          </button>
-        )}
-        
-        {hasCaseStudy3 && (
-          <button
-            onClick={() => onSectionChange('case_study3')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'case_study3' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            Estudo de Caso 3
-          </button>
-        )}
+        ))}
       </div>
     </div>
   );

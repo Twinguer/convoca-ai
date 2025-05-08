@@ -12,8 +12,8 @@ import { useScoreManagement } from './useScoreManagement';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: string }>({});
+  const [selectedSection, setSelectedSection] = useState<string>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -96,6 +96,52 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
           questions.push(i);
         }
+      } else {
+        // Verificar se é uma das novas áreas de conhecimento
+        const knowledgeAreas = [
+          'LPT', 'ING', 'MAT', 'RLM', 'EST', 'COS', 'ADM', 'ADO',
+          'COT', 'COC', 'ECO', 'TRI', 'AFO', 'LTC', 'TIC', 'ETT',
+          'AUD', 'CIV', 'PEN', 'INF', 'EMP', 'MTF', 'OUT'
+        ];
+        
+        if (knowledgeAreas.includes(selectedSection)) {
+          // Calcular o índice de início considerando as seções anteriores
+          let startIndex = 0;
+          
+          // Adicionar conhecimentos básicos e específicos
+          if (concurso.has_basic_knowledge) {
+            startIndex += concurso.basic_knowledge_questions || 0;
+          }
+          if (concurso.has_specific_knowledge_1) {
+            startIndex += concurso.specific_knowledge_1_questions || 0;
+          }
+          if (concurso.has_specific_knowledge_2) {
+            startIndex += concurso.specific_knowledge_2_questions || 0;
+          }
+          if (concurso.has_specific_knowledge_3) {
+            startIndex += concurso.specific_knowledge_3_questions || 0;
+          }
+          
+          // Adicionar áreas de conhecimento anteriores
+          const lowerSection = selectedSection.toLowerCase();
+          
+          for (const area of knowledgeAreas.map(a => a.toLowerCase())) {
+            if (area === lowerSection) break;
+            
+            const questionCountKey = `${area}_questions` as keyof Concurso;
+            if (concurso[`has_${area}` as keyof Concurso] && concurso[questionCountKey]) {
+              startIndex += concurso[questionCountKey] as number;
+            }
+          }
+          
+          // Agora adicionar as questões para esta área
+          const questionCountKey = `${lowerSection}_questions` as keyof Concurso;
+          const questionCount = concurso[questionCountKey] as number || 0;
+          
+          for (let i = startIndex + 1; i <= startIndex + questionCount; i++) {
+            questions.push(i);
+          }
+        }
       }
     } else {
       // Se tiver, usamos o mapeamento existente
@@ -104,7 +150,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           (selectedSection === 'basic' && type === 'basic') ||
           (selectedSection === 'specific1' && type === 'specific1') ||
           (selectedSection === 'specific2' && type === 'specific2') ||
-          (selectedSection === 'specific3' && type === 'specific3')
+          (selectedSection === 'specific3' && type === 'specific3') ||
+          (type.toUpperCase() === selectedSection)
         ) {
           questions.push(parseInt(num));
         }
