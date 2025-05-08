@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -126,28 +125,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    // Check if there's at least one section or discipline
-    const hasAnySection = 
-      currentValues.has_basic_knowledge || 
-      currentValues.has_specific_knowledge_1 || 
-      currentValues.has_specific_knowledge_2 || 
-      currentValues.has_specific_knowledge_3;
-      
-    const hasDisciplines = 
-      currentValues.disciplines && 
-      Array.isArray(currentValues.disciplines) && 
-      currentValues.disciplines.length > 0;
-      
-    if (!hasAnySection && !hasDisciplines) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, adicione pelo menos uma área de conhecimento ou disciplina.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // Verify that all enabled knowledge areas have questions
     if (
       (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
       (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
@@ -160,22 +137,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         variant: "destructive"
       });
       return false;
-    }
-    
-    // Check that all disciplines have questions
-    if (hasDisciplines) {
-      const disciplinesWithNoQuestions = currentValues.disciplines.filter(
-        (discipline: any) => !discipline.questions || discipline.questions <= 0
-      );
-      
-      if (disciplinesWithNoQuestions.length > 0) {
-        toast({
-          title: "Erro de validação",
-          description: "Todas as disciplinas precisam ter o número de questões maior que zero.",
-          variant: "destructive"
-        });
-        return false;
-      }
     }
 
     return true;

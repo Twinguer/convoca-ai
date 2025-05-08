@@ -1,7 +1,7 @@
 
 import { Concurso } from '@/types/concursos';
 
-// Define disciplinas com nomes e siglas
+// Define disciplines with names and siglas
 export const DISCIPLINES = [
   { name: 'Português', sigla: 'LPT' },
   { name: 'Inglês', sigla: 'ING' },
@@ -28,24 +28,7 @@ export const DISCIPLINES = [
   { name: 'Outro', sigla: 'OUT' }
 ];
 
-// Define o tipo para seções que inclui conhecimentos, disciplinas e avaliações discursivas
-type QuestionSectionType = 
-  | 'basic' 
-  | 'specific1' 
-  | 'specific2' 
-  | 'specific3' 
-  | 'discursive'
-  | 'case_study1' 
-  | 'case_study2'
-  | 'case_study3'
-  // Disciplinas comuns
-  | 'LPT' | 'ING' | 'MAT' | 'RLM' | 'EST' | 'COS' | 'ADM' | 'ADO' 
-  | 'COT' | 'COC' | 'ECO' | 'TRI' | 'AFO' | 'LTC' | 'TIC' | 'ETT' 
-  | 'AUD' | 'CIV' | 'PEN' | 'INF' | 'EMP' | 'MTF' | 'OUT'
-  // Permite qualquer string para disciplinas customizadas
-  | string;
-
-// Gera uma sigla única para disciplinas customizadas
+// Generate a unique sigla for custom disciplines
 export const generateCustomDisciplineSigla = () => {
   const randomChars = Math.random().toString(36).substring(2, 5).toUpperCase();
   return `C${randomChars}`;
@@ -53,11 +36,8 @@ export const generateCustomDisciplineSigla = () => {
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
-  setSelectedSection: React.Dispatch<React.SetStateAction<QuestionSectionType>>
+  setSelectedSection: React.Dispatch<React.SetStateAction<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>>
 ) => {
-  // Verifica todas as seções possíveis em ordem de prioridade
-  // Conhecimentos e disciplinas são tratados como parte da mesma lista
-
   if (concurso.has_basic_knowledge) {
     setSelectedSection('basic');
   } else if (concurso.has_specific_knowledge_1) {
@@ -66,9 +46,6 @@ export const handleQuestionSectionSelection = (
     setSelectedSection('specific2');
   } else if (concurso.has_specific_knowledge_3) {
     setSelectedSection('specific3');
-  } else if (concurso.disciplines && concurso.disciplines.length > 0) {
-    // Se não há conhecimentos, mas há disciplinas, seleciona a primeira disciplina
-    setSelectedSection(concurso.disciplines[0].sigla);
   } else if (concurso.has_discursive) {
     setSelectedSection('discursive');
   } else if (concurso.has_case_study_1) {
@@ -77,10 +54,14 @@ export const handleQuestionSectionSelection = (
     setSelectedSection('case_study2');
   } else if (concurso.has_case_study_3) {
     setSelectedSection('case_study3');
+  } else if (concurso.disciplines && concurso.disciplines.length > 0) {
+    // If no standard sections but disciplines exist, we could handle it here if needed
+    // For now, default to basic if available
+    setSelectedSection('basic');
   }
 };
 
-// Helper function para obter uma disciplina pela sigla
+// Helper function to get discipline by sigla
 export const getDisciplineBySigla = (concurso: Concurso, sigla: string) => {
   if (!concurso.disciplines) return null;
   
@@ -89,68 +70,7 @@ export const getDisciplineBySigla = (concurso: Concurso, sigla: string) => {
   );
 };
 
-// Helper function para obter todas as disciplinas
+// Helper function to get all disciplines
 export const getDisciplines = (concurso: Concurso) => {
   return concurso.disciplines || [];
-};
-
-// Helper function para verificar se uma seção é uma disciplina
-export const isDisciplineSection = (sigla: string, concurso: Concurso) => {
-  if (!concurso.disciplines) return false;
-  
-  return concurso.disciplines.some(
-    (discipline: any) => discipline.sigla === sigla
-  );
-};
-
-// Helper function para obter todas as seções disponíveis (conhecimentos + disciplinas)
-export const getAllSections = (concurso: Concurso) => {
-  const sections: {key: string, label: string, weight?: number}[] = [];
-  
-  // Adiciona conhecimentos
-  if (concurso.has_basic_knowledge) {
-    sections.push({ key: 'basic', label: 'Conhecimentos Básicos', weight: concurso.basic_knowledge_weight });
-  }
-  
-  if (concurso.has_specific_knowledge_1) {
-    sections.push({ key: 'specific1', label: 'C. Específicos 1', weight: concurso.specific_knowledge_1_weight });
-  }
-  
-  if (concurso.has_specific_knowledge_2) {
-    sections.push({ key: 'specific2', label: 'C. Específicos 2', weight: concurso.specific_knowledge_2_weight });
-  }
-  
-  if (concurso.has_specific_knowledge_3) {
-    sections.push({ key: 'specific3', label: 'C. Específicos 3', weight: concurso.specific_knowledge_3_weight });
-  }
-  
-  // Adiciona disciplinas na mesma lista
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    concurso.disciplines.forEach(discipline => {
-      sections.push({ 
-        key: discipline.sigla, 
-        label: discipline.name,
-        weight: discipline.weight 
-      });
-    });
-  }
-  
-  // Adiciona avaliações discursivas
-  if (concurso.has_discursive) {
-    sections.push({ key: 'discursive', label: 'Discursiva', weight: concurso.discursive_weight });
-  }
-  
-  if (concurso.has_case_study_1) {
-    sections.push({ key: 'case_study1', label: 'Estudo de Caso 1', weight: concurso.case_study_1_weight });
-  }
-  
-  if (concurso.has_case_study_2) {
-    sections.push({ key: 'case_study2', label: 'Estudo de Caso 2', weight: concurso.case_study_2_weight });
-  }
-  
-  if (concurso.has_case_study_3) {
-    sections.push({ key: 'case_study3', label: 'Estudo de Caso 3', weight: concurso.case_study_3_weight });
-  }
-  
-  return sections;
 };

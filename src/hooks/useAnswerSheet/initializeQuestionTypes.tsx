@@ -1,33 +1,15 @@
 
 import { Concurso } from '@/types/concursos';
 
-// Define o tipo para questionType que inclui conhecimentos, disciplinas e avaliações discursivas
-type QuestionSectionType = 
-  | 'basic' 
-  | 'specific1' 
-  | 'specific2' 
-  | 'specific3' 
-  | 'discursive'
-  | 'case_study1' 
-  | 'case_study2'
-  | 'case_study3'
-  // Disciplinas comuns
-  | 'LPT' | 'ING' | 'MAT' | 'RLM' | 'EST' | 'COS' | 'ADM' | 'ADO' 
-  | 'COT' | 'COC' | 'ECO' | 'TRI' | 'AFO' | 'LTC' | 'TIC' | 'ETT' 
-  | 'AUD' | 'CIV' | 'PEN' | 'INF' | 'EMP' | 'MTF' | 'OUT'
-  // Permite qualquer string para disciplinas customizadas
-  | string;
-
 export const initializeQuestionTypes = (
   concurso: Concurso,
-  questionType: { [key: number]: QuestionSectionType },
-  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: QuestionSectionType }>>
+  questionType: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' },
+  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>>
 ) => {
   if (concurso && Object.keys(questionType).length === 0) {
-    const typesMap: { [key: number]: QuestionSectionType } = {};
+    const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
     let questionNumber = 1;
     
-    // Handle knowledge sections
     if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
       for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
         typesMap[questionNumber] = 'basic';
@@ -53,16 +35,6 @@ export const initializeQuestionTypes = (
       for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
         typesMap[questionNumber] = 'specific3';
         questionNumber++;
-      }
-    }
-    
-    // Handle disciplines - integrados igualmente com conhecimentos
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      for (const discipline of concurso.disciplines) {
-        for (let i = 0; i < discipline.questions; i++) {
-          typesMap[questionNumber] = discipline.sigla;
-          questionNumber++;
-        }
       }
     }
     

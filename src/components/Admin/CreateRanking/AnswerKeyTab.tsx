@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,9 +42,8 @@ export const AnswerKeyTab = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | string>('basic');
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
   const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
-  const [disciplines, setDisciplines] = useState<Array<{name: string, sigla: string, questions: number}>>([]);
 
   useEffect(() => {
     const fetchAnswerKey = async () => {
@@ -56,7 +54,7 @@ export const AnswerKeyTab = ({
           return;
         }
         
-        // Use the RPC get_official_answer_weights
+        // Usar a RPC get_official_answer_weights
         const { data, error } = await supabase.rpc(
           'get_official_answer_weights',
           {
@@ -94,44 +92,13 @@ export const AnswerKeyTab = ({
       }
     };
 
-    const fetchDisciplines = async () => {
-      if (!concursoId) return;
-      
-      try {
-        const { data: concursoData, error } = await supabase
-          .from('concursos')
-          .select('disciplines')
-          .eq('id', concursoId)
-          .single();
-          
-        if (error) throw error;
-        
-        if (concursoData && concursoData.disciplines && Array.isArray(concursoData.disciplines)) {
-          setDisciplines(concursoData.disciplines);
-          
-          // If there are disciplines and no knowledge areas, select the first discipline
-          if (concursoData.disciplines.length > 0 && 
-              !hasBasicKnowledge && 
-              !hasSpecificKnowledge1 && 
-              !hasSpecificKnowledge2 && 
-              !hasSpecificKnowledge3) {
-            setSelectedSection(concursoData.disciplines[0].sigla);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching disciplines:', error);
-      }
-    };
-
     fetchAnswerKey();
-    fetchDisciplines();
-  }, [concursoId, hasBasicKnowledge, hasSpecificKnowledge1, hasSpecificKnowledge2, hasSpecificKnowledge3]);
+  }, [concursoId]);
 
   const getQuestionRange = () => {
     let questions: number[] = [];
     let startNumber = 1;
 
-    // Standard knowledge sections
     if (selectedSection === 'basic' && hasBasicKnowledge) {
       questions = Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1);
     } else if (selectedSection === 'specific1' && hasSpecificKnowledge1) {
@@ -153,40 +120,6 @@ export const AnswerKeyTab = ({
         { length: specificKnowledge3Questions },
         (_, i) => startNumber + i
       );
-    } else {
-      // Custom disciplines
-      const discipline = disciplines.find(d => d.sigla === selectedSection);
-      if (discipline) {
-        // Calculate the starting question number for this discipline
-        let disciplineStartNumber = 1;
-        
-        // Add all knowledge section questions
-        if (hasBasicKnowledge) {
-          disciplineStartNumber += basicKnowledgeQuestions;
-        }
-        if (hasSpecificKnowledge1) {
-          disciplineStartNumber += specificKnowledge1Questions;
-        }
-        if (hasSpecificKnowledge2) {
-          disciplineStartNumber += specificKnowledge2Questions;
-        }
-        if (hasSpecificKnowledge3) {
-          disciplineStartNumber += specificKnowledge3Questions;
-        }
-        
-        // Add questions from disciplines that come before this one
-        for (const prevDiscipline of disciplines) {
-          if (prevDiscipline.sigla === discipline.sigla) {
-            break;
-          }
-          disciplineStartNumber += prevDiscipline.questions;
-        }
-        
-        questions = Array.from(
-          { length: discipline.questions },
-          (_, i) => disciplineStartNumber + i
-        );
-      }
     }
 
     return questions;
@@ -213,7 +146,6 @@ export const AnswerKeyTab = ({
     let allQuestions: number[] = [];
     let startNumber = 1;
     
-    // Add questions from knowledge sections
     if (hasBasicKnowledge) {
       allQuestions = [...allQuestions, ...Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1)];
       startNumber = basicKnowledgeQuestions + 1;
@@ -240,18 +172,6 @@ export const AnswerKeyTab = ({
         { length: specificKnowledge3Questions },
         (_, i) => startNumber + i
       )];
-      startNumber += specificKnowledge3Questions;
-    }
-    
-    // Add questions from disciplines
-    if (disciplines && disciplines.length > 0) {
-      for (const discipline of disciplines) {
-        allQuestions = [...allQuestions, ...Array.from(
-          { length: discipline.questions },
-          (_, i) => startNumber + i
-        )];
-        startNumber += discipline.questions;
-      }
     }
     
     return allQuestions;
@@ -269,42 +189,26 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      // Calculate the section type for each question
+      // Diretamente determinamos os section_types no código em vez de chamar updateSectionTypes
       const calculateSectionType = (questionNumber: number) => {
-        // Calculate the number base of each section
+        // Calcular o número base de cada seção
         const basicEnd = basicKnowledgeQuestions || 0;
         
-        if (questionNumber <= basicEnd && hasBasicKnowledge) {
+        if (questionNumber <= basicEnd) {
           return 'basic';
         }
         
         const specific1End = basicEnd + (specificKnowledge1Questions || 0);
-        if (questionNumber <= specific1End && hasSpecificKnowledge1) {
+        if (questionNumber <= specific1End) {
           return 'specific1';
         }
         
         const specific2End = specific1End + (specificKnowledge2Questions || 0);
-        if (questionNumber <= specific2End && hasSpecificKnowledge2) {
+        if (questionNumber <= specific2End) {
           return 'specific2';
         }
         
-        const specific3End = specific2End + (specificKnowledge3Questions || 0);
-        if (questionNumber <= specific3End && hasSpecificKnowledge3) {
-          return 'specific3';
-        }
-        
-        // If we get here, it's a discipline question
-        // Find which discipline this question belongs to
-        let currentPos = specific3End;
-        for (const discipline of disciplines) {
-          const disciplineEnd = currentPos + discipline.questions;
-          if (questionNumber <= disciplineEnd) {
-            return discipline.sigla; // Use the discipline sigla as the section type
-          }
-          currentPos = disciplineEnd;
-        }
-        
-        return 'unknown';
+        return 'specific3';
       };
 
       const answerKeyData = allQuestions.map(qNum => {
@@ -342,52 +246,6 @@ export const AnswerKeyTab = ({
     return <div className="py-4">Carregando gabarito...</div>;
   }
 
-  // Get all available sections (standard knowledge areas + disciplines)
-  const getSectionTabs = () => {
-    const tabs = [];
-    
-    if (hasBasicKnowledge) {
-      tabs.push({ value: 'basic', label: 'Conhecimentos Básicos' });
-    }
-    
-    if (hasSpecificKnowledge1) {
-      tabs.push({ value: 'specific1', label: 'C. Específicos 1' });
-    }
-    
-    if (hasSpecificKnowledge2) {
-      tabs.push({ value: 'specific2', label: 'C. Específicos 2' });
-    }
-    
-    if (hasSpecificKnowledge3) {
-      tabs.push({ value: 'specific3', label: 'C. Específicos 3' });
-    }
-    
-    // Add discipline tabs
-    if (disciplines && disciplines.length > 0) {
-      disciplines.forEach(discipline => {
-        tabs.push({ value: discipline.sigla, label: discipline.name });
-      });
-    }
-    
-    return tabs;
-  };
-
-  const sectionTabs = getSectionTabs();
-
-  // If there are no sections available, show a message
-  if (sectionTabs.length === 0) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-8 text-gray-500">
-            Nenhuma área de conhecimento ou disciplina configurada. 
-            Por favor, volte e configure a estrutura da prova.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardContent className="pt-6">
@@ -395,18 +253,37 @@ export const AnswerKeyTab = ({
         
         <Tabs 
           value={selectedSection} 
-          onValueChange={(value) => setSelectedSection(value)}
+          onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
           className="w-full"
         >
           <TabsList className="grid w-full" style={{
-            gridTemplateColumns: `repeat(${sectionTabs.length}, minmax(0, 1fr))`
+            gridTemplateColumns: `repeat(${[
+              hasBasicKnowledge,
+              hasSpecificKnowledge1,
+              hasSpecificKnowledge2,
+              hasSpecificKnowledge3
+            ].filter(Boolean).length}, minmax(0, 1fr))`
           }}>
-            {sectionTabs.map(tab => (
-              <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
-            ))}
+            {hasBasicKnowledge && (
+              <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>
+            )}
+            {hasSpecificKnowledge1 && (
+              <TabsTrigger value="specific1">C. Específicos 1</TabsTrigger>
+            )}
+            {hasSpecificKnowledge2 && (
+              <TabsTrigger value="specific2">C. Específicos 2</TabsTrigger>
+            )}
+            {hasSpecificKnowledge3 && (
+              <TabsTrigger value="specific3">C. Específicos 3</TabsTrigger>
+            )}
           </TabsList>
 
-          {sectionTabs.map(section => (
+          {[
+            { value: 'basic', label: 'Conhecimentos Básicos', show: hasBasicKnowledge },
+            { value: 'specific1', label: 'C. Específicos 1', show: hasSpecificKnowledge1 },
+            { value: 'specific2', label: 'C. Específicos 2', show: hasSpecificKnowledge2 },
+            { value: 'specific3', label: 'C. Específicos 3', show: hasSpecificKnowledge3 }
+          ].map(section => section.show && (
             <TabsContent key={section.value} value={section.value}>
               <div className="grid gap-4">
                 <p className="text-sm text-gray-500">
