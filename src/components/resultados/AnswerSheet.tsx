@@ -53,7 +53,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score
+    setCaseStudy3Score,
+    disciplines,
+    isDiscursiveSection
   } = useAnswerSheet(concurso, rankingId);
   
   const {
@@ -73,7 +75,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     staleTime: 1000
   });
   
-  // Definir a variável editsLeft e canEdit antes de useEffect
+  // Define the variables editsLeft and canEdit before useEffect
   const editsLeft = userRankingData ? 3 - (userRankingData.edit_count || 0) : 3;
   const canEdit = editsLeft > 0;
   
@@ -92,11 +94,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           if (error) throw error;
           return data;
       },
-      staleTime: 30000, // Aumentado para reduzir consultas desnecessárias
+      staleTime: 30000, // Increased to reduce unnecessary queries
       refetchOnWindowFocus: true
   });
   
-  // Renomeie a função importada de useSaveAnswers para saveAnswersService
+  // Rename the imported function from useSaveAnswers to saveAnswersService
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -110,7 +112,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0,
-    nullifiedQuestions // Passar as questões anuladas para o hook
+    nullifiedQuestions // Pass the nullified questions to the hook
   });
   
   useEffect(() => {
@@ -132,17 +134,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
-      console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
+      console.log('[AnswerSheet] Nullified questions updated:', Array.from(nullifiedSet).join(', '));
       
-      // Verificar se houve alteração no número de questões anuladas
+      // Check if there was a change in the number of nullified questions
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
-        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:', 
-          `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
+        console.log('[AnswerSheet] Change detected in nullified questions:', 
+          `Previous: ${lastCheckedNullifiedCount}, Current: ${nullifiedSet.size}`);
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
         
-        // Removemos o toast quando questões anuladas mudam
-        // e também o auto-salvamento
+        // We removed the toast when nullified questions change
+        // and also the auto-save
       }
     }
   }, [nullifiedData]);
@@ -156,16 +158,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
     
-    // Considerar também as questões anuladas como "respondidas" para a validação
+    // Consider nullified questions as "answered" for validation
     const effectivelyAnsweredQuestions = answeredQuestions + 
       Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
     if (effectivelyAnsweredQuestions < totalQuestions) {
-      // Identificar quais questões ainda não foram respondidas (excluindo as anuladas)
+      // Identify which questions are still unanswered (excluding nullified ones)
       const unansweredQuestions = [];
       const allQuestions = getAllQuestionsFromAllSections();
       
-      // Para cada questão, verificar se está respondida ou anulada
+      // For each question, check if it's answered or nullified
       for (const qNum of allQuestions) {
         if (!answers[qNum] && !nullifiedQuestions.has(qNum)) {
           unansweredQuestions.push(qNum);
@@ -179,16 +181,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
 
     try {
-      console.log("[AnswerSheet] Iniciando processo de salvamento");
+      console.log("[AnswerSheet] Starting save process");
       setIsSaving(true);
       setError(null);
       
-      // Chamando o serviço correto renomeado
+      // Call the renamed service
       await saveAnswersService();
       await refetchNullified();
-      console.log("[AnswerSheet] Salvamento concluído com sucesso");
+      console.log("[AnswerSheet] Save completed successfully");
     } catch (error: any) {
-      console.error("[AnswerSheet] Erro durante o salvamento:", error);
+      console.error("[AnswerSheet] Error during save:", error);
       setIsSaving(false);
       setError(error.message || "Erro ao salvar respostas");
     }
@@ -229,48 +231,76 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  const getObjectiveSectionList = () => {
-    const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
-    return sections;
+  // Get all available section tabs (standard + disciplines)
+  const getAvailableSectionTabs = () => {
+    const tabs = [];
+    
+    // Add standard knowledge sections
+    if (concurso.has_basic_knowledge) {
+      tabs.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    }
+    if (concurso.has_specific_knowledge_1) {
+      tabs.push({ key: 'specific1', label: 'C. Específicos 1' });
+    }
+    if (concurso.has_specific_knowledge_2) {
+      tabs.push({ key: 'specific2', label: 'C. Específicos 2' });
+    }
+    if (concurso.has_specific_knowledge_3) {
+      tabs.push({ key: 'specific3', label: 'C. Específicos 3' });
+    }
+    
+    // Add disciplines if they exist
+    if (disciplines && disciplines.length > 0) {
+      disciplines.forEach(discipline => {
+        tabs.push({ key: discipline.sigla, label: discipline.name });
+      });
+    }
+    
+    return tabs;
   };
   
-  const objectiveSections = getObjectiveSectionList();
+  const sectionTabs = getAvailableSectionTabs();
   
-  // Função utilitária para obter todas as questões de todas as seções
+  // Utility function to get all questions from all sections
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
     
     let currentQuestionNumber = 1;
     
-    // Básico
+    // Basic knowledge
     if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
       for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Específico 1
+    // Specific 1
     if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
       for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Específico 2
+    // Specific 2
     if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
       for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Específico 3
+    // Specific 3
     if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
       for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Disciplines
+    if (disciplines && disciplines.length > 0) {
+      for (const discipline of disciplines) {
+        for (let i = 0; i < discipline.questions; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
       }
     }
     
@@ -338,22 +368,24 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         </div>
         <Progress value={progressPercentage} className="h-2 bg-gray-200" />
         
-        {objectiveSections.length > 0 && (
+        {sectionTabs.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              onValueChange={(value) => setSelectedSection(value as any)}
               className="w-full"
             >
-              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
-                {objectiveSections.map(section => (
+              <TabsList className="grid w-full" style={{
+                gridTemplateColumns: `repeat(${Math.min(sectionTabs.length, 5)}, minmax(0, 1fr))`
+              }}>
+                {sectionTabs.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
               
-              {objectiveSections.map(section => (
+              {sectionTabs.map(section => (
                 <TabsContent key={section.key} value={section.key}>
                   <AnswerMatrix
                     matrix={createAnswerMatrix()}

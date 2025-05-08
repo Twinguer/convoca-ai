@@ -12,11 +12,12 @@ import { useScoreManagement } from './useScoreManagement';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>({});
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3' | string>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [disciplines, setDisciplines] = useState<Array<{name: string, sigla: string, questions: number}>>([]);
   
   const { 
     discursiveScore, setDiscursiveScore,
@@ -33,7 +34,22 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
-      handleQuestionSectionSelection(concurso, setSelectedSection);
+      // First check for disciplines if no knowledge areas are present
+      if (concurso.disciplines && 
+          Array.isArray(concurso.disciplines) && 
+          concurso.disciplines.length > 0 &&
+          !concurso.has_basic_knowledge &&
+          !concurso.has_specific_knowledge_1 &&
+          !concurso.has_specific_knowledge_2 &&
+          !concurso.has_specific_knowledge_3) {
+        setSelectedSection(concurso.disciplines[0].sigla);
+        setDisciplines(concurso.disciplines);
+      } else {
+        handleQuestionSectionSelection(concurso, setSelectedSection);
+        if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+          setDisciplines(concurso.disciplines);
+        }
+      }
     }
   }, [concurso]);
 
@@ -70,45 +86,65 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (!concurso) return [];
     
     console.log('Getting questions for section:', selectedSection);
-    console.log('Question type mapping:', questionType);
     
     const questions: number[] = [];
     
-    // Verificando se o objeto questionType tem alguma propriedade
-    if (Object.keys(questionType).length === 0) {
-      // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
-      if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-        for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
-          questions.push(i);
-        }
+    // Standard knowledge sections
+    if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
+        questions.push(i);
+      }
+    } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
+      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
+        questions.push(i);
+      }
+    } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
+      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
+        questions.push(i);
+      }
+    } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
+      for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+        questions.push(i);
       }
     } else {
-      // Se tiver, usamos o mapeamento existente
-      Object.entries(questionType).forEach(([num, type]) => {
-        if (
-          (selectedSection === 'basic' && type === 'basic') ||
-          (selectedSection === 'specific1' && type === 'specific1') ||
-          (selectedSection === 'specific2' && type === 'specific2') ||
-          (selectedSection === 'specific3' && type === 'specific3')
-        ) {
-          questions.push(parseInt(num));
+      // Custom discipline
+      // Find which discipline this section is
+      const discipline = disciplines.find(d => d.sigla === selectedSection);
+      
+      if (discipline) {
+        // Calculate the starting question number for this discipline
+        let startIndex = 1;
+        
+        // Add all knowledge section questions
+        if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+          startIndex += concurso.basic_knowledge_questions;
         }
-      });
+        if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+          startIndex += concurso.specific_knowledge_1_questions;
+        }
+        if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+          startIndex += concurso.specific_knowledge_2_questions;
+        }
+        if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+          startIndex += concurso.specific_knowledge_3_questions;
+        }
+        
+        // Add questions from disciplines that come before this one
+        for (const prevDiscipline of disciplines) {
+          if (prevDiscipline.sigla === discipline.sigla) {
+            break;
+          }
+          startIndex += prevDiscipline.questions;
+        }
+        
+        // Now add the questions for this discipline
+        for (let i = 0; i < discipline.questions; i++) {
+          questions.push(startIndex + i);
+        }
+      }
     }
     
     console.log('Questions for section', selectedSection, ':', questions);
@@ -151,6 +187,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    disciplines
   };
 };
