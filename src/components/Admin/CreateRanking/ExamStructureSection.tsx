@@ -246,23 +246,6 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     form.setValue('disciplines', updatedDisciplines);
   };
 
-  // Check if structure is empty (now includes disciplines)
-  const isStructureEmpty = () => {
-    const hasKnowledgeAreas = 
-      form.watch('has_basic_knowledge') || 
-      form.watch('has_specific_knowledge_1') || 
-      form.watch('has_specific_knowledge_2') || 
-      form.watch('has_specific_knowledge_3') || 
-      form.watch('has_discursive') || 
-      form.watch('has_case_study_1') || 
-      form.watch('has_case_study_2') || 
-      form.watch('has_case_study_3');
-    
-    const hasDisciplines = (form.watch('disciplines') || []).length > 0;
-    
-    return !hasKnowledgeAreas && !hasDisciplines;
-  };
-
   return (
     <Card>
       <CardContent className="pt-6">
@@ -474,13 +457,6 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         
         {/* Áreas de conhecimento - cards */}
         <div className="space-y-4">
-          {/* Área vazia se não tiver nenhuma seção */}
-          {isStructureEmpty() && (
-            <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
-              Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
-            </div>
-          )}
-          
           {/* Conhecimentos Básicos */}
           {form.watch('has_basic_knowledge') && (
             <div className="border p-4 rounded-md">

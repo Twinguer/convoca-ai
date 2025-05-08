@@ -108,25 +108,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    const hasAnyKnowledgeArea = 
-      currentValues.has_basic_knowledge || 
-      currentValues.has_specific_knowledge_1 || 
-      currentValues.has_specific_knowledge_2 || 
-      currentValues.has_specific_knowledge_3 ||
-      currentValues.has_discursive ||
-      currentValues.has_case_study_1 ||
-      currentValues.has_case_study_2 ||
-      currentValues.has_case_study_3;
-
-    if (!hasAnyKnowledgeArea) {
-      toast({
-        title: "Erro de validação",
-        description: "Por favor, adicione pelo menos uma área de conhecimento.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
     const hasAnyQuota = 
       currentValues.has_ampla_concorrencia || 
       currentValues.has_ppp || 
