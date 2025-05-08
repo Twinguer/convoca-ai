@@ -136,6 +136,7 @@ export type Database = {
           custom_banca: string | null
           custom_job_title: string | null
           data_publicacao: string | null
+          disciplines: Json | null
           discursive_minimum_score: number | null
           discursive_weight: number | null
           etapa_atual: string | null
@@ -204,6 +205,7 @@ export type Database = {
           custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
+          disciplines?: Json | null
           discursive_minimum_score?: number | null
           discursive_weight?: number | null
           etapa_atual?: string | null
@@ -272,6 +274,7 @@ export type Database = {
           custom_banca?: string | null
           custom_job_title?: string | null
           data_publicacao?: string | null
+          disciplines?: Json | null
           discursive_minimum_score?: number | null
           discursive_weight?: number | null
           etapa_atual?: string | null

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +18,7 @@ import {
   DropdownMenuGroup
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DISCIPLINES } from '@/hooks/useAnswerSheet/sectionUtils';
+import { DISCIPLINES, generateCustomDisciplineSigla } from '@/hooks/useAnswerSheet/sectionUtils';
 
 interface ExamStructureSectionProps {
   form: UseFormReturn<any>;
@@ -26,7 +26,8 @@ interface ExamStructureSectionProps {
 
 export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form }) => {
   const [minimumScoreType, setMinimumScoreType] = useState<'percentage' | 'points'>('percentage');
-  const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
+  const [isAddingCustomDiscipline, setIsAddingCustomDiscipline] = useState(false);
+  const [customDisciplineName, setCustomDisciplineName] = useState('');
 
   // Helper function to render weight select component
   const renderWeightSelect = (name: string) => (
@@ -149,6 +150,11 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
 
   // Add a discipline
   const addDiscipline = (disciplineName: string) => {
+    if (disciplineName === 'Outro') {
+      setIsAddingCustomDiscipline(true);
+      return;
+    }
+    
     const discipline = DISCIPLINES.find(d => d.name === disciplineName);
     if (!discipline) return;
 
@@ -167,6 +173,27 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
       weight: 1,
       minimumScore: 0
     }]);
+  };
+  
+  // Add custom discipline
+  const addCustomDiscipline = () => {
+    if (!customDisciplineName.trim()) return;
+    
+    const currentDisciplines = form.watch('disciplines') || [];
+    const sigla = generateCustomDisciplineSigla();
+    
+    // Add the custom discipline
+    form.setValue('disciplines', [...currentDisciplines, {
+      name: customDisciplineName.trim(),
+      sigla: sigla,
+      questions: 0,
+      weight: 1,
+      minimumScore: 0
+    }]);
+    
+    // Reset custom discipline state
+    setCustomDisciplineName('');
+    setIsAddingCustomDiscipline(false);
   };
 
   // Remove a discipline
@@ -394,6 +421,36 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
           </FormItem>
         )}
       />
+
+      {/* UI para adicionar disciplina customizada */}
+      {isAddingCustomDiscipline && (
+        <div className="mb-4 p-4 border rounded-md bg-muted/30">
+          <div className="flex justify-between items-center mb-2">
+            <h5 className="text-sm font-medium">Adicionar Disciplina Personalizada</h5>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setIsAddingCustomDiscipline(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex space-x-2">
+            <Input
+              placeholder="Nome da disciplina"
+              value={customDisciplineName}
+              onChange={(e) => setCustomDisciplineName(e.target.value)}
+              className="flex-1"
+            />
+            <Button 
+              onClick={addCustomDiscipline} 
+              disabled={!customDisciplineName.trim()}
+            >
+              Adicionar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Render all enabled sections */}
       {renderSectionCard(
