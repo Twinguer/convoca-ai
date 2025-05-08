@@ -1,10 +1,27 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Define o tipo para questionType que inclui conhecimentos, disciplinas e avaliações discursivas
+type QuestionSectionType = 
+  | 'basic' 
+  | 'specific1' 
+  | 'specific2' 
+  | 'specific3' 
+  | 'discursive'
+  | 'case_study1' 
+  | 'case_study2'
+  | 'case_study3'
+  // Disciplinas comuns
+  | 'LPT' | 'ING' | 'MAT' | 'RLM' | 'EST' | 'COS' | 'ADM' | 'ADO' 
+  | 'COT' | 'COC' | 'ECO' | 'TRI' | 'AFO' | 'LTC' | 'TIC' | 'ETT' 
+  | 'AUD' | 'CIV' | 'PEN' | 'INF' | 'EMP' | 'MTF' | 'OUT'
+  // Permite qualquer string para disciplinas customizadas
+  | string;
+
 export const fetchExistingAnswers = async (
   rankingId: string,
   setAnswers: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>,
-  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>>,
+  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: QuestionSectionType }>>,
   setDiscursiveScore: React.Dispatch<React.SetStateAction<number | null>>,
   setCaseStudy1Score: React.Dispatch<React.SetStateAction<number | null>>,
   setCaseStudy2Score: React.Dispatch<React.SetStateAction<number | null>>,
@@ -25,14 +42,15 @@ export const fetchExistingAnswers = async (
     
     if (answersData?.length) {
       const answersMap: { [key: number]: string } = {};
-      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
+      const typesMap: { [key: number]: QuestionSectionType } = {};
       
       answersData.forEach((item: any) => {
-        // Extract question number from key (e.g., "questao1" -> 1)
+        // Extract question number from key
         const questionNumber = item.question_number;
         
         answersMap[questionNumber] = item.answer;
         
+        // Determina o tipo da questão (conhecimentos ou disciplina)
         if (item.is_basic_knowledge) {
           typesMap[questionNumber] = 'basic';
         } else if (item.is_specific_1) {
@@ -42,7 +60,7 @@ export const fetchExistingAnswers = async (
         } else if (item.is_specific_3) {
           typesMap[questionNumber] = 'specific3';
         } else if (item.section_type) {
-          // This is for disciplines or custom sections
+          // Isso é para disciplinas ou seções personalizadas - todas tratadas igualmente
           typesMap[questionNumber] = item.section_type;
         }
       });

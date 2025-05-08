@@ -1,8 +1,5 @@
 
-import { useState, useEffect } from 'react';
-import { Concurso } from '@/types/concursos';
-import { supabase } from '@/integrations/supabase/client';
 import { useAnswerSheet as useNewAnswerSheet } from './useAnswerSheet/index';
 
-// This file now just re-exports the real implementation from the modular directory
+// Este arquivo agora apenas reexporta a implementação real do diretório modular
 export const useAnswerSheet = useNewAnswerSheet;

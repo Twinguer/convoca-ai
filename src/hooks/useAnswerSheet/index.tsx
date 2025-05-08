@@ -10,10 +10,27 @@ import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 
+// Define o tipo para questionType que inclui conhecimentos, disciplinas e avaliaçôes discursivas
+type QuestionSectionType = 
+  | 'basic' 
+  | 'specific1' 
+  | 'specific2' 
+  | 'specific3' 
+  | 'discursive'
+  | 'case_study1' 
+  | 'case_study2'
+  | 'case_study3'
+  // Disciplinas comuns
+  | 'LPT' | 'ING' | 'MAT' | 'RLM' | 'EST' | 'COS' | 'ADM' | 'ADO' 
+  | 'COT' | 'COC' | 'ECO' | 'TRI' | 'AFO' | 'LTC' | 'TIC' | 'ETT' 
+  | 'AUD' | 'CIV' | 'PEN' | 'INF' | 'EMP' | 'MTF' | 'OUT'
+  // Permite qualquer string para disciplinas customizadas
+  | string;
+
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3' | string>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: QuestionSectionType }>({});
+  const [selectedSection, setSelectedSection] = useState<QuestionSectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -31,25 +48,16 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
-  // Initialize with the first available section
+  // Inicializa com a primeira seção disponível, seja conhecimento ou disciplina
   useEffect(() => {
     if (concurso) {
-      // First check for disciplines if no knowledge areas are present
-      if (concurso.disciplines && 
-          Array.isArray(concurso.disciplines) && 
-          concurso.disciplines.length > 0 &&
-          !concurso.has_basic_knowledge &&
-          !concurso.has_specific_knowledge_1 &&
-          !concurso.has_specific_knowledge_2 &&
-          !concurso.has_specific_knowledge_3) {
-        setSelectedSection(concurso.disciplines[0].sigla);
+      // Primeiro, armazena as disciplinas se existirem
+      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
         setDisciplines(concurso.disciplines);
-      } else {
-        handleQuestionSectionSelection(concurso, setSelectedSection);
-        if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-          setDisciplines(concurso.disciplines);
-        }
       }
+      
+      // Chama a função auxiliar que trata conhecimentos e disciplinas como seções iguais
+      handleQuestionSectionSelection(concurso, setSelectedSection);
     }
   }, [concurso]);
 
@@ -89,7 +97,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     const questions: number[] = [];
     
-    // Standard knowledge sections
+    // Lógica unificada para conhecimentos e disciplinas
     if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
       for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
         questions.push(i);
@@ -110,15 +118,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         questions.push(i);
       }
     } else {
-      // Custom discipline
-      // Find which discipline this section is
+      // Trata como disciplina (qualquer outro valor de selectedSection)
       const discipline = disciplines.find(d => d.sigla === selectedSection);
       
       if (discipline) {
-        // Calculate the starting question number for this discipline
+        // Calcula o índice inicial para esta disciplina
         let startIndex = 1;
         
-        // Add all knowledge section questions
+        // Adiciona todas as questões de conhecimentos
         if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
           startIndex += concurso.basic_knowledge_questions;
         }
@@ -132,7 +139,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           startIndex += concurso.specific_knowledge_3_questions;
         }
         
-        // Add questions from disciplines that come before this one
+        // Adiciona questões das disciplinas anteriores
         for (const prevDiscipline of disciplines) {
           if (prevDiscipline.sigla === discipline.sigla) {
             break;
@@ -140,7 +147,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           startIndex += prevDiscipline.questions;
         }
         
-        // Now add the questions for this discipline
+        // Adiciona as questões para esta disciplina
         for (let i = 0; i < discipline.questions; i++) {
           questions.push(startIndex + i);
         }
