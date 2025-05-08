@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -83,48 +84,33 @@ const CriarRanking = () => {
       alternatives_count: 5,
       wrong_answer_penalty: 0,
       
-      has_basic_knowledge: false,
+      has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
-      basic_knowledge_minimum_score: 0,
       
       has_specific_knowledge_1: false,
       specific_knowledge_1_questions: 0,
       specific_knowledge_1_weight: 1,
-      specific_knowledge_1_minimum_score: 0,
       
       has_specific_knowledge_2: false,
       specific_knowledge_2_questions: 0,
       specific_knowledge_2_weight: 1,
-      specific_knowledge_2_minimum_score: 0,
       
       has_specific_knowledge_3: false,
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
-      specific_knowledge_3_minimum_score: 0,
       
       has_discursive: false,
       discursive_weight: 1,
-      discursive_minimum_score: 0,
       
       has_case_study_1: false,
       case_study_1_weight: 1,
-      case_study_1_minimum_score: 0,
       
       has_case_study_2: false,
       case_study_2_weight: 1,
-      case_study_2_minimum_score: 0,
       
       has_case_study_3: false,
       case_study_3_weight: 1,
-      case_study_3_minimum_score: 0,
-      
-      disciplines: [],
-      
-      has_minimum_score: false,
-      minimum_score_unit_type: 'percentage' as 'percentage' | 'points',
-      minimum_score_type: 'knowledge' as 'knowledge' | 'subject',
-      total_minimum_score: 0,
       
       has_ampla_concorrencia: true,
       has_ppp: false,
@@ -163,7 +149,6 @@ const CriarRanking = () => {
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
               data_publicacao: data.data_publicacao ? new Date(data.data_publicacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-              disciplines: data.disciplines || []
             });
           }
         } catch (error) {
@@ -210,23 +195,6 @@ const CriarRanking = () => {
 
   const handleSaveRanking = async () => {
     const formValues = form.getValues();
-    
-    // Verificar se a estrutura da prova está vazia
-    const isStructureEmpty = 
-      !formValues.has_basic_knowledge && 
-      !formValues.has_specific_knowledge_1 && 
-      !formValues.has_specific_knowledge_2 && 
-      !formValues.has_specific_knowledge_3 && 
-      !formValues.has_discursive && 
-      !formValues.has_case_study_1 && 
-      !formValues.has_case_study_2 && 
-      !formValues.has_case_study_3 && 
-      (!formValues.disciplines || formValues.disciplines.length === 0);
-    
-    if (isStructureEmpty) {
-      toast.error("A estrutura da prova não pode estar vazia. Adicione ao menos uma seção ou disciplina.");
-      return;
-    }
     
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, { shouldDirty: true });

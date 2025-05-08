@@ -28,15 +28,6 @@ export interface Concurso {
   has_case_study_2?: boolean;
   has_case_study_3?: boolean;
   
-  // Disciplines configuration
-  disciplines?: Array<{
-    name: string;
-    sigla: string;
-    questions: number;
-    weight: number;
-    minimumScore: number;
-  }>;
-  
   // Question counts
   basic_knowledge_questions?: number;
   specific_knowledge_1_questions?: number;
@@ -53,20 +44,6 @@ export interface Concurso {
   case_study_1_weight?: number;
   case_study_2_weight?: number;
   case_study_3_weight?: number;
-  
-  // Minimum scores
-  has_minimum_score?: boolean;
-  minimum_score_unit_type?: 'percentage' | 'points';
-  minimum_score_type?: 'knowledge' | 'subject';
-  total_minimum_score?: number;
-  basic_knowledge_minimum_score?: number;
-  specific_knowledge_1_minimum_score?: number;
-  specific_knowledge_2_minimum_score?: number;
-  specific_knowledge_3_minimum_score?: number;
-  discursive_minimum_score?: number;
-  case_study_1_minimum_score?: number;
-  case_study_2_minimum_score?: number;
-  case_study_3_minimum_score?: number;
   
   // Exam configuration
   alternatives_count?: number;
@@ -121,8 +98,7 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
     discursive: concurso.has_discursive === true,
     caseStudy1: concurso.has_case_study_1 === true,
     caseStudy2: concurso.has_case_study_2 === true,
-    caseStudy3: concurso.has_case_study_3 === true,
-    hasDisciplines: Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0
+    caseStudy3: concurso.has_case_study_3 === true
   };
 };
 
@@ -167,30 +143,5 @@ export const getRankingTableColumns = (concurso: Concurso) => {
     columns.push({ id: 'case3Score', label: 'Estudo 3', align: 'right' });
   }
   
-  // Add discipline columns if available
-  if (concurso.disciplines && concurso.disciplines.length > 0) {
-    concurso.disciplines.forEach(discipline => {
-      columns.push({ 
-        id: `discipline_${discipline.sigla}`, 
-        label: discipline.name, 
-        align: 'right' 
-      });
-    });
-  }
-  
   return columns;
-};
-
-// Utility to check if a score meets the minimum requirement
-export const isScoreBelowMinimum = (score: number, minimumScore: number, totalQuestions: number, unitType: 'percentage' | 'points') => {
-  if (minimumScore <= 0) {
-    return false;
-  }
-  
-  if (unitType === 'percentage') {
-    const percentageScore = (score / totalQuestions) * 100;
-    return percentageScore < minimumScore;
-  }
-  
-  return score < minimumScore;
 };

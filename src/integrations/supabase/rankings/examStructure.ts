@@ -14,44 +14,6 @@ export const getExamStructure = (concurso: any) => {
     specific1End,
     specific2End,
     specific3End,
-    totalQuestions: specific3End,
-    // Adicionar informações de nota mínima
-    minimumScores: {
-      unitType: concurso.minimum_score_unit_type || 'percentage',
-      basic: concurso.basic_knowledge_minimum_score || 0,
-      specific1: concurso.specific_knowledge_1_minimum_score || 0,
-      specific2: concurso.specific_knowledge_2_minimum_score || 0,
-      specific3: concurso.specific_knowledge_3_minimum_score || 0,
-      discursive: concurso.discursive_minimum_score || 0,
-      caseStudy1: concurso.case_study_1_minimum_score || 0,
-      caseStudy2: concurso.case_study_2_minimum_score || 0,
-      caseStudy3: concurso.case_study_3_minimum_score || 0
-    }
+    totalQuestions: specific3End
   };
-};
-
-/**
- * Verifica se uma pontuação é menor que a pontuação mínima requerida
- * @param score Pontuação a ser verificada
- * @param minimumScore Pontuação mínima requerida 
- * @param totalQuestions Total de questões da seção
- * @param unitType Tipo de unidade (porcentagem ou pontos absolutos)
- * @returns True se a pontuação estiver abaixo do mínimo
- */
-export const isScoreBelowMinimum = (
-  score: number, 
-  minimumScore: number, 
-  totalQuestions: number, 
-  unitType: 'percentage' | 'points'
-): boolean => {
-  if (minimumScore <= 0) {
-    return false;
-  }
-  
-  if (unitType === 'percentage') {
-    const scorePercentage = (score / totalQuestions) * 100;
-    return scorePercentage < minimumScore;
-  }
-  
-  return score < minimumScore;
 };
