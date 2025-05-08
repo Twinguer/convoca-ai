@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -246,7 +246,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
     form.setValue('disciplines', updatedDisciplines);
   };
 
-  // Check if structure is empty
+  // Check if structure is empty (now includes disciplines)
   const isStructureEmpty = () => {
     const hasKnowledgeAreas = 
       form.watch('has_basic_knowledge') || 
@@ -722,13 +722,16 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                     {/* Nota mínima */}
                     <div>
                       <FormLabel>Nota Mínima {minimumScoreType === 'percentage' ? '(%)' : '(pontos)'}</FormLabel>
-                      <Input 
-                        type="number" 
-                        min="0"
-                        max={minimumScoreType === 'percentage' ? 100 : discipline.questions} 
-                        value={discipline.minimumScore}
-                        onChange={(e) => updateDisciplineField(index, 'minimumScore', Number(e.target.value))}
-                      />
+                      <div className="flex space-x-2">
+                        <Input 
+                          type="number" 
+                          min="0"
+                          max={minimumScoreType === 'percentage' ? 100 : discipline.questions} 
+                          value={discipline.minimumScore}
+                          onChange={(e) => updateDisciplineField(index, 'minimumScore', Number(e.target.value))}
+                          className="flex-1"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
