@@ -1,26 +1,30 @@
 
 import { Concurso } from '@/types/concursos';
-import { getEnabledKnowledgeAreas } from '@/services/knowledgeAreaService';
 
-export const getTotalQuestions = (concurso: Concurso): number => {
+export const getTotalQuestions = (concurso: Concurso | null) => {
   if (!concurso) return 0;
   
-  // Utiliza a função getEnabledKnowledgeAreas para obter todas as áreas habilitadas
-  const enabledAreas = getEnabledKnowledgeAreas(concurso);
+  let total = 0;
   
-  // Conta o total de questões somando o número de questões de cada área habilitada
-  let totalQuestions = 0;
-  for (const area of enabledAreas) {
-    // Só considera áreas que têm questões (ignora discursivas por exemplo)
-    if (area.questionsField) {
-      const questionCount = concurso[area.questionsField as keyof Concurso] as number;
-      totalQuestions += questionCount || 0;
-    }
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    total += concurso.basic_knowledge_questions;
   }
   
-  return totalQuestions;
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    total += concurso.specific_knowledge_1_questions;
+  }
+  
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    total += concurso.specific_knowledge_2_questions;
+  }
+  
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    total += concurso.specific_knowledge_3_questions;
+  }
+  
+  return total;
 };
 
-export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): number => {
+export const getAnsweredQuestionsCount = (answers: { [key: number]: string }) => {
   return Object.keys(answers).length;
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,6 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { getEnabledKnowledgeAreas, getDisplayLabel } from '@/services/knowledgeAreaService';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -26,27 +26,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
-  // Definir um tipo mais abrangente para selectedSection para incluir todas as possíveis áreas
-  type SectionType = 
-    | 'basic' 
-    | 'specific1' 
-    | 'specific2' 
-    | 'specific3' 
-    | 'discursive' 
-    | 'case_study1' 
-    | 'case_study2' 
-    | 'case_study3'
-    | 'lpt' | 'ing' | 'mat' | 'rlm' | 'est' | 'cos' | 'adm' | 'ado'
-    | 'cot' | 'coc' | 'eco' | 'tri' | 'afo' | 'ltc' | 'tic' | 'ett'
-    | 'aud' | 'civ' | 'pen' | 'inf' | 'emp' | 'mtf' | 'out';
-  
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   
   const {
     answers,
     selectedSection,
-    setSelectedSection: setSelectedSectionHook,
+    setSelectedSection,
     isSaving,
     setIsSaving,
     error,
@@ -67,14 +53,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score,
-    isDiscursiveSection
+    setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
-  
-  // Wrapper para garantir tipagem correta ao chamar setSelectedSection do hook
-  const setSelectedSection = (section: string) => {
-    setSelectedSectionHook(section as SectionType);
-  };
   
   const {
     data: userRankingData,
@@ -112,11 +92,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           if (error) throw error;
           return data;
       },
-      staleTime: 30000,
+      staleTime: 30000, // Aumentado para reduzir consultas desnecessárias
       refetchOnWindowFocus: true
   });
   
-  // Rename a função importada de useSaveAnswers para saveAnswersService
+  // Renomeie a função importada de useSaveAnswers para saveAnswersService
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -130,7 +110,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0,
-    nullifiedQuestions
+    nullifiedQuestions // Passar as questões anuladas para o hook
   });
   
   useEffect(() => {
@@ -160,6 +140,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
+        
+        // Removemos o toast quando questões anuladas mudam
+        // e também o auto-salvamento
       }
     }
   }, [nullifiedData]);
@@ -200,6 +183,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
       
+      // Chamando o serviço correto renomeado
       await saveAnswersService();
       await refetchNullified();
       console.log("[AnswerSheet] Salvamento concluído com sucesso");
@@ -245,21 +229,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  // Obter lista de seções objetivas habilitadas para este concurso
   const getObjectiveSectionList = () => {
-    // Obter todas as áreas de conhecimento habilitadas
-    const enabledAreas = getEnabledKnowledgeAreas(concurso);
-    
-    // Filtrar apenas áreas objetivas (que têm questões)
-    const objectiveAreas = enabledAreas.filter(area => area.questionsField);
-    
-    // Converter para o formato esperado pelo componente
-    return objectiveAreas.map(area => {
-      return { 
-        key: area.key, 
-        label: getDisplayLabel(area, concurso)
-      };
-    });
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    return sections;
   };
   
   const objectiveSections = getObjectiveSectionList();
@@ -268,31 +244,38 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
     
-    // Obter todas as áreas com questões habilitadas
-    const areasWithQuestions = getEnabledKnowledgeAreas(concurso)
-      .filter(area => area.questionsField);
-    
     let currentQuestionNumber = 1;
     
-    // Para cada área habilitada, adicionar suas questões
-    for (const area of areasWithQuestions) {
-      const questionCount = concurso[area.questionsField as keyof Concurso] as number;
-      
-      if (questionCount && questionCount > 0) {
-        for (let i = 0; i < questionCount; i++) {
-          allQuestions.push(currentQuestionNumber++);
-        }
+    // Básico
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 1
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 2
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Específico 3
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+        allQuestions.push(currentQuestionNumber++);
       }
     }
     
     return allQuestions;
   };
-  
-  // Verificar se há questões disponíveis para a seção selecionada
-  const currentSectionMatrix = createAnswerMatrix();
-  const hasSectionQuestions = currentSectionMatrix && 
-    currentSectionMatrix.length > 0 && 
-    currentSectionMatrix.some(row => row.some(cell => cell !== null));
   
   return (
     <Card className="shadow-lg">
@@ -359,10 +342,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value)}
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
               className="w-full"
             >
-              <TabsList className="flex flex-wrap w-full">
+              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
@@ -372,22 +355,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               
               {objectiveSections.map(section => (
                 <TabsContent key={section.key} value={section.key}>
-                  {hasSectionQuestions ? (
-                    <AnswerMatrix
-                      matrix={currentSectionMatrix}
-                      answers={answers}
-                      onAnswerChange={handleAnswerChange}
-                      onClearAnswer={handleClearAnswer}
-                      getOptionsForQuestion={getOptionsForQuestion}
-                      disabled={false} // Change as needed based on user permissions
-                      examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
-                      nullifiedQuestions={nullifiedQuestions}
-                    />
-                  ) : (
-                    <div className="p-6 text-center text-gray-500">
-                      Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.
-                    </div>
-                  )}
+                  <AnswerMatrix
+                    matrix={createAnswerMatrix()}
+                    answers={answers}
+                    onAnswerChange={handleAnswerChange}
+                    onClearAnswer={handleClearAnswer}
+                    getOptionsForQuestion={getOptionsForQuestion}
+                    disabled={!canEdit}
+                    examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
+                    nullifiedQuestions={nullifiedQuestions}
+                  />
                 </TabsContent>
               ))}
             </Tabs>

@@ -1,8 +1,6 @@
 
 import { supabase } from '../client';
 import { getExamStructure } from './examStructure';
-import { Concurso } from '@/types/concursos';
-import { getEnabledKnowledgeAreas } from '@/services/knowledgeAreaService';
 
 // Função para salvar as respostas do usuário no banco de dados
 export const saveUserAnswersData = async (
@@ -14,13 +12,17 @@ export const saveUserAnswersData = async (
     // Carregue os dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('*')
+      .select(`
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions
+      `)
       .eq('id', concursoId)
       .single();
     if (concursoError) throw concursoError;
 
-    // Obter todas as áreas de conhecimento habilitadas
-    const enabledAreas = getEnabledKnowledgeAreas(concurso);
+    const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
 
     // Preparar os dados de resposta com as marcações corretas de seção
     const answersData = answers.map(a => {
@@ -38,53 +40,18 @@ export const saveUserAnswersData = async (
     });
     
     // Corrija as flags para as seções corretamente
-    // Percorrendo cada área de conhecimento habilitada e definindo flags para questões correspondentes
-    let questionCounter = 0;
-    for (const area of enabledAreas) {
-      // Ignorar áreas sem questões (discursivas, etc.)
-      if (!area.questionsField) continue;
-
-      // Obter o número de questões para essa área
-      const questionCount = concurso[area.questionsField as keyof Concurso] as number || 0;
-      
-      // Se há questões nesta área, marcá-las adequadamente
-      if (questionCount > 0) {
-        const endIndex = questionCounter + questionCount;
-        
-        // Para cada questão dentro desta área
-        for (let q = questionCounter + 1; q <= endIndex; q++) {
-          // Encontrar o objeto de resposta correspondente
-          const answerItem = answersData.find(item => item.question_number === q);
-          
-          if (answerItem) {
-            // Definir as flags apropriadas com base na área atual
-            switch (area.key) {
-              case 'basic':
-                answerItem.is_basic_knowledge = true;
-                break;
-              case 'specific1':
-                answerItem.is_specific_1 = true;
-                break;
-              case 'specific2':
-                answerItem.is_specific_2 = true;
-                break;
-              case 'specific3':
-                answerItem.is_specific_3 = true;
-                break;
-              // Tratando outras áreas como específicas
-              // Nota: o banco de dados atual só tem flags para basic, specific1, specific2, specific3
-              default:
-                // Por padrão, vamos considerar como specific_1 para compatibilidade
-                answerItem.is_specific_1 = true;
-                break;
-            }
-          }
-        }
-        
-        // Atualizar contador para a próxima área
-        questionCounter += questionCount;
+    answersData.forEach(item => {
+      const qNum = item.question_number;
+      if (qNum <= basicEnd) {
+        item.is_basic_knowledge = true;
+      } else if (qNum <= specific1End) {
+        item.is_specific_1 = true;
+      } else if (qNum <= specific2End) {
+        item.is_specific_2 = true;
+      } else {
+        item.is_specific_3 = true;
       }
-    }
+    });
 
     console.log('Dados de respostas preparados para salvar:', answersData);
 
@@ -115,11 +82,25 @@ export const saveUserAnswersData = async (
       console.log('Novas respostas inseridas com sucesso');
     }
     
-    return { success: true };
-  } catch (error) {
-    console.error('Erro ao salvar respostas:', error);
+    return answersData;
+  } catch (error: any) {
+    console.error('Erro ao salvar respostas do usuário:', error);
     throw error;
   }
 };
 
-// Outras funções relacionadas às respostas do usuário podem ser adicionadas aqui
+// Função para buscar as respostas de um usuário
+export const fetchUserAnswers = async (rankingId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_answers')
+      .select('*')
+      .eq('user_ranking_id', rankingId);
+      
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching user answers:', error);
+    return [];
+  }
+};

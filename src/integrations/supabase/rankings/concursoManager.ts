@@ -61,91 +61,15 @@ export const createRanking = async (rankingData: any) => {
       has_case_study_2: rankingData.has_case_study_2 === true,
       has_case_study_3: rankingData.has_case_study_3 === true,
       
-      // Novas áreas de conhecimento - campos boolean
-      has_lpt: rankingData.has_lpt === true,
-      has_ing: rankingData.has_ing === true,
-      has_mat: rankingData.has_mat === true,
-      has_rlm: rankingData.has_rlm === true,
-      has_est: rankingData.has_est === true,
-      has_cos: rankingData.has_cos === true,
-      has_adm: rankingData.has_adm === true,
-      has_ado: rankingData.has_ado === true,
-      has_cot: rankingData.has_cot === true,
-      has_coc: rankingData.has_coc === true,
-      has_eco: rankingData.has_eco === true,
-      has_tri: rankingData.has_tri === true,
-      has_afo: rankingData.has_afo === true,
-      has_ltc: rankingData.has_ltc === true,
-      has_tic: rankingData.has_tic === true,
-      has_ett: rankingData.has_ett === true,
-      has_aud: rankingData.has_aud === true,
-      has_civ: rankingData.has_civ === true,
-      has_pen: rankingData.has_pen === true,
-      has_inf: rankingData.has_inf === true,
-      has_emp: rankingData.has_emp === true,
-      has_mtf: rankingData.has_mtf === true,
-      has_out: rankingData.has_out === true,
-      out_name: rankingData.out_name,
-      
       // Add question counts
       basic_knowledge_questions: rankingData.basic_knowledge_questions,
       specific_knowledge_1_questions: rankingData.specific_knowledge_1_questions,
       specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions,
       specific_knowledge_3_questions: rankingData.specific_knowledge_3_questions,
       
-      // Quantidade de questões para novas áreas
-      lpt_questions: rankingData.lpt_questions,
-      ing_questions: rankingData.ing_questions,
-      mat_questions: rankingData.mat_questions,
-      rlm_questions: rankingData.rlm_questions,
-      est_questions: rankingData.est_questions,
-      cos_questions: rankingData.cos_questions,
-      adm_questions: rankingData.adm_questions,
-      ado_questions: rankingData.ado_questions,
-      cot_questions: rankingData.cot_questions,
-      coc_questions: rankingData.coc_questions,
-      eco_questions: rankingData.eco_questions,
-      tri_questions: rankingData.tri_questions,
-      afo_questions: rankingData.afo_questions,
-      ltc_questions: rankingData.ltc_questions,
-      tic_questions: rankingData.tic_questions,
-      ett_questions: rankingData.ett_questions,
-      aud_questions: rankingData.aud_questions,
-      civ_questions: rankingData.civ_questions,
-      pen_questions: rankingData.pen_questions,
-      inf_questions: rankingData.inf_questions,
-      emp_questions: rankingData.emp_questions,
-      mtf_questions: rankingData.mtf_questions,
-      out_questions: rankingData.out_questions,
-      
       // Add weight fields
       basic_knowledge_weight: rankingData.basic_knowledge_weight,
       specific_knowledge_weight: rankingData.specific_knowledge_weight || rankingData.specific_knowledge_1_weight, // For backward compatibility
-      
-      // Pesos para novas áreas
-      lpt_weight: rankingData.lpt_weight,
-      ing_weight: rankingData.ing_weight,
-      mat_weight: rankingData.mat_weight,
-      rlm_weight: rankingData.rlm_weight,
-      est_weight: rankingData.est_weight,
-      cos_weight: rankingData.cos_weight,
-      adm_weight: rankingData.adm_weight,
-      ado_weight: rankingData.ado_weight,
-      cot_weight: rankingData.cot_weight,
-      coc_weight: rankingData.coc_weight,
-      eco_weight: rankingData.eco_weight,
-      tri_weight: rankingData.tri_weight,
-      afo_weight: rankingData.afo_weight,
-      ltc_weight: rankingData.ltc_weight,
-      tic_weight: rankingData.tic_weight,
-      ett_weight: rankingData.ett_weight,
-      aud_weight: rankingData.aud_weight,
-      civ_weight: rankingData.civ_weight,
-      pen_weight: rankingData.pen_weight,
-      inf_weight: rankingData.inf_weight,
-      emp_weight: rankingData.emp_weight,
-      mtf_weight: rankingData.mtf_weight,
-      out_weight: rankingData.out_weight,
       
       // Add reservation quota fields - ensuring boolean values
       has_ampla_concorrencia: rankingData.has_ampla_concorrencia === true,
@@ -153,10 +77,7 @@ export const createRanking = async (rankingData: any) => {
       has_pcd: rankingData.has_pcd === true,
       has_hipossuficientes: rankingData.has_hipossuficientes === true,
       has_indigenas: rankingData.has_indigenas === true,
-      has_transsexuais: rankingData.has_transsexuais === true,
-      
-      // Localidades
-      localidades: rankingData.localidades
+      has_transsexuais: rankingData.has_transsexuais === true
     };
     
     // Add additional weight fields if they exist
@@ -241,32 +162,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         has_discursive,
         has_case_study_1,
         has_case_study_2,
-        has_case_study_3,
-        
-        has_lpt, lpt_questions, lpt_weight,
-        has_ing, ing_questions, ing_weight,
-        has_mat, mat_questions, mat_weight,
-        has_rlm, rlm_questions, rlm_weight,
-        has_est, est_questions, est_weight,
-        has_cos, cos_questions, cos_weight,
-        has_adm, adm_questions, adm_weight,
-        has_ado, ado_questions, ado_weight,
-        has_cot, cot_questions, cot_weight,
-        has_coc, coc_questions, coc_weight,
-        has_eco, eco_questions, eco_weight,
-        has_tri, tri_questions, tri_weight,
-        has_afo, afo_questions, afo_weight,
-        has_ltc, ltc_questions, ltc_weight,
-        has_tic, tic_questions, tic_weight,
-        has_ett, ett_questions, ett_weight,
-        has_aud, aud_questions, aud_weight,
-        has_civ, civ_questions, civ_weight,
-        has_pen, pen_questions, pen_weight,
-        has_inf, inf_questions, inf_weight,
-        has_emp, emp_questions, emp_weight,
-        has_mtf, mtf_questions, mtf_weight,
-        has_out, out_questions, out_weight,
-        out_name
+        has_case_study_3
       `)
       .eq('id', rankingId)
       .single();
@@ -290,7 +186,6 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     // Check if any exam structure or weights have changed
     let structureChanged = false;
     if (oldData) {
-      // Lista completa de campos de estrutura, incluindo novas áreas
       const structureFields = [
         'basic_knowledge_questions',
         'specific_knowledge_1_questions',
@@ -312,33 +207,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         'has_discursive',
         'has_case_study_1',
         'has_case_study_2',
-        'has_case_study_3',
-        
-        // Novas áreas de conhecimento
-        'has_lpt', 'lpt_questions', 'lpt_weight',
-        'has_ing', 'ing_questions', 'ing_weight',
-        'has_mat', 'mat_questions', 'mat_weight',
-        'has_rlm', 'rlm_questions', 'rlm_weight',
-        'has_est', 'est_questions', 'est_weight',
-        'has_cos', 'cos_questions', 'cos_weight',
-        'has_adm', 'adm_questions', 'adm_weight',
-        'has_ado', 'ado_questions', 'ado_weight',
-        'has_cot', 'cot_questions', 'cot_weight',
-        'has_coc', 'coc_questions', 'coc_weight',
-        'has_eco', 'eco_questions', 'eco_weight',
-        'has_tri', 'tri_questions', 'tri_weight',
-        'has_afo', 'afo_questions', 'afo_weight',
-        'has_ltc', 'ltc_questions', 'ltc_weight',
-        'has_tic', 'tic_questions', 'tic_weight',
-        'has_ett', 'ett_questions', 'ett_weight',
-        'has_aud', 'aud_questions', 'aud_weight',
-        'has_civ', 'civ_questions', 'civ_weight',
-        'has_pen', 'pen_questions', 'pen_weight',
-        'has_inf', 'inf_questions', 'inf_weight',
-        'has_emp', 'emp_questions', 'emp_weight',
-        'has_mtf', 'mtf_questions', 'mtf_weight',
-        'has_out', 'out_questions', 'out_weight',
-        'out_name'
+        'has_case_study_3'
       ];
       
       for (const field of structureFields) {

@@ -1,15 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Dispatch, SetStateAction } from 'react';
 
 export const fetchExistingAnswers = async (
   rankingId: string,
-  setAnswers: Dispatch<SetStateAction<{ [key: number]: string }>>,
-  setQuestionType: Dispatch<SetStateAction<{ [key: number]: string }>>,
-  setDiscursiveScore: Dispatch<SetStateAction<number | null>>,
-  setCaseStudy1Score: Dispatch<SetStateAction<number | null>>,
-  setCaseStudy2Score: Dispatch<SetStateAction<number | null>>,
-  setCaseStudy3Score: Dispatch<SetStateAction<number | null>>
+  setAnswers: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>,
+  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>>,
+  setDiscursiveScore: React.Dispatch<React.SetStateAction<number | null>>,
+  setCaseStudy1Score: React.Dispatch<React.SetStateAction<number | null>>,
+  setCaseStudy2Score: React.Dispatch<React.SetStateAction<number | null>>,
+  setCaseStudy3Score: React.Dispatch<React.SetStateAction<number | null>>
 ) => {
   try {
     console.log('Fetching existing answers for ranking ID:', rankingId);
@@ -26,23 +25,19 @@ export const fetchExistingAnswers = async (
     
     if (answersData?.length) {
       const answersMap: { [key: number]: string } = {};
-      const typesMap: { [key: number]: string } = {};
+      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
       
       answersData.forEach((item: any) => {
-        const questionNumber = item.question_number;
-        answersMap[questionNumber] = item.answer;
+        answersMap[item.question_number] = item.answer;
         
-        // Map question types based on their flags
-        // Note: no banco atual só temos flags para basic, specific1, specific2 e specific3
-        // Os novos tipos serão determinados programaticamente em initializeQuestionTypes
         if (item.is_basic_knowledge) {
-          typesMap[questionNumber] = 'basic';
+          typesMap[item.question_number] = 'basic';
         } else if (item.is_specific_1) {
-          typesMap[questionNumber] = 'specific1';
+          typesMap[item.question_number] = 'specific1';
         } else if (item.is_specific_2) {
-          typesMap[questionNumber] = 'specific2';
+          typesMap[item.question_number] = 'specific2';
         } else if (item.is_specific_3) {
-          typesMap[questionNumber] = 'specific3';
+          typesMap[item.question_number] = 'specific3';
         }
       });
       
