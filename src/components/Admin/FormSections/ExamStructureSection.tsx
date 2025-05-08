@@ -184,7 +184,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
               Conhecimentos Específicos 3
             </DropdownMenuItem>
             
-            {/* Novos Conhecimentos */}
+            {/* Novos Conhecimentos - Mover "Outro (OUT)" para o final */}
             <DropdownMenuItem 
               onClick={() => toggleSection('has_lpt', true)} 
               disabled={lptEnabled}
@@ -317,12 +317,6 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
             >
               Mat. Financeira (MTF)
             </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => toggleSection('has_out', true)} 
-              disabled={outEnabled}
-            >
-              Outro (OUT)
-            </DropdownMenuItem>
             
             {/* Seções de Discursiva e Estudos de Caso */}
             <DropdownMenuItem 
@@ -348,6 +342,14 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
               disabled={caseStudy3Enabled}
             >
               Estudo de Caso 3
+            </DropdownMenuItem>
+            
+            {/* Movido para o final - Outro conhecimento customizável */}
+            <DropdownMenuItem 
+              onClick={() => toggleSection('has_out', true)} 
+              disabled={outEnabled}
+            >
+              Outro (OUT)
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -602,25 +604,6 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         caseStudy3Enabled, 
         undefined, 
         "case_study_3_weight"
-      )}
-
-      {!basicKnowledgeEnabled && 
-       !specificKnowledge1Enabled && 
-       !specificKnowledge2Enabled && 
-       !specificKnowledge3Enabled && 
-       !lptEnabled && !ingEnabled && !matEnabled && !rlmEnabled &&
-       !estEnabled && !cosEnabled && !admEnabled && !adoEnabled &&
-       !cotEnabled && !cocEnabled && !ecoEnabled && !triEnabled &&
-       !afoEnabled && !ltcEnabled && !ticEnabled && !ettEnabled &&
-       !audEnabled && !civEnabled && !penEnabled && !infEnabled &&
-       !empEnabled && !mtfEnabled && !outEnabled &&
-       !discursiveEnabled && 
-       !caseStudy1Enabled && 
-       !caseStudy2Enabled && 
-       !caseStudy3Enabled && (
-        <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
-          Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
-        </div>
       )}
     </div>
   );
