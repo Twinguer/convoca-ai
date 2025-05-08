@@ -1,14 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { Dispatch, SetStateAction } from 'react';
 
 export const fetchExistingAnswers = async (
   rankingId: string,
-  setAnswers: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>,
-  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>>,
-  setDiscursiveScore: React.Dispatch<React.SetStateAction<number | null>>,
-  setCaseStudy1Score: React.Dispatch<React.SetStateAction<number | null>>,
-  setCaseStudy2Score: React.Dispatch<React.SetStateAction<number | null>>,
-  setCaseStudy3Score: React.Dispatch<React.SetStateAction<number | null>>
+  setAnswers: Dispatch<SetStateAction<{ [key: number]: string }>>,
+  setQuestionType: Dispatch<SetStateAction<{ [key: number]: string }>>,
+  setDiscursiveScore: Dispatch<SetStateAction<number | null>>,
+  setCaseStudy1Score: Dispatch<SetStateAction<number | null>>,
+  setCaseStudy2Score: Dispatch<SetStateAction<number | null>>,
+  setCaseStudy3Score: Dispatch<SetStateAction<number | null>>
 ) => {
   try {
     console.log('Fetching existing answers for ranking ID:', rankingId);
@@ -25,19 +26,20 @@ export const fetchExistingAnswers = async (
     
     if (answersData?.length) {
       const answersMap: { [key: number]: string } = {};
-      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
+      const typesMap: { [key: number]: string } = {};
       
       answersData.forEach((item: any) => {
-        answersMap[item.question_number] = item.answer;
+        const questionNumber = item.question_number;
+        answersMap[questionNumber] = item.answer;
         
         if (item.is_basic_knowledge) {
-          typesMap[item.question_number] = 'basic';
+          typesMap[questionNumber] = 'basic';
         } else if (item.is_specific_1) {
-          typesMap[item.question_number] = 'specific1';
+          typesMap[questionNumber] = 'specific1';
         } else if (item.is_specific_2) {
-          typesMap[item.question_number] = 'specific2';
+          typesMap[questionNumber] = 'specific2';
         } else if (item.is_specific_3) {
-          typesMap[item.question_number] = 'specific3';
+          typesMap[questionNumber] = 'specific3';
         }
       });
       

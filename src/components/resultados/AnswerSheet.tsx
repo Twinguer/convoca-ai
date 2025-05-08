@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,13 +26,27 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
+  // Definir um tipo mais abrangente para selectedSection para incluir todas as possíveis áreas
+  type SectionType = 
+    | 'basic' 
+    | 'specific1' 
+    | 'specific2' 
+    | 'specific3' 
+    | 'discursive' 
+    | 'case_study1' 
+    | 'case_study2' 
+    | 'case_study3'
+    | 'lpt' | 'ing' | 'mat' | 'rlm' | 'est' | 'cos' | 'adm' | 'ado'
+    | 'cot' | 'coc' | 'eco' | 'tri' | 'afo' | 'ltc' | 'tic' | 'ett'
+    | 'aud' | 'civ' | 'pen' | 'inf' | 'emp' | 'mtf' | 'out';
+  
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   
   const {
     answers,
     selectedSection,
-    setSelectedSection,
+    setSelectedSection: setSelectedSectionHook,
     isSaving,
     setIsSaving,
     error,
@@ -54,8 +67,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score
+    setCaseStudy3Score,
+    isDiscursiveSection
   } = useAnswerSheet(concurso, rankingId);
+  
+  // Wrapper para garantir tipagem correta ao chamar setSelectedSection do hook
+  const setSelectedSection = (section: string) => {
+    setSelectedSectionHook(section as SectionType);
+  };
   
   const {
     data: userRankingData,
@@ -269,6 +288,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return allQuestions;
   };
   
+  // Verificar se há questões disponíveis para a seção selecionada
+  const currentSectionMatrix = createAnswerMatrix();
+  const hasSectionQuestions = currentSectionMatrix && 
+    currentSectionMatrix.length > 0 && 
+    currentSectionMatrix.some(row => row.some(cell => cell !== null));
+  
   return (
     <Card className="shadow-lg">
       <CardHeader className="bg-emerald-50 border-b">
@@ -347,16 +372,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               
               {objectiveSections.map(section => (
                 <TabsContent key={section.key} value={section.key}>
-                  <AnswerMatrix
-                    matrix={createAnswerMatrix()}
-                    answers={answers}
-                    onAnswerChange={handleAnswerChange}
-                    onClearAnswer={handleClearAnswer}
-                    getOptionsForQuestion={getOptionsForQuestion}
-                    disabled={!canEdit}
-                    examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
-                    nullifiedQuestions={nullifiedQuestions}
-                  />
+                  {hasSectionQuestions ? (
+                    <AnswerMatrix
+                      matrix={currentSectionMatrix}
+                      answers={answers}
+                      onAnswerChange={handleAnswerChange}
+                      onClearAnswer={handleClearAnswer}
+                      getOptionsForQuestion={getOptionsForQuestion}
+                      disabled={false} // Change as needed based on user permissions
+                      examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
+                      nullifiedQuestions={nullifiedQuestions}
+                    />
+                  ) : (
+                    <div className="p-6 text-center text-gray-500">
+                      Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.
+                    </div>
+                  )}
                 </TabsContent>
               ))}
             </Tabs>

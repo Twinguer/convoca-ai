@@ -10,10 +10,24 @@ import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 
+// Definindo um tipo mais abrangente para cobrir todas as possíveis seções
+type SectionType = 
+  | 'basic' 
+  | 'specific1' 
+  | 'specific2' 
+  | 'specific3' 
+  | 'discursive' 
+  | 'case_study1' 
+  | 'case_study2' 
+  | 'case_study3'
+  | 'lpt' | 'ing' | 'mat' | 'rlm' | 'est' | 'cos' | 'adm' | 'ado'
+  | 'cot' | 'coc' | 'eco' | 'tri' | 'afo' | 'ltc' | 'tic' | 'ett'
+  | 'aud' | 'civ' | 'pen' | 'inf' | 'emp' | 'mtf' | 'out';
+
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: string }>({});
-  const [selectedSection, setSelectedSection] = useState<string>('basic');
+  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -33,7 +47,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
-      handleQuestionSectionSelection(concurso, setSelectedSection);
+      const handleSectionSelection = (section: string) => {
+        setSelectedSection(section as SectionType);
+      };
+      
+      handleQuestionSectionSelection(concurso, handleSectionSelection);
     }
   }, [concurso]);
 
@@ -103,7 +121,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           'AUD', 'CIV', 'PEN', 'INF', 'EMP', 'MTF', 'OUT'
         ];
         
-        if (knowledgeAreas.includes(selectedSection)) {
+        if (knowledgeAreas.includes(selectedSection.toUpperCase())) {
           // Calcular o índice de início considerando as seções anteriores
           let startIndex = 0;
           
@@ -150,7 +168,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           (selectedSection === 'specific1' && type === 'specific1') ||
           (selectedSection === 'specific2' && type === 'specific2') ||
           (selectedSection === 'specific3' && type === 'specific3') ||
-          (type.toUpperCase() === selectedSection)
+          (type.toUpperCase() === selectedSection.toUpperCase())
         ) {
           questions.push(parseInt(num));
         }

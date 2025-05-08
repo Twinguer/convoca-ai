@@ -4,7 +4,7 @@ import { getEnabledKnowledgeAreas } from '@/services/knowledgeAreaService';
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
-  setSelectedSection: React.Dispatch<React.SetStateAction<string>>
+  setSelectedSection: (section: string) => void
 ) => {
   // Obter todas as áreas de conhecimento habilitadas
   const enabledAreas = getEnabledKnowledgeAreas(concurso);

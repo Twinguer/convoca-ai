@@ -19,8 +19,14 @@ export const createAnswerMatrix = (questionNumbers: number[] = []) => {
     const startIdx = i * questionsPerRow;
     const row = sortedNumbers.slice(startIdx, startIdx + questionsPerRow);
     
+    // Preenche o restante da linha com null se necessário
+    const filledRow = [...row];
+    while (filledRow.length < questionsPerRow) {
+      filledRow.push(null);
+    }
+    
     // Adiciona a linha à matriz
-    matrix.push(row);
+    matrix.push(filledRow);
   }
   
   return matrix;

@@ -19,8 +19,6 @@ export const saveUserAnswersData = async (
       .single();
     if (concursoError) throw concursoError;
 
-    const examStructure = getExamStructure(concurso);
-
     // Obter todas as áreas de conhecimento habilitadas
     const enabledAreas = getEnabledKnowledgeAreas(concurso);
 
@@ -115,13 +113,13 @@ export const saveUserAnswersData = async (
       }
       
       console.log('Novas respostas inseridas com sucesso');
-    } else {
-      console.log('Nenhuma resposta para inserir');
     }
     
-    return true;
+    return { success: true };
   } catch (error) {
-    console.error('Erro ao salvar respostas do usuário:', error);
+    console.error('Erro ao salvar respostas:', error);
     throw error;
   }
 };
+
+// Outras funções relacionadas às respostas do usuário podem ser adicionadas aqui
