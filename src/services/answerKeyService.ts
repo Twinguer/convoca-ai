@@ -81,18 +81,34 @@ export const answerKeyService = {
     try {
       console.log('[answerKeyService] Salvando gabarito completo para concurso:', concursoId);
       
+      // Buscar informações do concurso para determinar os tipos de seção
+      const { data: concursoData, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao buscar dados do concurso:', concursoError);
+      }
+      
       // Em vez de deletar tudo e reinserir, vamos atualizar cada questão individualmente
       // para evitar o erro de duplicação
       for (const item of answerKeyData) {
+        // Determinar o section_type para a questão se não estiver definido
+        if (!item.section_type && concursoData) {
+          item.section_type = getSectionTypeForQuestion(concursoData, item.question_number);
+        }
+        
         // Verificar se já existe esta questão para este concurso
         const { data: existingData, error: checkError } = await supabase
           .from('official_answer_weights')
           .select('id')
           .eq('concurso_id', concursoId)
           .eq('question_number', item.question_number)
-          .single();
+          .maybeSingle();
         
-        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = não encontrado, que é esperado
+        if (checkError) {
           console.error('[answerKeyService] Erro ao verificar existência da questão:', checkError);
         }
         
@@ -150,3 +166,5 @@ export const answerKeyService = {
     }
   }
 };
+
+import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';

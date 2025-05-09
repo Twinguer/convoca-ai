@@ -10,13 +10,14 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { answerKeyService } from '@/services/answerKeyService';
+import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyFormProps {
   concursoId: string;
 }
 
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
+  const [selectedSection, setSelectedSection] = useState<string>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -97,41 +98,48 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
 
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
-    
     let currentQuestionNumber = 1;
     
-    // Básico
+    // Seções padrão
     if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
       for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Específico 1
     if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
       for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Específico 2
     if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
       for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Específico 3
     if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
       for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
+    // Disciplinas customizadas
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      for (const discipline of concurso.disciplines) {
+        if (discipline.isEnabled && discipline.questionCount) {
+          for (let i = 0; i < discipline.questionCount; i++) {
+            allQuestions.push(currentQuestionNumber++);
+          }
+        }
+      }
+    }
+    
     return allQuestions;
   };
 
-  const getQuestionsCount = (section: 'basic' | 'specific1' | 'specific2' | 'specific3') => {
+  const getQuestionsCount = (section: string): number => {
     if (section === 'basic' && concurso.has_basic_knowledge) {
       return concurso.basic_knowledge_questions || 0;
     } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
@@ -140,32 +148,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       return concurso.specific_knowledge_2_questions || 0;
     } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
       return concurso.specific_knowledge_3_questions || 0;
+    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const customDiscipline = concurso.disciplines.find(d => d.type === section);
+      if (customDiscipline) {
+        return customDiscipline.questionCount || 0;
+      }
     }
     return 0;
-  };
-
-  // Método modificado para buscar questões apenas da seção atual (para exibição)
-  const getQuestionsRange = () => {
-    if (selectedSection === 'basic') {
-      return Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1);
-    } else {
-      let startNumber = 1;
-      
-      if (concurso.has_basic_knowledge) {
-        startNumber += (concurso.basic_knowledge_questions || 0);
-      }
-      
-      if (selectedSection === 'specific1') {
-        return Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i);
-      } else if (selectedSection === 'specific2') {
-        startNumber += (concurso.specific_knowledge_1_questions || 0);
-        return Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i);
-      } else if (selectedSection === 'specific3') {
-        startNumber += (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0);
-        return Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i);
-      }
-    }
-    return [];
   };
 
   const handleAnswerChange = (questionNumber: number, answer: string) => {
@@ -278,27 +267,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       // Preparar dados para salvar o gabarito completo de uma vez
       const answerKeyData = allQuestions.map(qNum => {
         // Determinar o tipo de seção para cada questão
-        let sectionType = 'basic';
+        const sectionType = getSectionTypeForQuestion(concurso, qNum);
         
-        // Calcular o número base de cada seção
-        const basicEnd = concurso.basic_knowledge_questions || 0;
-        
-        if (qNum > basicEnd) {
-          sectionType = 'specific1';
-          
-          const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
-          if (qNum > specific1End) {
-            sectionType = 'specific2';
-            
-            const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
-            if (qNum > specific2End) {
-              sectionType = 'specific3';
-            }
-          }
-        }
-
-        // Antes de destruir toda a tabela, vamos fazer uma tentativa de atualização individual
-        // answerKeyService cuida da lógica de upsert (update ou insert conforme necessário)
         return {
           concurso_id: concursoId,
           question_number: qNum,
@@ -354,12 +324,202 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
     if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
     if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    
+    // Adicionar disciplinas customizadas
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled) {
+          sections.push({ key: discipline.type, label: discipline.name });
+        }
+      });
+    }
+    
     return sections;
   };
 
-  const objectiveSections = getObjectiveSectionList();
-  
-  // Contar o total de questões que ainda não foram respondidas
+  const getQuestionsRange = () => {
+    if (selectedSection === 'basic') {
+      return Array.from({ length: getQuestionsCount('basic') }, (_, i) => i + 1);
+    } else if (selectedSection === 'specific1') {
+      let startNumber = 1;
+      
+      if (concurso.has_basic_knowledge) {
+        startNumber += (concurso.basic_knowledge_questions || 0);
+      }
+      
+      return Array.from({ length: getQuestionsCount('specific1') }, (_, i) => startNumber + i);
+    } else if (selectedSection === 'specific2') {
+      let startNumber = 1;
+      
+      if (concurso.has_basic_knowledge) {
+        startNumber += (concurso.basic_knowledge_questions || 0);
+      }
+      if (concurso.has_specific_knowledge_1) {
+        startNumber += (concurso.specific_knowledge_1_questions || 0);
+      }
+      
+      return Array.from({ length: getQuestionsCount('specific2') }, (_, i) => startNumber + i);
+    } else if (selectedSection === 'specific3') {
+      let startNumber = 1;
+      
+      if (concurso.has_basic_knowledge) {
+        startNumber += (concurso.basic_knowledge_questions || 0);
+      }
+      if (concurso.has_specific_knowledge_1) {
+        startNumber += (concurso.specific_knowledge_1_questions || 0);
+      }
+      if (concurso.has_specific_knowledge_2) {
+        startNumber += (concurso.specific_knowledge_2_questions || 0);
+      }
+      
+      return Array.from({ length: getQuestionsCount('specific3') }, (_, i) => startNumber + i);
+    } else {
+      // Para disciplinas customizadas
+      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        const customDiscipline = concurso.disciplines.find(d => d.type === selectedSection);
+        if (customDiscipline && customDiscipline.questionCount) {
+          // Calcular o índice de início para esta disciplina
+          let startNumber = 1;
+          
+          if (concurso.has_basic_knowledge) {
+            startNumber += (concurso.basic_knowledge_questions || 0);
+          }
+          if (concurso.has_specific_knowledge_1) {
+            startNumber += (concurso.specific_knowledge_1_questions || 0);
+          }
+          if (concurso.has_specific_knowledge_2) {
+            startNumber += (concurso.specific_knowledge_2_questions || 0);
+          }
+          if (concurso.has_specific_knowledge_3) {
+            startNumber += (concurso.specific_knowledge_3_questions || 0);
+          }
+          
+          // Ajustar o índice baseado nas disciplinas anteriores
+          for (const discipline of concurso.disciplines) {
+            if (discipline.type === selectedSection) break;
+            if (discipline.isEnabled && discipline.questionCount) {
+              startNumber += discipline.questionCount;
+            }
+          }
+          
+          return Array.from({ length: customDiscipline.questionCount }, (_, i) => startNumber + i);
+        }
+      }
+      return [];
+    }
+  };
+
+  const getQuestionsCount = (section: string): number => {
+    if (section === 'basic' && concurso.has_basic_knowledge) {
+      return concurso.basic_knowledge_questions || 0;
+    } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
+      return concurso.specific_knowledge_1_questions || 0;
+    } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
+      return concurso.specific_knowledge_2_questions || 0;
+    } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
+      return concurso.specific_knowledge_3_questions || 0;
+    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const customDiscipline = concurso.disciplines.find(d => d.type === section);
+      if (customDiscipline) {
+        return customDiscipline.questionCount || 0;
+      }
+    }
+    return 0;
+  };
+
+  const handleSaveAnswerKey = async () => {
+    try {
+      setIsSaving(true);
+      setError(null);
+      setSavedSuccess(false);
+      
+      // Verificar todas as questões em todas as seções, não apenas a aba atual
+      const allQuestions = getAllQuestionsFromAllSections();
+      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
+      
+      if (unansweredQuestions.length > 0) {
+        setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        toast({
+          title: "Erro ao salvar gabarito",
+          description: "Todas as questões devem ser respondidas antes de salvar o gabarito.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Preparar dados para salvar o gabarito completo de uma vez
+      const answerKeyData = allQuestions.map(qNum => {
+        // Determinar o tipo de seção para cada questão
+        const sectionType = getSectionTypeForQuestion(concurso, qNum);
+        
+        return {
+          concurso_id: concursoId,
+          question_number: qNum,
+          correct_answer: answers[qNum],
+          weight: 1.0,
+          section_type: sectionType,
+          is_nullified: nullifiedQuestions.has(qNum)
+        };
+      });
+
+      // Usar o método que evita recrear toda a tabela
+      const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
+
+      if (saveResult.success) {
+        setSavedSuccess(true);
+        toast({
+          title: "Gabarito salvo com sucesso",
+          description: `O gabarito oficial foi atualizado. ${saveResult.updatedCount || 0} pontuações foram recalculadas.`,
+        });
+        
+        setTimeout(() => {
+          setSavedSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error("Erro ao salvar gabarito");
+      }
+    } catch (error: any) {
+      console.error('Error saving answer key:', error);
+      setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
+      
+      toast({
+        title: "Erro ao salvar gabarito",
+        description: error.message || "Ocorreu um erro ao salvar o gabarito oficial. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getOptionsForQuestion = () => {
+    if (concurso.exam_type === 'Certo ou Errado') {
+      return ['C', 'E'];
+    }
+    
+    const count = concurso.alternatives_count || 5;
+    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
+  };
+
+  const getObjectiveSectionList = () => {
+    const sections = [];
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    
+    // Adicionar disciplinas customizadas
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled) {
+          sections.push({ key: discipline.type, label: discipline.name });
+        }
+      });
+    }
+    
+    return sections;
+  };
+
   const totalQuestions = getAllQuestionsFromAllSections().length;
   const answeredQuestions = Object.keys(answers).length;
   const percentageComplete = totalQuestions > 0 ? Math.floor((answeredQuestions / totalQuestions) * 100) : 0;
@@ -434,18 +594,20 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              onValueChange={(value) => setSelectedSection(value)}
               className="w-full"
             >
-              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
-                {objectiveSections.map(section => (
+              <TabsList className="grid w-full" style={{
+                gridTemplateColumns: `repeat(${getObjectiveSectionList().length}, minmax(0, 1fr))`
+              }}>
+                {getObjectiveSectionList().map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
               
-              {objectiveSections.map(section => (
+              {getObjectiveSectionList().map(section => (
                 <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

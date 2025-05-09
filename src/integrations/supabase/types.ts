@@ -591,6 +591,41 @@ export type Database = {
           },
         ]
       }
+      disciplinas: {
+        Row: {
+          concurso_id: string
+          id: string
+          name: string
+          questioncount: number
+          type: string
+          weight: number
+        }
+        Insert: {
+          concurso_id: string
+          id?: string
+          name: string
+          questioncount: number
+          type: string
+          weight: number
+        }
+        Update: {
+          concurso_id?: string
+          id?: string
+          name?: string
+          questioncount?: number
+          type?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinas_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_titles: {
         Row: {
           created_at: string | null

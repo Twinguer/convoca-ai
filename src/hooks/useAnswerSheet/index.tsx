@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,24 +110,26 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
                           (concurso.specific_knowledge_1_questions || 0) +
                           (concurso.specific_knowledge_2_questions || 0) +
                           (concurso.specific_knowledge_3_questions || 0) + 1;
+          
+          // Ajustar o índice baseado nas disciplinas anteriores
+          for (const discipline of concurso.disciplines) {
+            if (discipline.type === selectedSection) break;
+            if (discipline.isEnabled && discipline.questionCount) {
+              startIndex += discipline.questionCount;
+            }
+          }
                           
           // Adicionar questões para esta disciplina
           const questionCount = customDiscipline.questionCount || 0;
-          for (let i = startIndex; i < startIndex + questionCount; i++) {
-            questions.push(i);
+          for (let i = 0; i < questionCount; i++) {
+            questions.push(startIndex + i);
           }
         }
       }
     } else {
       // Se tiver, usamos o mapeamento existente
       Object.entries(questionType).forEach(([num, type]) => {
-        if (
-          (selectedSection === 'basic' && type === 'basic') ||
-          (selectedSection === 'specific1' && type === 'specific1') ||
-          (selectedSection === 'specific2' && type === 'specific2') ||
-          (selectedSection === 'specific3' && type === 'specific3') ||
-          (type === selectedSection) // Para tipos customizados
-        ) {
+        if (type === selectedSection) {
           questions.push(parseInt(num));
         }
       });
@@ -174,7 +175,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions
   };
 };
-
