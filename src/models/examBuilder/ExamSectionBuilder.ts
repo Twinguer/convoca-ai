@@ -4,53 +4,56 @@ import { SectionType } from '@/integrations/supabase/rankings/examStructure';
 export interface ExamSectionConfig {
   sectionType: SectionType;
   displayName: string;
-  questionCount: number;
   weight: number;
+  questionCount: number;
   isEnabled: boolean;
-  isCustom?: boolean;
+  isCustom: boolean;
   customName?: string;
 }
 
 export class ExamSectionBuilder {
-  private section: ExamSectionConfig;
+  private config: ExamSectionConfig;
   
   constructor(sectionType: SectionType, displayName: string) {
-    this.section = {
+    this.config = {
       sectionType,
       displayName,
-      questionCount: 0,
       weight: 1,
-      isEnabled: false
+      questionCount: 0,
+      isEnabled: false,
+      isCustom: false
     };
   }
   
-  withQuestionCount(count: number): ExamSectionBuilder {
-    this.section.questionCount = count;
+  withWeight(weight: number): ExamSectionBuilder {
+    this.config.weight = weight;
     return this;
   }
   
-  withWeight(weight: number): ExamSectionBuilder {
-    this.section.weight = weight;
+  withQuestionCount(count: number): ExamSectionBuilder {
+    this.config.questionCount = count;
     return this;
   }
   
   enabled(): ExamSectionBuilder {
-    this.section.isEnabled = true;
+    this.config.isEnabled = true;
     return this;
   }
   
   disabled(): ExamSectionBuilder {
-    this.section.isEnabled = false;
+    this.config.isEnabled = false;
     return this;
   }
   
-  asCustomSection(customName: string): ExamSectionBuilder {
-    this.section.isCustom = true;
-    this.section.customName = customName;
+  asCustomSection(name?: string): ExamSectionBuilder {
+    this.config.isCustom = true;
+    if (name) {
+      this.config.customName = name;
+    }
     return this;
   }
   
   build(): ExamSectionConfig {
-    return { ...this.section };
+    return { ...this.config };
   }
 }

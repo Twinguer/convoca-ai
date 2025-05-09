@@ -1,12 +1,11 @@
 
-import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
-import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType } from '@/integrations/supabase/rankings/examStructure';
 
 export const initializeQuestionTypes = (
   concurso: Concurso, 
-  questionType: { [key: number]: string },
-  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>
+  questionType: { [key: number]: SectionType },
+  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: SectionType }>>
 ) => {
   // Se o mapeamento já tiver sido feito, não precisamos refazer
   if (Object.keys(questionType).length > 0) {
@@ -15,7 +14,7 @@ export const initializeQuestionTypes = (
   
   // Caso contrário, vamos inicializar o mapeamento com base na estrutura do concurso
   let questionCounter = 1;
-  const questionTypeMap: { [key: number]: string } = {};
+  const questionTypeMap: { [key: number]: SectionType } = {};
 
   // Conhecimentos básicos
   if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
@@ -50,7 +49,7 @@ export const initializeQuestionTypes = (
     concurso.disciplines.forEach(discipline => {
       if (discipline.isEnabled && discipline.questionCount) {
         for (let i = 0; i < discipline.questionCount; i++) {
-          questionTypeMap[questionCounter++] = discipline.type;
+          questionTypeMap[questionCounter++] = discipline.type as SectionType;
         }
       }
     });

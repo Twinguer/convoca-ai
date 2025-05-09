@@ -13,8 +13,8 @@ import { SectionType, updateSectionDisplayNames } from '@/integrations/supabase/
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: string }>({});
-  const [selectedSection, setSelectedSection] = useState<string>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: SectionType }>({});
+  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -43,7 +43,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso) {
       handleQuestionSectionSelection(
         concurso,
-        (section: string) => setSelectedSection(section)
+        (section: SectionType) => setSelectedSection(section)
       );
     }
   }, [concurso]);

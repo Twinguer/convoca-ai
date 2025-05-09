@@ -145,23 +145,25 @@ export class ExamStructureBuilder {
     }
 
     // Inicializar seções de disciplinas específicas
-    const disciplineFlags = [
+    const disciplineFlags: Array<{
+      type: string;
+      hasFlag: keyof Concurso;
+      questions: keyof Concurso;
+      weight: keyof Concurso;
+    }> = [
       { type: 'lpt', hasFlag: 'has_lpt', questions: 'lpt_questions', weight: 'lpt_weight' },
       { type: 'ing', hasFlag: 'has_ing', questions: 'ing_questions', weight: 'ing_weight' },
       { type: 'mat', hasFlag: 'has_mat', questions: 'mat_questions', weight: 'mat_weight' },
       { type: 'rlm', hasFlag: 'has_rlm', questions: 'rlm_questions', weight: 'rlm_weight' },
       { type: 'est', hasFlag: 'has_est', questions: 'est_questions', weight: 'est_weight' },
-      { type: 'cos', hasFlag: 'has_cos', questions: 'cos_questions', weight: 'cos_weight' },
-      // ... e assim por diante para todas as disciplinas suportadas
+      { type: 'cos', hasFlag: 'has_cos', questions: 'cos_questions', weight: 'cos_weight' }
     ];
 
     disciplineFlags.forEach(({ type, hasFlag, questions, weight }) => {
-      if (concurso[hasFlag as keyof Concurso]) {
-        this.enableSection(
-          type as SectionType, 
-          (concurso[questions as keyof Concurso] as number) || 0,
-          (concurso[weight as keyof Concurso] as number) || 1
-        );
+      if (concurso[hasFlag]) {
+        const questionsCount = concurso[questions] as number || 0;
+        const weightValue = concurso[weight] as number || 1;
+        this.enableSection(type as SectionType, questionsCount, weightValue);
       } else {
         this.disableSection(type as SectionType);
       }

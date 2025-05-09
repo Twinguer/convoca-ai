@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -13,10 +14,9 @@ import {
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { ExamStructureBuilder } from '@/models/examBuilder/ExamStructureBuilder';
 import { ExamSectionConfig } from '@/models/examBuilder/ExamSectionBuilder';
-import { sectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, SectionType } from '@/integrations/supabase/rankings/examStructure';
 
 interface CustomExamStructureSectionProps {
   form: UseFormReturn<any>;
@@ -29,7 +29,6 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   const [customSectionQuestions, setCustomSectionQuestions] = useState('0');
   const [customSectionWeight, setCustomSectionWeight] = useState('1');
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
-  const [editingSectionType, setEditingSectionType] = useState<string | null>(null);
 
   // Inicializa o construtor com os dados do formulário quando o formulário mudar
   useEffect(() => {
@@ -127,7 +126,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   };
   
   // Helper para obter o nome do campo de peso para uma seção
-  const getWeightFieldName = (sectionType: string): string => {
+  const getWeightFieldName = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'basic': return 'basic_knowledge_weight';
       case 'specific1': return 'specific_knowledge_1_weight';
@@ -177,7 +176,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   };
   
   // Helper para obter o nome do campo de questões para uma seção
-  const getQuestionsFieldName = (sectionType: string): string => {
+  const getQuestionsFieldName = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'basic': return 'basic_knowledge_questions';
       case 'specific1': return 'specific_knowledge_1_questions';
@@ -188,7 +187,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   };
 
   // Atualiza uma seção no builder e no formulário
-  const updateSection = (sectionType: string, questionCount: number, weight: number) => {
+  const updateSection = (sectionType: SectionType, questionCount: number, weight: number) => {
     const updatedBuilder = new ExamStructureBuilder();
     
     // Copiar as seções do builder atual
@@ -214,7 +213,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     const concursoValues = updatedBuilder.toConcurso();
     Object.entries(concursoValues).forEach(([key, value]) => {
       if (key !== 'disciplines') { // Disciplinas já são tratadas separadamente
-        form.setValue(key, value);
+        form.setValue(key as any, value);
       }
     });
     
@@ -225,7 +224,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   };
 
   // Adicionar uma nova seção
-  const addSection = (sectionType: string) => {
+  const addSection = (sectionType: SectionType) => {
     const updatedBuilder = new ExamStructureBuilder();
     
     // Copiar as seções existentes
@@ -245,12 +244,12 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     setEnabledSections(updatedBuilder.getEnabledSections());
     
     // Atualizar o formulário
-    const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues;
+    const hasKey = `has_${getSectionKey(sectionType)}` as any;
     form.setValue(hasKey, true);
   };
   
   // Helper para obter a chave correta para uma seção
-  const getSectionKey = (sectionType: string): string => {
+  const getSectionKey = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'specific1': return 'specific_knowledge_1';
       case 'specific2': return 'specific_knowledge_2';
@@ -263,7 +262,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   };
 
   // Remover uma seção
-  const removeSection = (sectionType: string) => {
+  const removeSection = (sectionType: SectionType) => {
     const updatedBuilder = new ExamStructureBuilder();
     
     // Copiar apenas as seções que não vão ser removidas
@@ -282,7 +281,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     setEnabledSections(updatedBuilder.getEnabledSections());
     
     // Atualizar o formulário
-    const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues;
+    const hasKey = `has_${getSectionKey(sectionType)}` as any;
     form.setValue(hasKey, false);
     
     // Para seções customizadas, atualizar a lista de disciplines no formulário
@@ -290,7 +289,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
           'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
       const disciplines = form.getValues('disciplines') || [];
       const updatedDisciplines = disciplines.filter((d: any) => 
-        d.type !== sectionType || d.name !== sectionDisplayNames[sectionType]
+        d.type !== sectionType || d.name !== sectionDisplayNames[sectionType as keyof typeof sectionDisplayNames]
       );
       form.setValue('disciplines', updatedDisciplines);
     }
@@ -300,7 +299,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   const addCustomSection = () => {
     if (!customSectionName.trim()) return;
     
-    const sectionType = customSectionName.toLowerCase().replace(/\s+/g, '_');
+    const sectionType = customSectionName.toLowerCase().replace(/\s+/g, '_') as SectionType;
     const questionCount = parseInt(customSectionQuestions) || 0;
     const weight = parseInt(customSectionWeight) || 1;
     
@@ -341,13 +340,13 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   };
 
   // Verificar quais seções já estão habilitadas
-  const isEnabledSection = (sectionType: string): boolean => {
+  const isEnabledSection = (sectionType: SectionType): boolean => {
     return enabledSections.some(section => section.sectionType === sectionType);
   };
 
   // Obter seções disponíveis para adicionar
   const getAvailableSections = () => {
-    const available: Array<{ type: string, name: string }> = [];
+    const available: Array<{ type: SectionType, name: string }> = [];
     
     // Seções padrão
     if (!isEnabledSection('basic')) available.push({ type: 'basic', name: 'Conhecimentos Básicos' });
@@ -363,8 +362,8 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     Object.entries(sectionDisplayNames).forEach(([type, name]) => {
       if (!['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
             'case_study1', 'case_study2', 'case_study3'].includes(type) &&
-          !isEnabledSection(type)) {
-        available.push({ type, name });
+          !isEnabledSection(type as SectionType)) {
+        available.push({ type: type as SectionType, name });
       }
     });
     
@@ -505,9 +504,9 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
               {Object.entries(sectionDisplayNames)
                 .filter(([type]) => !['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
                          'case_study1', 'case_study2', 'case_study3'].includes(type))
-                .filter(([type]) => !isEnabledSection(type))
+                .filter(([type]) => !isEnabledSection(type as SectionType))
                 .map(([type, name]) => (
-                  <DropdownMenuItem key={type} onClick={() => addSection(type)}>
+                  <DropdownMenuItem key={type} onClick={() => addSection(type as SectionType)}>
                     {name}
                   </DropdownMenuItem>
                 ))
