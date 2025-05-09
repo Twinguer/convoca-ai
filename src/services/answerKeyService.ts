@@ -1,6 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { recalculateAllUserScores } from "@/integrations/supabase/rankings/batchOperations";
+import { getSectionTypeForQuestion, updateSectionDisplayNames } from "@/integrations/supabase/rankings/examStructure";
+import { Concurso } from "@/types/concursos";
 
 interface UpdateAnswerParams {
   concursoId: string;
@@ -92,12 +94,17 @@ export const answerKeyService = {
         console.error('[answerKeyService] Erro ao buscar dados do concurso:', concursoError);
       }
       
+      // Atualizar os nomes de exibição com disciplinas customizadas
+      if (concursoData) {
+        updateSectionDisplayNames(concursoData as Concurso);
+      }
+      
       // Em vez de deletar tudo e reinserir, vamos atualizar cada questão individualmente
       // para evitar o erro de duplicação
       for (const item of answerKeyData) {
         // Determinar o section_type para a questão se não estiver definido
         if (!item.section_type && concursoData) {
-          item.section_type = getSectionTypeForQuestion(concursoData, item.question_number);
+          item.section_type = getSectionTypeForQuestion(concursoData as Concurso, item.question_number);
         }
         
         // Verificar se já existe esta questão para este concurso
@@ -166,5 +173,3 @@ export const answerKeyService = {
     }
   }
 };
-
-import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';

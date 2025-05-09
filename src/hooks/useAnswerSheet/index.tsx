@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,14 +9,12 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { SectionType } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
-  type AnswerSheetSectionType = 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3' | string;
-  
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>({});
-  const [selectedSection, setSelectedSection] = useState<AnswerSheetSectionType>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: string }>({});
+  const [selectedSection, setSelectedSection] = useState<string>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -32,12 +31,19 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
+  // Atualizar os nomes de exibição das seções com disciplinas customizadas
+  useEffect(() => {
+    if (concurso) {
+      updateSectionDisplayNames(concurso);
+    }
+  }, [concurso]);
+
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
       handleQuestionSectionSelection(
         concurso,
-        (section: string) => setSelectedSection(section as AnswerSheetSectionType)
+        (section: string) => setSelectedSection(section)
       );
     }
   }, [concurso]);

@@ -56,8 +56,7 @@ export const sectionDisplayNames: Record<string, string> = {
   discursive: 'Discursiva',
   case_study1: 'Estudo de Caso 1',
   case_study2: 'Estudo de Caso 2',
-  case_study3: 'Estudo de Caso 3',
-  custom: 'Conhecimento Customizado' // Mantido apenas como fallback
+  case_study3: 'Estudo de Caso 3'
 };
 
 /**

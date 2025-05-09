@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,7 +11,7 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { answerKeyService } from '@/services/answerKeyService';
-import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -95,6 +96,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       </Card>
     );
   }
+
+  // Atualizar os nomes de exibição com conhecimentos customizados
+  const sectionNames = updateSectionDisplayNames(concurso);
 
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
@@ -409,120 +413,10 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
     }
   };
 
-  const getQuestionsCount = (section: string): number => {
-    if (section === 'basic' && concurso.has_basic_knowledge) {
-      return concurso.basic_knowledge_questions || 0;
-    } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
-      return concurso.specific_knowledge_1_questions || 0;
-    } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
-      return concurso.specific_knowledge_2_questions || 0;
-    } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
-      return concurso.specific_knowledge_3_questions || 0;
-    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const customDiscipline = concurso.disciplines.find(d => d.type === section);
-      if (customDiscipline) {
-        return customDiscipline.questionCount || 0;
-      }
-    }
-    return 0;
-  };
-
-  const handleSaveAnswerKey = async () => {
-    try {
-      setIsSaving(true);
-      setError(null);
-      setSavedSuccess(false);
-      
-      // Verificar todas as questões em todas as seções, não apenas a aba atual
-      const allQuestions = getAllQuestionsFromAllSections();
-      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
-      
-      if (unansweredQuestions.length > 0) {
-        setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
-        toast({
-          title: "Erro ao salvar gabarito",
-          description: "Todas as questões devem ser respondidas antes de salvar o gabarito.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Preparar dados para salvar o gabarito completo de uma vez
-      const answerKeyData = allQuestions.map(qNum => {
-        // Determinar o tipo de seção para cada questão
-        const sectionType = getSectionTypeForQuestion(concurso, qNum);
-        
-        return {
-          concurso_id: concursoId,
-          question_number: qNum,
-          correct_answer: answers[qNum],
-          weight: 1.0,
-          section_type: sectionType,
-          is_nullified: nullifiedQuestions.has(qNum)
-        };
-      });
-
-      // Usar o método que evita recrear toda a tabela
-      const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
-
-      if (saveResult.success) {
-        setSavedSuccess(true);
-        toast({
-          title: "Gabarito salvo com sucesso",
-          description: `O gabarito oficial foi atualizado. ${saveResult.updatedCount || 0} pontuações foram recalculadas.`,
-        });
-        
-        setTimeout(() => {
-          setSavedSuccess(false);
-        }, 3000);
-      } else {
-        throw new Error("Erro ao salvar gabarito");
-      }
-    } catch (error: any) {
-      console.error('Error saving answer key:', error);
-      setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
-      
-      toast({
-        title: "Erro ao salvar gabarito",
-        description: error.message || "Ocorreu um erro ao salvar o gabarito oficial. Tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const getOptionsForQuestion = () => {
-    if (concurso.exam_type === 'Certo ou Errado') {
-      return ['C', 'E'];
-    }
-    
-    const count = concurso.alternatives_count || 5;
-    return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
-  };
-
-  const getObjectiveSectionList = () => {
-    const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
-    
-    // Adicionar disciplinas customizadas
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      concurso.disciplines.forEach(discipline => {
-        if (discipline.isEnabled) {
-          sections.push({ key: discipline.type, label: discipline.name });
-        }
-      });
-    }
-    
-    return sections;
-  };
-
   const totalQuestions = getAllQuestionsFromAllSections().length;
   const answeredQuestions = Object.keys(answers).length;
   const percentageComplete = totalQuestions > 0 ? Math.floor((answeredQuestions / totalQuestions) * 100) : 0;
+  const objectiveSections = getObjectiveSectionList();
 
   return (
     <Card>
@@ -598,16 +492,16 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
               className="w-full"
             >
               <TabsList className="grid w-full" style={{
-                gridTemplateColumns: `repeat(${getObjectiveSectionList().length}, minmax(0, 1fr))`
+                gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))`
               }}>
-                {getObjectiveSectionList().map(section => (
+                {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
               
-              {getObjectiveSectionList().map(section => (
+              {objectiveSections.map(section => (
                 <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
