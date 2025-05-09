@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -246,7 +247,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     
     // Atualizar o formulário
     const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
-    form.setValue(hasKey, true);
+    form.setValue(hasKey as any, true);
   };
   
   // Helper para obter a chave correta para uma seção
@@ -284,7 +285,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     // Atualizar o formulário
     if (['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
       const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
-      form.setValue(hasKey, false);
+      form.setValue(hasKey as any, false);
     } else {
       // Para seções customizadas, atualizar a lista de disciplines no formulário
       const disciplines = form.getValues('disciplines') || [];
