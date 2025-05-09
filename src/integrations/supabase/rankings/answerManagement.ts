@@ -13,16 +13,14 @@ export const saveUserAnswersData = async (
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
       .select(`
-        basic_knowledge_questions,
-        specific_knowledge_1_questions,
-        specific_knowledge_2_questions,
-        specific_knowledge_3_questions
+        *
       `)
       .eq('id', concursoId)
       .single();
     if (concursoError) throw concursoError;
 
-    const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
+    const examStructure = getExamStructure(concurso);
+    const { basicEnd, specific1End, specific2End, specific3End, customSections } = examStructure;
 
     // Preparar os dados de resposta com as marcações corretas de seção
     const answersData = answers.map(a => {
@@ -48,8 +46,12 @@ export const saveUserAnswersData = async (
         item.is_specific_1 = true;
       } else if (qNum <= specific2End) {
         item.is_specific_2 = true;
-      } else {
+      } else if (qNum <= specific3End) {
         item.is_specific_3 = true;
+      } else {
+        // Para questões de disciplinas customizadas, vamos marcá-las como específicas
+        // para manter a compatibilidade, mas o tipo real será determinado pelo section_type no banco
+        item.is_specific_3 = true; // Fallback para compatibilidade
       }
     });
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -182,7 +181,9 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       case 'specific1': return 'specific_knowledge_1_questions';
       case 'specific2': return 'specific_knowledge_2_questions';
       case 'specific3': return 'specific_knowledge_3_questions';
-      default: return `${sectionType}_questions`;
+      default: 
+        // Para seções customizadas, precisamos configurar no array de disciplines
+        return 'questionCount';
     }
   };
 
@@ -244,7 +245,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     setEnabledSections(updatedBuilder.getEnabledSections());
     
     // Atualizar o formulário
-    const hasKey = `has_${getSectionKey(sectionType)}` as any;
+    const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
     form.setValue(hasKey, true);
   };
   
@@ -281,12 +282,11 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     setEnabledSections(updatedBuilder.getEnabledSections());
     
     // Atualizar o formulário
-    const hasKey = `has_${getSectionKey(sectionType)}` as any;
-    form.setValue(hasKey, false);
-    
-    // Para seções customizadas, atualizar a lista de disciplines no formulário
-    if (!['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
-          'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
+    if (['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
+      const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
+      form.setValue(hasKey, false);
+    } else {
+      // Para seções customizadas, atualizar a lista de disciplines no formulário
       const disciplines = form.getValues('disciplines') || [];
       const updatedDisciplines = disciplines.filter((d: any) => 
         d.type !== sectionType || d.name !== sectionDisplayNames[sectionType as keyof typeof sectionDisplayNames]
@@ -299,7 +299,6 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   const addCustomSection = () => {
     if (!customSectionName.trim()) return;
     
-    const sectionType = customSectionName.toLowerCase().replace(/\s+/g, '_') as SectionType;
     const questionCount = parseInt(customSectionQuestions) || 0;
     const weight = parseInt(customSectionWeight) || 1;
     
@@ -323,9 +322,10 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     
     // Atualizar o formulário - adicionar à lista de disciplines
     const disciplines = form.getValues('disciplines') || [];
+    const type = customSectionName.toLowerCase().replace(/\s+/g, '_');
     disciplines.push({
       name: customSectionName,
-      type: sectionType,
+      type: type,
       questionCount: questionCount,
       weight: weight,
       isEnabled: true
@@ -499,18 +499,6 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
               <DropdownMenuItem onClick={handleCustomSectionClick}>
                 Outro: Digite o Conhecimento
               </DropdownMenuItem>
-              
-              {/* Disciplinas específicas pré-definidas */}
-              {Object.entries(sectionDisplayNames)
-                .filter(([type]) => !['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
-                         'case_study1', 'case_study2', 'case_study3'].includes(type))
-                .filter(([type]) => !isEnabledSection(type as SectionType))
-                .map(([type, name]) => (
-                  <DropdownMenuItem key={type} onClick={() => addSection(type as SectionType)}>
-                    {name}
-                  </DropdownMenuItem>
-                ))
-              }
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

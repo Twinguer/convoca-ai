@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,7 +57,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
   
-  // Atualizar os nomes de exibição com disciplinas customizadas
+  // Atualizar os nomes de exibição das seções com disciplinas customizadas
   useEffect(() => {
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
