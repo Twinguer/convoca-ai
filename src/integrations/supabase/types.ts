@@ -120,12 +120,33 @@ export type Database = {
       }
       concursos: {
         Row: {
+          adm_questions: number | null
+          adm_weight: number | null
+          ado_questions: number | null
+          ado_weight: number | null
+          afo_questions: number | null
+          afo_weight: number | null
           alternatives_count: number | null
+          aud_questions: number | null
+          aud_weight: number | null
           banca: string
           basic_knowledge_minimum_score: number | null
+          basic_knowledge_questions: number | null
+          basic_knowledge_weight: number | null
           case_study_1_minimum_score: number | null
+          case_study_1_weight: number | null
           case_study_2_minimum_score: number | null
+          case_study_2_weight: number | null
           case_study_3_minimum_score: number | null
+          case_study_3_weight: number | null
+          civ_questions: number | null
+          civ_weight: number | null
+          coc_questions: number | null
+          coc_weight: number | null
+          cos_questions: number | null
+          cos_weight: number | null
+          cot_questions: number | null
+          cot_weight: number | null
           created_at: string
           created_by_user_id: string | null
           custom_banca: string | null
@@ -133,47 +154,138 @@ export type Database = {
           data_publicacao: string | null
           disciplines: Json | null
           discursive_minimum_score: number | null
+          discursive_weight: number | null
+          eco_questions: number | null
+          eco_weight: number | null
+          emp_questions: number | null
+          emp_weight: number | null
+          est_questions: number | null
+          est_weight: number | null
           etapa_atual: string | null
+          ett_questions: number | null
+          ett_weight: number | null
           exam_type: string | null
+          has_adm: boolean | null
+          has_ado: boolean | null
+          has_afo: boolean | null
           has_ampla_concorrencia: boolean | null
+          has_aud: boolean | null
+          has_basic_knowledge: boolean | null
+          has_case_study_1: boolean | null
+          has_case_study_2: boolean | null
+          has_case_study_3: boolean | null
+          has_civ: boolean | null
+          has_coc: boolean | null
+          has_cos: boolean | null
+          has_cot: boolean | null
+          has_discursive: boolean | null
+          has_eco: boolean | null
+          has_emp: boolean | null
+          has_est: boolean | null
+          has_ett: boolean | null
           has_hipossuficientes: boolean | null
           has_indigenas: boolean | null
+          has_inf: boolean | null
+          has_ing: boolean | null
+          has_lpt: boolean | null
+          has_ltc: boolean | null
+          has_mat: boolean | null
           has_minimum_score: boolean | null
+          has_mtf: boolean | null
+          has_out: boolean | null
           has_pcd: boolean | null
+          has_pen: boolean | null
           has_ppp: boolean | null
           has_quota_minimum_score: boolean | null
+          has_rlm: boolean | null
+          has_specific_knowledge_1: boolean | null
+          has_specific_knowledge_2: boolean | null
+          has_specific_knowledge_3: boolean | null
+          has_tic: boolean | null
           has_transsexuais: boolean | null
+          has_tri: boolean | null
           id: string
+          inf_questions: number | null
+          inf_weight: number | null
+          ing_questions: number | null
+          ing_weight: number | null
           inscritos: number | null
           is_admin_created: boolean | null
           is_admin_update: boolean | null
           knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
+          lpt_questions: number | null
+          lpt_weight: number | null
+          ltc_questions: number | null
+          ltc_weight: number | null
+          mat_questions: number | null
+          mat_weight: number | null
           minimum_score_type: string | null
           minimum_score_unit_type: string | null
+          mtf_questions: number | null
+          mtf_weight: number | null
           orgao: string
+          out_name: string | null
+          out_questions: number | null
+          out_weight: number | null
+          pen_questions: number | null
+          pen_weight: number | null
           predefined_job_title: string | null
           quota_minimum_score: number | null
           quota_minimum_score_unit_type: string | null
+          rlm_questions: number | null
+          rlm_weight: number | null
           specific_knowledge_1_minimum_score: number | null
+          specific_knowledge_1_questions: number | null
+          specific_knowledge_1_weight: number | null
           specific_knowledge_2_minimum_score: number | null
+          specific_knowledge_2_questions: number | null
+          specific_knowledge_2_weight: number | null
           specific_knowledge_3_minimum_score: number | null
+          specific_knowledge_3_questions: number | null
+          specific_knowledge_3_weight: number | null
+          specific_knowledge_weight: number | null
           status: string
           subjects: Json | null
+          tic_questions: number | null
+          tic_weight: number | null
           titulo: string
           total_minimum_score: number | null
+          tri_questions: number | null
+          tri_weight: number | null
           updated_at: string
           vagas: number | null
           wrong_answer_penalty: number | null
         }
         Insert: {
+          adm_questions?: number | null
+          adm_weight?: number | null
+          ado_questions?: number | null
+          ado_weight?: number | null
+          afo_questions?: number | null
+          afo_weight?: number | null
           alternatives_count?: number | null
+          aud_questions?: number | null
+          aud_weight?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: number | null
+          basic_knowledge_weight?: number | null
           case_study_1_minimum_score?: number | null
+          case_study_1_weight?: number | null
           case_study_2_minimum_score?: number | null
+          case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
+          case_study_3_weight?: number | null
+          civ_questions?: number | null
+          civ_weight?: number | null
+          coc_questions?: number | null
+          coc_weight?: number | null
+          cos_questions?: number | null
+          cos_weight?: number | null
+          cot_questions?: number | null
+          cot_weight?: number | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
@@ -181,47 +293,138 @@ export type Database = {
           data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
+          discursive_weight?: number | null
+          eco_questions?: number | null
+          eco_weight?: number | null
+          emp_questions?: number | null
+          emp_weight?: number | null
+          est_questions?: number | null
+          est_weight?: number | null
           etapa_atual?: string | null
+          ett_questions?: number | null
+          ett_weight?: number | null
           exam_type?: string | null
+          has_adm?: boolean | null
+          has_ado?: boolean | null
+          has_afo?: boolean | null
           has_ampla_concorrencia?: boolean | null
+          has_aud?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
+          has_civ?: boolean | null
+          has_coc?: boolean | null
+          has_cos?: boolean | null
+          has_cot?: boolean | null
+          has_discursive?: boolean | null
+          has_eco?: boolean | null
+          has_emp?: boolean | null
+          has_est?: boolean | null
+          has_ett?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
+          has_inf?: boolean | null
+          has_ing?: boolean | null
+          has_lpt?: boolean | null
+          has_ltc?: boolean | null
+          has_mat?: boolean | null
           has_minimum_score?: boolean | null
+          has_mtf?: boolean | null
+          has_out?: boolean | null
           has_pcd?: boolean | null
+          has_pen?: boolean | null
           has_ppp?: boolean | null
           has_quota_minimum_score?: boolean | null
+          has_rlm?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
+          has_tic?: boolean | null
           has_transsexuais?: boolean | null
+          has_tri?: boolean | null
           id?: string
+          inf_questions?: number | null
+          inf_weight?: number | null
+          ing_questions?: number | null
+          ing_weight?: number | null
           inscritos?: number | null
           is_admin_created?: boolean | null
           is_admin_update?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
+          lpt_questions?: number | null
+          lpt_weight?: number | null
+          ltc_questions?: number | null
+          ltc_weight?: number | null
+          mat_questions?: number | null
+          mat_weight?: number | null
           minimum_score_type?: string | null
           minimum_score_unit_type?: string | null
+          mtf_questions?: number | null
+          mtf_weight?: number | null
           orgao: string
+          out_name?: string | null
+          out_questions?: number | null
+          out_weight?: number | null
+          pen_questions?: number | null
+          pen_weight?: number | null
           predefined_job_title?: string | null
           quota_minimum_score?: number | null
           quota_minimum_score_unit_type?: string | null
+          rlm_questions?: number | null
+          rlm_weight?: number | null
           specific_knowledge_1_minimum_score?: number | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_minimum_score?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
+          specific_knowledge_weight?: number | null
           status?: string
           subjects?: Json | null
+          tic_questions?: number | null
+          tic_weight?: number | null
           titulo: string
           total_minimum_score?: number | null
+          tri_questions?: number | null
+          tri_weight?: number | null
           updated_at?: string
           vagas?: number | null
           wrong_answer_penalty?: number | null
         }
         Update: {
+          adm_questions?: number | null
+          adm_weight?: number | null
+          ado_questions?: number | null
+          ado_weight?: number | null
+          afo_questions?: number | null
+          afo_weight?: number | null
           alternatives_count?: number | null
+          aud_questions?: number | null
+          aud_weight?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: number | null
+          basic_knowledge_weight?: number | null
           case_study_1_minimum_score?: number | null
+          case_study_1_weight?: number | null
           case_study_2_minimum_score?: number | null
+          case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
+          case_study_3_weight?: number | null
+          civ_questions?: number | null
+          civ_weight?: number | null
+          coc_questions?: number | null
+          coc_weight?: number | null
+          cos_questions?: number | null
+          cos_weight?: number | null
+          cot_questions?: number | null
+          cot_weight?: number | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
@@ -229,36 +432,106 @@ export type Database = {
           data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
+          discursive_weight?: number | null
+          eco_questions?: number | null
+          eco_weight?: number | null
+          emp_questions?: number | null
+          emp_weight?: number | null
+          est_questions?: number | null
+          est_weight?: number | null
           etapa_atual?: string | null
+          ett_questions?: number | null
+          ett_weight?: number | null
           exam_type?: string | null
+          has_adm?: boolean | null
+          has_ado?: boolean | null
+          has_afo?: boolean | null
           has_ampla_concorrencia?: boolean | null
+          has_aud?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
+          has_civ?: boolean | null
+          has_coc?: boolean | null
+          has_cos?: boolean | null
+          has_cot?: boolean | null
+          has_discursive?: boolean | null
+          has_eco?: boolean | null
+          has_emp?: boolean | null
+          has_est?: boolean | null
+          has_ett?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
+          has_inf?: boolean | null
+          has_ing?: boolean | null
+          has_lpt?: boolean | null
+          has_ltc?: boolean | null
+          has_mat?: boolean | null
           has_minimum_score?: boolean | null
+          has_mtf?: boolean | null
+          has_out?: boolean | null
           has_pcd?: boolean | null
+          has_pen?: boolean | null
           has_ppp?: boolean | null
           has_quota_minimum_score?: boolean | null
+          has_rlm?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
+          has_tic?: boolean | null
           has_transsexuais?: boolean | null
+          has_tri?: boolean | null
           id?: string
+          inf_questions?: number | null
+          inf_weight?: number | null
+          ing_questions?: number | null
+          ing_weight?: number | null
           inscritos?: number | null
           is_admin_created?: boolean | null
           is_admin_update?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
+          lpt_questions?: number | null
+          lpt_weight?: number | null
+          ltc_questions?: number | null
+          ltc_weight?: number | null
+          mat_questions?: number | null
+          mat_weight?: number | null
           minimum_score_type?: string | null
           minimum_score_unit_type?: string | null
+          mtf_questions?: number | null
+          mtf_weight?: number | null
           orgao?: string
+          out_name?: string | null
+          out_questions?: number | null
+          out_weight?: number | null
+          pen_questions?: number | null
+          pen_weight?: number | null
           predefined_job_title?: string | null
           quota_minimum_score?: number | null
           quota_minimum_score_unit_type?: string | null
+          rlm_questions?: number | null
+          rlm_weight?: number | null
           specific_knowledge_1_minimum_score?: number | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_minimum_score?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
+          specific_knowledge_weight?: number | null
           status?: string
           subjects?: Json | null
+          tic_questions?: number | null
+          tic_weight?: number | null
           titulo?: string
           total_minimum_score?: number | null
+          tri_questions?: number | null
+          tri_weight?: number | null
           updated_at?: string
           vagas?: number | null
           wrong_answer_penalty?: number | null
@@ -311,6 +584,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "custom_sections_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disciplinas: {
+        Row: {
+          concurso_id: string
+          id: string
+          name: string
+          questioncount: number
+          type: string
+          weight: number
+        }
+        Insert: {
+          concurso_id: string
+          id?: string
+          name: string
+          questioncount: number
+          type: string
+          weight: number
+        }
+        Update: {
+          concurso_id?: string
+          id?: string
+          name?: string
+          questioncount?: number
+          type?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinas_concurso_id_fkey"
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"

@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -36,6 +35,7 @@ export interface Concurso {
   
   // Section weights
   basic_knowledge_weight?: number;
+  specific_knowledge_weight?: number;
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;
@@ -68,16 +68,6 @@ export interface Concurso {
     questionCount: number;
     weight: number;
     isEnabled: boolean;
-  }>;
-  
-  // Custom section structure - unified approach
-  sections?: Array<{
-    type: string;
-    name: string;
-    questionCount: number;
-    weight: number;
-    isEnabled: boolean;
-    isCustom: boolean;
   }>;
   
   // Admin flag
@@ -148,20 +138,6 @@ export const getRankingTableColumns = (concurso: Concurso) => {
     columns.push({ id: 'specific3Score', label: 'Específica 3', align: 'right' });
   }
   
-  // Add columns for custom disciplines if present
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    concurso.disciplines.forEach(discipline => {
-      if (discipline.isEnabled) {
-        columns.push({
-          id: discipline.type,
-          label: discipline.name,
-          align: 'right'
-        });
-      }
-    });
-  }
-  
-  // Add columns for subjective sections if enabled
   if (concurso.has_discursive) {
     columns.push({ id: 'discursiveScore', label: 'Discursiva', align: 'right' });
   }
