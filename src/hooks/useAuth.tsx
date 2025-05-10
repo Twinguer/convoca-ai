@@ -35,6 +35,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log('[useAuth] Session refreshed:', newSession ? 'Valid session' : 'No session');
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      
+      if (newSession?.user) {
+        console.log('[useAuth] User authenticated:', newSession.user.email);
+      } else {
+        console.log('[useAuth] No authenticated user');
+      }
     } catch (error) {
       console.error('[useAuth] Failed to refresh session:', error);
     } finally {
@@ -44,6 +50,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     console.log('[useAuth] Setting up auth state listener');
+    
+    // Check if supabase client is initialized properly
+    if (!supabase?.auth) {
+      console.error('[useAuth] Supabase client is not properly initialized!');
+      setIsLoading(false);
+      return;
+    }
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -71,6 +84,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       console.log('[useAuth] Signing out...');
+      if (!supabase?.auth) {
+        console.error('[useAuth] Cannot sign out: Supabase client is not properly initialized');
+        throw new Error('Authentication client not initialized');
+      }
+      
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);

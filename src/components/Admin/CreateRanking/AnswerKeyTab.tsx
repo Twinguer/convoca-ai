@@ -46,6 +46,7 @@ export const AnswerKeyTab = ({
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
   const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAnswerKey = async () => {
@@ -56,6 +57,8 @@ export const AnswerKeyTab = ({
           return;
         }
         
+        console.log(`[AnswerKeyTab] Buscando gabarito para concurso: ${concursoId}`);
+        
         // Usar a RPC get_official_answer_weights
         const { data, error } = await supabase.rpc(
           'get_official_answer_weights',
@@ -64,7 +67,10 @@ export const AnswerKeyTab = ({
           }
         );
 
-        if (error) throw error;
+        if (error) {
+          console.error('[AnswerKeyTab] Erro ao buscar gabarito:', error);
+          throw error;
+        }
 
         if (data && Object.keys(data).length > 0) {
           const answerMap: Record<number, string> = {};
@@ -82,12 +88,13 @@ export const AnswerKeyTab = ({
           
           setAnswers(answerMap);
           setNullifiedQuestions(nullified);
-          console.log('Gabarito carregado:', answerMap);
+          console.log('[AnswerKeyTab] Gabarito carregado:', answerMap);
+          console.log('[AnswerKeyTab] Questões anuladas:', nullified);
         } else {
-          console.log('Nenhum gabarito encontrado para este concurso');
+          console.log('[AnswerKeyTab] Nenhum gabarito encontrado para este concurso');
         }
       } catch (error) {
-        console.error('Error fetching answer key:', error);
+        console.error('[AnswerKeyTab] Error fetching answer key:', error);
         toast.error('Erro ao carregar gabarito existente');
       } finally {
         setIsLoading(false);
@@ -182,14 +189,18 @@ export const AnswerKeyTab = ({
   const handleSaveAnswerKey = async () => {
     try {
       setIsSaving(true);
+      setError(null);
       
       const allQuestions = getAllQuestions();
       const unansweredQuestions = allQuestions.filter(q => !answers[q]);
       
       if (unansweredQuestions.length > 0) {
+        setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
         toast.error(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
         return;
       }
+
+      console.log('[AnswerKeyTab] Salvando gabarito...');
 
       // Diretamente determinamos os section_types no código
       const calculateSectionType = (questionNumber: number) => {
@@ -226,42 +237,54 @@ export const AnswerKeyTab = ({
         };
       });
       
+      console.log(`[AnswerKeyTab] Total de questões preparadas: ${answerKeyData.length}`);
+      
       if (onSaveFullRanking && formValues) {
-        console.log('Salvando gabarito via onSaveFullRanking...');
+        console.log('[AnswerKeyTab] Salvando gabarito via onSaveFullRanking...');
         await onSaveFullRanking(formValues, answerKeyData);
         toast.success('Gabarito salvo com sucesso!');
       } else if (concursoId) {
-        console.log('Salvando gabarito diretamente via answerKeyService...');
+        console.log('[AnswerKeyTab] Salvando gabarito diretamente via answerKeyService...');
         // Tentar ambos os métodos para garantir que o gabarito seja salvo
         const saveResult1 = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
         
         if (!saveResult1.success) {
-          console.warn('Tentativa de salvar via RPC falhou, tentando inserção direta...');
+          console.warn('[AnswerKeyTab] Tentativa de salvar via RPC falhou, tentando inserção direta...');
           const saveResult2 = await answerKeyService.insertAnswersDirectly(concursoId, answerKeyData);
           
           if (saveResult2.success) {
             toast.success(`Gabarito salvo com sucesso (inserção direta)!`);
           } else {
+            setError(saveResult2.error || 'Erro desconhecido');
             toast.error('Erro ao salvar gabarito: ' + (saveResult2.error || 'Erro desconhecido'));
+            return;
           }
         } else {
           toast.success(`Gabarito salvo com sucesso!`);
         }
         
         // Verificar se os dados foram salvos
-        const verifyResult = await answerKeyService.getAnswerKey(concursoId);
-        if (verifyResult.success && Object.keys(verifyResult.data).length > 0) {
-          console.log('Verificação após salvar: dados encontrados no banco!');
-          toast.success('Verificação: Gabarito encontrado no banco de dados!');
-        } else {
-          console.warn('Verificação após salvar: nenhum dado encontrado!');
-          toast.warning('Aviso: Gabarito pode não ter sido salvo corretamente');
+        try {
+          const verifyResult = await answerKeyService.getAnswerKey(concursoId);
+          if (verifyResult.success && Object.keys(verifyResult.data).length > 0) {
+            console.log('[AnswerKeyTab] Verificação após salvar: dados encontrados no banco!');
+            toast.success('Verificação: Gabarito encontrado no banco de dados!');
+          } else {
+            console.warn('[AnswerKeyTab] Verificação após salvar: nenhum dado encontrado!');
+            toast.warning('Aviso: Gabarito pode não ter sido salvo corretamente');
+          }
+        } catch (verifyError) {
+          console.error('[AnswerKeyTab] Erro na verificação após salvar:', verifyError);
+          // Não mostrar erro de verificação ao usuário
         }
       } else {
+        setError('Não foi possível salvar o gabarito sem um ID de concurso');
         toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
       }
     } catch (error: any) {
-      console.error('Error saving answer key:', error);
+      console.error('[AnswerKeyTab] Error saving answer key:', error);
+      setError(error.message || 'Erro desconhecido');
+      
       if (error.message && error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
         toast.error('Todas as questões do gabarito oficial devem ter uma resposta');
       } else {
@@ -280,6 +303,12 @@ export const AnswerKeyTab = ({
     <Card>
       <CardContent className="pt-6">
         <h3 className="text-lg font-semibold mb-4">Gabarito Oficial</h3>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4 text-red-800">
+            <p>{error}</p>
+          </div>
+        )}
         
         <Tabs 
           value={selectedSection} 

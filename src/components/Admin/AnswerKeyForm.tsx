@@ -273,6 +273,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         // Determinar o tipo de seção para cada questão
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
         
+        console.log(`Questão ${qNum}, tipo: ${sectionType}`);
+        
         return {
           concurso_id: concursoId,
           question_number: qNum,
@@ -282,6 +284,10 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           is_nullified: nullifiedQuestions.has(qNum)
         };
       });
+
+      console.log('[AnswerKeyForm] Salvando gabarito para concurso:', concursoId);
+      console.log('[AnswerKeyForm] Total de questões:', answerKeyData.length);
+      console.log('[AnswerKeyForm] Primeiras 3 questões:', answerKeyData.slice(0, 3));
 
       // Usar o método que evita recrear toda a tabela
       const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
@@ -297,7 +303,23 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           setSavedSuccess(false);
         }, 3000);
       } else {
-        throw new Error("Erro ao salvar gabarito");
+        // Se falhar, tentar a inserção direta como fallback
+        console.log('[AnswerKeyForm] Tentativa de RPC falhou, tentando inserção direta');
+        const directResult = await answerKeyService.insertAnswersDirectly(concursoId, answerKeyData);
+        
+        if (directResult.success) {
+          setSavedSuccess(true);
+          toast({
+            title: "Gabarito salvo com sucesso (método alternativo)",
+            description: `O gabarito oficial foi atualizado com ${directResult.insertedCount} questões.`,
+          });
+          
+          setTimeout(() => {
+            setSavedSuccess(false);
+          }, 3000);
+        } else {
+          throw new Error(saveResult.error || directResult.error || "Erro ao salvar gabarito");
+        }
       }
     } catch (error: any) {
       console.error('Error saving answer key:', error);
@@ -507,8 +529,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => (
                         <React.Fragment key={rowIndex}>
-                          {row.map((questionNumber, colIndex) => (
-                            questionNumber !== null && (
+                          {row.map((questionNumber, colIndex) => 
+                            questionNumber !== null ? (
                               <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
                                 <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
@@ -533,8 +555,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                   onNullify={handleNullifyQuestion}
                                 />
                               </div>
-                            )
-                          ))}
+                            ) : null
+                          )}
                         </React.Fragment>
                       ))}
                     </div>

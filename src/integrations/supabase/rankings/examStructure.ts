@@ -111,17 +111,33 @@ export const standardSectionTypes = ['basic', 'specific1', 'specific2', 'specifi
 // Função para verificar se um tipo de seção é válido, agora aceita tipos customizados
 export const isValidSectionType = (sectionType: string, concurso: Concurso): boolean => {
   try {
+    // Log para debug
+    console.log(`[isValidSectionType] Verificando se ${sectionType} é válido para concurso ${concurso.id}`);
+    
     // Verificar se é um tipo padrão
     if (standardSectionTypes.includes(sectionType)) {
+      console.log(`[isValidSectionType] ${sectionType} é um tipo padrão válido`);
       return true;
     }
     
     // Verificar se é um tipo customizado definido no concurso
     if (concurso && concurso.has_custom_knowledge && concurso.disciplines) {
       const disciplines = getDisciplines(concurso);
-      return disciplines.some(d => d.type === sectionType);
+      
+      // Verificar se existe alguma disciplina com o tipo informado
+      const found = disciplines.some(d => d.type === sectionType);
+      
+      if (found) {
+        console.log(`[isValidSectionType] ${sectionType} é um tipo customizado válido`);
+        return true;
+      }
+      
+      console.log(`[isValidSectionType] ${sectionType} não encontrado em disciplinas customizadas:`, 
+        disciplines.map(d => d.type).join(', '));
     }
     
+    // Se chegou aqui, não é um tipo válido
+    console.warn(`[isValidSectionType] ${sectionType} não é válido para este concurso`);
     return false;
   } catch (error) {
     // Em caso de erro, permita que o fluxo continue para evitar bloqueios
@@ -133,6 +149,8 @@ export const isValidSectionType = (sectionType: string, concurso: Concurso): boo
 // Função para obter o peso específico de uma disciplina customizada
 export const getDisciplineWeight = (sectionType: string, concurso: Concurso): number => {
   try {
+    console.log(`[getDisciplineWeight] Buscando peso para seção ${sectionType}`);
+    
     // Para tipos padrão, retornar os pesos definidos no concurso
     if (sectionType === 'basic') return getNumericValue(concurso.basic_knowledge_weight);
     if (sectionType === 'specific1') return getNumericValue(concurso.specific_knowledge_1_weight);
@@ -147,12 +165,17 @@ export const getDisciplineWeight = (sectionType: string, concurso: Concurso): nu
     if (concurso && concurso.disciplines) {
       const disciplines = getDisciplines(concurso);
       const discipline = disciplines.find(d => d.type === sectionType);
+      
       if (discipline && discipline.weight !== undefined) {
+        console.log(`[getDisciplineWeight] Encontrado peso específico para ${sectionType}: ${discipline.weight}`);
         return getNumericValue(discipline.weight);
       }
+      
+      console.log(`[getDisciplineWeight] Disciplina encontrada para ${sectionType}, mas sem peso definido`);
     }
     
     // Fallback para o peso genérico de conhecimento customizado
+    console.log(`[getDisciplineWeight] Usando peso genérico para ${sectionType}: ${concurso.custom_knowledge_weight || 1.0}`);
     return getNumericValue(concurso.custom_knowledge_weight);
   } catch (error) {
     // Em caso de erro, retorne um peso padrão
@@ -164,15 +187,20 @@ export const getDisciplineWeight = (sectionType: string, concurso: Concurso): nu
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
   try {
+    console.log(`[getSectionTypeForQuestion] Determinando tipo de seção para questão ${questionNumber}`);
+    
     // Verificar se estamos usando a estrutura customizável
     if (concurso && concurso.has_custom_knowledge === true) {
       const disciplines = getDisciplines(concurso);
+      console.log(`[getSectionTypeForQuestion] Concurso usa disciplinas customizadas (${disciplines.length})`);
+      
       let currentIndex = 1;
       
       for (const discipline of disciplines) {
         if (discipline.isEnabled && discipline.questionCount) {
           const disciplineQuestions = getNumericValue(discipline.questionCount);
           if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
+            console.log(`[getSectionTypeForQuestion] Questão ${questionNumber} pertence à disciplina ${discipline.name} (tipo: ${discipline.type})`);
             // Retornar o tipo exato da disciplina para preservar o tipo custom
             return discipline.type as SectionType;
           }
@@ -180,9 +208,12 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
         }
       }
       
+      console.warn(`[getSectionTypeForQuestion] Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
       // Fallback para conhecimentos específicos genéricos se não encontrar
       return 'specific1';
     }
+    
+    console.log(`[getSectionTypeForQuestion] Usando estrutura tradicional para questão ${questionNumber}`);
     
     // Estrutura tradicional
     let currentIndex = 1;
@@ -222,6 +253,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       }
     }
     
+    console.warn(`[getSectionTypeForQuestion] Questão ${questionNumber} não encontrada em nenhuma seção tradicional`);
     // Fallback para conhecimentos específicos genéricos
     return 'specific1';
   } catch (error) {
