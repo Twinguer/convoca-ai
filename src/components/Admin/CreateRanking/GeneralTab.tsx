@@ -108,23 +108,71 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    const hasAnyKnowledgeArea = 
-      currentValues.has_basic_knowledge || 
-      currentValues.has_specific_knowledge_1 || 
-      currentValues.has_specific_knowledge_2 || 
-      currentValues.has_specific_knowledge_3 ||
-      currentValues.has_discursive ||
-      currentValues.has_case_study_1 ||
-      currentValues.has_case_study_2 ||
-      currentValues.has_case_study_3;
+    const isUsingCustomKnowledge = currentValues.has_custom_knowledge;
+    
+    // Check for valid knowledge sections based on the selected mode
+    let hasAnyKnowledgeArea = false;
+    
+    if (isUsingCustomKnowledge) {
+      // For custom knowledge, check if there are any enabled disciplines with question count
+      hasAnyKnowledgeArea = 
+        currentValues.disciplines && 
+        Array.isArray(currentValues.disciplines) &&
+        currentValues.disciplines.some(d => d.isEnabled && d.questionCount > 0);
+    } else {
+      // For standard knowledge, check the traditional fields
+      hasAnyKnowledgeArea = 
+        currentValues.has_basic_knowledge || 
+        currentValues.has_specific_knowledge_1 || 
+        currentValues.has_specific_knowledge_2 || 
+        currentValues.has_specific_knowledge_3 ||
+        currentValues.has_discursive ||
+        currentValues.has_case_study_1 ||
+        currentValues.has_case_study_2 ||
+        currentValues.has_case_study_3;
+    }
 
     if (!hasAnyKnowledgeArea) {
       toast({
         title: "Erro de validação",
-        description: "Por favor, adicione pelo menos uma área de conhecimento.",
+        description: isUsingCustomKnowledge 
+          ? "Por favor, adicione pelo menos uma área de conhecimento customizada."
+          : "Por favor, adicione pelo menos uma área de conhecimento.",
         variant: "destructive"
       });
       return false;
+    }
+
+    // Validation for question counts
+    if (!isUsingCustomKnowledge) {
+      if (
+        (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
+        (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
+        (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
+        (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
+      ) {
+        toast({
+          title: "Erro de validação",
+          description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
+          variant: "destructive"
+        });
+        return false;
+      }
+    } else if (currentValues.disciplines) {
+      // Check that all enabled custom disciplines have questions
+      const invalidDisciplines = currentValues.disciplines
+        .filter(d => d.isEnabled && (!d.questionCount || Number(d.questionCount) === 0));
+      
+      if (invalidDisciplines.length > 0) {
+        toast({
+          title: "Erro de validação",
+          description: `As seguintes disciplinas precisam ter número de questões maior que zero: ${
+            invalidDisciplines.map(d => d.name).join(', ')
+          }`,
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     const hasAnyQuota = 
@@ -139,20 +187,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       toast({
         title: "Erro de validação",
         description: "Por favor, selecione pelo menos uma cota de reserva.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (
-      (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
-      (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
-      (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
-      (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
-    ) {
-      toast({
-        title: "Erro de validação",
-        description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
         variant: "destructive"
       });
       return false;

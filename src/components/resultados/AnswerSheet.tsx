@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -319,7 +318,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return allQuestions;
   };
   
-  // Corrigido para aceitar qualquer string como tipo de seção
+  // Modified function to handle section changes with proper typing
   const handleSectionChange = (value: string) => {
     setSelectedSection(value as SectionType);
   };

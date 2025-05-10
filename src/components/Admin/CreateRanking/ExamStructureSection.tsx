@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -169,26 +168,22 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     form.setValue('disciplines', updatedDisciplines);
   };
 
-  // Toggle para alternar entre estrutura tradicional e customizada
+  // Modified handler for toggle between knowledge types
   const handleKnowledgeTypeToggle = (value: boolean) => {
     setIsCustomKnowledge(value);
     form.setValue('has_custom_knowledge', value);
     
-    // Se estiver ativando o modo customizado e não houver disciplinas ainda
-    if (value && (!form.watch('disciplines') || form.watch('disciplines').length === 0)) {
-      // Adicionar uma disciplina customizada inicial baseada nos conhecimentos básicos existentes
-      if (form.watch('has_basic_knowledge')) {
-        const newDiscipline = {
-          id: uuidv4(),
-          name: 'Conhecimentos Básicos',
-          type: 'custom_basic',
-          isEnabled: true,
-          questionCount: form.watch('basic_knowledge_questions') || 10,
-          weight: form.watch('basic_knowledge_weight') || 1
-        };
-        form.setValue('disciplines', [newDiscipline]);
-      } else {
-        // Ou criar uma nova disciplina padrão
+    if (value) {
+      // Switching to custom mode - disable all standard knowledge sections
+      form.setValue('has_basic_knowledge', false);
+      form.setValue('has_specific_knowledge_1', false);
+      form.setValue('has_specific_knowledge_2', false);
+      form.setValue('has_specific_knowledge_3', false);
+      
+      // Keep discursive and case study settings as they are compatible with both modes
+      
+      // If no disciplines exist yet, create an initial one
+      if (!form.watch('disciplines') || form.watch('disciplines').length === 0) {
         const newDiscipline = {
           id: uuidv4(),
           name: 'Novo Conhecimento',
@@ -199,6 +194,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         };
         form.setValue('disciplines', [newDiscipline]);
       }
+    } else {
+      // Switching to standard mode - enable at least basic knowledge
+      form.setValue('has_basic_knowledge', true);
+      form.setValue('basic_knowledge_questions', 10);
+      form.setValue('basic_knowledge_weight', 1);
+      
+      // We don't clear disciplines array to preserve data if user toggles back
     }
   };
 
@@ -291,7 +293,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           </div>
         </div>
 
-        {/* Toggle para alterar entre estrutura tradicional e customizada */}
+        {/* Toggle for switching between traditional and custom knowledge */}
         <div className="flex items-center space-x-2 mb-6">
           <Switch 
             checked={isCustomKnowledge}
