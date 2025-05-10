@@ -290,7 +290,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       // Para seções customizadas, atualizar a lista de disciplines no formulário
       const disciplines = form.getValues('disciplines') || [];
       const updatedDisciplines = disciplines.filter((d: any) => 
-        d.type !== sectionType || d.name !== sectionDisplayNames[sectionType as keyof typeof sectionDisplayNames]
+        d.type !== sectionType || d.name !== sectionDisplayNames[sectionType]
       );
       form.setValue('disciplines', updatedDisciplines);
     }

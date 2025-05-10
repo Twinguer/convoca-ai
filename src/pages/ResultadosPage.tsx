@@ -86,7 +86,6 @@ const ResultadosPage = () => {
   return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         
-        
         <div className="flex gap-1 sm:gap-2 flex-wrap">
           <Button onClick={handleRefresh} className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isRefetching}>
             <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isRefetching ? 'animate-spin' : ''}`} />
@@ -115,7 +114,13 @@ const ResultadosPage = () => {
         </div>}
       
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
-      <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />
+      <RankingTable 
+        rankings={rankings} 
+        concurso={concurso} 
+        currentUserId={user?.id} 
+        isAuthenticated={isAuthenticated} 
+        isRefetching={isRefetching} 
+      />
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
           <p className="text-center text-gray-600 dark:text-gray-300">

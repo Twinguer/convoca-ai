@@ -131,14 +131,9 @@ export type Database = {
           aud_weight: number | null
           banca: string
           basic_knowledge_minimum_score: number | null
-          basic_knowledge_questions: number | null
-          basic_knowledge_weight: number | null
           case_study_1_minimum_score: number | null
-          case_study_1_weight: number | null
           case_study_2_minimum_score: number | null
-          case_study_2_weight: number | null
           case_study_3_minimum_score: number | null
-          case_study_3_weight: number | null
           civ_questions: number | null
           civ_weight: number | null
           coc_questions: number | null
@@ -154,7 +149,6 @@ export type Database = {
           data_publicacao: string | null
           disciplines: Json | null
           discursive_minimum_score: number | null
-          discursive_weight: number | null
           eco_questions: number | null
           eco_weight: number | null
           emp_questions: number | null
@@ -170,15 +164,10 @@ export type Database = {
           has_afo: boolean | null
           has_ampla_concorrencia: boolean | null
           has_aud: boolean | null
-          has_basic_knowledge: boolean | null
-          has_case_study_1: boolean | null
-          has_case_study_2: boolean | null
-          has_case_study_3: boolean | null
           has_civ: boolean | null
           has_coc: boolean | null
           has_cos: boolean | null
           has_cot: boolean | null
-          has_discursive: boolean | null
           has_eco: boolean | null
           has_emp: boolean | null
           has_est: boolean | null
@@ -198,9 +187,6 @@ export type Database = {
           has_ppp: boolean | null
           has_quota_minimum_score: boolean | null
           has_rlm: boolean | null
-          has_specific_knowledge_1: boolean | null
-          has_specific_knowledge_2: boolean | null
-          has_specific_knowledge_3: boolean | null
           has_tic: boolean | null
           has_transsexuais: boolean | null
           has_tri: boolean | null
@@ -237,14 +223,8 @@ export type Database = {
           rlm_questions: number | null
           rlm_weight: number | null
           specific_knowledge_1_minimum_score: number | null
-          specific_knowledge_1_questions: number | null
-          specific_knowledge_1_weight: number | null
           specific_knowledge_2_minimum_score: number | null
-          specific_knowledge_2_questions: number | null
-          specific_knowledge_2_weight: number | null
           specific_knowledge_3_minimum_score: number | null
-          specific_knowledge_3_questions: number | null
-          specific_knowledge_3_weight: number | null
           specific_knowledge_weight: number | null
           status: string
           subjects: Json | null
@@ -270,14 +250,9 @@ export type Database = {
           aud_weight?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
-          basic_knowledge_questions?: number | null
-          basic_knowledge_weight?: number | null
           case_study_1_minimum_score?: number | null
-          case_study_1_weight?: number | null
           case_study_2_minimum_score?: number | null
-          case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
-          case_study_3_weight?: number | null
           civ_questions?: number | null
           civ_weight?: number | null
           coc_questions?: number | null
@@ -293,7 +268,6 @@ export type Database = {
           data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
-          discursive_weight?: number | null
           eco_questions?: number | null
           eco_weight?: number | null
           emp_questions?: number | null
@@ -309,15 +283,10 @@ export type Database = {
           has_afo?: boolean | null
           has_ampla_concorrencia?: boolean | null
           has_aud?: boolean | null
-          has_basic_knowledge?: boolean | null
-          has_case_study_1?: boolean | null
-          has_case_study_2?: boolean | null
-          has_case_study_3?: boolean | null
           has_civ?: boolean | null
           has_coc?: boolean | null
           has_cos?: boolean | null
           has_cot?: boolean | null
-          has_discursive?: boolean | null
           has_eco?: boolean | null
           has_emp?: boolean | null
           has_est?: boolean | null
@@ -337,9 +306,6 @@ export type Database = {
           has_ppp?: boolean | null
           has_quota_minimum_score?: boolean | null
           has_rlm?: boolean | null
-          has_specific_knowledge_1?: boolean | null
-          has_specific_knowledge_2?: boolean | null
-          has_specific_knowledge_3?: boolean | null
           has_tic?: boolean | null
           has_transsexuais?: boolean | null
           has_tri?: boolean | null
@@ -376,14 +342,8 @@ export type Database = {
           rlm_questions?: number | null
           rlm_weight?: number | null
           specific_knowledge_1_minimum_score?: number | null
-          specific_knowledge_1_questions?: number | null
-          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_minimum_score?: number | null
-          specific_knowledge_2_questions?: number | null
-          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_minimum_score?: number | null
-          specific_knowledge_3_questions?: number | null
-          specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           subjects?: Json | null
@@ -409,14 +369,9 @@ export type Database = {
           aud_weight?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
-          basic_knowledge_questions?: number | null
-          basic_knowledge_weight?: number | null
           case_study_1_minimum_score?: number | null
-          case_study_1_weight?: number | null
           case_study_2_minimum_score?: number | null
-          case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
-          case_study_3_weight?: number | null
           civ_questions?: number | null
           civ_weight?: number | null
           coc_questions?: number | null
@@ -432,7 +387,6 @@ export type Database = {
           data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
-          discursive_weight?: number | null
           eco_questions?: number | null
           eco_weight?: number | null
           emp_questions?: number | null
@@ -448,15 +402,10 @@ export type Database = {
           has_afo?: boolean | null
           has_ampla_concorrencia?: boolean | null
           has_aud?: boolean | null
-          has_basic_knowledge?: boolean | null
-          has_case_study_1?: boolean | null
-          has_case_study_2?: boolean | null
-          has_case_study_3?: boolean | null
           has_civ?: boolean | null
           has_coc?: boolean | null
           has_cos?: boolean | null
           has_cot?: boolean | null
-          has_discursive?: boolean | null
           has_eco?: boolean | null
           has_emp?: boolean | null
           has_est?: boolean | null
@@ -476,9 +425,6 @@ export type Database = {
           has_ppp?: boolean | null
           has_quota_minimum_score?: boolean | null
           has_rlm?: boolean | null
-          has_specific_knowledge_1?: boolean | null
-          has_specific_knowledge_2?: boolean | null
-          has_specific_knowledge_3?: boolean | null
           has_tic?: boolean | null
           has_transsexuais?: boolean | null
           has_tri?: boolean | null
@@ -515,14 +461,8 @@ export type Database = {
           rlm_questions?: number | null
           rlm_weight?: number | null
           specific_knowledge_1_minimum_score?: number | null
-          specific_knowledge_1_questions?: number | null
-          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_minimum_score?: number | null
-          specific_knowledge_2_questions?: number | null
-          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_minimum_score?: number | null
-          specific_knowledge_3_questions?: number | null
-          specific_knowledge_3_weight?: number | null
           specific_knowledge_weight?: number | null
           status?: string
           subjects?: Json | null
@@ -596,6 +536,7 @@ export type Database = {
           concurso_id: string
           id: string
           name: string
+          order: number
           questioncount: number
           type: string
           weight: number
@@ -604,6 +545,7 @@ export type Database = {
           concurso_id: string
           id?: string
           name: string
+          order?: number
           questioncount: number
           type: string
           weight: number
@@ -612,6 +554,7 @@ export type Database = {
           concurso_id?: string
           id?: string
           name?: string
+          order?: number
           questioncount?: number
           type?: string
           weight?: number

@@ -2,27 +2,18 @@
 import { Concurso } from '@/types/concursos';
 import { SectionType } from '@/integrations/supabase/rankings/examStructure';
 
+/**
+ * Seleciona automaticamente uma seção baseada nas seções disponíveis no concurso
+ */
 export const handleQuestionSectionSelection = (concurso: Concurso, setSectionCallback: (section: SectionType) => void) => {
-  // Prioridade de seleção de seção
-  if (concurso.has_basic_knowledge) {
-    setSectionCallback('basic');
-  } else if (concurso.has_specific_knowledge_1) {
-    setSectionCallback('specific1');
-  } else if (concurso.has_specific_knowledge_2) {
-    setSectionCallback('specific2');
-  } else if (concurso.has_specific_knowledge_3) {
-    setSectionCallback('specific3');
+  // Obter todas as seções habilitadas
+  const enabledSections = getAllEnabledSections(concurso);
+  
+  // Se houver alguma seção, selecionar a primeira
+  if (enabledSections.length > 0) {
+    setSectionCallback(enabledSections[0]);
   } else {
-    // Verificar se há disciplinas customizadas
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      const firstCustomDiscipline = concurso.disciplines.find(d => d.isEnabled);
-      if (firstCustomDiscipline) {
-        setSectionCallback(firstCustomDiscipline.type as SectionType);
-        return;
-      }
-    }
-    
-    // Default fallback
+    // Fallback para basic no caso improvável de não haver seções
     setSectionCallback('basic');
   }
 };
