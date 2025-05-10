@@ -30,7 +30,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   const [customSectionWeight, setCustomSectionWeight] = useState('1');
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
 
-  // Initialize the builder with form data when the form changes
+  // Initialize the builder with form data
   useEffect(() => {
     const builder = new ExamStructureBuilder();
     const values = form.getValues();
@@ -125,7 +125,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     );
   };
   
-  // Helper to get the weight field name for a section
+  // Helper to get weight field name for a section
   const getWeightFieldName = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'basic': return 'basic_knowledge_weight';
@@ -175,30 +175,26 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     );
   };
   
-  // Helper to get the questions field name for a section
+  // Helper to get questions field name for a section
   const getQuestionsFieldName = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'basic': return 'basic_knowledge_questions';
       case 'specific1': return 'specific_knowledge_1_questions';
       case 'specific2': return 'specific_knowledge_2_questions';
       case 'specific3': return 'specific_knowledge_3_questions';
-      default: 
-        // For custom sections, we need to configure in the disciplines array
-        return 'questionCount';
+      default: return 'questionCount'; // For custom sections
     }
   };
 
-  // Update a section in the builder and in the form
+  // Update a section in the builder and form
   const updateSection = (sectionType: SectionType, questionCount: number, weight: number) => {
     const updatedBuilder = new ExamStructureBuilder();
     
     // Copy sections from current builder
     examBuilder.getEnabledSections().forEach(section => {
       if (section.sectionType === sectionType) {
-        // Update the specific section
         updatedBuilder.enableSection(sectionType, questionCount, weight);
       } else {
-        // Manter as outras seções como estão
         updatedBuilder.enableSection(
           section.sectionType,
           section.questionCount,
@@ -207,26 +203,29 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       }
     });
     
-    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Update form
-    const concursoValues = updatedBuilder.toConcurso();
-    Object.entries(concursoValues).forEach(([key, value]) => {
-      if (key !== 'disciplines') { // Disciplines are handled separately
-        form.setValue(key as any, value);
-      }
-    });
+    // Update form values
+    form.setValue(`has_${sectionType}`, true);
     
-    // Update disciplines in the form
-    if (concursoValues.disciplines) {
-      form.setValue('disciplines', concursoValues.disciplines);
+    // Only update question count for objective sections
+    if (!['discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
+      const questionsField = getQuestionsFieldName(sectionType);
+      form.setValue(questionsField, questionCount);
     }
+    
+    const weightField = getWeightFieldName(sectionType);
+    form.setValue(weightField, weight);
   };
-
+  
   // Add a new section
   const addSection = (sectionType: SectionType) => {
+    // Default values
+    const questionCount = ['discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType) 
+      ? 0 : 10;
+    const weight = 1;
+    
     const updatedBuilder = new ExamStructureBuilder();
     
     // Copy existing sections
@@ -238,70 +237,57 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       );
     });
     
-    // Add the new section
-    updatedBuilder.enableSection(sectionType);
+    // Add new section
+    updatedBuilder.enableSection(sectionType, questionCount, weight);
     
-    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Update form
-    const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
-    form.setValue(hasKey as any, true);
+    // Update form values
+    form.setValue(`has_${sectionType}`, true);
+    
+    if (!['discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
+      const questionsField = getQuestionsFieldName(sectionType);
+      form.setValue(questionsField, questionCount);
+    }
+    
+    const weightField = getWeightFieldName(sectionType);
+    form.setValue(weightField, weight);
   };
   
-  // Helper to get the correct key for a section
-  const getSectionKey = (sectionType: SectionType): string => {
-    switch (sectionType) {
-      case 'specific1': return 'specific_knowledge_1';
-      case 'specific2': return 'specific_knowledge_2';
-      case 'specific3': return 'specific_knowledge_3';
-      case 'case_study1': return 'case_study_1';
-      case 'case_study2': return 'case_study_2';
-      case 'case_study3': return 'case_study_3';
-      default: return sectionType;
-    }
-  };
-
   // Remove a section
   const removeSection = (sectionType: SectionType) => {
     const updatedBuilder = new ExamStructureBuilder();
     
-    // Copy only the sections that won't be removed
-    examBuilder.getEnabledSections()
-      .filter(section => section.sectionType !== sectionType)
-      .forEach(section => {
+    // Copy all sections except the one being removed
+    examBuilder.getEnabledSections().forEach(section => {
+      if (section.sectionType !== sectionType) {
         updatedBuilder.enableSection(
           section.sectionType,
           section.questionCount,
           section.weight
         );
-      });
+      }
+    });
     
-    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Update form
-    if (['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
-      const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
-      form.setValue(hasKey as any, false);
-    } else {
-      // For custom sections, update the disciplines list in the form
-      const disciplines = form.getValues('disciplines') || [];
-      const updatedDisciplines = disciplines.filter((d: any) => 
-        d.type !== sectionType || d.name !== sectionDisplayNames[sectionType as keyof typeof sectionDisplayNames]
-      );
-      form.setValue('disciplines', updatedDisciplines);
-    }
+    // Update form values
+    form.setValue(`has_${sectionType}`, false);
   };
-
-  // Add custom section
+  
+  // Add a custom section
   const addCustomSection = () => {
-    if (!customSectionName.trim()) return;
+    if (!customSectionName.trim()) {
+      return;
+    }
     
     const questionCount = parseInt(customSectionQuestions) || 0;
     const weight = parseInt(customSectionWeight) || 1;
+    
+    // Create a custom section ID
+    const customId = `custom_${Date.now()}`;
     
     const updatedBuilder = new ExamStructureBuilder();
     
@@ -317,332 +303,185 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     // Add new custom section
     updatedBuilder.addCustomSection(customSectionName, questionCount, weight);
     
-    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Update form - add to disciplines list
-    const disciplines = form.getValues('disciplines') || [];
-    const type = customSectionName.toLowerCase().replace(/\s+/g, '_');
-    disciplines.push({
-      name: customSectionName,
-      type: type,
-      questionCount: questionCount,
-      weight: weight,
-      isEnabled: true
-    });
-    form.setValue('disciplines', disciplines);
+    // Update disciplines in form
+    const currentDisciplines = form.getValues('disciplines') || [];
+    const newDisciplines = [
+      ...currentDisciplines,
+      {
+        name: customSectionName,
+        questionCount,
+        weight,
+        isEnabled: true,
+        type: 'custom'
+      }
+    ];
     
-    // Clear fields
+    form.setValue('disciplines', newDisciplines);
+    
+    // Reset custom section inputs
     setCustomSectionName('');
     setCustomSectionQuestions('0');
     setCustomSectionWeight('1');
     setIsCustomDialogOpen(false);
   };
 
-  // Check which sections are already enabled
-  const isEnabledSection = (sectionType: SectionType): boolean => {
-    return enabledSections.some(section => section.sectionType === sectionType);
-  };
-
-  // Get available sections to add
+  // Get available sections that can be added
   const getAvailableSections = () => {
-    const available: Array<{ type: SectionType, name: string }> = [];
+    const enabledSectionTypes = enabledSections.map(s => s.sectionType);
     
-    // Standard sections
-    if (!isEnabledSection('basic')) available.push({ type: 'basic', name: 'Conhecimentos Básicos' });
-    if (!isEnabledSection('specific1')) available.push({ type: 'specific1', name: 'Conhecimentos Específicos' });
-    if (!isEnabledSection('specific2')) available.push({ type: 'specific2', name: 'Conhecimentos Específicos 2' });
-    if (!isEnabledSection('specific3')) available.push({ type: 'specific3', name: 'Conhecimentos Específicos 3' });
-    if (!isEnabledSection('discursive')) available.push({ type: 'discursive', name: 'Dissertativa' });
-    if (!isEnabledSection('case_study1')) available.push({ type: 'case_study1', name: 'Estudo de Caso' });
-    if (!isEnabledSection('case_study2')) available.push({ type: 'case_study2', name: 'Estudo de Caso 2' });
-    if (!isEnabledSection('case_study3')) available.push({ type: 'case_study3', name: 'Estudo de Caso 3' });
+    const availableSections = [
+      { type: 'basic', label: 'Conhecimentos Básicos' },
+      { type: 'specific1', label: 'Conhecimentos Específicos 1' },
+      { type: 'specific2', label: 'Conhecimentos Específicos 2' },
+      { type: 'specific3', label: 'Conhecimentos Específicos 3' },
+      { type: 'discursive', label: 'Prova Discursiva' },
+      { type: 'case_study1', label: 'Estudo de Caso 1' },
+      { type: 'case_study2', label: 'Estudo de Caso 2' },
+      { type: 'case_study3', label: 'Estudo de Caso 3' }
+    ].filter(section => !enabledSectionTypes.includes(section.type as SectionType));
     
-    // Specific predefined disciplines
-    Object.entries(sectionDisplayNames).forEach(([type, name]) => {
-      if (!['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
-            'case_study1', 'case_study2', 'case_study3'].includes(type) &&
-          !isEnabledSection(type as SectionType)) {
-        available.push({ type: type as SectionType, name });
-      }
-    });
-    
-    return available;
+    return availableSections;
   };
-
-  // Handler to open custom section dialog
-  const handleCustomSectionClick = () => {
-    setIsCustomDialogOpen(true);
-  };
-
+  
   return (
-    <div className="space-y-4 border p-4 rounded-md">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center border-b pb-2">
         <h3 className="text-lg font-medium">Estrutura da Prova</h3>
-        
-        <div className="flex gap-2">
-          <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Conhecimento Customizado
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Conhecimento Customizado</DialogTitle>
-              </DialogHeader>
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 gap-2">
-                  <FormLabel htmlFor="customName">Nome do Conhecimento</FormLabel>
-                  <Input
-                    id="customName"
-                    placeholder="Ex: Direito Administrativo"
-                    value={customSectionName}
-                    onChange={(e) => setCustomSectionName(e.target.value)}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <FormLabel htmlFor="customQuestions">Quantidade de Questões</FormLabel>
-                    <Input
-                      id="customQuestions"
-                      type="number"
-                      min="0"
-                      value={customSectionQuestions}
-                      onChange={(e) => setCustomSectionQuestions(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div>
-                    <FormLabel htmlFor="customWeight">Peso</FormLabel>
-                    <Select
-                      value={customSectionWeight}
-                      onValueChange={setCustomSectionWeight}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Peso" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1</SelectItem>
-                        <SelectItem value="2">2</SelectItem>
-                        <SelectItem value="3">3</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={addCustomSection}>Adicionar</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Seção Pré-definida
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {/* Standard sections */}
-              {!isEnabledSection('basic') && (
-                <DropdownMenuItem onClick={() => addSection('basic')}>
-                  Conhecimentos Básicos
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('specific1') && (
-                <DropdownMenuItem onClick={() => addSection('specific1')}>
-                  Conhecimentos Específicos
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('specific2') && (
-                <DropdownMenuItem onClick={() => addSection('specific2')}>
-                  Conhecimentos Específicos 2
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('specific3') && (
-                <DropdownMenuItem onClick={() => addSection('specific3')}>
-                  Conhecimentos Específicos 3
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('discursive') && (
-                <DropdownMenuItem onClick={() => addSection('discursive')}>
-                  Dissertativa
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('case_study1') && (
-                <DropdownMenuItem onClick={() => addSection('case_study1')}>
-                  Estudo de Caso
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('case_study2') && (
-                <DropdownMenuItem onClick={() => addSection('case_study2')}>
-                  Estudo de Caso 2
-                </DropdownMenuItem>
-              )}
-              {!isEnabledSection('case_study3') && (
-                <DropdownMenuItem onClick={() => addSection('case_study3')}>
-                  Estudo de Caso 3
-                </DropdownMenuItem>
-              )}
-              
-              {/* Separator for custom option */}
-              <DropdownMenuSeparator />
-              
-              {/* Option to add custom knowledge */}
-              <DropdownMenuItem onClick={handleCustomSectionClick}>
-                Outro: Digite o Conhecimento
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      
-      {/* General exam settings */}
-      <div className="border p-4 rounded-md bg-gray-50">
-        <h4 className="font-medium mb-4">Configurações Gerais do Exame</h4>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Exam Type */}
-          <FormField
-            control={form.control}
-            name="exam_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Prova</FormLabel>
-                <Select 
-                  defaultValue={field.value} 
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    examBuilder.withExamType(value as 'Alternativas' | 'Certo ou Errado');
-                  }}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
-                    <SelectItem value="Certo-Errado">Certo ou Errado</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Formato das questões do exame
-                </FormDescription>
-              </FormItem>
-            )}
-          />
-          
-          {/* Alternatives Count */}
-          <FormField
-            control={form.control}
-            name="alternatives_count"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantidade de Alternativas</FormLabel>
-                <Select 
-                  defaultValue={String(field.value)} 
-                  onValueChange={(value) => {
-                    field.onChange(Number(value));
-                    examBuilder.withAlternativesCount(Number(value));
-                  }}
-                  disabled={form.watch('exam_type') !== 'Alternativas'}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="4">4 (A-D)</SelectItem>
-                    <SelectItem value="5">5 (A-E)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Para provas de múltipla escolha
-                </FormDescription>
-              </FormItem>
-            )}
-          />
-          
-          {/* Wrong Answer Penalty */}
-          <FormField
-            control={form.control}
-            name="wrong_answer_penalty"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Penalidade para Erro</FormLabel>
-                <Select 
-                  defaultValue={String(field.value)} 
-                  onValueChange={(value) => {
-                    field.onChange(Number(value));
-                    examBuilder.withWrongAnswerPenalty(Number(value));
-                  }}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="0">Sem penalidade</SelectItem>
-                    <SelectItem value="0.25">0.25 pontos</SelectItem>
-                    <SelectItem value="0.33">0.33 pontos</SelectItem>
-                    <SelectItem value="0.5">0.5 pontos</SelectItem>
-                    <SelectItem value="1">1 ponto</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Pontos descontados por resposta errada
-                </FormDescription>
-              </FormItem>
-            )}
-          />
-        </div>
-      </div>
-      
-      {/* Configured sections list */}
-      <div className="space-y-4">
-        {enabledSections.length === 0 && (
-          <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
-            Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
-          </div>
-        )}
-        
-        {enabledSections.map(section => (
-          <div key={section.sectionType} className="border p-4 rounded-md">
-            <div className="flex justify-between items-center mb-4">
-              <h5 className="font-medium">
-                {section.isCustom ? section.customName : section.displayName}
-              </h5>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => removeSection(section.sectionType)}
-                className="text-red-500 hover:text-red-700"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Plus className="h-4 w-4 mr-1" /> Adicionar Seção
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {getAvailableSections().map((section) => (
+              <DropdownMenuItem 
+                key={section.type} 
+                onClick={() => addSection(section.type as SectionType)}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Remover
-              </Button>
-            </div>
+                {section.label}
+              </DropdownMenuItem>
+            ))}
+            {getAvailableSections().length > 0 && (
+              <DropdownMenuSeparator />
+            )}
+            <DialogTrigger asChild onClick={() => setIsCustomDialogOpen(true)}>
+              <DropdownMenuItem>Adicionar Seção Personalizada</DropdownMenuItem>
+            </DialogTrigger>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      
+      {/* Show message if no sections are enabled */}
+      {enabledSections.length === 0 && (
+        <div className="text-center py-6 text-muted-foreground">
+          Adicione pelo menos uma seção para configurar a estrutura da prova
+        </div>
+      )}
+      
+      {/* Render enabled sections */}
+      <div className="space-y-6">
+        {enabledSections.map((section) => (
+          <div key={section.sectionType} className="border rounded-lg p-4 relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute top-2 right-2" 
+              onClick={() => removeSection(section.sectionType)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h4 className="font-medium mb-3">
+              {section.sectionType.startsWith('custom_') 
+                ? section.name 
+                : sectionDisplayNames[section.sectionType] || section.sectionType}
+            </h4>
+            
+            <div className="grid grid-cols-2 gap-4">
               {renderQuestionsInput(section)}
               {renderWeightSelect(section)}
             </div>
           </div>
         ))}
       </div>
+      
+      {/* Dialog for adding custom section */}
+      <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Seção Personalizada</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="custom-section-name" className="text-sm font-medium">
+                Nome da Seção
+              </label>
+              <Input
+                id="custom-section-name"
+                value={customSectionName}
+                onChange={(e) => setCustomSectionName(e.target.value)}
+                placeholder="Ex: Matemática"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="custom-questions" className="text-sm font-medium">
+                  Quantidade de Questões
+                </label>
+                <Input
+                  id="custom-questions"
+                  type="number"
+                  min="0"
+                  value={customSectionQuestions}
+                  onChange={(e) => setCustomSectionQuestions(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="custom-weight" className="text-sm font-medium">
+                  Peso
+                </label>
+                <Input
+                  id="custom-weight"
+                  type="number"
+                  min="1"
+                  max="5"
+                  step="0.5"
+                  value={customSectionWeight}
+                  onChange={(e) => setCustomSectionWeight(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={addCustomSection}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <FormField
+        control={form.control}
+        name="disciplines"
+        render={({ field }) => (
+          <FormItem className="hidden">
+            <FormControl>
+              <Input {...field} type="hidden" />
+            </FormControl>
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
-
-export default CustomExamStructureSection;
