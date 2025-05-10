@@ -306,6 +306,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return allQuestions;
   };
   
+  const handleSectionChange = (value: string) => {
+    setSelectedSection(value as SectionType);
+  };
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="bg-emerald-50 border-b">
@@ -371,7 +375,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as SectionType)}
+              onValueChange={handleSectionChange}
               className="w-full"
             >
               <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(objectiveSections.length, 4)}, 1fr)` }}>

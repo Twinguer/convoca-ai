@@ -1,31 +1,34 @@
-
 import { Concurso, SectionType } from '@/types/concursos';
 
-export const handleQuestionSectionSelection = (concurso: Concurso, setSectionCallback: (section: SectionType) => void) => {
+// Export a handler for selecting which section to show initially
+export const handleQuestionSectionSelection = (
+  concurso: Concurso,
+  setSection: (section: SectionType) => void
+) => {
   // Prioridade de seleção de seção
   if (concurso.has_basic_knowledge) {
-    setSectionCallback('basic');
+    setSection('basic');
   } else if (concurso.has_specific_knowledge_1) {
-    setSectionCallback('specific1');
+    setSection('specific1');
   } else if (concurso.has_specific_knowledge_2) {
-    setSectionCallback('specific2');
+    setSection('specific2');
   } else if (concurso.has_specific_knowledge_3) {
-    setSectionCallback('specific3');
+    setSection('specific3');
   } else if (concurso.has_custom_knowledge) {
     // Verificar se há disciplinas customizadas
     if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const firstCustomDiscipline = concurso.disciplines.find(d => d.isEnabled);
       if (firstCustomDiscipline) {
-        setSectionCallback(firstCustomDiscipline.type as SectionType);
+        setSection(firstCustomDiscipline.type as SectionType);
         return;
       }
     }
     
     // Caso não tenha disciplinas específicas mas tenha conhecimento customizado genérico
-    setSectionCallback('custom');
+    setSection('custom');
   } else {
     // Default fallback
-    setSectionCallback('basic');
+    setSection('basic');
   }
 };
 

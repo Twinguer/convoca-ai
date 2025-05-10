@@ -2,10 +2,10 @@
 import { Concurso } from '@/types/concursos';
 
 // Use the SectionType from concursos.ts
-import { SectionType } from '@/types/concursos';
+import type { SectionType } from '@/types/concursos';
 
 // Re-export SectionType for backward compatibility
-export { SectionType };
+export type { SectionType };
 
 // Objeto de nomes de exibição das seções
 export const sectionDisplayNames: Record<string, string> = {

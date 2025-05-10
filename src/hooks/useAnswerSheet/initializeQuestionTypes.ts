@@ -1,12 +1,10 @@
-
-import { Concurso } from "@/types/concursos";
+import { Concurso, SectionType } from '@/types/concursos';
 import { Dispatch, SetStateAction } from "react";
-import { SectionType } from "@/types/concursos";
 
 export const initializeQuestionTypes = (
-  concurso: Concurso,
+  concurso: Concurso, 
   questionType: { [key: number]: SectionType },
-  setQuestionType: Dispatch<SetStateAction<{ [key: number]: SectionType }>>
+  setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: SectionType }>>
 ) => {
   // Check if questionType is already initialized
   if (Object.keys(questionType).length > 0) {
