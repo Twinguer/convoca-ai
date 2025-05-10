@@ -14,6 +14,7 @@ interface ExamStructureSectionProps {
   form: any;
 }
 
+// Mudança aqui: Renomeado para ExamStructureSectionComponent e adicionado export default
 export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> = ({ form }) => {
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
   const [customSectionName, setCustomSectionName] = useState('');
@@ -662,3 +663,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     </Card>
   );
 };
+
+// Adicionando uma exportação com o nome esperado pela GeneralTab
+export const ExamStructureSection = ExamStructureSectionComponent;
