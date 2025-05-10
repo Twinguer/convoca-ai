@@ -61,8 +61,22 @@ export const updateSectionTypeForConcurso = async (
 
 // Garantir que o tipo de seção seja válido para o banco de dados
 const sanitizeSectionType = (sectionType: string): string => {
-  // Agora permitimos todos os tipos de seção, inclusive customizadas
-  return sectionType || 'specific1';
+  // Fazer uma limpeza básica para remover caracteres especiais
+  // e garantir compatibilidade com restrições de banco de dados
+  const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
+  
+  // Verificar se é um tipo conhecido
+  if (validSectionTypes.includes(sanitized)) {
+    return sanitized;
+  }
+  
+  // Para tipos customizados, garantir que começam com 'custom_'
+  // para evitar colisão com tipos padrão
+  if (!sanitized.startsWith('custom_')) {
+    return `custom_${sanitized}`;
+  }
+  
+  return sanitized || 'specific1';
 };
 
 export const answerKeyService = {
@@ -89,8 +103,8 @@ export const answerKeyService = {
         // Determinar o tipo de seção correto baseado na estrutura do concurso
         const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
         
-        // Atualizar o section_type com o valor correto
-        item.section_type = correctedSectionType;
+        // Sanitizar o tipo de seção para evitar problemas com restrições de banco de dados
+        item.section_type = sanitizeSectionType(correctedSectionType);
         
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
@@ -239,13 +253,16 @@ export const answerKeyService = {
         // Determinar o tipo de seção correto baseado na estrutura do concurso
         const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
         
+        // Sanitizar o tipo de seção para evitar problemas com restrições de banco de dados
+        const sanitizedSectionType = sanitizeSectionType(correctedSectionType);
+        
         return {
           concurso_id: item.concurso_id,
           question_number: item.question_number,
           correct_answer: item.correct_answer,
           weight: item.weight || 1.0,
           is_nullified: item.is_nullified || false,
-          section_type: correctedSectionType // Usar o tipo de seção corrigido
+          section_type: sanitizedSectionType
         };
       });
       

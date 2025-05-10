@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { answerKeyService } from '@/services/answerKeyService';
+import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -191,30 +192,18 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      // Diretamente determinamos os section_types no código
-      const calculateSectionType = (questionNumber: number) => {
-        // Calcular o número base de cada seção
-        const basicEnd = basicKnowledgeQuestions || 0;
-        
-        if (questionNumber <= basicEnd) {
-          return 'basic';
-        }
-        
-        const specific1End = basicEnd + (specificKnowledge1Questions || 0);
-        if (questionNumber <= specific1End) {
-          return 'specific1';
-        }
-        
-        const specific2End = specific1End + (specificKnowledge2Questions || 0);
-        if (questionNumber <= specific2End) {
-          return 'specific2';
-        }
-        
-        return 'specific3';
-      };
+      // Calcular o section_type baseado no concurso
+      // Se tivermos o formValues (criação) ou o concursoId (edição), podemos determinar os tipos corretos
+      const concursoData = formValues || await fetchConcursoData(concursoId);
+      
+      if (!concursoData) {
+        toast.error("Dados do concurso não disponíveis. Não é possível salvar o gabarito.");
+        return;
+      }
 
       const answerKeyData = allQuestions.map(qNum => {
-        const sectionType = calculateSectionType(qNum);
+        // Determinar o tipo de seção para cada questão baseado na estrutura do concurso
+        const sectionType = getSectionTypeForQuestion(concursoData, qNum);
         
         return {
           concurso_id: concursoId || '',
@@ -269,6 +258,25 @@ export const AnswerKeyTab = ({
       }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Função auxiliar para buscar dados do concurso pelo ID
+  const fetchConcursoData = async (id?: string) => {
+    if (!id) return null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error("Erro ao buscar dados do concurso:", e);
+      return null;
     }
   };
 
@@ -399,4 +407,23 @@ export const AnswerKeyTab = ({
       </CardContent>
     </Card>
   );
+};
+
+// Function to sanitize section types to ensure they're valid for the database
+export const sanitizeSectionType = (sectionType: string): string => {
+  // For standard types, return as is
+  if (['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
+       'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
+    return sectionType;
+  }
+  
+  // For custom types, sanitize to avoid DB constraints
+  const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
+  
+  // Ensure custom types have a common prefix
+  if (!sanitized.startsWith('custom_')) {
+    return `custom_${sanitized}`;
+  }
+  
+  return sanitized;
 };

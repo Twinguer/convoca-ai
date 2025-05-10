@@ -141,8 +141,10 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // Retornar o tipo da disciplina diretamente, sem fallback
-          return discipline.type as SectionType;
+          // Para evitar problemas com o check constraint, garantimos que o tipo seja uma string simples
+          // Muitos banks de dados têm restrições em tipos de coluna como TEXT
+          const safeType = discipline.type.replace(/[^a-zA-Z0-9_]/g, '_');
+          return safeType as SectionType;
         }
         currentIndex += disciplineQuestions;
       }
