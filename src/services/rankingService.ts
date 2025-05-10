@@ -120,14 +120,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const customDisciplineScores: Record<string, number> = {};
       const weightedCustomDisciplineScores: Record<string, number> = {};
       
-      // Processar pontuações customizadas
+      // Processar pontuações customizadas do subject_scores
       Object.entries(subjectScores).forEach(([key, value]) => {
-        // Ignorar chaves padrão (basic, specific1, etc)
+        // Ignorar chaves padrão que já são tratadas pelos campos específicos
         if (!['basic', 'specific1', 'specific2', 'specific3'].includes(key)) {
+          // Esta é uma disciplina customizada
           customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
           
-          // Calcular pontuação ponderada (se não estiver disponível no objeto weightedSubjectScores)
-          // Nota: em uma implementação completa, você teria acesso ao peso da disciplina aqui
+          // Para obter pontuações ponderadas de disciplinas customizadas,
+          // precisaríamos acessar os pesos aqui, mas não temos acesso à estrutura do concurso
+          // As pontuações ponderadas são armazenadas em subject_scores
           weightedCustomDisciplineScores[key] = customDisciplineScores[key];
         }
       });

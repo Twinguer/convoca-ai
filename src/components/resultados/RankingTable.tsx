@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
+import { getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
 
 export interface Ranking {
   position: number;
@@ -197,7 +198,7 @@ const getQuotaAbbreviation = (quota: string): string => {
 };
 
 const getSectionWeights = (concurso?: Concurso) => {
-  return {
+  const weights: Record<string, number> = {
     basic: concurso?.basic_knowledge_weight ?? 1,
     specific1: concurso?.specific_knowledge_1_weight ?? 1,
     specific2: concurso?.specific_knowledge_2_weight ?? 1,
@@ -207,6 +208,17 @@ const getSectionWeights = (concurso?: Concurso) => {
     caseStudy2: concurso?.case_study_2_weight ?? 1,
     caseStudy3: concurso?.case_study_3_weight ?? 1
   };
+  
+  // Adicionar pesos das disciplinas customizadas
+  if (concurso?.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    concurso.disciplines.forEach(discipline => {
+      if (discipline.isEnabled && discipline.type) {
+        weights[discipline.type] = Number(discipline.weight) || 1;
+      }
+    });
+  }
+  
+  return weights;
 };
 
 const RankingTableContent: React.FC<{
@@ -217,14 +229,7 @@ const RankingTableContent: React.FC<{
   isAmpla: boolean;
   availableQuotas: string[];
   sectionWeights: {
-    basic: number;
-    specific1: number;
-    specific2: number;
-    specific3: number;
-    discursive: number;
-    caseStudy1: number;
-    caseStudy2: number;
-    caseStudy3: number;
+    [key: string]: number;
   };
   isAuthenticated: boolean;
   isRefetching?: boolean;
@@ -266,6 +271,19 @@ const RankingTableContent: React.FC<{
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
+
+  // Exibir todas as disciplinas customizadas habilitadas
+  const getCustomDisciplines = (): { type: string, name: string }[] => {
+    if (!concurso?.has_custom_knowledge || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
+      return [];
+    }
+
+    return concurso.disciplines
+      .filter(d => d.isEnabled)
+      .map(d => ({ type: d.type, name: d.name }));
+  };
+  
+  const customDisciplines = getCustomDisciplines();
   
   if (!concurso) {
     return <Table>
@@ -311,9 +329,6 @@ const RankingTableContent: React.FC<{
 
   const columns = getRankingTableColumns(concurso);
   
-  // Prepare the custom disciplines from the concurso
-  const customDisciplines = concurso.disciplines || [];
-  
   return <Table>
       <TableHeader>
         <TableRow>
@@ -342,7 +357,7 @@ const RankingTableContent: React.FC<{
             </TableHead>}
           
           {/* Render custom disciplines columns */}
-          {customDisciplines.filter(d => d.isEnabled).map((discipline, idx) => (
+          {customDisciplines.map((discipline, idx) => (
             <TableHead key={`custom-${idx}`} className="text-right">
               {discipline.name}
             </TableHead>
@@ -369,6 +384,8 @@ const RankingTableContent: React.FC<{
       <TableBody className="space-y-0.5">
         {rankings.length > 0 ? rankings.map(ranking => {
         const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
+        console.log(`Discipline scores for user ${ranking.name}:`, ranking.weightedCustomDisciplineScores);
+        
         return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
               <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
               {!isAmpla && <TableCell className="text-center font-bold">
@@ -411,11 +428,14 @@ const RankingTableContent: React.FC<{
                 </TableCell>}
               
               {/* Render custom discipline scores */}
-              {customDisciplines.filter(d => d.isEnabled).map((discipline, idx) => (
-                <TableCell key={`custom-score-${idx}`} className="text-right">
-                  {Number(ranking.weightedCustomDisciplineScores?.[discipline.type] || 0).toFixed(2)}
-                </TableCell>
-              ))}
+              {customDisciplines.map((discipline, idx) => {
+                const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
+                return (
+                  <TableCell key={`custom-score-${idx}`} className="text-right">
+                    {Number(scoreValue).toFixed(2)}
+                  </TableCell>
+                );
+              })}
               
               {concurso.has_discursive === true && <TableCell className="text-right">
                   {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
@@ -437,7 +457,7 @@ const RankingTableContent: React.FC<{
                 </TableCell>}
             </TableRow>;
       }) : <TableRow>
-            <TableCell colSpan={columns.length + (isAdminMode && isAuthenticated ? 3 : 2) + customDisciplines.filter(d => d.isEnabled).length} className="text-center py-4">
+            <TableCell colSpan={columns.length + (isAdminMode && isAuthenticated ? 3 : 2) + customDisciplines.length} className="text-center py-4">
               Nenhum participante registrado nesta lista ainda
             </TableCell>
           </TableRow>}

@@ -1,3 +1,4 @@
+
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
@@ -115,7 +116,8 @@ export const getSectionDisplayName = (concurso: any, sectionType: string): strin
   
   // Verificar se é uma disciplina customizada
   if (concurso?.has_custom_knowledge && concurso?.disciplines) {
-    const discipline = concurso.disciplines.find((d: any) => d.type === sectionType);
+    const disciplines = getDisciplines(concurso);
+    const discipline = disciplines.find((d: any) => d.type === sectionType);
     if (discipline) {
       return discipline.name;
     }
@@ -125,7 +127,7 @@ export const getSectionDisplayName = (concurso: any, sectionType: string): strin
   return sectionType;
 };
 
-// Lista de tipos de seção válidos
+// Lista de tipos de seção válidos - Agora aceitamos qualquer string para disciplinas customizadas
 export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
@@ -139,15 +141,14 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // Mapear discipline.type para um tipo válido de seção
-          // Para disciplinas customizadas, usamos 'specific1' como fallback seguro
-          const disciplineType = discipline.type as string;
-          return validSectionTypes.includes(disciplineType) ? disciplineType : 'specific1';
+          // Retornar o tipo da disciplina diretamente, sem fallback
+          return discipline.type as SectionType;
         }
         currentIndex += disciplineQuestions;
       }
     }
     
+    console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
     // Fallback para conhecimentos específicos genéricos se não encontrar
     return 'specific1';
   }

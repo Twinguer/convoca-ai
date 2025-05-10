@@ -39,6 +39,8 @@ export const updateSectionTypeForConcurso = async (
     for (const question of questions || []) {
       const sectionType = getSectionTypeForQuestion(concurso, question.question_number);
       
+      console.log(`Atualizando questão ${question.question_number} para section_type: ${sectionType}`);
+      
       const { error } = await supabase
         .from('official_answer_weights')
         .update({ section_type: sectionType })
@@ -59,14 +61,8 @@ export const updateSectionTypeForConcurso = async (
 
 // Garantir que o tipo de seção seja válido para o banco de dados
 const sanitizeSectionType = (sectionType: string): string => {
-  // Verificar se o tipo de seção está na lista de tipos válidos
-  if (validSectionTypes.includes(sectionType)) {
-    return sectionType;
-  }
-  
-  // Caso contrário, retornar um valor padrão seguro
-  console.warn(`Section type "${sectionType}" não é válido. Usando "specific1" como fallback.`);
-  return 'specific1';
+  // Agora permitimos todos os tipos de seção, inclusive customizadas
+  return sectionType || 'specific1';
 };
 
 export const answerKeyService = {
@@ -76,10 +72,25 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Iniciando salvamento de gabarito para concurso: ${concursoId}`);
       console.log(`[answerKeyService] Total de questões a salvar: ${answerKeyData.length}`);
       
+      // Primeiro obter o concurso para ter acesso às disciplinas customizadas
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao obter concurso:', concursoError);
+        throw concursoError;
+      }
+      
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
-        // Garantir que section_type seja válido
-        item.section_type = sanitizeSectionType(item.section_type);
+        // Determinar o tipo de seção correto baseado na estrutura do concurso
+        const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
+        
+        // Atualizar o section_type com o valor correto
+        item.section_type = correctedSectionType;
         
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
@@ -104,9 +115,6 @@ export const answerKeyService = {
 
       // Atualizar ou inserir cada questão do gabarito
       for (const item of answerKeyData) {
-        // Garantir que section_type seja válido
-        item.section_type = sanitizeSectionType(item.section_type);
-        
         console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
         
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
@@ -129,7 +137,7 @@ export const answerKeyService = {
       // Verificar se os dados foram realmente salvos
       const { data: verifyData, error: verifyError } = await supabase
         .from('official_answer_weights')
-        .select('question_number, correct_answer')
+        .select('question_number, correct_answer, section_type')
         .eq('concurso_id', concursoId);
 
       if (verifyError) {
@@ -140,7 +148,7 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
       if (verifyData) {
         verifyData.forEach(item => {
-          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}`);
+          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}, seção: ${item.section_type}`);
         });
       }
 
@@ -203,6 +211,18 @@ export const answerKeyService = {
     try {
       console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
       
+      // Primeiro obter o concurso para ter acesso às disciplinas customizadas
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao obter concurso:', concursoError);
+        throw concursoError;
+      }
+      
       // Primeiro, remover registros existentes para este concurso para evitar conflitos
       const { error: deleteError } = await supabase
         .from('official_answer_weights')
@@ -215,14 +235,24 @@ export const answerKeyService = {
       }
       
       // Preparar dados para inserção e garantir que section_type seja válido
-      const insertData = answerKeyData.map(item => ({
-        concurso_id: item.concurso_id,
-        question_number: item.question_number,
-        correct_answer: item.correct_answer,
-        weight: item.weight || 1.0,
-        is_nullified: item.is_nullified || false,
-        section_type: sanitizeSectionType(item.section_type)
-      }));
+      const insertData = answerKeyData.map(item => {
+        // Determinar o tipo de seção correto baseado na estrutura do concurso
+        const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
+        
+        return {
+          concurso_id: item.concurso_id,
+          question_number: item.question_number,
+          correct_answer: item.correct_answer,
+          weight: item.weight || 1.0,
+          is_nullified: item.is_nullified || false,
+          section_type: correctedSectionType // Usar o tipo de seção corrigido
+        };
+      });
+      
+      // Registrar os section_types para debug
+      insertData.forEach(item => {
+        console.log(`[answerKeyService] Questão ${item.question_number} com section_type: ${item.section_type}`);
+      });
       
       // Inserir todos os registros de uma vez
       const { data, error } = await supabase
