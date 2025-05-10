@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -107,12 +106,10 @@ export type SectionType =
   | 'specific1' 
   | 'specific2' 
   | 'specific3' 
-  | 'custom' 
   | 'discursive' 
   | 'case_study1' 
   | 'case_study2' 
-  | 'case_study3' 
-  | string;
+  | 'case_study3';
 
 // Fixed helper to determine which specific knowledge sections are enabled
 // Now uses has_* flags instead of weights

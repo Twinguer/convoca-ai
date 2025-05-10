@@ -1,11 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
-
-// Use the SectionType from concursos.ts
 import type { SectionType } from '@/types/concursos';
-
-// Re-export SectionType for backward compatibility
-export type { SectionType };
 
 // Objeto de nomes de exibição das seções
 export const sectionDisplayNames: Record<string, string> = {
@@ -16,8 +11,7 @@ export const sectionDisplayNames: Record<string, string> = {
   discursive: 'Discursiva',
   case_study1: 'Estudo de Caso 1',
   case_study2: 'Estudo de Caso 2',
-  case_study3: 'Estudo de Caso 3',
-  custom: 'Conhecimentos Customizados'
+  case_study3: 'Estudo de Caso 3'
 };
 
 // Helper function to safely get numeric value from possibly JSONB field
@@ -27,16 +21,6 @@ const getNumericValue = (value: any): number => {
   if (typeof value === 'string') {
     const parsed = parseFloat(value);
     return isNaN(parsed) ? 0 : parsed;
-  }
-  if (typeof value === 'object') {
-    // If it's a JSONB object, try to extract a numeric value
-    try {
-      // This is just a placeholder. Adjust based on actual structure if needed
-      return 0;
-    } catch (e) {
-      console.warn('Failed to parse JSONB value:', e);
-      return 0;
-    }
   }
   return 0;
 };
@@ -67,30 +51,10 @@ export const getExamStructure = (concurso: Concurso) => {
   };
 };
 
-// Função para atualizar os nomes de exibição das seções, incluindo disciplinas customizadas
+// Função para atualizar os nomes de exibição das seções
 export const updateSectionDisplayNames = (concurso: Concurso) => {
-  const sectionDisplayNames: Record<string, string> = {
-    basic: 'Conhecimentos Básicos',
-    specific1: 'Conhecimentos Específicos 1',
-    specific2: 'Conhecimentos Específicos 2',
-    specific3: 'Conhecimentos Específicos 3',
-    discursive: 'Discursiva',
-    case_study1: 'Estudo de Caso 1',
-    case_study2: 'Estudo de Caso 2',
-    case_study3: 'Estudo de Caso 3',
-    custom: 'Conhecimentos Customizados'
-  };
-  
-  // Adicionar disciplinas customizadas
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    concurso.disciplines.forEach(discipline => {
-      if (discipline.isEnabled && discipline.type && discipline.name) {
-        sectionDisplayNames[discipline.type] = discipline.name;
-      }
-    });
-  }
-  
-  return sectionDisplayNames;
+  // Retorna apenas as seções padrões
+  return { ...sectionDisplayNames };
 };
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
@@ -129,19 +93,6 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
     const specificQuestions3 = getNumericValue(concurso.specific_knowledge_3_questions);
     if (specificQuestions3 > 0 && questionNumber <= currentIndex + specificQuestions3 - 1) {
       return 'specific3';
-    }
-    currentIndex += specificQuestions3;
-  }
-  
-  // Disciplinas customizadas
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    for (const discipline of concurso.disciplines) {
-      if (discipline.isEnabled && discipline.questionCount) {
-        if (questionNumber <= currentIndex + discipline.questionCount - 1) {
-          return discipline.type as SectionType;
-        }
-        currentIndex += discipline.questionCount;
-      }
     }
   }
   

@@ -235,24 +235,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  // Modificando a função getObjectiveSectionList para lidar com seções customizadas
+  // Modificando a função getObjectiveSectionList para usar apenas seções padrão
   const getObjectiveSectionList = () => {
     const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: sectionLabels.basic || 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: sectionLabels.specific1 || 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: sectionLabels.specific2 || 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: sectionLabels.specific3 || 'C. Específicos 3' });
-    if (concurso.has_custom_knowledge) sections.push({ key: 'custom', label: sectionLabels.custom || 'C. Customizados' });
-    
-    // Adicionar disciplinas customizadas
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      concurso.disciplines.forEach(discipline => {
-        if (discipline.isEnabled && discipline.type && discipline.name) {
-          sections.push({ key: discipline.type, label: discipline.name });
-        }
-      });
-    }
-    
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
     return sections;
   };
   
@@ -290,17 +279,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
-    }
-    
-    // Disciplinas customizadas
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      concurso.disciplines.forEach(discipline => {
-        if (discipline.isEnabled && discipline.questionCount) {
-          for (let i = 0; i < discipline.questionCount; i++) {
-            allQuestions.push(currentQuestionNumber++);
-          }
-        }
-      });
     }
     
     return allQuestions;

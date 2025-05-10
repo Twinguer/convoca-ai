@@ -9,7 +9,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -30,13 +30,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleAnswerChange,
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
-
-  // Atualizar os nomes de exibição das seções com disciplinas customizadas
-  useEffect(() => {
-    if (concurso) {
-      updateSectionDisplayNames(concurso);
-    }
-  }, [concurso]);
 
   // Initialize with the first available section
   useEffect(() => {
@@ -108,36 +101,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
         for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
           questions.push(i);
-        }
-      } else if (selectedSection === 'custom' && concurso.has_custom_knowledge && concurso.custom_knowledge_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) +
-                          (concurso.specific_knowledge_2_questions || 0) + (concurso.specific_knowledge_3_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.custom_knowledge_questions; i++) {
-          questions.push(i);
-        }
-      } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        // Procurar disciplina customizada correspondente
-        const customDiscipline = concurso.disciplines.find(d => d.type === selectedSection);
-        if (customDiscipline) {
-          // Calcular o índice de início para esta disciplina
-          let startIndex = (concurso.basic_knowledge_questions || 0) + 
-                          (concurso.specific_knowledge_1_questions || 0) +
-                          (concurso.specific_knowledge_2_questions || 0) +
-                          (concurso.specific_knowledge_3_questions || 0) + 1;
-          
-          // Ajustar o índice baseado nas disciplinas anteriores
-          for (const discipline of concurso.disciplines) {
-            if (discipline.type === selectedSection) break;
-            if (discipline.isEnabled && discipline.questionCount) {
-              startIndex += discipline.questionCount;
-            }
-          }
-                          
-          // Adicionar questões para esta disciplina
-          const questionCount = customDiscipline.questionCount || 0;
-          for (let i = 0; i < questionCount; i++) {
-            questions.push(startIndex + i);
-          }
         }
       }
     } else {

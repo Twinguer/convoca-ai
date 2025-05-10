@@ -164,6 +164,7 @@ export type Database = {
           specific_knowledge_3_minimum_score: number | null
           status: string
           subjects: Json | null
+          temp_disciplines_data: Json | null
           titulo: string
           total_minimum_score: number | null
           updated_at: string
@@ -215,6 +216,7 @@ export type Database = {
           specific_knowledge_3_minimum_score?: number | null
           status?: string
           subjects?: Json | null
+          temp_disciplines_data?: Json | null
           titulo: string
           total_minimum_score?: number | null
           updated_at?: string
@@ -266,6 +268,7 @@ export type Database = {
           specific_knowledge_3_minimum_score?: number | null
           status?: string
           subjects?: Json | null
+          temp_disciplines_data?: Json | null
           titulo?: string
           total_minimum_score?: number | null
           updated_at?: string
@@ -289,44 +292,6 @@ export type Database = {
         }
         Relationships: []
       }
-      custom_sections: {
-        Row: {
-          concurso_id: string
-          created_at: string
-          display_name: string
-          id: string
-          section_type: string
-          sigla: string
-          updated_at: string
-        }
-        Insert: {
-          concurso_id: string
-          created_at?: string
-          display_name: string
-          id?: string
-          section_type: string
-          sigla: string
-          updated_at?: string
-        }
-        Update: {
-          concurso_id?: string
-          created_at?: string
-          display_name?: string
-          id?: string
-          section_type?: string
-          sigla?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "custom_sections_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       job_titles: {
         Row: {
           created_at: string | null
@@ -345,6 +310,27 @@ export type Database = {
           id?: string
           title?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      migration_logs: {
+        Row: {
+          applied_at: string | null
+          details: Json | null
+          id: number
+          migration_name: string
+        }
+        Insert: {
+          applied_at?: string | null
+          details?: Json | null
+          id?: number
+          migration_name: string
+        }
+        Update: {
+          applied_at?: string | null
+          details?: Json | null
+          id?: number
+          migration_name?: string
         }
         Relationships: []
       }
