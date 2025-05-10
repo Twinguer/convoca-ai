@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { getSectionTypeForQuestion, isValidSectionType, getDisciplineWeight } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, validSectionTypes } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
 import { toast } from 'sonner';
 
@@ -25,10 +25,7 @@ export const updateSectionTypeForConcurso = async (
       .eq('id', concursoId)
       .single();
       
-    if (concursoError) {
-      console.error('[updateSectionTypeForConcurso] Error fetching concurso:', concursoError);
-      throw concursoError;
-    }
+    if (concursoError) throw concursoError;
     
     // Obter todas as questões do gabarito oficial
     const { data: questions, error: questionsError } = await supabase
@@ -36,37 +33,23 @@ export const updateSectionTypeForConcurso = async (
       .select('id, question_number')
       .eq('concurso_id', concursoId);
       
-    if (questionsError) {
-      console.error('[updateSectionTypeForConcurso] Error fetching questions:', questionsError);
-      throw questionsError;
-    }
-    
-    console.log(`[updateSectionTypeForConcurso] Updating section types for ${questions?.length || 0} questions`);
+    if (questionsError) throw questionsError;
     
     // Para cada questão, atualizar o section_type com base na função de mapeamento
     for (const question of questions || []) {
-      try {
-        const sectionType = getSectionTypeForQuestion(concurso, question.question_number);
+      const sectionType = getSectionTypeForQuestion(concurso, question.question_number);
+      
+      const { error } = await supabase
+        .from('official_answer_weights')
+        .update({ section_type: sectionType })
+        .eq('id', question.id);
         
-        console.log(`[updateSectionTypeForConcurso] Question ${question.question_number} mapped to section: ${sectionType}`);
-        
-        const { error } = await supabase
-          .from('official_answer_weights')
-          .update({ section_type: sectionType })
-          .eq('id', question.id);
-          
-        if (error) {
-          console.warn(`[updateSectionTypeForConcurso] Failed to update section type for question ${question.question_number}:`, error);
-        }
-      } catch (err) {
-        console.error(`[updateSectionTypeForConcurso] Error processing question ${question.question_number}:`, err);
-        // Continue with other questions even if one fails
-      }
+      if (error) throw error;
     }
     
     return { success: true };
   } catch (error) {
-    console.error('[updateSectionTypeForConcurso] Error updating section types:', error);
+    console.error('Error updating section types:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
@@ -74,20 +57,16 @@ export const updateSectionTypeForConcurso = async (
   }
 }
 
-// Função atualizada para verificar se o tipo de seção é válido
-const sanitizeSectionType = (sectionType: string, concurso: Concurso): string => {
-  // Verificar se o tipo é um tipo válido para este concurso
-  try {
-    if (isValidSectionType(sectionType, concurso)) {
-      return sectionType; // Retornar o tipo original se for válido
-    }
-    
-    console.warn(`[sanitizeSectionType] Section type "${sectionType}" não é válido para este concurso. Usando "specific1" como fallback.`);
-    return 'specific1'; // Fallback para compatibilidade
-  } catch (error) {
-    console.error('[sanitizeSectionType] Error validating section type:', error);
-    return 'specific1'; // Fallback em caso de erro
+// Garantir que o tipo de seção seja válido para o banco de dados
+const sanitizeSectionType = (sectionType: string): string => {
+  // Verificar se o tipo de seção está na lista de tipos válidos
+  if (validSectionTypes.includes(sectionType)) {
+    return sectionType;
   }
+  
+  // Caso contrário, retornar um valor padrão seguro
+  console.warn(`Section type "${sectionType}" não é válido. Usando "specific1" como fallback.`);
+  return 'specific1';
 };
 
 export const answerKeyService = {
@@ -97,57 +76,17 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Iniciando salvamento de gabarito para concurso: ${concursoId}`);
       console.log(`[answerKeyService] Total de questões a salvar: ${answerKeyData.length}`);
       
-      if (!concursoId || concursoId.trim() === '') {
-        throw new Error('ID do concurso não fornecido ou inválido');
-      }
-      
-      if (!answerKeyData || answerKeyData.length === 0) {
-        throw new Error('Dados do gabarito não fornecidos ou vazios');
-      }
-      
-      // Verificar se há alguma resposta sem valor
-      const emptyAnswers = answerKeyData.filter(item => !item.correct_answer || item.correct_answer.trim() === '');
-      if (emptyAnswers.length > 0) {
-        const questionNumbers = emptyAnswers.map(item => item.question_number).join(', ');
-        throw new Error(`Questões sem resposta: ${questionNumbers}`);
-      }
-      
-      // Obter o concurso para validação de tipos de seção
-      const { data: concurso, error: concursoError } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', concursoId)
-        .single();
-        
-      if (concursoError) {
-        console.error('[answerKeyService] Erro ao buscar concurso:', concursoError);
-        throw concursoError;
-      }
-      
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
-        try {
-          // Garantir que section_type seja válido para este concurso
-          item.section_type = sanitizeSectionType(item.section_type, concurso);
-          
-          // Calcular o peso correto para o tipo de seção
-          const sectionWeight = getDisciplineWeight(item.section_type, concurso);
-          if (sectionWeight !== item.weight) {
-            console.log(`[answerKeyService] Ajustando peso da questão ${item.question_number} de ${item.weight} para ${sectionWeight} (tipo: ${item.section_type})`);
-            item.weight = sectionWeight;
-          }
-          
-          console.log(`[answerKeyService] Questão ${index + 1}:`, {
-            numero: item.question_number,
-            resposta: item.correct_answer,
-            seção: item.section_type,
-            peso: item.weight,
-            anulada: item.is_nullified
-          });
-        } catch (error) {
-          console.error(`[answerKeyService] Erro ao processar questão ${item.question_number}:`, error);
-          // Não interromper o loop, continuar com as outras questões
-        }
+        // Garantir que section_type seja válido
+        item.section_type = sanitizeSectionType(item.section_type);
+        
+        console.log(`[answerKeyService] Questão ${index + 1}:`, {
+          numero: item.question_number,
+          resposta: item.correct_answer,
+          seção: item.section_type,
+          anulada: item.is_nullified
+        });
       });
 
       // Verificar se já existem respostas no gabarito
@@ -165,34 +104,32 @@ export const answerKeyService = {
 
       // Atualizar ou inserir cada questão do gabarito
       for (const item of answerKeyData) {
-        try {
-          console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}, peso: ${item.weight}`);
-          
-          const { data, error } = await supabase.rpc('update_answer_with_weight', {
-            p_concurso_id: item.concurso_id,
-            p_question_number: item.question_number,
-            p_correct_answer: item.correct_answer,
-            p_weight: item.weight,
-            p_is_nullified: item.is_nullified || false,
-            p_section_type: item.section_type
-          });
+        // Garantir que section_type seja válido
+        item.section_type = sanitizeSectionType(item.section_type);
+        
+        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
+        
+        const { data, error } = await supabase.rpc('update_answer_with_weight', {
+          p_concurso_id: item.concurso_id,
+          p_question_number: item.question_number,
+          p_correct_answer: item.correct_answer,
+          p_weight: item.weight || 1.0,
+          p_is_nullified: item.is_nullified || false,
+          p_section_type: item.section_type
+        });
 
-          if (error) {
-            console.error(`[answerKeyService] Erro ao salvar questão ${item.question_number}:`, error);
-            throw error;
-          }
-          
-          console.log(`[answerKeyService] Questão ${item.question_number} salva com sucesso`);
-        } catch (error) {
-          console.error(`[answerKeyService] Falha ao salvar questão ${item.question_number}:`, error);
-          throw error; // Propagar erro para interromper processo
+        if (error) {
+          console.error(`[answerKeyService] Erro ao salvar questão ${item.question_number}:`, error);
+          throw error;
         }
+        
+        console.log(`[answerKeyService] Questão ${item.question_number} salva com sucesso`);
       }
 
       // Verificar se os dados foram realmente salvos
       const { data: verifyData, error: verifyError } = await supabase
         .from('official_answer_weights')
-        .select('question_number, correct_answer, section_type, weight')
+        .select('question_number, correct_answer')
         .eq('concurso_id', concursoId);
 
       if (verifyError) {
@@ -203,7 +140,7 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
       if (verifyData) {
         verifyData.forEach(item => {
-          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer} (seção: ${item.section_type}, peso: ${item.weight})`);
+          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}`);
         });
       }
 
@@ -227,7 +164,7 @@ export const answerKeyService = {
       console.error('[answerKeyService] Erro ao salvar gabarito:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido ao salvar gabarito'
+        error: (error as Error).message
       };
     }
   },
@@ -255,7 +192,7 @@ export const answerKeyService = {
       console.error('[answerKeyService] Erro ao buscar gabarito:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: (error as Error).message,
         data: {}
       };
     }
@@ -265,18 +202,6 @@ export const answerKeyService = {
   async insertAnswersDirectly(concursoId: string, answerKeyData: AnswerKeyItem[]) {
     try {
       console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
-      
-      // Obter o concurso para validação de tipos de seção
-      const { data: concurso, error: concursoError } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', concursoId)
-        .single();
-        
-      if (concursoError) {
-        console.error('[answerKeyService] Erro ao buscar concurso:', concursoError);
-        throw concursoError;
-      }
       
       // Primeiro, remover registros existentes para este concurso para evitar conflitos
       const { error: deleteError } = await supabase
@@ -290,71 +215,37 @@ export const answerKeyService = {
       }
       
       // Preparar dados para inserção e garantir que section_type seja válido
-      const insertData = answerKeyData.map(item => {
-        try {
-          // Validar e sanitizar o tipo de seção
-          const sectionType = sanitizeSectionType(item.section_type, concurso);
-          
-          // Obter o peso correto para esta seção/disciplina
-          const weight = getDisciplineWeight(sectionType, concurso);
-          
-          return {
-            concurso_id: item.concurso_id,
-            question_number: item.question_number,
-            correct_answer: item.correct_answer,
-            weight: weight, // Usar o peso calculado da disciplina
-            is_nullified: item.is_nullified || false,
-            section_type: sectionType
-          };
-        } catch (error) {
-          console.error(`[answerKeyService] Erro ao preparar questão ${item.question_number} para inserção:`, error);
-          // Usar valores padrão em caso de erro para evitar que a operação falhe
-          return {
-            concurso_id: item.concurso_id,
-            question_number: item.question_number,
-            correct_answer: item.correct_answer,
-            weight: 1.0,
-            is_nullified: item.is_nullified || false,
-            section_type: 'specific1' // Fallback seguro
-          };
-        }
-      });
+      const insertData = answerKeyData.map(item => ({
+        concurso_id: item.concurso_id,
+        question_number: item.question_number,
+        correct_answer: item.correct_answer,
+        weight: item.weight || 1.0,
+        is_nullified: item.is_nullified || false,
+        section_type: sanitizeSectionType(item.section_type)
+      }));
       
-      console.log(`[answerKeyService] Inserindo ${insertData.length} questões diretamente`);
+      // Inserir todos os registros de uma vez
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .insert(insertData)
+        .select();
       
-      // Inserir em lotes para evitar problemas com muitos dados
-      const BATCH_SIZE = 50;
-      let successCount = 0;
-      
-      for (let i = 0; i < insertData.length; i += BATCH_SIZE) {
-        const batch = insertData.slice(i, i + BATCH_SIZE);
-        console.log(`[answerKeyService] Inserindo lote ${i / BATCH_SIZE + 1} com ${batch.length} questões`);
-        
-        const { data, error } = await supabase
-          .from('official_answer_weights')
-          .insert(batch)
-          .select();
-        
-        if (error) {
-          console.error(`[answerKeyService] Erro ao inserir lote ${i / BATCH_SIZE + 1}:`, error);
-          throw error;
-        }
-        
-        successCount += data?.length || 0;
-        console.log(`[answerKeyService] Lote ${i / BATCH_SIZE + 1} inserido com sucesso: ${data?.length || 0} questões`);
+      if (error) {
+        console.error('[answerKeyService] Erro ao inserir gabarito diretamente:', error);
+        throw error;
       }
       
-      console.log(`[answerKeyService] Inserção direta concluída: ${successCount} questões inseridas com sucesso`);
+      console.log(`[answerKeyService] Inserção direta: ${data?.length || 0} questões inseridas com sucesso`);
       
       return {
         success: true,
-        insertedCount: successCount
+        insertedCount: data?.length || 0
       };
     } catch (error) {
       console.error('[answerKeyService] Erro na inserção direta:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido na inserção direta'
+        error: (error as Error).message
       };
     }
   }

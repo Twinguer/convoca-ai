@@ -40,18 +40,6 @@ export const useSaveAnswers = ({
 
   const handleSaveAnswers = async () => {
     try {
-      if (!rankingId) {
-        throw new Error('ID do ranking não fornecido');
-      }
-
-      if (!concurso || !concurso.id) {
-        throw new Error('Informações do concurso não fornecidas corretamente');
-      }
-
-      console.log('[useSaveAnswers] Iniciando salvamento de respostas');
-      console.log('[useSaveAnswers] rankingId:', rankingId);
-      console.log('[useSaveAnswers] concursoId:', concurso.id);
-      
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
@@ -61,8 +49,6 @@ export const useSaveAnswers = ({
         questionNumber: parseInt(questionNumber, 10),
         answer,
       }));
-      
-      console.log(`[useSaveAnswers] Total de respostas: ${answersArray.length}`);
       
       // Adicionar todas as questões anuladas com uma resposta padrão (se ainda não existirem na lista de respostas)
       if (nullifiedQuestions && nullifiedQuestions.size > 0) {
@@ -75,28 +61,18 @@ export const useSaveAnswers = ({
               questionNumber,
               answer: defaultAnswer
             });
-            
-            console.log(`[useSaveAnswers] Adicionando resposta padrão (${defaultAnswer}) para questão anulada ${questionNumber}`);
           }
         });
       }
 
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
-      console.log('[useSaveAnswers] Primeiras 3 respostas:', answersArray.slice(0, 3));
 
       // Certifique-se de que section_type esteja atualizado para este concurso
-      try {
-        const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
-        if (!sectionTypeResult.success) {
-          console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
-          // Continuamos mesmo com erro, pois isso é apenas uma melhoria
-        } else {
-          console.log('[useSaveAnswers] section_type atualizado com sucesso');
-        }
-      } catch (sectionTypeError) {
-        console.warn('[useSaveAnswers] Erro ao atualizar section_type:', sectionTypeError);
-        // Continuamos mesmo com erro
+      const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
+      if (!sectionTypeResult.success) {
+        console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
+        // Continuamos mesmo com erro, pois isso é apenas uma melhoria
       }
 
       // Chamar a função RPC centralizada
@@ -118,8 +94,8 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Resposta da função RPC:', data);
 
-      if (!data || !data.success) {
-        throw new Error(data?.error || "Erro desconhecido ao salvar respostas");
+      if (!data.success) {
+        throw new Error(data.error || "Erro ao salvar respostas");
       }
       
       // Removemos o recálculo automático de todas as pontuações
