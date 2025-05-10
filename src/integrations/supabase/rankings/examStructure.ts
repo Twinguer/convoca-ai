@@ -110,105 +110,123 @@ export const standardSectionTypes = ['basic', 'specific1', 'specific2', 'specifi
 
 // Função para verificar se um tipo de seção é válido, agora aceita tipos customizados
 export const isValidSectionType = (sectionType: string, concurso: Concurso): boolean => {
-  // Verificar se é um tipo padrão
-  if (standardSectionTypes.includes(sectionType)) {
-    return true;
+  try {
+    // Verificar se é um tipo padrão
+    if (standardSectionTypes.includes(sectionType)) {
+      return true;
+    }
+    
+    // Verificar se é um tipo customizado definido no concurso
+    if (concurso && concurso.has_custom_knowledge && concurso.disciplines) {
+      const disciplines = getDisciplines(concurso);
+      return disciplines.some(d => d.type === sectionType);
+    }
+    
+    return false;
+  } catch (error) {
+    // Em caso de erro, permita que o fluxo continue para evitar bloqueios
+    console.error('[isValidSectionType] Error checking section type:', error);
+    return true; // Permita o tipo para evitar bloqueios
   }
-  
-  // Verificar se é um tipo customizado definido no concurso
-  if (concurso.has_custom_knowledge && concurso.disciplines) {
-    const disciplines = getDisciplines(concurso);
-    return disciplines.some(d => d.type === sectionType && d.isEnabled);
-  }
-  
-  return false;
 };
 
 // Função para obter o peso específico de uma disciplina customizada
 export const getDisciplineWeight = (sectionType: string, concurso: Concurso): number => {
-  // Para tipos padrão, retornar os pesos definidos no concurso
-  if (sectionType === 'basic') return getNumericValue(concurso.basic_knowledge_weight);
-  if (sectionType === 'specific1') return getNumericValue(concurso.specific_knowledge_1_weight);
-  if (sectionType === 'specific2') return getNumericValue(concurso.specific_knowledge_2_weight);
-  if (sectionType === 'specific3') return getNumericValue(concurso.specific_knowledge_3_weight);
-  if (sectionType === 'discursive') return getNumericValue(concurso.discursive_weight);
-  if (sectionType === 'case_study1') return getNumericValue(concurso.case_study_1_weight);
-  if (sectionType === 'case_study2') return getNumericValue(concurso.case_study_2_weight);
-  if (sectionType === 'case_study3') return getNumericValue(concurso.case_study_3_weight);
-  
-  // Para tipos customizados, buscar o peso na definição da disciplina
-  if (concurso.disciplines) {
-    const disciplines = getDisciplines(concurso);
-    const discipline = disciplines.find(d => d.type === sectionType);
-    if (discipline && discipline.weight !== undefined) {
-      return getNumericValue(discipline.weight);
+  try {
+    // Para tipos padrão, retornar os pesos definidos no concurso
+    if (sectionType === 'basic') return getNumericValue(concurso.basic_knowledge_weight);
+    if (sectionType === 'specific1') return getNumericValue(concurso.specific_knowledge_1_weight);
+    if (sectionType === 'specific2') return getNumericValue(concurso.specific_knowledge_2_weight);
+    if (sectionType === 'specific3') return getNumericValue(concurso.specific_knowledge_3_weight);
+    if (sectionType === 'discursive') return getNumericValue(concurso.discursive_weight);
+    if (sectionType === 'case_study1') return getNumericValue(concurso.case_study_1_weight);
+    if (sectionType === 'case_study2') return getNumericValue(concurso.case_study_2_weight);
+    if (sectionType === 'case_study3') return getNumericValue(concurso.case_study_3_weight);
+    
+    // Para tipos customizados, buscar o peso na definição da disciplina
+    if (concurso && concurso.disciplines) {
+      const disciplines = getDisciplines(concurso);
+      const discipline = disciplines.find(d => d.type === sectionType);
+      if (discipline && discipline.weight !== undefined) {
+        return getNumericValue(discipline.weight);
+      }
     }
+    
+    // Fallback para o peso genérico de conhecimento customizado
+    return getNumericValue(concurso.custom_knowledge_weight);
+  } catch (error) {
+    // Em caso de erro, retorne um peso padrão
+    console.error('[getDisciplineWeight] Error getting discipline weight:', error);
+    return 1.0; // Peso padrão
   }
-  
-  // Fallback para o peso genérico de conhecimento customizado
-  return getNumericValue(concurso.custom_knowledge_weight);
 };
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
-  // Verificar se estamos usando a estrutura customizável
-  if (concurso.has_custom_knowledge === true) {
-    const disciplines = getDisciplines(concurso);
+  try {
+    // Verificar se estamos usando a estrutura customizável
+    if (concurso && concurso.has_custom_knowledge === true) {
+      const disciplines = getDisciplines(concurso);
+      let currentIndex = 1;
+      
+      for (const discipline of disciplines) {
+        if (discipline.isEnabled && discipline.questionCount) {
+          const disciplineQuestions = getNumericValue(discipline.questionCount);
+          if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
+            // Retornar o tipo exato da disciplina para preservar o tipo custom
+            return discipline.type as SectionType;
+          }
+          currentIndex += disciplineQuestions;
+        }
+      }
+      
+      // Fallback para conhecimentos específicos genéricos se não encontrar
+      return 'specific1';
+    }
+    
+    // Estrutura tradicional
     let currentIndex = 1;
     
-    for (const discipline of disciplines) {
-      if (discipline.isEnabled && discipline.questionCount) {
-        const disciplineQuestions = getNumericValue(discipline.questionCount);
-        if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // Retornar o tipo exato da disciplina para preservar o tipo custom
-          return discipline.type as SectionType;
-        }
-        currentIndex += disciplineQuestions;
+    // Conhecimentos Básicos
+    if (concurso.has_basic_knowledge) {
+      const basicQuestions = getNumericValue(concurso.basic_knowledge_questions);
+      if (basicQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + basicQuestions - 1) {
+        return 'basic';
+      }
+      currentIndex += basicQuestions;
+    }
+    
+    // Conhecimentos Específicos 1
+    if (concurso.has_specific_knowledge_1) {
+      const specificQuestions1 = getNumericValue(concurso.specific_knowledge_1_questions);
+      if (specificQuestions1 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions1 - 1) {
+        return 'specific1';
+      }
+      currentIndex += specificQuestions1;
+    }
+    
+    // Conhecimentos Específicos 2
+    if (concurso.has_specific_knowledge_2) {
+      const specificQuestions2 = getNumericValue(concurso.specific_knowledge_2_questions);
+      if (specificQuestions2 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions2 - 1) {
+        return 'specific2';
+      }
+      currentIndex += specificQuestions2;
+    }
+    
+    // Conhecimentos Específicos 3
+    if (concurso.has_specific_knowledge_3) {
+      const specificQuestions3 = getNumericValue(concurso.specific_knowledge_3_questions);
+      if (specificQuestions3 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions3 - 1) {
+        return 'specific3';
       }
     }
     
-    // Fallback para conhecimentos específicos genéricos se não encontrar
+    // Fallback para conhecimentos específicos genéricos
     return 'specific1';
+  } catch (error) {
+    // Em caso de erro, retorne um tipo de seção padrão
+    console.error('[getSectionTypeForQuestion] Error determining section type:', error);
+    return 'specific1'; // Tipo padrão
   }
-  
-  // Estrutura tradicional
-  let currentIndex = 1;
-  
-  // Conhecimentos Básicos
-  if (concurso.has_basic_knowledge) {
-    const basicQuestions = getNumericValue(concurso.basic_knowledge_questions);
-    if (basicQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + basicQuestions - 1) {
-      return 'basic';
-    }
-    currentIndex += basicQuestions;
-  }
-  
-  // Conhecimentos Específicos 1
-  if (concurso.has_specific_knowledge_1) {
-    const specificQuestions1 = getNumericValue(concurso.specific_knowledge_1_questions);
-    if (specificQuestions1 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions1 - 1) {
-      return 'specific1';
-    }
-    currentIndex += specificQuestions1;
-  }
-  
-  // Conhecimentos Específicos 2
-  if (concurso.has_specific_knowledge_2) {
-    const specificQuestions2 = getNumericValue(concurso.specific_knowledge_2_questions);
-    if (specificQuestions2 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions2 - 1) {
-      return 'specific2';
-    }
-    currentIndex += specificQuestions2;
-  }
-  
-  // Conhecimentos Específicos 3
-  if (concurso.has_specific_knowledge_3) {
-    const specificQuestions3 = getNumericValue(concurso.specific_knowledge_3_questions);
-    if (specificQuestions3 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions3 - 1) {
-      return 'specific3';
-    }
-  }
-  
-  // Fallback para conhecimentos específicos genéricos
-  return 'specific1';
 };
