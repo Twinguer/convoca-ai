@@ -126,7 +126,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
             specific_knowledge_1_weight,
             specific_knowledge_2_weight,
             specific_knowledge_3_weight,
-            specific_knowledge_weight,
             discursive_weight,
             case_study_1_weight,
             case_study_2_weight,
@@ -144,7 +143,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         if (data) {
           const weightsObj = {
             basicKnowledge: data.basic_knowledge_weight || 1,
-            specificKnowledge1: data.specific_knowledge_1_weight || data.specific_knowledge_weight || 1,
+            specificKnowledge1: data.specific_knowledge_1_weight || 1,
             specificKnowledge2: data.specific_knowledge_2_weight || 1,
             specificKnowledge3: data.specific_knowledge_3_weight || 1,
             discursive: data.discursive_weight || 1,
@@ -180,7 +179,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       // Use weights from state if available, otherwise fall back to concurso prop
       const actualWeights = weights || {
         basicKnowledge: concurso.basic_knowledge_weight || 1,
-        specificKnowledge1: concurso.specific_knowledge_1_weight || concurso.specific_knowledge_weight || 1,
+        specificKnowledge1: concurso.specific_knowledge_1_weight || 1,
         specificKnowledge2: concurso.specific_knowledge_2_weight || 1,
         specificKnowledge3: concurso.specific_knowledge_3_weight || 1,
         discursive: concurso.discursive_weight || 1,

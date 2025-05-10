@@ -48,7 +48,7 @@ export const useSaveRanking = () => {
       // For fields that should be JSON but might be numbers in the form
       numericFields.forEach(field => {
         if (typeof formValues[field] === 'number') {
-          // Convert number to valid JSON if needed
+          // Keep as is for now - we'll let the database handle conversion
           formValues[field] = formValues[field];
         }
       });
@@ -104,9 +104,8 @@ export const useSaveRanking = () => {
         dataToSubmit.is_admin_update = formValues.is_admin_update;
       }
 
-      // Make sure jsonb fields are proper JSON objects
+      // Log basic_knowledge_questions data for debugging
       if (typeof dataToSubmit.basic_knowledge_questions === 'number') {
-        // If it's a number, we'll keep it as is - the database will handle it
         console.log("basic_knowledge_questions is a number:", dataToSubmit.basic_knowledge_questions);
       }
 

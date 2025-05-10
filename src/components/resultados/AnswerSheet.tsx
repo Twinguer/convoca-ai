@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, AlertTriangle, Check, HelpCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso } from '@/types/concursos';
+import { Concurso, SectionType } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { SectionType, sectionDisplayNames, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -383,7 +383,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               </TabsList>
               
               {objectiveSections.map(section => (
-                <TabsContent key={section.key} value={section.key as SectionType}>
+                <TabsContent key={section.key} value={section.key}>
                   <AnswerMatrix
                     matrix={createAnswerMatrix()}
                     answers={answers}

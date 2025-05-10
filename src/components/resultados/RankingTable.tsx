@@ -199,7 +199,7 @@ const getQuotaAbbreviation = (quota: string): string => {
 const getSectionWeights = (concurso?: Concurso) => {
   return {
     basic: concurso?.basic_knowledge_weight ?? 1,
-    specific1: concurso?.specific_knowledge_1_weight ?? concurso?.specific_knowledge_weight ?? 1,
+    specific1: concurso?.specific_knowledge_1_weight ?? 1,
     specific2: concurso?.specific_knowledge_2_weight ?? 1,
     specific3: concurso?.specific_knowledge_3_weight ?? 1,
     discursive: concurso?.discursive_weight ?? 1,

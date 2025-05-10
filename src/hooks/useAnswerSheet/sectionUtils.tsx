@@ -1,6 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
-import { SectionType } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType } from '@/types/concursos';
 
 export const handleQuestionSectionSelection = (concurso: Concurso, setSectionCallback: (section: SectionType) => void) => {
   // Prioridade de seleção de seção
