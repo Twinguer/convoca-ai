@@ -140,8 +140,8 @@ export const sanitizeSectionType = (sectionType: string): string => {
   // Para tipos customizados, garantir que sejam compatíveis com as restrições do banco
   const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
   
-  // Garantir que tipos customizados tenham o prefixo "custom"
-  if (!sanitized.startsWith('custom')) {
+  // Garantir que tipos customizados tenham o prefixo "custom_"
+  if (!sanitized.startsWith('custom_')) {
     return `custom_${sanitized}`;
   }
   

@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { getSectionTypeForQuestion, validSectionTypes } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
 import { toast } from 'sonner';
 
@@ -59,26 +58,6 @@ export const updateSectionTypeForConcurso = async (
   }
 }
 
-// Garantir que o tipo de seção seja válido para o banco de dados
-const sanitizeSectionType = (sectionType: string): string => {
-  // Fazer uma limpeza básica para remover caracteres especiais
-  // e garantir compatibilidade com restrições de banco de dados
-  const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
-  
-  // Verificar se é um tipo conhecido
-  if (validSectionTypes.includes(sanitized)) {
-    return sanitized;
-  }
-  
-  // Para tipos customizados, garantir que começam com 'custom_'
-  // para evitar colisão com tipos padrão
-  if (!sanitized.startsWith('custom_')) {
-    return `custom_${sanitized}`;
-  }
-  
-  return sanitized || 'specific1';
-};
-
 export const answerKeyService = {
   // Função para salvar o gabarito e recalcular pontuações
   async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: AnswerKeyItem[]) {
@@ -100,11 +79,11 @@ export const answerKeyService = {
       
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
-        // Determinar o tipo de seção correto baseado na estrutura do concurso
+        // Determine the correct section type for this question
         const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
         
-        // Sanitizar o tipo de seção para evitar problemas com restrições de banco de dados
-        item.section_type = sanitizeSectionType(correctedSectionType);
+        // Use the sanitized section type from the updated function
+        item.section_type = correctedSectionType;
         
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
