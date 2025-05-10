@@ -34,9 +34,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
+      console.log("Initializing selected section for concurso:", concurso.id);
       handleQuestionSectionSelection(
         concurso,
-        (section: SectionType) => setSelectedSection(section)
+        (section: SectionType) => {
+          console.log("Setting selected section to:", section);
+          setSelectedSection(section);
+        }
       );
     }
   }, [concurso]);
@@ -59,6 +63,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   useEffect(() => {
     if (concurso) {
+      console.log("Initializing question types for concurso:", concurso.id);
       initializeQuestionTypes(concurso, questionType, setQuestionType);
     }
   }, [concurso]);
@@ -71,7 +76,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   };
 
   const getSectionQuestions = () => {
-    if (!concurso) return [];
+    if (!concurso) {
+      console.warn("No concurso available for getSectionQuestions");
+      return [];
+    }
     
     console.log('Getting questions for section:', selectedSection);
     console.log('Question type mapping:', questionType);
@@ -80,24 +88,39 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
     // Verificar primeiro se estamos usando conhecimento customizável
     if (concurso.has_custom_knowledge) {
+      console.log("Using custom knowledge model");
+      
       if (Object.keys(questionType).length === 0) {
         // Se ainda não temos mapeamento, inicializar baseado no modelo customizável
+        console.log("No question type mapping yet, building from disciplines");
+        
         if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
           let currentQuestion = 1;
           
           for (const discipline of concurso.disciplines) {
-            if (discipline.isEnabled && discipline.type === selectedSection && discipline.questionCount) {
-              for (let i = 0; i < discipline.questionCount; i++) {
+            const questionCount = typeof discipline.questionCount === 'number'
+              ? discipline.questionCount
+              : Number(discipline.questionCount);
+              
+            if (discipline.isEnabled && discipline.type === selectedSection && questionCount) {
+              console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+              
+              for (let i = 0; i < questionCount; i++) {
                 questions.push(currentQuestion++);
               }
             } else if (discipline.isEnabled) {
               // Pular questões de outras disciplinas
-              currentQuestion += (discipline.questionCount || 0);
+              console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+              currentQuestion += questionCount;
             }
           }
+        } else {
+          console.warn("No disciplines array found in concurso");
         }
       } else {
         // Usar o mapeamento existente para encontrar questões do tipo selecionado
+        console.log("Using existing question type mapping");
+        
         Object.entries(questionType).forEach(([num, type]) => {
           if (type === selectedSection) {
             questions.push(parseInt(num));
@@ -105,36 +128,87 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         });
       }
       
+      console.log(`Found ${questions.length} questions for section ${selectedSection}:`, questions);
       return questions.sort((a, b) => a - b);
     }
     
     // Estrutura tradicional - verifique primeiro se temos mapeamento
     if (Object.keys(questionType).length === 0) {
       // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
-      const structure = getExamStructure(concurso);
+      console.log("No question type mapping yet, building from traditional structure");
       
       if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-        for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
+        const count = typeof concurso.basic_knowledge_questions === 'number'
+          ? concurso.basic_knowledge_questions
+          : Number(concurso.basic_knowledge_questions);
+          
+        console.log(`Adding ${count} basic knowledge questions`);
+        
+        for (let i = 1; i <= count; i++) {
           questions.push(i);
         }
       } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_1_questions; i++) {
+        const basicCount = typeof concurso.basic_knowledge_questions === 'number'
+          ? concurso.basic_knowledge_questions
+          : Number(concurso.basic_knowledge_questions || 0);
+          
+        const count = typeof concurso.specific_knowledge_1_questions === 'number'
+          ? concurso.specific_knowledge_1_questions
+          : Number(concurso.specific_knowledge_1_questions);
+          
+        const startIndex = basicCount + 1;
+        console.log(`Adding ${count} specific1 questions starting from ${startIndex}`);
+        
+        for (let i = startIndex; i < startIndex + count; i++) {
           questions.push(i);
         }
       } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_2_questions; i++) {
+        const basicCount = typeof concurso.basic_knowledge_questions === 'number'
+          ? concurso.basic_knowledge_questions
+          : Number(concurso.basic_knowledge_questions || 0);
+          
+        const specific1Count = typeof concurso.specific_knowledge_1_questions === 'number'
+          ? concurso.specific_knowledge_1_questions
+          : Number(concurso.specific_knowledge_1_questions || 0);
+          
+        const count = typeof concurso.specific_knowledge_2_questions === 'number'
+          ? concurso.specific_knowledge_2_questions
+          : Number(concurso.specific_knowledge_2_questions);
+          
+        const startIndex = basicCount + specific1Count + 1;
+        console.log(`Adding ${count} specific2 questions starting from ${startIndex}`);
+        
+        for (let i = startIndex; i < startIndex + count; i++) {
           questions.push(i);
         }
       } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) + (concurso.specific_knowledge_2_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
+        const basicCount = typeof concurso.basic_knowledge_questions === 'number'
+          ? concurso.basic_knowledge_questions
+          : Number(concurso.basic_knowledge_questions || 0);
+          
+        const specific1Count = typeof concurso.specific_knowledge_1_questions === 'number'
+          ? concurso.specific_knowledge_1_questions
+          : Number(concurso.specific_knowledge_1_questions || 0);
+          
+        const specific2Count = typeof concurso.specific_knowledge_2_questions === 'number'
+          ? concurso.specific_knowledge_2_questions
+          : Number(concurso.specific_knowledge_2_questions || 0);
+          
+        const count = typeof concurso.specific_knowledge_3_questions === 'number'
+          ? concurso.specific_knowledge_3_questions
+          : Number(concurso.specific_knowledge_3_questions);
+          
+        const startIndex = basicCount + specific1Count + specific2Count + 1;
+        console.log(`Adding ${count} specific3 questions starting from ${startIndex}`);
+        
+        for (let i = startIndex; i < startIndex + count; i++) {
           questions.push(i);
         }
       }
     } else {
       // Se tiver, usamos o mapeamento existente
+      console.log("Using existing question type mapping for traditional structure");
+      
       Object.entries(questionType).forEach(([num, type]) => {
         if (type === selectedSection) {
           questions.push(parseInt(num));
@@ -142,7 +216,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       });
     }
     
-    console.log('Questions for section', selectedSection, ':', questions);
+    console.log(`Found ${questions.length} questions for section ${selectedSection}:`, questions);
     return questions.sort((a, b) => a - b);
   };
 

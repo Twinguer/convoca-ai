@@ -170,6 +170,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Modified handler for toggle between knowledge types
   const handleKnowledgeTypeToggle = (value: boolean) => {
+    console.log(`Toggling knowledge type to custom: ${value}`);
     setIsCustomKnowledge(value);
     form.setValue('has_custom_knowledge', value);
     
