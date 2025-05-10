@@ -13,8 +13,6 @@ export const handleQuestionSectionSelection = (concurso: Concurso, setSectionCal
   } else if (concurso.has_specific_knowledge_3) {
     setSectionCallback('specific3');
   } else if (concurso.has_custom_knowledge) {
-    setSectionCallback('custom');
-  } else {
     // Verificar se há disciplinas customizadas
     if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const firstCustomDiscipline = concurso.disciplines.find(d => d.isEnabled);
@@ -24,6 +22,9 @@ export const handleQuestionSectionSelection = (concurso: Concurso, setSectionCal
       }
     }
     
+    // Caso não tenha disciplinas específicas mas tenha conhecimento customizado genérico
+    setSectionCallback('custom');
+  } else {
     // Default fallback
     setSectionCallback('basic');
   }
@@ -40,7 +41,11 @@ export const getAllEnabledSections = (concurso: Concurso): SectionType[] => {
   if (concurso.has_specific_knowledge_1) enabledSections.push('specific1');
   if (concurso.has_specific_knowledge_2) enabledSections.push('specific2');
   if (concurso.has_specific_knowledge_3) enabledSections.push('specific3');
-  if (concurso.has_custom_knowledge) enabledSections.push('custom');
+  
+  // Adicionar conhecimento customizado genérico
+  if (concurso.has_custom_knowledge && !concurso.disciplines?.length) {
+    enabledSections.push('custom');
+  }
   
   // Adicionar seções customizadas
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {

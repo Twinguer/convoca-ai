@@ -1,3 +1,4 @@
+
 import { ExamSectionBuilder, ExamSectionConfig } from './ExamSectionBuilder';
 import { Concurso } from '@/types/concursos';
 
@@ -134,7 +135,7 @@ export class ExamStructureBuilder {
       alternatives_count: this.alternativesCount,
       wrong_answer_penalty: this.wrongAnswerPenalty,
       
-      // Configurações de seções
+      // Configurações de seções - inicializando todas como false (estrutura vazia)
       has_basic_knowledge: false,
       has_specific_knowledge_1: false,
       has_specific_knowledge_2: false,
@@ -220,6 +221,9 @@ export class ExamStructureBuilder {
             weight: section.weight,
             isEnabled: true
           });
+          
+          // Garantir que has_custom_knowledge está habilitado
+          concurso.has_custom_knowledge = true;
           break;
       }
     });

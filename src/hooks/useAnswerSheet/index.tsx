@@ -9,7 +9,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { SectionType, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -88,6 +88,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     // Verificando se o objeto questionType tem alguma propriedade
     if (Object.keys(questionType).length === 0) {
       // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
+      const structure = getExamStructure(concurso);
+      
       if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
           questions.push(i);

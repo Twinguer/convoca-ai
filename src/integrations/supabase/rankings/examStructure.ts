@@ -10,12 +10,18 @@ export const getExamStructure = (concurso: any) => {
   const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
   const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
   const specific3End = specific2End + (concurso.specific_knowledge_3_questions || 0);
-  const customEnd = specific3End + (concurso.custom_knowledge_questions || 0);
   
   // Adiciona disciplinas customizadas ao cálculo
   let currentEnd = specific3End;
   let customSections: Record<string, number> = {};
   
+  // Se temos conhecimento customizado genérico
+  if (concurso.has_custom_knowledge && concurso.custom_knowledge_questions) {
+    currentEnd += concurso.custom_knowledge_questions;
+    customSections['custom'] = currentEnd;
+  }
+  
+  // Adiciona disciplinas específicas se existirem
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
     concurso.disciplines.forEach((discipline: any) => {
       if (discipline.isEnabled && discipline.questionCount) {
@@ -31,7 +37,7 @@ export const getExamStructure = (concurso: any) => {
     specific1End,
     specific2End,
     specific3End,
-    customEnd,
+    customEnd: currentEnd,
     customSections,
     totalQuestions: currentEnd
   };
