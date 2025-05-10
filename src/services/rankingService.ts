@@ -119,10 +119,10 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       if (ranking.subject_scores) {
         console.log(`User ${name} has subject_scores:`, ranking.subject_scores);
         
-        // Processar pontuações brutas e ponderadas
+        // Process raw and weighted scores
         Object.entries(ranking.subject_scores).forEach(([key, value]: [string, any]) => {
           if (typeof value === 'object' && value !== null) {
-            // Se o valor é um objeto, assume o formato { raw: X, weighted: Y }
+            // If value is an object with raw and weighted properties
             customDisciplineScores[key] = value.raw || 0;
             weightedCustomDisciplineScores[key] = value.weighted || 0;
             
@@ -130,12 +130,20 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
           } else {
             // Caso contrário, assume que é apenas o valor bruto
             customDisciplineScores[key] = value || 0;
-            weightedCustomDisciplineScores[key] = value || 0; // Sem peso aplicado
+            weightedCustomDisciplineScores[key] = value || 0;
             
             console.log(`Discipline ${key} - simple value: ${value}`);
           }
         });
       }
+      
+      // Calculate total custom disciplines weighted score
+      let customDisciplinesTotal = 0;
+      Object.values(weightedCustomDisciplineScores).forEach(score => {
+        customDisciplinesTotal += Number(score) || 0;
+      });
+      
+      console.log(`User ${name} custom disciplines total: ${customDisciplinesTotal}`);
       
       // Calculate the total score properly including all components
       const calculatedScore = 
@@ -146,20 +154,15 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         (ranking.weighted_discursive_score || 0) +
         (ranking.weighted_case_study_1_score || 0) +
         (ranking.weighted_case_study_2_score || 0) +
-        (ranking.weighted_case_study_3_score || 0);
+        (ranking.weighted_case_study_3_score || 0) +
+        customDisciplinesTotal;  // Include custom disciplines in total
         
-      // Add weighted custom discipline scores to total
-      let customDisciplinesTotal = 0;
-      Object.values(weightedCustomDisciplineScores).forEach(score => {
-        customDisciplinesTotal += score;
-      });
-      
       // Use the database score if available, otherwise use our calculated score
-      const finalScore = ranking.score || (calculatedScore + customDisciplinesTotal);
+      const finalScore = ranking.score || calculatedScore;
       
       console.log(`User ${name} score components:`, {
         db_score: ranking.score,
-        calc_score: calculatedScore,
+        calc_score: calculatedScore - customDisciplinesTotal,
         custom_total: customDisciplinesTotal,
         final: finalScore,
         weighted_basic: ranking.weighted_basic_score,

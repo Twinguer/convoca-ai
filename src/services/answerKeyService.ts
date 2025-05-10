@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { getSectionTypeForQuestion, validSectionTypes, getCustomDisciplineType, getDisciplineWeight } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
@@ -65,9 +64,9 @@ const sanitizeSectionType = (sectionType: string): string => {
     return sectionType;
   }
   
-  // Para tipos customizados, retornar 'custom'
+  // Para tipos customizados, manter o valor original para processar corretamente
   if (sectionType.startsWith('custom_')) {
-    return 'custom';
+    return sectionType;
   }
   
   // Caso contrário, retornar um valor padrão seguro
@@ -219,6 +218,18 @@ export const answerKeyService = {
     try {
       console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
       
+      // Buscar o concurso para obter disciplinas customizadas e pesos
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao buscar dados do concurso:', concursoError);
+        throw concursoError;
+      }
+      
       // Primeiro, remover registros existentes para este concurso para evitar conflitos
       const { error: deleteError } = await supabase
         .from('official_answer_weights')
@@ -230,15 +241,39 @@ export const answerKeyService = {
         throw deleteError;
       }
       
+      // Log das disciplinas customizadas
+      const disciplines = concurso.disciplines || [];
+      console.log('[answerKeyService] Disciplinas customizadas:', disciplines);
+      
       // Preparar dados para inserção e garantir que section_type seja válido
-      const insertData = answerKeyData.map(item => ({
-        concurso_id: item.concurso_id,
-        question_number: item.question_number,
-        correct_answer: item.correct_answer,
-        weight: item.weight || 1.0,
-        is_nullified: item.is_nullified || false,
-        section_type: sanitizeSectionType(item.section_type)
-      }));
+      const insertData = answerKeyData.map(item => {
+        // Aplicar o peso da disciplina se for uma disciplina customizada
+        const sectionType = sanitizeSectionType(item.section_type);
+        let weight = item.weight || 1.0;
+        
+        // Se for uma disciplina customizada, obter o peso da configuração do concurso
+        if (sectionType.startsWith('custom_')) {
+          const disciplineType = sectionType;
+          const discipline = disciplines.find((d: any) => d.type === disciplineType);
+          
+          if (discipline && discipline.weight) {
+            console.log(`[answerKeyService] Aplicando peso ${discipline.weight} para disciplina ${disciplineType}`);
+            // Não aplicamos o peso aqui, pois será aplicado na função de recálculo
+            // Apenas registramos o peso correto
+          }
+        }
+        
+        console.log(`[answerKeyService] Questão ${item.question_number}: tipo=${sectionType}, peso=${weight}`);
+        
+        return {
+          concurso_id: item.concurso_id,
+          question_number: item.question_number,
+          correct_answer: item.correct_answer,
+          weight: weight,
+          is_nullified: item.is_nullified || false,
+          section_type: sectionType
+        };
+      });
       
       // Inserir todos os registros de uma vez
       const { data, error } = await supabase
@@ -252,6 +287,19 @@ export const answerKeyService = {
       }
       
       console.log(`[answerKeyService] Inserção direta: ${data?.length || 0} questões inseridas com sucesso`);
+      
+      // Recalcular todas as pontuações
+      const { data: recalcResult, error: recalcError } = await supabase.rpc(
+        'recalculate_all_scores',
+        { p_concurso_id: concursoId }
+      );
+
+      if (recalcError) {
+        console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcError);
+        throw recalcError;
+      }
+
+      console.log('[answerKeyService] Pontuações recalculadas com sucesso:', recalcResult);
       
       return {
         success: true,
