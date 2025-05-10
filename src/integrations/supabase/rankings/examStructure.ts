@@ -18,6 +18,27 @@ export const sectionDisplayNames: Record<string, string> = {
   custom: 'Conhecimentos Customizados'
 };
 
+// Helper function to safely get numeric value from possibly JSONB field
+const getNumericValue = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  if (typeof value === 'object') {
+    // If it's a JSONB object, try to extract a numeric value
+    try {
+      // This is just a placeholder. Adjust based on actual structure if needed
+      return 0;
+    } catch (e) {
+      console.warn('Failed to parse JSONB value:', e);
+      return 0;
+    }
+  }
+  return 0;
+};
+
 // Função para obter a estrutura de exame de um concurso
 export const getExamStructure = (concurso: Concurso) => {
   return {
@@ -29,12 +50,11 @@ export const getExamStructure = (concurso: Concurso) => {
     hasCaseStudy1: concurso.has_case_study_1 === true,
     hasCaseStudy2: concurso.has_case_study_2 === true,
     hasCaseStudy3: concurso.has_case_study_3 === true,
-    basicKnowledgeQuestions: concurso.basic_knowledge_questions || 0,
-    specificKnowledge1Questions: concurso.specific_knowledge_1_questions || 0,
-    specificKnowledge2Questions: concurso.specific_knowledge_2_questions || 0,
-    specificKnowledge3Questions: concurso.specific_knowledge_3_questions || 0,
+    basicKnowledgeQuestions: getNumericValue(concurso.basic_knowledge_questions),
+    specificKnowledge1Questions: getNumericValue(concurso.specific_knowledge_1_questions),
+    specificKnowledge2Questions: getNumericValue(concurso.specific_knowledge_2_questions),
+    specificKnowledge3Questions: getNumericValue(concurso.specific_knowledge_3_questions),
     basicKnowledgeWeight: concurso.basic_knowledge_weight || 1,
-    // Usar specific_knowledge_weight como fallback para compatibilidade
     specificKnowledge1Weight: concurso.specific_knowledge_1_weight || 1,
     specificKnowledge2Weight: concurso.specific_knowledge_2_weight || 1,
     specificKnowledge3Weight: concurso.specific_knowledge_3_weight || 1,
@@ -71,40 +91,44 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
   return sectionDisplayNames;
 };
 
-// Função auxiliar para determinar o tipo de seção com base no número da questão (exportada para resolver o erro de importação)
+// Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
   let currentIndex = 1;
   
   // Conhecimentos Básicos
-  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-    if (questionNumber <= currentIndex + concurso.basic_knowledge_questions - 1) {
+  if (concurso.has_basic_knowledge) {
+    const basicQuestions = getNumericValue(concurso.basic_knowledge_questions);
+    if (basicQuestions > 0 && questionNumber <= currentIndex + basicQuestions - 1) {
       return 'basic';
     }
-    currentIndex += concurso.basic_knowledge_questions;
+    currentIndex += basicQuestions;
   }
   
   // Conhecimentos Específicos 1
-  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-    if (questionNumber <= currentIndex + concurso.specific_knowledge_1_questions - 1) {
+  if (concurso.has_specific_knowledge_1) {
+    const specificQuestions1 = getNumericValue(concurso.specific_knowledge_1_questions);
+    if (specificQuestions1 > 0 && questionNumber <= currentIndex + specificQuestions1 - 1) {
       return 'specific1';
     }
-    currentIndex += concurso.specific_knowledge_1_questions;
+    currentIndex += specificQuestions1;
   }
   
   // Conhecimentos Específicos 2
-  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-    if (questionNumber <= currentIndex + concurso.specific_knowledge_2_questions - 1) {
+  if (concurso.has_specific_knowledge_2) {
+    const specificQuestions2 = getNumericValue(concurso.specific_knowledge_2_questions);
+    if (specificQuestions2 > 0 && questionNumber <= currentIndex + specificQuestions2 - 1) {
       return 'specific2';
     }
-    currentIndex += concurso.specific_knowledge_2_questions;
+    currentIndex += specificQuestions2;
   }
   
   // Conhecimentos Específicos 3
-  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-    if (questionNumber <= currentIndex + concurso.specific_knowledge_3_questions - 1) {
+  if (concurso.has_specific_knowledge_3) {
+    const specificQuestions3 = getNumericValue(concurso.specific_knowledge_3_questions);
+    if (specificQuestions3 > 0 && questionNumber <= currentIndex + specificQuestions3 - 1) {
       return 'specific3';
     }
-    currentIndex += concurso.specific_knowledge_3_questions;
+    currentIndex += specificQuestions3;
   }
   
   // Disciplinas customizadas

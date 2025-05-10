@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -29,8 +28,8 @@ export interface Concurso {
   has_case_study_2?: boolean;
   has_case_study_3?: boolean;
   
-  // Question counts
-  basic_knowledge_questions?: number;
+  // Question counts - updated to reflect JSONB type in database
+  basic_knowledge_questions?: number | any; // Can be number or jsonb
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
@@ -38,7 +37,6 @@ export interface Concurso {
   
   // Section weights
   basic_knowledge_weight?: number;
-  specific_knowledge_weight?: number; // Campo de compatibilidade
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;

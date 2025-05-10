@@ -123,6 +123,7 @@ export type Database = {
           alternatives_count: number | null
           banca: string
           basic_knowledge_minimum_score: number | null
+          basic_knowledge_questions: Json | null
           case_study_1_minimum_score: number | null
           case_study_2_minimum_score: number | null
           case_study_3_minimum_score: number | null
@@ -174,6 +175,7 @@ export type Database = {
           alternatives_count?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: Json | null
           case_study_1_minimum_score?: number | null
           case_study_2_minimum_score?: number | null
           case_study_3_minimum_score?: number | null
@@ -225,6 +227,7 @@ export type Database = {
           alternatives_count?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: Json | null
           case_study_1_minimum_score?: number | null
           case_study_2_minimum_score?: number | null
           case_study_3_minimum_score?: number | null

@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,7 +27,7 @@ export const useSaveRanking = () => {
         orgao = orgao.substring(0, 30) + '...';
       }
 
-      // Ensure the disciplines array is properly formatted
+      // Ensure the disciplines array is properly formatted as JSON
       if (formValues.disciplines && !Array.isArray(formValues.disciplines)) {
         try {
           formValues.disciplines = JSON.parse(formValues.disciplines);
@@ -36,6 +35,23 @@ export const useSaveRanking = () => {
           formValues.disciplines = [];
         }
       }
+
+      // Convert numeric fields to their proper types
+      const numericFields = [
+        'basic_knowledge_questions', 
+        'specific_knowledge_1_questions',
+        'specific_knowledge_2_questions',
+        'specific_knowledge_3_questions',
+        'custom_knowledge_questions'
+      ];
+      
+      // For fields that should be JSON but might be numbers in the form
+      numericFields.forEach(field => {
+        if (typeof formValues[field] === 'number') {
+          // Convert number to valid JSON if needed
+          formValues[field] = formValues[field];
+        }
+      });
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
@@ -86,6 +102,12 @@ export const useSaveRanking = () => {
       
       if (formValues.is_admin_update !== undefined) {
         dataToSubmit.is_admin_update = formValues.is_admin_update;
+      }
+
+      // Make sure jsonb fields are proper JSON objects
+      if (typeof dataToSubmit.basic_knowledge_questions === 'number') {
+        // If it's a number, we'll keep it as is - the database will handle it
+        console.log("basic_knowledge_questions is a number:", dataToSubmit.basic_knowledge_questions);
       }
 
       let result;

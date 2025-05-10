@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { SectionType, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType, sectionDisplayNames, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerSheetProps {
   concurso: Concurso;

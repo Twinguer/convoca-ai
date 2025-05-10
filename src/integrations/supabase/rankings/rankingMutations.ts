@@ -1,6 +1,20 @@
-
 import { supabase } from '../client';
 import { Concurso } from '@/types/concursos';
+
+// Helper function to safely handle JSONB fields
+const processJsonbField = (value: any): any => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'object') return value; // Already an object
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (e) {
+      console.warn('Failed to parse string as JSON:', e);
+      return value; // Return as is if can't parse
+    }
+  }
+  return value; // Return as is for numbers or other types
+};
 
 // Função para salvar um novo ranking ou atualizar um existente
 export const saveRanking = async (
@@ -45,14 +59,33 @@ export const saveRanking = async (
       return { duplicated: true };
     }
 
+    // Processar campos JSONB
+    let processedFormValues = { ...formValues };
+    if (processedFormValues.disciplines && typeof processedFormValues.disciplines === 'string') {
+      try {
+        processedFormValues.disciplines = JSON.parse(processedFormValues.disciplines as string);
+      } catch (e) {
+        console.error('Error parsing disciplines:', e);
+        processedFormValues.disciplines = [];
+      }
+    }
+
     // Criar objeto limpo com dados para submissão
     const dataToSubmit: Record<string, any> = {
-      ...formValues,
-      created_by_user_id: formValues.created_by_user_id || userId, // Manter criador original quando admin está editando
+      ...processedFormValues,
+      created_by_user_id: processedFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
       titulo: title,
       orgao: orgao,
-      banca: formValues.custom_banca || formValues.banca,
+      banca: processedFormValues.custom_banca || processedFormValues.banca,
     };
+
+    // Log to see what we're submitting
+    console.log('Submitting data to Supabase:', 
+      JSON.stringify({
+        ...dataToSubmit,
+        basic_knowledge_questions_type: typeof dataToSubmit.basic_knowledge_questions
+      }, null, 2)
+    );
 
     let result;
     
