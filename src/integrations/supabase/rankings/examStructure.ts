@@ -1,9 +1,5 @@
 
-import { Concurso } from '@/types/concursos';
-
-// Definição dos tipos de seção
-export type SectionType = 'basic' | 'specific1' | 'specific2' | 'specific3' | 
-                         'discursive' | 'caseStudy1' | 'caseStudy2' | 'caseStudy3' | string;
+import { Concurso, SectionType } from '@/types/concursos';
 
 // Objeto de nomes de exibição das seções (adicionado aqui para resolver o erro de importação)
 export const sectionDisplayNames: Record<string, string> = {
@@ -12,9 +8,9 @@ export const sectionDisplayNames: Record<string, string> = {
   specific2: 'Conhecimentos Específicos 2',
   specific3: 'Conhecimentos Específicos 3',
   discursive: 'Discursiva',
-  caseStudy1: 'Estudo de Caso 1',
-  caseStudy2: 'Estudo de Caso 2',
-  caseStudy3: 'Estudo de Caso 3',
+  case_study1: 'Estudo de Caso 1',
+  case_study2: 'Estudo de Caso 2',
+  case_study3: 'Estudo de Caso 3',
   custom: 'Conhecimentos Customizados'
 };
 
@@ -73,9 +69,9 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
     specific2: 'Conhecimentos Específicos 2',
     specific3: 'Conhecimentos Específicos 3',
     discursive: 'Discursiva',
-    caseStudy1: 'Estudo de Caso 1',
-    caseStudy2: 'Estudo de Caso 2',
-    caseStudy3: 'Estudo de Caso 3',
+    case_study1: 'Estudo de Caso 1',
+    case_study2: 'Estudo de Caso 2',
+    case_study3: 'Estudo de Caso 3',
     custom: 'Conhecimentos Customizados'
   };
   

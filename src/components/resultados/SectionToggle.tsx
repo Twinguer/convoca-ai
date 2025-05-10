@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { Concurso } from '@/types/concursos';
+import { Concurso, SectionType } from '@/types/concursos';
 
 interface SectionToggleProps {
-  selectedSection: 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3';
-  onSectionChange: (section: 'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3') => void;
+  selectedSection: SectionType;
+  onSectionChange: (section: SectionType) => void;
   concurso: Concurso;
 }
 

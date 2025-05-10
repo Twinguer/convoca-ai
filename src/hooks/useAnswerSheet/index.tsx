@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Concurso } from '@/types/concursos';
+import { Concurso, SectionType } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { fetchExistingAnswers } from './fetchExistingAnswers';
 import { initializeQuestionTypes } from './initializeQuestionTypes';
@@ -9,7 +9,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { SectionType, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
+import { updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
