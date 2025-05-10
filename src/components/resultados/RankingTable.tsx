@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Medal } from 'lucide-react';
 import { Concurso } from '@/types/concursos';
 import { getRankingTableColumns } from '@/types/concursos';
-import UserAvatar from '../user/UserAvatar';
+import { UserAvatar } from '@/components/profile/UserAvatar';
 
 interface RankingTableProps {
   rankings: any[];
@@ -127,7 +127,8 @@ export const RankingTable = ({
                     ) : (
                       <>
                         <UserAvatar 
-                          user={{ name: item.user_name, avatar_url: item.avatar_url }} 
+                          name={item.user_name || "Usuário"} 
+                          avatarUrl={item.avatar_url} 
                           size="sm" 
                         />
                         <span className={`${isCurrentUser ? "font-semibold" : "font-normal"}`}>
