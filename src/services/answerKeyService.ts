@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { getSectionTypeForQuestion, validSectionTypes } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, isValidSectionType, getDisciplineWeight } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
 import { toast } from 'sonner';
 
@@ -57,16 +57,15 @@ export const updateSectionTypeForConcurso = async (
   }
 }
 
-// Garantir que o tipo de seção seja válido para o banco de dados
-const sanitizeSectionType = (sectionType: string): string => {
-  // Verificar se o tipo de seção está na lista de tipos válidos
-  if (validSectionTypes.includes(sectionType)) {
-    return sectionType;
+// Função atualizada para verificar se o tipo de seção é válido
+const sanitizeSectionType = (sectionType: string, concurso: Concurso): string => {
+  // Verificar se o tipo é um tipo válido para este concurso
+  if (isValidSectionType(sectionType, concurso)) {
+    return sectionType; // Retornar o tipo original se for válido
   }
   
-  // Caso contrário, retornar um valor padrão seguro
-  console.warn(`Section type "${sectionType}" não é válido. Usando "specific1" como fallback.`);
-  return 'specific1';
+  console.warn(`Section type "${sectionType}" não é válido para este concurso. Usando "specific1" como fallback.`);
+  return 'specific1'; // Fallback para compatibilidade
 };
 
 export const answerKeyService = {
@@ -76,15 +75,35 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Iniciando salvamento de gabarito para concurso: ${concursoId}`);
       console.log(`[answerKeyService] Total de questões a salvar: ${answerKeyData.length}`);
       
+      // Obter o concurso para validação de tipos de seção
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao buscar concurso:', concursoError);
+        throw concursoError;
+      }
+      
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
-        // Garantir que section_type seja válido
-        item.section_type = sanitizeSectionType(item.section_type);
+        // Garantir que section_type seja válido para este concurso
+        item.section_type = sanitizeSectionType(item.section_type, concurso);
+        
+        // Calcular o peso correto para o tipo de seção
+        const sectionWeight = getDisciplineWeight(item.section_type, concurso);
+        if (sectionWeight !== item.weight) {
+          console.log(`[answerKeyService] Ajustando peso da questão ${item.question_number} de ${item.weight} para ${sectionWeight} (tipo: ${item.section_type})`);
+          item.weight = sectionWeight;
+        }
         
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
           resposta: item.correct_answer,
           seção: item.section_type,
+          peso: item.weight,
           anulada: item.is_nullified
         });
       });
@@ -104,16 +123,13 @@ export const answerKeyService = {
 
       // Atualizar ou inserir cada questão do gabarito
       for (const item of answerKeyData) {
-        // Garantir que section_type seja válido
-        item.section_type = sanitizeSectionType(item.section_type);
-        
-        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
+        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}, peso: ${item.weight}`);
         
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: item.concurso_id,
           p_question_number: item.question_number,
           p_correct_answer: item.correct_answer,
-          p_weight: item.weight || 1.0,
+          p_weight: item.weight,
           p_is_nullified: item.is_nullified || false,
           p_section_type: item.section_type
         });
@@ -129,7 +145,7 @@ export const answerKeyService = {
       // Verificar se os dados foram realmente salvos
       const { data: verifyData, error: verifyError } = await supabase
         .from('official_answer_weights')
-        .select('question_number, correct_answer')
+        .select('question_number, correct_answer, section_type, weight')
         .eq('concurso_id', concursoId);
 
       if (verifyError) {
@@ -140,7 +156,7 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
       if (verifyData) {
         verifyData.forEach(item => {
-          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}`);
+          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer} (seção: ${item.section_type}, peso: ${item.weight})`);
         });
       }
 
@@ -203,6 +219,18 @@ export const answerKeyService = {
     try {
       console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
       
+      // Obter o concurso para validação de tipos de seção
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+        
+      if (concursoError) {
+        console.error('[answerKeyService] Erro ao buscar concurso:', concursoError);
+        throw concursoError;
+      }
+      
       // Primeiro, remover registros existentes para este concurso para evitar conflitos
       const { error: deleteError } = await supabase
         .from('official_answer_weights')
@@ -215,14 +243,22 @@ export const answerKeyService = {
       }
       
       // Preparar dados para inserção e garantir que section_type seja válido
-      const insertData = answerKeyData.map(item => ({
-        concurso_id: item.concurso_id,
-        question_number: item.question_number,
-        correct_answer: item.correct_answer,
-        weight: item.weight || 1.0,
-        is_nullified: item.is_nullified || false,
-        section_type: sanitizeSectionType(item.section_type)
-      }));
+      const insertData = answerKeyData.map(item => {
+        // Validar e sanitizar o tipo de seção
+        const sectionType = sanitizeSectionType(item.section_type, concurso);
+        
+        // Obter o peso correto para esta seção/disciplina
+        const weight = getDisciplineWeight(sectionType, concurso);
+        
+        return {
+          concurso_id: item.concurso_id,
+          question_number: item.question_number,
+          correct_answer: item.correct_answer,
+          weight: weight, // Usar o peso calculado da disciplina
+          is_nullified: item.is_nullified || false,
+          section_type: sectionType
+        };
+      });
       
       // Inserir todos os registros de uma vez
       const { data, error } = await supabase

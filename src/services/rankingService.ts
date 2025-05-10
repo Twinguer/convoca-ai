@@ -1,4 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
+import { getDisciplines, getDisciplineWeight } from '@/integrations/supabase/rankings/examStructure';
 
 // Defining the Ranking interface to fix TypeScript errors
 export interface Ranking {
@@ -28,6 +30,7 @@ export interface Ranking {
   weightedCaseStudy3Score?: number | null;
   // Custom discipline scores
   customDisciplineScores?: Record<string, number> | null;
+  weightedCustomDisciplineScores?: Record<string, number> | null;
   reservationType: string;
   displayReservation: string;
   id: string;
@@ -45,6 +48,22 @@ const getReservationAbbreviation = (reservationType: string): string => {
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
+    
+    // Primeiro, buscar os dados do concurso para obter as disciplinas e pesos
+    const { data: concursoData, error: concursoError } = await supabase
+      .from('concursos')
+      .select('*')
+      .eq('id', concursoId)
+      .single();
+      
+    if (concursoError) {
+      console.error('Error fetching concurso data:', concursoError);
+      return [];
+    }
+    
+    // Extrair as disciplinas do concurso
+    const disciplines = getDisciplines(concursoData);
+    console.log('Concurso disciplines:', disciplines);
     
     // Modificando para usar uma abordagem alternativa que evite a ambiguidade de ID
     const { data, error } = await supabase
@@ -94,6 +113,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id: firstRanking.id,
         user_id: firstRanking.user_id,
         score: firstRanking.score,
+        subject_scores: firstRanking.subject_scores,
         profile: firstRanking.users_profiles
       });
     }
@@ -109,8 +129,39 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
       
-      // Parse custom discipline scores from subject_scores jsonb if available
-      const customDisciplineScores = ranking.subject_scores ? ranking.subject_scores : {};
+      // Parse e processa os scores customizados das disciplinas
+      const rawCustomDisciplineScores: Record<string, number> = {};
+      const weightedCustomDisciplineScores: Record<string, number> = {};
+      
+      // Verificar se subject_scores existe e é um objeto válido
+      if (ranking.subject_scores && typeof ranking.subject_scores === 'object') {
+        // Log para verificar o conteúdo de subject_scores
+        console.log(`Subject scores for ranking ${ranking.id}:`, ranking.subject_scores);
+        
+        // Processar cada disciplina customizada
+        disciplines.forEach(discipline => {
+          if (discipline.isEnabled && discipline.type) {
+            const disciplineType = discipline.type;
+            
+            // Verificar se há pontuação para esta disciplina
+            const rawScore = ranking.subject_scores[disciplineType] || 0;
+            rawCustomDisciplineScores[disciplineType] = rawScore;
+            
+            // Calcular a pontuação ponderada
+            const weight = getDisciplineWeight(disciplineType, concursoData);
+            const weightedScore = rawScore * weight;
+            weightedCustomDisciplineScores[disciplineType] = weightedScore;
+            
+            console.log(`Discipline ${disciplineType}:`, {
+              rawScore, 
+              weight, 
+              weightedScore
+            });
+          }
+        });
+      } else {
+        console.log(`No subject_scores found for ranking ${ranking.id}`);
+      }
       
       return {
         position: index + 1,
@@ -137,7 +188,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         // Custom discipline scores
-        customDisciplineScores,
+        customDisciplineScores: rawCustomDisciplineScores,
+        weightedCustomDisciplineScores: weightedCustomDisciplineScores,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id
