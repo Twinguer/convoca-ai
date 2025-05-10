@@ -123,9 +123,14 @@ export type Database = {
           alternatives_count: number | null
           banca: string
           basic_knowledge_minimum_score: number | null
+          basic_knowledge_questions: number | null
+          basic_knowledge_weight: number | null
           case_study_1_minimum_score: number | null
+          case_study_1_weight: number | null
           case_study_2_minimum_score: number | null
+          case_study_2_weight: number | null
           case_study_3_minimum_score: number | null
+          case_study_3_weight: number | null
           created_at: string
           created_by_user_id: string | null
           custom_banca: string | null
@@ -135,16 +140,25 @@ export type Database = {
           data_publicacao: string | null
           disciplines: Json | null
           discursive_minimum_score: number | null
+          discursive_weight: number | null
           etapa_atual: string | null
           exam_type: string | null
           has_ampla_concorrencia: boolean | null
+          has_basic_knowledge: boolean | null
+          has_case_study_1: boolean | null
+          has_case_study_2: boolean | null
+          has_case_study_3: boolean | null
           has_custom_knowledge: boolean | null
+          has_discursive: boolean | null
           has_hipossuficientes: boolean | null
           has_indigenas: boolean | null
           has_minimum_score: boolean | null
           has_pcd: boolean | null
           has_ppp: boolean | null
           has_quota_minimum_score: boolean | null
+          has_specific_knowledge_1: boolean | null
+          has_specific_knowledge_2: boolean | null
+          has_specific_knowledge_3: boolean | null
           has_transsexuais: boolean | null
           id: string
           inscritos: number | null
@@ -160,8 +174,14 @@ export type Database = {
           quota_minimum_score: number | null
           quota_minimum_score_unit_type: string | null
           specific_knowledge_1_minimum_score: number | null
+          specific_knowledge_1_questions: number | null
+          specific_knowledge_1_weight: number | null
           specific_knowledge_2_minimum_score: number | null
+          specific_knowledge_2_questions: number | null
+          specific_knowledge_2_weight: number | null
           specific_knowledge_3_minimum_score: number | null
+          specific_knowledge_3_questions: number | null
+          specific_knowledge_3_weight: number | null
           status: string
           subjects: Json | null
           temp_disciplines_data: Json | null
@@ -175,9 +195,14 @@ export type Database = {
           alternatives_count?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: number | null
+          basic_knowledge_weight?: number | null
           case_study_1_minimum_score?: number | null
+          case_study_1_weight?: number | null
           case_study_2_minimum_score?: number | null
+          case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
+          case_study_3_weight?: number | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
@@ -187,16 +212,25 @@ export type Database = {
           data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
+          discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
           has_ampla_concorrencia?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
           has_custom_knowledge?: boolean | null
+          has_discursive?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
           has_quota_minimum_score?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
           has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
@@ -212,8 +246,14 @@ export type Database = {
           quota_minimum_score?: number | null
           quota_minimum_score_unit_type?: string | null
           specific_knowledge_1_minimum_score?: number | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_minimum_score?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
           status?: string
           subjects?: Json | null
           temp_disciplines_data?: Json | null
@@ -227,9 +267,14 @@ export type Database = {
           alternatives_count?: number | null
           banca?: string
           basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: number | null
+          basic_knowledge_weight?: number | null
           case_study_1_minimum_score?: number | null
+          case_study_1_weight?: number | null
           case_study_2_minimum_score?: number | null
+          case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
+          case_study_3_weight?: number | null
           created_at?: string
           created_by_user_id?: string | null
           custom_banca?: string | null
@@ -239,16 +284,25 @@ export type Database = {
           data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
+          discursive_weight?: number | null
           etapa_atual?: string | null
           exam_type?: string | null
           has_ampla_concorrencia?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
           has_custom_knowledge?: boolean | null
+          has_discursive?: boolean | null
           has_hipossuficientes?: boolean | null
           has_indigenas?: boolean | null
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
           has_quota_minimum_score?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
           has_transsexuais?: boolean | null
           id?: string
           inscritos?: number | null
@@ -264,8 +318,14 @@ export type Database = {
           quota_minimum_score?: number | null
           quota_minimum_score_unit_type?: string | null
           specific_knowledge_1_minimum_score?: number | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
           specific_knowledge_2_minimum_score?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
           specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
           status?: string
           subjects?: Json | null
           temp_disciplines_data?: Json | null
