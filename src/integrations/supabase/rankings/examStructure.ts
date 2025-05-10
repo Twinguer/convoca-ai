@@ -1,16 +1,16 @@
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
-// Objeto de nomes de exibição das seções
+// Mapeamento de nomes de exibição para seções
 export const sectionDisplayNames: Record<string, string> = {
-  basic: 'Conhecimentos Básicos',
-  specific1: 'Conhecimentos Específicos 1',
-  specific2: 'Conhecimentos Específicos 2',
-  specific3: 'Conhecimentos Específicos 3',
-  discursive: 'Discursiva',
-  case_study1: 'Estudo de Caso 1',
-  case_study2: 'Estudo de Caso 2',
-  case_study3: 'Estudo de Caso 3'
+  'basic': 'Conhecimentos Básicos',
+  'specific1': 'C. Específicos 1',
+  'specific2': 'C. Específicos 2',
+  'specific3': 'C. Específicos 3',
+  'discursive': 'Discursiva',
+  'case_study1': 'Estudo de Caso 1',
+  'case_study2': 'Estudo de Caso 2',
+  'case_study3': 'Estudo de Caso 3'
 };
 
 // Helper function to safely get numeric value from possibly JSONB field
@@ -89,22 +89,43 @@ export const getExamStructure = (concurso: Concurso) => {
   return examStructure;
 };
 
-// Função para atualizar os nomes de exibição das seções
-export const updateSectionDisplayNames = (concurso: Concurso) => {
-  const disciplines = getDisciplines(concurso);
-  const displayNames = { ...sectionDisplayNames };
+// Função para atualizar os nomes de exibição com disciplinas customizadas
+export const updateSectionDisplayNames = (concurso: any): Record<string, string> => {
+  // Criar uma cópia do objeto padrão
+  const updatedNames = { ...sectionDisplayNames };
   
-  // Adicionar nomes customizados das disciplinas
-  disciplines.forEach(discipline => {
-    if (discipline.type && discipline.name) {
-      displayNames[discipline.type] = discipline.name;
-    }
-  });
+  // Se concurso tem disciplinas customizadas, adicionar seus nomes ao mapeamento
+  if (concurso?.has_custom_knowledge && concurso?.disciplines && Array.isArray(concurso.disciplines)) {
+    concurso.disciplines.forEach((discipline: any) => {
+      if (discipline.type && discipline.name) {
+        updatedNames[discipline.type] = discipline.name;
+      }
+    });
+  }
   
-  return displayNames;
+  return updatedNames;
 };
 
-// Lista de tipos de seção válidos no banco de dados
+// Esta função é usada para obter o nome de exibição correto para uma disciplina/seção
+export const getSectionDisplayName = (concurso: any, sectionType: string): string => {
+  // Verificar se é uma das seções padrão
+  if (sectionDisplayNames[sectionType]) {
+    return sectionDisplayNames[sectionType];
+  }
+  
+  // Verificar se é uma disciplina customizada
+  if (concurso?.has_custom_knowledge && concurso?.disciplines) {
+    const discipline = concurso.disciplines.find((d: any) => d.type === sectionType);
+    if (discipline) {
+      return discipline.name;
+    }
+  }
+  
+  // Retornar o código da disciplina se não encontrar um nome melhor
+  return sectionType;
+};
+
+// Lista de tipos de seção válidos
 export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
