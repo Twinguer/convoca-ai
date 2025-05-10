@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { ExamStructureBuilder } from '@/models/examBuilder/ExamStructureBuilder';
 import { ExamSectionConfig } from '@/models/examBuilder/ExamSectionBuilder';
-import { sectionDisplayNames, SectionType } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType } from '@/types/concursos';
 
 interface CustomExamStructureSectionProps {
   form: UseFormReturn<any>;

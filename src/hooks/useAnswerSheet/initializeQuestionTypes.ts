@@ -1,7 +1,7 @@
 
 import { Concurso } from "@/types/concursos";
 import { Dispatch, SetStateAction } from "react";
-import { SectionType } from "@/integrations/supabase/rankings/examStructure";
+import { SectionType } from "@/types/concursos";
 
 export const initializeQuestionTypes = (
   concurso: Concurso,

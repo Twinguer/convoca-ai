@@ -1,7 +1,13 @@
 
-import { Concurso, SectionType } from '@/types/concursos';
+import { Concurso } from '@/types/concursos';
 
-// Objeto de nomes de exibição das seções (adicionado aqui para resolver o erro de importação)
+// Use the SectionType from concursos.ts
+import { SectionType } from '@/types/concursos';
+
+// Re-export SectionType for backward compatibility
+export { SectionType };
+
+// Objeto de nomes de exibição das seções
 export const sectionDisplayNames: Record<string, string> = {
   basic: 'Conhecimentos Básicos',
   specific1: 'Conhecimentos Específicos 1',

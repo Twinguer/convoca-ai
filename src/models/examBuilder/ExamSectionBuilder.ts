@@ -1,4 +1,5 @@
-import { SectionType } from '@/integrations/supabase/rankings/examStructure';
+
+import { SectionType } from '@/types/concursos';
 
 export interface ExamSectionConfig {
   sectionType: SectionType;
