@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -27,6 +26,8 @@ export interface Ranking {
   weightedCaseStudy1Score?: number | null;
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
+  // Custom discipline scores
+  customDisciplineScores?: Record<string, number> | null;
   reservationType: string;
   displayReservation: string;
   id: string;
@@ -69,6 +70,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_1_score,
         weighted_case_study_2_score,
         weighted_case_study_3_score,
+        subject_scores,
         reservation_type,
         users_profiles(name, avatar_url)
       `)
@@ -107,6 +109,9 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
       
+      // Parse custom discipline scores from subject_scores jsonb if available
+      const customDisciplineScores = ranking.subject_scores ? ranking.subject_scores : {};
+      
       return {
         position: index + 1,
         name: name,
@@ -131,6 +136,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
+        // Custom discipline scores
+        customDisciplineScores,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id

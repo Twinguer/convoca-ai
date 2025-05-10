@@ -162,6 +162,7 @@ export type Database = {
           specific_knowledge_1_minimum_score: number | null
           specific_knowledge_2_minimum_score: number | null
           specific_knowledge_3_minimum_score: number | null
+          specific_knowledge_weight: number | null
           status: string
           subjects: Json | null
           titulo: string
@@ -213,6 +214,7 @@ export type Database = {
           specific_knowledge_1_minimum_score?: number | null
           specific_knowledge_2_minimum_score?: number | null
           specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_weight?: number | null
           status?: string
           subjects?: Json | null
           titulo: string
@@ -264,6 +266,7 @@ export type Database = {
           specific_knowledge_1_minimum_score?: number | null
           specific_knowledge_2_minimum_score?: number | null
           specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_weight?: number | null
           status?: string
           subjects?: Json | null
           titulo?: string
@@ -782,6 +785,7 @@ export type Database = {
           name: string
           profile_text: string | null
           rotina_estudos: string | null
+          status_concurseiro: string | null
           updated_at: string
         }
         Insert: {
@@ -801,6 +805,7 @@ export type Database = {
           name: string
           profile_text?: string | null
           rotina_estudos?: string | null
+          status_concurseiro?: string | null
           updated_at?: string
         }
         Update: {
@@ -820,6 +825,7 @@ export type Database = {
           name?: string
           profile_text?: string | null
           rotina_estudos?: string | null
+          status_concurseiro?: string | null
           updated_at?: string
         }
         Relationships: []

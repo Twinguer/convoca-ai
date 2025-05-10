@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { recalculateAllUserScores } from './userAnswers';
 
@@ -66,10 +67,9 @@ export const createRanking = async (rankingData: any) => {
       specific_knowledge_2_questions: rankingData.specific_knowledge_2_questions,
       specific_knowledge_3_questions: rankingData.specific_knowledge_3_questions,
       
-      // Add weight fields - removed specific_knowledge_weight as it no longer exists
+      // Add weight fields
       basic_knowledge_weight: rankingData.basic_knowledge_weight,
-      // specific_knowledge_weight is removed, use specific_knowledge_1_weight directly
-      specific_knowledge_1_weight: rankingData.specific_knowledge_1_weight,
+      specific_knowledge_weight: rankingData.specific_knowledge_weight || rankingData.specific_knowledge_1_weight, // For backward compatibility
       
       // Add reservation quota fields - ensuring boolean values
       has_ampla_concorrencia: rankingData.has_ampla_concorrencia === true,
@@ -82,6 +82,7 @@ export const createRanking = async (rankingData: any) => {
     
     // Add additional weight fields if they exist
     const weightFields = [
+      'specific_knowledge_1_weight',
       'specific_knowledge_2_weight',
       'specific_knowledge_3_weight',
       'discursive_weight',

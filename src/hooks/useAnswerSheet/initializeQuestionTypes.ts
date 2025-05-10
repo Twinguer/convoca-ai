@@ -1,11 +1,12 @@
 
 import { Concurso } from "@/types/concursos";
 import { Dispatch, SetStateAction } from "react";
+import { SectionType } from "@/integrations/supabase/rankings/examStructure";
 
 export const initializeQuestionTypes = (
   concurso: Concurso,
-  questionType: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' },
-  setQuestionType: Dispatch<SetStateAction<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>>
+  questionType: { [key: number]: SectionType },
+  setQuestionType: Dispatch<SetStateAction<{ [key: number]: SectionType }>>
 ) => {
   // Check if questionType is already initialized
   if (Object.keys(questionType).length > 0) {
@@ -13,7 +14,7 @@ export const initializeQuestionTypes = (
   }
 
   // Create a temporary object to hold question types
-  const types: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
+  const types: { [key: number]: SectionType } = {};
   
   let questionNumber = 1;
   
@@ -47,6 +48,18 @@ export const initializeQuestionTypes = (
       types[questionNumber] = 'specific3';
       questionNumber++;
     }
+  }
+  
+  // Custom disciplines
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    concurso.disciplines.forEach(discipline => {
+      if (discipline.isEnabled && discipline.questionCount) {
+        for (let i = 0; i < discipline.questionCount; i++) {
+          types[questionNumber] = discipline.type;
+          questionNumber++;
+        }
+      }
+    });
   }
   
   setQuestionType(types);

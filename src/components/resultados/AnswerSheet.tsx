@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { SectionType, sectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { SectionType, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -28,6 +28,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 }) => {
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
+  const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
   
   const {
     answers,
@@ -55,6 +56,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy3Score,
     setCaseStudy3Score
   } = useAnswerSheet(concurso, rankingId);
+  
+  // Atualizar os nomes de exibição das seções com disciplinas customizadas
+  useEffect(() => {
+    if (concurso) {
+      const updatedNames = updateSectionDisplayNames(concurso);
+      setSectionLabels(updatedNames);
+    }
+  }, [concurso]);
   
   const {
     data: userRankingData,
@@ -140,9 +149,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
         
         setLastCheckedNullifiedCount(nullifiedSet.size);
-        
-        // Removemos o toast quando questões anuladas mudam
-        // e também o auto-salvamento
       }
     }
   }, [nullifiedData]);
@@ -229,12 +235,24 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
+  // Modificando a função getObjectiveSectionList para lidar com seções customizadas
   const getObjectiveSectionList = () => {
     const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: sectionLabels.basic || 'Conhecimentos Básicos' });
+    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: sectionLabels.specific1 || 'C. Específicos 1' });
+    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: sectionLabels.specific2 || 'C. Específicos 2' });
+    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: sectionLabels.specific3 || 'C. Específicos 3' });
+    if (concurso.has_custom_knowledge) sections.push({ key: 'custom', label: sectionLabels.custom || 'C. Customizados' });
+    
+    // Adicionar disciplinas customizadas
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.type && discipline.name) {
+          sections.push({ key: discipline.type, label: discipline.name });
+        }
+      });
+    }
+    
     return sections;
   };
   
@@ -274,12 +292,18 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
     }
     
+    // Disciplinas customizadas
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.questionCount) {
+          for (let i = 0; i < discipline.questionCount; i++) {
+            allQuestions.push(currentQuestionNumber++);
+          }
+        }
+      });
+    }
+    
     return allQuestions;
-  };
-  
-  // Fix for the type error: modify onValueChange to handle SectionType properly
-  const handleSectionChange = (value: string) => {
-    setSelectedSection(value as SectionType);
   };
   
   return (
@@ -347,10 +371,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={handleSectionChange}
+              onValueChange={setSelectedSection}
               className="w-full"
             >
-              <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>
+              <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(objectiveSections.length, 4)}, 1fr)` }}>
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
@@ -359,7 +383,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               </TabsList>
               
               {objectiveSections.map(section => (
-                <TabsContent key={section.key} value={section.key}>
+                <TabsContent key={section.key} value={section.key as SectionType}>
                   <AnswerMatrix
                     matrix={createAnswerMatrix()}
                     answers={answers}

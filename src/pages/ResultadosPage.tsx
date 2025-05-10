@@ -40,10 +40,12 @@ const ResultadosPage = () => {
         indigenas: concurso.has_indigenas,
         transsexuais: concurso.has_transsexuais
       });
+      console.log('Custom disciplines:', concurso.disciplines);
     }
     if (rankings?.length > 0) {
       console.log('Rankings data:', rankings);
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
+      console.log('Custom discipline scores in first ranking:', rankings[0].customDisciplineScores);
     }
   }, [concurso, rankings]);
 
