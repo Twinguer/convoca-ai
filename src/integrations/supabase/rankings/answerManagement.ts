@@ -1,106 +1,58 @@
 
 import { supabase } from '../client';
-import { getExamStructure } from './examStructure';
+import { getSectionTypeForQuestion, getExamStructure } from './examStructure';
 
-// Função para salvar as respostas do usuário no banco de dados
-export const saveUserAnswersData = async (
+export const saveAnswers = async (
   rankingId: string,
-  concursoId: string,
-  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
+  concursoId: string, 
+  answers: { [key: number]: string },
+  discursiveScore: number | null = null,
+  caseStudy1Score: number | null = null,
+  caseStudy2Score: number | null = null,
+  caseStudy3Score: number | null = null
 ) => {
   try {
-    // Carregue os dados do concurso para determinar as faixas das seções
-    const { data: concurso, error: concursoError } = await supabase
+    // Get the structure of the exam
+    const { data: concursoData, error: concursoError } = await supabase
       .from('concursos')
-      .select(`
-        basic_knowledge_questions,
-        specific_knowledge_1_questions,
-        specific_knowledge_2_questions,
-        specific_knowledge_3_questions
-      `)
+      .select('*')
       .eq('id', concursoId)
       .single();
+      
     if (concursoError) throw concursoError;
-
-    const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
-
-    // Preparar os dados de resposta com as marcações corretas de seção
-    const answersData = answers.map(a => {
-      const qNum = a.questionNumber;
-
+    
+    // Get exam structure
+    const examStructure = getExamStructure(concursoData);
+    
+    // Convert answers object to array of objects for RPC call
+    const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
+      const qNum = parseInt(questionNumber);
+      const sectionType = getSectionTypeForQuestion(qNum, concursoData);
+      
       return {
-        user_ranking_id: rankingId,
-        question_number: qNum,
-        answer: a.answer,
-        is_basic_knowledge: false, // Será ajustado abaixo
-        is_specific_1: false,
-        is_specific_2: false,
-        is_specific_3: false
+        questionNumber: qNum,
+        answer: answer,
+        sectionType
       };
     });
     
-    // Corrija as flags para as seções corretamente
-    answersData.forEach(item => {
-      const qNum = item.question_number;
-      if (qNum <= basicEnd) {
-        item.is_basic_knowledge = true;
-      } else if (qNum <= specific1End) {
-        item.is_specific_1 = true;
-      } else if (qNum <= specific2End) {
-        item.is_specific_2 = true;
-      } else {
-        item.is_specific_3 = true;
-      }
-    });
-
-    console.log('Dados de respostas preparados para salvar:', answersData);
-
-    // Primeiro exclui todas as respostas existentes
-    const { error: deleteError } = await supabase
-      .from('user_answers')
-      .delete()
-      .eq('user_ranking_id', rankingId);
-    
-    if (deleteError) {
-      console.error('Erro ao excluir respostas existentes:', deleteError);
-      throw deleteError;
-    }
-    
-    console.log('Respostas anteriores excluídas com sucesso');
-    
-    // Insere novas respostas apenas se houver respostas para inserir
-    if (answersData.length > 0) {
-      const { error: insertError } = await supabase
-        .from('user_answers')
-        .insert(answersData);
-        
-      if (insertError) {
-        console.error('Erro ao inserir novas respostas:', insertError);
-        throw insertError;
-      }
-      
-      console.log('Novas respostas inseridas com sucesso');
-    }
-    
-    return answersData;
-  } catch (error: any) {
-    console.error('Erro ao salvar respostas do usuário:', error);
-    throw error;
-  }
-};
-
-// Função para buscar as respostas de um usuário
-export const fetchUserAnswers = async (rankingId: string) => {
-  try {
+    // Call the RPC function to save answers and calculate scores
     const { data, error } = await supabase
-      .from('user_answers')
-      .select('*')
-      .eq('user_ranking_id', rankingId);
-      
+      .rpc('save_user_answers_and_calculate_scores', {
+        p_ranking_id: rankingId,
+        p_concurso_id: concursoId,
+        p_answers: answersArray,
+        p_discursive_score: discursiveScore || 0,
+        p_case_study_1_score: caseStudy1Score || 0,
+        p_case_study_2_score: caseStudy2Score || 0,
+        p_case_study_3_score: caseStudy3Score || 0
+      });
+    
     if (error) throw error;
-    return data || [];
+    
+    return data;
   } catch (error) {
-    console.error('Error fetching user answers:', error);
-    return [];
+    console.error('Error saving answers:', error);
+    throw error;
   }
 };

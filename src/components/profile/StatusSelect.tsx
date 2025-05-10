@@ -8,6 +8,8 @@ interface StatusSelectProps {
 }
 
 const StatusSelect: React.FC<StatusSelectProps> = ({ value, onChange }) => {
+  // Since status_concurseiro column was removed, we'll use a local state approach
+  // The application can still use this component, but the status won't be persisted in the database
   return (
     <div className="space-y-2">
       <Label htmlFor="status-concurseiro">Status de concurseiro</Label>

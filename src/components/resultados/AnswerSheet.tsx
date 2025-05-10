@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
+import { SectionType, sectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -277,6 +277,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return allQuestions;
   };
   
+  // Fix for the type error: modify onValueChange to handle SectionType properly
+  const handleSectionChange = (value: string) => {
+    setSelectedSection(value as SectionType);
+  };
+  
   return (
     <Card className="shadow-lg">
       <CardHeader className="bg-emerald-50 border-b">
@@ -342,7 +347,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              onValueChange={handleSectionChange}
               className="w-full"
             >
               <TabsList className={`grid w-full grid-cols-${objectiveSections.length}`}>

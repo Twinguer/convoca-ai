@@ -1,24 +1,25 @@
 
+// Updating the useSaveAnswers hook to work with the updated database schema
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import { Concurso } from '@/types/concursos';
-import { useToast } from '@/components/ui/use-toast';
-import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
-// Removemos a importação de recalculateAllUserScores pois não vamos mais recalcular todas as pontuações
+import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 interface UseSaveAnswersProps {
   rankingId: string;
   concurso: Concurso;
   answers: { [key: number]: string };
-  setIsSaving: (saving: boolean) => void;
-  setError: (error: string | null) => void;
-  setSavedSuccess: (success: boolean) => void;
+  setIsSaving: (value: boolean) => void;
+  setError: (value: string | null) => void;
+  setSavedSuccess: (value: boolean) => void;
   onSuccess: () => void;
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
+  discursiveScore: number | null;
+  caseStudy1Score: number | null;
+  caseStudy2Score: number | null;
+  caseStudy3Score: number | null;
   editCount: number;
-  nullifiedQuestions?: Set<number>;
+  nullifiedQuestions: Set<number>;
 }
 
 export const useSaveAnswers = ({
@@ -34,95 +35,84 @@ export const useSaveAnswers = ({
   caseStudy2Score,
   caseStudy3Score,
   editCount,
-  nullifiedQuestions = new Set()
+  nullifiedQuestions
 }: UseSaveAnswersProps) => {
-  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSaveAnswers = async () => {
+    if (isProcessing) return;
+    
     try {
+      setIsProcessing(true);
       setIsSaving(true);
       setError(null);
-      setSavedSuccess(false);
-
-      // Preparar os dados de respostas para enviar - garantindo que questionNumber seja número
+      console.log('[useSaveAnswers] Saving answers for ranking ID:', rankingId);
+      
+      // Convert answers object to array of { questionNumber, answer } objects
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
-        questionNumber: parseInt(questionNumber, 10),
+        questionNumber: parseInt(questionNumber),
         answer,
       }));
       
-      // Adicionar todas as questões anuladas com uma resposta padrão (se ainda não existirem na lista de respostas)
-      if (nullifiedQuestions && nullifiedQuestions.size > 0) {
-        nullifiedQuestions.forEach(questionNumber => {
-          // Verificar se a questão anulada já tem uma resposta
-          if (!answers[questionNumber]) {
-            // Adicionar uma resposta padrão para questões anuladas ("A" ou "C" dependendo do tipo de prova)
-            const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-            answersArray.push({
-              questionNumber,
-              answer: defaultAnswer
-            });
-          }
+      console.log('[useSaveAnswers] Answers to save:', answersArray);
+      
+      // Call the RPC function to save answers and calculate scores
+      const { data, error } = await supabase
+        .rpc('save_user_answers_and_calculate_scores', {
+          p_ranking_id: rankingId,
+          p_concurso_id: concurso.id,
+          p_answers: JSON.stringify(answersArray),
+          p_discursive_score: discursiveScore || 0,
+          p_case_study_1_score: caseStudy1Score || 0,
+          p_case_study_2_score: caseStudy2Score || 0,
+          p_case_study_3_score: caseStudy3Score || 0,
+          p_current_edit_count: editCount
         });
-      }
-
-      console.log('[useSaveAnswers] Iniciando salvamento via RPC');
-      console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
-
-      // Certifique-se de que section_type esteja atualizado para este concurso
-      const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
-      if (!sectionTypeResult.success) {
-        console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
-        // Continuamos mesmo com erro, pois isso é apenas uma melhoria
-      }
-
-      // Chamar a função RPC centralizada
-      const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
-        p_ranking_id: rankingId,
-        p_concurso_id: concurso.id,
-        p_answers: answersArray,
-        p_discursive_score: discursiveScore || 0,
-        p_case_study_1_score: caseStudy1Score || 0,
-        p_case_study_2_score: caseStudy2Score || 0,
-        p_case_study_3_score: caseStudy3Score || 0,
-        p_current_edit_count: editCount
-      });
-
+        
       if (error) {
-        console.error('[useSaveAnswers] Erro na função RPC:', error);
-        throw new Error(error.message || "Erro ao salvar respostas");
-      }
-
-      console.log('[useSaveAnswers] Resposta da função RPC:', data);
-
-      if (!data.success) {
-        throw new Error(data.error || "Erro ao salvar respostas");
+        console.error('[useSaveAnswers] Error saving answers:', error);
+        throw new Error(error.message);
       }
       
-      // Removemos o recálculo automático de todas as pontuações
-      // Cada usuário verá apenas sua pontuação atualizada
-
-      // Atualizar estado da UI
+      // Check if the function returned success
+      if (!data.success) {
+        console.error('[useSaveAnswers] Function reported failure:', data);
+        throw new Error(data.error || 'Falha ao salvar respostas.');
+      }
+      
+      console.log('[useSaveAnswers] Answers saved successfully:', data);
+      
+      // Show success notification
       setSavedSuccess(true);
+      
+      // Call onSuccess callback (usually to update state in parent component)
+      setTimeout(() => {
+        onSuccess();
+      }, 2000);
+      
+      // Notify user of success
       toast({
-        title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada.",
-        duration: 5000
+        title: 'Respostas salvas com sucesso!',
+        description: 'Suas respostas foram registradas e sua pontuação foi calculada.',
+        variant: 'default',
       });
-
-      // Chamar callback de sucesso
-      onSuccess();
     } catch (error: any) {
-      console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
-      setError(error.message || "Erro ao salvar respostas");
+      console.error('[useSaveAnswers] Error in handleSaveAnswers:', error);
+      setError(error.message || 'Erro ao salvar respostas');
+      
       toast({
-        title: "Erro ao salvar",
-        description: error.message,
-        variant: "destructive"
+        title: 'Erro ao salvar respostas',
+        description: error.message || 'Ocorreu um erro ao salvar suas respostas. Tente novamente.',
+        variant: 'destructive',
       });
     } finally {
+      setIsProcessing(false);
       setIsSaving(false);
     }
   };
 
-  return { handleSaveAnswers };
+  return {
+    handleSaveAnswers,
+    isProcessing
+  };
 };
