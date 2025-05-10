@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -104,7 +103,7 @@ export interface RankingTableColumn {
   width?: string;
 }
 
-// SectionType atualizado para aceitar tipos padrão e também custom
+// SectionType atualizado para aceitar qualquer string
 export type SectionType = 
   | 'basic' 
   | 'specific1' 
@@ -114,7 +113,6 @@ export type SectionType =
   | 'case_study1' 
   | 'case_study2' 
   | 'case_study3'
-  | 'custom'
   | string; // Permite tipos customizados para disciplinas
 
 // Fixed helper to determine which specific knowledge sections are enabled

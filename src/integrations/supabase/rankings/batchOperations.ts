@@ -4,24 +4,6 @@ import { supabase } from '../client';
 // Função para recalcular todas as pontuações de usuários para um concurso específico
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
-    console.log('Recalculating all user scores for concurso:', concursoId);
-    
-    // Primeiro, buscar o concurso para ver se tem disciplinas customizadas
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('*, disciplines')
-      .eq('id', concursoId)
-      .single();
-      
-    if (concursoError) {
-      console.error('Error fetching concurso data:', concursoError);
-      return { success: false, error: concursoError.message };
-    }
-    
-    // Log das disciplinas customizadas
-    console.log('Concurso disciplines:', concurso.disciplines);
-    
-    // Chamar a função RPC para recalcular pontuações
     const { data, error } = await supabase.rpc(
       'recalculate_all_scores',
       { p_concurso_id: concursoId }
@@ -32,8 +14,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
       return { success: false, error: error.message };
     }
 
-    console.log('Scores recalculated successfully:', data);
-    
     return { 
       success: true, 
       updatedCount: data?.updatedCount || 0 
@@ -50,8 +30,6 @@ export const recalculateAllUserScores = async (concursoId: string) => {
 // Função para recalcular a pontuação de um usuário específico
 export const recalculateUserScore = async (userRankingId: string) => {
   try {
-    console.log('Recalculating score for user ranking:', userRankingId);
-    
     const { data, error } = await supabase.rpc(
       'calculate_user_score_realtime',
       { p_ranking_id: userRankingId }
@@ -62,8 +40,6 @@ export const recalculateUserScore = async (userRankingId: string) => {
       return { success: false, error: error.message };
     }
 
-    console.log('User score recalculated successfully:', data);
-    
     return { 
       success: true, 
       score: data 

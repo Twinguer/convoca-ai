@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
@@ -11,8 +10,7 @@ export const sectionDisplayNames: Record<string, string> = {
   discursive: 'Discursiva',
   case_study1: 'Estudo de Caso 1',
   case_study2: 'Estudo de Caso 2',
-  case_study3: 'Estudo de Caso 3',
-  custom: 'Disciplina Customizada'
+  case_study3: 'Estudo de Caso 3'
 };
 
 // Helper function to safely get numeric value from possibly JSONB field
@@ -107,7 +105,7 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
 };
 
 // Lista de tipos de seção válidos no banco de dados
-export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3', 'custom'];
+export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
@@ -120,9 +118,10 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // Para disciplinas customizadas, usamos 'custom' como tipo de seção seguro para o banco de dados
-          // Mas armazenamos o tipo real no 'custom_type' para uso na UI
-          return 'custom';
+          // Mapear discipline.type para um tipo válido de seção
+          // Para disciplinas customizadas, usamos 'specific1' como fallback seguro
+          const disciplineType = discipline.type as string;
+          return validSectionTypes.includes(disciplineType) ? disciplineType : 'specific1';
         }
         currentIndex += disciplineQuestions;
       }
@@ -172,49 +171,4 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   
   // Fallback para conhecimentos específicos genéricos
   return 'specific1';
-};
-
-// Nova função para mapear uma disciplina customizada para seu tipo real
-export const getCustomDisciplineType = (concurso: Concurso, questionNumber: number): string | null => {
-  if (!concurso.has_custom_knowledge) return null;
-  
-  const disciplines = getDisciplines(concurso);
-  let currentIndex = 1;
-  
-  // Pular seções padrão
-  if (concurso.has_basic_knowledge) {
-    currentIndex += getNumericValue(concurso.basic_knowledge_questions);
-  }
-  if (concurso.has_specific_knowledge_1) {
-    currentIndex += getNumericValue(concurso.specific_knowledge_1_questions);
-  }
-  if (concurso.has_specific_knowledge_2) {
-    currentIndex += getNumericValue(concurso.specific_knowledge_2_questions);
-  }
-  if (concurso.has_specific_knowledge_3) {
-    currentIndex += getNumericValue(concurso.specific_knowledge_3_questions);
-  }
-  
-  // Encontrar a disciplina correspondente
-  for (const discipline of disciplines) {
-    if (discipline.isEnabled && discipline.questionCount) {
-      const disciplineQuestions = getNumericValue(discipline.questionCount);
-      if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-        return discipline.type;
-      }
-      currentIndex += disciplineQuestions;
-    }
-  }
-  
-  return null;
-};
-
-// Nova função para obter o peso de uma disciplina específica
-export const getDisciplineWeight = (concurso: Concurso, disciplineType: string): number => {
-  if (!concurso.disciplines) return 1.0;
-  
-  const disciplines = getDisciplines(concurso);
-  const discipline = disciplines.find(d => d.type === disciplineType);
-  
-  return discipline && discipline.weight ? getNumericValue(discipline.weight) : 1.0;
 };

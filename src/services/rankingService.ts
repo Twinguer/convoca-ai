@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -28,8 +27,7 @@ export interface Ranking {
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
   // Custom discipline scores
-  customDisciplineScores?: Record<string, number>;
-  weightedCustomDisciplineScores?: Record<string, number>;
+  customDisciplineScores?: Record<string, number> | null;
   reservationType: string;
   displayReservation: string;
   id: string;
@@ -96,8 +94,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id: firstRanking.id,
         user_id: firstRanking.user_id,
         score: firstRanking.score,
-        profile: firstRanking.users_profiles,
-        subject_scores: firstRanking.subject_scores
+        profile: firstRanking.users_profiles
       });
     }
     
@@ -113,67 +110,12 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const avatarUrl = userProfile?.avatar_url || null;
       
       // Parse custom discipline scores from subject_scores jsonb if available
-      let customDisciplineScores: Record<string, number> = {};
-      let weightedCustomDisciplineScores: Record<string, number> = {};
-      
-      if (ranking.subject_scores) {
-        console.log(`User ${name} has subject_scores:`, ranking.subject_scores);
-        
-        // Process raw and weighted scores
-        Object.entries(ranking.subject_scores).forEach(([key, value]: [string, any]) => {
-          if (typeof value === 'object' && value !== null) {
-            // If value is an object with raw and weighted properties
-            customDisciplineScores[key] = value.raw || 0;
-            weightedCustomDisciplineScores[key] = value.weighted || 0;
-            
-            console.log(`Discipline ${key} - raw: ${value.raw}, weighted: ${value.weighted}`);
-          } else {
-            // Caso contrário, assume que é apenas o valor bruto
-            customDisciplineScores[key] = value || 0;
-            weightedCustomDisciplineScores[key] = value || 0;
-            
-            console.log(`Discipline ${key} - simple value: ${value}`);
-          }
-        });
-      }
-      
-      // Calculate total custom disciplines weighted score
-      let customDisciplinesTotal = 0;
-      Object.values(weightedCustomDisciplineScores).forEach(score => {
-        customDisciplinesTotal += Number(score) || 0;
-      });
-      
-      console.log(`User ${name} custom disciplines total: ${customDisciplinesTotal}`);
-      
-      // Calculate the total score properly including all components
-      const calculatedScore = 
-        (ranking.weighted_basic_score || 0) +
-        (ranking.weighted_specific_1_score || 0) +
-        (ranking.weighted_specific_2_score || 0) +
-        (ranking.weighted_specific_3_score || 0) +
-        (ranking.weighted_discursive_score || 0) +
-        (ranking.weighted_case_study_1_score || 0) +
-        (ranking.weighted_case_study_2_score || 0) +
-        (ranking.weighted_case_study_3_score || 0) +
-        customDisciplinesTotal;  // Include custom disciplines in total
-        
-      // Use the database score if available, otherwise use our calculated score
-      const finalScore = ranking.score || calculatedScore;
-      
-      console.log(`User ${name} score components:`, {
-        db_score: ranking.score,
-        calc_score: calculatedScore - customDisciplinesTotal,
-        custom_total: customDisciplinesTotal,
-        final: finalScore,
-        weighted_basic: ranking.weighted_basic_score,
-        weighted_specific1: ranking.weighted_specific_1_score,
-        custom_disciplines: weightedCustomDisciplineScores
-      });
+      const customDisciplineScores = ranking.subject_scores ? ranking.subject_scores : {};
       
       return {
         position: index + 1,
         name: name,
-        score: finalScore,
+        score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
@@ -196,7 +138,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         // Custom discipline scores
         customDisciplineScores,
-        weightedCustomDisciplineScores,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id
