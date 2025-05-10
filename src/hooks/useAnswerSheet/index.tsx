@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,7 +109,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           for (const discipline of concurso.disciplines) {
             const questionCount = typeof discipline.questionCount === 'number'
               ? discipline.questionCount
-              : parseInt(discipline.questionCount?.toString() || '0');
+              : (discipline.questionCount ? parseInt(String(discipline.questionCount)) : 0);
               
             if (discipline.isEnabled && discipline.type === selectedSection && questionCount) {
               console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
@@ -148,7 +149,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         const count = typeof concurso.basic_knowledge_questions === 'number'
           ? concurso.basic_knowledge_questions
-          : parseInt(concurso.basic_knowledge_questions.toString() || '0');
+          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
           
         console.log(`Adding ${count} basic knowledge questions`);
         
@@ -158,11 +159,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
         const basicCount = typeof concurso.basic_knowledge_questions === 'number'
           ? concurso.basic_knowledge_questions
-          : parseInt(concurso.basic_knowledge_questions?.toString() || '0');
+          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
           
         const count = typeof concurso.specific_knowledge_1_questions === 'number'
           ? concurso.specific_knowledge_1_questions
-          : parseInt(concurso.specific_knowledge_1_questions.toString() || '0');
+          : (concurso.specific_knowledge_1_questions ? parseInt(String(concurso.specific_knowledge_1_questions)) : 0);
           
         const startIndex = basicCount + 1;
         console.log(`Adding ${count} specific1 questions starting from ${startIndex}`);
@@ -173,15 +174,15 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
         const basicCount = typeof concurso.basic_knowledge_questions === 'number'
           ? concurso.basic_knowledge_questions
-          : parseInt(concurso.basic_knowledge_questions?.toString() || '0');
+          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
           
         const specific1Count = typeof concurso.specific_knowledge_1_questions === 'number'
           ? concurso.specific_knowledge_1_questions
-          : parseInt(concurso.specific_knowledge_1_questions?.toString() || '0');
+          : (concurso.specific_knowledge_1_questions ? parseInt(String(concurso.specific_knowledge_1_questions)) : 0);
           
         const count = typeof concurso.specific_knowledge_2_questions === 'number'
           ? concurso.specific_knowledge_2_questions
-          : parseInt(concurso.specific_knowledge_2_questions.toString() || '0');
+          : (concurso.specific_knowledge_2_questions ? parseInt(String(concurso.specific_knowledge_2_questions)) : 0);
           
         const startIndex = basicCount + specific1Count + 1;
         console.log(`Adding ${count} specific2 questions starting from ${startIndex}`);
@@ -192,19 +193,19 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
         const basicCount = typeof concurso.basic_knowledge_questions === 'number'
           ? concurso.basic_knowledge_questions
-          : parseInt(concurso.basic_knowledge_questions?.toString() || '0');
+          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
           
         const specific1Count = typeof concurso.specific_knowledge_1_questions === 'number'
           ? concurso.specific_knowledge_1_questions
-          : parseInt(concurso.specific_knowledge_1_questions?.toString() || '0');
+          : (concurso.specific_knowledge_1_questions ? parseInt(String(concurso.specific_knowledge_1_questions)) : 0);
           
         const specific2Count = typeof concurso.specific_knowledge_2_questions === 'number'
           ? concurso.specific_knowledge_2_questions
-          : parseInt(concurso.specific_knowledge_2_questions?.toString() || '0');
+          : (concurso.specific_knowledge_2_questions ? parseInt(String(concurso.specific_knowledge_2_questions)) : 0);
           
         const count = typeof concurso.specific_knowledge_3_questions === 'number'
           ? concurso.specific_knowledge_3_questions
-          : parseInt(concurso.specific_knowledge_3_questions.toString() || '0');
+          : (concurso.specific_knowledge_3_questions ? parseInt(String(concurso.specific_knowledge_3_questions)) : 0);
           
         const startIndex = basicCount + specific1Count + specific2Count + 1;
         console.log(`Adding ${count} specific3 questions starting from ${startIndex}`);

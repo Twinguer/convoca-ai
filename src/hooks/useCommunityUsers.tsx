@@ -85,7 +85,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               followerCount: followerCount || 0,
               postCount: postCount || 0,
               approvalCount,
-              status_concurseiro: statusConcurseiro // Add default status
+              status_concurseiro: statusConcurseiro // Fornecer valor dinamicamente, não depender do banco
             };
           })
         );

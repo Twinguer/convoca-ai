@@ -21,7 +21,7 @@ export const initializeQuestionTypes = (
           if (discipline.isEnabled && discipline.type) {
             const questionCount = typeof discipline.questionCount === 'number' 
               ? discipline.questionCount 
-              : parseInt(discipline.questionCount?.toString() || '0');
+              : parseInt(String(discipline.questionCount || '0'));
               
             console.log(`Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);
             
@@ -41,7 +41,7 @@ export const initializeQuestionTypes = (
       if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         const basicCount = typeof concurso.basic_knowledge_questions === 'number' 
           ? concurso.basic_knowledge_questions 
-          : parseInt(concurso.basic_knowledge_questions.toString() || '0');
+          : parseInt(String(concurso.basic_knowledge_questions || '0'));
           
         console.log(`Traditional structure: basic knowledge has ${basicCount} questions`);
         for (let i = 0; i < basicCount; i++) {
@@ -53,7 +53,7 @@ export const initializeQuestionTypes = (
       if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
         const count = typeof concurso.specific_knowledge_1_questions === 'number'
           ? concurso.specific_knowledge_1_questions
-          : parseInt(concurso.specific_knowledge_1_questions.toString() || '0');
+          : parseInt(String(concurso.specific_knowledge_1_questions || '0'));
           
         console.log(`Traditional structure: specific knowledge 1 has ${count} questions`);
         for (let i = 0; i < count; i++) {
@@ -65,7 +65,7 @@ export const initializeQuestionTypes = (
       if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
         const count = typeof concurso.specific_knowledge_2_questions === 'number'
           ? concurso.specific_knowledge_2_questions
-          : parseInt(concurso.specific_knowledge_2_questions.toString() || '0');
+          : parseInt(String(concurso.specific_knowledge_2_questions || '0'));
           
         console.log(`Traditional structure: specific knowledge 2 has ${count} questions`);
         for (let i = 0; i < count; i++) {
@@ -77,7 +77,7 @@ export const initializeQuestionTypes = (
       if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
         const count = typeof concurso.specific_knowledge_3_questions === 'number'
           ? concurso.specific_knowledge_3_questions
-          : parseInt(concurso.specific_knowledge_3_questions.toString() || '0');
+          : parseInt(String(concurso.specific_knowledge_3_questions || '0'));
           
         console.log(`Traditional structure: specific knowledge 3 has ${count} questions`);
         for (let i = 0; i < count; i++) {

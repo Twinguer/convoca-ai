@@ -239,7 +239,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Função para obter lista de seções para renderizar as abas
   const getObjectiveSectionList = () => {
-    const sections = [];
+    const sections: {key: SectionType, label: string}[] = [];
     
     // Se estamos usando conhecimentos customizáveis
     if (concurso.has_custom_knowledge) {
@@ -248,7 +248,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         concurso.disciplines.forEach(discipline => {
           if (discipline.isEnabled && discipline.type) {
             sections.push({ 
-              key: discipline.type, 
+              key: discipline.type as SectionType, 
               label: discipline.name || discipline.type 
             });
           }
@@ -277,7 +277,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
         for (const discipline of concurso.disciplines) {
           if (discipline.isEnabled && discipline.questionCount) {
-            for (let i = 0; i < discipline.questionCount; i++) {
+            const count = typeof discipline.questionCount === 'number' 
+              ? discipline.questionCount 
+              : parseInt(String(discipline.questionCount) || '0');
+              
+            for (let i = 0; i < count; i++) {
               allQuestions.push(currentQuestionNumber++);
             }
           }
@@ -291,28 +295,44 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     // Básico
     if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+      const count = typeof concurso.basic_knowledge_questions === 'number' 
+        ? concurso.basic_knowledge_questions 
+        : parseInt(String(concurso.basic_knowledge_questions) || '0');
+        
+      for (let i = 0; i < count; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
     // Específico 1
     if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+      const count = typeof concurso.specific_knowledge_1_questions === 'number' 
+        ? concurso.specific_knowledge_1_questions 
+        : parseInt(String(concurso.specific_knowledge_1_questions) || '0');
+        
+      for (let i = 0; i < count; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
     // Específico 2
     if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+      const count = typeof concurso.specific_knowledge_2_questions === 'number' 
+        ? concurso.specific_knowledge_2_questions 
+        : parseInt(String(concurso.specific_knowledge_2_questions) || '0');
+        
+      for (let i = 0; i < count; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
     
     // Específico 3
     if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+      const count = typeof concurso.specific_knowledge_3_questions === 'number' 
+        ? concurso.specific_knowledge_3_questions 
+        : parseInt(String(concurso.specific_knowledge_3_questions) || '0');
+        
+      for (let i = 0; i < count; i++) {
         allQuestions.push(currentQuestionNumber++);
       }
     }
