@@ -7,6 +7,8 @@ export class ExamStructureBuilder {
   private alternativesCount: number = 5;
   private wrongAnswerPenalty: number = 0;
   private sections: ExamSectionConfig[] = [];
+  private useCustomKnowledge: boolean = false;
+  private disciplines: any[] = [];
 
   constructor() {
     // Inicialização vazia
@@ -24,6 +26,16 @@ export class ExamStructureBuilder {
 
   withWrongAnswerPenalty(penalty: number): ExamStructureBuilder {
     this.wrongAnswerPenalty = penalty;
+    return this;
+  }
+
+  withUseCustomKnowledge(value: boolean): ExamStructureBuilder {
+    this.useCustomKnowledge = value;
+    return this;
+  }
+
+  withDisciplines(disciplines: any[]): ExamStructureBuilder {
+    this.disciplines = disciplines;
     return this;
   }
 
@@ -100,6 +112,8 @@ export class ExamStructureBuilder {
       exam_type: this.examType,
       alternatives_count: this.alternativesCount,
       wrong_answer_penalty: this.wrongAnswerPenalty,
+      has_custom_knowledge: this.useCustomKnowledge,
+      disciplines: this.disciplines,
       
       // Configurações de seções - inicializando todas como false (estrutura vazia)
       has_basic_knowledge: false,
@@ -128,47 +142,49 @@ export class ExamStructureBuilder {
       case_study_3_weight: 1
     };
     
-    // Processar seções
-    this.sections.forEach(section => {
-      switch (section.sectionType) {
-        case 'basic':
-          concurso.has_basic_knowledge = true;
-          concurso.basic_knowledge_questions = Number(section.questionCount);
-          concurso.basic_knowledge_weight = Number(section.weight);
-          break;
-        case 'specific1':
-          concurso.has_specific_knowledge_1 = true;
-          concurso.specific_knowledge_1_questions = Number(section.questionCount);
-          concurso.specific_knowledge_1_weight = Number(section.weight);
-          break;
-        case 'specific2':
-          concurso.has_specific_knowledge_2 = true;
-          concurso.specific_knowledge_2_questions = Number(section.questionCount);
-          concurso.specific_knowledge_2_weight = Number(section.weight);
-          break;
-        case 'specific3':
-          concurso.has_specific_knowledge_3 = true;
-          concurso.specific_knowledge_3_questions = Number(section.questionCount);
-          concurso.specific_knowledge_3_weight = Number(section.weight);
-          break;
-        case 'discursive':
-          concurso.has_discursive = true;
-          concurso.discursive_weight = Number(section.weight);
-          break;
-        case 'case_study1':
-          concurso.has_case_study_1 = true;
-          concurso.case_study_1_weight = Number(section.weight);
-          break;
-        case 'case_study2':
-          concurso.has_case_study_2 = true;
-          concurso.case_study_2_weight = Number(section.weight);
-          break;
-        case 'case_study3':
-          concurso.has_case_study_3 = true;
-          concurso.case_study_3_weight = Number(section.weight);
-          break;
-      }
-    });
+    // Se não estamos usando conhecimento customizado, processar seções tradicionais
+    if (!this.useCustomKnowledge) {
+      this.sections.forEach(section => {
+        switch (section.sectionType) {
+          case 'basic':
+            concurso.has_basic_knowledge = true;
+            concurso.basic_knowledge_questions = Number(section.questionCount);
+            concurso.basic_knowledge_weight = Number(section.weight);
+            break;
+          case 'specific1':
+            concurso.has_specific_knowledge_1 = true;
+            concurso.specific_knowledge_1_questions = Number(section.questionCount);
+            concurso.specific_knowledge_1_weight = Number(section.weight);
+            break;
+          case 'specific2':
+            concurso.has_specific_knowledge_2 = true;
+            concurso.specific_knowledge_2_questions = Number(section.questionCount);
+            concurso.specific_knowledge_2_weight = Number(section.weight);
+            break;
+          case 'specific3':
+            concurso.has_specific_knowledge_3 = true;
+            concurso.specific_knowledge_3_questions = Number(section.questionCount);
+            concurso.specific_knowledge_3_weight = Number(section.weight);
+            break;
+          case 'discursive':
+            concurso.has_discursive = true;
+            concurso.discursive_weight = Number(section.weight);
+            break;
+          case 'case_study1':
+            concurso.has_case_study_1 = true;
+            concurso.case_study_1_weight = Number(section.weight);
+            break;
+          case 'case_study2':
+            concurso.has_case_study_2 = true;
+            concurso.case_study_2_weight = Number(section.weight);
+            break;
+          case 'case_study3':
+            concurso.has_case_study_3 = true;
+            concurso.case_study_3_weight = Number(section.weight);
+            break;
+        }
+      });
+    }
     
     return concurso;
   }

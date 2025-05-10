@@ -18,6 +18,9 @@ export interface Concurso {
   is_admin_created?: boolean;
   created_by_user_id?: string | null;
   
+  // Configuração de conhecimentos customizáveis
+  has_custom_knowledge?: boolean;
+  
   // Exam structure configuration
   has_basic_knowledge?: boolean;
   has_specific_knowledge_1?: boolean;
@@ -33,6 +36,7 @@ export interface Concurso {
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
+  custom_knowledge_questions?: number;
   
   // Section weights
   basic_knowledge_weight?: number;
@@ -43,6 +47,7 @@ export interface Concurso {
   case_study_1_weight?: number;
   case_study_2_weight?: number;
   case_study_3_weight?: number;
+  custom_knowledge_weight?: number;
   
   // Exam configuration
   alternatives_count?: number;
@@ -64,8 +69,9 @@ export interface Concurso {
   // Admin flag
   is_admin_update?: boolean;
   
-  // Add disciplines property to fix type errors
+  // Disciplines array for custom knowledge structure
   disciplines?: Array<{
+    id?: string;
     type: string;
     name: string;
     isEnabled: boolean;
@@ -107,12 +113,16 @@ export type SectionType =
   | 'discursive' 
   | 'case_study1' 
   | 'case_study2' 
-  | 'case_study3';
+  | 'case_study3'
+  | string; // Adicionado string para permitir tipos customizados
 
 // Fixed helper to determine which specific knowledge sections are enabled
 // Now uses has_* flags instead of weights
 export const getEnabledKnowledgeSections = (concurso: Concurso) => {
-  return {
+  const useCustomKnowledge = concurso.has_custom_knowledge === true;
+  
+  // Estrutura base com seções tradicionais
+  const enabledSections = {
     basicKnowledge: concurso.has_basic_knowledge === true,
     specificKnowledge1: concurso.has_specific_knowledge_1 === true,
     specificKnowledge2: concurso.has_specific_knowledge_2 === true,
@@ -120,8 +130,20 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
     discursive: concurso.has_discursive === true,
     caseStudy1: concurso.has_case_study_1 === true,
     caseStudy2: concurso.has_case_study_2 === true,
-    caseStudy3: concurso.has_case_study_3 === true
+    caseStudy3: concurso.has_case_study_3 === true,
+    useCustomKnowledge: useCustomKnowledge
   };
+  
+  // Adicionar seções customizadas se estiverem sendo usadas
+  if (useCustomKnowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    concurso.disciplines.forEach(discipline => {
+      if (discipline.isEnabled && discipline.type) {
+        enabledSections[discipline.type] = true;
+      }
+    });
+  }
+  
+  return enabledSections;
 };
 
 // Function to get the table columns for a ranking based on the concurso structure
@@ -132,21 +154,37 @@ export const getRankingTableColumns = (concurso: Concurso) => {
     { id: 'score', label: 'Total', align: 'right' }
   ];
   
-  // Add columns based on enabled sections
-  if (concurso.has_basic_knowledge) {
-    columns.push({ id: 'basicScore', label: 'Básica', align: 'right' });
-  }
+  // Verificar se estamos usando a estrutura customizada
+  const useCustomKnowledge = concurso.has_custom_knowledge === true;
   
-  if (concurso.has_specific_knowledge_1) {
-    columns.push({ id: 'specific1Score', label: 'Específica 1', align: 'right' });
-  }
-  
-  if (concurso.has_specific_knowledge_2) {
-    columns.push({ id: 'specific2Score', label: 'Específica 2', align: 'right' });
-  }
-  
-  if (concurso.has_specific_knowledge_3) {
-    columns.push({ id: 'specific3Score', label: 'Específica 3', align: 'right' });
+  if (useCustomKnowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Adicionar colunas baseadas nas disciplinas customizadas
+    concurso.disciplines.forEach(discipline => {
+      if (discipline.isEnabled) {
+        columns.push({
+          id: `${discipline.type}Score`,
+          label: discipline.name,
+          align: 'right'
+        });
+      }
+    });
+  } else {
+    // Add columns based on enabled sections (traditional structure)
+    if (concurso.has_basic_knowledge) {
+      columns.push({ id: 'basicScore', label: 'Básica', align: 'right' });
+    }
+    
+    if (concurso.has_specific_knowledge_1) {
+      columns.push({ id: 'specific1Score', label: 'Específica 1', align: 'right' });
+    }
+    
+    if (concurso.has_specific_knowledge_2) {
+      columns.push({ id: 'specific2Score', label: 'Específica 2', align: 'right' });
+    }
+    
+    if (concurso.has_specific_knowledge_3) {
+      columns.push({ id: 'specific3Score', label: 'Específica 3', align: 'right' });
+    }
   }
   
   if (concurso.has_discursive) {

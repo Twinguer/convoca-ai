@@ -59,23 +59,23 @@ export const saveRanking = async (
     // Remover campos que não existem mais no modelo
     const dataFormValues = { ...formValues };
     
-    // Remover propriedades que não existem mais no modelo atualizado
-    if ('has_custom_knowledge' in dataFormValues) {
-      delete dataFormValues.has_custom_knowledge;
-    }
-    
-    if ('disciplines' in dataFormValues) {
-      // Mantemos disciplines no objeto porque agora está definido no tipo
-    }
-    
-    if ('custom_knowledge_questions' in dataFormValues) {
-      delete (dataFormValues as any).custom_knowledge_questions;
-    }
-    
-    if ('custom_knowledge_weight' in dataFormValues) {
-      delete (dataFormValues as any).custom_knowledge_weight;
+    // Garantir que disciplines é um array válido
+    if (!dataFormValues.disciplines) {
+      dataFormValues.disciplines = [];
     }
 
+    // Validar e processar disciplinas customizadas
+    if (dataFormValues.has_custom_knowledge === true && Array.isArray(dataFormValues.disciplines)) {
+      dataFormValues.disciplines = dataFormValues.disciplines.map((discipline: any) => {
+        return {
+          ...discipline,
+          questionCount: ensureNumeric(discipline.questionCount),
+          weight: ensureNumeric(discipline.weight),
+          isEnabled: discipline.isEnabled === true
+        };
+      });
+    }
+    
     // Converter campos numéricos adequadamente
     const numericFields = [
       'basic_knowledge_questions', 'specific_knowledge_1_questions', 
@@ -90,7 +90,8 @@ export const saveRanking = async (
     // Criar objeto limpo com dados para submissão
     const dataToSubmit: Record<string, any> = {
       ...dataFormValues,
-      created_by_user_id: dataFormValues.created_by_user_id || userId // Manter criador original quando admin está editando
+      created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
+      has_custom_knowledge: dataFormValues.has_custom_knowledge === true
     };
     
     // Definir explicitamente título e órgão
@@ -111,6 +112,8 @@ export const saveRanking = async (
     console.log('Submitting data to Supabase:', 
       JSON.stringify({
         ...dataToSubmit,
+        has_custom_knowledge: dataToSubmit.has_custom_knowledge,
+        disciplines: dataToSubmit.disciplines,
         basic_knowledge_questions_type: typeof dataToSubmit.basic_knowledge_questions
       }, null, 2)
     );

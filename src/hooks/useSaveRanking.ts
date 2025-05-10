@@ -57,21 +57,25 @@ export const useSaveRanking = () => {
       formValues.case_study_2_weight = ensureNumeric(formValues.case_study_2_weight);
       formValues.case_study_3_weight = ensureNumeric(formValues.case_study_3_weight);
 
+      // Garantir que disciplines é um array válido
+      if (!formValues.disciplines || !Array.isArray(formValues.disciplines)) {
+        formValues.disciplines = [];
+      }
+
+      // Validar e processar disciplinas customizadas
+      if (formValues.has_custom_knowledge && formValues.disciplines.length > 0) {
+        formValues.disciplines = formValues.disciplines.map((discipline: any) => {
+          return {
+            ...discipline,
+            questionCount: ensureNumeric(discipline.questionCount),
+            weight: ensureNumeric(discipline.weight),
+            isEnabled: discipline.isEnabled === true
+          };
+        });
+      }
+
       // Handle fields that might need to be removed or preserved
       const cleanFormValues = { ...formValues };
-      
-      // Remove fields that are not in the model but might be in the form
-      if ('has_custom_knowledge' in cleanFormValues) {
-        delete cleanFormValues.has_custom_knowledge;
-      }
-      
-      if ('custom_knowledge_questions' in cleanFormValues) {
-        delete cleanFormValues.custom_knowledge_questions;
-      }
-      
-      if ('custom_knowledge_weight' in cleanFormValues) {
-        delete cleanFormValues.custom_knowledge_weight;
-      }
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
@@ -102,7 +106,9 @@ export const useSaveRanking = () => {
         titulo: title,
         orgao: orgao,
         banca: cleanFormValues.custom_banca || cleanFormValues.banca,
-        localidades: cleanFormValues.localidades
+        localidades: cleanFormValues.localidades,
+        has_custom_knowledge: cleanFormValues.has_custom_knowledge === true,
+        disciplines: cleanFormValues.disciplines
       };
 
       // Add admin flags if provided
@@ -116,6 +122,8 @@ export const useSaveRanking = () => {
 
       // Log for debugging
       console.log("Submitting to database:", {
+        has_custom_knowledge: dataToSubmit.has_custom_knowledge,
+        disciplines: dataToSubmit.disciplines,
         basic_knowledge_questions: dataToSubmit.basic_knowledge_questions,
         basic_knowledge_questions_type: typeof dataToSubmit.basic_knowledge_questions
       });

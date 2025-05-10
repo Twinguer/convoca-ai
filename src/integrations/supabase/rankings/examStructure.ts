@@ -27,13 +27,38 @@ export const getNumericValue = (value: any): number => {
 
 // Helper function to safely handle the disciplines array
 export const getDisciplines = (concurso: Concurso) => {
-  // If disciplines is defined in concurso, return it, otherwise return an empty array
+  // Se disciplines está definido no concurso, retorne-o, caso contrário, retorne um array vazio
+  if (!concurso.disciplines) {
+    return [];
+  }
+  
+  // Se for uma string JSON, tente fazer o parse
+  if (typeof concurso.disciplines === 'string') {
+    try {
+      return JSON.parse(concurso.disciplines);
+    } catch (e) {
+      console.error('Error parsing disciplines JSON:', e);
+      return [];
+    }
+  }
+  
+  // Se já for um array, retorne-o
+  if (Array.isArray(concurso.disciplines)) {
+    return concurso.disciplines;
+  }
+  
+  // Se for um objeto, verifique se é um objeto JSONB do Postgres
   return concurso.disciplines || [];
 };
 
 // Função para obter a estrutura de exame de um concurso
 export const getExamStructure = (concurso: Concurso) => {
-  return {
+  // Verificar se estamos usando knowledge areas customizáveis
+  const useCustomKnowledge = concurso.has_custom_knowledge === true;
+  
+  // Estrutura básica que será retornada
+  const examStructure = {
+    // Estrutura tradicional
     hasBasicKnowledge: concurso.has_basic_knowledge === true,
     hasSpecificKnowledge1: concurso.has_specific_knowledge_1 === true,
     hasSpecificKnowledge2: concurso.has_specific_knowledge_2 === true,
@@ -53,18 +78,55 @@ export const getExamStructure = (concurso: Concurso) => {
     discursiveWeight: getNumericValue(concurso.discursive_weight),
     caseStudy1Weight: getNumericValue(concurso.case_study_1_weight),
     caseStudy2Weight: getNumericValue(concurso.case_study_2_weight),
-    caseStudy3Weight: getNumericValue(concurso.case_study_3_weight)
+    caseStudy3Weight: getNumericValue(concurso.case_study_3_weight),
+    
+    // Nova estrutura customizável
+    useCustomKnowledge: useCustomKnowledge,
+    customKnowledgeQuestions: getNumericValue(concurso.custom_knowledge_questions),
+    customKnowledgeWeight: getNumericValue(concurso.custom_knowledge_weight),
+    disciplines: getDisciplines(concurso)
   };
+  
+  return examStructure;
 };
 
 // Função para atualizar os nomes de exibição das seções
 export const updateSectionDisplayNames = (concurso: Concurso) => {
-  // Retorna apenas as seções padrões
-  return { ...sectionDisplayNames };
+  const disciplines = getDisciplines(concurso);
+  const displayNames = { ...sectionDisplayNames };
+  
+  // Adicionar nomes customizados das disciplinas
+  disciplines.forEach(discipline => {
+    if (discipline.type && discipline.name) {
+      displayNames[discipline.type] = discipline.name;
+    }
+  });
+  
+  return displayNames;
 };
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
+  // Verificar se estamos usando a estrutura customizável
+  if (concurso.has_custom_knowledge === true) {
+    const disciplines = getDisciplines(concurso);
+    let currentIndex = 1;
+    
+    for (const discipline of disciplines) {
+      if (discipline.isEnabled && discipline.questionCount) {
+        const disciplineQuestions = getNumericValue(discipline.questionCount);
+        if (disciplineQuestions > 0 && questionNumber <= currentIndex + disciplineQuestions - 1) {
+          return discipline.type as SectionType;
+        }
+        currentIndex += disciplineQuestions;
+      }
+    }
+    
+    // Fallback para conhecimentos específicos genéricos se não encontrar
+    return 'specific1';
+  }
+  
+  // Estrutura tradicional
   let currentIndex = 1;
   
   // Conhecimentos Básicos
