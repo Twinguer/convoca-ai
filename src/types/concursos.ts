@@ -38,6 +38,7 @@ export interface Concurso {
   
   // Section weights
   basic_knowledge_weight?: number;
+  specific_knowledge_weight?: number; // Campo de compatibilidade
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;

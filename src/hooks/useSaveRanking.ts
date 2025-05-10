@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -86,6 +85,12 @@ export const useSaveRanking = () => {
       
       if (formValues.is_admin_update !== undefined) {
         dataToSubmit.is_admin_update = formValues.is_admin_update;
+      }
+
+      // Adicionar campo de compatibilidade specific_knowledge_weight para versões antigas do app
+      // Usar specific_knowledge_1_weight como valor padrão
+      if (formValues.specific_knowledge_1_weight && !formValues.specific_knowledge_weight) {
+        dataToSubmit.specific_knowledge_weight = formValues.specific_knowledge_1_weight;
       }
 
       let result;
