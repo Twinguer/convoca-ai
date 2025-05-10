@@ -2,19 +2,15 @@
 import { supabase } from '../client';
 import { Concurso } from '@/types/concursos';
 
-// Helper function to safely handle JSONB fields
-const processJsonbField = (value: any): any => {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'object') return value; // Already an object
+// Helper function to safely handle numeric values
+const ensureNumeric = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
   if (typeof value === 'string') {
-    try {
-      return JSON.parse(value);
-    } catch (e) {
-      console.warn('Failed to parse string as JSON:', e);
-      return value; // Return as is if can't parse
-    }
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
   }
-  return value; // Return as is for numbers or other types
+  return 0;
 };
 
 // Função para salvar um novo ranking ou atualizar um existente
@@ -66,6 +62,17 @@ export const saveRanking = async (
     delete formValues.custom_knowledge_questions;
     delete formValues.custom_knowledge_weight;
 
+    // Converter campos numéricos adequadamente
+    const numericFields = [
+      'basic_knowledge_questions', 'specific_knowledge_1_questions', 
+      'specific_knowledge_2_questions', 'specific_knowledge_3_questions',
+      'basic_knowledge_weight', 'specific_knowledge_1_weight',
+      'specific_knowledge_2_weight', 'specific_knowledge_3_weight',
+      'discursive_weight', 'case_study_1_weight',
+      'case_study_2_weight', 'case_study_3_weight',
+      'alternatives_count', 'wrong_answer_penalty'
+    ];
+
     // Criar objeto limpo com dados para submissão
     const dataToSubmit: Record<string, any> = {
       ...formValues,
@@ -76,7 +83,14 @@ export const saveRanking = async (
       has_custom_knowledge: false // Explicitamente definir como false
     };
 
-    // Log to see what we're submitting
+    // Converter todos os campos numéricos
+    numericFields.forEach(field => {
+      if (field in dataToSubmit) {
+        dataToSubmit[field] = ensureNumeric(dataToSubmit[field]);
+      }
+    });
+
+    // Log para verificar o que estamos enviando
     console.log('Submitting data to Supabase:', 
       JSON.stringify({
         ...dataToSubmit,

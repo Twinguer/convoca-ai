@@ -111,13 +111,13 @@ export class ExamStructureBuilder {
       has_case_study_2: false,
       has_case_study_3: false,
       
-      // Quantidades de questões
+      // Quantidades de questões - garantindo que sejam números
       basic_knowledge_questions: 0,
       specific_knowledge_1_questions: 0,
       specific_knowledge_2_questions: 0,
       specific_knowledge_3_questions: 0,
       
-      // Pesos
+      // Pesos - garantindo que sejam números
       basic_knowledge_weight: 1,
       specific_knowledge_1_weight: 1,
       specific_knowledge_2_weight: 1,
@@ -133,39 +133,39 @@ export class ExamStructureBuilder {
       switch (section.sectionType) {
         case 'basic':
           concurso.has_basic_knowledge = true;
-          concurso.basic_knowledge_questions = section.questionCount;
-          concurso.basic_knowledge_weight = section.weight;
+          concurso.basic_knowledge_questions = Number(section.questionCount);
+          concurso.basic_knowledge_weight = Number(section.weight);
           break;
         case 'specific1':
           concurso.has_specific_knowledge_1 = true;
-          concurso.specific_knowledge_1_questions = section.questionCount;
-          concurso.specific_knowledge_1_weight = section.weight;
+          concurso.specific_knowledge_1_questions = Number(section.questionCount);
+          concurso.specific_knowledge_1_weight = Number(section.weight);
           break;
         case 'specific2':
           concurso.has_specific_knowledge_2 = true;
-          concurso.specific_knowledge_2_questions = section.questionCount;
-          concurso.specific_knowledge_2_weight = section.weight;
+          concurso.specific_knowledge_2_questions = Number(section.questionCount);
+          concurso.specific_knowledge_2_weight = Number(section.weight);
           break;
         case 'specific3':
           concurso.has_specific_knowledge_3 = true;
-          concurso.specific_knowledge_3_questions = section.questionCount;
-          concurso.specific_knowledge_3_weight = section.weight;
+          concurso.specific_knowledge_3_questions = Number(section.questionCount);
+          concurso.specific_knowledge_3_weight = Number(section.weight);
           break;
         case 'discursive':
           concurso.has_discursive = true;
-          concurso.discursive_weight = section.weight;
+          concurso.discursive_weight = Number(section.weight);
           break;
         case 'case_study1':
           concurso.has_case_study_1 = true;
-          concurso.case_study_1_weight = section.weight;
+          concurso.case_study_1_weight = Number(section.weight);
           break;
         case 'case_study2':
           concurso.has_case_study_2 = true;
-          concurso.case_study_2_weight = section.weight;
+          concurso.case_study_2_weight = Number(section.weight);
           break;
         case 'case_study3':
           concurso.has_case_study_3 = true;
-          concurso.case_study_3_weight = section.weight;
+          concurso.case_study_3_weight = Number(section.weight);
           break;
       }
     });

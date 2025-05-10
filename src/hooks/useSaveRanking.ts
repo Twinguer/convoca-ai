@@ -10,6 +10,17 @@ interface SaveRankingOptions {
   jobTitles: Array<{ id: string; title: string }>;
 }
 
+// Helper to ensure numeric values
+const ensureNumeric = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
 export const useSaveRanking = () => {
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
     try {
@@ -27,6 +38,24 @@ export const useSaveRanking = () => {
       if (orgao && orgao.length > 30) {
         orgao = orgao.substring(0, 30) + '...';
       }
+
+      // Explicitly convert numeric fields to ensure proper types
+      formValues.basic_knowledge_questions = ensureNumeric(formValues.basic_knowledge_questions);
+      formValues.specific_knowledge_1_questions = ensureNumeric(formValues.specific_knowledge_1_questions);
+      formValues.specific_knowledge_2_questions = ensureNumeric(formValues.specific_knowledge_2_questions);
+      formValues.specific_knowledge_3_questions = ensureNumeric(formValues.specific_knowledge_3_questions);
+      formValues.alternatives_count = ensureNumeric(formValues.alternatives_count);
+      formValues.wrong_answer_penalty = ensureNumeric(formValues.wrong_answer_penalty);
+
+      // Ensure weight fields are numeric
+      formValues.basic_knowledge_weight = ensureNumeric(formValues.basic_knowledge_weight);
+      formValues.specific_knowledge_1_weight = ensureNumeric(formValues.specific_knowledge_1_weight);
+      formValues.specific_knowledge_2_weight = ensureNumeric(formValues.specific_knowledge_2_weight);
+      formValues.specific_knowledge_3_weight = ensureNumeric(formValues.specific_knowledge_3_weight);
+      formValues.discursive_weight = ensureNumeric(formValues.discursive_weight);
+      formValues.case_study_1_weight = ensureNumeric(formValues.case_study_1_weight);
+      formValues.case_study_2_weight = ensureNumeric(formValues.case_study_2_weight);
+      formValues.case_study_3_weight = ensureNumeric(formValues.case_study_3_weight);
 
       // Remove custom discipline related fields
       delete formValues.has_custom_knowledge;
@@ -76,10 +105,11 @@ export const useSaveRanking = () => {
         dataToSubmit.is_admin_update = formValues.is_admin_update;
       }
 
-      // Log basic_knowledge_questions data for debugging
-      if (typeof dataToSubmit.basic_knowledge_questions === 'number') {
-        console.log("basic_knowledge_questions is a number:", dataToSubmit.basic_knowledge_questions);
-      }
+      // Log for debugging
+      console.log("Submitting to database:", {
+        basic_knowledge_questions: dataToSubmit.basic_knowledge_questions,
+        basic_knowledge_questions_type: typeof dataToSubmit.basic_knowledge_questions
+      });
 
       let result;
       let concursoIdToUse = editId;

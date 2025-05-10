@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { getNumericValue } from './examStructure';
 
 /**
  * Atualiza os tipos de seções para um gabarito
@@ -49,10 +50,10 @@ export const getExamSections = async (concursoId: string) => {
       hasSpecific1: data.has_specific_knowledge_1,
       hasSpecific2: data.has_specific_knowledge_2, 
       hasSpecific3: data.has_specific_knowledge_3,
-      basicCount: data.basic_knowledge_questions,
-      specific1Count: data.specific_knowledge_1_questions,
-      specific2Count: data.specific_knowledge_2_questions,
-      specific3Count: data.specific_knowledge_3_questions
+      basicCount: getNumericValue(data.basic_knowledge_questions),
+      specific1Count: getNumericValue(data.specific_knowledge_1_questions),
+      specific2Count: getNumericValue(data.specific_knowledge_2_questions),
+      specific3Count: getNumericValue(data.specific_knowledge_3_questions)
     };
   } catch (error) {
     console.error('Error fetching exam sections:', error);

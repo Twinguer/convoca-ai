@@ -15,7 +15,7 @@ export const sectionDisplayNames: Record<string, string> = {
 };
 
 // Helper function to safely get numeric value from possibly JSONB field
-const getNumericValue = (value: any): number => {
+export const getNumericValue = (value: any): number => {
   if (value === null || value === undefined) return 0;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {
@@ -40,14 +40,14 @@ export const getExamStructure = (concurso: Concurso) => {
     specificKnowledge1Questions: getNumericValue(concurso.specific_knowledge_1_questions),
     specificKnowledge2Questions: getNumericValue(concurso.specific_knowledge_2_questions),
     specificKnowledge3Questions: getNumericValue(concurso.specific_knowledge_3_questions),
-    basicKnowledgeWeight: concurso.basic_knowledge_weight || 1,
-    specificKnowledge1Weight: concurso.specific_knowledge_1_weight || 1,
-    specificKnowledge2Weight: concurso.specific_knowledge_2_weight || 1,
-    specificKnowledge3Weight: concurso.specific_knowledge_3_weight || 1,
-    discursiveWeight: concurso.discursive_weight || 1,
-    caseStudy1Weight: concurso.case_study_1_weight || 1,
-    caseStudy2Weight: concurso.case_study_2_weight || 1,
-    caseStudy3Weight: concurso.case_study_3_weight || 1
+    basicKnowledgeWeight: getNumericValue(concurso.basic_knowledge_weight),
+    specificKnowledge1Weight: getNumericValue(concurso.specific_knowledge_1_weight),
+    specificKnowledge2Weight: getNumericValue(concurso.specific_knowledge_2_weight),
+    specificKnowledge3Weight: getNumericValue(concurso.specific_knowledge_3_weight),
+    discursiveWeight: getNumericValue(concurso.discursive_weight),
+    caseStudy1Weight: getNumericValue(concurso.case_study_1_weight),
+    caseStudy2Weight: getNumericValue(concurso.case_study_2_weight),
+    caseStudy3Weight: getNumericValue(concurso.case_study_3_weight)
   };
 };
 
