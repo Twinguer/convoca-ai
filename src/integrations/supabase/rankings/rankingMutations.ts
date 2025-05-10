@@ -56,11 +56,25 @@ export const saveRanking = async (
       return { duplicated: true };
     }
 
-    // Garantir que has_custom_knowledge e disciplines são explicitamente removidos
-    delete formValues.has_custom_knowledge;
-    delete formValues.disciplines;
-    delete formValues.custom_knowledge_questions;
-    delete formValues.custom_knowledge_weight;
+    // Remover campos que não existem mais no modelo
+    const dataFormValues = { ...formValues };
+    
+    // Remover propriedades que não existem mais no modelo atualizado
+    if ('has_custom_knowledge' in dataFormValues) {
+      delete dataFormValues.has_custom_knowledge;
+    }
+    
+    if ('disciplines' in dataFormValues) {
+      // Mantemos disciplines no objeto porque agora está definido no tipo
+    }
+    
+    if ('custom_knowledge_questions' in dataFormValues) {
+      delete (dataFormValues as any).custom_knowledge_questions;
+    }
+    
+    if ('custom_knowledge_weight' in dataFormValues) {
+      delete (dataFormValues as any).custom_knowledge_weight;
+    }
 
     // Converter campos numéricos adequadamente
     const numericFields = [
@@ -75,13 +89,16 @@ export const saveRanking = async (
 
     // Criar objeto limpo com dados para submissão
     const dataToSubmit: Record<string, any> = {
-      ...formValues,
-      created_by_user_id: formValues.created_by_user_id || userId, // Manter criador original quando admin está editando
-      titulo: title,
-      orgao: orgao,
-      banca: formValues.custom_banca || formValues.banca,
-      has_custom_knowledge: false // Explicitamente definir como false
+      ...dataFormValues,
+      created_by_user_id: dataFormValues.created_by_user_id || userId // Manter criador original quando admin está editando
     };
+    
+    // Definir explicitamente título e órgão
+    if (title) dataToSubmit.titulo = title;
+    if (orgao) dataToSubmit.orgao = orgao;
+    if (dataFormValues.banca || dataFormValues.custom_banca) {
+      dataToSubmit.banca = dataFormValues.custom_banca || dataFormValues.banca;
+    }
 
     // Converter todos os campos numéricos
     numericFields.forEach(field => {

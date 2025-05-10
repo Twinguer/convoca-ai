@@ -57,11 +57,21 @@ export const useSaveRanking = () => {
       formValues.case_study_2_weight = ensureNumeric(formValues.case_study_2_weight);
       formValues.case_study_3_weight = ensureNumeric(formValues.case_study_3_weight);
 
-      // Remove custom discipline related fields
-      delete formValues.has_custom_knowledge;
-      delete formValues.disciplines;
-      delete formValues.custom_knowledge_questions;
-      delete formValues.custom_knowledge_weight;
+      // Handle fields that might need to be removed or preserved
+      const cleanFormValues = { ...formValues };
+      
+      // Remove fields that are not in the model but might be in the form
+      if ('has_custom_knowledge' in cleanFormValues) {
+        delete cleanFormValues.has_custom_knowledge;
+      }
+      
+      if ('custom_knowledge_questions' in cleanFormValues) {
+        delete cleanFormValues.custom_knowledge_questions;
+      }
+      
+      if ('custom_knowledge_weight' in cleanFormValues) {
+        delete cleanFormValues.custom_knowledge_weight;
+      }
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
@@ -87,22 +97,21 @@ export const useSaveRanking = () => {
 
       // Create a clean object with the data for submission
       const dataToSubmit: Record<string, any> = {
-        ...formValues,
-        created_by_user_id: formValues.created_by_user_id || userId, // Keep original creator when admin is editing
+        ...cleanFormValues,
+        created_by_user_id: cleanFormValues.created_by_user_id || userId, // Keep original creator when admin is editing
         titulo: title,
         orgao: orgao,
-        banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades,
-        has_custom_knowledge: false // Explicitly set to false
+        banca: cleanFormValues.custom_banca || cleanFormValues.banca,
+        localidades: cleanFormValues.localidades
       };
 
       // Add admin flags if provided
-      if (formValues.is_admin_created !== undefined) {
-        dataToSubmit.is_admin_created = formValues.is_admin_created;
+      if (cleanFormValues.is_admin_created !== undefined) {
+        dataToSubmit.is_admin_created = cleanFormValues.is_admin_created;
       }
       
-      if (formValues.is_admin_update !== undefined) {
-        dataToSubmit.is_admin_update = formValues.is_admin_update;
+      if (cleanFormValues.is_admin_update !== undefined) {
+        dataToSubmit.is_admin_update = cleanFormValues.is_admin_update;
       }
 
       // Log for debugging

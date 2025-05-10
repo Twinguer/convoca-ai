@@ -25,6 +25,12 @@ export const getNumericValue = (value: any): number => {
   return 0;
 };
 
+// Helper function to safely handle the disciplines array
+export const getDisciplines = (concurso: Concurso) => {
+  // If disciplines is defined in concurso, return it, otherwise return an empty array
+  return concurso.disciplines || [];
+};
+
 // Função para obter a estrutura de exame de um concurso
 export const getExamStructure = (concurso: Concurso) => {
   return {

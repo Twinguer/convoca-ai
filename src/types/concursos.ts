@@ -63,6 +63,15 @@ export interface Concurso {
   
   // Admin flag
   is_admin_update?: boolean;
+  
+  // Add disciplines property to fix type errors
+  disciplines?: Array<{
+    type: string;
+    name: string;
+    isEnabled: boolean;
+    questionCount?: number;
+    weight?: number;
+  }>;
 }
 
 export interface ConcursoFilter {
