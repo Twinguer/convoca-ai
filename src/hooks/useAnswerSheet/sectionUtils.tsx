@@ -11,8 +11,9 @@ export const handleQuestionSectionSelection = (
     if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
       for (const discipline of concurso.disciplines) {
         if (discipline.isEnabled && discipline.type) {
-          setSelectedSection(discipline.type as SectionType);
-          console.log(`Selected custom discipline section: ${discipline.type}`);
+          const sectionType = discipline.type as SectionType;
+          setSelectedSection(sectionType);
+          console.log(`Selected custom discipline section: ${sectionType}`);
           return;
         }
       }

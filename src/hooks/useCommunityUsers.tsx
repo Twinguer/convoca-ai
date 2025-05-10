@@ -14,7 +14,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
       try {
         console.log('Fetching community users with query:', debouncedSearchQuery);
         
-        // Fetching users with additional metadata - incluindo novos campos
+        // Fetching users with additional metadata
         let query = supabase
           .from('users_profiles')
           .select(`
@@ -25,7 +25,6 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             avatar_url,
             concursos_aprovados,
             concursos_participando,
-            status_concurseiro,
             estado,
             formacao,
             cargo_atual,
@@ -40,7 +39,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           query = query.or(`name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%`);
         }
         
-        // Execute the query with pagination - aumentando o limite para garantir que temos usuários suficientes
+        // Execute the query with pagination
         const { data: profiles, error } = await query.limit(100);
 
         if (error) {
@@ -76,13 +75,17 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             const emailParts = profile.email.split('@');
             const usernameFromEmail = emailParts[0].toLowerCase().replace(/[^a-z0-9]/g, '');
 
+            // Generate a status based on approvals or default to "Na Ativa"
+            const statusConcurseiro = approvalCount > 0 ? "Aprovado" : "Na Ativa";
+
             // Store the counts directly in the object to ensure persistence
             return {
               ...profile,
               username: usernameFromEmail, // Criar username como fallback
               followerCount: followerCount || 0,
               postCount: postCount || 0,
-              approvalCount
+              approvalCount,
+              status_concurseiro: statusConcurseiro // Add default status
             };
           })
         );

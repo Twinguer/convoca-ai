@@ -54,7 +54,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score
+    setCaseStudy3Score,
+    isDiscursiveSection,
+    getSectionQuestions
   } = useAnswerSheet(concurso, rankingId);
   
   // Atualizar os nomes de exibição das seções com disciplinas customizadas
@@ -244,7 +246,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       // Adicionar cada disciplina customizada como uma seção
       if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
         concurso.disciplines.forEach(discipline => {
-          if (discipline.isEnabled) {
+          if (discipline.isEnabled && discipline.type) {
             sections.push({ 
               key: discipline.type, 
               label: discipline.name || discipline.type 
