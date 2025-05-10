@@ -35,7 +35,7 @@ export const getExamStructure = (concurso: Concurso) => {
     specificKnowledge3Questions: concurso.specific_knowledge_3_questions || 0,
     basicKnowledgeWeight: concurso.basic_knowledge_weight || 1,
     // Usar specific_knowledge_weight como fallback para compatibilidade
-    specificKnowledge1Weight: concurso.specific_knowledge_1_weight || concurso.specific_knowledge_weight || 1,
+    specificKnowledge1Weight: concurso.specific_knowledge_1_weight || 1,
     specificKnowledge2Weight: concurso.specific_knowledge_2_weight || 1,
     specificKnowledge3Weight: concurso.specific_knowledge_3_weight || 1,
     discursiveWeight: concurso.discursive_weight || 1,

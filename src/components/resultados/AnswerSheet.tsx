@@ -371,7 +371,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
               value={selectedSection} 
-              onValueChange={setSelectedSection}
+              onValueChange={(value) => setSelectedSection(value as SectionType)}
               className="w-full"
             >
               <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(objectiveSections.length, 4)}, 1fr)` }}>
