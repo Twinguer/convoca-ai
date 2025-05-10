@@ -11,7 +11,7 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { answerKeyService } from '@/services/answerKeyService';
-import { getSectionTypeForQuestion, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, updateSectionDisplayNames, getCustomDisciplineType, getDisciplineWeight } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -25,6 +25,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [recalculationSuccess, setRecalculationSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+  const [weights, setWeights] = useState<{ [key: number]: number }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
@@ -57,19 +58,26 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   useEffect(() => {
     if (existingAnswers && Object.keys(existingAnswers).length > 0) {
       const answersMap: { [key: number]: string } = {};
+      const weightsMap: { [key: number]: number } = {};
       const nullifiedSet = new Set<number>();
       
       Object.entries(existingAnswers).forEach(([key, value]: [string, any]) => {
         const questionNumber = parseInt(key.replace('questao', ''));
         
         answersMap[questionNumber] = value.resposta;
+        weightsMap[questionNumber] = value.peso || 1;
+        
         if (value.anulada) {
           nullifiedSet.add(questionNumber);
         }
       });
       
       setAnswers(answersMap);
+      setWeights(weightsMap);
       setNullifiedQuestions(nullifiedSet);
+      
+      // Log para debug
+      console.log('Loaded weights:', weightsMap);
     }
   }, [existingAnswers]);
 
@@ -166,6 +174,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       ...prev,
       [questionNumber]: answer
     }));
+  };
+
+  const handleWeightChange = (questionNumber: number, weight: number) => {
+    setWeights((prev) => ({
+      ...prev,
+      [questionNumber]: weight
+    }));
+    console.log(`Set weight for question ${questionNumber} to ${weight}`);
   };
 
   const handleNullifyQuestion = (questionNumber: number) => {
@@ -268,18 +284,40 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         return;
       }
       
+      // Log dos pesos antes de salvar para debug
+      console.log('Saving weights:', weights);
+      
       // Preparar dados para salvar o gabarito completo de uma vez
       const answerKeyData = allQuestions.map(qNum => {
         // Determinar o tipo de seção para cada questão
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
         
+        // Verificar se é uma disciplina customizada
+        const customDisciplineType = getCustomDisciplineType(concurso, qNum);
+        
+        // Obter o peso específico para esta questão (do estado) ou usar o padrão se não existir
+        const questionWeight = weights[qNum] || 1.0;
+        
+        // Para disciplinas customizadas, considerar peso da disciplina
+        let finalWeight = questionWeight;
+        if (customDisciplineType && finalWeight === 1.0) {
+          const disciplineWeight = getDisciplineWeight(concurso, customDisciplineType);
+          if (disciplineWeight !== 1.0) {
+            finalWeight = disciplineWeight;
+          }
+        }
+        
+        // Debug log
+        console.log(`Question ${qNum}: type=${sectionType}, customType=${customDisciplineType}, weight=${finalWeight}`);
+        
         return {
           concurso_id: concursoId,
           question_number: qNum,
           correct_answer: answers[qNum],
-          weight: 1.0,
+          weight: finalWeight,
           section_type: sectionType,
-          is_nullified: nullifiedQuestions.has(qNum)
+          is_nullified: nullifiedQuestions.has(qNum),
+          custom_discipline_type: customDisciplineType
         };
       });
 
@@ -510,7 +548,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                           {row.map((questionNumber, colIndex) => (
                             questionNumber !== null && (
                               <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
-                                <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
+                                <div className="mb-2 font-medium text-gray-700">
+                                  Questão {questionNumber}
+                                  {weights[questionNumber] && weights[questionNumber] !== 1.0 && (
+                                    <span className="ml-2 text-xs text-emerald-600">
+                                      (Peso: {weights[questionNumber]})
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex flex-wrap gap-2">
                                   {getOptionsForQuestion().map((option) => (
                                     <button
@@ -527,6 +572,24 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                     </button>
                                   ))}
                                 </div>
+                                
+                                {/* Input para peso da questão */}
+                                <div className="mt-3 flex items-center">
+                                  <Label htmlFor={`weight-${questionNumber}`} className="text-xs text-gray-500 mr-2">
+                                    Peso:
+                                  </Label>
+                                  <Input
+                                    id={`weight-${questionNumber}`}
+                                    type="number"
+                                    min="0.1"
+                                    step="0.1"
+                                    value={weights[questionNumber] || 1.0}
+                                    onChange={(e) => handleWeightChange(questionNumber, parseFloat(e.target.value) || 1.0)}
+                                    className="w-20 h-8 text-sm"
+                                    disabled={nullifiedQuestions.has(questionNumber)}
+                                  />
+                                </div>
+                                
                                 <NullifyQuestionButton
                                   questionNumber={questionNumber}
                                   isNullified={nullifiedQuestions.has(questionNumber)}

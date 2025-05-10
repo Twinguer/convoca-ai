@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { getSectionTypeForQuestion, validSectionTypes } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, validSectionTypes, getCustomDisciplineType, getDisciplineWeight } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
 import { toast } from 'sonner';
 
@@ -11,6 +11,7 @@ interface AnswerKeyItem {
   weight: number;
   section_type: string;
   is_nullified: boolean;
+  custom_discipline_type?: string;
 }
 
 // Função para atualizar o tipo de seção para determinado concurso
@@ -64,6 +65,11 @@ const sanitizeSectionType = (sectionType: string): string => {
     return sectionType;
   }
   
+  // Para tipos customizados, retornar 'custom'
+  if (sectionType.startsWith('custom_')) {
+    return 'custom';
+  }
+  
   // Caso contrário, retornar um valor padrão seguro
   console.warn(`Section type "${sectionType}" não é válido. Usando "specific1" como fallback.`);
   return 'specific1';
@@ -76,8 +82,35 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Iniciando salvamento de gabarito para concurso: ${concursoId}`);
       console.log(`[answerKeyService] Total de questões a salvar: ${answerKeyData.length}`);
       
+      // Buscar o concurso para ter acesso aos pesos e configuração de disciplinas
+      const { data: concurso, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', concursoId)
+        .single();
+      
+      if (concursoError) {
+        throw new Error(`Erro ao buscar dados do concurso: ${concursoError.message}`);
+      }
+      
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
+        // Para disciplinas customizadas, determinar o tipo real
+        if (concurso.has_custom_knowledge) {
+          const customType = getCustomDisciplineType(concurso, item.question_number);
+          if (customType) {
+            // Armazenar o tipo real como metadado
+            item.custom_discipline_type = customType;
+            
+            // Buscar o peso definido para essa disciplina
+            const disciplineWeight = getDisciplineWeight(concurso, customType);
+            // Só aplica o peso da disciplina se o peso da questão for padrão (1.0)
+            if (item.weight === 1.0) {
+              item.weight = disciplineWeight;
+            }
+          }
+        }
+        
         // Garantir que section_type seja válido
         item.section_type = sanitizeSectionType(item.section_type);
         
@@ -85,7 +118,9 @@ export const answerKeyService = {
           numero: item.question_number,
           resposta: item.correct_answer,
           seção: item.section_type,
-          anulada: item.is_nullified
+          peso: item.weight,
+          anulada: item.is_nullified,
+          disciplinaCustom: item.custom_discipline_type || 'N/A'
         });
       });
 
@@ -107,7 +142,7 @@ export const answerKeyService = {
         // Garantir que section_type seja válido
         item.section_type = sanitizeSectionType(item.section_type);
         
-        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
+        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}, peso: ${item.weight}`);
         
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: item.concurso_id,
@@ -129,7 +164,7 @@ export const answerKeyService = {
       // Verificar se os dados foram realmente salvos
       const { data: verifyData, error: verifyError } = await supabase
         .from('official_answer_weights')
-        .select('question_number, correct_answer')
+        .select('question_number, correct_answer, weight')
         .eq('concurso_id', concursoId);
 
       if (verifyError) {
@@ -140,7 +175,7 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
       if (verifyData) {
         verifyData.forEach(item => {
-          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}`);
+          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}, peso: ${item.weight}`);
         });
       }
 

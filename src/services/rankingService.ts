@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -27,7 +28,8 @@ export interface Ranking {
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
   // Custom discipline scores
-  customDisciplineScores?: Record<string, number> | null;
+  customDisciplineScores?: Record<string, number>;
+  weightedCustomDisciplineScores?: Record<string, number>;
   reservationType: string;
   displayReservation: string;
   id: string;
@@ -94,7 +96,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id: firstRanking.id,
         user_id: firstRanking.user_id,
         score: firstRanking.score,
-        profile: firstRanking.users_profiles
+        profile: firstRanking.users_profiles,
+        subject_scores: firstRanking.subject_scores
       });
     }
     
@@ -110,7 +113,25 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const avatarUrl = userProfile?.avatar_url || null;
       
       // Parse custom discipline scores from subject_scores jsonb if available
-      const customDisciplineScores = ranking.subject_scores ? ranking.subject_scores : {};
+      let customDisciplineScores: Record<string, number> = {};
+      let weightedCustomDisciplineScores: Record<string, number> = {};
+      
+      if (ranking.subject_scores) {
+        console.log(`User ${name} has subject_scores:`, ranking.subject_scores);
+        
+        // Processar pontuações brutas e ponderadas
+        Object.entries(ranking.subject_scores).forEach(([key, value]: [string, any]) => {
+          if (typeof value === 'object' && value !== null) {
+            // Se o valor é um objeto, assume o formato { raw: X, weighted: Y }
+            customDisciplineScores[key] = value.raw || 0;
+            weightedCustomDisciplineScores[key] = value.weighted || 0;
+          } else {
+            // Caso contrário, assume que é apenas o valor bruto
+            customDisciplineScores[key] = value || 0;
+            weightedCustomDisciplineScores[key] = value || 0; // Sem peso aplicado
+          }
+        });
+      }
       
       return {
         position: index + 1,
@@ -138,6 +159,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         // Custom discipline scores
         customDisciplineScores,
+        weightedCustomDisciplineScores,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id
