@@ -12,6 +12,8 @@ export const handleQuestionSectionSelection = (concurso: Concurso, setSectionCal
     setSectionCallback('specific2');
   } else if (concurso.has_specific_knowledge_3) {
     setSectionCallback('specific3');
+  } else if (concurso.has_custom_knowledge) {
+    setSectionCallback('custom');
   } else {
     // Verificar se há disciplinas customizadas
     if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
@@ -38,6 +40,7 @@ export const getAllEnabledSections = (concurso: Concurso): SectionType[] => {
   if (concurso.has_specific_knowledge_1) enabledSections.push('specific1');
   if (concurso.has_specific_knowledge_2) enabledSections.push('specific2');
   if (concurso.has_specific_knowledge_3) enabledSections.push('specific3');
+  if (concurso.has_custom_knowledge) enabledSections.push('custom');
   
   // Adicionar seções customizadas
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
@@ -55,7 +58,10 @@ export const getAllEnabledSections = (concurso: Concurso): SectionType[] => {
  * Verifica se uma string representa um tipo de seção válido
  */
 export const isValidSectionType = (sectionType: string): boolean => {
-  const standardSections = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
+  const standardSections = [
+    'basic', 'specific1', 'specific2', 'specific3', 
+    'custom', 'discursive', 'case_study1', 'case_study2', 'case_study3'
+  ];
   
   // Se for uma seção padrão, retorna true
   if (standardSections.includes(sectionType)) {
@@ -76,6 +82,7 @@ export const getSectionDisplayName = (sectionType: SectionType, concurso: Concur
     case 'specific1': return 'Conhecimentos Específicos';
     case 'specific2': return 'Conhecimentos Específicos 2';
     case 'specific3': return 'Conhecimentos Específicos 3';
+    case 'custom': return 'Conhecimentos Customizados';
     case 'discursive': return 'Dissertativa';
     case 'case_study1': return 'Estudo de Caso';
     case 'case_study2': return 'Estudo de Caso 2';

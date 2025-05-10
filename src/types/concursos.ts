@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -22,6 +23,7 @@ export interface Concurso {
   has_specific_knowledge_1?: boolean;
   has_specific_knowledge_2?: boolean;
   has_specific_knowledge_3?: boolean;
+  has_custom_knowledge?: boolean;
   has_discursive?: boolean;
   has_case_study_1?: boolean;
   has_case_study_2?: boolean;
@@ -32,13 +34,14 @@ export interface Concurso {
   specific_knowledge_1_questions?: number;
   specific_knowledge_2_questions?: number;
   specific_knowledge_3_questions?: number;
+  custom_knowledge_questions?: number;
   
   // Section weights
   basic_knowledge_weight?: number;
-  specific_knowledge_weight?: number;
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;
+  custom_knowledge_weight?: number;
   discursive_weight?: number;
   case_study_1_weight?: number;
   case_study_2_weight?: number;
@@ -106,6 +109,7 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
     specificKnowledge1: concurso.has_specific_knowledge_1 === true,
     specificKnowledge2: concurso.has_specific_knowledge_2 === true,
     specificKnowledge3: concurso.has_specific_knowledge_3 === true,
+    customKnowledge: concurso.has_custom_knowledge === true,
     discursive: concurso.has_discursive === true,
     caseStudy1: concurso.has_case_study_1 === true,
     caseStudy2: concurso.has_case_study_2 === true,
@@ -136,6 +140,10 @@ export const getRankingTableColumns = (concurso: Concurso) => {
   
   if (concurso.has_specific_knowledge_3) {
     columns.push({ id: 'specific3Score', label: 'Específica 3', align: 'right' });
+  }
+  
+  if (concurso.has_custom_knowledge) {
+    columns.push({ id: 'customScore', label: 'Customizada', align: 'right' });
   }
   
   if (concurso.has_discursive) {

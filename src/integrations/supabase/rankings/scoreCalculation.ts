@@ -23,7 +23,8 @@ export const updateSectionTypeForConcurso = async (concursoId: string) => {
       p_basic_end: examStructure.basicEnd,
       p_specific1_end: examStructure.specific1End,
       p_specific2_end: examStructure.specific2End,
-      p_specific3_end: examStructure.specific3End
+      p_specific3_end: examStructure.specific3End,
+      p_custom_end: examStructure.customEnd || examStructure.specific3End // Fallback se não houver conhecimentos customizados
     });
 
     if (error) {
@@ -45,12 +46,14 @@ const getExamStructure = (concurso: any) => {
   const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
   const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
   const specific3End = specific2End + (concurso.specific_knowledge_3_questions || 0);
+  const customEnd = specific3End + (concurso.custom_knowledge_questions || 0);
   
   return {
     basicEnd,
     specific1End,
     specific2End,
     specific3End,
-    totalQuestions: specific3End
+    customEnd,
+    totalQuestions: customEnd
   };
 };

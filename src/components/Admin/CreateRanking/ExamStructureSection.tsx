@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ interface ExamStructureSectionProps {
   form: any;
 }
 
-export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form }) => {
+export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> = ({ form }) => {
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
   const [customSectionName, setCustomSectionName] = useState('');
   const [customSectionQuestions, setCustomSectionQuestions] = useState('0');
@@ -83,6 +84,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
       case 'specific3':
         form.setValue('has_specific_knowledge_3', true);
         break;
+      case 'custom':
+        form.setValue('has_custom_knowledge', true);
+        break;
       case 'discursive':
         form.setValue('has_discursive', true);
         break;
@@ -112,6 +116,9 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
         break;
       case 'specific3':
         form.setValue('has_specific_knowledge_3', false);
+        break;
+      case 'custom':
+        form.setValue('has_custom_knowledge', false);
         break;
       case 'discursive':
         form.setValue('has_discursive', false);
@@ -183,7 +190,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Alternativas">Múltipla Escolha</SelectItem>
-                      <SelectItem value="Certo-Errado">Certo ou Errado</SelectItem>
+                      <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
@@ -280,6 +287,11 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                   Conhecimentos Específicos 3
                 </DropdownMenuItem>
               )}
+              {!form.watch('has_custom_knowledge') && (
+                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('custom')}>
+                  Conhecimentos Customizados
+                </DropdownMenuItem>
+              )}
               {!form.watch('has_discursive') && (
                 <DropdownMenuItem onClick={() => handleAddKnowledgeArea('discursive')}>
                   Dissertativa
@@ -319,6 +331,7 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
            !form.watch('has_specific_knowledge_1') && 
            !form.watch('has_specific_knowledge_2') && 
            !form.watch('has_specific_knowledge_3') &&
+           !form.watch('has_custom_knowledge') &&
            !form.watch('has_discursive') &&
            !form.watch('has_case_study_1') &&
            !form.watch('has_case_study_2') &&
@@ -416,6 +429,29 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderQuestionsInput("specific_knowledge_3_questions")}
                 {renderWeightSelect("specific_knowledge_3_weight")}
+              </div>
+            </div>
+          )}
+          
+          {/* Conhecimentos Customizados */}
+          {form.watch('has_custom_knowledge') && (
+            <div className="border p-4 rounded-md">
+              <div className="flex justify-between items-center mb-4">
+                <h5 className="font-medium">Conhecimentos Customizados</h5>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveKnowledgeArea('custom')}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remover
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {renderQuestionsInput("custom_knowledge_questions")}
+                {renderWeightSelect("custom_knowledge_weight")}
               </div>
             </div>
           )}

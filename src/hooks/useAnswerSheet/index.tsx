@@ -107,6 +107,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
           questions.push(i);
         }
+      } else if (selectedSection === 'custom' && concurso.has_custom_knowledge && concurso.custom_knowledge_questions) {
+        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) +
+                          (concurso.specific_knowledge_2_questions || 0) + (concurso.specific_knowledge_3_questions || 0) + 1;
+        for (let i = startIndex; i < startIndex + concurso.custom_knowledge_questions; i++) {
+          questions.push(i);
+        }
       } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
         // Procurar disciplina customizada correspondente
         const customDiscipline = concurso.disciplines.find(d => d.type === selectedSection);

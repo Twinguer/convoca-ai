@@ -10,6 +10,7 @@ export const getExamStructure = (concurso: any) => {
   const specific1End = basicEnd + (concurso.specific_knowledge_1_questions || 0);
   const specific2End = specific1End + (concurso.specific_knowledge_2_questions || 0);
   const specific3End = specific2End + (concurso.specific_knowledge_3_questions || 0);
+  const customEnd = specific3End + (concurso.custom_knowledge_questions || 0);
   
   // Adiciona disciplinas customizadas ao cálculo
   let currentEnd = specific3End;
@@ -30,6 +31,7 @@ export const getExamStructure = (concurso: any) => {
     specific1End,
     specific2End,
     specific3End,
+    customEnd,
     customSections,
     totalQuestions: currentEnd
   };
@@ -45,6 +47,7 @@ export type SectionType =
   | 'case_study1' 
   | 'case_study2' 
   | 'case_study3'
+  | 'custom'
   | string; // Para tipos customizados digitados pelo usuário
 
 // Mapeamento de seções para nomes de exibição
@@ -53,6 +56,7 @@ export const sectionDisplayNames: Record<string, string> = {
   specific1: 'Conhecimentos Específicos 1',
   specific2: 'Conhecimentos Específicos 2',
   specific3: 'Conhecimentos Específicos 3',
+  custom: 'Conhecimentos Customizados',
   discursive: 'Discursiva',
   case_study1: 'Estudo de Caso 1',
   case_study2: 'Estudo de Caso 2',
@@ -105,6 +109,12 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
         }
         startNumber = endNumber;
       }
+    }
+  } else if (concurso.has_custom_knowledge && concurso.custom_knowledge_questions) {
+    // Se não há disciplines detalhadas mas tem conhecimento customizado, usar tipo genérico
+    if (questionNumber > examStructure.specific3End && 
+        questionNumber <= examStructure.specific3End + concurso.custom_knowledge_questions) {
+      return 'custom';
     }
   }
   

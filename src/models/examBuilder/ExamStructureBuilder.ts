@@ -1,4 +1,3 @@
-
 import { ExamSectionBuilder, ExamSectionConfig } from './ExamSectionBuilder';
 import { Concurso } from '@/types/concursos';
 
@@ -43,6 +42,9 @@ export class ExamStructureBuilder {
         break;
       case 'specific3':
         displayName = 'Conhecimentos Específicos 3';
+        break;
+      case 'custom':
+        displayName = 'Conhecimentos Customizados';
         break;
       case 'discursive':
         displayName = 'Discursiva';
@@ -137,6 +139,7 @@ export class ExamStructureBuilder {
       has_specific_knowledge_1: false,
       has_specific_knowledge_2: false,
       has_specific_knowledge_3: false,
+      has_custom_knowledge: false,
       has_discursive: false,
       has_case_study_1: false,
       has_case_study_2: false,
@@ -147,12 +150,14 @@ export class ExamStructureBuilder {
       specific_knowledge_1_questions: 0,
       specific_knowledge_2_questions: 0,
       specific_knowledge_3_questions: 0,
+      custom_knowledge_questions: 0,
       
       // Pesos
       basic_knowledge_weight: 1,
       specific_knowledge_1_weight: 1,
       specific_knowledge_2_weight: 1,
       specific_knowledge_3_weight: 1,
+      custom_knowledge_weight: 1,
       discursive_weight: 1,
       case_study_1_weight: 1,
       case_study_2_weight: 1,
@@ -184,6 +189,11 @@ export class ExamStructureBuilder {
           concurso.has_specific_knowledge_3 = true;
           concurso.specific_knowledge_3_questions = section.questionCount;
           concurso.specific_knowledge_3_weight = section.weight;
+          break;
+        case 'custom':
+          concurso.has_custom_knowledge = true;
+          concurso.custom_knowledge_questions = section.questionCount;
+          concurso.custom_knowledge_weight = section.weight;
           break;
         case 'discursive':
           concurso.has_discursive = true;
