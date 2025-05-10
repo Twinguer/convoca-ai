@@ -104,7 +104,7 @@ export interface RankingTableColumn {
   width?: string;
 }
 
-// Standardized SectionType to use snake_case consistently with existing codebase
+// SectionType updated to be flexible for custom disciplines
 export type SectionType = 
   | 'basic' 
   | 'specific1' 
@@ -114,15 +114,14 @@ export type SectionType =
   | 'case_study1' 
   | 'case_study2' 
   | 'case_study3'
-  | string; // Adicionado string para permitir tipos customizados
+  | string; // Allows for custom discipline types
 
 // Fixed helper to determine which specific knowledge sections are enabled
-// Now uses has_* flags instead of weights
 export const getEnabledKnowledgeSections = (concurso: Concurso) => {
   const useCustomKnowledge = concurso.has_custom_knowledge === true;
   
   // Estrutura base com seções tradicionais
-  const enabledSections = {
+  const enabledSections: Record<string, boolean> = {
     basicKnowledge: concurso.has_basic_knowledge === true,
     specificKnowledge1: concurso.has_specific_knowledge_1 === true,
     specificKnowledge2: concurso.has_specific_knowledge_2 === true,

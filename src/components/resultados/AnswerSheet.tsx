@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -235,13 +236,31 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  // Modificando a função getObjectiveSectionList para usar apenas seções padrão
+  // Função para obter lista de seções para renderizar as abas
   const getObjectiveSectionList = () => {
     const sections = [];
-    if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-    if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-    if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-    if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    
+    // Se estamos usando conhecimentos customizáveis
+    if (concurso.has_custom_knowledge) {
+      // Adicionar cada disciplina customizada como uma seção
+      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        concurso.disciplines.forEach(discipline => {
+          if (discipline.isEnabled) {
+            sections.push({ 
+              key: discipline.type, 
+              label: discipline.name || discipline.type 
+            });
+          }
+        });
+      }
+    } else {
+      // Estrutura tradicional
+      if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
+      if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
+      if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
+      if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
+    }
+    
     return sections;
   };
   
@@ -251,6 +270,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
     
+    if (concurso.has_custom_knowledge) {
+      // Usar disciplinas customizadas
+      let currentQuestionNumber = 1;
+      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        for (const discipline of concurso.disciplines) {
+          if (discipline.isEnabled && discipline.questionCount) {
+            for (let i = 0; i < discipline.questionCount; i++) {
+              allQuestions.push(currentQuestionNumber++);
+            }
+          }
+        }
+      }
+      return allQuestions;
+    }
+    
+    // Estrutura tradicional
     let currentQuestionNumber = 1;
     
     // Básico
@@ -284,6 +319,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return allQuestions;
   };
   
+  // Corrigido para aceitar qualquer string como tipo de seção
   const handleSectionChange = (value: string) => {
     setSelectedSection(value as SectionType);
   };

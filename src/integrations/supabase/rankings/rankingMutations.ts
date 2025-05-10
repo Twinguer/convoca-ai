@@ -66,6 +66,16 @@ export const saveRanking = async (
 
     // Validar e processar disciplinas customizadas
     if (dataFormValues.has_custom_knowledge === true && Array.isArray(dataFormValues.disciplines)) {
+      // Verificar se pelo menos uma disciplina está habilitada
+      const hasEnabledDiscipline = dataFormValues.disciplines.some(
+        (discipline: any) => discipline.isEnabled === true
+      );
+      
+      if (!hasEnabledDiscipline) {
+        throw new Error("Você precisa habilitar pelo menos uma disciplina quando usar conhecimentos customizados");
+      }
+      
+      // Garantir que todas as disciplinas habilitadas tenham valores numéricos válidos
       dataFormValues.disciplines = dataFormValues.disciplines.map((discipline: any) => {
         return {
           ...discipline,

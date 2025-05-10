@@ -115,7 +115,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
     for (const discipline of disciplines) {
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
-        if (disciplineQuestions > 0 && questionNumber <= currentIndex + disciplineQuestions - 1) {
+        if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
           return discipline.type as SectionType;
         }
         currentIndex += disciplineQuestions;
@@ -132,7 +132,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   // Conhecimentos Básicos
   if (concurso.has_basic_knowledge) {
     const basicQuestions = getNumericValue(concurso.basic_knowledge_questions);
-    if (basicQuestions > 0 && questionNumber <= currentIndex + basicQuestions - 1) {
+    if (basicQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + basicQuestions - 1) {
       return 'basic';
     }
     currentIndex += basicQuestions;
@@ -141,7 +141,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   // Conhecimentos Específicos 1
   if (concurso.has_specific_knowledge_1) {
     const specificQuestions1 = getNumericValue(concurso.specific_knowledge_1_questions);
-    if (specificQuestions1 > 0 && questionNumber <= currentIndex + specificQuestions1 - 1) {
+    if (specificQuestions1 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions1 - 1) {
       return 'specific1';
     }
     currentIndex += specificQuestions1;
@@ -150,7 +150,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   // Conhecimentos Específicos 2
   if (concurso.has_specific_knowledge_2) {
     const specificQuestions2 = getNumericValue(concurso.specific_knowledge_2_questions);
-    if (specificQuestions2 > 0 && questionNumber <= currentIndex + specificQuestions2 - 1) {
+    if (specificQuestions2 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions2 - 1) {
       return 'specific2';
     }
     currentIndex += specificQuestions2;
@@ -159,7 +159,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   // Conhecimentos Específicos 3
   if (concurso.has_specific_knowledge_3) {
     const specificQuestions3 = getNumericValue(concurso.specific_knowledge_3_questions);
-    if (specificQuestions3 > 0 && questionNumber <= currentIndex + specificQuestions3 - 1) {
+    if (specificQuestions3 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions3 - 1) {
       return 'specific3';
     }
   }

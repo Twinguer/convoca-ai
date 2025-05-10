@@ -77,8 +77,38 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('Question type mapping:', questionType);
     
     const questions: number[] = [];
+
+    // Verificar primeiro se estamos usando conhecimento customizável
+    if (concurso.has_custom_knowledge) {
+      if (Object.keys(questionType).length === 0) {
+        // Se ainda não temos mapeamento, inicializar baseado no modelo customizável
+        if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+          let currentQuestion = 1;
+          
+          for (const discipline of concurso.disciplines) {
+            if (discipline.isEnabled && discipline.type === selectedSection && discipline.questionCount) {
+              for (let i = 0; i < discipline.questionCount; i++) {
+                questions.push(currentQuestion++);
+              }
+            } else if (discipline.isEnabled) {
+              // Pular questões de outras disciplinas
+              currentQuestion += (discipline.questionCount || 0);
+            }
+          }
+        }
+      } else {
+        // Usar o mapeamento existente para encontrar questões do tipo selecionado
+        Object.entries(questionType).forEach(([num, type]) => {
+          if (type === selectedSection) {
+            questions.push(parseInt(num));
+          }
+        });
+      }
+      
+      return questions.sort((a, b) => a - b);
+    }
     
-    // Verificando se o objeto questionType tem alguma propriedade
+    // Estrutura tradicional - verifique primeiro se temos mapeamento
     if (Object.keys(questionType).length === 0) {
       // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
       const structure = getExamStructure(concurso);
