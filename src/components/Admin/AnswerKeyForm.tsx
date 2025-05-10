@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +27,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const [recalculationSuccess, setRecalculationSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [weights, setWeights] = useState<{ [key: number]: number }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const { toast } = useToast();
 
@@ -59,14 +59,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   useEffect(() => {
     if (existingAnswers && Object.keys(existingAnswers).length > 0) {
       const answersMap: { [key: number]: string } = {};
-      const weightsMap: { [key: number]: number } = {};
       const nullifiedSet = new Set<number>();
       
       Object.entries(existingAnswers).forEach(([key, value]: [string, any]) => {
         const questionNumber = parseInt(key.replace('questao', ''));
         
         answersMap[questionNumber] = value.resposta;
-        weightsMap[questionNumber] = value.peso || 1;
         
         if (value.anulada) {
           nullifiedSet.add(questionNumber);
@@ -74,11 +72,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       });
       
       setAnswers(answersMap);
-      setWeights(weightsMap);
       setNullifiedQuestions(nullifiedSet);
-      
-      // Log para debug
-      console.log('Loaded weights:', weightsMap);
     }
   }, [existingAnswers]);
 
@@ -175,14 +169,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       ...prev,
       [questionNumber]: answer
     }));
-  };
-
-  const handleWeightChange = (questionNumber: number, weight: number) => {
-    setWeights((prev) => ({
-      ...prev,
-      [questionNumber]: weight
-    }));
-    console.log(`Set weight for question ${questionNumber} to ${weight}`);
   };
 
   const handleNullifyQuestion = (questionNumber: number) => {
@@ -285,9 +271,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         return;
       }
       
-      // Log dos pesos antes de salvar para debug
-      console.log('Saving weights:', weights);
-      
       // Preparar dados para salvar o gabarito completo de uma vez
       const answerKeyData = allQuestions.map(qNum => {
         // Determinar o tipo de seção para cada questão
@@ -296,26 +279,34 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         // Verificar se é uma disciplina customizada
         const customDisciplineType = getCustomDisciplineType(concurso, qNum);
         
-        // Obter o peso específico para esta questão (do estado) ou usar o padrão se não existir
-        const questionWeight = weights[qNum] || 1.0;
-        
-        // Para disciplinas customizadas, considerar peso da disciplina
-        let finalWeight = questionWeight;
-        if (customDisciplineType && finalWeight === 1.0) {
+        // Para disciplinas customizadas, usar o peso da disciplina do cadastro
+        let weight = 1.0;
+        if (customDisciplineType) {
           const disciplineWeight = getDisciplineWeight(concurso, customDisciplineType);
           if (disciplineWeight !== 1.0) {
-            finalWeight = disciplineWeight;
+            weight = disciplineWeight;
+          }
+        } else {
+          // Para seções padrão, usar os pesos do cadastro
+          if (sectionType === 'basic') {
+            weight = concurso.basic_knowledge_weight || 1.0;
+          } else if (sectionType === 'specific1') {
+            weight = concurso.specific_knowledge_1_weight || 1.0;
+          } else if (sectionType === 'specific2') {
+            weight = concurso.specific_knowledge_2_weight || 1.0;
+          } else if (sectionType === 'specific3') {
+            weight = concurso.specific_knowledge_3_weight || 1.0;
           }
         }
         
         // Debug log
-        console.log(`Question ${qNum}: type=${sectionType}, customType=${customDisciplineType}, weight=${finalWeight}`);
+        console.log(`Question ${qNum}: type=${sectionType}, customType=${customDisciplineType}, weight=${weight}`);
         
         return {
           concurso_id: concursoId,
           question_number: qNum,
           correct_answer: answers[qNum],
-          weight: finalWeight,
+          weight: weight,
           section_type: sectionType,
           is_nullified: nullifiedQuestions.has(qNum),
           custom_discipline_type: customDisciplineType
@@ -457,6 +448,24 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
   const percentageComplete = totalQuestions > 0 ? Math.floor((answeredQuestions / totalQuestions) * 100) : 0;
   const objectiveSections = getObjectiveSectionList();
 
+  const getSectionWeight = (sectionType: string): number => {
+    if (sectionType === 'basic') {
+      return concurso.basic_knowledge_weight || 1.0;
+    } else if (sectionType === 'specific1') {
+      return concurso.specific_knowledge_1_weight || 1.0;
+    } else if (sectionType === 'specific2') {
+      return concurso.specific_knowledge_2_weight || 1.0;
+    } else if (sectionType === 'specific3') {
+      return concurso.specific_knowledge_3_weight || 1.0;
+    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const customDiscipline = concurso.disciplines.find(d => d.type === sectionType);
+      if (customDiscipline) {
+        return customDiscipline.weight || 1.0;
+      }
+    }
+    return 1.0;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -501,6 +510,26 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                 Ao anular questões, as pontuações de todos os usuários serão recalculadas automaticamente após salvar.
               </p>
             </div>
+          </div>
+        </div>
+        
+        {/* Display section weights information */}
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="flex flex-col">
+            <h4 className="font-medium text-blue-800">Pesos das Seções</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
+              {objectiveSections.map(section => (
+                <div key={section.key} className="p-2 bg-white rounded-md border border-blue-100">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{section.label}:</span>
+                    <span className="text-sm text-blue-700 font-semibold">Peso {getSectionWeight(section.key)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              Os pesos acima são definidos na configuração do concurso e serão aplicados automaticamente.
+            </p>
           </div>
         </div>
         
@@ -549,13 +578,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                           {row.map((questionNumber, colIndex) => (
                             questionNumber !== null && (
                               <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
-                                <div className="mb-2 font-medium text-gray-700">
-                                  Questão {questionNumber}
-                                  {weights[questionNumber] && weights[questionNumber] !== 1.0 && (
-                                    <span className="ml-2 text-xs text-emerald-600">
-                                      (Peso: {weights[questionNumber]})
-                                    </span>
-                                  )}
+                                <div className="mb-2 font-medium text-gray-700 flex justify-between items-center">
+                                  <span>Questão {questionNumber}</span>
+                                  {/* Display section weight information */}
+                                  <span className="text-xs text-emerald-600">
+                                    Peso: {getSectionWeight(section.key).toFixed(1)}
+                                  </span>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                   {getOptionsForQuestion().map((option) => (
@@ -572,23 +600,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                       {option}
                                     </button>
                                   ))}
-                                </div>
-                                
-                                {/* Input para peso da questão */}
-                                <div className="mt-3 flex items-center">
-                                  <Label htmlFor={`weight-${questionNumber}`} className="text-xs text-gray-500 mr-2">
-                                    Peso:
-                                  </Label>
-                                  <Input
-                                    id={`weight-${questionNumber}`}
-                                    type="number"
-                                    min="0.1"
-                                    step="0.1"
-                                    value={weights[questionNumber] || 1.0}
-                                    onChange={(e) => handleWeightChange(questionNumber, parseFloat(e.target.value) || 1.0)}
-                                    className="w-20 h-8 text-sm"
-                                    disabled={nullifiedQuestions.has(questionNumber)}
-                                  />
                                 </div>
                                 
                                 <NullifyQuestionButton

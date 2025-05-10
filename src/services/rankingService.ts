@@ -125,18 +125,52 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
             // Se o valor é um objeto, assume o formato { raw: X, weighted: Y }
             customDisciplineScores[key] = value.raw || 0;
             weightedCustomDisciplineScores[key] = value.weighted || 0;
+            
+            console.log(`Discipline ${key} - raw: ${value.raw}, weighted: ${value.weighted}`);
           } else {
             // Caso contrário, assume que é apenas o valor bruto
             customDisciplineScores[key] = value || 0;
             weightedCustomDisciplineScores[key] = value || 0; // Sem peso aplicado
+            
+            console.log(`Discipline ${key} - simple value: ${value}`);
           }
         });
       }
       
+      // Calculate the total score properly including all components
+      const calculatedScore = 
+        (ranking.weighted_basic_score || 0) +
+        (ranking.weighted_specific_1_score || 0) +
+        (ranking.weighted_specific_2_score || 0) +
+        (ranking.weighted_specific_3_score || 0) +
+        (ranking.weighted_discursive_score || 0) +
+        (ranking.weighted_case_study_1_score || 0) +
+        (ranking.weighted_case_study_2_score || 0) +
+        (ranking.weighted_case_study_3_score || 0);
+        
+      // Add weighted custom discipline scores to total
+      let customDisciplinesTotal = 0;
+      Object.values(weightedCustomDisciplineScores).forEach(score => {
+        customDisciplinesTotal += score;
+      });
+      
+      // Use the database score if available, otherwise use our calculated score
+      const finalScore = ranking.score || (calculatedScore + customDisciplinesTotal);
+      
+      console.log(`User ${name} score components:`, {
+        db_score: ranking.score,
+        calc_score: calculatedScore,
+        custom_total: customDisciplinesTotal,
+        final: finalScore,
+        weighted_basic: ranking.weighted_basic_score,
+        weighted_specific1: ranking.weighted_specific_1_score,
+        custom_disciplines: weightedCustomDisciplineScores
+      });
+      
       return {
         position: index + 1,
         name: name,
-        score: ranking.score || 0,
+        score: finalScore,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,

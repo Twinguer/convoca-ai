@@ -95,22 +95,6 @@ export const answerKeyService = {
       
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
-        // Para disciplinas customizadas, determinar o tipo real
-        if (concurso.has_custom_knowledge) {
-          const customType = getCustomDisciplineType(concurso, item.question_number);
-          if (customType) {
-            // Armazenar o tipo real como metadado
-            item.custom_discipline_type = customType;
-            
-            // Buscar o peso definido para essa disciplina
-            const disciplineWeight = getDisciplineWeight(concurso, customType);
-            // Só aplica o peso da disciplina se o peso da questão for padrão (1.0)
-            if (item.weight === 1.0) {
-              item.weight = disciplineWeight;
-            }
-          }
-        }
-        
         // Garantir que section_type seja válido
         item.section_type = sanitizeSectionType(item.section_type);
         
@@ -139,9 +123,6 @@ export const answerKeyService = {
 
       // Atualizar ou inserir cada questão do gabarito
       for (const item of answerKeyData) {
-        // Garantir que section_type seja válido
-        item.section_type = sanitizeSectionType(item.section_type);
-        
         console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}, peso: ${item.weight}`);
         
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
@@ -164,7 +145,7 @@ export const answerKeyService = {
       // Verificar se os dados foram realmente salvos
       const { data: verifyData, error: verifyError } = await supabase
         .from('official_answer_weights')
-        .select('question_number, correct_answer, weight')
+        .select('question_number, correct_answer, weight, section_type')
         .eq('concurso_id', concursoId);
 
       if (verifyError) {
@@ -175,7 +156,7 @@ export const answerKeyService = {
       console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
       if (verifyData) {
         verifyData.forEach(item => {
-          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}, peso: ${item.weight}`);
+          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}, peso: ${item.weight}, seção: ${item.section_type}`);
         });
       }
 
