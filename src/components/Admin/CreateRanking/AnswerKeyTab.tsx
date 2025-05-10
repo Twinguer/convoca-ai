@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { answerKeyService } from '@/services/answerKeyService';
-import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -407,23 +407,4 @@ export const AnswerKeyTab = ({
       </CardContent>
     </Card>
   );
-};
-
-// Function to sanitize section types to ensure they're valid for the database
-export const sanitizeSectionType = (sectionType: string): string => {
-  // For standard types, return as is
-  if (['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
-       'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
-    return sectionType;
-  }
-  
-  // For custom types, sanitize to avoid DB constraints
-  const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
-  
-  // Ensure custom types have a common prefix
-  if (!sanitized.startsWith('custom_')) {
-    return `custom_${sanitized}`;
-  }
-  
-  return sanitized;
 };

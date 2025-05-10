@@ -130,6 +130,24 @@ export const getSectionDisplayName = (concurso: any, sectionType: string): strin
 // Lista de tipos de seção válidos - Agora aceitamos qualquer string para disciplinas customizadas
 export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
 
+// Função para sanitizar tipos de seção para garantir compatibilidade com o banco de dados
+export const sanitizeSectionType = (sectionType: string): string => {
+  // Para tipos padrão, retorna como está
+  if (validSectionTypes.includes(sectionType)) {
+    return sectionType;
+  }
+  
+  // Para tipos customizados, garantir que sejam compatíveis com as restrições do banco
+  const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
+  
+  // Garantir que tipos customizados tenham o prefixo "custom"
+  if (!sanitized.startsWith('custom')) {
+    return `custom_${sanitized}`;
+  }
+  
+  return sanitized;
+};
+
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
   // Verificar se estamos usando a estrutura customizável
@@ -143,7 +161,7 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
           // Para evitar problemas com o check constraint, garantimos que o tipo seja uma string simples
           // Muitos banks de dados têm restrições em tipos de coluna como TEXT
-          const safeType = discipline.type.replace(/[^a-zA-Z0-9_]/g, '_');
+          const safeType = sanitizeSectionType(discipline.type);
           return safeType as SectionType;
         }
         currentIndex += disciplineQuestions;
