@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, validSectionTypes } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
 import { toast } from 'sonner';
 
@@ -57,6 +57,18 @@ export const updateSectionTypeForConcurso = async (
   }
 }
 
+// Garantir que o tipo de seção seja válido para o banco de dados
+const sanitizeSectionType = (sectionType: string): string => {
+  // Verificar se o tipo de seção está na lista de tipos válidos
+  if (validSectionTypes.includes(sectionType)) {
+    return sectionType;
+  }
+  
+  // Caso contrário, retornar um valor padrão seguro
+  console.warn(`Section type "${sectionType}" não é válido. Usando "specific1" como fallback.`);
+  return 'specific1';
+};
+
 export const answerKeyService = {
   // Função para salvar o gabarito e recalcular pontuações
   async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: AnswerKeyItem[]) {
@@ -66,6 +78,9 @@ export const answerKeyService = {
       
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
+        // Garantir que section_type seja válido
+        item.section_type = sanitizeSectionType(item.section_type);
+        
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
           resposta: item.correct_answer,
@@ -89,7 +104,10 @@ export const answerKeyService = {
 
       // Atualizar ou inserir cada questão do gabarito
       for (const item of answerKeyData) {
-        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}`);
+        // Garantir que section_type seja válido
+        item.section_type = sanitizeSectionType(item.section_type);
+        
+        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
         
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: item.concurso_id,
@@ -196,14 +214,14 @@ export const answerKeyService = {
         throw deleteError;
       }
       
-      // Preparar dados para inserção
+      // Preparar dados para inserção e garantir que section_type seja válido
       const insertData = answerKeyData.map(item => ({
         concurso_id: item.concurso_id,
         question_number: item.question_number,
         correct_answer: item.correct_answer,
         weight: item.weight || 1.0,
         is_nullified: item.is_nullified || false,
-        section_type: item.section_type
+        section_type: sanitizeSectionType(item.section_type)
       }));
       
       // Inserir todos os registros de uma vez

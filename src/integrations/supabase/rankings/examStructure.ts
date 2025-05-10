@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
@@ -105,6 +104,9 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
   return displayNames;
 };
 
+// Lista de tipos de seção válidos no banco de dados
+export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
+
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
   // Verificar se estamos usando a estrutura customizável
@@ -116,7 +118,10 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          return discipline.type as SectionType;
+          // Mapear discipline.type para um tipo válido de seção
+          // Para disciplinas customizadas, usamos 'specific1' como fallback seguro
+          const disciplineType = discipline.type as string;
+          return validSectionTypes.includes(disciplineType) ? disciplineType : 'specific1';
         }
         currentIndex += disciplineQuestions;
       }

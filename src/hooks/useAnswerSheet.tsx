@@ -1,11 +1,12 @@
+
 import { useState, useEffect } from 'react';
-import { Concurso } from '@/types/concursos';
+import { Concurso, SectionType } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
+  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -25,6 +26,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setSelectedSection('specific2');
       } else if (concurso.has_specific_knowledge_3) {
         setSelectedSection('specific3');
+      } else if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+        // Se for um conhecimento customizado, use o tipo da primeira disciplina ativa
+        const firstDiscipline = concurso.disciplines.find(d => d.isEnabled);
+        if (firstDiscipline) {
+          setSelectedSection(firstDiscipline.type as SectionType);
+        }
       }
     }
   }, [concurso]);
@@ -188,6 +195,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       total += concurso.specific_knowledge_3_questions;
     }
     
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.questionCount) {
+          total += Number(discipline.questionCount);
+        }
+      });
+    }
+    
     return total;
   };
 
@@ -202,24 +217,50 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
            selectedSection === 'case_study3';
   };
 
+  // Função para obter questões baseadas na seção selecionada
   const getSectionQuestions = () => {
     if (!concurso) return [];
     
     console.log('Getting questions for section:', selectedSection);
-    console.log('Question type mapping:', questionType);
     
+    // Se estamos lidando com conhecimentos customizados
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const selectedDiscipline = concurso.disciplines.find(d => d.type === selectedSection);
+      if (selectedDiscipline && selectedDiscipline.isEnabled) {
+        // Calcular o índice inicial da disciplina
+        let startIndex = 1;
+        for (const discipline of concurso.disciplines) {
+          if (discipline.type === selectedSection) break;
+          if (discipline.isEnabled && discipline.questionCount) {
+            startIndex += Number(discipline.questionCount);
+          }
+        }
+        
+        // Retornar o range de questões para esta disciplina
+        const questions = Array.from(
+          { length: Number(selectedDiscipline.questionCount || 0) }, 
+          (_, i) => startIndex + i
+        );
+        console.log(`Questions for custom discipline ${selectedSection}:`, questions);
+        return questions;
+      }
+    }
+    
+    // Lidar com tipos tradicionais de seção
     const questions: number[] = [];
     
-    Object.entries(questionType).forEach(([num, type]) => {
-      if (
-        (selectedSection === 'basic' && type === 'basic') ||
-        (selectedSection === 'specific1' && type === 'specific1') ||
-        (selectedSection === 'specific2' && type === 'specific2') ||
-        (selectedSection === 'specific3' && type === 'specific3')
-      ) {
-        questions.push(parseInt(num));
-      }
-    });
+    if (concurso && questionType) {
+      Object.entries(questionType).forEach(([num, type]) => {
+        if (
+          (selectedSection === 'basic' && type === 'basic') ||
+          (selectedSection === 'specific1' && type === 'specific1') ||
+          (selectedSection === 'specific2' && type === 'specific2') ||
+          (selectedSection === 'specific3' && type === 'specific3')
+        ) {
+          questions.push(parseInt(num));
+        }
+      });
+    }
     
     console.log('Questions for section', selectedSection, ':', questions);
     return questions.sort((a, b) => a - b);
@@ -287,6 +328,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection
+    isDiscursiveSection,
+    getSectionQuestions
   };
 };
