@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,9 +19,22 @@ interface ScoreFormProps {
   onSuccess: () => void;
 }
 
+// Definir a interface FormValues para resolver o problema de tipagem
+interface FormValues {
+  basicKnowledgeScore: number;
+  specificKnowledge1Score: number;
+  specificKnowledge2Score: number;
+  specificKnowledge3Score: number;
+  discursiveScore: number;
+  caseStudy1Score: number;
+  caseStudy2Score: number;
+  caseStudy3Score: number;
+  [key: string]: number; // Para campos dinâmicos como customDiscipline_*
+}
+
 // Create a dynamic form schema that includes custom disciplines
 const createFormSchema = (concurso?: Concurso) => {
-  const baseSchema = {
+  const baseSchema: Record<string, any> = {
     basicKnowledgeScore: z.coerce.number()
       .min(0, 'A nota não pode ser negativa')
       .max(100, 'A nota não pode ser maior que 100'),

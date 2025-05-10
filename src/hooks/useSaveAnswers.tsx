@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-import { updateSectionTypeForConcurso } from '@/integrations/supabase/rankings/scoreCalculation';
+import { updateSectionTypeForConcurso } from '@/services/answerKeyService';
 // Removemos a importação de recalculateAllUserScores pois não vamos mais recalcular todas as pontuações
 
 interface UseSaveAnswersProps {

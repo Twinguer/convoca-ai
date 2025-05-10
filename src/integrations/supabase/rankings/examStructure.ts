@@ -5,6 +5,19 @@ import { Concurso } from '@/types/concursos';
 export type SectionType = 'basic' | 'specific1' | 'specific2' | 'specific3' | 
                          'discursive' | 'caseStudy1' | 'caseStudy2' | 'caseStudy3' | string;
 
+// Objeto de nomes de exibição das seções (adicionado aqui para resolver o erro de importação)
+export const sectionDisplayNames: Record<string, string> = {
+  basic: 'Conhecimentos Básicos',
+  specific1: 'Conhecimentos Específicos 1',
+  specific2: 'Conhecimentos Específicos 2',
+  specific3: 'Conhecimentos Específicos 3',
+  discursive: 'Discursiva',
+  caseStudy1: 'Estudo de Caso 1',
+  caseStudy2: 'Estudo de Caso 2',
+  caseStudy3: 'Estudo de Caso 3',
+  custom: 'Conhecimentos Customizados'
+};
+
 // Função para obter a estrutura de exame de um concurso
 export const getExamStructure = (concurso: Concurso) => {
   return {
@@ -42,7 +55,8 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
     discursive: 'Discursiva',
     caseStudy1: 'Estudo de Caso 1',
     caseStudy2: 'Estudo de Caso 2',
-    caseStudy3: 'Estudo de Caso 3'
+    caseStudy3: 'Estudo de Caso 3',
+    custom: 'Conhecimentos Customizados'
   };
   
   // Adicionar disciplinas customizadas
@@ -55,4 +69,56 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
   }
   
   return sectionDisplayNames;
+};
+
+// Função auxiliar para determinar o tipo de seção com base no número da questão (exportada para resolver o erro de importação)
+export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
+  let currentIndex = 1;
+  
+  // Conhecimentos Básicos
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    if (questionNumber <= currentIndex + concurso.basic_knowledge_questions - 1) {
+      return 'basic';
+    }
+    currentIndex += concurso.basic_knowledge_questions;
+  }
+  
+  // Conhecimentos Específicos 1
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    if (questionNumber <= currentIndex + concurso.specific_knowledge_1_questions - 1) {
+      return 'specific1';
+    }
+    currentIndex += concurso.specific_knowledge_1_questions;
+  }
+  
+  // Conhecimentos Específicos 2
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    if (questionNumber <= currentIndex + concurso.specific_knowledge_2_questions - 1) {
+      return 'specific2';
+    }
+    currentIndex += concurso.specific_knowledge_2_questions;
+  }
+  
+  // Conhecimentos Específicos 3
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    if (questionNumber <= currentIndex + concurso.specific_knowledge_3_questions - 1) {
+      return 'specific3';
+    }
+    currentIndex += concurso.specific_knowledge_3_questions;
+  }
+  
+  // Disciplinas customizadas
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    for (const discipline of concurso.disciplines) {
+      if (discipline.isEnabled && discipline.questionCount) {
+        if (questionNumber <= currentIndex + discipline.questionCount - 1) {
+          return discipline.type as SectionType;
+        }
+        currentIndex += discipline.questionCount;
+      }
+    }
+  }
+  
+  // Fallback para conhecimentos específicos genéricos
+  return 'specific1';
 };
