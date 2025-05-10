@@ -1,6 +1,6 @@
 
 import { ExamSectionBuilder, ExamSectionConfig } from './ExamSectionBuilder';
-import { Concurso } from '@/types/concursos';
+import { Concurso, SectionType } from '@/types/concursos';
 
 export class ExamStructureBuilder {
   private examType: 'Alternativas' | 'Certo ou Errado' = 'Alternativas';
@@ -27,7 +27,7 @@ export class ExamStructureBuilder {
     return this;
   }
 
-  enableSection(sectionType: string, questionCount: number = 0, weight: number = 1): ExamStructureBuilder {
+  enableSection(sectionType: SectionType, questionCount: number = 0, weight: number = 1): ExamStructureBuilder {
     let displayName = '';
 
     // Determinar o nome de exibição baseado no tipo
@@ -44,9 +44,6 @@ export class ExamStructureBuilder {
       case 'specific3':
         displayName = 'Conhecimentos Específicos 3';
         break;
-      case 'custom':
-        displayName = 'Conhecimentos Customizados';
-        break;
       case 'discursive':
         displayName = 'Discursiva';
         break;
@@ -60,7 +57,6 @@ export class ExamStructureBuilder {
         displayName = 'Estudo de Caso 3';
         break;
       default:
-        // Para seções customizadas, podemos usar o tipo como nome
         displayName = sectionType;
         break;
     }
@@ -88,39 +84,9 @@ export class ExamStructureBuilder {
     return this;
   }
 
-  disableSection(sectionType: string): ExamStructureBuilder {
+  disableSection(sectionType: SectionType): ExamStructureBuilder {
     // Remover a seção específica
     this.sections = this.sections.filter(s => s.sectionType !== sectionType);
-    return this;
-  }
-
-  addCustomSection(name: string, questionCount: number = 0, weight: number = 1): ExamStructureBuilder {
-    // Gerar um tipo único para a seção customizada
-    // Usando o próprio nome como base mas convertendo para slug
-    const sectionType = name.toLowerCase().replace(/\s+/g, '_');
-    
-    // Verificar se já existe uma seção com esse tipo
-    const existingIndex = this.sections.findIndex(s => s.sectionType === sectionType);
-    if (existingIndex >= 0) {
-      // Atualizar a seção existente
-      this.sections[existingIndex] = new ExamSectionBuilder(sectionType, name)
-        .withQuestionCount(questionCount)
-        .withWeight(weight)
-        .asCustomSection(name)
-        .enabled()
-        .build();
-    } else {
-      // Adicionar nova seção customizada
-      this.sections.push(
-        new ExamSectionBuilder(sectionType, name)
-          .withQuestionCount(questionCount)
-          .withWeight(weight)
-          .asCustomSection(name)
-          .enabled()
-          .build()
-      );
-    }
-
     return this;
   }
 
@@ -140,7 +106,6 @@ export class ExamStructureBuilder {
       has_specific_knowledge_1: false,
       has_specific_knowledge_2: false,
       has_specific_knowledge_3: false,
-      has_custom_knowledge: false,
       has_discursive: false,
       has_case_study_1: false,
       has_case_study_2: false,
@@ -151,22 +116,17 @@ export class ExamStructureBuilder {
       specific_knowledge_1_questions: 0,
       specific_knowledge_2_questions: 0,
       specific_knowledge_3_questions: 0,
-      custom_knowledge_questions: 0,
       
       // Pesos
       basic_knowledge_weight: 1,
       specific_knowledge_1_weight: 1,
       specific_knowledge_2_weight: 1,
       specific_knowledge_3_weight: 1,
-      custom_knowledge_weight: 1,
       discursive_weight: 1,
       case_study_1_weight: 1,
       case_study_2_weight: 1,
       case_study_3_weight: 1
     };
-    
-    // Lista de disciplinas customizadas
-    const disciplines: any[] = [];
     
     // Processar seções
     this.sections.forEach(section => {
@@ -191,11 +151,6 @@ export class ExamStructureBuilder {
           concurso.specific_knowledge_3_questions = section.questionCount;
           concurso.specific_knowledge_3_weight = section.weight;
           break;
-        case 'custom':
-          concurso.has_custom_knowledge = true;
-          concurso.custom_knowledge_questions = section.questionCount;
-          concurso.custom_knowledge_weight = section.weight;
-          break;
         case 'discursive':
           concurso.has_discursive = true;
           concurso.discursive_weight = section.weight;
@@ -212,26 +167,8 @@ export class ExamStructureBuilder {
           concurso.has_case_study_3 = true;
           concurso.case_study_3_weight = section.weight;
           break;
-        default:
-          // É uma disciplina customizada
-          disciplines.push({
-            name: section.customName || section.displayName,
-            type: section.sectionType,
-            questionCount: section.questionCount,
-            weight: section.weight,
-            isEnabled: true
-          });
-          
-          // Garantir que has_custom_knowledge está habilitado
-          concurso.has_custom_knowledge = true;
-          break;
       }
     });
-    
-    // Adicionar disciplinas customizadas se houver
-    if (disciplines.length > 0) {
-      concurso.disciplines = disciplines;
-    }
     
     return concurso;
   }

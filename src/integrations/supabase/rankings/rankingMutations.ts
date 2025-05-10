@@ -1,3 +1,4 @@
+
 import { supabase } from '../client';
 import { Concurso } from '@/types/concursos';
 
@@ -59,24 +60,20 @@ export const saveRanking = async (
       return { duplicated: true };
     }
 
-    // Processar campos JSONB
-    let processedFormValues = { ...formValues };
-    if (processedFormValues.disciplines && typeof processedFormValues.disciplines === 'string') {
-      try {
-        processedFormValues.disciplines = JSON.parse(processedFormValues.disciplines as string);
-      } catch (e) {
-        console.error('Error parsing disciplines:', e);
-        processedFormValues.disciplines = [];
-      }
-    }
+    // Garantir que has_custom_knowledge e disciplines são explicitamente removidos
+    delete formValues.has_custom_knowledge;
+    delete formValues.disciplines;
+    delete formValues.custom_knowledge_questions;
+    delete formValues.custom_knowledge_weight;
 
     // Criar objeto limpo com dados para submissão
     const dataToSubmit: Record<string, any> = {
-      ...processedFormValues,
-      created_by_user_id: processedFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
+      ...formValues,
+      created_by_user_id: formValues.created_by_user_id || userId, // Manter criador original quando admin está editando
       titulo: title,
       orgao: orgao,
-      banca: processedFormValues.custom_banca || processedFormValues.banca,
+      banca: formValues.custom_banca || formValues.banca,
+      has_custom_knowledge: false // Explicitamente definir como false
     };
 
     // Log to see what we're submitting

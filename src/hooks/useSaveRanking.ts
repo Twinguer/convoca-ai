@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,31 +28,11 @@ export const useSaveRanking = () => {
         orgao = orgao.substring(0, 30) + '...';
       }
 
-      // Ensure the disciplines array is properly formatted as JSON
-      if (formValues.disciplines && !Array.isArray(formValues.disciplines)) {
-        try {
-          formValues.disciplines = JSON.parse(formValues.disciplines);
-        } catch (e) {
-          formValues.disciplines = [];
-        }
-      }
-
-      // Convert numeric fields to their proper types
-      const numericFields = [
-        'basic_knowledge_questions', 
-        'specific_knowledge_1_questions',
-        'specific_knowledge_2_questions',
-        'specific_knowledge_3_questions',
-        'custom_knowledge_questions'
-      ];
-      
-      // For fields that should be JSON but might be numbers in the form
-      numericFields.forEach(field => {
-        if (typeof formValues[field] === 'number') {
-          // Keep as is for now - we'll let the database handle conversion
-          formValues[field] = formValues[field];
-        }
-      });
+      // Remove custom discipline related fields
+      delete formValues.has_custom_knowledge;
+      delete formValues.disciplines;
+      delete formValues.custom_knowledge_questions;
+      delete formValues.custom_knowledge_weight;
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
@@ -82,18 +63,9 @@ export const useSaveRanking = () => {
         titulo: title,
         orgao: orgao,
         banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades
+        localidades: formValues.localidades,
+        has_custom_knowledge: false // Explicitly set to false
       };
-
-      // Convert disciplines to proper JSON if needed
-      if (dataToSubmit.disciplines && typeof dataToSubmit.disciplines === 'string') {
-        try {
-          dataToSubmit.disciplines = JSON.parse(dataToSubmit.disciplines);
-        } catch (e) {
-          console.error("Error parsing disciplines JSON", e);
-          dataToSubmit.disciplines = [];
-        }
-      }
 
       // Add admin flags if provided
       if (formValues.is_admin_created !== undefined) {
