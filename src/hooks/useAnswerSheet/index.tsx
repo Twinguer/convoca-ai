@@ -9,12 +9,11 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { SectionType, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: SectionType }>({});
-  const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
+  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
+  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3' | 'discursive' | 'case_study1' | 'case_study2' | 'case_study3'>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -31,20 +30,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
-  // Atualizar os nomes de exibição das seções com disciplinas customizadas
-  useEffect(() => {
-    if (concurso) {
-      updateSectionDisplayNames(concurso);
-    }
-  }, [concurso]);
-
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
-      handleQuestionSectionSelection(
-        concurso,
-        (section: SectionType) => setSelectedSection(section)
-      );
+      handleQuestionSectionSelection(concurso, setSelectedSection);
     }
   }, [concurso]);
 
@@ -88,8 +77,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     // Verificando se o objeto questionType tem alguma propriedade
     if (Object.keys(questionType).length === 0) {
       // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
-      const structure = getExamStructure(concurso);
-      
       if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         for (let i = 1; i <= concurso.basic_knowledge_questions; i++) {
           questions.push(i);
@@ -109,41 +96,16 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         for (let i = startIndex; i < startIndex + concurso.specific_knowledge_3_questions; i++) {
           questions.push(i);
         }
-      } else if (selectedSection === 'custom' && concurso.has_custom_knowledge && concurso.custom_knowledge_questions) {
-        const startIndex = (concurso.basic_knowledge_questions || 0) + (concurso.specific_knowledge_1_questions || 0) +
-                          (concurso.specific_knowledge_2_questions || 0) + (concurso.specific_knowledge_3_questions || 0) + 1;
-        for (let i = startIndex; i < startIndex + concurso.custom_knowledge_questions; i++) {
-          questions.push(i);
-        }
-      } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        // Procurar disciplina customizada correspondente
-        const customDiscipline = concurso.disciplines.find(d => d.type === selectedSection);
-        if (customDiscipline) {
-          // Calcular o índice de início para esta disciplina
-          let startIndex = (concurso.basic_knowledge_questions || 0) + 
-                          (concurso.specific_knowledge_1_questions || 0) +
-                          (concurso.specific_knowledge_2_questions || 0) +
-                          (concurso.specific_knowledge_3_questions || 0) + 1;
-          
-          // Ajustar o índice baseado nas disciplinas anteriores
-          for (const discipline of concurso.disciplines) {
-            if (discipline.type === selectedSection) break;
-            if (discipline.isEnabled && discipline.questionCount) {
-              startIndex += discipline.questionCount;
-            }
-          }
-                          
-          // Adicionar questões para esta disciplina
-          const questionCount = customDiscipline.questionCount || 0;
-          for (let i = 0; i < questionCount; i++) {
-            questions.push(startIndex + i);
-          }
-        }
       }
     } else {
       // Se tiver, usamos o mapeamento existente
       Object.entries(questionType).forEach(([num, type]) => {
-        if (type === selectedSection) {
+        if (
+          (selectedSection === 'basic' && type === 'basic') ||
+          (selectedSection === 'specific1' && type === 'specific1') ||
+          (selectedSection === 'specific2' && type === 'specific2') ||
+          (selectedSection === 'specific3' && type === 'specific3')
+        ) {
           questions.push(parseInt(num));
         }
       });
@@ -189,7 +151,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score, 
     setCaseStudy3Score,
-    isDiscursiveSection,
-    getSectionQuestions
+    isDiscursiveSection
   };
 };

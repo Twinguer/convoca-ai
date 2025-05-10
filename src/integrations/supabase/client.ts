@@ -1,7 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize the Supabase client with environment variables
+// Initialize the Supabase client with environment variables instead of hardcoded values
 // These values will be properly set in the deployment environment
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || 'https://ppsymqrdtjyaguftracc.supabase.co',
@@ -11,20 +11,6 @@ export const supabase = createClient(
       persistSession: true,
       storage: localStorage,
       autoRefreshToken: true,
-    },
-    // Disable schema cache completely to prevent issues with missing or new columns
-    global: {
-      headers: {
-        'X-Supabase-Cache-Control': '0'
-      }
-    },
-    db: {
-      schema: 'public'
-    },
-    realtime: {
-      params: {
-        eventsPerSecond: 10
-      }
     }
   }
 );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,101 +20,40 @@ interface ScoreFormProps {
   onSuccess: () => void;
 }
 
-// Definir a interface FormValues para resolver o problema de tipagem
-interface FormValues {
-  basicKnowledgeScore: number;
-  specificKnowledge1Score: number;
-  specificKnowledge2Score: number;
-  specificKnowledge3Score: number;
-  discursiveScore: number;
-  caseStudy1Score: number;
-  caseStudy2Score: number;
-  caseStudy3Score: number;
-  [key: string]: number; // Para campos dinâmicos como customDiscipline_*
-}
+const formSchema = z.object({
+  basicKnowledgeScore: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  specificKnowledge1Score: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  specificKnowledge2Score: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  specificKnowledge3Score: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  discursiveScore: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  caseStudy1Score: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  caseStudy2Score: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+  caseStudy3Score: z.coerce.number()
+    .min(0, 'A nota não pode ser negativa')
+    .max(100, 'A nota não pode ser maior que 100'),
+});
 
-// Create a dynamic form schema that includes custom disciplines
-const createFormSchema = (concurso?: Concurso) => {
-  const baseSchema: Record<string, any> = {
-    basicKnowledgeScore: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    specificKnowledge1Score: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    specificKnowledge2Score: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    specificKnowledge3Score: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    discursiveScore: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    caseStudy1Score: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    caseStudy2Score: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-    caseStudy3Score: z.coerce.number()
-      .min(0, 'A nota não pode ser negativa')
-      .max(100, 'A nota não pode ser maior que 100'),
-  };
-
-  // Add custom discipline fields if they exist
-  if (concurso?.disciplines && Array.isArray(concurso.disciplines)) {
-    concurso.disciplines.forEach(discipline => {
-      if (discipline.isEnabled && discipline.type) {
-        baseSchema[`customDiscipline_${discipline.type}`] = z.coerce.number()
-          .min(0, 'A nota não pode ser negativa')
-          .max(100, 'A nota não pode ser maior que 100');
-      }
-    });
-  }
-
-  return z.object(baseSchema);
-};
+type FormValues = z.infer<typeof formSchema>;
 
 export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userId, onSuccess }) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [weights, setWeights] = useState<any>(null);
   const queryClient = useQueryClient();
-
-  // Create the form schema based on the concurso
-  const formSchema = createFormSchema(concurso);
-  type FormValues = z.infer<typeof formSchema>;
-
-  // Generate default values including custom disciplines
-  const generateDefaultValues = () => {
-    const defaultValues: any = {
-      basicKnowledgeScore: 0,
-      specificKnowledge1Score: 0,
-      specificKnowledge2Score: 0,
-      specificKnowledge3Score: 0,
-      discursiveScore: 0,
-      caseStudy1Score: 0,
-      caseStudy2Score: 0,
-      caseStudy3Score: 0,
-    };
-
-    // Add custom discipline default values
-    if (concurso?.disciplines && Array.isArray(concurso.disciplines)) {
-      concurso.disciplines.forEach(discipline => {
-        if (discipline.isEnabled && discipline.type) {
-          defaultValues[`customDiscipline_${discipline.type}`] = 0;
-        }
-      });
-    }
-
-    return defaultValues;
-  };
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: generateDefaultValues(),
-  });
 
   // Fetch the current weights from the database to ensure we're using the latest values
   useEffect(() => {
@@ -130,8 +70,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
             discursive_weight,
             case_study_1_weight,
             case_study_2_weight,
-            case_study_3_weight,
-            disciplines
+            case_study_3_weight
           `)
           .eq('id', concurso.id)
           .single();
@@ -142,7 +81,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         }
         
         if (data) {
-          const weightsObj = {
+          setWeights({
             basicKnowledge: data.basic_knowledge_weight || 1,
             specificKnowledge1: data.specific_knowledge_1_weight || data.specific_knowledge_weight || 1,
             specificKnowledge2: data.specific_knowledge_2_weight || 1,
@@ -150,21 +89,10 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
             discursive: data.discursive_weight || 1,
             caseStudy1: data.case_study_1_weight || 1,
             caseStudy2: data.case_study_2_weight || 1,
-            caseStudy3: data.case_study_3_weight || 1,
-            customDisciplines: {}
-          };
+            caseStudy3: data.case_study_3_weight || 1
+          });
           
-          // Add custom discipline weights
-          if (data.disciplines && Array.isArray(data.disciplines)) {
-            data.disciplines.forEach(discipline => {
-              if (discipline.isEnabled && discipline.type) {
-                weightsObj.customDisciplines[discipline.type] = discipline.weight || 1;
-              }
-            });
-          }
-          
-          setWeights(weightsObj);
-          console.log('Weights loaded from database:', weightsObj);
+          console.log('Weights loaded from database:', data);
         }
       } catch (err) {
         console.error('Error in fetchWeights:', err);
@@ -173,6 +101,20 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
     
     fetchWeights();
   }, [concurso.id]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      basicKnowledgeScore: 0,
+      specificKnowledge1Score: 0,
+      specificKnowledge2Score: 0,
+      specificKnowledge3Score: 0,
+      discursiveScore: 0,
+      caseStudy1Score: 0,
+      caseStudy2Score: 0,
+      caseStudy3Score: 0,
+    },
+  });
 
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
@@ -186,18 +128,8 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         discursive: concurso.discursive_weight || 1,
         caseStudy1: concurso.case_study_1_weight || 1,
         caseStudy2: concurso.case_study_2_weight || 1,
-        caseStudy3: concurso.case_study_3_weight || 1,
-        customDisciplines: {}
+        caseStudy3: concurso.case_study_3_weight || 1
       };
-      
-      // Add custom discipline weights from concurso if not in state
-      if (!weights && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        concurso.disciplines.forEach(discipline => {
-          if (discipline.isEnabled && discipline.type) {
-            actualWeights.customDisciplines[discipline.type] = discipline.weight || 1;
-          }
-        });
-      }
       
       console.log('Using weights for calculation:', actualWeights);
       
@@ -211,33 +143,14 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       const weightedCaseStudy2Score = values.caseStudy2Score * actualWeights.caseStudy2;
       const weightedCaseStudy3Score = values.caseStudy3Score * actualWeights.caseStudy3;
       
-      // Create objects for custom discipline scores
-      const customDisciplineScores = {};
-      const weightedCustomDisciplineScores = {};
-      
-      // Process custom discipline scores
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        concurso.disciplines.forEach(discipline => {
-          if (discipline.isEnabled && discipline.type) {
-            const scoreKey = `customDiscipline_${discipline.type}`;
-            const score = values[scoreKey] || 0;
-            const weight = actualWeights.customDisciplines[discipline.type] || 1;
-            const weightedScore = score * weight;
-            
-            customDisciplineScores[discipline.type] = score;
-            weightedCustomDisciplineScores[discipline.type] = weightedScore;
-          }
-        });
-      }
-      
       // Combined specific knowledge score
       const specificKnowledgeScore = 
         (concurso.has_specific_knowledge_1 ? values.specificKnowledge1Score : 0) + 
         (concurso.has_specific_knowledge_2 ? values.specificKnowledge2Score : 0) + 
         (concurso.has_specific_knowledge_3 ? values.specificKnowledge3Score : 0);
       
-      // Calculate total weighted score including custom disciplines
-      let totalScore = 
+      // Calculate total weighted score
+      const totalScore = 
         (concurso.has_basic_knowledge ? weightedBasicScore : 0) + 
         (concurso.has_specific_knowledge_1 ? weightedSpecific1Score : 0) + 
         (concurso.has_specific_knowledge_2 ? weightedSpecific2Score : 0) + 
@@ -246,11 +159,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         (concurso.has_case_study_1 ? weightedCaseStudy1Score : 0) + 
         (concurso.has_case_study_2 ? weightedCaseStudy2Score : 0) + 
         (concurso.has_case_study_3 ? weightedCaseStudy3Score : 0);
-      
-      // Add custom discipline scores to total
-      Object.values(weightedCustomDisciplineScores).forEach(score => {
-        totalScore += Number(score) || 0;
-      });
       
       console.log('Calculando pontuação total:', {
         rankingId,
@@ -279,8 +187,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         caseStudy3: values.caseStudy3Score,
         caseStudy3Weight: actualWeights.caseStudy3,
         weightedCaseStudy3: weightedCaseStudy3Score,
-        customDisciplineScores,
-        weightedCustomDisciplineScores,
         total: totalScore
       });
       
@@ -295,8 +201,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         case_study_1_score: concurso.has_case_study_1 ? values.caseStudy1Score : 0,
         case_study_2_score: concurso.has_case_study_2 ? values.caseStudy2Score : 0,
         case_study_3_score: concurso.has_case_study_3 ? values.caseStudy3Score : 0,
-        custom_discipline_scores: customDisciplineScores,
-        weighted_custom_discipline_scores: weightedCustomDisciplineScores,
         score: totalScore,
         all_questions_answered: true, // Since user is manually entering scores
         updated_at: new Date().toISOString()
@@ -479,44 +383,6 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                 )}
               />
             )}
-
-            {/* Custom Disciplines Scores */}
-            {concurso.disciplines && Array.isArray(concurso.disciplines) && 
-              concurso.disciplines
-                .filter(discipline => discipline.isEnabled)
-                .map((discipline, index) => (
-                  <FormField
-                    key={`custom-discipline-${index}`}
-                    control={form.control}
-                    name={`customDiscipline_${discipline.type}`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center">
-                          {discipline.name}
-                          {(weights?.customDisciplines?.[discipline.type] > 1 || discipline.weight > 1) && (
-                            <span className="ml-2 flex items-center text-emerald-700 text-sm">
-                              <Scale className="h-3.5 w-3.5 mr-1" />
-                              Peso {weights?.customDisciplines?.[discipline.type] || discipline.weight}
-                            </span>
-                          )}
-                        </FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder={`Ex: 85.0`} 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Sua nota em {discipline.name} (0-100)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                ))
-            }
 
             {/* Discursive Score */}
             {concurso.has_discursive && (

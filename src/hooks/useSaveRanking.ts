@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,15 +28,6 @@ export const useSaveRanking = () => {
         orgao = orgao.substring(0, 30) + '...';
       }
 
-      // Ensure the disciplines array is properly formatted
-      if (formValues.disciplines && !Array.isArray(formValues.disciplines)) {
-        try {
-          formValues.disciplines = JSON.parse(formValues.disciplines);
-        } catch (e) {
-          formValues.disciplines = [];
-        }
-      }
-
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
         .from('concursos')
@@ -58,7 +50,7 @@ export const useSaveRanking = () => {
         return { duplicated: true };
       }
 
-      // Create a clean object with the data for submission
+      // Criar um objeto limpo com os dados para submissão
       const dataToSubmit: Record<string, any> = {
         ...formValues,
         created_by_user_id: formValues.created_by_user_id || userId, // Keep original creator when admin is editing
@@ -68,29 +60,13 @@ export const useSaveRanking = () => {
         localidades: formValues.localidades
       };
 
-      // Convert disciplines to proper JSON if needed
-      if (dataToSubmit.disciplines && typeof dataToSubmit.disciplines === 'string') {
-        try {
-          dataToSubmit.disciplines = JSON.parse(dataToSubmit.disciplines);
-        } catch (e) {
-          console.error("Error parsing disciplines JSON", e);
-          dataToSubmit.disciplines = [];
-        }
-      }
-
-      // Add admin flags if provided
+      // Adicionar flags de admin se forem fornecidas
       if (formValues.is_admin_created !== undefined) {
         dataToSubmit.is_admin_created = formValues.is_admin_created;
       }
       
       if (formValues.is_admin_update !== undefined) {
         dataToSubmit.is_admin_update = formValues.is_admin_update;
-      }
-
-      // Adicionar campo de compatibilidade specific_knowledge_weight para versões antigas do app
-      // Usar specific_knowledge_1_weight como valor padrão
-      if (formValues.specific_knowledge_1_weight && !formValues.specific_knowledge_weight) {
-        dataToSubmit.specific_knowledge_weight = formValues.specific_knowledge_1_weight;
       }
 
       let result;
@@ -103,23 +79,13 @@ export const useSaveRanking = () => {
           .eq('id', editId)
           .select();
 
-        if (error) {
-          console.error("Error updating ranking:", error);
-          throw error;
-        }
+        if (error) throw error;
         result = data;
         concursoIdToUse = editId;
         toast.success("Ranking atualizado com sucesso!");
       } else {
-        const { data, error } = await supabase
-          .from('concursos')
-          .insert(dataToSubmit)
-          .select();
-          
-        if (error) {
-          console.error("Error inserting ranking:", error);
-          throw error;
-        }
+        const { data, error } = await supabase.from('concursos').insert(dataToSubmit).select();
+        if (error) throw error;
         result = data;
         concursoIdToUse = result?.[0]?.id;
         toast.success("Ranking criado com sucesso!");

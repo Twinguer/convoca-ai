@@ -1,90 +1,81 @@
 
-import { supabase } from '../client';
+import { supabase } from '@/integrations/supabase/client';
 
-// Função para recalcular todas as pontuações de usuários para um concurso específico
+/**
+ * Recalcula as pontuações de todos os usuários para um determinado concurso
+ * independentemente do status de autenticação
+ * 
+ * @param concursoId UUID do concurso
+ */
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      'recalculate_all_scores',
-      { p_concurso_id: concursoId }
-    );
-
+    console.log("[batchOperations] Recalculando pontuações para todos os usuários do concurso", concursoId);
+    
+    // Chamar a função de banco de dados que força recálculo para todos os usuários
+    // Usando a função RPC que tem permissões SECURITY DEFINER para ignorar RLS
+    const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', { 
+      p_concurso_id: concursoId 
+    });
+    
     if (error) {
-      console.error('Error recalculating scores:', error);
+      console.error("[batchOperations] Erro ao recalcular pontuações:", error);
       return { success: false, error: error.message };
     }
-
+    
+    // Verifica se foram recalculadas as pontuações
+    console.log("[batchOperations] Resultado do recálculo:", data);
+    
+    // Chama a função para atualizar a flag `is_score_recalculated` para falso,
+    // forçando a interface a buscar os dados novamente
+    try {
+      console.log("[batchOperations] Forçando recálculo em tempo real");
+      const realtimeResult = await supabase.rpc('recalculate_all_users_scores_realtime', {
+        p_concurso_id: concursoId
+      });
+      
+      if (realtimeResult.error) {
+        console.error("[batchOperations] Erro ao forçar recálculo em tempo real:", realtimeResult.error);
+      } else {
+        console.log("[batchOperations] Recálculo em tempo real ativado:", realtimeResult.data);
+      }
+    } catch (realtimeError) {
+      console.warn("[batchOperations] Erro ao forçar recálculo em tempo real:", realtimeError);
+      // Continuamos mesmo com erro
+    }
+    
     return { 
       success: true, 
-      updatedCount: data?.updatedCount || 0 
+      data,
+      updatedCount: data?.updatedCount || 0
     };
-  } catch (error) {
-    console.error('Exception recalculating scores:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+  } catch (err) {
+    console.error("[batchOperations] Erro inesperado ao recalcular pontuações:", err);
+    return { success: false, error: String(err) };
   }
 };
 
-// Função para recalcular a pontuação de um usuário específico
-export const recalculateUserScore = async (userRankingId: string) => {
+/**
+ * Atualiza os tipos de seção para um determinado concurso
+ * 
+ * @param concursoId UUID do concurso
+ */
+export const updateSectionTypes = async (concursoId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      'calculate_user_score_realtime',
-      { p_ranking_id: userRankingId }
-    );
-
+    console.log("[batchOperations] Atualizando tipos de seção para o concurso", concursoId);
+    
+    const { data, error } = await supabase.rpc('update_section_types', {
+      p_concurso_id: concursoId
+    });
+    
     if (error) {
-      console.error('Error recalculating user score:', error);
+      console.error("[batchOperations] Erro ao atualizar tipos de seção:", error);
       return { success: false, error: error.message };
     }
-
-    return { 
-      success: true, 
-      score: data 
-    };
-  } catch (error) {
-    console.error('Exception recalculating user score:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-};
-
-// Função para atualizar as pontuações subjetivas de um usuário
-export const updateSubjectiveScores = async (
-  userRankingId: string, 
-  discursiveScore: number, 
-  caseStudy1Score: number, 
-  caseStudy2Score: number, 
-  caseStudy3Score: number
-) => {
-  try {
-    const { error } = await supabase
-      .from('user_rankings')
-      .update({
-        discursive_score: discursiveScore,
-        case_study_1_score: caseStudy1Score,
-        case_study_2_score: caseStudy2Score,
-        case_study_3_score: caseStudy3Score,
-        is_score_recalculated: false
-      })
-      .eq('id', userRankingId);
-
-    if (error) {
-      console.error('Error updating subjective scores:', error);
-      return { success: false, error: error.message };
-    }
-
-    // Recalcular pontuação após atualizar notas subjetivas
-    return await recalculateUserScore(userRankingId);
-  } catch (error) {
-    console.error('Exception updating subjective scores:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+    
+    console.log("[batchOperations] Tipos de seção atualizados com sucesso:", data);
+    return { success: true, data };
+  } catch (err) {
+    console.error("[batchOperations] Erro inesperado ao atualizar tipos de seção:", err);
+    return { success: false, error: String(err) };
   }
 };

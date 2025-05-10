@@ -1,8 +1,8 @@
 
-// Export all ranking-related functions
-export * from './examStructure';
-export * from './rankingQueries';
-export * from './rankingMutations';
-export * from './sectionUtils';
-export * from './answerManagement';
-export * from './batchOperations';
+// Export all functions from the sub-modules
+export * from './fakeDemoData';
+export * from './userRankings';
+export * from './scoreCalculation';
+export * from './userAnswers';
+export * from './concursoManager';
+

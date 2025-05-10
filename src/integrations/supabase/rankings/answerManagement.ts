@@ -1,41 +1,58 @@
 
 import { supabase } from '../client';
-import { getExamStructure, getSectionTypeForQuestion } from './examStructure';
+import { getExamStructure } from './examStructure';
 
 // Função para salvar as respostas do usuário no banco de dados
 export const saveUserAnswersData = async (
   rankingId: string,
   concursoId: string,
-  answers: { questionNumber: number; answer: string }[]
+  answers: { questionNumber: number; answer: string; isBasicKnowledge: boolean }[]
 ) => {
   try {
     // Carregue os dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
       .select(`
-        *
+        basic_knowledge_questions,
+        specific_knowledge_1_questions,
+        specific_knowledge_2_questions,
+        specific_knowledge_3_questions
       `)
       .eq('id', concursoId)
       .single();
     if (concursoError) throw concursoError;
 
+    const { basicEnd, specific1End, specific2End } = getExamStructure(concurso);
+
     // Preparar os dados de resposta com as marcações corretas de seção
     const answersData = answers.map(a => {
       const qNum = a.questionNumber;
-      // Determinar o tipo de seção para esta questão
-      const sectionType = getSectionTypeForQuestion(concurso, qNum);
 
       return {
         user_ranking_id: rankingId,
         question_number: qNum,
         answer: a.answer,
-        is_basic_knowledge: sectionType === 'basic',
-        is_specific_1: sectionType === 'specific1',
-        is_specific_2: sectionType === 'specific2',
-        is_specific_3: sectionType === 'specific3'
+        is_basic_knowledge: false, // Será ajustado abaixo
+        is_specific_1: false,
+        is_specific_2: false,
+        is_specific_3: false
       };
     });
     
+    // Corrija as flags para as seções corretamente
+    answersData.forEach(item => {
+      const qNum = item.question_number;
+      if (qNum <= basicEnd) {
+        item.is_basic_knowledge = true;
+      } else if (qNum <= specific1End) {
+        item.is_specific_1 = true;
+      } else if (qNum <= specific2End) {
+        item.is_specific_2 = true;
+      } else {
+        item.is_specific_3 = true;
+      }
+    });
+
     console.log('Dados de respostas preparados para salvar:', answersData);
 
     // Primeiro exclui todas as respostas existentes
