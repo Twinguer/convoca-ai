@@ -183,6 +183,31 @@ export const RankingTable = ({
                       )
                     ))
                   }
+                  
+                  {/* Adicionar colunas para notas dissertativas */}
+                  {concurso?.has_discursive && (
+                    <TableCell className={`py-2 text-right ${isRefetching ? 'animate-pulse bg-gray-200 dark:bg-gray-700 w-12' : ''}`}>
+                      {isRefetching ? '' : item.discursive_score?.toFixed(2) || '0.00'}
+                    </TableCell>
+                  )}
+                  
+                  {concurso?.has_case_study_1 && (
+                    <TableCell className={`py-2 text-right ${isRefetching ? 'animate-pulse bg-gray-200 dark:bg-gray-700 w-12' : ''}`}>
+                      {isRefetching ? '' : item.case_study_1_score?.toFixed(2) || '0.00'}
+                    </TableCell>
+                  )}
+                  
+                  {concurso?.has_case_study_2 && (
+                    <TableCell className={`py-2 text-right ${isRefetching ? 'animate-pulse bg-gray-200 dark:bg-gray-700 w-12' : ''}`}>
+                      {isRefetching ? '' : item.case_study_2_score?.toFixed(2) || '0.00'}
+                    </TableCell>
+                  )}
+                  
+                  {concurso?.has_case_study_3 && (
+                    <TableCell className={`py-2 text-right ${isRefetching ? 'animate-pulse bg-gray-200 dark:bg-gray-700 w-12' : ''}`}>
+                      {isRefetching ? '' : item.case_study_3_score?.toFixed(2) || '0.00'}
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

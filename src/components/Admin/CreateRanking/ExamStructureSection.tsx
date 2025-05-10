@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -322,7 +323,8 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
            !form.watch('has_discursive') &&
            !form.watch('has_case_study_1') &&
            !form.watch('has_case_study_2') &&
-           !form.watch('has_case_study_3') && (
+           !form.watch('has_case_study_3') &&
+           (!form.watch('disciplines') || !form.watch('disciplines').length) && (
             <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
               Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
             </div>
@@ -596,15 +598,14 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
                     onChange={(e) => setCustomSectionQuestions(e.target.value)}
                   />
                 </div>
-                
                 <div>
                   <FormLabel htmlFor="customWeight">Peso</FormLabel>
-                  <Select
+                  <Select 
                     value={customSectionWeight}
                     onValueChange={setCustomSectionWeight}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Peso" />
+                    <SelectTrigger id="customWeight">
+                      <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1">1</SelectItem>
@@ -617,8 +618,12 @@ export const ExamStructureSection: React.FC<ExamStructureSectionProps> = ({ form
             </div>
             
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={addCustomSection}>Adicionar</Button>
+              <Button variant="outline" onClick={() => setIsCustomDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={addCustomSection}>
+                Adicionar
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
