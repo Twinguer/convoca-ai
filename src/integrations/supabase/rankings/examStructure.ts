@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 
 /**
@@ -44,17 +43,7 @@ export const getExamStructure = (concurso: any) => {
 };
 
 // Define todos os tipos de seção possíveis no sistema
-export type SectionType = 
-  | 'basic' 
-  | 'specific1' 
-  | 'specific2' 
-  | 'specific3' 
-  | 'discursive' 
-  | 'case_study1' 
-  | 'case_study2' 
-  | 'case_study3'
-  | 'custom'
-  | string; // Para tipos customizados digitados pelo usuário
+export type SectionType = string; // Changed to string to allow any section type
 
 // Mapeamento de seções para nomes de exibição
 export const sectionDisplayNames: Record<string, string> = {

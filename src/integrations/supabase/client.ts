@@ -12,10 +12,18 @@ export const supabase = createClient(
       storage: localStorage,
       autoRefreshToken: true,
     },
-    // Disable schema cache to prevent issues with missing columns
+    // Disable schema cache completely to prevent issues with missing or new columns
     global: {
       headers: {
         'X-Supabase-Cache-Control': '0'
+      }
+    },
+    db: {
+      schema: 'public'
+    },
+    realtime: {
+      params: {
+        eventsPerSecond: 10
       }
     }
   }

@@ -1,6 +1,7 @@
 
 import { Concurso } from '@/types/concursos';
 import { SectionType } from '@/integrations/supabase/rankings/examStructure';
+import React from 'react';
 
 export const initializeQuestionTypes = (
   concurso: Concurso, 
@@ -49,7 +50,7 @@ export const initializeQuestionTypes = (
     concurso.disciplines.forEach(discipline => {
       if (discipline.isEnabled && discipline.questionCount) {
         for (let i = 0; i < discipline.questionCount; i++) {
-          questionTypeMap[questionCounter++] = discipline.type as SectionType;
+          questionTypeMap[questionCounter++] = discipline.type;
         }
       }
     });

@@ -1,4 +1,3 @@
-
 import { SectionType } from '@/integrations/supabase/rankings/examStructure';
 
 export interface ExamSectionConfig {
@@ -9,6 +8,7 @@ export interface ExamSectionConfig {
   isEnabled: boolean;
   isCustom: boolean;
   customName?: string;
+  name?: string; // Added this property for compatibility
 }
 
 export class ExamSectionBuilder {
@@ -21,7 +21,8 @@ export class ExamSectionBuilder {
       weight: 1,
       questionCount: 0,
       isEnabled: false,
-      isCustom: false
+      isCustom: false,
+      name: displayName // Initialize name with displayName
     };
   }
   
@@ -49,6 +50,7 @@ export class ExamSectionBuilder {
     this.config.isCustom = true;
     if (name) {
       this.config.customName = name;
+      this.config.name = name; // Also update the name property
     }
     return this;
   }
