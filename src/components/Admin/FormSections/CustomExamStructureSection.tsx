@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -29,17 +30,17 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
   const [customSectionWeight, setCustomSectionWeight] = useState('1');
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
 
-  // Inicializa o construtor com os dados do formulário quando o formulário mudar
+  // Initialize the builder with form data when the form changes
   useEffect(() => {
     const builder = new ExamStructureBuilder();
     const values = form.getValues();
     
-    // Configurar tipo de exame
+    // Configure exam type
     builder.withExamType(values.exam_type || 'Alternativas');
     builder.withAlternativesCount(Number(values.alternatives_count) || 5);
     builder.withWrongAnswerPenalty(Number(values.wrong_answer_penalty) || 0);
     
-    // Configurar seções existentes
+    // Configure existing sections
     if (values.has_basic_knowledge) {
       builder.enableSection('basic', values.basic_knowledge_questions, values.basic_knowledge_weight);
     }
@@ -72,7 +73,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       builder.enableSection('case_study3', 0, values.case_study_3_weight);
     }
     
-    // Adicionar disciplinas customizadas se houver
+    // Add custom disciplines if any
     if (values.disciplines && Array.isArray(values.disciplines)) {
       values.disciplines.forEach((discipline: any) => {
         if (discipline.name && discipline.isEnabled) {
@@ -89,7 +90,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     setEnabledSections(builder.getEnabledSections());
   }, [form]);
   
-  // Helper function para renderizar select de peso
+  // Helper function to render weight select
   const renderWeightSelect = (section: ExamSectionConfig) => {
     const fieldName = getWeightFieldName(section.sectionType);
     
@@ -124,7 +125,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     );
   };
   
-  // Helper para obter o nome do campo de peso para uma seção
+  // Helper to get the weight field name for a section
   const getWeightFieldName = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'basic': return 'basic_knowledge_weight';
@@ -139,9 +140,9 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     }
   };
   
-  // Helper function para renderizar input de questões
+  // Helper function to render questions input
   const renderQuestionsInput = (section: ExamSectionConfig) => {
-    // Para seções subjetivas, não temos contagem de questões
+    // For subjective sections, we don't have question count
     if (['discursive', 'case_study1', 'case_study2', 'case_study3'].includes(section.sectionType)) {
       return null;
     }
@@ -174,7 +175,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     );
   };
   
-  // Helper para obter o nome do campo de questões para uma seção
+  // Helper to get the questions field name for a section
   const getQuestionsFieldName = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'basic': return 'basic_knowledge_questions';
@@ -182,19 +183,19 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       case 'specific2': return 'specific_knowledge_2_questions';
       case 'specific3': return 'specific_knowledge_3_questions';
       default: 
-        // Para seções customizadas, precisamos configurar no array de disciplines
+        // For custom sections, we need to configure in the disciplines array
         return 'questionCount';
     }
   };
 
-  // Atualiza uma seção no builder e no formulário
+  // Update a section in the builder and in the form
   const updateSection = (sectionType: SectionType, questionCount: number, weight: number) => {
     const updatedBuilder = new ExamStructureBuilder();
     
-    // Copiar as seções do builder atual
+    // Copy sections from current builder
     examBuilder.getEnabledSections().forEach(section => {
       if (section.sectionType === sectionType) {
-        // Atualizar a seção específica
+        // Update the specific section
         updatedBuilder.enableSection(sectionType, questionCount, weight);
       } else {
         // Manter as outras seções como estão
@@ -206,29 +207,29 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       }
     });
     
-    // Atualizar o builder e as seções habilitadas
+    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Atualizar o formulário
+    // Update form
     const concursoValues = updatedBuilder.toConcurso();
     Object.entries(concursoValues).forEach(([key, value]) => {
-      if (key !== 'disciplines') { // Disciplinas já são tratadas separadamente
+      if (key !== 'disciplines') { // Disciplines are handled separately
         form.setValue(key as any, value);
       }
     });
     
-    // Atualizar disciplinas no formulário
+    // Update disciplines in the form
     if (concursoValues.disciplines) {
       form.setValue('disciplines', concursoValues.disciplines);
     }
   };
 
-  // Adicionar uma nova seção
+  // Add a new section
   const addSection = (sectionType: SectionType) => {
     const updatedBuilder = new ExamStructureBuilder();
     
-    // Copiar as seções existentes
+    // Copy existing sections
     examBuilder.getEnabledSections().forEach(section => {
       updatedBuilder.enableSection(
         section.sectionType,
@@ -237,19 +238,19 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       );
     });
     
-    // Adicionar a nova seção
+    // Add the new section
     updatedBuilder.enableSection(sectionType);
     
-    // Atualizar o builder e as seções habilitadas
+    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Atualizar o formulário
+    // Update form
     const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
     form.setValue(hasKey as any, true);
   };
   
-  // Helper para obter a chave correta para uma seção
+  // Helper to get the correct key for a section
   const getSectionKey = (sectionType: SectionType): string => {
     switch (sectionType) {
       case 'specific1': return 'specific_knowledge_1';
@@ -262,11 +263,11 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     }
   };
 
-  // Remover uma seção
+  // Remove a section
   const removeSection = (sectionType: SectionType) => {
     const updatedBuilder = new ExamStructureBuilder();
     
-    // Copiar apenas as seções que não vão ser removidas
+    // Copy only the sections that won't be removed
     examBuilder.getEnabledSections()
       .filter(section => section.sectionType !== sectionType)
       .forEach(section => {
@@ -277,16 +278,16 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
         );
       });
     
-    // Atualizar o builder e as seções habilitadas
+    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Atualizar o formulário
+    // Update form
     if (['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'].includes(sectionType)) {
       const hasKey = `has_${getSectionKey(sectionType)}` as keyof typeof form.getValues();
       form.setValue(hasKey as any, false);
     } else {
-      // Para seções customizadas, atualizar a lista de disciplines no formulário
+      // For custom sections, update the disciplines list in the form
       const disciplines = form.getValues('disciplines') || [];
       const updatedDisciplines = disciplines.filter((d: any) => 
         d.type !== sectionType || d.name !== sectionDisplayNames[sectionType as keyof typeof sectionDisplayNames]
@@ -295,7 +296,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     }
   };
 
-  // Adicionar seção customizada
+  // Add custom section
   const addCustomSection = () => {
     if (!customSectionName.trim()) return;
     
@@ -304,7 +305,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     
     const updatedBuilder = new ExamStructureBuilder();
     
-    // Copiar seções existentes
+    // Copy existing sections
     examBuilder.getEnabledSections().forEach(section => {
       updatedBuilder.enableSection(
         section.sectionType,
@@ -313,14 +314,14 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
       );
     });
     
-    // Adicionar nova seção customizada
+    // Add new custom section
     updatedBuilder.addCustomSection(customSectionName, questionCount, weight);
     
-    // Atualizar o builder e as seções habilitadas
+    // Update the builder and enabled sections
     setExamBuilder(updatedBuilder);
     setEnabledSections(updatedBuilder.getEnabledSections());
     
-    // Atualizar o formulário - adicionar à lista de disciplines
+    // Update form - add to disciplines list
     const disciplines = form.getValues('disciplines') || [];
     const type = customSectionName.toLowerCase().replace(/\s+/g, '_');
     disciplines.push({
@@ -332,23 +333,23 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     });
     form.setValue('disciplines', disciplines);
     
-    // Limpar campos
+    // Clear fields
     setCustomSectionName('');
     setCustomSectionQuestions('0');
     setCustomSectionWeight('1');
     setIsCustomDialogOpen(false);
   };
 
-  // Verificar quais seções já estão habilitadas
+  // Check which sections are already enabled
   const isEnabledSection = (sectionType: SectionType): boolean => {
     return enabledSections.some(section => section.sectionType === sectionType);
   };
 
-  // Obter seções disponíveis para adicionar
+  // Get available sections to add
   const getAvailableSections = () => {
     const available: Array<{ type: SectionType, name: string }> = [];
     
-    // Seções padrão
+    // Standard sections
     if (!isEnabledSection('basic')) available.push({ type: 'basic', name: 'Conhecimentos Básicos' });
     if (!isEnabledSection('specific1')) available.push({ type: 'specific1', name: 'Conhecimentos Específicos' });
     if (!isEnabledSection('specific2')) available.push({ type: 'specific2', name: 'Conhecimentos Específicos 2' });
@@ -358,7 +359,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     if (!isEnabledSection('case_study2')) available.push({ type: 'case_study2', name: 'Estudo de Caso 2' });
     if (!isEnabledSection('case_study3')) available.push({ type: 'case_study3', name: 'Estudo de Caso 3' });
     
-    // Disciplinas específicas pré-definidas
+    // Specific predefined disciplines
     Object.entries(sectionDisplayNames).forEach(([type, name]) => {
       if (!['basic', 'specific1', 'specific2', 'specific3', 'discursive', 
             'case_study1', 'case_study2', 'case_study3'].includes(type) &&
@@ -370,7 +371,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
     return available;
   };
 
-  // Handler para abrir o diálogo de seção customizada
+  // Handler to open custom section dialog
   const handleCustomSectionClick = () => {
     setIsCustomDialogOpen(true);
   };
@@ -450,7 +451,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {/* Seções padrão */}
+              {/* Standard sections */}
               {!isEnabledSection('basic') && (
                 <DropdownMenuItem onClick={() => addSection('basic')}>
                   Conhecimentos Básicos
@@ -492,10 +493,10 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
                 </DropdownMenuItem>
               )}
               
-              {/* Separador para opção customizada */}
+              {/* Separator for custom option */}
               <DropdownMenuSeparator />
               
-              {/* Opção para adicionar conhecimento customizado */}
+              {/* Option to add custom knowledge */}
               <DropdownMenuItem onClick={handleCustomSectionClick}>
                 Outro: Digite o Conhecimento
               </DropdownMenuItem>
@@ -504,12 +505,12 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
         </div>
       </div>
       
-      {/* Configurações gerais do exame */}
+      {/* General exam settings */}
       <div className="border p-4 rounded-md bg-gray-50">
         <h4 className="font-medium mb-4">Configurações Gerais do Exame</h4>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Tipo de Prova */}
+          {/* Exam Type */}
           <FormField
             control={form.control}
             name="exam_type"
@@ -540,7 +541,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
             )}
           />
           
-          {/* Quantidade de Alternativas */}
+          {/* Alternatives Count */}
           <FormField
             control={form.control}
             name="alternatives_count"
@@ -572,7 +573,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
             )}
           />
           
-          {/* Penalidade para Erro */}
+          {/* Wrong Answer Penalty */}
           <FormField
             control={form.control}
             name="wrong_answer_penalty"
@@ -608,7 +609,7 @@ export const CustomExamStructureSection: React.FC<CustomExamStructureSectionProp
         </div>
       </div>
       
-      {/* Lista de seções configuradas */}
+      {/* Configured sections list */}
       <div className="space-y-4">
         {enabledSections.length === 0 && (
           <div className="text-center p-8 border border-dashed rounded-md text-gray-500">

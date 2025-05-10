@@ -59,7 +59,7 @@ export const useSaveRanking = () => {
         return { duplicated: true };
       }
 
-      // Criar um objeto limpo com os dados para submissão
+      // Create a clean object with the data for submission
       const dataToSubmit: Record<string, any> = {
         ...formValues,
         created_by_user_id: formValues.created_by_user_id || userId, // Keep original creator when admin is editing
@@ -79,7 +79,7 @@ export const useSaveRanking = () => {
         }
       }
 
-      // Adicionar flags de admin se forem fornecidas
+      // Add admin flags if provided
       if (formValues.is_admin_created !== undefined) {
         dataToSubmit.is_admin_created = formValues.is_admin_created;
       }
