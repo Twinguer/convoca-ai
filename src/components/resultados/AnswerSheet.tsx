@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Save, AlertTriangle, Check, HelpCircle } from 'lucide-react';
+import { Loader2, Save, AlertTriangle, Check, HelpCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso, SectionType } from '@/types/concursos';
@@ -13,7 +13,9 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { sectionDisplayNames, updateSectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCountUtils';
+import { toast } from 'sonner';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -29,6 +31,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
+  const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
+  const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
   
   const {
     answers,
@@ -58,6 +62,40 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isDiscursiveSection,
     getSectionQuestions
   } = useAnswerSheet(concurso, rankingId);
+  
+  // Verificar se o gabarito oficial existe
+  useEffect(() => {
+    const checkOfficialAnswerKey = async () => {
+      if (!concurso?.id) return;
+      
+      setCheckingOfficialAnswers(true);
+      try {
+        console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
+        const result = await checkMissingOfficialAnswers(concurso.id);
+        
+        if (result.missing) {
+          console.warn(`[AnswerSheet] Gabarito oficial incompleto ou não encontrado!`, result);
+          setMissingOfficialAnswers(true);
+          
+          // Exibir toast apenas uma vez
+          toast.warning(
+            "O gabarito oficial deste concurso parece estar incompleto ou não foi configurado. " +
+            "Entre em contato com o administrador.", 
+            { duration: 8000 }
+          );
+        } else {
+          console.log(`[AnswerSheet] Gabarito oficial verificado e completo!`);
+          setMissingOfficialAnswers(false);
+        }
+      } catch (err) {
+        console.error('[AnswerSheet] Erro ao verificar gabarito oficial:', err);
+      } finally {
+        setCheckingOfficialAnswers(false);
+      }
+    };
+    
+    checkOfficialAnswerKey();
+  }, [concurso?.id]);
   
   // Atualizar os nomes de exibição das seções com disciplinas customizadas
   useEffect(() => {
@@ -223,7 +261,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
   
-  if (isLoadingRanking || isLoadingNullified) {
+  if (isLoadingRanking || (checkingOfficialAnswers && !missingOfficialAnswers)) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -375,6 +413,24 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <Check className="h-4 w-4" />
             <p>Respostas salvas com sucesso! Calculando pontuação...</p>
+          </div>
+        )}
+        
+        {missingOfficialAnswers && (
+          <div className="bg-amber-100 border border-amber-300 rounded-md p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-amber-800">Gabarito Oficial Incompleto</h4>
+                <p className="text-sm text-amber-700 mt-1">
+                  O gabarito oficial deste concurso parece estar incompleto ou não foi configurado. 
+                  Você ainda pode preencher suas respostas, mas a pontuação pode não ser calculada corretamente.
+                </p>
+                <p className="text-xs text-amber-600 mt-2">
+                  Entre em contato com o administrador para resolver este problema.
+                </p>
+              </div>
+            </div>
           </div>
         )}
         

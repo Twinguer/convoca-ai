@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
+import { toast } from 'sonner';
 
 interface AnswerKeyItem {
   concurso_id: string;
@@ -60,15 +61,68 @@ export const answerKeyService = {
   // Função para salvar o gabarito e recalcular pontuações
   async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: AnswerKeyItem[]) {
     try {
+      console.log(`[answerKeyService] Iniciando salvamento de gabarito para concurso: ${concursoId}`);
+      console.log(`[answerKeyService] Total de questões a salvar: ${answerKeyData.length}`);
+      
+      // Registrar todas as questões que vamos salvar para debug
+      answerKeyData.forEach((item, index) => {
+        console.log(`[answerKeyService] Questão ${index + 1}:`, {
+          numero: item.question_number,
+          resposta: item.correct_answer,
+          seção: item.section_type,
+          anulada: item.is_nullified
+        });
+      });
+
+      // Verificar se já existem respostas no gabarito
+      const { data: existingAnswers, error: checkError } = await supabase
+        .from('official_answer_weights')
+        .select('question_number, correct_answer')
+        .eq('concurso_id', concursoId);
+
+      if (checkError) {
+        console.error('[answerKeyService] Erro ao verificar gabarito existente:', checkError);
+        throw checkError;
+      }
+      
+      console.log(`[answerKeyService] Respostas existentes: ${existingAnswers?.length || 0}`);
+
       // Atualizar ou inserir cada questão do gabarito
       for (const item of answerKeyData) {
-        await supabase.rpc('update_answer_with_weight', {
+        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}`);
+        
+        const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: item.concurso_id,
           p_question_number: item.question_number,
           p_correct_answer: item.correct_answer,
           p_weight: item.weight || 1.0,
           p_is_nullified: item.is_nullified || false,
           p_section_type: item.section_type
+        });
+
+        if (error) {
+          console.error(`[answerKeyService] Erro ao salvar questão ${item.question_number}:`, error);
+          throw error;
+        }
+        
+        console.log(`[answerKeyService] Questão ${item.question_number} salva com sucesso`);
+      }
+
+      // Verificar se os dados foram realmente salvos
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('official_answer_weights')
+        .select('question_number, correct_answer')
+        .eq('concurso_id', concursoId);
+
+      if (verifyError) {
+        console.error('[answerKeyService] Erro ao verificar salvamento:', verifyError);
+        throw verifyError;
+      }
+
+      console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
+      if (verifyData) {
+        verifyData.forEach(item => {
+          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}`);
         });
       }
 
@@ -78,14 +132,18 @@ export const answerKeyService = {
         { p_concurso_id: concursoId }
       );
 
-      if (recalcError) throw recalcError;
+      if (recalcError) {
+        console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcError);
+        throw recalcError;
+      }
 
+      console.log('[answerKeyService] Pontuações recalculadas com sucesso:', recalcResult);
       return {
         success: true,
         updatedCount: recalcResult?.updatedCount || 0
       };
     } catch (error) {
-      console.error('Error saving answer key:', error);
+      console.error('[answerKeyService] Erro ao salvar gabarito:', error);
       return {
         success: false,
         error: (error as Error).message
@@ -96,22 +154,80 @@ export const answerKeyService = {
   // Função para obter o gabarito de um concurso
   async getAnswerKey(concursoId: string) {
     try {
+      console.log(`[answerKeyService] Buscando gabarito do concurso: ${concursoId}`);
+      
       const { data, error } = await supabase.rpc('get_official_answer_weights', {
         p_concurso_id: concursoId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[answerKeyService] Erro ao buscar gabarito:', error);
+        throw error;
+      }
 
+      console.log(`[answerKeyService] Gabarito encontrado:`, data);
       return {
         success: true,
         data: data || {}
       };
     } catch (error) {
-      console.error('Error fetching answer key:', error);
+      console.error('[answerKeyService] Erro ao buscar gabarito:', error);
       return {
         success: false,
         error: (error as Error).message,
         data: {}
+      };
+    }
+  },
+  
+  // Nova função para inserir diretamente na tabela official_answer_weights
+  async insertAnswersDirectly(concursoId: string, answerKeyData: AnswerKeyItem[]) {
+    try {
+      console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
+      
+      // Primeiro, remover registros existentes para este concurso para evitar conflitos
+      const { error: deleteError } = await supabase
+        .from('official_answer_weights')
+        .delete()
+        .eq('concurso_id', concursoId);
+      
+      if (deleteError) {
+        console.error('[answerKeyService] Erro ao limpar gabarito existente:', deleteError);
+        throw deleteError;
+      }
+      
+      // Preparar dados para inserção
+      const insertData = answerKeyData.map(item => ({
+        concurso_id: item.concurso_id,
+        question_number: item.question_number,
+        correct_answer: item.correct_answer,
+        weight: item.weight || 1.0,
+        is_nullified: item.is_nullified || false,
+        section_type: item.section_type
+      }));
+      
+      // Inserir todos os registros de uma vez
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .insert(insertData)
+        .select();
+      
+      if (error) {
+        console.error('[answerKeyService] Erro ao inserir gabarito diretamente:', error);
+        throw error;
+      }
+      
+      console.log(`[answerKeyService] Inserção direta: ${data?.length || 0} questões inseridas com sucesso`);
+      
+      return {
+        success: true,
+        insertedCount: data?.length || 0
+      };
+    } catch (error) {
+      console.error('[answerKeyService] Erro na inserção direta:', error);
+      return {
+        success: false,
+        error: (error as Error).message
       };
     }
   }

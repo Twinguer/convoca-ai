@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { answerKeyService } from '@/services/answerKeyService';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -189,7 +191,7 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      // Diretamente determinamos os section_types no código em vez de chamar updateSectionTypes
+      // Diretamente determinamos os section_types no código
       const calculateSectionType = (questionNumber: number) => {
         // Calcular o número base de cada seção
         const basicEnd = basicKnowledgeQuestions || 0;
@@ -225,8 +227,36 @@ export const AnswerKeyTab = ({
       });
       
       if (onSaveFullRanking && formValues) {
+        console.log('Salvando gabarito via onSaveFullRanking...');
         await onSaveFullRanking(formValues, answerKeyData);
         toast.success('Gabarito salvo com sucesso!');
+      } else if (concursoId) {
+        console.log('Salvando gabarito diretamente via answerKeyService...');
+        // Tentar ambos os métodos para garantir que o gabarito seja salvo
+        const saveResult1 = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
+        
+        if (!saveResult1.success) {
+          console.warn('Tentativa de salvar via RPC falhou, tentando inserção direta...');
+          const saveResult2 = await answerKeyService.insertAnswersDirectly(concursoId, answerKeyData);
+          
+          if (saveResult2.success) {
+            toast.success(`Gabarito salvo com sucesso (inserção direta)!`);
+          } else {
+            toast.error('Erro ao salvar gabarito: ' + (saveResult2.error || 'Erro desconhecido'));
+          }
+        } else {
+          toast.success(`Gabarito salvo com sucesso!`);
+        }
+        
+        // Verificar se os dados foram salvos
+        const verifyResult = await answerKeyService.getAnswerKey(concursoId);
+        if (verifyResult.success && Object.keys(verifyResult.data).length > 0) {
+          console.log('Verificação após salvar: dados encontrados no banco!');
+          toast.success('Verificação: Gabarito encontrado no banco de dados!');
+        } else {
+          console.warn('Verificação após salvar: nenhum dado encontrado!');
+          toast.warning('Aviso: Gabarito pode não ter sido salvo corretamente');
+        }
       } else {
         toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
       }
@@ -235,7 +265,7 @@ export const AnswerKeyTab = ({
       if (error.message && error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
         toast.error('Todas as questões do gabarito oficial devem ter uma resposta');
       } else {
-        toast.error('Erro ao salvar gabarito');
+        toast.error('Erro ao salvar gabarito: ' + error.message);
       }
     } finally {
       setIsSaving(false);
