@@ -11,6 +11,12 @@ export const supabase = createClient(
       persistSession: true,
       storage: localStorage,
       autoRefreshToken: true,
+    },
+    // Disable automatic schema cache to prevent issues with missing columns
+    global: {
+      headers: {
+        'X-Supabase-Cache-Control': '3600'
+      }
     }
   }
 );
