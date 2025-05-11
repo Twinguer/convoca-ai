@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
-import { answerKeyService } from '@/services/answerKeyService';
+import { answerKeyService } from '@/services/answerKey';
 import { getSectionTypeForQuestion, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyFormProps {

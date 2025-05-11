@@ -1009,7 +1009,7 @@ export type Database = {
           p_question_number: number
           p_correct_answer: string
           p_weight: number
-          p_is_nullified: boolean
+          p_is_nullified?: boolean
           p_section_type?: string
         }
         Returns: undefined
