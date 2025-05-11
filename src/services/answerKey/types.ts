@@ -14,6 +14,7 @@ export interface SaveAnswerKeyResult {
   success: boolean;
   error?: string;
   updatedCount?: number;
+  insertedCount?: number; // Adicionando esta propriedade que faltava
 }
 
 export interface GetAnswerKeyResult {
