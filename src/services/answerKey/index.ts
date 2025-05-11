@@ -3,7 +3,6 @@ import { saveAnswerKeyAndRecalculate } from './saveAnswerKeyService';
 import { getAnswerKey } from './getAnswerKeyService';
 import { insertAnswersDirectly } from './insertAnswerKeyService';
 import { updateSectionTypeForConcurso } from './updateSectionTypeService';
-import type { AnswerKeyItem, SaveAnswerKeyResult, GetAnswerKeyResult } from './types';
 
 // Exportar todas as funções como um único objeto
 export const answerKeyService = {
@@ -18,7 +17,7 @@ export type {
   AnswerKeyItem,
   SaveAnswerKeyResult,
   GetAnswerKeyResult
-};
+} from './types';
 
 export {
   updateSectionTypeForConcurso
