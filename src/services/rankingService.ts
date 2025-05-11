@@ -74,10 +74,14 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         subject_scores,
-        "customDisciplineScores",
-        "weightedCustomDisciplineScores",
+        customDisciplineScores,
+        weightedCustomDisciplineScores,
         reservation_type,
-        users_profiles(name, avatar_url, status_concurseiro)
+        users_profiles (
+          name,
+          avatar_url,
+          status_concurseiro
+        )
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -110,9 +114,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     const formattedRankings = data.map((ranking, index) => {
       // Corrigir o problema de TypeScript aqui
       // Verificando corretamente se users_profiles é um array ou um objeto individual
-      const userProfile = Array.isArray(ranking.users_profiles) ? 
-                        ranking.users_profiles[0] : 
-                        ranking.users_profiles;
+      const userProfile = ranking.users_profiles;
       
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
