@@ -127,7 +127,7 @@ export const getSectionDisplayName = (concurso: any, sectionType: string): strin
   return sectionType;
 };
 
-// Lista de tipos de seção válidos - Agora aceitamos qualquer string para disciplinas customizadas
+// Lista de tipos de seção válidos para o banco de dados
 export const validSectionTypes = ['basic', 'specific1', 'specific2', 'specific3', 'discursive', 'case_study1', 'case_study2', 'case_study3'];
 
 // Função para sanitizar tipos de seção para garantir compatibilidade com o banco de dados
@@ -137,10 +137,9 @@ export const sanitizeSectionType = (sectionType: string): string => {
     return sectionType;
   }
   
-  // Check constraint só aceita valores específicos, então para tipos customizados
-  // vamos usar 'specific1' como fallback para garantir compatibilidade
-  // Anteriormente tentávamos usar custom_ como prefixo, mas isso está violando a constraint
-  return 'specific1';
+  // Para disciplinas customizadas, devemos retornar um tipo válido
+  // O check constraint no banco de dados só aceita valores específicos
+  return 'specific1'; // Usamos specific1 como fallback para garantir compatibilidade
 };
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
@@ -154,16 +153,14 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // Importante: sempre retorna um dos tipos válidos conhecidos pelo banco de dados
-          // em vez de usar tipos customizados que podem violar o check constraint
-          return 'specific1' as SectionType;
+          // É importante retornar um tipo válido para a constraint do banco de dados
+          return sanitizeSectionType(discipline.type) as SectionType;
         }
         currentIndex += disciplineQuestions;
       }
     }
     
     console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
-    // Fallback para conhecimentos específicos genéricos se não encontrar
     return 'specific1';
   }
   
@@ -208,3 +205,24 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   // Fallback para conhecimentos específicos genéricos
   return 'specific1';
 };
+
+// Helper function to get discipline data for a specific question
+export const getDisciplineForQuestion = (concurso: Concurso, questionNumber: number): any => {
+  if (!concurso.has_custom_knowledge) return null;
+  
+  const disciplines = getDisciplines(concurso);
+  let currentIndex = 1;
+  
+  for (const discipline of disciplines) {
+    if (discipline.isEnabled && discipline.questionCount) {
+      const disciplineQuestions = getNumericValue(discipline.questionCount);
+      if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
+        return discipline;
+      }
+      currentIndex += disciplineQuestions;
+    }
+  }
+  
+  return null;
+};
+

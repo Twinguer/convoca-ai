@@ -176,10 +176,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} // Pass the activeTab as a prop
+                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota}
           />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" // Pass a default value
+          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} sectionWeights={getSectionWeights(concurso)} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência"
       />}
       </CardContent>
     </Card>;
@@ -384,7 +384,6 @@ const RankingTableContent: React.FC<{
       <TableBody className="space-y-0.5">
         {rankings.length > 0 ? rankings.map(ranking => {
         const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
-        console.log(`Discipline scores for user ${ranking.name}:`, ranking.weightedCustomDisciplineScores);
         
         return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
               <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
@@ -408,7 +407,6 @@ const RankingTableContent: React.FC<{
               </TableCell>
               <TableCell className={`text-right font-medium ${scoreChanged ? 'text-emerald-600' : ''}`}>
                 {ranking.score.toFixed(2)}
-                {scoreChanged}
               </TableCell>
               
               {concurso.has_basic_knowledge === true && <TableCell className="text-right">

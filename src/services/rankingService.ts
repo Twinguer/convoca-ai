@@ -113,7 +113,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const avatarUrl = userProfile?.avatar_url || null;
       
       // Parse custom discipline scores from subject_scores jsonb if available
-      // Separar pontuações brutas e ponderadas
       const subjectScores = ranking.subject_scores || {};
       
       // Criar objetos para armazenar pontuações customizadas
@@ -122,14 +121,9 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       
       // Processar pontuações customizadas do subject_scores
       Object.entries(subjectScores).forEach(([key, value]) => {
-        // Ignorar chaves padrão que já são tratadas pelos campos específicos
-        if (!['basic', 'specific1', 'specific2', 'specific3'].includes(key)) {
-          // Esta é uma disciplina customizada
+        // Processar todas as chaves como disciplinas potencialmente customizadas
+        if (key !== 'total') { // Ignorar chave especial 'total' se existir
           customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
-          
-          // Para obter pontuações ponderadas de disciplinas customizadas,
-          // precisaríamos acessar os pesos aqui, mas não temos acesso à estrutura do concurso
-          // As pontuações ponderadas são armazenadas em subject_scores
           weightedCustomDisciplineScores[key] = customDisciplineScores[key];
         }
       });
