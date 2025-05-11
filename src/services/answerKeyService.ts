@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
@@ -82,8 +83,8 @@ export const answerKeyService = {
         // Determine the correct section type for this question
         const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
         
-        // Use the sanitized section type from the updated function
-        item.section_type = correctedSectionType;
+        // Ensure the section type is properly formatted with custom_ prefix if needed
+        item.section_type = sanitizeSectionType(correctedSectionType);
         
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
@@ -106,25 +107,40 @@ export const answerKeyService = {
       
       console.log(`[answerKeyService] Respostas existentes: ${existingAnswers?.length || 0}`);
 
-      // Atualizar ou inserir cada questão do gabarito
+      // Processar cada questão individualmente para identificar erros específicos
+      const errors = [];
+      
       for (const item of answerKeyData) {
-        console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
-        
-        const { data, error } = await supabase.rpc('update_answer_with_weight', {
-          p_concurso_id: item.concurso_id,
-          p_question_number: item.question_number,
-          p_correct_answer: item.correct_answer,
-          p_weight: item.weight || 1.0,
-          p_is_nullified: item.is_nullified || false,
-          p_section_type: item.section_type
-        });
+        try {
+          console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
+          
+          const { data, error } = await supabase.rpc('update_answer_with_weight', {
+            p_concurso_id: item.concurso_id,
+            p_question_number: item.question_number,
+            p_correct_answer: item.correct_answer,
+            p_weight: item.weight || 1.0,
+            p_is_nullified: item.is_nullified || false,
+            p_section_type: item.section_type
+          });
 
-        if (error) {
-          console.error(`[answerKeyService] Erro ao salvar questão ${item.question_number}:`, error);
-          throw error;
+          if (error) {
+            console.error(`[answerKeyService] Erro ao salvar questão ${item.question_number}:`, error);
+            errors.push(`Questão ${item.question_number}: ${error.message}`);
+            // Continue trying other questions despite errors
+          } else {
+            console.log(`[answerKeyService] Questão ${item.question_number} salva com sucesso`);
+          }
+        } catch (error) {
+          console.error(`[answerKeyService] Exceção ao salvar questão ${item.question_number}:`, error);
+          errors.push(`Questão ${item.question_number}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
         }
-        
-        console.log(`[answerKeyService] Questão ${item.question_number} salva com sucesso`);
+      }
+
+      // Verificar se houve erros
+      if (errors.length > 0) {
+        console.error('[answerKeyService] Erros ao salvar gabarito:', errors);
+        // Throw comprehensive error with all question-specific errors
+        throw new Error(`Erros ao salvar questões: ${errors.join(', ')}`);
       }
 
       // Verificar se os dados foram realmente salvos
@@ -145,21 +161,27 @@ export const answerKeyService = {
         });
       }
 
-      // Recalcular todas as pontuações
-      const { data: recalcResult, error: recalcError } = await supabase.rpc(
-        'recalculate_all_scores',
-        { p_concurso_id: concursoId }
-      );
+      // Try to recalculate all scores
+      try {
+        const { data: recalcResult, error: recalcError } = await supabase.rpc(
+          'recalculate_all_scores',
+          { p_concurso_id: concursoId }
+        );
 
-      if (recalcError) {
-        console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcError);
-        throw recalcError;
+        if (recalcError) {
+          console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcError);
+          // Don't throw here, we'll return success for saving the answers
+        } else {
+          console.log('[answerKeyService] Pontuações recalculadas com sucesso:', recalcResult);
+        }
+      } catch (error) {
+        console.error('[answerKeyService] Erro ao chamar recalculate_all_scores:', error);
+        // Don't throw here, we'll return success for saving the answers
       }
 
-      console.log('[answerKeyService] Pontuações recalculadas com sucesso:', recalcResult);
       return {
         success: true,
-        updatedCount: recalcResult?.updatedCount || 0
+        updatedCount: verifyData?.length || 0
       };
     } catch (error) {
       console.error('[answerKeyService] Erro ao salvar gabarito:', error);

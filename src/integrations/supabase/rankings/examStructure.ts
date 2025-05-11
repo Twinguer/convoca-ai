@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 

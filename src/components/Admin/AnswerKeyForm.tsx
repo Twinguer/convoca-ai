@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -507,8 +506,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => (
                         <React.Fragment key={rowIndex}>
-                          {row.map((questionNumber, colIndex) => (
-                            questionNumber !== null && (
+                          {row.map((questionNumber, colIndex) => 
+                            questionNumber !== null ? (
                               <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
                                 <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
@@ -533,8 +532,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                                   onNullify={handleNullifyQuestion}
                                 />
                               </div>
-                            )
-                          ))}
+                            ) : null
+                          )}
                         </React.Fragment>
                       ))}
                     </div>
