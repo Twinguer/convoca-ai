@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
-import { supabase } from '@/integrations/supabase/client';
 import { fetchExistingAnswers } from './fetchExistingAnswers';
 import { initializeQuestionTypes } from './initializeQuestionTypes';
 import { getAnsweredQuestionsCount, getTotalQuestions } from './questionCountUtils';
@@ -9,7 +8,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { sectionDisplayNames, getExamStructure } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionDisplayName, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -31,7 +30,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     handleClearAnswer
   } = useAnswerManagement(answers, setAnswers);
 
-  // Initialize with the first available section
+  // Inicializar com a primeira seção disponível
   useEffect(() => {
     if (concurso) {
       console.log("Initializing selected section for concurso:", concurso.id);
@@ -84,134 +83,41 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('Getting questions for section:', selectedSection);
     console.log('Question type mapping:', questionType);
     
-    const questions: number[] = [];
-
-    // Verificar primeiro se estamos usando conhecimento customizável
-    if (concurso.has_custom_knowledge) {
-      console.log("Using custom knowledge model");
-      
-      // Se temos mapeamento, usamos ele
-      if (Object.keys(questionType).length > 0) {
-        console.log("Using existing question type mapping");
-        
-        Object.entries(questionType).forEach(([num, type]) => {
-          if (type === selectedSection) {
-            questions.push(parseInt(num));
-          }
-        });
-      } else {
-        // Se ainda não temos mapeamento, inicializar baseado no modelo customizável
-        console.log("No question type mapping yet, building from disciplines");
-        
-        if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-          let currentQuestion = 1;
-          
-          for (const discipline of concurso.disciplines) {
-            const questionCount = typeof discipline.questionCount === 'number'
-              ? discipline.questionCount
-              : (discipline.questionCount ? parseInt(String(discipline.questionCount)) : 0);
-              
-            if (discipline.isEnabled && discipline.type === selectedSection && questionCount) {
-              console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-              
-              for (let i = 0; i < questionCount; i++) {
-                questions.push(currentQuestion++);
-              }
-            } else if (discipline.isEnabled) {
-              // Pular questões de outras disciplinas
-              console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-              currentQuestion += questionCount;
-            }
-          }
-        } else {
-          console.warn("No disciplines array found in concurso");
-        }
-      }
-      
-      console.log(`Found ${questions.length} questions for section ${selectedSection}:`, questions);
-      return questions.sort((a, b) => a - b);
-    }
-    
-    // Estrutura tradicional - verificar se temos mapeamento
+    // Verificar se temos mapeamento de tipos de questão
     if (Object.keys(questionType).length > 0) {
-      // Se tiver, usamos o mapeamento existente
-      console.log("Using existing question type mapping for traditional structure");
+      console.log("Using existing question type mapping");
       
+      const questions: number[] = [];
       Object.entries(questionType).forEach(([num, type]) => {
         if (type === selectedSection) {
           questions.push(parseInt(num));
         }
       });
-    } else {
-      // Se não tiver, inicializamos com as questões que DEVERIAM existir com base no concurso
-      console.log("No question type mapping yet, building from traditional structure");
+      console.log(`Found ${questions.length} questions for section ${selectedSection}:`, questions);
+      return questions.sort((a, b) => a - b);
+    }
+    
+    // Se não temos mapeamento, tentar construir com base nas disciplinas
+    console.log("No question type mapping yet, building from disciplines");
+    const questions: number[] = [];
+    const disciplines = getDisciplines(concurso);
+    
+    if (Array.isArray(disciplines)) {
+      let currentQuestion = 1;
       
-      if (selectedSection === 'basic' && concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-        const count = typeof concurso.basic_knowledge_questions === 'number'
-          ? concurso.basic_knowledge_questions
-          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
+      for (const discipline of disciplines) {
+        const questionCount = getNumericValue(discipline.questionCount);
           
-        console.log(`Adding ${count} basic knowledge questions`);
-        
-        for (let i = 1; i <= count; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific1' && concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-        const basicCount = typeof concurso.basic_knowledge_questions === 'number'
-          ? concurso.basic_knowledge_questions
-          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
+        if (discipline.isEnabled && discipline.type === selectedSection && questionCount > 0) {
+          console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
           
-        const count = typeof concurso.specific_knowledge_1_questions === 'number'
-          ? concurso.specific_knowledge_1_questions
-          : (concurso.specific_knowledge_1_questions ? parseInt(String(concurso.specific_knowledge_1_questions)) : 0);
-          
-        const startIndex = basicCount + 1;
-        console.log(`Adding ${count} specific1 questions starting from ${startIndex}`);
-        
-        for (let i = startIndex; i < startIndex + count; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific2' && concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-        const basicCount = typeof concurso.basic_knowledge_questions === 'number'
-          ? concurso.basic_knowledge_questions
-          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
-          
-        const specific1Count = typeof concurso.specific_knowledge_1_questions === 'number'
-          ? concurso.specific_knowledge_1_questions
-          : (concurso.specific_knowledge_1_questions ? parseInt(String(concurso.specific_knowledge_1_questions)) : 0);
-          
-        const count = typeof concurso.specific_knowledge_2_questions === 'number'
-          ? concurso.specific_knowledge_2_questions
-          : (concurso.specific_knowledge_2_questions ? parseInt(String(concurso.specific_knowledge_2_questions)) : 0);
-          
-        const startIndex = basicCount + specific1Count + 1;
-        console.log(`Adding ${count} specific2 questions starting from ${startIndex}`);
-        
-        for (let i = startIndex; i < startIndex + count; i++) {
-          questions.push(i);
-        }
-      } else if (selectedSection === 'specific3' && concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-        const basicCount = typeof concurso.basic_knowledge_questions === 'number'
-          ? concurso.basic_knowledge_questions
-          : (concurso.basic_knowledge_questions ? parseInt(String(concurso.basic_knowledge_questions)) : 0);
-          
-        const specific1Count = typeof concurso.specific_knowledge_1_questions === 'number'
-          ? concurso.specific_knowledge_1_questions
-          : (concurso.specific_knowledge_1_questions ? parseInt(String(concurso.specific_knowledge_1_questions)) : 0);
-          
-        const specific2Count = typeof concurso.specific_knowledge_2_questions === 'number'
-          ? concurso.specific_knowledge_2_questions
-          : (concurso.specific_knowledge_2_questions ? parseInt(String(concurso.specific_knowledge_2_questions)) : 0);
-          
-        const count = typeof concurso.specific_knowledge_3_questions === 'number'
-          ? concurso.specific_knowledge_3_questions
-          : (concurso.specific_knowledge_3_questions ? parseInt(String(concurso.specific_knowledge_3_questions)) : 0);
-          
-        const startIndex = basicCount + specific1Count + specific2Count + 1;
-        console.log(`Adding ${count} specific3 questions starting from ${startIndex}`);
-        
-        for (let i = startIndex; i < startIndex + count; i++) {
-          questions.push(i);
+          for (let i = 0; i < questionCount; i++) {
+            questions.push(currentQuestion++);
+          }
+        } else if (discipline.isEnabled) {
+          // Pular questões de outras disciplinas
+          console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+          currentQuestion += questionCount;
         }
       }
     }

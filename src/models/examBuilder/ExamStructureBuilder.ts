@@ -7,7 +7,6 @@ export class ExamStructureBuilder {
   private alternativesCount: number = 5;
   private wrongAnswerPenalty: number = 0;
   private sections: ExamSectionConfig[] = [];
-  private useCustomKnowledge: boolean = false;
   private disciplines: any[] = [];
 
   constructor() {
@@ -26,11 +25,6 @@ export class ExamStructureBuilder {
 
   withWrongAnswerPenalty(penalty: number): ExamStructureBuilder {
     this.wrongAnswerPenalty = penalty;
-    return this;
-  }
-
-  withUseCustomKnowledge(value: boolean): ExamStructureBuilder {
-    this.useCustomKnowledge = value;
     return this;
   }
 
@@ -112,79 +106,56 @@ export class ExamStructureBuilder {
       exam_type: this.examType,
       alternatives_count: this.alternativesCount,
       wrong_answer_penalty: this.wrongAnswerPenalty,
-      has_custom_knowledge: this.useCustomKnowledge,
-      disciplines: this.disciplines,
       
-      // Configurações de seções - inicializando todas como false (estrutura vazia)
-      has_basic_knowledge: false,
-      has_specific_knowledge_1: false,
-      has_specific_knowledge_2: false,
-      has_specific_knowledge_3: false,
+      // Sempre usar modo customizável
+      has_custom_knowledge: true,
+      
+      // Configurações para as versões subjetivas
       has_discursive: false,
       has_case_study_1: false,
       has_case_study_2: false,
       has_case_study_3: false,
       
-      // Quantidades de questões - garantindo que sejam números
-      basic_knowledge_questions: 0,
-      specific_knowledge_1_questions: 0,
-      specific_knowledge_2_questions: 0,
-      specific_knowledge_3_questions: 0,
-      
-      // Pesos - garantindo que sejam números
-      basic_knowledge_weight: 1,
-      specific_knowledge_1_weight: 1,
-      specific_knowledge_2_weight: 1,
-      specific_knowledge_3_weight: 1,
+      // Pesos das seções subjetivas
       discursive_weight: 1,
       case_study_1_weight: 1,
       case_study_2_weight: 1,
       case_study_3_weight: 1
     };
     
-    // Se não estamos usando conhecimento customizado, processar seções tradicionais
-    if (!this.useCustomKnowledge) {
-      this.sections.forEach(section => {
-        switch (section.sectionType) {
-          case 'basic':
-            concurso.has_basic_knowledge = true;
-            concurso.basic_knowledge_questions = Number(section.questionCount);
-            concurso.basic_knowledge_weight = Number(section.weight);
-            break;
-          case 'specific1':
-            concurso.has_specific_knowledge_1 = true;
-            concurso.specific_knowledge_1_questions = Number(section.questionCount);
-            concurso.specific_knowledge_1_weight = Number(section.weight);
-            break;
-          case 'specific2':
-            concurso.has_specific_knowledge_2 = true;
-            concurso.specific_knowledge_2_questions = Number(section.questionCount);
-            concurso.specific_knowledge_2_weight = Number(section.weight);
-            break;
-          case 'specific3':
-            concurso.has_specific_knowledge_3 = true;
-            concurso.specific_knowledge_3_questions = Number(section.questionCount);
-            concurso.specific_knowledge_3_weight = Number(section.weight);
-            break;
-          case 'discursive':
-            concurso.has_discursive = true;
-            concurso.discursive_weight = Number(section.weight);
-            break;
-          case 'case_study1':
-            concurso.has_case_study_1 = true;
-            concurso.case_study_1_weight = Number(section.weight);
-            break;
-          case 'case_study2':
-            concurso.has_case_study_2 = true;
-            concurso.case_study_2_weight = Number(section.weight);
-            break;
-          case 'case_study3':
-            concurso.has_case_study_3 = true;
-            concurso.case_study_3_weight = Number(section.weight);
-            break;
-        }
-      });
-    }
+    // Converter seções para disciplinas
+    const disciplines = this.sections.map(section => {
+      // Verificar se é um tipo de seção subjetiva
+      if (section.sectionType === 'discursive') {
+        concurso.has_discursive = true;
+        concurso.discursive_weight = Number(section.weight);
+        return null; // Não criar disciplina para seções subjetivas
+      } else if (section.sectionType === 'case_study1') {
+        concurso.has_case_study_1 = true;
+        concurso.case_study_1_weight = Number(section.weight);
+        return null;
+      } else if (section.sectionType === 'case_study2') {
+        concurso.has_case_study_2 = true;
+        concurso.case_study_2_weight = Number(section.weight);
+        return null;
+      } else if (section.sectionType === 'case_study3') {
+        concurso.has_case_study_3 = true;
+        concurso.case_study_3_weight = Number(section.weight);
+        return null;
+      }
+      
+      // Criar disciplina para tipos de questões objetivas
+      return {
+        id: crypto.randomUUID(),
+        type: section.sectionType,
+        name: section.displayName,
+        isEnabled: true,
+        questionCount: Number(section.questionCount),
+        weight: Number(section.weight)
+      };
+    }).filter(Boolean); // Remove null entries
+    
+    concurso.disciplines = disciplines;
     
     return concurso;
   }

@@ -53,24 +53,27 @@ export const getDisciplines = (concurso: Concurso) => {
 
 // Função para obter a estrutura de exame de um concurso
 export const getExamStructure = (concurso: Concurso) => {
-  // Verificar se estamos usando knowledge areas customizáveis
-  const useCustomKnowledge = concurso.has_custom_knowledge === true;
-  
   // Estrutura básica que será retornada
   const examStructure = {
-    // Estrutura tradicional
-    hasBasicKnowledge: concurso.has_basic_knowledge === true,
-    hasSpecificKnowledge1: concurso.has_specific_knowledge_1 === true,
-    hasSpecificKnowledge2: concurso.has_specific_knowledge_2 === true,
-    hasSpecificKnowledge3: concurso.has_specific_knowledge_3 === true,
+    // Agora apenas usamos o modo customizável
+    hasCustomKnowledge: true,
+    disciplines: getDisciplines(concurso),
+    
+    // Configurações de exame
+    exam_type: concurso.exam_type || 'Alternativas',
+    alternatives_count: getNumericValue(concurso.alternatives_count),
+    wrong_answer_penalty: getNumericValue(concurso.wrong_answer_penalty),
+    
+    // Para compatibilidade com código que ainda usa essas propriedades
+    hasBasicKnowledge: false,
+    hasSpecificKnowledge1: false,
+    hasSpecificKnowledge2: false,
+    hasSpecificKnowledge3: false,
     hasDiscursive: concurso.has_discursive === true,
     hasCaseStudy1: concurso.has_case_study_1 === true,
     hasCaseStudy2: concurso.has_case_study_2 === true,
     hasCaseStudy3: concurso.has_case_study_3 === true,
-    basicKnowledgeQuestions: getNumericValue(concurso.basic_knowledge_questions),
-    specificKnowledge1Questions: getNumericValue(concurso.specific_knowledge_1_questions),
-    specificKnowledge2Questions: getNumericValue(concurso.specific_knowledge_2_questions),
-    specificKnowledge3Questions: getNumericValue(concurso.specific_knowledge_3_questions),
+    
     basicKnowledgeWeight: getNumericValue(concurso.basic_knowledge_weight),
     specificKnowledge1Weight: getNumericValue(concurso.specific_knowledge_1_weight),
     specificKnowledge2Weight: getNumericValue(concurso.specific_knowledge_2_weight),
@@ -79,24 +82,29 @@ export const getExamStructure = (concurso: Concurso) => {
     caseStudy1Weight: getNumericValue(concurso.case_study_1_weight),
     caseStudy2Weight: getNumericValue(concurso.case_study_2_weight),
     caseStudy3Weight: getNumericValue(concurso.case_study_3_weight),
-    
-    // Nova estrutura customizável
-    useCustomKnowledge: useCustomKnowledge,
-    customKnowledgeQuestions: getNumericValue(concurso.custom_knowledge_questions),
-    customKnowledgeWeight: getNumericValue(concurso.custom_knowledge_weight),
-    disciplines: getDisciplines(concurso)
   };
+  
+  // Configurar valores para compatibilidade
+  const disciplines = examStructure.disciplines;
+  disciplines.forEach(discipline => {
+    if (discipline.isEnabled) {
+      if (discipline.type === 'basic') examStructure.hasBasicKnowledge = true;
+      else if (discipline.type === 'specific1') examStructure.hasSpecificKnowledge1 = true;
+      else if (discipline.type === 'specific2') examStructure.hasSpecificKnowledge2 = true;
+      else if (discipline.type === 'specific3') examStructure.hasSpecificKnowledge3 = true;
+    }
+  });
   
   return examStructure;
 };
 
 // Função para atualizar os nomes de exibição com disciplinas customizadas
-export const updateSectionDisplayNames = (concurso: any): Record<string, string> => {
+export const updateSectionDisplayNames = (concurso: Concurso): Record<string, string> => {
   // Criar uma cópia do objeto padrão
   const updatedNames = { ...sectionDisplayNames };
   
-  // Se concurso tem disciplinas customizadas, adicionar seus nomes ao mapeamento
-  if (concurso?.has_custom_knowledge && concurso?.disciplines && Array.isArray(concurso.disciplines)) {
+  // Adicionar nomes das disciplinas ao mapeamento
+  if (concurso?.disciplines && Array.isArray(concurso.disciplines)) {
     concurso.disciplines.forEach((discipline: any) => {
       if (discipline.type && discipline.name) {
         updatedNames[discipline.type] = discipline.name;
@@ -108,14 +116,14 @@ export const updateSectionDisplayNames = (concurso: any): Record<string, string>
 };
 
 // Esta função é usada para obter o nome de exibição correto para uma disciplina/seção
-export const getSectionDisplayName = (concurso: any, sectionType: string): string => {
+export const getSectionDisplayName = (concurso: Concurso, sectionType: string): string => {
   // Verificar se é uma das seções padrão
   if (sectionDisplayNames[sectionType]) {
     return sectionDisplayNames[sectionType];
   }
   
   // Verificar se é uma disciplina customizada
-  if (concurso?.has_custom_knowledge && concurso?.disciplines) {
+  if (concurso?.disciplines) {
     const disciplines = getDisciplines(concurso);
     const discipline = disciplines.find((d: any) => d.type === sectionType);
     if (discipline) {
@@ -144,72 +152,28 @@ export const sanitizeSectionType = (sectionType: string): string => {
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
-  // Verificar se estamos usando a estrutura customizável
-  if (concurso.has_custom_knowledge === true) {
-    const disciplines = getDisciplines(concurso);
-    let currentIndex = 1;
-    
-    for (const discipline of disciplines) {
-      if (discipline.isEnabled && discipline.questionCount) {
-        const disciplineQuestions = getNumericValue(discipline.questionCount);
-        if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // É importante retornar um tipo válido para a constraint do banco de dados
-          return sanitizeSectionType(discipline.type) as SectionType;
-        }
-        currentIndex += disciplineQuestions;
-      }
-    }
-    
-    console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
-    return 'specific1';
-  }
-  
-  // Estrutura tradicional
+  const disciplines = getDisciplines(concurso);
   let currentIndex = 1;
   
-  // Conhecimentos Básicos
-  if (concurso.has_basic_knowledge) {
-    const basicQuestions = getNumericValue(concurso.basic_knowledge_questions);
-    if (basicQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + basicQuestions - 1) {
-      return 'basic';
-    }
-    currentIndex += basicQuestions;
-  }
-  
-  // Conhecimentos Específicos 1
-  if (concurso.has_specific_knowledge_1) {
-    const specificQuestions1 = getNumericValue(concurso.specific_knowledge_1_questions);
-    if (specificQuestions1 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions1 - 1) {
-      return 'specific1';
-    }
-    currentIndex += specificQuestions1;
-  }
-  
-  // Conhecimentos Específicos 2
-  if (concurso.has_specific_knowledge_2) {
-    const specificQuestions2 = getNumericValue(concurso.specific_knowledge_2_questions);
-    if (specificQuestions2 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions2 - 1) {
-      return 'specific2';
-    }
-    currentIndex += specificQuestions2;
-  }
-  
-  // Conhecimentos Específicos 3
-  if (concurso.has_specific_knowledge_3) {
-    const specificQuestions3 = getNumericValue(concurso.specific_knowledge_3_questions);
-    if (specificQuestions3 > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + specificQuestions3 - 1) {
-      return 'specific3';
+  // Iterar pelas disciplinas habilitadas para encontrar em qual está o número da questão
+  for (const discipline of disciplines) {
+    if (discipline.isEnabled && discipline.questionCount) {
+      const disciplineQuestions = getNumericValue(discipline.questionCount);
+      if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
+        // É importante retornar um tipo válido para a constraint do banco de dados
+        return sanitizeSectionType(discipline.type) as SectionType;
+      }
+      currentIndex += disciplineQuestions;
     }
   }
   
   // Fallback para conhecimentos específicos genéricos
+  console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
   return 'specific1';
 };
 
 // Helper function to get discipline data for a specific question
 export const getDisciplineForQuestion = (concurso: Concurso, questionNumber: number): any => {
-  if (!concurso.has_custom_knowledge) return null;
-  
   const disciplines = getDisciplines(concurso);
   let currentIndex = 1;
   
@@ -225,4 +189,3 @@ export const getDisciplineForQuestion = (concurso: Concurso, questionNumber: num
   
   return null;
 };
-

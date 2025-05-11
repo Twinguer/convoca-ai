@@ -1,5 +1,6 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
+import { getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const initializeQuestionTypes = (
   concurso: Concurso, 
@@ -7,42 +8,39 @@ export const initializeQuestionTypes = (
   setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: SectionType }>>
 ) => {
   if (concurso && Object.keys(questionType).length === 0) {
+    console.log('Initializing question types for concurso:', concurso.id, concurso.titulo);
     const typesMap: { [key: number]: SectionType } = {};
     let questionNumber = 1;
     
-    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      const basicCount = typeof concurso.basic_knowledge_questions === 'number' 
-        ? concurso.basic_knowledge_questions 
-        : 0;
-        
-      for (let i = 0; i < basicCount; i++) {
-        typesMap[questionNumber] = 'basic';
-        questionNumber++;
-      }
-    }
+    // Inicializar usando as disciplinas (modo customizável)
+    const disciplines = getDisciplines(concurso);
     
-    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
-        typesMap[questionNumber] = 'specific1';
-        questionNumber++;
-      }
-    }
+    console.log('Initializing custom knowledge question types, disciplines:', disciplines);
     
-    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
-        typesMap[questionNumber] = 'specific2';
-        questionNumber++;
-      }
-    }
-    
-    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
-        typesMap[questionNumber] = 'specific3';
-        questionNumber++;
-      }
+    if (Array.isArray(disciplines)) {
+      disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.type) {
+          const questionCount = getNumericValue(discipline.questionCount);
+            
+          console.log(`Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);
+          
+          for (let i = 0; i < questionCount; i++) {
+            typesMap[questionNumber] = discipline.type as SectionType;
+            questionNumber++;
+          }
+        } else {
+          console.log(`Skipping disabled discipline or invalid type:`, discipline);
+        }
+      });
+    } else {
+      console.warn('No disciplines array found in concurso');
     }
     
     console.log('Initialized question types mapping:', typesMap);
     setQuestionType(typesMap);
+  } else if (concurso) {
+    console.log('Question type already initialized:', Object.keys(questionType).length);
+  } else {
+    console.warn('No concurso object available for initializing question types');
   }
 };

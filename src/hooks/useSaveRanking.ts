@@ -40,22 +40,11 @@ export const useSaveRanking = () => {
       }
 
       // Explicitly convert numeric fields to ensure proper types
-      formValues.basic_knowledge_questions = ensureNumeric(formValues.basic_knowledge_questions);
-      formValues.specific_knowledge_1_questions = ensureNumeric(formValues.specific_knowledge_1_questions);
-      formValues.specific_knowledge_2_questions = ensureNumeric(formValues.specific_knowledge_2_questions);
-      formValues.specific_knowledge_3_questions = ensureNumeric(formValues.specific_knowledge_3_questions);
       formValues.alternatives_count = ensureNumeric(formValues.alternatives_count);
       formValues.wrong_answer_penalty = ensureNumeric(formValues.wrong_answer_penalty);
 
-      // Ensure weight fields are numeric
-      formValues.basic_knowledge_weight = ensureNumeric(formValues.basic_knowledge_weight);
-      formValues.specific_knowledge_1_weight = ensureNumeric(formValues.specific_knowledge_1_weight);
-      formValues.specific_knowledge_2_weight = ensureNumeric(formValues.specific_knowledge_2_weight);
-      formValues.specific_knowledge_3_weight = ensureNumeric(formValues.specific_knowledge_3_weight);
-      formValues.discursive_weight = ensureNumeric(formValues.discursive_weight);
-      formValues.case_study_1_weight = ensureNumeric(formValues.case_study_1_weight);
-      formValues.case_study_2_weight = ensureNumeric(formValues.case_study_2_weight);
-      formValues.case_study_3_weight = ensureNumeric(formValues.case_study_3_weight);
+      // Sempre usar modo customizável
+      formValues.has_custom_knowledge = true;
 
       // Garantir que disciplines é um array válido
       if (!formValues.disciplines || !Array.isArray(formValues.disciplines)) {
@@ -63,7 +52,7 @@ export const useSaveRanking = () => {
       }
 
       // Validar e processar disciplinas customizadas
-      if (formValues.has_custom_knowledge && formValues.disciplines.length > 0) {
+      if (formValues.disciplines.length > 0) {
         formValues.disciplines = formValues.disciplines.map((discipline: any) => {
           return {
             ...discipline,
@@ -72,10 +61,17 @@ export const useSaveRanking = () => {
             isEnabled: discipline.isEnabled === true
           };
         });
+        
+        // Verificar se pelo menos uma disciplina está habilitada
+        const hasEnabledDiscipline = formValues.disciplines.some(
+          (discipline: any) => discipline.isEnabled === true
+        );
+        
+        if (!hasEnabledDiscipline) {
+          toast.error("Você precisa habilitar pelo menos uma disciplina");
+          return { duplicated: false, error: true };
+        }
       }
-
-      // Handle fields that might need to be removed or preserved
-      const cleanFormValues = { ...formValues };
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
@@ -101,31 +97,29 @@ export const useSaveRanking = () => {
 
       // Create a clean object with the data for submission
       const dataToSubmit: Record<string, any> = {
-        ...cleanFormValues,
-        created_by_user_id: cleanFormValues.created_by_user_id || userId, // Keep original creator when admin is editing
+        ...formValues,
+        created_by_user_id: formValues.created_by_user_id || userId, // Keep original creator when admin is editing
         titulo: title,
         orgao: orgao,
-        banca: cleanFormValues.custom_banca || cleanFormValues.banca,
-        localidades: cleanFormValues.localidades,
-        has_custom_knowledge: cleanFormValues.has_custom_knowledge === true,
-        disciplines: cleanFormValues.disciplines
+        banca: formValues.custom_banca || formValues.banca,
+        localidades: formValues.localidades,
+        has_custom_knowledge: true,
+        disciplines: formValues.disciplines
       };
 
       // Add admin flags if provided
-      if (cleanFormValues.is_admin_created !== undefined) {
-        dataToSubmit.is_admin_created = cleanFormValues.is_admin_created;
+      if (formValues.is_admin_created !== undefined) {
+        dataToSubmit.is_admin_created = formValues.is_admin_created;
       }
       
-      if (cleanFormValues.is_admin_update !== undefined) {
-        dataToSubmit.is_admin_update = cleanFormValues.is_admin_update;
+      if (formValues.is_admin_update !== undefined) {
+        dataToSubmit.is_admin_update = formValues.is_admin_update;
       }
 
       // Log for debugging
       console.log("Submitting to database:", {
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
-        disciplines: dataToSubmit.disciplines,
-        basic_knowledge_questions: dataToSubmit.basic_knowledge_questions,
-        basic_knowledge_questions_type: typeof dataToSubmit.basic_knowledge_questions
+        disciplines: dataToSubmit.disciplines
       });
 
       let result;

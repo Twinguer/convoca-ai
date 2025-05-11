@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users } from 'lucide-react';
+
 interface RankingCardProps {
   participantCount?: number;
   userRanking?: {
@@ -10,6 +12,7 @@ interface RankingCardProps {
   } | null;
   inscritos?: number;
 }
+
 export const RankingCard: React.FC<RankingCardProps> = ({
   participantCount = 0,
   userRanking,

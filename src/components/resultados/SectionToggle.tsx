@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
+import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
 
 interface SectionToggleProps {
   selectedSection: SectionType;
@@ -13,11 +14,12 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   onSectionChange,
   concurso
 }) => {
-  // Determine which sections are enabled based on the concurso configuration
-  const hasBasic = concurso.has_basic_knowledge;
-  const hasSpecific1 = concurso.has_specific_knowledge_1;
-  const hasSpecific2 = concurso.has_specific_knowledge_2;
-  const hasSpecific3 = concurso.has_specific_knowledge_3;
+  const disciplines = getDisciplines(concurso);
+  
+  // Filtrar apenas disciplinas habilitadas
+  const enabledDisciplines = disciplines.filter(d => d.isEnabled);
+
+  // Verificar seções subjetivas
   const hasDiscursive = concurso.has_discursive;
   const hasCaseStudy1 = concurso.has_case_study_1;
   const hasCaseStudy2 = concurso.has_case_study_2;
@@ -26,57 +28,19 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   return (
     <div className="bg-gray-100 border-b overflow-x-auto">
       <div className="flex flex-nowrap min-w-full">
-        {hasBasic && (
+        {enabledDisciplines.map((discipline) => (
           <button
-            onClick={() => onSectionChange('basic')}
+            key={discipline.type}
+            onClick={() => onSectionChange(discipline.type)}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'basic' 
+              ${selectedSection === discipline.type 
                 ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
-            C. Básicos {concurso.basic_knowledge_weight && concurso.basic_knowledge_weight > 1 ? 
-              `(Peso ${concurso.basic_knowledge_weight})` : ''}
+            {discipline.name} {discipline.weight && discipline.weight > 1 ? 
+              `(Peso ${discipline.weight})` : ''}
           </button>
-        )}
-        
-        {hasSpecific1 && (
-          <button
-            onClick={() => onSectionChange('specific1')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'specific1' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            C. Específicos 1 {concurso.specific_knowledge_1_weight && concurso.specific_knowledge_1_weight > 1 ? 
-              `(Peso ${concurso.specific_knowledge_1_weight})` : ''}
-          </button>
-        )}
-        
-        {hasSpecific2 && (
-          <button
-            onClick={() => onSectionChange('specific2')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'specific2' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            C. Específicos 2 {concurso.specific_knowledge_2_weight && concurso.specific_knowledge_2_weight > 1 ? 
-              `(Peso ${concurso.specific_knowledge_2_weight})` : ''}
-          </button>
-        )}
-        
-        {hasSpecific3 && (
-          <button
-            onClick={() => onSectionChange('specific3')}
-            className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
-              ${selectedSection === 'specific3' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
-                : 'text-gray-600 hover:bg-gray-200'}`}
-          >
-            C. Específicos 3 {concurso.specific_knowledge_3_weight && concurso.specific_knowledge_3_weight > 1 ? 
-              `(Peso ${concurso.specific_knowledge_3_weight})` : ''}
-          </button>
-        )}
+        ))}
         
         {hasDiscursive && (
           <button
