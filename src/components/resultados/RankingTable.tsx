@@ -7,35 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Concurso, getRankingTableColumns } from '@/types/concursos';
+import { Concurso } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
-
-export interface Ranking {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
-  avatarUrl?: string | null;
-  // Pontuações subjetivas
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
-  // Pontuações subjetivas com peso
-  weightedDiscursiveScore?: number | null;
-  weightedCaseStudy1Score?: number | null;
-  weightedCaseStudy2Score?: number | null;
-  weightedCaseStudy3Score?: number | null;
-  // Pontuações de disciplinas customizadas
-  customDisciplineScores?: { [key: string]: number };
-  weightedCustomDisciplineScores?: { [key: string]: number };
-  // Campos adicionais
-  reservationType: string;
-  displayReservation: string;
-  id: string;
-  quotaPosition?: number; // Posição dentro da cota
-}
+import { Ranking } from '@/services/rankingService';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -378,6 +353,7 @@ const RankingTableContent: React.FC<{
             
             {/* Pontuações de disciplinas customizadas */}
             {customDisciplines.map((discipline, idx) => {
+              // Access the score using the discipline type as the key
               const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
               return (
                 <TableCell key={`custom-score-${idx}`} className="text-right">
