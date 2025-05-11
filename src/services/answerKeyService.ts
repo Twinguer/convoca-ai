@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
@@ -116,6 +117,19 @@ export const answerKeyService = {
       for (const item of answerKeyData) {
         try {
           console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
+          
+          // Primeiro obter o concurso novamente para cada questão, para garantir que temos v_concurso
+          // Isso resolve o erro "record v_concurso is not assigned yet"
+          const { data: concurso, error: concursoError } = await supabase
+            .from('concursos')
+            .select('*')
+            .eq('id', concursoId)
+            .single();
+            
+          if (concursoError) {
+            console.error('[answerKeyService] Erro ao obter concurso para questão:', concursoError);
+            throw concursoError;
+          }
           
           const { data, error } = await supabase.rpc('update_answer_with_weight', {
             p_concurso_id: item.concurso_id,
