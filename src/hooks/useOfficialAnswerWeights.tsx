@@ -65,18 +65,6 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
           sectionType
         });
 
-        // Primeiro, buscar informações do concurso para garantir que temos v_concurso
-        const { data: concursoData, error: concursoError } = await supabase
-          .from('concursos')
-          .select('*')
-          .eq('id', concursoId)
-          .single();
-        
-        if (concursoError) {
-          throw new Error(`Erro ao buscar informações do concurso: ${concursoError.message}`);
-        }
-        
-        // Agora podemos chamar a função RPC com garantia que o concurso existe
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: concursoId,
           p_question_number: questionNumber,

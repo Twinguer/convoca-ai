@@ -54,7 +54,7 @@ export function useResultadosData() {
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
     refetchOnWindowFocus: true,
-    staleTime: 30000, // 30 segundos para reduzir atualizações
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
     enabled: !!id,
   });
   
@@ -62,16 +62,8 @@ export function useResultadosData() {
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    staleTime: 30000, // 30 segundos para reduzir atualizações
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
-  
-  // Force a refresh of data when the page loads if the concurso uses custom disciplines
-  useEffect(() => {
-    if (concurso?.has_custom_knowledge) {
-      console.log("[useResultadosData] Concurso uses custom disciplines, refreshing data automatically");
-      refreshData();
-    }
-  }, [concurso?.has_custom_knowledge]);
   
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
   useEffect(() => {
@@ -154,6 +146,9 @@ export function useResultadosData() {
       return { success: false, error: String(err) };
     }
   };
+  
+  // Remover auto-refresh ao montar o componente
+  // Agora o usuário precisa clicar no botão de atualizar explicitamente
   
   return {
     concurso,

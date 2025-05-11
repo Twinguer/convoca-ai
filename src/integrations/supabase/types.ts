@@ -664,7 +664,6 @@ export type Database = {
           case_study_3_score: number | null
           concurso_id: string
           created_at: string
-          customDisciplineScores: Json | null
           discursive_score: number | null
           edit_count: number | null
           edit_history: Json | null
@@ -687,7 +686,6 @@ export type Database = {
           weighted_specific_1_score: number | null
           weighted_specific_2_score: number | null
           weighted_specific_3_score: number | null
-          weightedCustomDisciplineScores: Json | null
         }
         Insert: {
           all_questions_answered?: boolean | null
@@ -697,7 +695,6 @@ export type Database = {
           case_study_3_score?: number | null
           concurso_id: string
           created_at?: string
-          customDisciplineScores?: Json | null
           discursive_score?: number | null
           edit_count?: number | null
           edit_history?: Json | null
@@ -720,7 +717,6 @@ export type Database = {
           weighted_specific_1_score?: number | null
           weighted_specific_2_score?: number | null
           weighted_specific_3_score?: number | null
-          weightedCustomDisciplineScores?: Json | null
         }
         Update: {
           all_questions_answered?: boolean | null
@@ -730,7 +726,6 @@ export type Database = {
           case_study_3_score?: number | null
           concurso_id?: string
           created_at?: string
-          customDisciplineScores?: Json | null
           discursive_score?: number | null
           edit_count?: number | null
           edit_history?: Json | null
@@ -753,7 +748,6 @@ export type Database = {
           weighted_specific_1_score?: number | null
           weighted_specific_2_score?: number | null
           weighted_specific_3_score?: number | null
-          weightedCustomDisciplineScores?: Json | null
         }
         Relationships: [
           {
@@ -1009,7 +1003,7 @@ export type Database = {
           p_question_number: number
           p_correct_answer: string
           p_weight: number
-          p_is_nullified?: boolean
+          p_is_nullified: boolean
           p_section_type?: string
         }
         Returns: undefined

@@ -33,7 +33,6 @@ export interface Ranking {
   reservationType: string;
   displayReservation: string;
   id: string;
-  status_concurseiro?: string | null;
 }
 
 // Helper function to get abbreviation for reservation type
@@ -74,14 +73,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         subject_scores,
-        customDisciplineScores,
-        weightedCustomDisciplineScores,
         reservation_type,
-        users_profiles (
-          name,
-          avatar_url,
-          status_concurseiro
-        )
+        users_profiles(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false });
@@ -104,9 +97,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         user_id: firstRanking.user_id,
         score: firstRanking.score,
         profile: firstRanking.users_profiles,
-        subject_scores: firstRanking.subject_scores,
-        customDisciplineScores: firstRanking.customDisciplineScores,
-        weightedCustomDisciplineScores: firstRanking.weightedCustomDisciplineScores
+        subject_scores: firstRanking.subject_scores
       });
     }
     
@@ -114,22 +105,28 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     const formattedRankings = data.map((ranking, index) => {
       // Corrigir o problema de TypeScript aqui
       // Verificando corretamente se users_profiles é um array ou um objeto individual
-      const userProfile = ranking.users_profiles;
+      const userProfile = Array.isArray(ranking.users_profiles) ? 
+                        ranking.users_profiles[0] : 
+                        ranking.users_profiles;
       
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
-      const status_concurseiro = userProfile?.status_concurseiro || null;
       
       // Parse custom discipline scores from subject_scores jsonb if available
       const subjectScores = ranking.subject_scores || {};
       
-      // Use explicitly stored custom discipline scores if available
-      const customDisciplineScores: Record<string, number> = 
-        ranking.customDisciplineScores || {};
+      // Criar objetos para armazenar pontuações customizadas
+      const customDisciplineScores: Record<string, number> = {};
+      const weightedCustomDisciplineScores: Record<string, number> = {};
       
-      // Use explicitly stored weighted custom discipline scores if available
-      const weightedCustomDisciplineScores: Record<string, number> = 
-        ranking.weightedCustomDisciplineScores || {};
+      // Processar pontuações customizadas do subject_scores
+      Object.entries(subjectScores).forEach(([key, value]) => {
+        // Processar todas as chaves como disciplinas potencialmente customizadas
+        if (key !== 'total') { // Ignorar chave especial 'total' se existir
+          customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
+          weightedCustomDisciplineScores[key] = customDisciplineScores[key];
+        }
+      });
       
       return {
         position: index + 1,
@@ -137,7 +134,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
-        status_concurseiro: status_concurseiro,
         basicKnowledgeScore: ranking.basic_knowledge_score || 0,
         specificKnowledgeScore: ranking.specific_knowledge_score || 0,
         specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,

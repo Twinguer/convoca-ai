@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { answerKeyService } from '@/services/answerKey';
+import { answerKeyService } from '@/services/answerKeyService';
 import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyTabProps {

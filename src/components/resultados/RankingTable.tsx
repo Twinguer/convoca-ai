@@ -9,14 +9,43 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
-import type { Ranking as RankingType } from '@/services/rankingService';
 
-// Define the internal Ranking interface with additional props used in this component
-interface Ranking extends RankingType {
+export interface Ranking {
+  position: number;
+  name: string;
+  score: number;
+  userId: string;
+  avatarUrl?: string | null;
+  // Raw scores
+  basicKnowledgeScore?: number | null;
+  specificKnowledgeScore?: number | null;
+  specificKnowledge1Score?: number | null;
+  specificKnowledge2Score?: number | null;
+  specificKnowledge3Score?: number | null;
+  discursiveScore?: number | null;
+  caseStudy1Score?: number | null;
+  caseStudy2Score?: number | null;
+  caseStudy3Score?: number | null;
+  // Weighted scores (optional)
+  weightedBasicScore?: number | null;
+  weightedSpecific1Score?: number | null;
+  weightedSpecific2Score?: number | null;
+  weightedSpecific3Score?: number | null;
+  weightedDiscursiveScore?: number | null;
+  weightedCaseStudy1Score?: number | null;
+  weightedCaseStudy2Score?: number | null;
+  weightedCaseStudy3Score?: number | null;
+  // Custom discipline scores (optional)
+  customDisciplineScores?: { [key: string]: number };
+  weightedCustomDisciplineScores?: { [key: string]: number };
+  // Additional fields
+  reservationType: string;
+  displayReservation: string;
+  id: string;
   quotaPosition?: number; // Position within quota
 }
 
-export interface RankingTableProps {
+interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
   currentUserId?: string | null;
@@ -33,7 +62,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
-  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -54,13 +82,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         hasCaseStudy2: concurso.has_case_study_2,
         hasCaseStudy3: concurso.has_case_study_3
       });
-      
-      // Check if using custom disciplines
-      if (concurso.has_custom_knowledge && concurso.disciplines) {
-        console.log('Using custom disciplines:', concurso.disciplines);
-      }
     }
-    
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
@@ -71,13 +93,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         weightedBasic: rankings[0].weightedBasicScore,
         weightedSpecific1: rankings[0].weightedSpecific1Score
       });
-      
-      // Log custom discipline scores if available
-      if (rankings[0].customDisciplineScores) {
-        console.log('First ranking custom discipline scores:', rankings[0].customDisciplineScores);
-        console.log('First ranking weighted custom discipline scores:', rankings[0].weightedCustomDisciplineScores);
-      }
-      
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
   }, [concurso, rankings]);
@@ -105,7 +120,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
-  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -127,9 +141,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
-  
   const availableQuotas = getAvailableQuotas();
-  
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
     if (quota === "Ampla Concorrência") {
@@ -137,7 +149,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
-  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -145,7 +156,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
-  
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
