@@ -9,44 +9,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso, getRankingTableColumns } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
-import type { Ranking } from '@/services/rankingService';
+import type { Ranking as RankingType } from '@/services/rankingService';
 
-export interface Ranking {
-  position: number;
-  name: string;
-  score: number;
-  userId: string;
-  avatarUrl?: string | null;
-  // Raw scores
-  basicKnowledgeScore?: number | null;
-  specificKnowledgeScore?: number | null;
-  specificKnowledge1Score?: number | null;
-  specificKnowledge2Score?: number | null;
-  specificKnowledge3Score?: number | null;
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
-  // Weighted scores (optional)
-  weightedBasicScore?: number | null;
-  weightedSpecific1Score?: number | null;
-  weightedSpecific2Score?: number | null;
-  weightedSpecific3Score?: number | null;
-  weightedDiscursiveScore?: number | null;
-  weightedCaseStudy1Score?: number | null;
-  weightedCaseStudy2Score?: number | null;
-  weightedCaseStudy3Score?: number | null;
-  // Custom discipline scores (optional)
-  customDisciplineScores?: { [key: string]: number };
-  weightedCustomDisciplineScores?: { [key: string]: number };
-  // Additional fields
-  reservationType: string;
-  displayReservation: string;
-  id: string;
+// Define the internal Ranking interface with additional props used in this component
+interface Ranking extends RankingType {
   quotaPosition?: number; // Position within quota
 }
 
-interface RankingTableProps {
+export interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
   currentUserId?: string | null;
