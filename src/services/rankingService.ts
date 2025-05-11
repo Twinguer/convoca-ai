@@ -8,26 +8,17 @@ export interface Ranking {
   score: number;
   userId: string;
   avatarUrl?: string | null;
-  // Raw scores
-  basicKnowledgeScore?: number | null;
-  specificKnowledgeScore?: number | null;
-  specificKnowledge1Score?: number | null;
-  specificKnowledge2Score?: number | null;
-  specificKnowledge3Score?: number | null;
+  // Pontuações subjetivas
   discursiveScore?: number | null;
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
-  // Weighted scores
-  weightedBasicScore?: number | null;
-  weightedSpecific1Score?: number | null;
-  weightedSpecific2Score?: number | null;
-  weightedSpecific3Score?: number | null;
+  // Pontuações subjetivas com peso
   weightedDiscursiveScore?: number | null;
   weightedCaseStudy1Score?: number | null;
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
-  // Custom discipline scores
+  // Pontuações de disciplinas customizadas
   customDisciplineScores?: Record<string, number> | null;
   weightedCustomDisciplineScores?: Record<string, number> | null;
   reservationType: string;
@@ -55,24 +46,17 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id,
         user_id,
         score,
-        basic_knowledge_score,
-        specific_knowledge_score,
-        specific_knowledge_1_score,
-        specific_knowledge_2_score,
-        specific_knowledge_3_score,
         discursive_score,
         case_study_1_score,
         case_study_2_score,
         case_study_3_score,
-        weighted_basic_score,
-        weighted_specific_1_score,
-        weighted_specific_2_score,
-        weighted_specific_3_score,
         weighted_discursive_score,
         weighted_case_study_1_score,
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         subject_scores,
+        customDisciplineScores,
+        weightedCustomDisciplineScores,
         reservation_type,
         users_profiles(name, avatar_url)
       `)
@@ -97,7 +81,9 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         user_id: firstRanking.user_id,
         score: firstRanking.score,
         profile: firstRanking.users_profiles,
-        subject_scores: firstRanking.subject_scores
+        subject_scores: firstRanking.subject_scores,
+        customDisciplineScores: firstRanking.customDisciplineScores,
+        weightedCustomDisciplineScores: firstRanking.weightedCustomDisciplineScores
       });
     }
     
@@ -115,18 +101,25 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       // Parse custom discipline scores from subject_scores jsonb if available
       const subjectScores = ranking.subject_scores || {};
       
-      // Criar objetos para armazenar pontuações customizadas
-      const customDisciplineScores: Record<string, number> = {};
-      const weightedCustomDisciplineScores: Record<string, number> = {};
+      // Usar as pontuações customizadas do JSONB, ou criar um objeto vazio se não existir
+      const customDisciplineScores = ranking.customDisciplineScores || {};
+      const weightedCustomDisciplineScores = ranking.weightedCustomDisciplineScores || {};
       
-      // Processar pontuações customizadas do subject_scores
-      Object.entries(subjectScores).forEach(([key, value]) => {
-        // Processar todas as chaves como disciplinas potencialmente customizadas
-        if (key !== 'total') { // Ignorar chave especial 'total' se existir
-          customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
-          weightedCustomDisciplineScores[key] = customDisciplineScores[key];
-        }
-      });
+      // Se não tiver pontuações customizadas, tentar criar a partir do subject_scores para compatibilidade
+      if (Object.keys(customDisciplineScores).length === 0) {
+        // Processar pontuações customizadas do subject_scores
+        Object.entries(subjectScores).forEach(([key, value]) => {
+          // Processar todas as chaves como disciplinas potencialmente customizadas
+          if (key !== 'total') { // Ignorar chave especial 'total' se existir
+            customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
+            
+            // Se não houver pontuações ponderadas, usar as pontuações brutas
+            if (Object.keys(weightedCustomDisciplineScores).length === 0) {
+              weightedCustomDisciplineScores[key] = customDisciplineScores[key];
+            }
+          }
+        });
+      }
       
       return {
         position: index + 1,
@@ -134,25 +127,17 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
-        basicKnowledgeScore: ranking.basic_knowledge_score || 0,
-        specificKnowledgeScore: ranking.specific_knowledge_score || 0,
-        specificKnowledge1Score: ranking.specific_knowledge_1_score || 0,
-        specificKnowledge2Score: ranking.specific_knowledge_2_score || 0,
-        specificKnowledge3Score: ranking.specific_knowledge_3_score || 0,
+        // Pontuações subjetivas
         discursiveScore: ranking.discursive_score || 0,
         caseStudy1Score: ranking.case_study_1_score || 0,
         caseStudy2Score: ranking.case_study_2_score || 0,
         caseStudy3Score: ranking.case_study_3_score || 0,
-        // Weighted scores
-        weightedBasicScore: ranking.weighted_basic_score || 0,
-        weightedSpecific1Score: ranking.weighted_specific_1_score || 0,
-        weightedSpecific2Score: ranking.weighted_specific_2_score || 0,
-        weightedSpecific3Score: ranking.weighted_specific_3_score || 0,
+        // Pontuações subjetivas com peso
         weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
         weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
-        // Custom discipline scores
+        // Pontuações de disciplinas customizadas
         customDisciplineScores,
         weightedCustomDisciplineScores,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',

@@ -80,7 +80,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
         
         {hasCaseStudy3 && (
           <button
-            onClick={() => onSectionChange('case_study3')}
+            onClick={() => onSectionSection('case_study3')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study3' 
                 ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 

@@ -953,6 +953,8 @@ export type Database = {
           weighted_case_study_1_score: number
           weighted_case_study_2_score: number
           weighted_case_study_3_score: number
+          customDisciplineScores: Json
+          weightedCustomDisciplineScores: Json
           reservation_type: string
           is_classified: boolean
         }[]
