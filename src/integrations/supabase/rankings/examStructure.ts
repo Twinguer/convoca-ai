@@ -153,8 +153,8 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // É importante retornar um tipo válido para a constraint do banco de dados
-          return sanitizeSectionType(discipline.type) as SectionType;
+          // Return the discipline type as-is for custom disciplines
+          return discipline.type as SectionType;
         }
         currentIndex += disciplineQuestions;
       }

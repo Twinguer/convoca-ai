@@ -65,6 +65,14 @@ export function useResultadosData() {
     staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
   
+  // Force a refresh of data when the page loads if the concurso uses custom disciplines
+  useEffect(() => {
+    if (concurso?.has_custom_knowledge) {
+      console.log("[useResultadosData] Concurso uses custom disciplines, refreshing data automatically");
+      refreshData();
+    }
+  }, [concurso?.has_custom_knowledge]);
+  
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
   useEffect(() => {
     if (!id) return;
@@ -146,9 +154,6 @@ export function useResultadosData() {
       return { success: false, error: String(err) };
     }
   };
-  
-  // Remover auto-refresh ao montar o componente
-  // Agora o usuário precisa clicar no botão de atualizar explicitamente
   
   return {
     concurso,
