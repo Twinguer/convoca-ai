@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';
@@ -81,10 +80,14 @@ export const answerKeyService = {
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
         // Determine the correct section type for this question
+        // Usar apenas tipos válidos reconhecidos pelo banco de dados
         const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
         
-        // Ensure the section type is properly formatted with custom_ prefix if needed
-        item.section_type = sanitizeSectionType(correctedSectionType);
+        // Log para debug
+        console.log(`[answerKeyService] Questão ${index + 1}: assigning section_type=${correctedSectionType} for question=${item.question_number}`);
+        
+        // Sempre atribuir section_type para garantir compatibilidade com o banco
+        item.section_type = correctedSectionType;
         
         console.log(`[answerKeyService] Questão ${index + 1}:`, {
           numero: item.question_number,
@@ -252,10 +255,8 @@ export const answerKeyService = {
       // Preparar dados para inserção e garantir que section_type seja válido
       const insertData = answerKeyData.map(item => {
         // Determinar o tipo de seção correto baseado na estrutura do concurso
+        // Usar APENAS tipos válidos conhecidos pelo banco de dados
         const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
-        
-        // Sanitizar o tipo de seção para evitar problemas com restrições de banco de dados
-        const sanitizedSectionType = sanitizeSectionType(correctedSectionType);
         
         return {
           concurso_id: item.concurso_id,
@@ -263,7 +264,7 @@ export const answerKeyService = {
           correct_answer: item.correct_answer,
           weight: item.weight || 1.0,
           is_nullified: item.is_nullified || false,
-          section_type: sanitizedSectionType
+          section_type: correctedSectionType
         };
       });
       

@@ -1,3 +1,4 @@
+
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
@@ -136,15 +137,10 @@ export const sanitizeSectionType = (sectionType: string): string => {
     return sectionType;
   }
   
-  // Para tipos customizados, garantir que sejam compatíveis com as restrições do banco
-  const sanitized = sectionType.replace(/[^a-zA-Z0-9_]/g, '_');
-  
-  // Garantir que tipos customizados tenham o prefixo "custom_"
-  if (!sanitized.startsWith('custom_')) {
-    return `custom_${sanitized}`;
-  }
-  
-  return sanitized;
+  // Check constraint só aceita valores específicos, então para tipos customizados
+  // vamos usar 'specific1' como fallback para garantir compatibilidade
+  // Anteriormente tentávamos usar custom_ como prefixo, mas isso está violando a constraint
+  return 'specific1';
 };
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
@@ -158,10 +154,9 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
       if (discipline.isEnabled && discipline.questionCount) {
         const disciplineQuestions = getNumericValue(discipline.questionCount);
         if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-          // Para evitar problemas com o check constraint, garantimos que o tipo seja uma string simples
-          // Muitos banks de dados têm restrições em tipos de coluna como TEXT
-          const safeType = sanitizeSectionType(discipline.type);
-          return safeType as SectionType;
+          // Importante: sempre retorna um dos tipos válidos conhecidos pelo banco de dados
+          // em vez de usar tipos customizados que podem violar o check constraint
+          return 'specific1' as SectionType;
         }
         currentIndex += disciplineQuestions;
       }

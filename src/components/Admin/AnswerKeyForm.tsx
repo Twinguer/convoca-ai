@@ -269,8 +269,10 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
       
       // Preparar dados para salvar o gabarito completo de uma vez
       const answerKeyData = allQuestions.map(qNum => {
-        // Determinar o tipo de seção para cada questão
+        // Determinar o tipo de seção para cada questão - usando tipos válidos
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
+        
+        console.log(`Questão ${qNum}: usando section_type=${sectionType}`);
         
         return {
           concurso_id: concursoId,
@@ -296,7 +298,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           setSavedSuccess(false);
         }, 3000);
       } else {
-        throw new Error("Erro ao salvar gabarito");
+        throw new Error(saveResult.error || "Erro ao salvar gabarito");
       }
     } catch (error: any) {
       console.error('Error saving answer key:', error);
@@ -423,6 +425,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
         <CardTitle>Gabarito Oficial - {concurso?.titulo}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Error message */}
         {error && (
           <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
@@ -430,6 +433,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
+        {/* Success message */}
         {savedSuccess && (
           <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <CheckCircle className="h-4 w-4" />
@@ -437,6 +441,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
+        {/* Recalculation success message */}
         {recalculationSuccess && (
           <div className="bg-blue-100 p-3 rounded-md flex items-center gap-2 text-blue-800">
             <CheckCircle className="h-4 w-4" />
@@ -444,6 +449,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
+        {/* Nullified questions info */}
         <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
@@ -464,7 +470,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         </div>
         
-        {/* Barra de progresso de preenchimento do gabarito */}
+        {/* Progress indicator */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex flex-col">
             <h4 className="font-medium text-blue-800">Progresso do preenchimento</h4>
@@ -483,6 +489,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         </div>
         
+        {/* Tabs for sections */}
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
             <Tabs 
@@ -505,7 +512,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => (
-                        <React.Fragment key={rowIndex}>
+                        /* Remove data-lov-id to avoid React Fragment warning */
+                        <React.Fragment key={`row-${rowIndex}`}>
                           {row.map((questionNumber, colIndex) => 
                             questionNumber !== null ? (
                               <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
@@ -544,6 +552,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({ concursoId }) => {
           </div>
         )}
         
+        {/* Action buttons */}
         <div className="flex justify-between mt-4">
           <Button 
             onClick={performRecalculation}
