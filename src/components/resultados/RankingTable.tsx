@@ -265,13 +265,13 @@ const RankingTableContent: React.FC<{
           </TableHead>)}
         
         {/* Partes subjetivas */}
-        {concurso.has_discursive === true && <TableHead className="text-right">Dis</TableHead>}
+        {concurso.has_discursive === true && <TableHead className="text-right">DIS</TableHead>}
         
-        {concurso.has_case_study_1 === true && <TableHead className="text-right">Estudo 1</TableHead>}
+        {concurso.has_case_study_1 === true && <TableHead className="text-right">EC1</TableHead>}
         
-        {concurso.has_case_study_2 === true && <TableHead className="text-right">Estudo 2</TableHead>}
+        {concurso.has_case_study_2 === true && <TableHead className="text-right">EC2</TableHead>}
         
-        {concurso.has_case_study_3 === true && <TableHead className="text-right">Estudo 3</TableHead>}
+        {concurso.has_case_study_3 === true && <TableHead className="text-right">EC3</TableHead>}
           
         {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
       </TableRow>
