@@ -138,7 +138,6 @@ export const useSaveRanking = () => {
         }
         result = data;
         concursoIdToUse = editId;
-        toast.success("Ranking atualizado com sucesso!");
       } else {
         const { data, error } = await supabase
           .from('concursos')
@@ -151,6 +150,98 @@ export const useSaveRanking = () => {
         }
         result = data;
         concursoIdToUse = result?.[0]?.id;
+      }
+
+      // Nova lógica: Sincronizar official_answer_weights com as disciplinas do concurso
+      if (concursoIdToUse) {
+        // Obter o concurso salvo para acessar suas disciplinas
+        const { data: savedConcurso, error: getConcursoError } = await supabase
+          .from('concursos')
+          .select('disciplines')
+          .eq('id', concursoIdToUse)
+          .single();
+
+        if (getConcursoError) {
+          console.error("Erro ao buscar concurso para sincronização:", getConcursoError);
+          // Continuamos mesmo com erro, pois o concurso já foi salvo
+        } else if (savedConcurso && savedConcurso.disciplines) {
+          try {
+            // 1. Excluir registros existentes em official_answer_weights para este concurso
+            const { error: deleteError } = await supabase
+              .from('official_answer_weights')
+              .delete()
+              .eq('concurso_id', concursoIdToUse);
+
+            if (deleteError) {
+              console.error("Erro ao excluir official_answer_weights existentes:", deleteError);
+            }
+
+            // 2. Gerar dados para official_answer_weights
+            const disciplines = savedConcurso.disciplines;
+            const officialAnswerWeightsToInsert: any[] = [];
+            let questionCounter = 1;
+
+            if (disciplines && Array.isArray(disciplines)) {
+              console.log(`Processando ${disciplines.length} disciplinas para inserir em official_answer_weights`);
+              
+              for (const discipline of disciplines) {
+                if (discipline.isEnabled !== true) {
+                  console.log(`Pulando disciplina desabilitada: ${discipline.name}`);
+                  continue;
+                }
+
+                const disciplineType = discipline.type;
+                const questionCount = ensureNumeric(discipline.questionCount);
+                const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
+
+                console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
+
+                if (disciplineType && questionCount > 0) {
+                  for (let i = 0; i < questionCount; i++) {
+                    officialAnswerWeightsToInsert.push({
+                      concurso_id: concursoIdToUse,
+                      question_number: questionCounter,
+                      correct_answer: 'A', // Valor padrão inicial
+                      section_type: disciplineType, // CRUCIAL: Usar o type da disciplina como section_type
+                      weight: disciplineWeight,
+                      is_nullified: false,
+                      question_type: 'MULTIPLE_CHOICE'
+                    });
+                    questionCounter++;
+                  }
+                } else {
+                  console.warn(`Disciplina com type ou questionCount inválido ignorada:`, discipline);
+                }
+              }
+            }
+
+            // 3. Inserir os novos registros em official_answer_weights
+            if (officialAnswerWeightsToInsert.length > 0) {
+              console.log(`Inserindo ${officialAnswerWeightsToInsert.length} registros em official_answer_weights`);
+              
+              const { error: insertError } = await supabase
+                .from('official_answer_weights')
+                .insert(officialAnswerWeightsToInsert);
+
+              if (insertError) {
+                console.error("Erro ao inserir novos official_answer_weights:", insertError);
+                toast.error("Ranking salvo, mas houve um erro ao configurar os pesos das questões. O cálculo da pontuação pode estar incorreto.");
+              } else {
+                console.log(`Official answer weights criados com sucesso para o concurso ${concursoIdToUse}. Total: ${officialAnswerWeightsToInsert.length} registros.`);
+              }
+            } else {
+              console.log("Nenhuma disciplina customizada válida encontrada para inserir em official_answer_weights.");
+            }
+          } catch (syncError) {
+            console.error("Erro durante a sincronização com official_answer_weights:", syncError);
+          }
+        }
+      }
+
+      // Exibir mensagem de sucesso apenas depois de todo o processo
+      if (editId) {
+        toast.success("Ranking atualizado com sucesso!");
+      } else {
         toast.success("Ranking criado com sucesso!");
       }
 

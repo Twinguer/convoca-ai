@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -19,11 +18,13 @@ export interface Ranking {
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
   // Pontuações de disciplinas customizadas
-  customDisciplineScores?: Record<string, number> | null;
-  weightedCustomDisciplineScores?: Record<string, number> | null;
+  customDisciplineScores?: { [key: string]: number };
+  weightedCustomDisciplineScores?: { [key: string]: number };
+  // Campos adicionais
   reservationType: string;
-  displayReservation: string;
+  displayReservation?: string;
   id: string;
+  quotaPosition?: number; // Posição dentro da cota
 }
 
 // Helper function to get abbreviation for reservation type
@@ -142,7 +143,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCustomDisciplineScores,
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
-        id: ranking.id
+        id: ranking.id,
+        quotaPosition: ranking.quota_position
       };
     });
     
