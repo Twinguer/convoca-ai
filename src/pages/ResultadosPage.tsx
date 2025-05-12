@@ -22,7 +22,8 @@ const ResultadosPage = () => {
     user,
     refreshData,
     creatorName,
-    inscritos
+    inscritos,
+    isParticipating // Usando a nova propriedade para verificar participação
   } = useResultadosData();
   const {
     toast
@@ -47,7 +48,14 @@ const ResultadosPage = () => {
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
       console.log('Custom discipline scores in first ranking:', rankings[0].customDisciplineScores);
     }
-  }, [concurso, rankings]);
+    
+    // Log para verificar status de participação
+    console.log('User participation status:', { 
+      isAuthenticated, 
+      isParticipating, 
+      userRankingExists: !!userRanking 
+    });
+  }, [concurso, rankings, isAuthenticated, isParticipating, userRanking]);
 
   const handleRefresh = async () => {
     console.log("Manual refresh initiated by user");
@@ -93,7 +101,8 @@ const ResultadosPage = () => {
             {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
           </Button>
           
-          {concurso && !userRanking && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
+          {/* Mostrar o botão "Participar" apenas se o usuário estiver logado e não estiver participando */}
+          {concurso && !isParticipating && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}

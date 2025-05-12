@@ -65,6 +65,33 @@ export function useResultadosData() {
     staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
   
+  // Verificar se o usuário já está participando deste concurso
+  const { data: userParticipationStatus, isLoading: isCheckingParticipation } = useQuery({
+    queryKey: ['user-participation', id, user?.id],
+    queryFn: async () => {
+      if (!user || !id) return { isParticipating: false };
+      
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('id')
+        .eq('concurso_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+        
+      if (error) {
+        console.error('Error checking participation:', error);
+        return { isParticipating: false };
+      }
+      
+      return { 
+        isParticipating: !!data,
+        rankingId: data?.id 
+      };
+    },
+    enabled: !!user && !!id,
+    staleTime: 10000,
+  });
+  
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
   useEffect(() => {
     if (!id) return;
@@ -98,7 +125,7 @@ export function useResultadosData() {
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
   
-  const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator;
+  const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator || isCheckingParticipation;
   
   // Function to manually refresh all data
   const refreshData = async () => {
@@ -147,9 +174,6 @@ export function useResultadosData() {
     }
   };
   
-  // Remover auto-refresh ao montar o componente
-  // Agora o usuário precisa clicar no botão de atualizar explicitamente
-  
   return {
     concurso,
     rankings,
@@ -160,6 +184,9 @@ export function useResultadosData() {
     user,
     refreshData,
     creatorName: creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário'),
-    inscritos: concurso?.inscritos || 0
+    inscritos: concurso?.inscritos || 0,
+    // Adiciona informação sobre participação do usuário
+    isParticipating: userParticipationStatus?.isParticipating || false,
+    userRankingId: userParticipationStatus?.rankingId
   };
 }
