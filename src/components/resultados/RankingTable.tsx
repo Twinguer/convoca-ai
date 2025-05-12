@@ -257,7 +257,7 @@ const RankingTableContent: React.FC<{
           {getQuotaAbbreviation(activeTab)}
         </TableHead>}
         <TableHead>Candidato</TableHead>
-        <TableHead className="text-right">Total</TableHead>
+        <TableHead className="text-right">Tot</TableHead>
         
         {/* Colunas de disciplinas customizadas */}
         {customDisciplines.map((discipline, idx) => <TableHead key={`custom-${idx}`} className="text-right">
