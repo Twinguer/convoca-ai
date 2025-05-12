@@ -19,7 +19,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal">AC (Ampla Concorrência)</FormLabel>
+                <FormLabel className="text-sm font-normal">ac (Ampla Concorrência)</FormLabel>
               </FormItem>} />
           
           <FormField control={form.control} name="has_ppp" render={({
@@ -28,7 +28,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal">PPP (Pessoas Pretas e Pardas)</FormLabel>
+                <FormLabel className="text-sm font-normal">ppp (Pessoas Pretas e Pardas)</FormLabel>
               </FormItem>} />
           
           <FormField control={form.control} name="has_pcd" render={({
@@ -37,7 +37,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal">PCD (Pessoas com Deficiência)</FormLabel>
+                <FormLabel className="text-sm font-normal">pcd (Pessoas com Deficiência)</FormLabel>
               </FormItem>} />
           
           <FormField control={form.control} name="has_hipossuficientes" render={({
@@ -46,7 +46,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal">Hip (Hipossuficientes)</FormLabel>
+                <FormLabel className="text-sm font-normal">hip (Hipossuficientes)</FormLabel>
               </FormItem>} />
           
           <FormField control={form.control} name="has_indigenas" render={({
@@ -55,7 +55,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal">Ind (Indígenas)</FormLabel>
+                <FormLabel className="text-sm font-normal">ind (Indígenas)</FormLabel>
               </FormItem>} />
           
           <FormField control={form.control} name="has_transsexuais" render={({
@@ -64,7 +64,7 @@ export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> =
                 <FormControl>
                   <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
-                <FormLabel className="text-sm font-normal">Trans (Pessoas Trans)</FormLabel>
+                <FormLabel className="text-sm font-normal">tra (Pessoas Trans)</FormLabel>
               </FormItem>} />
         </div>
       </CardContent>
