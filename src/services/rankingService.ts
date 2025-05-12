@@ -25,7 +25,7 @@ export interface Ranking {
   reservationType: string;
   displayReservation?: string;
   id: string;
-  quotaPosition?: number; // Posição dentro da cota
+  quotaPosition?: number; // Posição dentro da cota - será calculado em runtime
 }
 
 // Helper function to get abbreviation for reservation type
@@ -60,7 +60,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         customDisciplineScores,
         weightedCustomDisciplineScores,
         reservation_type,
-        quota_position,
         users_profiles(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)
@@ -146,7 +145,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id,
-        quotaPosition: ranking.quota_position
+        // Não buscamos mais quota_position do banco, será calculado em runtime
       };
     });
     
