@@ -252,12 +252,12 @@ const RankingTableContent: React.FC<{
   // Determinar as colunas da tabela com base nas disciplinas do concurso
   const renderTableHeader = () => <TableHeader>
       <TableRow>
-        <TableHead className="text-center w-16">AC</TableHead>
+        <TableHead className="text-center w-16">ac</TableHead>
         {!isAmpla && <TableHead className="text-center w-16">
           {getQuotaAbbreviation(activeTab)}
         </TableHead>}
-        <TableHead>PAR</TableHead>
-        <TableHead className="text-right">TOT</TableHead>
+        <TableHead>part</TableHead>
+        <TableHead className="text-right">tot</TableHead>
         
         {/* Colunas de disciplinas customizadas */}
         {customDisciplines.map((discipline, idx) => <TableHead key={`custom-${idx}`} className="text-right">
@@ -265,13 +265,13 @@ const RankingTableContent: React.FC<{
           </TableHead>)}
         
         {/* Partes subjetivas */}
-        {concurso.has_discursive === true && <TableHead className="text-right">DIS</TableHead>}
+        {concurso.has_discursive === true && <TableHead className="text-right">dis</TableHead>}
         
-        {concurso.has_case_study_1 === true && <TableHead className="text-right">EC1</TableHead>}
+        {concurso.has_case_study_1 === true && <TableHead className="text-right">ec1</TableHead>}
         
-        {concurso.has_case_study_2 === true && <TableHead className="text-right">EC2</TableHead>}
+        {concurso.has_case_study_2 === true && <TableHead className="text-right">ec2</TableHead>}
         
-        {concurso.has_case_study_3 === true && <TableHead className="text-right">EC3</TableHead>}
+        {concurso.has_case_study_3 === true && <TableHead className="text-right">ec3</TableHead>}
           
         {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
       </TableRow>
