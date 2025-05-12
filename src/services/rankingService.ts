@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -59,6 +60,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         customDisciplineScores,
         weightedCustomDisciplineScores,
         reservation_type,
+        quota_position,
         users_profiles(name, avatar_url)
       `)
       .eq('concurso_id', concursoId)

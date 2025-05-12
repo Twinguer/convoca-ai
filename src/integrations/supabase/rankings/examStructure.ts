@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
@@ -145,9 +144,9 @@ export const sanitizeSectionType = (sectionType: string): string => {
     return sectionType;
   }
   
-  // Para disciplinas customizadas, devemos retornar um tipo válido
-  // O check constraint no banco de dados só aceita valores específicos
-  return 'specific1'; // Usamos specific1 como fallback para garantir compatibilidade
+  // Para disciplinas customizadas, permitimos que o tipo original seja mantido
+  // O banco de dados aceita tipos customizados (por exemplo, que começam com 'custom_')
+  return sectionType;
 };
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
