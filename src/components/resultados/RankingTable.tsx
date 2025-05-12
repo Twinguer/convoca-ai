@@ -256,7 +256,7 @@ const RankingTableContent: React.FC<{
         {!isAmpla && <TableHead className="text-center w-16">
           {getQuotaAbbreviation(activeTab)}
         </TableHead>}
-        <TableHead>Candidato</TableHead>
+        <TableHead>PAR</TableHead>
         <TableHead className="text-right">TOT</TableHead>
         
         {/* Colunas de disciplinas customizadas */}
