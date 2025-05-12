@@ -17,7 +17,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h3 className="text-xl font-bold">{concurso.orgao}</h3>
-            <p className="text-gray-600">{concurso.banca} • {examTypeLabel}</p>
+            
           </div>
           
           <div className="flex items-center bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-lg border border-emerald-200">
