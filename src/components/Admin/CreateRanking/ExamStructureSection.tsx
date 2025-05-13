@@ -234,7 +234,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
             <FormField control={form.control} name="alternatives_count" render={({
             field
           }) => <FormItem className="ml-4">
-                  <FormLabel>Quantidade de Alternativas</FormLabel>
+                  <FormLabel>Qtd de Alternativas</FormLabel>
                   <Select defaultValue={String(field.value)} onValueChange={value => field.onChange(Number(value))} disabled={form.watch('exam_type') !== 'Alternativas'}>
                     <FormControl>
                       <SelectTrigger>
@@ -266,7 +266,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       <SelectItem value="0.5">0.5 pontos</SelectItem>
                       <SelectItem value="1">1 ponto</SelectItem>
                       <SelectItem value="1.5">1,5 pontos</SelectItem>
-                      <SelectItem value="2.5">2,5 pontos</SelectItem>
+                      <SelectItem value="2">2 pontos</SelectItem>
                       <SelectItem value="3">3 pontos</SelectItem>
                     </SelectContent>
                   </Select>
@@ -278,13 +278,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         <div className="flex items-center space-x-2 mb-6">
           <Switch checked={isCustomKnowledge} onCheckedChange={handleKnowledgeTypeToggle} id="knowledge-type-toggle" />
           <label htmlFor="knowledge-type-toggle" className="text-sm font-medium">
-            Usar conhecimentos customizáveis
+            Por Disciplinas
           </label>
         </div>
         
         {/* Áreas de Conhecimento */}
         <div className="flex justify-between items-center mb-4">
-          <h4 className="font-medium">DISCIPLINAS</h4>
+          <h4 className="font-medium">Digite a baixo cada sigla</h4>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -294,32 +294,32 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {isCustomKnowledge ? <DropdownMenuItem onClick={() => handleAddKnowledgeArea('custom')}>
-                  Conhecimento (Customizável)
+                  Adicionar Disciplina
                 </DropdownMenuItem> : <>
                   {!form.watch('has_basic_knowledge') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('basic')}>
-                      Conhecimentos Básicos
+                      C Básicos
                     </DropdownMenuItem>}
                   {!form.watch('has_specific_knowledge_1') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific1')}>
-                      Conhecimentos Específicos
+                      C Específicos
                     </DropdownMenuItem>}
                   {!form.watch('has_specific_knowledge_2') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific2')}>
-                      Conhecimentos Específicos 2
+                      C Específicos 2
                     </DropdownMenuItem>}
                   {!form.watch('has_specific_knowledge_3') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific3')}>
-                      Conhecimentos Específicos 3
+                      C Específicos 3
                     </DropdownMenuItem>}
                 </>}
               {!form.watch('has_discursive') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('discursive')}>
                   Dissertativa
                 </DropdownMenuItem>}
               {!form.watch('has_case_study_1') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case1')}>
-                  Estudo de Caso
+                  Est de Caso
                 </DropdownMenuItem>}
               {!form.watch('has_case_study_2') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case2')}>
-                  Estudo de Caso 2
+                  Est de Caso 2
                 </DropdownMenuItem>}
               {!form.watch('has_case_study_3') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case3')}>
-                  Estudo de Caso 3
+                  Est de Caso 3
                 </DropdownMenuItem>}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -351,7 +351,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <FormLabel>Número de Questões</FormLabel>
+                  <FormLabel>Qtd Questões</FormLabel>
                   <Input type="number" value={discipline.questionCount || 0} min="0" onChange={e => handleDisciplineChange(discipline.id, 'questionCount', Number(e.target.value))} />
                 </div>
                 <div>
