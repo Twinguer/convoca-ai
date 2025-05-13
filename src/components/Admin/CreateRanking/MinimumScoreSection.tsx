@@ -125,7 +125,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
               )}
             />
 
-            {/* Pontuação mínima total da prova */}
+            {/* Pontuação mínima para ampla concorrência */}
             {(watchMinimumScoreType === 'total' || watchMinimumScoreType === 'both') && (
               <FormField
                 control={form.control}
@@ -133,7 +133,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Pontuação mínima total 
+                      Pontuação mínima para ampla concorrência
                       {watchMinimumScoreUnitType === 'percentage' ? ' (%)' : ''}
                     </FormLabel>
                     <FormControl>

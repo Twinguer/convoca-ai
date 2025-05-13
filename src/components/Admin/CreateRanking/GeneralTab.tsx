@@ -161,42 +161,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         return false;
       }
     } else {
-      // For standard knowledge, check the traditional fields
-      console.log("Validating traditional knowledge areas");
-      
-      hasAnyKnowledgeArea = 
-        currentValues.has_basic_knowledge || 
-        currentValues.has_specific_knowledge_1 || 
-        currentValues.has_specific_knowledge_2 || 
-        currentValues.has_specific_knowledge_3 ||
-        currentValues.has_discursive ||
-        currentValues.has_case_study_1 ||
-        currentValues.has_case_study_2 ||
-        currentValues.has_case_study_3;
-
-      if (!hasAnyKnowledgeArea) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, adicione pelo menos uma área de conhecimento.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Validation for question counts
-      if (
-        (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
-        (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
-        (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
-        (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
-      ) {
-        toast({
-          title: "Erro de validação",
-          description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
-          variant: "destructive"
-        });
-        return false;
-      }
+      // Para o modo legado, não precisamos mais validar conhecimentos básicos
+      hasAnyKnowledgeArea = true;
     }
 
     const hasAnyQuota = 

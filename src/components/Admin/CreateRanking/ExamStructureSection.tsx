@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { 
   Card, 
@@ -41,6 +41,7 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
 
   const watchHasCustomKnowledge = form.watch('has_custom_knowledge');
   const watchDisciplines = form.watch('disciplines') || [];
+  const watchExamType = form.watch('exam_type');
 
   const addCustomDiscipline = () => {
     if (!customDisciplineName.trim()) return;
@@ -107,6 +108,13 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
     form.setValue('disciplines', updatedDisciplines, { shouldDirty: true });
   };
 
+  // Efeito para ajustar a penalidade quando o tipo de exame muda
+  useEffect(() => {
+    if (watchExamType !== 'Certo ou Errado') {
+      form.setValue('wrong_answer_penalty', 0);
+    }
+  }, [watchExamType, form]);
+
   return (
     <Card className="border-none shadow-none">
       <CardHeader className="p-0 pb-4">
@@ -128,8 +136,8 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Alternativas">Alternativas (A,B,C,D)</SelectItem>
-                    <SelectItem value="C/E">Certo ou Errado (C/E)</SelectItem>
+                    <SelectItem value="Múltipla Escolha">Múltipla Escolha</SelectItem>
+                    <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
                   </SelectContent>
                 </Select>
               </FormItem>
@@ -164,33 +172,36 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
               )}
             />
 
-            {/* Penalidade por Erro */}
-            <FormField
-              control={form.control}
-              name="wrong_answer_penalty"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Penalidade por Erro</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseFloat(value))}
-                    defaultValue={field.value?.toString() || "0"}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Penalidade" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="0">Sem penalidade</SelectItem>
-                      <SelectItem value="0.25">0.25 ponto</SelectItem>
-                      <SelectItem value="0.33">0.33 ponto</SelectItem>
-                      <SelectItem value="0.5">0.5 ponto</SelectItem>
-                      <SelectItem value="1">1 ponto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
+            {/* Penalidade por Erro - Apenas visível para "Certo ou Errado" */}
+            {watchExamType === 'Certo ou Errado' && (
+              <FormField
+                control={form.control}
+                name="wrong_answer_penalty"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Penalidade por Erro</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseFloat(value))}
+                      defaultValue={field.value?.toString() || "0"}
+                      value={field.value?.toString() || "0"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Penalidade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">Sem penalidade</SelectItem>
+                        <SelectItem value="0.5">0.5 ponto</SelectItem>
+                        <SelectItem value="1">1.0 ponto</SelectItem>
+                        <SelectItem value="1.5">1.5 pontos</SelectItem>
+                        <SelectItem value="2">2.0 pontos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
           {/* Modo de Conhecimentos */}
