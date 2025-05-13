@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
 import { ReservationQuotasSection } from './ReservationQuotasSection';
+import { MinimumScoreSection } from './MinimumScoreSection';
 import { useToast } from '@/hooks/use-toast';
 
 interface GeneralTabProps {
@@ -48,6 +50,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     const formValues = form.getValues();
     if (formValues.localidades && Array.isArray(formValues.localidades) && formValues.localidades.length > 0) {
       setSelectedStates(formValues.localidades);
+    }
+    
+    // Garantir que has_custom_knowledge esteja habilitado por padrão
+    if (form.getValues('has_custom_knowledge') === undefined) {
+      form.setValue('has_custom_knowledge', true);
     }
   }, [form, setSelectedStates]);
 
@@ -253,6 +260,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       />
 
       <ExamStructureSection form={form} />
+      
+      <MinimumScoreSection form={form} />
 
       <ReservationQuotasSection form={form} />
 

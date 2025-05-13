@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -7,9 +8,9 @@ import { UserPlus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
-import { UserActions } from '../Admin/UserActions';
-import { getDisciplines, getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
+import { RankingTableRow } from './RankingTableRow';
 import { Ranking } from '@/services/rankingService';
+
 interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
@@ -17,6 +18,7 @@ interface RankingTableProps {
   isAuthenticated: boolean;
   isRefetching?: boolean;
 }
+
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
@@ -26,6 +28,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -44,7 +47,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       console.log('First ranking scores:', {
         total: rankings[0].score,
         customScores: rankings[0].customDisciplineScores,
-        weightedCustomScores: rankings[0].weightedCustomDisciplineScores
+        weightedCustomScores: rankings[0].weightedCustomDisciplineScores,
+        is_classified: rankings[0].is_classified
       });
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
     }
@@ -73,6 +77,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
+  
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -94,7 +99,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
+  
   const availableQuotas = getAvailableQuotas();
+  
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
     if (quota === "Ampla Concorrência") {
@@ -102,6 +109,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
+  
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -109,32 +117,70 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
-  return <Card>
+  
+  return (
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
-        {isRefetching && <div className="flex items-center text-xs text-amber-600 gap-1">
+        {isRefetching && (
+          <div className="flex items-center text-xs text-amber-600 gap-1">
             <RefreshCw className="h-3 w-3 animate-spin" />
             <span>Atualizando dados...</span>
-          </div>}
-        {!isAuthenticated && <div className="text-sm text-muted-foreground mt-1">
+          </div>
+        )}
+        {!isAuthenticated && (
+          <div className="text-sm text-muted-foreground mt-1">
             <Link to="/auth" className="text-primary hover:underline">
               Faça login
             </Link> para participar deste ranking ou para acessar perfis completos.
-          </div>}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
-        {availableQuotas.length > 1 ? <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {availableQuotas.length > 1 ? (
+          <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4 flex flex-wrap h-auto">
-              {availableQuotas.map(quota => <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>)}
+              {availableQuotas.map(quota => (
+                <TabsTrigger key={quota} value={quota} className="text-sm">
+                  {quota}
+                </TabsTrigger>
+              ))}
             </TabsList>
             
-            {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} />
-              </TabsContent>)}
-          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" />}
+            {availableQuotas.map(quota => (
+              <TabsContent key={quota} value={quota}>
+                <RankingTableContent 
+                  rankings={filterRankingsByQuota(quota)} 
+                  currentUserId={currentUserId} 
+                  handleUserClick={handleUserClick} 
+                  concurso={concurso} 
+                  isAmpla={quota === "Ampla Concorrência"} 
+                  availableQuotas={availableQuotas} 
+                  isAuthenticated={isAuthenticated} 
+                  isRefetching={isRefetching} 
+                  activeTab={quota} 
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          <RankingTableContent 
+            rankings={rankingsWithQuotaPositions || []} 
+            currentUserId={currentUserId} 
+            handleUserClick={handleUserClick} 
+            concurso={concurso} 
+            isAmpla={true} 
+            availableQuotas={availableQuotas} 
+            isAuthenticated={isAuthenticated} 
+            isRefetching={isRefetching} 
+            activeTab="Ampla Concorrência" 
+          />
+        )}
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
+
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
@@ -146,6 +192,7 @@ const getQuotaAbbreviation = (quota: string): string => {
   };
   return abbreviations[quota] || quota.substring(0, 3);
 };
+
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -206,9 +253,12 @@ const RankingTableContent: React.FC<{
       name: d.name
     }));
   };
+  
   const customDisciplines = getCustomDisciplines();
+  
   if (!concurso) {
-    return <Table>
+    return (
+      <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="text-center w-16">AC</TableHead>
@@ -219,51 +269,78 @@ const RankingTableContent: React.FC<{
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rankings.length > 0 ? rankings.map(ranking => <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
-              <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
-              {isAmpla && <TableCell className="text-center font-bold">
-                {ranking.reservationType === "Ampla Concorrência" ? ranking.position + "º" : ""}
-              </TableCell>}
-              <TableCell>
-                <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                    <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span>{ranking.name}</span>
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      {getQuotaAbbreviation(ranking.reservationType)}
-                    </span>}
-                </div>
-              </TableCell>
-              <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-              {isAdminMode && isAuthenticated && <TableCell>
-                  <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
-                </TableCell>}
-            </TableRow>) : <TableRow>
-              <TableCell colSpan={isAdminMode && isAuthenticated ? isAmpla ? 5 : 4 : isAmpla ? 4 : 3} className="text-center py-4">
+          {rankings.length > 0 ? (
+            rankings.map(ranking => (
+              <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
+                <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
+                {isAmpla && (
+                  <TableCell className="text-center font-bold">
+                    {ranking.reservationType === "Ampla Concorrência" ? ranking.position + "º" : ""}
+                  </TableCell>
+                )}
+                <TableCell>
+                  <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
+                      <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span>{ranking.name}</span>
+                    {isAmpla && ranking.reservationType !== "Ampla Concorrência" && (
+                      <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                        {getQuotaAbbreviation(ranking.reservationType)}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
+                {isAdminMode && isAuthenticated && (
+                  <TableCell>
+                    <UserActions 
+                      userId={ranking.userId} 
+                      userName={ranking.name} 
+                      rankingId={ranking.id} 
+                      onSuccess={() => window.location.reload()} 
+                      showOnlyRankingActions={true} 
+                    />
+                  </TableCell>
+                )}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell 
+                colSpan={isAdminMode && isAuthenticated ? isAmpla ? 5 : 4 : isAmpla ? 4 : 3} 
+                className="text-center py-4"
+              >
                 Nenhum participante registrado nesta lista ainda
               </TableCell>
-            </TableRow>}
+            </TableRow>
+          )}
         </TableBody>
-      </Table>;
+      </Table>
+    );
   }
 
   // Determinar as colunas da tabela com base nas disciplinas do concurso
-  const renderTableHeader = () => <TableHeader>
+  const renderTableHeader = () => (
+    <TableHeader>
       <TableRow>
         <TableHead className="text-center w-16">ac</TableHead>
-        {!isAmpla && <TableHead className="text-center w-16">
-          {getQuotaAbbreviation(activeTab)}
-        </TableHead>}
+        {!isAmpla && (
+          <TableHead className="text-center w-16">
+            {getQuotaAbbreviation(activeTab)}
+          </TableHead>
+        )}
         <TableHead>part</TableHead>
         <TableHead className="text-right">tot</TableHead>
         
         {/* Colunas de disciplinas customizadas */}
-        {customDisciplines.map((discipline, idx) => <TableHead key={`custom-${idx}`} className="text-right">
+        {customDisciplines.map((discipline, idx) => (
+          <TableHead key={`custom-${idx}`} className="text-right">
             {/* Garantir que o nome da disciplina seja exibido como até 4 caracteres em caixa baixa */}
             {discipline.name.toLowerCase().slice(0, 4)}
-          </TableHead>)}
+          </TableHead>
+        ))}
         
         {/* Partes subjetivas */}
         {concurso.has_discursive === true && <TableHead className="text-right">dis</TableHead>}
@@ -276,76 +353,52 @@ const RankingTableContent: React.FC<{
           
         {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
       </TableRow>
-    </TableHeader>;
+    </TableHeader>
+  );
 
-  // Renderizar cada linha de ranking
-  const renderRankingRows = () => <TableBody className="space-y-0.5">
-      {rankings.length > 0 ? rankings.map(ranking => {
-      const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
-      return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
-            <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
-            
-            {!isAmpla && <TableCell className="text-center font-bold">
-              {ranking.quotaPosition}º
-            </TableCell>}
-            
-            <TableCell>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                  <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span>
-                  {ranking.name}
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      ({getQuotaAbbreviation(ranking.reservationType)})
-                    </span>}
-                </span>
-              </div>
-            </TableCell>
-            
-            <TableCell className={`text-right font-medium ${scoreChanged ? 'text-emerald-600' : ''}`}>
-              {ranking.score.toFixed(2)}
-            </TableCell>
-            
-            {/* Pontuações de disciplinas customizadas */}
-            {customDisciplines.map((discipline, idx) => {
-          // Access the score using the discipline type as the key
-          const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
-          return <TableCell key={`custom-score-${idx}`} className="text-right">
-                  {Number(scoreValue).toFixed(2)}
-                </TableCell>;
-        })}
-            
-            {/* Pontuações de partes subjetivas */}
-            {concurso.has_discursive === true && <TableCell className="text-right">
-                {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
-              </TableCell>}
-            
-            {concurso.has_case_study_1 === true && <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
-              </TableCell>}
-            
-            {concurso.has_case_study_2 === true && <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
-              </TableCell>}
-            
-            {concurso.has_case_study_3 === true && <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
-              </TableCell>}
-            
-            {isAdminMode && isAuthenticated && <TableCell>
-                <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
-              </TableCell>}
-          </TableRow>;
-    }) : <TableRow>
-          <TableCell colSpan={4 + customDisciplines.length + (concurso.has_discursive ? 1 : 0) + (concurso.has_case_study_1 ? 1 : 0) + (concurso.has_case_study_2 ? 1 : 0) + (concurso.has_case_study_3 ? 1 : 0) + (isAdminMode && isAuthenticated ? 1 : 0)} className="text-center py-4">
+  // Renderizar cada linha de ranking usando o componente RankingTableRow
+  const renderRankingRows = () => (
+    <TableBody className="space-y-0.5">
+      {rankings.length > 0 ? (
+        rankings.map(ranking => (
+          <RankingTableRow
+            key={ranking.userId}
+            ranking={ranking}
+            currentUserId={currentUserId}
+            handleUserClick={handleUserClick}
+            isAmpla={isAmpla}
+            isAuthenticated={isAuthenticated}
+            isAdminMode={isAdminMode}
+            hasScoreChanged={hasScoreChanged(ranking.id, ranking.score)}
+            customDisciplines={customDisciplines}
+            concursoHasDiscursive={concurso.has_discursive}
+            concursoHasCaseStudy1={concurso.has_case_study_1}
+            concursoHasCaseStudy2={concurso.has_case_study_2}
+            concursoHasCaseStudy3={concurso.has_case_study_3}
+          />
+        ))
+      ) : (
+        <TableRow>
+          <TableCell 
+            colSpan={4 + customDisciplines.length + 
+              (concurso.has_discursive ? 1 : 0) + 
+              (concurso.has_case_study_1 ? 1 : 0) + 
+              (concurso.has_case_study_2 ? 1 : 0) + 
+              (concurso.has_case_study_3 ? 1 : 0) + 
+              (isAdminMode && isAuthenticated ? 1 : 0)} 
+            className="text-center py-4"
+          >
             Nenhum participante registrado nesta lista ainda
           </TableCell>
-        </TableRow>}
-    </TableBody>;
-  return <Table>
+        </TableRow>
+      )}
+    </TableBody>
+  );
+
+  return (
+    <Table>
       {renderTableHeader()}
       {renderRankingRows()}
-    </Table>;
+    </Table>
+  );
 };
