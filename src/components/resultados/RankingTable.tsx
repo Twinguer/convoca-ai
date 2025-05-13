@@ -261,7 +261,8 @@ const RankingTableContent: React.FC<{
         
         {/* Colunas de disciplinas customizadas */}
         {customDisciplines.map((discipline, idx) => <TableHead key={`custom-${idx}`} className="text-right">
-            {discipline.name}
+            {/* Garantir que o nome da disciplina seja exibido como até 4 caracteres em caixa baixa */}
+            {discipline.name.toLowerCase().slice(0, 4)}
           </TableHead>)}
         
         {/* Partes subjetivas */}

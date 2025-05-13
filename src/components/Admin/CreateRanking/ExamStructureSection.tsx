@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,16 @@ interface ExamStructureSectionProps {
 export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> = ({
   form
 }) => {
-  const [isCustomKnowledge, setIsCustomKnowledge] = useState<boolean>(form.watch('has_custom_knowledge') || false);
+  // Definir isCustomKnowledge como true por padrão
+  const [isCustomKnowledge, setIsCustomKnowledge] = useState<boolean>(form.watch('has_custom_knowledge') !== false);
+  
+  // Inicializar com conhecimentos customizáveis ativados
+  useEffect(() => {
+    // Se não estiver explicitamente definido como false, ativar por padrão
+    if (form.watch('has_custom_knowledge') !== false) {
+      handleKnowledgeTypeToggle(true);
+    }
+  }, []);
 
   // Helper function to render weight select component
   const renderWeightSelect = (name: string) => <FormField control={form.control} name={name} render={({
@@ -50,9 +60,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     if (type === 'custom') {
       // Adicionar conhecimento customizado
       const currentDisciplines = form.watch('disciplines') || [];
+      
+      // Criar uma sigla aleatória de até 4 caracteres em caixa baixa
+      const randomId = Math.random().toString(36).substring(2, 6).toLowerCase();
+      
       const newDiscipline = {
         id: uuidv4(),
-        name: 'Novo Conhecimento',
+        name: randomId, // Usar a sigla como nome padrão (até 4 caracteres minúsculos)
         type: `custom_${uuidv4().slice(0, 8)}`,
         // Identificador único para a seção
         isEnabled: true,
@@ -138,9 +152,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
   // Handler para atualizar um campo específico de uma disciplina
   const handleDisciplineChange = (disciplineId: string, field: string, value: any) => {
     const currentDisciplines = form.watch('disciplines') || [];
+    
+    // Se o campo for "name", garantir que seja no máximo 4 caracteres em caixa baixa
+    let processedValue = value;
+    if (field === 'name') {
+      processedValue = value.toLowerCase().slice(0, 4);
+    }
+    
     const updatedDisciplines = currentDisciplines.map((d: any) => d.id === disciplineId ? {
       ...d,
-      [field]: value
+      [field]: processedValue
     } : d);
     form.setValue('disciplines', updatedDisciplines);
   };
@@ -161,9 +182,12 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
       // If no disciplines exist yet, create an initial one
       if (!form.watch('disciplines') || form.watch('disciplines').length === 0) {
+        // Criar uma sigla aleatória de até 4 caracteres em caixa baixa
+        const randomId = Math.random().toString(36).substring(2, 6).toLowerCase();
+        
         const newDiscipline = {
           id: uuidv4(),
-          name: 'Novo Conhecimento',
+          name: randomId, // Usar a sigla como nome padrão (até 4 caracteres minúsculos)
           type: `custom_${uuidv4().slice(0, 8)}`,
           isEnabled: true,
           questionCount: 10,
@@ -180,6 +204,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       // We don't clear disciplines array to preserve data if user toggles back
     }
   };
+  
   return <Card>
       <CardContent className="pt-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -314,7 +339,10 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           {/* Seções customizadas */}
           {isCustomKnowledge && form.watch('disciplines') && form.watch('disciplines').map((discipline: any, index: number) => <div className="border p-4 rounded-md" key={discipline.id || index}>
               <div className="flex justify-between items-center mb-4">
-                <input className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={discipline.name} onChange={e => handleDisciplineChange(discipline.id, 'name', e.target.value)} />
+                <input className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%] lowercase" 
+                       maxLength={4}
+                       value={discipline.name} 
+                       onChange={e => handleDisciplineChange(discipline.id, 'name', e.target.value)} />
                 <Button variant="ghost" size="sm" onClick={() => handleRemoveKnowledgeArea('custom', discipline.id)} className="text-red-500 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remover

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -142,7 +143,10 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 
                 {/* Posição e Pontuação */}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  
+                  {/* Adicionando a posição */}
+                  <Badge variant="outline" className="flex items-center bg-amber-50 border-amber-200">
+                    Posição: {ranking.position ? `${ranking.position}º` : 'Calculando...'}
+                  </Badge>
                   
                   <Badge variant="secondary" className="flex items-center">
                     Pontuação: {typeof ranking.score === 'number' ? ranking.score.toFixed(2) : 'Calculando...'}
