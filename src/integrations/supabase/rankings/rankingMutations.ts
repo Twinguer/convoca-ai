@@ -38,7 +38,7 @@ export const saveRanking = async (
     // Buscar concursos existentes e fazer a comparação de unicidade em JS
     const { data: founds, error: findError } = await supabase
       .from('concursos')
-      .select('id, titulo, orgao, banca, data_publicacao')
+      .select('id, titulo, orgao, banca, custom_banca, data_publicacao')
       .eq('data_publicacao', formValues.data_publicacao);
 
     if (findError) throw findError;
@@ -102,7 +102,7 @@ export const saveRanking = async (
     const dataToSubmit: Record<string, any> = {
       ...dataFormValues,
       created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
-      has_custom_knowledge: dataFormValues.has_custom_knowledge === true
+      has_custom_knowledge: true // Sempre usar conhecimento customizado (disciplinas)
     };
     
     // Definir explicitamente título e órgão
@@ -119,13 +119,11 @@ export const saveRanking = async (
       }
     });
 
-    // Verificar validações específicas quando não estiver usando conhecimentos customizados
-    if (dataToSubmit.has_custom_knowledge !== true) {
-      // Somente verificar basic_knowledge_questions se has_basic_knowledge for true E não estiver usando conhecimentos customizados
-      if (dataToSubmit.has_basic_knowledge === true && (!dataToSubmit.basic_knowledge_questions || dataToSubmit.basic_knowledge_questions <= 0)) {
-        throw new Error("O número de questões de Conhecimentos Básicos deve ser maior que zero quando habilitado");
-      }
-    }
+    // Desabilitar conhecimentos básicos/específicos padrão
+    dataToSubmit.has_basic_knowledge = false;
+    dataToSubmit.has_specific_knowledge_1 = false;
+    dataToSubmit.has_specific_knowledge_2 = false;
+    dataToSubmit.has_specific_knowledge_3 = false;
 
     // Log para verificar o que estamos enviando
     console.log('Submitting data to Supabase:', 

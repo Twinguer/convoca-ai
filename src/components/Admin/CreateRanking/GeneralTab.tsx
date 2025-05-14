@@ -54,7 +54,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
-    console.log("Validating form values:", currentValues);
+    console.log("Validando form values:", currentValues);
 
     if (!currentValues.predefined_job_title) {
       toast({
@@ -127,6 +127,22 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       });
       return false;
     }
+    
+    // Verificar se há pelo menos uma disciplina habilitada
+    if (Array.isArray(currentValues.disciplines)) {
+      const hasEnabledDiscipline = currentValues.disciplines.some(
+        (discipline: any) => discipline.isEnabled === true
+      );
+      
+      if (!hasEnabledDiscipline) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, habilite pelo menos uma disciplina.",
+          variant: "destructive"
+        });
+        return false;
+      }
+    }
 
     return true;
   };
@@ -135,8 +151,14 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     if (validateBeforeSave() && onSaveRanking) {
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       
-      // Ensure has_custom_knowledge is set to true as default
+      // Garantir que has_custom_knowledge seja sempre true (padrão agora é disciplinas)
       form.setValue('has_custom_knowledge', true);
+      
+      // Desabilitar conhecimentos básicos/específicos padrão
+      form.setValue('has_basic_knowledge', false);
+      form.setValue('has_specific_knowledge_1', false);
+      form.setValue('has_specific_knowledge_2', false);
+      form.setValue('has_specific_knowledge_3', false);
       
       await onSaveRanking();
       setIsFirstSaveDone(true);
