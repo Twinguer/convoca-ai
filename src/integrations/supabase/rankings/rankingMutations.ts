@@ -119,6 +119,14 @@ export const saveRanking = async (
       }
     });
 
+    // Verificar validações específicas quando não estiver usando conhecimentos customizados
+    if (dataToSubmit.has_custom_knowledge !== true) {
+      // Somente verificar basic_knowledge_questions se has_basic_knowledge for true E não estiver usando conhecimentos customizados
+      if (dataToSubmit.has_basic_knowledge === true && (!dataToSubmit.basic_knowledge_questions || dataToSubmit.basic_knowledge_questions <= 0)) {
+        throw new Error("O número de questões de Conhecimentos Básicos deve ser maior que zero quando habilitado");
+      }
+    }
+
     // Log para verificar o que estamos enviando
     console.log('Submitting data to Supabase:', 
       JSON.stringify({
@@ -176,4 +184,3 @@ export const saveOfficialAnswers = async (
 };
 
 // Outras funções de mutação relacionadas a rankings...
-
