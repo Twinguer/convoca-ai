@@ -49,7 +49,7 @@ export const saveRanking = async (
     const isDuplicate = !editId && !isAdminEditing && founds?.some(item =>
       normalize(item.titulo) === normalize(title) &&
       normalize(item.orgao) === normalize(orgao) &&
-      normalize(item.banca) === normalize(formValues.custom_banca || formValues.banca || '')
+      normalize(item.custom_banca || item.banca || '') === normalize(formValues.custom_banca || formValues.banca || '')
     );
 
     if (isDuplicate) {
@@ -94,7 +94,8 @@ export const saveRanking = async (
       'specific_knowledge_2_weight', 'specific_knowledge_3_weight',
       'discursive_weight', 'case_study_1_weight',
       'case_study_2_weight', 'case_study_3_weight',
-      'alternatives_count', 'wrong_answer_penalty'
+      'alternatives_count', 'wrong_answer_penalty',
+      'total_minimum_score', 'quota_minimum_score'
     ];
 
     // Criar objeto limpo com dados para submissão
@@ -175,3 +176,4 @@ export const saveOfficialAnswers = async (
 };
 
 // Outras funções de mutação relacionadas a rankings...
+
