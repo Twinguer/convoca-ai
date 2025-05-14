@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -109,89 +110,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
 
-    const isUsingCustomKnowledge = currentValues.has_custom_knowledge;
-    console.log("Using custom knowledge:", isUsingCustomKnowledge);
-    
-    // Check for valid knowledge sections based on the selected mode
-    let hasAnyKnowledgeArea = false;
-    
-    if (isUsingCustomKnowledge) {
-      // For custom knowledge, check if there are any enabled disciplines with question count
-      console.log("Validating custom disciplines:", currentValues.disciplines);
-      
-      if (!currentValues.disciplines || !Array.isArray(currentValues.disciplines) || currentValues.disciplines.length === 0) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, adicione pelo menos uma disciplina customizada.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      hasAnyKnowledgeArea = currentValues.disciplines.some(d => d.isEnabled && d.questionCount > 0);
-      
-      if (!hasAnyKnowledgeArea) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, adicione pelo menos uma disciplina customizada com questões.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      // Check that all enabled custom disciplines have questions
-      const invalidDisciplines = currentValues.disciplines
-        .filter(d => d.isEnabled && (!d.questionCount || Number(d.questionCount) === 0));
-      
-      if (invalidDisciplines.length > 0) {
-        toast({
-          title: "Erro de validação",
-          description: `As seguintes disciplinas precisam ter número de questões maior que zero: ${
-            invalidDisciplines.map(d => d.name).join(', ')
-          }`,
-          variant: "destructive"
-        });
-        return false;
-      }
-    } else {
-      // For standard knowledge, check the traditional fields
-      console.log("Validating traditional knowledge areas");
-      
-      hasAnyKnowledgeArea = 
-        currentValues.has_basic_knowledge || 
-        currentValues.has_specific_knowledge_1 || 
-        currentValues.has_specific_knowledge_2 || 
-        currentValues.has_specific_knowledge_3 ||
-        currentValues.has_discursive ||
-        currentValues.has_case_study_1 ||
-        currentValues.has_case_study_2 ||
-        currentValues.has_case_study_3;
-
-      if (!hasAnyKnowledgeArea) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, adicione pelo menos uma área de conhecimento.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Validation for question counts
-      if (
-        (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
-        (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
-        (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
-        (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
-      ) {
-        toast({
-          title: "Erro de validação",
-          description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
-          variant: "destructive"
-        });
-        return false;
-      }
-    }
-
+    // Verificar se há cotas de reserva selecionadas
     const hasAnyQuota = 
       currentValues.has_ampla_concorrencia || 
       currentValues.has_ppp || 
@@ -215,6 +134,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const handleSave = async () => {
     if (validateBeforeSave() && onSaveRanking) {
       form.setValue('localidades', selectedStates, { shouldDirty: true });
+      
+      // Ensure has_custom_knowledge is set to true as default
+      form.setValue('has_custom_knowledge', true);
+      
       await onSaveRanking();
       setIsFirstSaveDone(true);
     }

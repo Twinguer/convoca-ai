@@ -42,16 +42,29 @@ export const useSaveRanking = () => {
       // Explicitly convert numeric fields to ensure proper types
       formValues.alternatives_count = ensureNumeric(formValues.alternatives_count);
       formValues.wrong_answer_penalty = ensureNumeric(formValues.wrong_answer_penalty);
+      
+      // Minimum score fields
+      if (formValues.has_minimum_score) {
+        formValues.total_minimum_score = ensureNumeric(formValues.total_minimum_score);
+      } else {
+        formValues.total_minimum_score = 0;
+      }
+      
+      if (formValues.has_quota_minimum_score) {
+        formValues.quota_minimum_score = ensureNumeric(formValues.quota_minimum_score);
+      } else {
+        formValues.quota_minimum_score = 0;
+      }
 
-      // Sempre usar modo customizável
+      // Always use custom knowledge mode
       formValues.has_custom_knowledge = true;
 
-      // Garantir que disciplines é um array válido
+      // Ensure disciplines is a valid array
       if (!formValues.disciplines || !Array.isArray(formValues.disciplines)) {
         formValues.disciplines = [];
       }
 
-      // Validar e processar disciplinas customizadas
+      // Process disciplines for valid numeric fields
       if (formValues.disciplines.length > 0) {
         formValues.disciplines = formValues.disciplines.map((discipline: any) => {
           return {
@@ -61,16 +74,6 @@ export const useSaveRanking = () => {
             isEnabled: discipline.isEnabled === true
           };
         });
-        
-        // Verificar se pelo menos uma disciplina está habilitada
-        const hasEnabledDiscipline = formValues.disciplines.some(
-          (discipline: any) => discipline.isEnabled === true
-        );
-        
-        if (!hasEnabledDiscipline) {
-          toast.error("Você precisa habilitar pelo menos uma disciplina");
-          return { duplicated: false, error: true };
-        }
       }
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
@@ -104,7 +107,17 @@ export const useSaveRanking = () => {
         banca: formValues.custom_banca || formValues.banca,
         localidades: formValues.localidades,
         has_custom_knowledge: true,
-        disciplines: formValues.disciplines
+        disciplines: formValues.disciplines,
+        
+        // Process minimum score fields
+        has_minimum_score: formValues.has_minimum_score === true,
+        minimum_score_unit_type: formValues.minimum_score_unit_type || 'percentage',
+        minimum_score_type: formValues.minimum_score_type || 'knowledge',
+        total_minimum_score: formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0,
+        
+        has_quota_minimum_score: formValues.has_quota_minimum_score === true,
+        quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
+        quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0
       };
 
       // Add admin flags if provided
@@ -119,7 +132,11 @@ export const useSaveRanking = () => {
       // Log for debugging
       console.log("Submitting to database:", {
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
-        disciplines: dataToSubmit.disciplines
+        disciplines: dataToSubmit.disciplines,
+        has_minimum_score: dataToSubmit.has_minimum_score,
+        total_minimum_score: dataToSubmit.total_minimum_score,
+        has_quota_minimum_score: dataToSubmit.has_quota_minimum_score,
+        quota_minimum_score: dataToSubmit.quota_minimum_score
       });
 
       let result;
@@ -152,9 +169,9 @@ export const useSaveRanking = () => {
         concursoIdToUse = result?.[0]?.id;
       }
 
-      // Nova lógica: Sincronizar official_answer_weights com as disciplinas do concurso
+      // Logic to synchronize official_answer_weights with the disciplines
       if (concursoIdToUse) {
-        // Obter o concurso salvo para acessar suas disciplinas
+        // Get the saved ranking to access its disciplines
         const { data: savedConcurso, error: getConcursoError } = await supabase
           .from('concursos')
           .select('disciplines')
@@ -163,10 +180,10 @@ export const useSaveRanking = () => {
 
         if (getConcursoError) {
           console.error("Erro ao buscar concurso para sincronização:", getConcursoError);
-          // Continuamos mesmo com erro, pois o concurso já foi salvo
+          // Continue even with error, as the ranking was already saved
         } else if (savedConcurso && savedConcurso.disciplines) {
           try {
-            // 1. Excluir registros existentes em official_answer_weights para este concurso
+            // 1. Delete existing records for this ranking
             const { error: deleteError } = await supabase
               .from('official_answer_weights')
               .delete()
@@ -176,7 +193,7 @@ export const useSaveRanking = () => {
               console.error("Erro ao excluir official_answer_weights existentes:", deleteError);
             }
 
-            // 2. Gerar dados para official_answer_weights
+            // 2. Generate data for official_answer_weights
             const disciplines = savedConcurso.disciplines;
             const officialAnswerWeightsToInsert: any[] = [];
             let questionCounter = 1;
@@ -201,8 +218,8 @@ export const useSaveRanking = () => {
                     officialAnswerWeightsToInsert.push({
                       concurso_id: concursoIdToUse,
                       question_number: questionCounter,
-                      correct_answer: 'A', // Valor padrão inicial
-                      section_type: disciplineType, // CRUCIAL: Usar o type da disciplina como section_type
+                      correct_answer: 'A', // Default initial value
+                      section_type: disciplineType, // CRUCIAL: Use discipline type as section_type
                       weight: disciplineWeight,
                       is_nullified: false,
                       question_type: 'MULTIPLE_CHOICE'
@@ -215,7 +232,7 @@ export const useSaveRanking = () => {
               }
             }
 
-            // 3. Inserir os novos registros em official_answer_weights
+            // 3. Insert new records
             if (officialAnswerWeightsToInsert.length > 0) {
               console.log(`Inserindo ${officialAnswerWeightsToInsert.length} registros em official_answer_weights`);
               
@@ -238,7 +255,7 @@ export const useSaveRanking = () => {
         }
       }
 
-      // Exibir mensagem de sucesso apenas depois de todo o processo
+      // Show success message after the whole process
       if (editId) {
         toast.success("Ranking atualizado com sucesso!");
       } else {
