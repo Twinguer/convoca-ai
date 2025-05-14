@@ -342,10 +342,10 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="0">Sem penalidade</SelectItem>
-                        <SelectItem value="0.25">0.25 pontos</SelectItem>
-                        <SelectItem value="0.33">0.33 pontos</SelectItem>
                         <SelectItem value="0.5">0.5 pontos</SelectItem>
                         <SelectItem value="1">1 ponto</SelectItem>
+                        <SelectItem value="1.5">1.5 pontos</SelectItem>
+                        <SelectItem value="2">2 pontos</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -387,7 +387,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="percentage">Porcentagem</SelectItem>
-                        <SelectItem value="absolute">Pontuação Absoluta</SelectItem>
+                        <SelectItem value="absolute">Absoluta</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
@@ -491,13 +491,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         <div className="flex items-center space-x-2 mb-6 border-t pt-4">
           <Switch checked={isCustomKnowledge} onCheckedChange={handleKnowledgeTypeToggle} id="knowledge-type-toggle" />
           <label htmlFor="knowledge-type-toggle" className="text-sm font-medium">
-            Usar conhecimentos customizáveis
+            Disciplinas
           </label>
         </div>
         
         {/* Áreas de Conhecimento */}
         <div className="flex justify-between items-center mb-4">
-          <h4 className="font-medium">DISCIPLINAS</h4>
+          <h4 className="font-medium"></h4>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -508,7 +508,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
             <DropdownMenuContent>
               {isCustomKnowledge ? 
                 <DropdownMenuItem onClick={() => handleAddKnowledgeArea('custom')}>
-                  Conhecimento (Customizável)
+                  Adicionar Disciplina
                 </DropdownMenuItem> 
                 : 
                 <>
