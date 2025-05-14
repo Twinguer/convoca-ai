@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { RankingTableRow } from './RankingTableRow';
 import { Ranking } from '@/services/rankingService';
+import { UserActions } from '../Admin/UserActions';
 
 interface RankingTableProps {
   rankings?: Ranking[];
