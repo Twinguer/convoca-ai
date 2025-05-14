@@ -61,6 +61,16 @@ export const useSaveRanking = () => {
             isEnabled: discipline.isEnabled === true
           };
         });
+        
+        // Verificar se pelo menos uma disciplina está habilitada
+        const hasEnabledDiscipline = formValues.disciplines.some(
+          (discipline: any) => discipline.isEnabled === true
+        );
+        
+        if (!hasEnabledDiscipline) {
+          toast.error("Você precisa habilitar pelo menos uma disciplina");
+          return { duplicated: false, error: true };
+        }
       }
 
       // Fetch concursos and do the comparison in JS for robust uniqueness

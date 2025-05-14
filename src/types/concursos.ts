@@ -37,18 +37,6 @@ export interface Concurso {
   has_hipossuficientes?: boolean;
   has_indigenas?: boolean;
   has_transsexuais?: boolean;
-
-  // Pontuações mínimas - NOVO
-  has_minimum_score?: boolean; // Flag para usar pontuação mínima
-  minimum_score_type?: 'knowledge' | 'total' | 'both'; // Tipo de pontuação mínima
-  minimum_score_unit_type?: 'percentage' | 'absolute'; // Unidade de pontuação mínima
-  total_minimum_score?: number; // Pontuação mínima total
-  total_ampla_minimum_score?: number; // Pontuação mínima total para ampla concorrência
-  
-  // Pontuações mínimas para cotas - NOVO
-  has_quota_minimum_score?: boolean;
-  quota_minimum_score?: number;
-  quota_minimum_score_unit_type?: 'percentage' | 'absolute';
   
   // Flag de administrador
   is_admin_update?: boolean;
@@ -61,7 +49,6 @@ export interface Concurso {
     isEnabled: boolean;
     questionCount?: number;
     weight?: number;
-    minimumScore?: number; // NOVO: Pontuação mínima para esta disciplina
   }>;
 
   // Manteremos por retrocompatibilidade, mas não serão mais usados ativamente
@@ -89,16 +76,6 @@ export interface Concurso {
   case_study_3_weight?: number;
   custom_knowledge_questions?: number;
   custom_knowledge_weight?: number;
-  
-  // Campos para pontuações mínimas por área de conhecimento - NOVO
-  basic_knowledge_minimum_score?: number;
-  specific_knowledge_1_minimum_score?: number;
-  specific_knowledge_2_minimum_score?: number;
-  specific_knowledge_3_minimum_score?: number;
-  discursive_minimum_score?: number;
-  case_study_1_minimum_score?: number;
-  case_study_2_minimum_score?: number;
-  case_study_3_minimum_score?: number;
 }
 
 export interface ConcursoFilter {
@@ -116,7 +93,6 @@ export interface UserRankingDisplay {
   specific_knowledge_score?: number;
   discursive_score?: number;
   rankingId?: string;
-  is_classified?: boolean; // NOVO: Indica se o usuário está classificado
 }
 
 export interface RankingTableColumn {

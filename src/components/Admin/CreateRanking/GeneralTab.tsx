@@ -1,10 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
 import { ReservationQuotasSection } from './ReservationQuotasSection';
-import { MinimumScoreSection } from './MinimumScoreSection';
 import { useToast } from '@/hooks/use-toast';
 
 interface GeneralTabProps {
@@ -50,11 +48,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     const formValues = form.getValues();
     if (formValues.localidades && Array.isArray(formValues.localidades) && formValues.localidades.length > 0) {
       setSelectedStates(formValues.localidades);
-    }
-    
-    // Garantir que has_custom_knowledge esteja habilitado por padrão
-    if (form.getValues('has_custom_knowledge') === undefined) {
-      form.setValue('has_custom_knowledge', true);
     }
   }, [form, setSelectedStates]);
 
@@ -161,8 +154,42 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         return false;
       }
     } else {
-      // Para o modo legado, não precisamos mais validar conhecimentos básicos
-      hasAnyKnowledgeArea = true;
+      // For standard knowledge, check the traditional fields
+      console.log("Validating traditional knowledge areas");
+      
+      hasAnyKnowledgeArea = 
+        currentValues.has_basic_knowledge || 
+        currentValues.has_specific_knowledge_1 || 
+        currentValues.has_specific_knowledge_2 || 
+        currentValues.has_specific_knowledge_3 ||
+        currentValues.has_discursive ||
+        currentValues.has_case_study_1 ||
+        currentValues.has_case_study_2 ||
+        currentValues.has_case_study_3;
+
+      if (!hasAnyKnowledgeArea) {
+        toast({
+          title: "Erro de validação",
+          description: "Por favor, adicione pelo menos uma área de conhecimento.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Validation for question counts
+      if (
+        (currentValues.has_basic_knowledge && Number(currentValues.basic_knowledge_questions) === 0) ||
+        (currentValues.has_specific_knowledge_1 && Number(currentValues.specific_knowledge_1_questions) === 0) ||
+        (currentValues.has_specific_knowledge_2 && Number(currentValues.specific_knowledge_2_questions) === 0) ||
+        (currentValues.has_specific_knowledge_3 && Number(currentValues.specific_knowledge_3_questions) === 0)
+      ) {
+        toast({
+          title: "Erro de validação",
+          description: "Todas as áreas de conhecimento ativas precisam ter o número de questões maior que zero.",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
 
     const hasAnyQuota = 
@@ -226,8 +253,6 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       />
 
       <ExamStructureSection form={form} />
-      
-      <MinimumScoreSection form={form} />
 
       <ReservationQuotasSection form={form} />
 

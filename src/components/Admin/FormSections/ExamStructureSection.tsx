@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { ExamStructureSection as ExamStructureSectionComponent } from '../CreateRanking/ExamStructureSection';
+import { ExamStructureSectionComponent } from '../CreateRanking/ExamStructureSection';
 
 interface ExamStructureSectionProps {
   form: UseFormReturn<any>;

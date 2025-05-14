@@ -1,11 +1,8 @@
 
-// This file exports all ranking-related functionality from dedicated modules
+// Export all ranking-related functions
+export * from './examStructure';
+export * from './rankingQueries';
+export * from './rankingMutations';
+export * from './sectionUtils';
 export * from './answerManagement';
 export * from './batchOperations';
-export * from './concursoManager';
-export * from './examStructure';
-export * from './rankingMutations';
-export * from './rankingQueries';
-export * from './userAnswers';
-export * from './userRankings';
-export * from './sectionUtils';
