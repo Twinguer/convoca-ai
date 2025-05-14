@@ -1,243 +1,355 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl 
-} from '@/components/ui/form';
 import { 
   Card, 
   CardContent, 
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 
-interface MinimumScoreSectionProps {
-  form: UseFormReturn<any>;
-}
-
-export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }) => {
-  const watchHasMinimumScore = form.watch('has_minimum_score');
-  const watchMinimumScoreType = form.watch('minimum_score_type');
-  const watchMinimumScoreUnitType = form.watch('minimum_score_unit_type');
-  const watchHasQuotaMinimumScore = form.watch('has_quota_minimum_score');
-  const watchHasCustomKnowledge = form.watch('has_custom_knowledge');
-  const watchDisciplines = form.watch('disciplines') || [];
-
-  // Determinar se o tipo de mínimo selecionado permite configuração por conhecimento/disciplina
-  const showCustomMinimums = watchHasMinimumScore && 
-    (watchMinimumScoreType === 'knowledge' || watchMinimumScoreType === 'both');
-
-  // Verificar se há disciplinas habilitadas no modo customizado
-  const hasEnabledDisciplines = Array.isArray(watchDisciplines) && 
-    watchDisciplines.some((d: any) => d.isEnabled === true);
+export const MinimumScoreSection = ({ form }: { form: UseFormReturn<any> }) => {
+  const hasMinimumScore = form.watch('has_minimum_score');
+  const minimumScoreType = form.watch('minimum_score_type');
+  const minimumScoreUnitType = form.watch('minimum_score_unit_type');
+  const hasQuotaMinimumScore = form.watch('has_quota_minimum_score');
+  const quotaMinimumScoreUnitType = form.watch('quota_minimum_score_unit_type');
+  const disciplines = form.watch('disciplines') || [];
 
   return (
     <Card className="border-none shadow-none">
       <CardHeader className="p-0 pb-4">
-        <CardTitle className="text-lg font-medium">Pontuações Mínimas</CardTitle>
+        <CardTitle className="text-lg font-medium">Pontuação Mínima</CardTitle>
       </CardHeader>
-
-      <CardContent className="p-0 space-y-4">
-        {/* Toggle para ativar pontuações mínimas */}
-        <FormField
-          control={form.control}
-          name="has_minimum_score"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
-              <div className="space-y-0.5">
-                <FormLabel className="text-base">
-                  Usar pontuações mínimas
-                </FormLabel>
-                <div className="text-sm text-muted-foreground">
-                  Desclassifica candidatos que não atingirem o mínimo necessário
-                </div>
-              </div>
-              <FormControl>
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        {watchHasMinimumScore && (
-          <div className="space-y-4 pl-3 border-l-2 border-gray-100">
-            {/* Tipo de Pontuação Mínima */}
-            <FormField
-              control={form.control}
-              name="minimum_score_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de pontuação mínima</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value || 'knowledge'}
-                    value={field.value || 'knowledge'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o tipo" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="knowledge">Por disciplina</SelectItem>
-                      <SelectItem value="total">Por total da prova</SelectItem>
-                      <SelectItem value="both">Ambos</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-
-            {/* Unidade de pontuação mínima */}
-            <FormField
-              control={form.control}
-              name="minimum_score_unit_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unidade de pontuação mínima</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value || 'percentage'}
-                    value={field.value || 'percentage'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a unidade" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="percentage">Porcentagem</SelectItem>
-                      <SelectItem value="absolute">Valor absoluto</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-
-            {/* Pontuação mínima para ampla concorrência */}
-            {(watchMinimumScoreType === 'total' || watchMinimumScoreType === 'both') && (
-              <FormField
-                control={form.control}
-                name="total_minimum_score"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Pontuação mínima para ampla concorrência
-                      {watchMinimumScoreUnitType === 'percentage' ? ' (%)' : ''}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="0"
-                        max={watchMinimumScoreUnitType === 'percentage' ? '100' : undefined}
-                        step="0.1"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Pontuações mínimas por disciplina - Modo disciplinas customizadas */}
-            {showCustomMinimums && watchHasCustomKnowledge && hasEnabledDisciplines && (
-              <div className="space-y-4">
-                <Separator />
-                <div className="text-sm font-medium">Pontuações mínimas por disciplina</div>
-                
-                {watchDisciplines.map((discipline: any, index: number) => 
-                  discipline.isEnabled ? (
-                    <div key={`discipline-min-${index}`} className="grid grid-cols-2 gap-2">
-                      <Label className="self-center">{discipline.name}</Label>
-                      <FormField
-                        control={form.control}
-                        name={`disciplines.${index}.minimumScore`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              <Input
-                                {...field}
-                                type="number"
-                                min="0"
-                                max={watchMinimumScoreUnitType === 'percentage' ? '100' : undefined}
-                                step="0.1"
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                placeholder={watchMinimumScoreUnitType === 'percentage' ? '% mínima' : 'Valor mínimo'}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  ) : null
-                )}
-              </div>
-            )}
-
-            {/* Pontuações mínimas diferentes para cotas */}
-            <Separator className="my-4" />
-
-            <FormField
-              control={form.control}
-              name="has_quota_minimum_score"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0 mt-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">
-                      Usar pontuação mínima diferenciada para cotas
-                    </FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Candidatos de cotas terão pontuação mínima diferente
-                    </div>
+      <CardContent className="p-0">
+        <div className="space-y-6">
+          {/* Toggle para ativar pontuação mínima */}
+          <FormField
+            control={form.control}
+            name="has_minimum_score"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    Exigir pontuação mínima
+                  </FormLabel>
+                  <div className="text-sm text-muted-foreground">
+                    Candidatos devem atingir uma pontuação mínima para serem classificados
                   </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {watchHasQuotaMinimumScore && (
-              <FormField
-                control={form.control}
-                name="quota_minimum_score"
-                render={({ field }) => (
-                  <FormItem className="pl-3 border-l-2 border-gray-100">
-                    <FormLabel>
-                      Pontuação mínima para cotas 
-                      {watchMinimumScoreUnitType === 'percentage' ? ' (%)' : ''}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="0"
-                        max={watchMinimumScoreUnitType === 'percentage' ? '100' : undefined}
-                        step="0.1"
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
             )}
-          </div>
-        )}
+          />
+
+          {/* Configurações de pontuação mínima */}
+          {hasMinimumScore && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                {/* Tipo de pontuação mínima */}
+                <FormField
+                  control={form.control}
+                  name="minimum_score_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de pontuação mínima</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || "total"}
+                        value={field.value || "total"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="total">Por Total da Prova</SelectItem>
+                          <SelectItem value="knowledge">Por Disciplina</SelectItem>
+                          <SelectItem value="both">Ambas</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Escolha como os candidatos serão avaliados
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Tipo de unidade para pontuação mínima */}
+                <FormField
+                  control={form.control}
+                  name="minimum_score_unit_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unidade de pontuação mínima</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value || "absolute"}
+                        value={field.value || "absolute"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a unidade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="absolute">Valor Absoluto</SelectItem>
+                          <SelectItem value="percentage">Porcentagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Pontuação mínima total para ampla concorrência */}
+                {(minimumScoreType === 'total' || minimumScoreType === 'both') && (
+                  <FormField
+                    control={form.control}
+                    name="total_ampla_minimum_score"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pontuação mínima para Ampla Concorrência</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(parseFloat(value))}
+                          defaultValue={field.value?.toString() || "0"}
+                          value={field.value?.toString() || "0"}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione a pontuação mínima" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {minimumScoreUnitType === 'percentage' ? (
+                              <>
+                                <SelectItem value="0">Sem mínimo</SelectItem>
+                                <SelectItem value="10">10%</SelectItem>
+                                <SelectItem value="20">20%</SelectItem>
+                                <SelectItem value="30">30%</SelectItem>
+                                <SelectItem value="40">40%</SelectItem>
+                                <SelectItem value="50">50%</SelectItem>
+                                <SelectItem value="60">60%</SelectItem>
+                                <SelectItem value="70">70%</SelectItem>
+                                <SelectItem value="80">80%</SelectItem>
+                                <SelectItem value="90">90%</SelectItem>
+                              </>
+                            ) : (
+                              <>
+                                <SelectItem value="0">Sem mínimo</SelectItem>
+                                <SelectItem value="1">1 ponto</SelectItem>
+                                <SelectItem value="2">2 pontos</SelectItem>
+                                <SelectItem value="3">3 pontos</SelectItem>
+                                <SelectItem value="5">5 pontos</SelectItem>
+                                <SelectItem value="10">10 pontos</SelectItem>
+                                <SelectItem value="15">15 pontos</SelectItem>
+                                <SelectItem value="20">20 pontos</SelectItem>
+                                <SelectItem value="25">25 pontos</SelectItem>
+                                <SelectItem value="30">30 pontos</SelectItem>
+                                <SelectItem value="40">40 pontos</SelectItem>
+                                <SelectItem value="50">50 pontos</SelectItem>
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          {minimumScoreUnitType === 'percentage' 
+                            ? 'Porcentagem do total possível' 
+                            : 'Valor absoluto de pontos'}
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Pontuação mínima para cada disciplina */}
+                {(minimumScoreType === 'knowledge' || minimumScoreType === 'both') && 
+                 disciplines && disciplines.length > 0 && (
+                  <div className="space-y-4">
+                    <FormLabel>Pontuação mínima por disciplina</FormLabel>
+                    {disciplines.filter(d => d.isEnabled).map((discipline, index) => (
+                      <div key={discipline.type} className="grid grid-cols-2 gap-4 items-center">
+                        <div className="text-sm font-medium">{discipline.name}</div>
+                        <FormField
+                          control={form.control}
+                          name={`disciplines.${index}.minimumScore`}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={(value) => field.onChange(parseFloat(value))}
+                              defaultValue={field.value?.toString() || "0"}
+                              value={field.value?.toString() || "0"}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pontuação mínima" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {minimumScoreUnitType === 'percentage' ? (
+                                  <>
+                                    <SelectItem value="0">Sem mínimo</SelectItem>
+                                    <SelectItem value="10">10%</SelectItem>
+                                    <SelectItem value="20">20%</SelectItem>
+                                    <SelectItem value="30">30%</SelectItem>
+                                    <SelectItem value="40">40%</SelectItem>
+                                    <SelectItem value="50">50%</SelectItem>
+                                    <SelectItem value="60">60%</SelectItem>
+                                  </>
+                                ) : (
+                                  <>
+                                    <SelectItem value="0">Sem mínimo</SelectItem>
+                                    <SelectItem value="1">1 ponto</SelectItem>
+                                    <SelectItem value="2">2 pontos</SelectItem>
+                                    <SelectItem value="3">3 pontos</SelectItem>
+                                    <SelectItem value="5">5 pontos</SelectItem>
+                                    <SelectItem value="10">10 pontos</SelectItem>
+                                  </>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                    ))}
+                    <FormDescription>
+                      {minimumScoreUnitType === 'percentage' 
+                        ? 'Porcentagem do total possível para cada disciplina' 
+                        : 'Valor absoluto de pontos para cada disciplina'}
+                    </FormDescription>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Pontuações mínimas para cotas */}
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="has_quota_minimum_score"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Pontuação mínima diferente para cotas
+                        </FormLabel>
+                        <div className="text-sm text-muted-foreground">
+                          Define uma pontuação mínima específica para candidatos cotistas
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {hasQuotaMinimumScore && (
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="quota_minimum_score_unit_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Unidade de pontuação para cotas</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value || "percentage"}
+                            value={field.value || "percentage"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a unidade" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="absolute">Valor Absoluto</SelectItem>
+                              <SelectItem value="percentage">Porcentagem</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="quota_minimum_score"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pontuação mínima para cotistas</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseFloat(value))}
+                            defaultValue={field.value?.toString() || "0"}
+                            value={field.value?.toString() || "0"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a pontuação mínima" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {quotaMinimumScoreUnitType === 'percentage' ? (
+                                <>
+                                  <SelectItem value="0">Sem mínimo</SelectItem>
+                                  <SelectItem value="10">10%</SelectItem>
+                                  <SelectItem value="20">20%</SelectItem>
+                                  <SelectItem value="30">30%</SelectItem>
+                                  <SelectItem value="40">40%</SelectItem>
+                                  <SelectItem value="50">50%</SelectItem>
+                                  <SelectItem value="60">60%</SelectItem>
+                                  <SelectItem value="70">70%</SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="0">Sem mínimo</SelectItem>
+                                  <SelectItem value="1">1 ponto</SelectItem>
+                                  <SelectItem value="2">2 pontos</SelectItem>
+                                  <SelectItem value="3">3 pontos</SelectItem>
+                                  <SelectItem value="5">5 pontos</SelectItem>
+                                  <SelectItem value="10">10 pontos</SelectItem>
+                                  <SelectItem value="15">15 pontos</SelectItem>
+                                  <SelectItem value="20">20 pontos</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            {quotaMinimumScoreUnitType === 'percentage' 
+                              ? 'Porcentagem do total possível' 
+                              : 'Valor absoluto de pontos'}
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

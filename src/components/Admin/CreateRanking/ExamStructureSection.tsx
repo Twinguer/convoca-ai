@@ -42,6 +42,10 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
   const watchHasCustomKnowledge = form.watch('has_custom_knowledge');
   const watchDisciplines = form.watch('disciplines') || [];
   const watchExamType = form.watch('exam_type');
+  const watchHasDiscursive = form.watch('has_discursive');
+  const watchHasCaseStudy1 = form.watch('has_case_study_1');
+  const watchHasCaseStudy2 = form.watch('has_case_study_2');
+  const watchHasCaseStudy3 = form.watch('has_case_study_3');
 
   const addCustomDiscipline = () => {
     if (!customDisciplineName.trim()) return;
@@ -123,54 +127,58 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
       <CardContent className="p-0">
         <div className="space-y-4">
           {/* Tipo de Prova */}
-          <FormField
-            control={form.control}
-            name="exam_type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tipo de Prova</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Múltipla Escolha">Múltipla Escolha</SelectItem>
-                    <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-
-          {/* Quantidade de Alternativas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <FormField
               control={form.control}
-              name="alternatives_count"
+              name="exam_type"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantidade de Alternativas</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    defaultValue={field.value?.toString() || "5"}
+                  <FormLabel>Tipo de Prova</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value || "Múltipla Escolha"}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Número de alternativas" />
+                        <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="2">2 (A,B)</SelectItem>
-                      <SelectItem value="3">3 (A,B,C)</SelectItem>
-                      <SelectItem value="4">4 (A,B,C,D)</SelectItem>
-                      <SelectItem value="5">5 (A,B,C,D,E)</SelectItem>
+                      <SelectItem value="Múltipla Escolha">Múltipla Escolha</SelectItem>
+                      <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
               )}
             />
+
+            {/* Quantidade de Alternativas - apenas para múltipla escolha */}
+            {watchExamType !== 'Certo ou Errado' && (
+              <FormField
+                control={form.control}
+                name="alternatives_count"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quantidade de Alternativas</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      defaultValue={field.value?.toString() || "5"}
+                      value={field.value?.toString() || "5"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Número de alternativas" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="4">4 (A,B,C,D)</SelectItem>
+                        <SelectItem value="5">5 (A,B,C,D,E)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Penalidade por Erro - Apenas visível para "Certo ou Errado" */}
             {watchExamType === 'Certo ou Errado' && (
@@ -204,39 +212,230 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
             )}
           </div>
 
-          {/* Modo de Conhecimentos */}
-          <FormField
-            control={form.control}
-            name="has_custom_knowledge"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    Usar disciplinas customizáveis
-                  </FormLabel>
-                  <div className="text-sm text-muted-foreground">
-                    Define as disciplinas da prova com pesos e quantidades personalizados
-                  </div>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked);
-                      // Inicializar disciplines com array vazio se estiver ativando
-                      if (checked && (!form.getValues('disciplines') || !form.getValues('disciplines').length)) {
-                        form.setValue('disciplines', [], { shouldDirty: true });
-                      }
-                    }}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {/* Seção para Discursiva e Estudos de Caso */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Provas Subjetivas</h3>
+            
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="has_discursive"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Discursiva
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        A prova inclui redação/discursiva
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {watchHasDiscursive && (
+                <FormField
+                  control={form.control}
+                  name="discursive_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso da Discursiva</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseFloat(value))}
+                        defaultValue={field.value?.toString() || "1"}
+                        value={field.value?.toString() || "1"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Peso" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              <FormField
+                control={form.control}
+                name="has_case_study_1"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Estudo de Caso 1
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        A prova inclui estudo de caso
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {watchHasCaseStudy1 && (
+                <FormField
+                  control={form.control}
+                  name="case_study_1_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso do Estudo de Caso 1</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseFloat(value))}
+                        defaultValue={field.value?.toString() || "1"}
+                        value={field.value?.toString() || "1"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Peso" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              <FormField
+                control={form.control}
+                name="has_case_study_2"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Estudo de Caso 2
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        A prova inclui segundo estudo de caso
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {watchHasCaseStudy2 && (
+                <FormField
+                  control={form.control}
+                  name="case_study_2_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso do Estudo de Caso 2</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseFloat(value))}
+                        defaultValue={field.value?.toString() || "1"}
+                        value={field.value?.toString() || "1"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Peso" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              <FormField
+                control={form.control}
+                name="has_case_study_3"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 space-y-0">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Estudo de Caso 3
+                      </FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        A prova inclui terceiro estudo de caso
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {watchHasCaseStudy3 && (
+                <FormField
+                  control={form.control}
+                  name="case_study_3_weight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso do Estudo de Caso 3</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseFloat(value))}
+                        defaultValue={field.value?.toString() || "1"}
+                        value={field.value?.toString() || "1"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Peso" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[...Array(10)].map((_, i) => (
+                            <SelectItem key={i} value={(i + 1).toString()}>
+                              {i + 1}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
+          </div>
 
           {/* Interface de Disciplinas Customizáveis */}
-          {watchHasCustomKnowledge && (
-            <div className="space-y-4 pl-3 border-l-2 border-gray-100">
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Disciplinas</h3>
+            
+            <div className="space-y-4">
               {/* Lista de disciplinas customizadas */}
               {Array.isArray(watchDisciplines) && watchDisciplines.length > 0 && (
                 <div className="space-y-2">
@@ -313,48 +512,40 @@ export const ExamStructureSection = ({ form }: { form: UseFormReturn<any> }) => 
               {/* Adicionar nova disciplina */}
               <div className="space-y-2">
                 <Label>Adicionar Nova Disciplina</Label>
-                <div className="grid grid-cols-12 gap-2">
-                  <div className="col-span-4">
-                    <Input
-                      value={customDisciplineName}
-                      onChange={(e) => setCustomDisciplineName(e.target.value)}
-                      placeholder="Nome da Disciplina"
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Input
-                      type="number"
-                      value={customDisciplineQuestionCount}
-                      onChange={(e) => setCustomDisciplineQuestionCount(e.target.value)}
-                      placeholder="Qtd. de Questões"
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="col-span-3">
-                    <Input
-                      type="number"
-                      value={customDisciplineWeight}
-                      onChange={(e) => setCustomDisciplineWeight(e.target.value)}
-                      placeholder="Peso"
-                      step="0.1"
-                      min="0.1"
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Button 
-                      onClick={addCustomDiscipline} 
-                      variant="outline" 
-                      className="h-9 w-full"
-                    >
-                      Adicionar
-                    </Button>
-                  </div>
+                <div className="grid grid-cols-1 gap-2">
+                  <Input
+                    value={customDisciplineName}
+                    onChange={(e) => setCustomDisciplineName(e.target.value)}
+                    placeholder="Nome da Disciplina"
+                    className="h-9"
+                  />
+                  <Input
+                    type="number"
+                    value={customDisciplineQuestionCount}
+                    onChange={(e) => setCustomDisciplineQuestionCount(e.target.value)}
+                    placeholder="Quantidade de Questões"
+                    className="h-9"
+                  />
+                  <Input
+                    type="number"
+                    value={customDisciplineWeight}
+                    onChange={(e) => setCustomDisciplineWeight(e.target.value)}
+                    placeholder="Peso"
+                    step="0.1"
+                    min="0.1"
+                    className="h-9"
+                  />
+                  <Button 
+                    onClick={addCustomDiscipline} 
+                    variant="outline" 
+                    className="h-9 w-full"
+                  >
+                    Adicionar
+                  </Button>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </CardContent>
     </Card>

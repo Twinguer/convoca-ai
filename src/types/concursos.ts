@@ -43,6 +43,7 @@ export interface Concurso {
   minimum_score_type?: 'knowledge' | 'total' | 'both'; // Tipo de pontuação mínima
   minimum_score_unit_type?: 'percentage' | 'absolute'; // Unidade de pontuação mínima
   total_minimum_score?: number; // Pontuação mínima total
+  total_ampla_minimum_score?: number; // Pontuação mínima total para ampla concorrência
   
   // Pontuações mínimas para cotas - NOVO
   has_quota_minimum_score?: boolean;
