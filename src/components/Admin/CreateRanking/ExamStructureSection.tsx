@@ -18,9 +18,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
   form
 }) => {
   // Set custom knowledge to true by default
-  const [isCustomKnowledge, setIsCustomKnowledge] = useState<boolean>(
-    form.watch('has_custom_knowledge') !== false
-  );
+  const [isCustomKnowledge, setIsCustomKnowledge] = useState<boolean>(true);
   
   const [hasMinimumScore, setHasMinimumScore] = useState<boolean>(
     form.watch('has_minimum_score') || false
@@ -35,22 +33,44 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   useEffect(() => {
     // Set default values if they don't exist
-    if (form.watch('has_custom_knowledge') === undefined) {
-      form.setValue('has_custom_knowledge', true);
-    }
+    // Always use custom knowledge
+    form.setValue('has_custom_knowledge', true);
     
-    // Check if we have any disciplines and add a default one if not
-    const disciplines = form.watch('disciplines') || [];
-    if (disciplines.length === 0) {
-      const newDiscipline = {
-        id: uuidv4(),
-        name: 'Conhecimentos',
-        type: `custom_${uuidv4().slice(0, 8)}`,
-        isEnabled: true,
-        questionCount: 10,
-        weight: 1
-      };
-      form.setValue('disciplines', [newDiscipline]);
+    // Check if we have any discipline_blocks and add default if not
+    const disciplineBlocks = form.watch('discipline_blocks') || [];
+    if (disciplineBlocks.length === 0) {
+      // Migrar disciplinas existentes para blocos se existirem
+      const existingDisciplines = form.watch('disciplines') || [];
+      
+      if (existingDisciplines.length > 0) {
+        // Criar um bloco padrão com as disciplinas existentes
+        const defaultBlock = {
+          id: uuidv4(),
+          name: "Conhecimentos",
+          weight: 1,
+          disciplines: [...existingDisciplines]
+        };
+        form.setValue('discipline_blocks', [defaultBlock]);
+      } else {
+        // Caso não tenha disciplinas, criar um bloco vazio com uma disciplina padrão
+        const newDiscipline = {
+          id: uuidv4(),
+          name: 'Nova Disciplina',
+          type: `custom_${uuidv4().slice(0, 8)}`,
+          isEnabled: true,
+          questionCount: 10,
+          weight: 1
+        };
+        
+        const defaultBlock = {
+          id: uuidv4(),
+          name: "Bloco 1",
+          weight: 1,
+          disciplines: [newDiscipline]
+        };
+        
+        form.setValue('discipline_blocks', [defaultBlock]);
+      }
     }
   }, [form]);
 
@@ -103,103 +123,110 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     />
   );
 
-  // Helper to add knowledge area
-  const handleAddKnowledgeArea = (type: string) => {
-    if (type === 'custom') {
-      // Adicionar conhecimento customizado
-      const currentDisciplines = form.watch('disciplines') || [];
-      const newDiscipline = {
+  // Adicionar um novo bloco
+  const handleAddBlock = () => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const newBlock = {
+      id: uuidv4(),
+      name: `Bloco ${currentBlocks.length + 1}`,
+      weight: 1,
+      disciplines: [{
         id: uuidv4(),
-        name: 'Novo Conhecimento',
+        name: 'Nova Disciplina',
         type: `custom_${uuidv4().slice(0, 8)}`,
         isEnabled: true,
         questionCount: 10,
         weight: 1
-      };
-      form.setValue('disciplines', [...currentDisciplines, newDiscipline]);
-      form.setValue('has_custom_knowledge', true);
-      setIsCustomKnowledge(true);
-    } else {
-      switch (type) {
-        case 'basic':
-          form.setValue('has_basic_knowledge', true);
-          break;
-        case 'specific1':
-          form.setValue('has_specific_knowledge_1', true);
-          break;
-        case 'specific2':
-          form.setValue('has_specific_knowledge_2', true);
-          break;
-        case 'specific3':
-          form.setValue('has_specific_knowledge_3', true);
-          break;
-        case 'discursive':
-          form.setValue('has_discursive', true);
-          break;
-        case 'case1':
-          form.setValue('has_case_study_1', true);
-          break;
-        case 'case2':
-          form.setValue('has_case_study_2', true);
-          break;
-        case 'case3':
-          form.setValue('has_case_study_3', true);
-          break;
-      }
-    }
+      }]
+    };
+    form.setValue('discipline_blocks', [...currentBlocks, newBlock]);
   };
 
-  // Helper to remove knowledge area
-  const handleRemoveKnowledgeArea = (type: string, customId?: string) => {
-    if (type === 'custom' && customId) {
-      // Remover conhecimento customizado pelo ID
-      const currentDisciplines = form.watch('disciplines') || [];
-      const updatedDisciplines = currentDisciplines.filter((d: any) => d.id !== customId);
-      form.setValue('disciplines', updatedDisciplines);
-
-      // Se não houver mais disciplinas customizadas, desabilitar o modo customizado
-      if (updatedDisciplines.length === 0) {
-        form.setValue('has_custom_knowledge', false);
-        setIsCustomKnowledge(false);
-      }
-    } else {
-      switch (type) {
-        case 'basic':
-          form.setValue('has_basic_knowledge', false);
-          break;
-        case 'specific1':
-          form.setValue('has_specific_knowledge_1', false);
-          break;
-        case 'specific2':
-          form.setValue('has_specific_knowledge_2', false);
-          break;
-        case 'specific3':
-          form.setValue('has_specific_knowledge_3', false);
-          break;
-        case 'discursive':
-          form.setValue('has_discursive', false);
-          break;
-        case 'case1':
-          form.setValue('has_case_study_1', false);
-          break;
-        case 'case2':
-          form.setValue('has_case_study_2', false);
-          break;
-        case 'case3':
-          form.setValue('has_case_study_3', false);
-          break;
-      }
-    }
+  // Remover um bloco
+  const handleRemoveBlock = (blockId: string) => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const updatedBlocks = currentBlocks.filter(block => block.id !== blockId);
+    form.setValue('discipline_blocks', updatedBlocks);
   };
 
-  // Handler para atualizar um campo específico de uma disciplina
-  const handleDisciplineChange = (disciplineId: string, field: string, value: any) => {
-    const currentDisciplines = form.watch('disciplines') || [];
-    const updatedDisciplines = currentDisciplines.map((d: any) => d.id === disciplineId ? {
-      ...d,
-      [field]: value
-    } : d);
-    form.setValue('disciplines', updatedDisciplines);
+  // Atualizar nome de um bloco
+  const handleBlockNameChange = (blockId: string, name: string) => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const updatedBlocks = currentBlocks.map(block => 
+      block.id === blockId ? { ...block, name } : block
+    );
+    form.setValue('discipline_blocks', updatedBlocks);
+  };
+
+  // Atualizar peso de um bloco
+  const handleBlockWeightChange = (blockId: string, weight: number) => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const updatedBlocks = currentBlocks.map(block => 
+      block.id === blockId ? { ...block, weight } : block
+    );
+    form.setValue('discipline_blocks', updatedBlocks);
+  };
+
+  // Adicionar disciplina a um bloco
+  const handleAddDiscipline = (blockId: string) => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const updatedBlocks = currentBlocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          disciplines: [
+            ...(block.disciplines || []),
+            {
+              id: uuidv4(),
+              name: 'Nova Disciplina',
+              type: `custom_${uuidv4().slice(0, 8)}`,
+              isEnabled: true,
+              questionCount: 10,
+              weight: 1
+            }
+          ]
+        };
+      }
+      return block;
+    });
+    form.setValue('discipline_blocks', updatedBlocks);
+  };
+
+  // Remover disciplina de um bloco
+  const handleRemoveDiscipline = (blockId: string, disciplineId: string) => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const updatedBlocks = currentBlocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          disciplines: (block.disciplines || []).filter(
+            discipline => discipline.id !== disciplineId
+          )
+        };
+      }
+      return block;
+    });
+    form.setValue('discipline_blocks', updatedBlocks);
+  };
+
+  // Atualizar campo de disciplina
+  const handleDisciplineChange = (blockId: string, disciplineId: string, field: string, value: any) => {
+    const currentBlocks = form.watch('discipline_blocks') || [];
+    const updatedBlocks = currentBlocks.map(block => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          disciplines: (block.disciplines || []).map(discipline => {
+            if (discipline.id === disciplineId) {
+              return { ...discipline, [field]: value };
+            }
+            return discipline;
+          })
+        };
+      }
+      return block;
+    });
+    form.setValue('discipline_blocks', updatedBlocks);
   };
 
   // Modified handler for toggle between knowledge types
@@ -213,28 +240,11 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       form.setValue('has_specific_knowledge_1', false);
       form.setValue('has_specific_knowledge_2', false);
       form.setValue('has_specific_knowledge_3', false);
-
-      // Keep discursive and case study settings as they are compatible with both modes
-
-      // If no disciplines exist yet, create an initial one
-      if (!form.watch('disciplines') || form.watch('disciplines').length === 0) {
-        const newDiscipline = {
-          id: uuidv4(),
-          name: 'Novo Conhecimento',
-          type: `custom_${uuidv4().slice(0, 8)}`,
-          isEnabled: true,
-          questionCount: 10,
-          weight: 1
-        };
-        form.setValue('disciplines', [newDiscipline]);
-      }
     } else {
       // Switching to standard mode - enable at least basic knowledge
       form.setValue('has_basic_knowledge', true);
       form.setValue('basic_knowledge_questions', 10);
       form.setValue('basic_knowledge_weight', 1);
-
-      // We don't clear disciplines array to preserve data if user toggles back
     }
   };
 
@@ -487,236 +497,172 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           )}
         </div>
 
-        {/* Toggle for switching between traditional and custom knowledge */}
-        <div className="flex items-center space-x-2 mb-6 border-t pt-4">
-          <Switch checked={isCustomKnowledge} onCheckedChange={handleKnowledgeTypeToggle} id="knowledge-type-toggle" />
-          <label htmlFor="knowledge-type-toggle" className="text-sm font-medium">
-            Disciplinas
-          </label>
-        </div>
-        
-        {/* Áreas de Conhecimento */}
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="font-medium"></h4>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {isCustomKnowledge ? 
-                <DropdownMenuItem onClick={() => handleAddKnowledgeArea('custom')}>
-                  Adicionar Disciplina
-                </DropdownMenuItem> 
-                : 
-                <>
-                  {!form.watch('has_basic_knowledge') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('basic')}>
-                    Conhecimentos Básicos
-                  </DropdownMenuItem>}
-                  {!form.watch('has_specific_knowledge_1') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific1')}>
-                    Conhecimentos Específicos
-                  </DropdownMenuItem>}
-                  {!form.watch('has_specific_knowledge_2') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific2')}>
-                    Conhecimentos Específicos 2
-                  </DropdownMenuItem>}
-                  {!form.watch('has_specific_knowledge_3') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('specific3')}>
-                    Conhecimentos Específicos 3
-                  </DropdownMenuItem>}
-                </>
-              }
-              {!form.watch('has_discursive') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('discursive')}>
-                Dissertativa
-              </DropdownMenuItem>}
-              {!form.watch('has_case_study_1') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case1')}>
-                Estudo de Caso
-              </DropdownMenuItem>}
-              {!form.watch('has_case_study_2') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case2')}>
-                Estudo de Caso 2
-              </DropdownMenuItem>}
-              {!form.watch('has_case_study_3') && <DropdownMenuItem onClick={() => handleAddKnowledgeArea('case3')}>
-                Estudo de Caso 3
-              </DropdownMenuItem>}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        {/* Áreas de conhecimento - cards */}
-        <div className="space-y-4">
-          {/* Área vazia se não tiver nenhuma seção */}
-          {!isCustomKnowledge && !form.watch('has_basic_knowledge') && 
-           !form.watch('has_specific_knowledge_1') && !form.watch('has_specific_knowledge_2') && 
-           !form.watch('has_specific_knowledge_3') && !form.watch('has_discursive') && 
-           !form.watch('has_case_study_1') && !form.watch('has_case_study_2') && 
-           !form.watch('has_case_study_3') && 
-            <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
-              Nenhuma seção adicionada. Clique em "Adicionar" para incluir seções da prova.
-            </div>
-          }
+        {/* Blocos de Disciplinas */}
+        <div className="mb-6 border-t pt-4">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-medium">Blocos de Disciplinas</h4>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleAddBlock}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Bloco
+            </Button>
+          </div>
           
-          {isCustomKnowledge && (!form.watch('disciplines') || form.watch('disciplines').length === 0) && 
-            <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
-              Nenhuma seção customizada adicionada. Clique em "Adicionar" para incluir conhecimentos.
-            </div>
-          }
-          
-          {/* Seções customizadas */}
-          {isCustomKnowledge && form.watch('disciplines') && form.watch('disciplines').map((discipline: any, index: number) => (
-            <div className="border p-4 rounded-md" key={discipline.id || index}>
+          {/* Renderização dos blocos */}
+          {form.watch('discipline_blocks')?.map((block, blockIndex) => (
+            <div key={block.id} className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
-                <input 
-                  className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" 
-                  value={discipline.name} 
-                  onChange={e => handleDisciplineChange(discipline.id, 'name', e.target.value)} 
-                />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleRemoveKnowledgeArea('custom', discipline.id)} 
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Remover
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <FormLabel>Número de Questões</FormLabel>
-                  <Input 
-                    type="number" 
-                    value={discipline.questionCount || 0} 
-                    min="0" 
-                    onChange={e => handleDisciplineChange(discipline.id, 'questionCount', Number(e.target.value))} 
+                <div className="flex-grow">
+                  <input 
+                    className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" 
+                    value={block.name} 
+                    onChange={e => handleBlockNameChange(block.id, e.target.value)} 
+                    placeholder="Nome do Bloco"
                   />
                 </div>
-                <div>
-                  <FormLabel>Peso</FormLabel>
-                  <Select 
-                    value={String(discipline.weight || 1)} 
-                    onValueChange={value => handleDisciplineChange(discipline.id, 'weight', Number(value))}
+                <div className="flex items-center space-x-2">
+                  <div className="w-32">
+                    <FormLabel>Peso do Bloco</FormLabel>
+                    <Select 
+                      value={String(block.weight || 1)} 
+                      onValueChange={value => handleBlockWeightChange(block.id, Number(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Peso" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="2">2</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleRemoveBlock(block.id)} 
+                    className="text-red-500 hover:text-red-700"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o peso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Remover Bloco
+                  </Button>
                 </div>
+              </div>
+              
+              {/* Disciplinas do bloco */}
+              <div className="space-y-4 pl-4 border-l-2 border-gray-200">
+                {block.disciplines?.map((discipline, disciplineIndex) => (
+                  <div key={discipline.id} className="border p-4 rounded-md">
+                    <div className="flex justify-between items-center mb-4">
+                      <input 
+                        className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" 
+                        value={discipline.name} 
+                        onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value)} 
+                        placeholder="Nome da Disciplina"
+                      />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleRemoveDiscipline(block.id, discipline.id)} 
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remover
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <FormLabel>Número de Questões</FormLabel>
+                        <Input 
+                          type="number" 
+                          value={discipline.questionCount || 0} 
+                          min="0" 
+                          onChange={e => handleDisciplineChange(block.id, discipline.id, 'questionCount', Number(e.target.value))} 
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>Peso</FormLabel>
+                        <Select 
+                          value={String(discipline.weight || 1)} 
+                          onValueChange={value => handleDisciplineChange(block.id, discipline.id, 'weight', Number(value))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o peso" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1</SelectItem>
+                            <SelectItem value="2">2</SelectItem>
+                            <SelectItem value="3">3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Botão para adicionar disciplina ao bloco */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleAddDiscipline(block.id)}
+                  className="mt-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Disciplina
+                </Button>
               </div>
             </div>
           ))}
           
-          {/* Seções tradicionais */}
-          {!isCustomKnowledge && (
-            <>
-              {/* Conhecimentos Básicos */}
-              {form.watch('has_basic_knowledge') && (
-                <div className="border p-4 rounded-md">
-                  <div className="flex justify-between items-center mb-4">
-                    <h5 className="font-medium">Conhecimentos Básicos</h5>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveKnowledgeArea('basic')} 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remover
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderQuestionsInput("basic_knowledge_questions")}
-                    {renderWeightSelect("basic_knowledge_weight")}
-                  </div>
-                </div>
-              )}
-              
-              {/* Conhecimentos Específicos 1 */}
-              {form.watch('has_specific_knowledge_1') && (
-                <div className="border p-4 rounded-md">
-                  <div className="flex justify-between items-center mb-4">
-                    <h5 className="font-medium">Conhecimentos Específicos</h5>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveKnowledgeArea('specific1')} 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remover
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderQuestionsInput("specific_knowledge_1_questions")}
-                    {renderWeightSelect("specific_knowledge_1_weight")}
-                  </div>
-                </div>
-              )}
-              
-              {/* Conhecimentos Específicos 2 */}
-              {form.watch('has_specific_knowledge_2') && (
-                <div className="border p-4 rounded-md">
-                  <div className="flex justify-between items-center mb-4">
-                    <h5 className="font-medium">Conhecimentos Específicos 2</h5>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveKnowledgeArea('specific2')} 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remover
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderQuestionsInput("specific_knowledge_2_questions")}
-                    {renderWeightSelect("specific_knowledge_2_weight")}
-                  </div>
-                </div>
-              )}
-              
-              {/* Conhecimentos Específicos 3 */}
-              {form.watch('has_specific_knowledge_3') && (
-                <div className="border p-4 rounded-md">
-                  <div className="flex justify-between items-center mb-4">
-                    <h5 className="font-medium">Conhecimentos Específicos 3</h5>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveKnowledgeArea('specific3')} 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Remover
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderQuestionsInput("specific_knowledge_3_questions")}
-                    {renderWeightSelect("specific_knowledge_3_weight")}
-                  </div>
-                </div>
-              )}
-            </>
+          {/* Mensagem se não houver blocos */}
+          {(!form.watch('discipline_blocks') || form.watch('discipline_blocks').length === 0) && (
+            <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
+              Nenhum bloco adicionado. Clique em "Adicionar Bloco" para criar blocos de disciplinas.
+            </div>
           )}
+        </div>
+        
+        {/* Dissertativa e Estudos de Caso - Mantém igual ao original */}
+        <div className="mb-4 border-t pt-4">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="font-medium">Outras Avaliações</h4>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {!form.watch('has_discursive') && <DropdownMenuItem onClick={() => form.setValue('has_discursive', true)}>
+                  Dissertativa
+                </DropdownMenuItem>}
+                {!form.watch('has_case_study_1') && <DropdownMenuItem onClick={() => form.setValue('has_case_study_1', true)}>
+                  Estudo de Caso
+                </DropdownMenuItem>}
+                {!form.watch('has_case_study_2') && <DropdownMenuItem onClick={() => form.setValue('has_case_study_2', true)}>
+                  Estudo de Caso 2
+                </DropdownMenuItem>}
+                {!form.watch('has_case_study_3') && <DropdownMenuItem onClick={() => form.setValue('has_case_study_3', true)}>
+                  Estudo de Caso 3
+                </DropdownMenuItem>}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           
           {/* Dissertativa */}
           {form.watch('has_discursive') && (
-            <div className="border p-4 rounded-md">
+            <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Dissertativa</h5>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => handleRemoveKnowledgeArea('discursive')} 
+                  onClick={() => form.setValue('has_discursive', false)} 
                   className="text-red-500 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -732,13 +678,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           
           {/* Estudo de Caso 1 */}
           {form.watch('has_case_study_1') && (
-            <div className="border p-4 rounded-md">
+            <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Estudo de Caso</h5>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => handleRemoveKnowledgeArea('case1')} 
+                  onClick={() => form.setValue('has_case_study_1', false)} 
                   className="text-red-500 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -754,13 +700,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           
           {/* Estudo de Caso 2 */}
           {form.watch('has_case_study_2') && (
-            <div className="border p-4 rounded-md">
+            <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Estudo de Caso 2</h5>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => handleRemoveKnowledgeArea('case2')} 
+                  onClick={() => form.setValue('has_case_study_2', false)} 
                   className="text-red-500 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -776,13 +722,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           
           {/* Estudo de Caso 3 */}
           {form.watch('has_case_study_3') && (
-            <div className="border p-4 rounded-md">
+            <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Estudo de Caso 3</h5>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => handleRemoveKnowledgeArea('case3')} 
+                  onClick={() => form.setValue('has_case_study_3', false)} 
                   className="text-red-500 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />

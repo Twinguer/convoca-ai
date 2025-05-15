@@ -59,19 +59,41 @@ export const saveRanking = async (
     // Remover campos que não existem mais no modelo
     const dataFormValues = { ...formValues };
     
+    // Processar os blocos de disciplinas e gerar o array disciplines
+    if (dataFormValues.discipline_blocks && Array.isArray(dataFormValues.discipline_blocks)) {
+      const flattenedDisciplines: any[] = [];
+      
+      dataFormValues.discipline_blocks.forEach(block => {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          block.disciplines.forEach(discipline => {
+            // Adicionar informações do bloco à disciplina
+            flattenedDisciplines.push({
+              ...discipline,
+              blockId: block.id,
+              blockName: block.name,
+              blockWeight: block.weight || 1
+            });
+          });
+        }
+      });
+      
+      // Substituir o campo disciplines pela versão achatada
+      dataFormValues.disciplines = flattenedDisciplines;
+    }
+    
     // Garantir que disciplines é um array válido
     if (!dataFormValues.disciplines) {
       dataFormValues.disciplines = [];
     }
 
     // Validar e processar disciplinas customizadas
-    if (dataFormValues.has_custom_knowledge === true && Array.isArray(dataFormValues.disciplines)) {
+    if (Array.isArray(dataFormValues.disciplines)) {
       // Verificar se pelo menos uma disciplina está habilitada
       const hasEnabledDiscipline = dataFormValues.disciplines.some(
         (discipline: any) => discipline.isEnabled === true
       );
       
-      if (!hasEnabledDiscipline) {
+      if (!hasEnabledDiscipline && dataFormValues.disciplines.length > 0) {
         throw new Error("Você precisa habilitar pelo menos uma disciplina quando usar conhecimentos customizados");
       }
       
@@ -128,10 +150,9 @@ export const saveRanking = async (
     // Log para verificar o que estamos enviando
     console.log('Submitting data to Supabase:', 
       JSON.stringify({
-        ...dataToSubmit,
-        has_custom_knowledge: dataToSubmit.has_custom_knowledge,
         disciplines: dataToSubmit.disciplines,
-        basic_knowledge_questions_type: typeof dataToSubmit.basic_knowledge_questions
+        discipline_blocks: dataToSubmit.discipline_blocks,
+        has_custom_knowledge: dataToSubmit.has_custom_knowledge,
       }, null, 2)
     );
 

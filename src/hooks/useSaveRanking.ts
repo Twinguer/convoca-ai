@@ -59,6 +59,28 @@ export const useSaveRanking = () => {
       // Always use custom knowledge mode
       formValues.has_custom_knowledge = true;
 
+      // Processar os blocos de disciplinas e gerar o array disciplines
+      if (formValues.discipline_blocks && Array.isArray(formValues.discipline_blocks)) {
+        const flattenedDisciplines: any[] = [];
+        
+        formValues.discipline_blocks.forEach((block: any) => {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            block.disciplines.forEach((discipline: any) => {
+              // Adicionar informações do bloco à disciplina
+              flattenedDisciplines.push({
+                ...discipline,
+                blockId: block.id,
+                blockName: block.name,
+                blockWeight: block.weight || 1
+              });
+            });
+          }
+        });
+        
+        // Substituir o campo disciplines pela versão achatada
+        formValues.disciplines = flattenedDisciplines;
+      }
+      
       // Ensure disciplines is a valid array
       if (!formValues.disciplines || !Array.isArray(formValues.disciplines)) {
         formValues.disciplines = [];
@@ -133,6 +155,7 @@ export const useSaveRanking = () => {
       console.log("Submitting to database:", {
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
         disciplines: dataToSubmit.disciplines,
+        discipline_blocks: dataToSubmit.discipline_blocks,
         has_minimum_score: dataToSubmit.has_minimum_score,
         total_minimum_score: dataToSubmit.total_minimum_score,
         has_quota_minimum_score: dataToSubmit.has_quota_minimum_score,

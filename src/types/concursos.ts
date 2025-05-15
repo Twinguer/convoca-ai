@@ -1,4 +1,3 @@
-
 export interface Concurso {
   id: string;
   titulo: string;
@@ -49,6 +48,24 @@ export interface Concurso {
     isEnabled: boolean;
     questionCount?: number;
     weight?: number;
+    blockId?: string; // ID do bloco ao qual pertence
+    blockName?: string; // Nome do bloco
+    blockWeight?: number; // Peso do bloco
+  }>;
+  
+  // Array de blocos de disciplinas
+  discipline_blocks?: Array<{
+    id: string;
+    name: string;
+    weight?: number;
+    disciplines: Array<{
+      id?: string;
+      type: string;
+      name: string;
+      isEnabled: boolean;
+      questionCount?: number;
+      weight?: number;
+    }>;
   }>;
 
   // Manteremos por retrocompatibilidade, mas não serão mais usados ativamente
