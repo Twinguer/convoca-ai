@@ -59,11 +59,11 @@ export const useSaveRanking = () => {
       // Always use custom knowledge mode
       formValues.has_custom_knowledge = true;
 
-      // Processar os blocos de disciplinas e gerar o array disciplines
-      if (formValues.discipline_blocks && Array.isArray(formValues.discipline_blocks)) {
+      // Processar os blocos de disciplinas e gerar disciplinas planas para o banco de dados
+      if (formValues.disciplines && Array.isArray(formValues.disciplines)) {
         const flattenedDisciplines: any[] = [];
         
-        formValues.discipline_blocks.forEach((block: any) => {
+        formValues.disciplines.forEach((block: any) => {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             block.disciplines.forEach((discipline: any) => {
               // Adicionar informações do bloco à disciplina
@@ -76,6 +76,9 @@ export const useSaveRanking = () => {
             });
           }
         });
+        
+        // Guardar os blocos na propriedade discipline_blocks para preservá-los
+        formValues.discipline_blocks = [...formValues.disciplines];
         
         // Substituir o campo disciplines pela versão achatada
         formValues.disciplines = flattenedDisciplines;

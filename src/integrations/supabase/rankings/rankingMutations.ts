@@ -60,25 +60,31 @@ export const saveRanking = async (
     const dataFormValues = { ...formValues };
     
     // Processar os blocos de disciplinas e gerar o array disciplines
-    if (dataFormValues.discipline_blocks && Array.isArray(dataFormValues.discipline_blocks)) {
-      const flattenedDisciplines: any[] = [];
-      
-      dataFormValues.discipline_blocks.forEach(block => {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          block.disciplines.forEach(discipline => {
-            // Adicionar informações do bloco à disciplina
-            flattenedDisciplines.push({
-              ...discipline,
-              blockId: block.id,
-              blockName: block.name,
-              blockWeight: block.weight || 1
+    if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
+      // Verificar se estamos lidando com a nova estrutura de blocos
+      if (dataFormValues.disciplines.length > 0 && dataFormValues.disciplines[0].disciplines) {
+        const flattenedDisciplines: any[] = [];
+        
+        dataFormValues.disciplines.forEach(block => {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            block.disciplines.forEach(discipline => {
+              // Adicionar informações do bloco à disciplina
+              flattenedDisciplines.push({
+                ...discipline,
+                blockId: block.id,
+                blockName: block.name,
+                blockWeight: block.weight || 1
+              });
             });
-          });
-        }
-      });
-      
-      // Substituir o campo disciplines pela versão achatada
-      dataFormValues.disciplines = flattenedDisciplines;
+          }
+        });
+        
+        // Armazenar a estrutura original como discipline_blocks
+        dataFormValues.discipline_blocks = [...dataFormValues.disciplines];
+        
+        // Substituir o campo disciplines pela versão achatada
+        dataFormValues.disciplines = flattenedDisciplines;
+      }
     }
     
     // Garantir que disciplines é um array válido

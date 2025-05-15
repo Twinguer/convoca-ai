@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
 import { ReservationQuotasSection } from './ReservationQuotasSection';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 interface GeneralTabProps {
   form: any;
@@ -128,20 +128,34 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       return false;
     }
     
-    // Verificar se há pelo menos uma disciplina habilitada
+    // Verificar se há pelo menos uma disciplina habilitada na nova estrutura de blocos
+    let hasEnabledDiscipline = false;
+    
     if (Array.isArray(currentValues.disciplines)) {
-      const hasEnabledDiscipline = currentValues.disciplines.some(
-        (discipline: any) => discipline.isEnabled === true
-      );
-      
-      if (!hasEnabledDiscipline) {
-        toast({
-          title: "Erro de validação",
-          description: "Por favor, habilite pelo menos uma disciplina.",
-          variant: "destructive"
-        });
-        return false;
+      // Iterar pelos blocos
+      for (const block of currentValues.disciplines) {
+        // Verificar se o bloco tem disciplinas
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          // Verificar se há pelo menos uma disciplina habilitada no bloco
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled === true) {
+              hasEnabledDiscipline = true;
+              break;
+            }
+          }
+        }
+        
+        if (hasEnabledDiscipline) break;
       }
+    }
+    
+    if (!hasEnabledDiscipline) {
+      toast({
+        title: "Erro de validação",
+        description: "Por favor, selecione ao menos uma disciplina.",
+        variant: "destructive"
+      });
+      return false;
     }
 
     return true;
