@@ -36,9 +36,9 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     // Always use custom knowledge
     form.setValue('has_custom_knowledge', true);
     
-    // Check if we have any discipline_blocks and add default if not
-    const disciplineBlocks = form.watch('discipline_blocks') || [];
-    if (disciplineBlocks.length === 0) {
+    // Check if we have any disciplines and add default if not
+    const disciplines = form.watch('disciplines') || [];
+    if (disciplines.length === 0) {
       // Migrar disciplinas existentes para blocos se existirem
       const existingDisciplines = form.watch('disciplines') || [];
       
@@ -50,7 +50,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           weight: 1,
           disciplines: [...existingDisciplines]
         };
-        form.setValue('discipline_blocks', [defaultBlock]);
+        form.setValue('disciplines', [defaultBlock]);
       } else {
         // Caso não tenha disciplinas, criar um bloco vazio com uma disciplina padrão
         const newDiscipline = {
@@ -69,7 +69,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           disciplines: [newDiscipline]
         };
         
-        form.setValue('discipline_blocks', [defaultBlock]);
+        form.setValue('disciplines', [defaultBlock]);
       }
     }
   }, [form]);
@@ -125,7 +125,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Adicionar um novo bloco
   const handleAddBlock = () => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const newBlock = {
       id: uuidv4(),
       name: `Bloco ${currentBlocks.length + 1}`,
@@ -139,37 +139,37 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         weight: 1
       }]
     };
-    form.setValue('discipline_blocks', [...currentBlocks, newBlock]);
+    form.setValue('disciplines', [...currentBlocks, newBlock]);
   };
 
   // Remover um bloco
   const handleRemoveBlock = (blockId: string) => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.filter(block => block.id !== blockId);
-    form.setValue('discipline_blocks', updatedBlocks);
+    form.setValue('disciplines', updatedBlocks);
   };
 
   // Atualizar nome de um bloco
   const handleBlockNameChange = (blockId: string, name: string) => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => 
       block.id === blockId ? { ...block, name } : block
     );
-    form.setValue('discipline_blocks', updatedBlocks);
+    form.setValue('disciplines', updatedBlocks);
   };
 
   // Atualizar peso de um bloco
   const handleBlockWeightChange = (blockId: string, weight: number) => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => 
       block.id === blockId ? { ...block, weight } : block
     );
-    form.setValue('discipline_blocks', updatedBlocks);
+    form.setValue('disciplines', updatedBlocks);
   };
 
   // Adicionar disciplina a um bloco
   const handleAddDiscipline = (blockId: string) => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => {
       if (block.id === blockId) {
         return {
@@ -189,12 +189,12 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       }
       return block;
     });
-    form.setValue('discipline_blocks', updatedBlocks);
+    form.setValue('disciplines', updatedBlocks);
   };
 
   // Remover disciplina de um bloco
   const handleRemoveDiscipline = (blockId: string, disciplineId: string) => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => {
       if (block.id === blockId) {
         return {
@@ -206,12 +206,12 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       }
       return block;
     });
-    form.setValue('discipline_blocks', updatedBlocks);
+    form.setValue('disciplines', updatedBlocks);
   };
 
   // Atualizar campo de disciplina
   const handleDisciplineChange = (blockId: string, disciplineId: string, field: string, value: any) => {
-    const currentBlocks = form.watch('discipline_blocks') || [];
+    const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => {
       if (block.id === blockId) {
         return {
@@ -226,7 +226,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       }
       return block;
     });
-    form.setValue('discipline_blocks', updatedBlocks);
+    form.setValue('disciplines', updatedBlocks);
   };
 
   // Modified handler for toggle between knowledge types
@@ -512,7 +512,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           </div>
           
           {/* Renderização dos blocos */}
-          {form.watch('discipline_blocks')?.map((block, blockIndex) => (
+          {form.watch('disciplines')?.map((block, blockIndex) => (
             <div key={block.id} className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex-grow">
@@ -619,7 +619,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           ))}
           
           {/* Mensagem se não houver blocos */}
-          {(!form.watch('discipline_blocks') || form.watch('discipline_blocks').length === 0) && (
+          {(!form.watch('disciplines') || form.watch('disciplines').length === 0) && (
             <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
               Nenhum bloco adicionado. Clique em "Adicionar Bloco" para criar blocos de disciplinas.
             </div>
