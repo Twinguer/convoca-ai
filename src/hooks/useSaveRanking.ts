@@ -61,27 +61,31 @@ export const useSaveRanking = () => {
 
       // Processar os blocos de disciplinas e gerar disciplinas planas para o banco de dados
       if (formValues.disciplines && Array.isArray(formValues.disciplines)) {
-        const flattenedDisciplines: any[] = [];
-        
-        formValues.disciplines.forEach((block: any) => {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            block.disciplines.forEach((discipline: any) => {
-              // Adicionar informações do bloco à disciplina
-              flattenedDisciplines.push({
-                ...discipline,
-                blockId: block.id,
-                blockName: block.name,
-                blockWeight: block.weight || 1
+        // Verificar se estamos lidando com a nova estrutura de blocos
+        if (formValues.disciplines.length > 0 && 'name' in formValues.disciplines[0] && 'disciplines' in formValues.disciplines[0]) {
+          const flattenedDisciplines: any[] = [];
+          
+          formValues.disciplines.forEach((block: any) => {
+            if (block.disciplines && Array.isArray(block.disciplines)) {
+              block.disciplines.forEach((discipline: any) => {
+                // Adicionar informações do bloco à disciplina
+                flattenedDisciplines.push({
+                  ...discipline,
+                  blockId: block.id,
+                  blockName: block.name,
+                  blockWeight: block.weight || 1
+                });
               });
-            });
-          }
-        });
-        
-        // Guardar os blocos na propriedade discipline_blocks para preservá-los
-        formValues.discipline_blocks = [...formValues.disciplines];
-        
-        // Substituir o campo disciplines pela versão achatada
-        formValues.disciplines = flattenedDisciplines;
+            }
+          });
+          
+          // Criar uma cópia da estrutura original para preservar os blocos no frontend
+          // mas enviar a estrutura achatada para o backend
+          const originalStructure = JSON.parse(JSON.stringify(formValues.disciplines));
+          
+          // Substituir o campo disciplines pela versão achatada
+          formValues.flattenedDisciplines = flattenedDisciplines;
+        }
       }
       
       // Ensure disciplines is a valid array
@@ -89,16 +93,42 @@ export const useSaveRanking = () => {
         formValues.disciplines = [];
       }
 
-      // Process disciplines for valid numeric fields
-      if (formValues.disciplines.length > 0) {
-        formValues.disciplines = formValues.disciplines.map((discipline: any) => {
+      // Process disciplines for valid numeric fields and check if any are enabled
+      let hasEnabledDiscipline = false;
+      
+      if (formValues.flattenedDisciplines && formValues.flattenedDisciplines.length > 0) {
+        // Process the flattened disciplines array (compatibility with the backend)
+        formValues.flattenedDisciplines = formValues.flattenedDisciplines.map((discipline: any) => {
+          const enabled = discipline.isEnabled === true;
+          if (enabled) {
+            hasEnabledDiscipline = true;
+          }
           return {
             ...discipline,
             questionCount: ensureNumeric(discipline.questionCount),
             weight: ensureNumeric(discipline.weight),
-            isEnabled: discipline.isEnabled === true
+            isEnabled: enabled
           };
         });
+      } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
+        // Check for enabled disciplines in the block structure
+        for (const block of formValues.disciplines) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled === true) {
+                hasEnabledDiscipline = true;
+                break;
+              }
+            }
+            if (hasEnabledDiscipline) break;
+          }
+        }
+      }
+      
+      // Validate that at least one discipline is enabled
+      if (!hasEnabledDiscipline && formValues.has_custom_knowledge) {
+        toast.error("Por favor, selecione ao menos uma disciplina.");
+        return { duplicated: false, error: true };
       }
 
       // Fetch concursos and do the comparison in JS for robust uniqueness
@@ -132,7 +162,9 @@ export const useSaveRanking = () => {
         banca: formValues.custom_banca || formValues.banca,
         localidades: formValues.localidades,
         has_custom_knowledge: true,
-        disciplines: formValues.disciplines,
+        
+        // Use the processed disciplines array
+        disciplines: formValues.flattenedDisciplines || formValues.disciplines,
         
         // Process minimum score fields
         has_minimum_score: formValues.has_minimum_score === true,
@@ -144,6 +176,9 @@ export const useSaveRanking = () => {
         quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
         quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0
       };
+
+      // Remove any temporary fields not needed in database
+      delete dataToSubmit.flattenedDisciplines;
 
       // Add admin flags if provided
       if (formValues.is_admin_created !== undefined) {
@@ -158,7 +193,6 @@ export const useSaveRanking = () => {
       console.log("Submitting to database:", {
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
         disciplines: dataToSubmit.disciplines,
-        discipline_blocks: dataToSubmit.discipline_blocks,
         has_minimum_score: dataToSubmit.has_minimum_score,
         total_minimum_score: dataToSubmit.total_minimum_score,
         has_quota_minimum_score: dataToSubmit.has_quota_minimum_score,

@@ -62,12 +62,12 @@ export const saveRanking = async (
     // Processar os blocos de disciplinas e gerar o array disciplines
     if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
       // Verificar se estamos lidando com a nova estrutura de blocos
-      if (dataFormValues.disciplines.length > 0 && dataFormValues.disciplines[0].disciplines) {
+      if (dataFormValues.disciplines.length > 0 && 'name' in dataFormValues.disciplines[0] && 'disciplines' in dataFormValues.disciplines[0]) {
         const flattenedDisciplines: any[] = [];
         
-        dataFormValues.disciplines.forEach(block => {
+        dataFormValues.disciplines.forEach((block: any) => {
           if (block.disciplines && Array.isArray(block.disciplines)) {
-            block.disciplines.forEach(discipline => {
+            block.disciplines.forEach((discipline: any) => {
               // Adicionar informações do bloco à disciplina
               flattenedDisciplines.push({
                 ...discipline,
@@ -79,10 +79,10 @@ export const saveRanking = async (
           }
         });
         
-        // Armazenar a estrutura original como discipline_blocks
-        dataFormValues.discipline_blocks = [...dataFormValues.disciplines];
+        // Criar uma cópia da estrutura original para preservar os blocos
+        const originalDisciplineBlocks = JSON.parse(JSON.stringify(dataFormValues.disciplines));
         
-        // Substituir o campo disciplines pela versão achatada
+        // Substituir o campo disciplines pela versão achatada para compatibilidade
         dataFormValues.disciplines = flattenedDisciplines;
       }
     }
@@ -157,7 +157,6 @@ export const saveRanking = async (
     console.log('Submitting data to Supabase:', 
       JSON.stringify({
         disciplines: dataToSubmit.disciplines,
-        discipline_blocks: dataToSubmit.discipline_blocks,
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
       }, null, 2)
     );
