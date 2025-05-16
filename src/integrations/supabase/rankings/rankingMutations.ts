@@ -101,7 +101,7 @@ export const saveRanking = async (
       
       // Verificar em todos os blocos
       for (const block of dataFormValues.disciplines) {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
+        if (block && typeof block === 'object' && 'disciplines' in block && Array.isArray(block.disciplines)) {
           // Verificar cada disciplina no bloco
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled === true) {
