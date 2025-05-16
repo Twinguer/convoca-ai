@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { InfoCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 interface MinimumScoreSectionProps {
   form: any;
@@ -21,8 +21,8 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
             Configure a pontuação mínima geral da prova. Os candidatos que não atingirem este valor serão destacados em vermelho.
           </p>
           
-          <Alert variant="outline" className="mb-4">
-            <InfoCircle className="h-4 w-4 mr-2" />
+          <Alert className="mb-4">
+            <Info className="h-4 w-4 mr-2" />
             <AlertDescription className="text-sm">
               Este valor representa o mínimo absoluto que deve ser atingido na pontuação total da prova objetiva.
             </AlertDescription>
