@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
 import { ReservationQuotasSection } from './ReservationQuotasSection';
+import { MinimumScoreSection } from './MinimumScoreSection';
 import { useToast } from '@/components/ui/use-toast';
 
 interface GeneralTabProps {
@@ -41,7 +43,13 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
 
   useEffect(() => {
-    setIsFirstSaveDone(false);
+    // Verificar se já existe um ID de concurso salvo
+    const formValues = form.getValues();
+    if (formValues.id) {
+      setIsFirstSaveDone(true);
+    } else {
+      setIsFirstSaveDone(false);
+    }
   }, [form]);
 
   useEffect(() => {
@@ -210,6 +218,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         setSelectedStates={setSelectedStates}
       />
 
+      <MinimumScoreSection form={form} />
+
       <ExamStructureSection form={form} />
 
       <ReservationQuotasSection form={form} />
@@ -219,8 +229,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           type="button" 
           onClick={handleSave}
           variant="secondary"
-          disabled={isFirstSaveDone || isSubmitting}
-          className={isFirstSaveDone ? "bg-gray-200 text-gray-500 cursor-not-allowed" : ""}
+          disabled={isSubmitting}
         >
           Salvar Ranking
         </Button>
@@ -230,7 +239,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           disabled={!isFirstSaveDone}
           className={isFirstSaveDone ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"}
         >
-          Preencher Gabarito
+          {isFirstSaveDone ? "Editar Gabarito" : "Preencher Gabarito"}
         </Button>
       </div>
     </div>

@@ -20,13 +20,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
   // Set custom knowledge to true by default
   const [isCustomKnowledge, setIsCustomKnowledge] = useState<boolean>(true);
   
-  const [hasMinimumScore, setHasMinimumScore] = useState<boolean>(
-    form.watch('has_minimum_score') || false
-  );
-  
-  const [hasQuotaMinimumScore, setHasQuotaMinimumScore] = useState<boolean>(
-    form.watch('has_quota_minimum_score') || false
-  );
+  const [hasMinimumScore, setHasMinimumScore] = useState<boolean>(true);
 
   // Determine if we should show penalty options
   const showPenaltyOptions = form.watch('exam_type') === 'Certo ou Errado';
@@ -47,7 +41,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         const defaultBlock = {
           id: uuidv4(),
           name: "Conhecimentos",
-          weight: 1,
+          minimum_score: 0,
           disciplines: [...existingDisciplines]
         };
         form.setValue('disciplines', [defaultBlock]);
@@ -59,48 +53,53 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           type: `custom_${uuidv4().slice(0, 8)}`,
           isEnabled: true,
           questionCount: 10,
-          weight: 1
+          weight: 1,
+          minimum_score: 0
         };
         
         const defaultBlock = {
           id: uuidv4(),
           name: "Bloco 1",
-          weight: 1,
+          minimum_score: 0,
           disciplines: [newDiscipline]
         };
         
         form.setValue('disciplines', [defaultBlock]);
       }
+    } else {
+      // Garantir que todos os blocos têm minimum_score
+      const updatedDisciplines = disciplines.map(block => {
+        if (block.minimum_score === undefined) {
+          return {
+            ...block,
+            minimum_score: 0
+          };
+        }
+        return block;
+      });
+      
+      // Garantir que todas as disciplinas têm minimum_score
+      const fullyUpdatedDisciplines = updatedDisciplines.map(block => {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          return {
+            ...block,
+            disciplines: block.disciplines.map(discipline => {
+              if (discipline.minimum_score === undefined) {
+                return {
+                  ...discipline,
+                  minimum_score: 0
+                };
+              }
+              return discipline;
+            })
+          };
+        }
+        return block;
+      });
+      
+      form.setValue('disciplines', fullyUpdatedDisciplines);
     }
   }, [form]);
-
-  // Helper function to render weight select component
-  const renderWeightSelect = (name: string) => (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>Peso</FormLabel>
-          <Select
-            defaultValue={String(field.value)}
-            onValueChange={value => field.onChange(Number(value))}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              <SelectItem value="1">1</SelectItem>
-              <SelectItem value="2">2</SelectItem>
-              <SelectItem value="3">3</SelectItem>
-            </SelectContent>
-          </Select>
-        </FormItem>
-      )}
-    />
-  );
 
   // Helper function for questions count inputs
   const renderQuestionsInput = (name: string) => (
@@ -129,14 +128,15 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     const newBlock = {
       id: uuidv4(),
       name: `Bloco ${currentBlocks.length + 1}`,
-      weight: 1,
+      minimum_score: 0,
       disciplines: [{
         id: uuidv4(),
         name: 'Nova Disciplina',
         type: `custom_${uuidv4().slice(0, 8)}`,
         isEnabled: true,
         questionCount: 10,
-        weight: 1
+        weight: 1,
+        minimum_score: 0
       }]
     };
     form.setValue('disciplines', [...currentBlocks, newBlock]);
@@ -158,11 +158,11 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
     form.setValue('disciplines', updatedBlocks);
   };
 
-  // Atualizar peso de um bloco
-  const handleBlockWeightChange = (blockId: string, weight: number) => {
+  // Atualizar nota mínima de um bloco
+  const handleBlockMinimumScoreChange = (blockId: string, minimumScore: number) => {
     const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => 
-      block.id === blockId ? { ...block, weight } : block
+      block.id === blockId ? { ...block, minimum_score: minimumScore } : block
     );
     form.setValue('disciplines', updatedBlocks);
   };
@@ -182,7 +182,8 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               type: `custom_${uuidv4().slice(0, 8)}`,
               isEnabled: true,
               questionCount: 10,
-              weight: 1
+              weight: 1,
+              minimum_score: 0
             }
           ]
         };
@@ -245,31 +246,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       form.setValue('has_basic_knowledge', true);
       form.setValue('basic_knowledge_questions', 10);
       form.setValue('basic_knowledge_weight', 1);
-    }
-  };
-
-  // Handle minimum score toggle
-  const handleMinimumScoreToggle = (value: boolean) => {
-    setHasMinimumScore(value);
-    form.setValue('has_minimum_score', value);
-    
-    // Reset values if disabled
-    if (!value) {
-      form.setValue('total_minimum_score', 0);
-      form.setValue('minimum_score_unit_type', 'percentage');
-      form.setValue('minimum_score_type', 'knowledge');
-    }
-  };
-  
-  // Handle quota minimum score toggle
-  const handleQuotaMinimumScoreToggle = (value: boolean) => {
-    setHasQuotaMinimumScore(value);
-    form.setValue('has_quota_minimum_score', value);
-    
-    // Reset values if disabled
-    if (!value) {
-      form.setValue('quota_minimum_score', 0);
-      form.setValue('quota_minimum_score_unit_type', 'percentage');
     }
   };
 
@@ -365,138 +341,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           </div>
         </div>
 
-        {/* Pontuação Mínima */}
-        <div className="mb-6 border-t pt-4">
-          <div className="flex items-center space-x-2 mb-4">
-            <Switch 
-              checked={hasMinimumScore} 
-              onCheckedChange={handleMinimumScoreToggle} 
-              id="minimum-score-toggle" 
-            />
-            <label htmlFor="minimum-score-toggle" className="text-sm font-medium">
-              Aplicar pontuação mínima
-            </label>
-          </div>
-          
-          {hasMinimumScore && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pl-4 border-l-2 border-gray-200">
-              <FormField
-                control={form.control}
-                name="minimum_score_unit_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de pontuação mínima</FormLabel>
-                    <Select 
-                      defaultValue={field.value || 'percentage'} 
-                      onValueChange={field.onChange}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="percentage">Porcentagem</SelectItem>
-                        <SelectItem value="absolute">Absoluta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="total_minimum_score"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Valor mínimo 
-                      {form.watch('minimum_score_unit_type') === 'percentage' && ' (%)'}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step={form.watch('minimum_score_unit_type') === 'percentage' ? '1' : '0.01'}
-                        min="0"
-                        max={form.watch('minimum_score_unit_type') === 'percentage' ? '100' : undefined}
-                        {...field}
-                        value={field.value || 0}
-                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* Pontuação mínima para cotas */}
-              <div className="col-span-2">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Switch 
-                    checked={hasQuotaMinimumScore} 
-                    onCheckedChange={handleQuotaMinimumScoreToggle} 
-                    id="quota-minimum-score-toggle" 
-                  />
-                  <label htmlFor="quota-minimum-score-toggle" className="text-sm font-medium">
-                    Pontuação mínima diferenciada para cotas
-                  </label>
-                </div>
-                
-                {hasQuotaMinimumScore && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-gray-200">
-                    <FormField
-                      control={form.control}
-                      name="quota_minimum_score_unit_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tipo de pontuação mínima (cotas)</FormLabel>
-                          <Select 
-                            defaultValue={field.value || 'percentage'} 
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="percentage">Porcentagem</SelectItem>
-                              <SelectItem value="absolute">Pontuação Absoluta</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="quota_minimum_score"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            Valor mínimo para cotas
-                            {form.watch('quota_minimum_score_unit_type') === 'percentage' && ' (%)'}
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step={form.watch('quota_minimum_score_unit_type') === 'percentage' ? '1' : '0.01'}
-                              min="0"
-                              max={form.watch('quota_minimum_score_unit_type') === 'percentage' ? '100' : undefined}
-                              {...field}
-                              value={field.value || 0}
-                              onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Blocos de Disciplinas */}
         <div className="mb-6 border-t pt-4">
           <div className="flex justify-between items-center mb-4">
@@ -524,22 +368,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-32">
-                    <FormLabel>Peso do Bloco</FormLabel>
-                    <Select 
-                      value={String(block.weight || 1)} 
-                      onValueChange={value => handleBlockWeightChange(block.id, Number(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Peso" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1</SelectItem>
-                        <SelectItem value="2">2</SelectItem>
-                        <SelectItem value="3">3</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <Button 
                     variant="ghost" 
                     size="sm" 
@@ -550,6 +378,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     Remover Bloco
                   </Button>
                 </div>
+              </div>
+              
+              {/* Nota mínima do bloco */}
+              <div className="mb-4">
+                <FormLabel>Nota mínima do bloco (valor absoluto)</FormLabel>
+                <Input 
+                  type="number" 
+                  step="0.01"
+                  min="0"
+                  value={block.minimum_score || 0}
+                  onChange={e => handleBlockMinimumScoreChange(block.id, parseFloat(e.target.value) || 0)}
+                  className="w-full md:w-1/3"
+                />
               </div>
               
               {/* Disciplinas do bloco */}
@@ -574,7 +415,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <FormLabel>Número de Questões</FormLabel>
                         <Input 
@@ -599,6 +440,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                             <SelectItem value="3">3</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div>
+                        <FormLabel>Nota mínima (valor absoluto)</FormLabel>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          min="0" 
+                          value={discipline.minimum_score || 0}
+                          onChange={e => handleDisciplineChange(block.id, discipline.id, 'minimum_score', parseFloat(e.target.value) || 0)} 
+                        />
                       </div>
                     </div>
                   </div>
@@ -671,7 +522,22 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderWeightSelect("discursive_weight")}
+                <div>
+                  <FormLabel>Peso</FormLabel>
+                  <Select 
+                    value={String(form.watch('discursive_weight') || 1)} 
+                    onValueChange={value => form.setValue('discursive_weight', Number(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
@@ -693,7 +559,22 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderWeightSelect("case_study_1_weight")}
+                <div>
+                  <FormLabel>Peso</FormLabel>
+                  <Select 
+                    value={String(form.watch('case_study_1_weight') || 1)} 
+                    onValueChange={value => form.setValue('case_study_1_weight', Number(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
@@ -715,7 +596,22 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderWeightSelect("case_study_2_weight")}
+                <div>
+                  <FormLabel>Peso</FormLabel>
+                  <Select 
+                    value={String(form.watch('case_study_2_weight') || 1)} 
+                    onValueChange={value => form.setValue('case_study_2_weight', Number(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
@@ -737,7 +633,22 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderWeightSelect("case_study_3_weight")}
+                <div>
+                  <FormLabel>Peso</FormLabel>
+                  <Select 
+                    value={String(form.watch('case_study_3_weight') || 1)} 
+                    onValueChange={value => form.setValue('case_study_3_weight', Number(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}

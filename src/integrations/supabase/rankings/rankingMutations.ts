@@ -59,32 +59,34 @@ export const saveRanking = async (
     // Remover campos que não existem mais no modelo
     const dataFormValues = { ...formValues };
     
-    // Processar os blocos de disciplinas e gerar o array disciplines
+    // Processar os blocos de disciplinas e garantir que as pontuações mínimas sejam numéricas
     if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
-      // Verificar se estamos lidando com a nova estrutura de blocos
-      if (dataFormValues.disciplines.length > 0 && 'name' in dataFormValues.disciplines[0] && 'disciplines' in dataFormValues.disciplines[0]) {
-        const flattenedDisciplines: any[] = [];
+      // Processar todos os blocos
+      dataFormValues.disciplines = dataFormValues.disciplines.map((block: any) => {
+        // Garantir que o mínimo do bloco é um número
+        const blockMinimumScore = ensureNumeric(block.minimum_score);
         
-        dataFormValues.disciplines.forEach((block: any) => {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            block.disciplines.forEach((discipline: any) => {
-              // Adicionar informações do bloco à disciplina
-              flattenedDisciplines.push({
-                ...discipline,
-                blockId: block.id,
-                blockName: block.name,
-                blockWeight: block.weight || 1
-              });
-            });
-          }
-        });
+        // Processar todas as disciplinas do bloco
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          block.disciplines = block.disciplines.map((discipline: any) => {
+            // Garantir que o mínimo da disciplina é um número
+            const disciplineMinimumScore = ensureNumeric(discipline.minimum_score);
+            
+            return {
+              ...discipline,
+              questionCount: ensureNumeric(discipline.questionCount),
+              weight: ensureNumeric(discipline.weight),
+              isEnabled: discipline.isEnabled === true,
+              minimum_score: disciplineMinimumScore
+            };
+          });
+        }
         
-        // Criar uma cópia da estrutura original para preservar os blocos
-        const originalDisciplineBlocks = JSON.parse(JSON.stringify(dataFormValues.disciplines));
-        
-        // Substituir o campo disciplines pela versão achatada para compatibilidade
-        dataFormValues.disciplines = flattenedDisciplines;
-      }
+        return {
+          ...block,
+          minimum_score: blockMinimumScore
+        };
+      });
     }
     
     // Garantir que disciplines é um array válido
@@ -95,23 +97,25 @@ export const saveRanking = async (
     // Validar e processar disciplinas customizadas
     if (Array.isArray(dataFormValues.disciplines)) {
       // Verificar se pelo menos uma disciplina está habilitada
-      const hasEnabledDiscipline = dataFormValues.disciplines.some(
-        (discipline: any) => discipline.isEnabled === true
-      );
+      let hasEnabledDiscipline = false;
+      
+      // Verificar em todos os blocos
+      for (const block of dataFormValues.disciplines) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          // Verificar cada disciplina no bloco
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled === true) {
+              hasEnabledDiscipline = true;
+              break;
+            }
+          }
+        }
+        if (hasEnabledDiscipline) break;
+      }
       
       if (!hasEnabledDiscipline && dataFormValues.disciplines.length > 0) {
         throw new Error("Você precisa habilitar pelo menos uma disciplina quando usar conhecimentos customizados");
       }
-      
-      // Garantir que todas as disciplinas habilitadas tenham valores numéricos válidos
-      dataFormValues.disciplines = dataFormValues.disciplines.map((discipline: any) => {
-        return {
-          ...discipline,
-          questionCount: ensureNumeric(discipline.questionCount),
-          weight: ensureNumeric(discipline.weight),
-          isEnabled: discipline.isEnabled === true
-        };
-      });
     }
     
     // Converter campos numéricos adequadamente
@@ -123,7 +127,7 @@ export const saveRanking = async (
       'discursive_weight', 'case_study_1_weight',
       'case_study_2_weight', 'case_study_3_weight',
       'alternatives_count', 'wrong_answer_penalty',
-      'total_minimum_score', 'quota_minimum_score'
+      'total_minimum_score'
     ];
 
     // Criar objeto limpo com dados para submissão
@@ -146,6 +150,11 @@ export const saveRanking = async (
         dataToSubmit[field] = ensureNumeric(dataToSubmit[field]);
       }
     });
+    
+    // Garantir que temos um valor para pontuação mínima geral
+    if (!dataToSubmit.total_minimum_score) {
+      dataToSubmit.total_minimum_score = 0;
+    }
 
     // Desabilitar conhecimentos básicos/específicos padrão
     dataToSubmit.has_basic_knowledge = false;
@@ -158,6 +167,7 @@ export const saveRanking = async (
       JSON.stringify({
         disciplines: dataToSubmit.disciplines,
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
+        total_minimum_score: dataToSubmit.total_minimum_score
       }, null, 2)
     );
 

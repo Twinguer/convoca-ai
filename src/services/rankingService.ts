@@ -26,6 +26,10 @@ export interface Ranking {
   displayReservation?: string;
   id: string;
   quotaPosition?: number; // Posição dentro da cota - será calculado em runtime
+  // Flags para mínimos não atingidos
+  belowMinimum?: boolean; // Não atingiu mínimo geral
+  belowBlockMinimums?: string[]; // Blocos com mínimo não atingido (IDs)
+  belowDisciplineMinimums?: string[]; // Disciplinas com mínimo não atingido (IDs)
 }
 
 // Helper function to get abbreviation for reservation type
@@ -40,6 +44,21 @@ const getReservationAbbreviation = (reservationType: string): string => {
 export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
   try {
     console.log('Fetching rankings for concurso:', concursoId, 'with reservation type:', reservationType);
+    
+    // Buscar configurações de mínimos do concurso
+    const { data: concursoData, error: concursoError } = await supabase
+      .from('concursos')
+      .select(`
+        id,
+        total_minimum_score,
+        disciplines
+      `)
+      .eq('id', concursoId)
+      .single();
+    
+    if (concursoError) {
+      console.error('Error fetching concurso data:', concursoError);
+    }
     
     // Modificando para usar uma abordagem alternativa que evite a ambiguidade de ID
     const { data, error } = await supabase
@@ -89,6 +108,31 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       });
     }
     
+    // Mínimo geral da prova
+    const totalMinimumScore = concursoData?.total_minimum_score || 0;
+    
+    // Extrair mínimos por bloco e disciplina
+    const blockMinimums: Record<string, number> = {};
+    const disciplineMinimums: Record<string, number> = {};
+    
+    if (concursoData?.disciplines && Array.isArray(concursoData.disciplines)) {
+      // Iterar pelos blocos
+      concursoData.disciplines.forEach(block => {
+        if (block.id && block.minimum_score !== undefined) {
+          blockMinimums[block.id] = block.minimum_score;
+        }
+        
+        // Iterar pelas disciplinas
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          block.disciplines.forEach(discipline => {
+            if (discipline.id && discipline.minimum_score !== undefined) {
+              disciplineMinimums[discipline.id] = discipline.minimum_score;
+            }
+          });
+        }
+      });
+    }
+    
     // Formatar os dados do ranking com posições
     const formattedRankings = data.map((ranking, index) => {
       // Corrigir o problema de TypeScript aqui
@@ -123,6 +167,52 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         });
       }
       
+      // Verificar se está abaixo do mínimo geral da prova
+      const totalObjScore = ranking.score || 0;
+      const belowMinimum = totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
+      
+      // Verificar mínimos por bloco e disciplina
+      const belowBlockMinimums: string[] = [];
+      const belowDisciplineMinimums: string[] = [];
+      
+      // Função auxiliar para agrupar pontuações por bloco
+      const getBlockScores = () => {
+        const blockScores: Record<string, number> = {};
+        
+        if (concursoData?.disciplines && Array.isArray(concursoData.disciplines)) {
+          concursoData.disciplines.forEach(block => {
+            if (block.id && block.disciplines && Array.isArray(block.disciplines)) {
+              let blockScore = 0;
+              
+              // Somar scores das disciplinas deste bloco
+              block.disciplines.forEach(discipline => {
+                if (discipline.id && discipline.type) {
+                  const disciplineScore = weightedCustomDisciplineScores[discipline.type] || 0;
+                  blockScore += disciplineScore;
+                  
+                  // Verificar mínimo da disciplina
+                  if (disciplineMinimums[discipline.id] > 0 && disciplineScore < disciplineMinimums[discipline.id]) {
+                    belowDisciplineMinimums.push(discipline.id);
+                  }
+                }
+              });
+              
+              blockScores[block.id] = blockScore;
+              
+              // Verificar mínimo do bloco
+              if (blockMinimums[block.id] > 0 && blockScore < blockMinimums[block.id]) {
+                belowBlockMinimums.push(block.id);
+              }
+            }
+          });
+        }
+        
+        return blockScores;
+      };
+      
+      // Calcular scores por bloco
+      const blockScores = getBlockScores();
+      
       return {
         position: index + 1,
         name: name,
@@ -142,6 +232,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         // Pontuações de disciplinas customizadas
         customDisciplineScores,
         weightedCustomDisciplineScores,
+        // Flags de mínimos não atingidos
+        belowMinimum,
+        belowBlockMinimums: belowBlockMinimums.length > 0 ? belowBlockMinimums : undefined,
+        belowDisciplineMinimums: belowDisciplineMinimums.length > 0 ? belowDisciplineMinimums : undefined,
+        // Dados do ranking
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id,
