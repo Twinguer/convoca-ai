@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -234,8 +235,10 @@ const RankingTableContent: React.FC<{
 
     const disciplines: { type: string; name: string }[] = [];
 
+    // Iterar por disciplinas no array principal de disciplines do concurso
     concurso.disciplines.forEach(block => {
       if (block.disciplines && Array.isArray(block.disciplines)) {
+        // Aqui acessamos corretamente o array disciplines do bloco
         block.disciplines.forEach(d => {
           if (d.isEnabled) {
             disciplines.push({
