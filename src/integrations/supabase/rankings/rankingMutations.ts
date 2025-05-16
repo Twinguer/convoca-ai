@@ -59,6 +59,9 @@ export const saveRanking = async (
     // Remover campos que não existem mais no modelo
     const dataFormValues = { ...formValues };
     
+    // Garantir que os valores mínimos são numéricos
+    dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
+    
     // Processar os blocos de disciplinas e garantir que as pontuações mínimas sejam numéricas
     if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
       // Processar todos os blocos
@@ -134,7 +137,8 @@ export const saveRanking = async (
     const dataToSubmit: Record<string, any> = {
       ...dataFormValues,
       created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
-      has_custom_knowledge: true // Sempre usar conhecimento customizado (disciplinas)
+      has_custom_knowledge: true, // Sempre usar conhecimento customizado (disciplinas)
+      has_minimum_score: dataFormValues.total_minimum_score > 0 // Definir has_minimum_score com base no valor
     };
     
     // Definir explicitamente título e órgão
@@ -167,7 +171,8 @@ export const saveRanking = async (
       JSON.stringify({
         disciplines: dataToSubmit.disciplines,
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
-        total_minimum_score: dataToSubmit.total_minimum_score
+        total_minimum_score: dataToSubmit.total_minimum_score,
+        has_minimum_score: dataToSubmit.has_minimum_score
       }, null, 2)
     );
 

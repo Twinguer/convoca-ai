@@ -51,6 +51,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       .select(`
         id,
         total_minimum_score,
+        has_minimum_score,
         disciplines
       `)
       .eq('id', concursoId)
@@ -108,25 +109,36 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       });
     }
     
+    // Verificar se o concurso tem mínimo habilitado
+    const hasMinimumScoreEnabled = concursoData?.has_minimum_score === true;
+    
     // Mínimo geral da prova
-    const totalMinimumScore = concursoData?.total_minimum_score || 0;
+    const totalMinimumScore = hasMinimumScoreEnabled ? concursoData?.total_minimum_score || 0 : 0;
+    
+    console.log('Concurso minimum settings:', {
+      hasMinimumScoreEnabled,
+      totalMinimumScore,
+      disciplines: concursoData?.disciplines
+    });
     
     // Extrair mínimos por bloco e disciplina
     const blockMinimums: Record<string, number> = {};
     const disciplineMinimums: Record<string, number> = {};
     
-    if (concursoData?.disciplines && Array.isArray(concursoData.disciplines)) {
+    if (hasMinimumScoreEnabled && concursoData?.disciplines && Array.isArray(concursoData.disciplines)) {
       // Iterar pelos blocos
       concursoData.disciplines.forEach(block => {
-        if (block.id && block.minimum_score !== undefined) {
-          blockMinimums[block.id] = block.minimum_score;
+        if (block.id && block.minimum_score !== undefined && block.minimum_score > 0) {
+          blockMinimums[block.id] = parseFloat(block.minimum_score);
+          console.log(`Block minimum found: ${block.id} = ${blockMinimums[block.id]}`);
         }
         
         // Iterar pelas disciplinas
         if (block.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines.forEach(discipline => {
-            if (discipline.id && discipline.minimum_score !== undefined) {
-              disciplineMinimums[discipline.id] = discipline.minimum_score;
+            if (discipline.id && discipline.minimum_score !== undefined && discipline.minimum_score > 0) {
+              disciplineMinimums[discipline.type] = parseFloat(discipline.minimum_score);
+              console.log(`Discipline minimum found: ${discipline.type} = ${disciplineMinimums[discipline.type]}`);
             }
           });
         }
@@ -169,7 +181,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       
       // Verificar se está abaixo do mínimo geral da prova
       const totalObjScore = ranking.score || 0;
-      const belowMinimum = totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
+      const belowMinimum = hasMinimumScoreEnabled && totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
+      
+      if (belowMinimum) {
+        console.log(`User ${ranking.user_id} (${name}) is below minimum: ${totalObjScore} < ${totalMinimumScore}`);
+      }
       
       // Verificar mínimos por bloco e disciplina
       const belowBlockMinimums: string[] = [];
@@ -191,8 +207,10 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
                   blockScore += disciplineScore;
                   
                   // Verificar mínimo da disciplina
-                  if (disciplineMinimums[discipline.id] > 0 && disciplineScore < disciplineMinimums[discipline.id]) {
-                    belowDisciplineMinimums.push(discipline.id);
+                  if (hasMinimumScoreEnabled && disciplineMinimums[discipline.type] > 0 && 
+                      disciplineScore < disciplineMinimums[discipline.type]) {
+                    belowDisciplineMinimums.push(discipline.type);
+                    console.log(`User ${ranking.user_id} (${name}) is below minimum in discipline ${discipline.type}: ${disciplineScore} < ${disciplineMinimums[discipline.type]}`);
                   }
                 }
               });
@@ -200,8 +218,9 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
               blockScores[block.id] = blockScore;
               
               // Verificar mínimo do bloco
-              if (blockMinimums[block.id] > 0 && blockScore < blockMinimums[block.id]) {
+              if (hasMinimumScoreEnabled && blockMinimums[block.id] > 0 && blockScore < blockMinimums[block.id]) {
                 belowBlockMinimums.push(block.id);
+                console.log(`User ${ranking.user_id} (${name}) is below minimum in block ${block.id}: ${blockScore} < ${blockMinimums[block.id]}`);
               }
             }
           });

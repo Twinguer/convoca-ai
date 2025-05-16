@@ -51,6 +51,16 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         weightedCustomScores: rankings[0].weightedCustomDisciplineScores
       });
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
+      
+      // Debugging minimum scores
+      console.log('Minimum score checks:', rankings.map(r => ({
+        id: r.id,
+        userId: r.userId,
+        name: r.name,
+        belowMinimum: r.belowMinimum,
+        belowBlockMinimums: r.belowBlockMinimums,
+        belowDisciplineMinimums: r.belowDisciplineMinimums
+      })));
     }
   }, [concurso, rankings]);
 
@@ -300,6 +310,7 @@ const RankingTableContent: React.FC<{
       {rankings.length > 0 ? rankings.map(ranking => {
       const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
       const belowMinimum = isBelowMinimum(ranking);
+      
       // Aplicar classe para destacar participantes abaixo do mínimo em vermelho
       const rowColorClass = belowMinimum 
         ? 'text-red-600' 
@@ -310,10 +321,18 @@ const RankingTableContent: React.FC<{
               : '');
       
       return <TableRow key={ranking.userId} className={rowColorClass}>
-            <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
+            <TableCell className="text-center font-bold">
+              {belowMinimum 
+                ? <span className="text-red-600 font-bold">E</span> 
+                : `${ranking.position}º`
+              }
+            </TableCell>
             
             {!isAmpla && <TableCell className="text-center font-bold">
-              {ranking.quotaPosition}º
+              {belowMinimum 
+                ? <span className="text-red-600 font-bold">E</span>
+                : `${ranking.quotaPosition}º`
+              }
             </TableCell>}
             
             <TableCell>
@@ -333,20 +352,20 @@ const RankingTableContent: React.FC<{
             
             <TableCell className={`text-right font-medium ${scoreChanged && !belowMinimum ? 'text-emerald-600' : ''}`}>
               {ranking.score.toFixed(2)}
-              {belowMinimum && <span className="ml-2 text-xs">(eliminado)</span>}
+              {belowMinimum && <span className="ml-2 text-xs text-red-600">(eliminado)</span>}
             </TableCell>
             
             {/* Pontuações de disciplinas customizadas */}
             {customDisciplines.map((discipline, idx) => {
-          // Access the score using the discipline type as the key
-          const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
-          // Verificar se esta disciplina específica está abaixo do mínimo
-          const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes(discipline.type);
-          
-          return <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
-                  {Number(scoreValue).toFixed(2)}
-                </TableCell>;
-        })}
+              // Access the score using the discipline type as the key
+              const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
+              // Verificar se esta disciplina específica está abaixo do mínimo
+              const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes(discipline.type);
+              
+              return <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
+                      {Number(scoreValue).toFixed(2)}
+                    </TableCell>;
+            })}
             
             {/* Pontuações de partes subjetivas */}
             {concurso.has_discursive === true && <TableCell className="text-right">
@@ -380,3 +399,4 @@ const RankingTableContent: React.FC<{
       {renderRankingRows()}
     </Table>;
 };
+
