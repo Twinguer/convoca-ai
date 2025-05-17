@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +10,6 @@ import { Concurso } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
-
 interface RankingTableProps {
   rankings?: Ranking[];
   concurso?: Concurso;
@@ -19,7 +17,6 @@ interface RankingTableProps {
   isAuthenticated: boolean;
   isRefetching?: boolean;
 }
-
 export const RankingTable: React.FC<RankingTableProps> = ({
   rankings,
   concurso,
@@ -29,7 +26,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
-
   useEffect(() => {
     if (concurso) {
       console.log('Available quotas in concurso:', {
@@ -47,23 +43,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
-        objective: rankings[0].objectiveScore,
         customScores: rankings[0].customDisciplineScores,
         weightedCustomScores: rankings[0].weightedCustomDisciplineScores
       });
       console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
-      
-      // Debugging minimum scores
-      console.log('Minimum score checks:', rankings.map(r => ({
-        id: r.id,
-        userId: r.userId,
-        name: r.name,
-        score: r.score,
-        objectiveScore: r.objectiveScore,
-        belowMinimum: r.belowMinimum,
-        belowBlockMinimums: r.belowBlockMinimums,
-        belowDisciplineMinimums: r.belowDisciplineMinimums
-      })));
     }
   }, [concurso, rankings]);
 
@@ -90,7 +73,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       };
     });
   }, [rankings]);
-
   const getAvailableQuotas = () => {
     if (!concurso) return ["Ampla Concorrência"];
     const quotas = ["Ampla Concorrência"];
@@ -112,9 +94,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     console.log('Available quotas for display:', quotas);
     return quotas;
   };
-
   const availableQuotas = getAvailableQuotas();
-
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
     if (quota === "Ampla Concorrência") {
@@ -122,7 +102,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
-
   const handleUserClick = (userId: string) => {
     if (!isAuthenticated) {
       navigate(`/auth?redirect=/usuario/${userId}`);
@@ -130,7 +109,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       navigate(`/usuario/${userId}`);
     }
   };
-
   return <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Classificação Pós-prova</CardTitle>
@@ -157,7 +135,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       </CardContent>
     </Card>;
 };
-
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
@@ -169,7 +146,6 @@ const getQuotaAbbreviation = (quota: string): string => {
   };
   return abbreviations[quota] || quota.substring(0, 3);
 };
-
 const RankingTableContent: React.FC<{
   rankings: Ranking[];
   currentUserId?: string | null;
@@ -217,13 +193,6 @@ const RankingTableContent: React.FC<{
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
 
-  // Função para determinar se um ranking está abaixo do mínimo exigido
-  const isBelowMinimum = (ranking: Ranking): boolean => {
-    return !!ranking.belowMinimum || 
-           (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
-           (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
-  };
-
   // Obter disciplinas customizadas habilitadas
   const getCustomDisciplines = (): {
     type: string;
@@ -232,29 +201,12 @@ const RankingTableContent: React.FC<{
     if (!concurso || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
       return [];
     }
-
-    const disciplines: { type: string; name: string }[] = [];
-
-    // Iterar por disciplinas no array principal de disciplines do concurso
-    concurso.disciplines.forEach(block => {
-      if (block.disciplines && Array.isArray(block.disciplines)) {
-        // Aqui acessamos corretamente o array disciplines do bloco
-        block.disciplines.forEach(d => {
-          if (d.isEnabled) {
-            disciplines.push({
-              type: d.type,
-              name: d.name
-            });
-          }
-        });
-      }
-    });
-
-    return disciplines;
+    return concurso.disciplines.filter(d => d.isEnabled).map(d => ({
+      type: d.type,
+      name: d.name
+    }));
   };
-  
   const customDisciplines = getCustomDisciplines();
-  
   if (!concurso) {
     return <Table>
         <TableHeader>
@@ -329,30 +281,11 @@ const RankingTableContent: React.FC<{
   const renderRankingRows = () => <TableBody className="space-y-0.5">
       {rankings.length > 0 ? rankings.map(ranking => {
       const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
-      const belowMinimum = isBelowMinimum(ranking);
-      
-      // Aplicar classe para destacar participantes abaixo do mínimo em vermelho
-      const rowColorClass = belowMinimum 
-        ? 'text-red-600' 
-        : (currentUserId && ranking.userId === currentUserId 
-            ? 'bg-muted' 
-            : scoreChanged 
-              ? 'bg-green-50' 
-              : '');
-      
-      return <TableRow key={ranking.userId} className={rowColorClass}>
-            <TableCell className="text-center font-bold">
-              {belowMinimum 
-                ? <span className="text-red-600 font-bold">E</span> 
-                : `${ranking.position}º`
-              }
-            </TableCell>
+      return <TableRow key={ranking.userId} className={`${currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''} ${scoreChanged ? 'bg-green-50' : ''}`}>
+            <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
             
             {!isAmpla && <TableCell className="text-center font-bold">
-              {belowMinimum 
-                ? <span className="text-red-600 font-bold">E</span>
-                : `${ranking.quotaPosition}º`
-              }
+              {ranking.quotaPosition}º
             </TableCell>}
             
             <TableCell>
@@ -370,22 +303,18 @@ const RankingTableContent: React.FC<{
               </div>
             </TableCell>
             
-            <TableCell className={`text-right font-medium ${scoreChanged && !belowMinimum ? 'text-emerald-600' : ''}`}>
+            <TableCell className={`text-right font-medium ${scoreChanged ? 'text-emerald-600' : ''}`}>
               {ranking.score.toFixed(2)}
-              {belowMinimum && <span className="ml-2 text-xs text-red-600">(eliminado)</span>}
             </TableCell>
             
             {/* Pontuações de disciplinas customizadas */}
             {customDisciplines.map((discipline, idx) => {
-              // Access the score using the discipline type as the key
-              const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
-              // Verificar se esta disciplina específica está abaixo do mínimo
-              const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes(discipline.type);
-              
-              return <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
-                      {Number(scoreValue).toFixed(2)}
-                    </TableCell>;
-            })}
+          // Access the score using the discipline type as the key
+          const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
+          return <TableCell key={`custom-score-${idx}`} className="text-right">
+                  {Number(scoreValue).toFixed(2)}
+                </TableCell>;
+        })}
             
             {/* Pontuações de partes subjetivas */}
             {concurso.has_discursive === true && <TableCell className="text-right">

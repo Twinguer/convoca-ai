@@ -15,7 +15,7 @@ const ensureNumeric = (value: any): number => {
 
 // Função para salvar um novo ranking ou atualizar um existente
 export const saveRanking = async (
-  formValues: any, 
+  formValues: Partial<Concurso>, 
   userId: string | undefined, 
   editId?: string | null
 ): Promise<{id?: string; duplicated?: boolean; error?: boolean}> => {
@@ -59,33 +59,18 @@ export const saveRanking = async (
     // Remover campos que não existem mais no modelo
     const dataFormValues = { ...formValues };
     
-    // Garantir que os valores mínimos são numéricos e has_minimum_score é booleano
-    dataFormValues.has_minimum_score = dataFormValues.has_minimum_score === true;
-    
-    // Definir total_minimum_score com base no has_minimum_score
-    if (dataFormValues.has_minimum_score) {
-      // Garantir que é um número
-      dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
-      console.log(`Valor mínimo total definido: ${dataFormValues.total_minimum_score}`);
-    } else {
-      // Se não tem mínimo habilitado, definir como 0
-      dataFormValues.total_minimum_score = 0;
-    }
-    
     // Processar os blocos de disciplinas e garantir que as pontuações mínimas sejam numéricas
     if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
       // Processar todos os blocos
       dataFormValues.disciplines = dataFormValues.disciplines.map((block: any) => {
         // Garantir que o mínimo do bloco é um número
         const blockMinimumScore = ensureNumeric(block.minimum_score);
-        console.log(`Bloco ${block.id || 'sem id'}: valor mínimo ${blockMinimumScore}`);
         
         // Processar todas as disciplinas do bloco
         if (block.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines = block.disciplines.map((discipline: any) => {
             // Garantir que o mínimo da disciplina é um número
             const disciplineMinimumScore = ensureNumeric(discipline.minimum_score);
-            console.log(`Disciplina ${discipline.type || 'sem tipo'}: valor mínimo ${disciplineMinimumScore}`);
             
             return {
               ...discipline,
@@ -149,8 +134,7 @@ export const saveRanking = async (
     const dataToSubmit: Record<string, any> = {
       ...dataFormValues,
       created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
-      has_custom_knowledge: true, // Sempre usar conhecimento customizado (disciplinas)
-      has_minimum_score: dataFormValues.has_minimum_score === true // Definir has_minimum_score com base no valor escolhido pelo usuário
+      has_custom_knowledge: true // Sempre usar conhecimento customizado (disciplinas)
     };
     
     // Definir explicitamente título e órgão
@@ -183,8 +167,7 @@ export const saveRanking = async (
       JSON.stringify({
         disciplines: dataToSubmit.disciplines,
         has_custom_knowledge: dataToSubmit.has_custom_knowledge,
-        total_minimum_score: dataToSubmit.total_minimum_score,
-        has_minimum_score: dataToSubmit.has_minimum_score
+        total_minimum_score: dataToSubmit.total_minimum_score
       }, null, 2)
     );
 
