@@ -19,13 +19,13 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
         <div className="mb-4">
           <h3 className="text-lg font-semibold">Pontuação Mínima da Prova</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Configure a pontuação mínima geral da prova objetiva. Os candidatos que não atingirem este valor serão destacados em vermelho, marcados como eliminados e não serão considerados na classificação.
+            Configure a pontuação mínima geral da prova. Os candidatos que não atingirem este valor serão destacados em vermelho e considerados eliminados.
           </p>
           
           <Alert className="mb-4">
             <Info className="h-4 w-4 mr-2" />
             <AlertDescription className="text-sm">
-              Este valor representa o mínimo absoluto que deve ser atingido na pontuação total da prova objetiva (excluindo discursivas e estudos de caso).
+              Este valor representa o mínimo absoluto que deve ser atingido na pontuação total da prova objetiva.
               Candidatos abaixo deste valor serão marcados como eliminados na tabela de classificação.
             </AlertDescription>
           </Alert>
@@ -56,7 +56,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
             name="total_minimum_score"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
+                <FormLabel>Pontuação mínima geral da prova (valor absoluto)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -79,7 +79,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                   />
                 </FormControl>
                 <FormDescription>
-                  O candidato será destacado em vermelho e considerado eliminado caso sua pontuação total na prova objetiva (excluindo discursivas/estudos de caso) seja menor que este valor.
+                  O candidato será destacado em vermelho e considerado eliminado caso sua pontuação total seja menor que este valor.
                 </FormDescription>
               </FormItem>
             )}

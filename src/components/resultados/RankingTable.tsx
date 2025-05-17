@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,7 +47,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (rankings && rankings.length > 0) {
       console.log('First ranking scores:', {
         total: rankings[0].score,
-        objective: rankings[0].objectiveScore,
         customScores: rankings[0].customDisciplineScores,
         weightedCustomScores: rankings[0].weightedCustomDisciplineScores
       });
@@ -57,8 +57,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         id: r.id,
         userId: r.userId,
         name: r.name,
-        score: r.score,
-        objectiveScore: r.objectiveScore,
         belowMinimum: r.belowMinimum,
         belowBlockMinimums: r.belowBlockMinimums,
         belowDisciplineMinimums: r.belowDisciplineMinimums
@@ -231,27 +229,12 @@ const RankingTableContent: React.FC<{
     if (!concurso || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
       return [];
     }
-
-    const disciplines: { type: string; name: string }[] = [];
-
-    concurso.disciplines.forEach(block => {
-      if (block.disciplines && Array.isArray(block.disciplines)) {
-        block.disciplines.forEach(d => {
-          if (d.isEnabled) {
-            disciplines.push({
-              type: d.type,
-              name: d.name
-            });
-          }
-        });
-      }
-    });
-
-    return disciplines;
+    return concurso.disciplines.filter(d => d.isEnabled).map(d => ({
+      type: d.type,
+      name: d.name
+    }));
   };
-  
   const customDisciplines = getCustomDisciplines();
-  
   if (!concurso) {
     return <Table>
         <TableHeader>
@@ -416,3 +399,4 @@ const RankingTableContent: React.FC<{
       {renderRankingRows()}
     </Table>;
 };
+

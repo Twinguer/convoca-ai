@@ -15,7 +15,7 @@ const ensureNumeric = (value: any): number => {
 
 // Função para salvar um novo ranking ou atualizar um existente
 export const saveRanking = async (
-  formValues: any, 
+  formValues: Partial<Concurso>, 
   userId: string | undefined, 
   editId?: string | null
 ): Promise<{id?: string; duplicated?: boolean; error?: boolean}> => {
@@ -60,11 +60,7 @@ export const saveRanking = async (
     const dataFormValues = { ...formValues };
     
     // Garantir que os valores mínimos são numéricos
-    if (dataFormValues.has_minimum_score) {
-      dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
-    } else {
-      dataFormValues.total_minimum_score = 0;
-    }
+    dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
     
     // Processar os blocos de disciplinas e garantir que as pontuações mínimas sejam numéricas
     if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
@@ -142,7 +138,7 @@ export const saveRanking = async (
       ...dataFormValues,
       created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
       has_custom_knowledge: true, // Sempre usar conhecimento customizado (disciplinas)
-      has_minimum_score: dataFormValues.has_minimum_score === true // Definir has_minimum_score com base no valor escolhido pelo usuário
+      has_minimum_score: dataFormValues.total_minimum_score > 0 // Definir has_minimum_score com base no valor
     };
     
     // Definir explicitamente título e órgão
