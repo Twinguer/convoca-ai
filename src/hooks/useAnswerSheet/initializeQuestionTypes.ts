@@ -7,6 +7,11 @@ export const initializeQuestionTypes = (
   questionType: { [key: number]: SectionType },
   setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: SectionType }>>
 ) => {
+  if (!concurso) {
+    console.warn('Nenhum concurso disponível para inicializar tipos de questões');
+    return;
+  }
+
   if (concurso && Object.keys(questionType).length === 0) {
     console.log('Initializing question types for concurso:', concurso.id, concurso.titulo);
     const typesMap: { [key: number]: SectionType } = {};
@@ -20,7 +25,7 @@ export const initializeQuestionTypes = (
       
       if (Array.isArray(disciplines)) {
         disciplines.forEach(discipline => {
-          if (discipline.isEnabled && discipline.type) {
+          if (discipline && discipline.isEnabled && discipline.type) {
             const questionCount = getNumericValue(discipline.questionCount);
               
             console.log(`Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);

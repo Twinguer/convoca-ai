@@ -1,12 +1,21 @@
 
 import React from 'react';
 
-const Logo: React.FC<{
+interface LogoProps {
   className?: string;
-}> = ({
-  className = "h-12 w-auto"
+  height?: number;
+}
+
+const Logo: React.FC<LogoProps> = ({
+  className = "h-12 w-auto",
+  height = 40
 }) => {
-  return null;
+  return (
+    <div className={className} style={{ height: height }}>
+      {/* Conteúdo do logo aqui */}
+      <span className="font-bold text-emerald-600">Convoca</span>
+    </div>
+  );
 };
 
 export default Logo;

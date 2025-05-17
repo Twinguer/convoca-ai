@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Menu from "./components/Menu";
+import { Menu } from "./components/Menu";
 import Index from "./pages/Index";
 import Editais from "./pages/Editais";
 import PreClassificacao from "./pages/PreClassificacao";

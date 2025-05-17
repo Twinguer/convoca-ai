@@ -10,10 +10,10 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
-import { UserMenu } from './UserMenu';
+import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
-import { Logo } from '@/assets/logo';
+import Logo from '@/assets/logo';
 
 export const Menu: React.FC = () => {
   const navigate = useNavigate();
@@ -48,52 +48,44 @@ export const Menu: React.FC = () => {
                       </NavigationMenuLink>
                     </li>
                     <li>
-                      <NavigationMenuLink asChild>
-                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div onClick={() => navigate('/cebraspe')}>
-                            <div className="text-sm font-medium leading-none">Cebraspe</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Todos os concursos do Cebraspe
-                            </p>
-                          </div>
+                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div onClick={() => navigate('/cebraspe')} className="cursor-pointer">
+                          <div className="text-sm font-medium leading-none">Cebraspe</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Todos os concursos do Cebraspe
+                          </p>
                         </div>
-                      </NavigationMenuLink>
+                      </div>
                     </li>
                     <li>
-                      <NavigationMenuLink asChild>
-                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div onClick={() => navigate('/fgv')}>
-                            <div className="text-sm font-medium leading-none">FGV</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Todos os concursos da FGV
-                            </p>
-                          </div>
+                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div onClick={() => navigate('/fgv')} className="cursor-pointer">
+                          <div className="text-sm font-medium leading-none">FGV</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Todos os concursos da FGV
+                          </p>
                         </div>
-                      </NavigationMenuLink>
+                      </div>
                     </li>
                     <li>
-                      <NavigationMenuLink asChild>
-                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div onClick={() => navigate('/fcc')}>
-                            <div className="text-sm font-medium leading-none">FCC</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Todos os concursos da FCC
-                            </p>
-                          </div>
+                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div onClick={() => navigate('/fcc')} className="cursor-pointer">
+                          <div className="text-sm font-medium leading-none">FCC</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Todos os concursos da FCC
+                          </p>
                         </div>
-                      </NavigationMenuLink>
+                      </div>
                     </li>
                     <li>
-                      <NavigationMenuLink asChild>
-                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <div onClick={() => navigate('/vunesp')}>
-                            <div className="text-sm font-medium leading-none">Vunesp</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Todos os concursos da Vunesp
-                            </p>
-                          </div>
+                      <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                        <div onClick={() => navigate('/vunesp')} className="cursor-pointer">
+                          <div className="text-sm font-medium leading-none">Vunesp</div>
+                          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                            Todos os concursos da Vunesp
+                          </p>
                         </div>
-                      </NavigationMenuLink>
+                      </div>
                     </li>
                   </ul>
                 </NavigationMenuContent>
@@ -138,3 +130,5 @@ export const Menu: React.FC = () => {
     </header>
   );
 };
+
+export default Menu;
