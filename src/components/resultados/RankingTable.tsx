@@ -352,7 +352,7 @@ const RankingTableContent: React.FC<{
             
             <TableCell className={`text-right font-medium ${scoreChanged && !belowMinimum ? 'text-emerald-600' : ''}`}>
               {ranking.score.toFixed(2)}
-              {belowMinimum && <span className="ml-2 text-xs text-red-600">(eliminado)</span>}
+              {belowMinimum && <span className="ml-2 text-xs text-red-600"></span>}
             </TableCell>
             
             {/* Pontuações de disciplinas customizadas */}
