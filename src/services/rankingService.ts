@@ -179,8 +179,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         });
       }
       
+      // Calcular o total objetivo (excluindo discursivas e estudos de caso)
+      // Esta é a principal alteração para resolver o problema
+      const totalObjScore = calculateObjectiveScore(ranking, weightedCustomDisciplineScores);
+      
       // Verificar se está abaixo do mínimo geral da prova
-      const totalObjScore = ranking.score || 0;
       const belowMinimum = hasMinimumScoreEnabled && totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
       
       if (belowMinimum) {
@@ -268,6 +271,22 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.error('Error fetching rankings:', error);
     return [];
   }
+};
+
+// Nova função auxiliar para calcular pontuação objetiva (excluindo discursivas e estudos de caso)
+const calculateObjectiveScore = (ranking: any, weightedCustomDisciplineScores: { [key: string]: number }) => {
+  // Se temos pontuações customizadas, usar a soma delas
+  if (weightedCustomDisciplineScores && Object.keys(weightedCustomDisciplineScores).length > 0) {
+    return Object.values(weightedCustomDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
+  }
+  
+  // Caso contrário, usar a soma das pontuações básicas/específicas
+  return (
+    (ranking.weighted_basic_score || 0) +
+    (ranking.weighted_specific_1_score || 0) +
+    (ranking.weighted_specific_2_score || 0) +
+    (ranking.weighted_specific_3_score || 0)
+  );
 };
 
 // Get the available reservation types for a concurso

@@ -62,6 +62,69 @@ export const saveRanking = async (
     // Garantir que os valores mínimos são numéricos
     dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
     
+    // Se estamos editando um ranking existente, buscar os dados originais para preservar a estrutura de disciplinas
+    if (editId) {
+      const { data: existingConcurso, error: getConcursoError } = await supabase
+        .from('concursos')
+        .select('disciplines')
+        .eq('id', editId)
+        .single();
+      
+      if (!getConcursoError && existingConcurso && existingConcurso.disciplines) {
+        // Se estamos editando e não há disciplines no formValues, preservar as existentes
+        if (!dataFormValues.disciplines || 
+            !Array.isArray(dataFormValues.disciplines) || 
+            dataFormValues.disciplines.length === 0) {
+          console.log('Preserving existing disciplines structure:', existingConcurso.disciplines);
+          dataFormValues.disciplines = existingConcurso.disciplines;
+        }
+        // Se estamos editando e há disciplines nas duas, verificar estrutura e preservar IDs
+        else if (Array.isArray(dataFormValues.disciplines) && dataFormValues.disciplines.length > 0 && 
+                Array.isArray(existingConcurso.disciplines) && existingConcurso.disciplines.length > 0) {
+          // Verificar se estamos lidando com a estrutura de blocos
+          if ('name' in dataFormValues.disciplines[0] && 'disciplines' in dataFormValues.disciplines[0]) {
+            console.log('Preserving block IDs in discipline structure');
+            // Preservar IDs dos blocos e disciplinas
+            dataFormValues.disciplines = dataFormValues.disciplines.map((block, blockIdx) => {
+              // Encontrar bloco correspondente por posição ou nome
+              const existingBlock = existingConcurso.disciplines[blockIdx] || 
+                existingConcurso.disciplines.find((b: any) => b.name === block.name);
+              
+              if (existingBlock && existingBlock.id) {
+                // Preservar disciplinas com IDs
+                const updatedDisciplines = block.disciplines?.map((discipline, discIdx) => {
+                  // Encontrar disciplina correspondente por posição ou nome/tipo
+                  const existingDiscipline = existingBlock.disciplines?.[discIdx] || 
+                    existingBlock.disciplines?.find((d: any) => 
+                      d.name === discipline.name || d.type === discipline.type
+                    );
+                  
+                  if (existingDiscipline && existingDiscipline.id) {
+                    return {
+                      ...discipline,
+                      id: existingDiscipline.id
+                    };
+                  }
+                  return discipline;
+                });
+                
+                return {
+                  ...block,
+                  id: existingBlock.id,
+                  disciplines: updatedDisciplines
+                };
+              }
+              return block;
+            });
+            
+            console.log('Updated disciplines structure with preserved IDs:', 
+              JSON.stringify(dataFormValues.disciplines, null, 2)
+            );
+          }
+        }
+      }
+    }
+    
     // Processar os blocos de disciplinas e garantir que as pontuações mínimas sejam numéricas
     if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
       // Processar todos os blocos

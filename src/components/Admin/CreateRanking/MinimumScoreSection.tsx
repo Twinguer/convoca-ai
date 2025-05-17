@@ -27,6 +27,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
             <AlertDescription className="text-sm">
               Este valor representa o mínimo absoluto que deve ser atingido na pontuação total da prova objetiva.
               Candidatos abaixo deste valor serão marcados como eliminados na tabela de classificação.
+              <strong className="block mt-1">Importante: Apenas pontuações de questões objetivas são consideradas para este cálculo. Discursivas e estudos de caso não são contabilizados para verificação de mínimo.</strong>
             </AlertDescription>
           </Alert>
           
@@ -79,7 +80,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                   />
                 </FormControl>
                 <FormDescription>
-                  O candidato será destacado em vermelho e considerado eliminado caso sua pontuação total seja menor que este valor.
+                  O candidato será destacado em vermelho e considerado eliminado caso sua pontuação total objetiva seja menor que este valor.
                 </FormDescription>
               </FormItem>
             )}
