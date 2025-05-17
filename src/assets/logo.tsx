@@ -12,7 +12,6 @@ const Logo: React.FC<LogoProps> = ({
 }) => {
   return (
     <div className={className} style={{ height: height }}>
-      {/* Conteúdo do logo aqui */}
       <span className="font-bold text-emerald-600">Convoca</span>
     </div>
   );

@@ -23,11 +23,9 @@ const ResultadosPage = () => {
     refreshData,
     creatorName,
     inscritos,
-    isParticipating // Usando a nova propriedade para verificar participação
+    isParticipating
   } = useResultadosData();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -49,7 +47,6 @@ const ResultadosPage = () => {
       console.log('Custom discipline scores in first ranking:', rankings[0].customDisciplineScores);
     }
     
-    // Log para verificar status de participação
     console.log('User participation status:', { 
       isAuthenticated, 
       isParticipating, 
@@ -91,26 +88,36 @@ const ResultadosPage = () => {
     return <LoadingState />;
   }
 
-  return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
+  return (
+    <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-        
-        
         <div className="flex gap-1 sm:gap-2 flex-wrap">
           <Button onClick={handleRefresh} className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isRefetching}>
             <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isRefetching ? 'animate-spin' : ''}`} />
             {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
           </Button>
           
-          {/* Mostrar o botão "Participar" apenas se o usuário estiver logado e não estiver participando */}
-          {concurso && !isParticipating && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
+          {concurso && !isParticipating && user && (
+            <Button 
+              onClick={() => navigate(`/concurso/${concurso.id}/participar`)} 
+              className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" 
+              size="sm"
+            >
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
-            </Button>}
+            </Button>
+          )}
           
-          {concurso && !user && <Button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+          {concurso && !user && (
+            <Button 
+              onClick={() => navigate('/auth')} 
+              className="flex items-center gap-2 text-xs sm:text-sm" 
+              size="sm"
+            >
               <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
               Login
-            </Button>}
+            </Button>
+          )}
         </div>
       </div>
       
@@ -119,19 +126,32 @@ const ResultadosPage = () => {
         {concurso && <ConcursoInfoCard concurso={concurso} />}
       </div>
       
-      {isRefetching && <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-md mb-2 text-center text-sm">
+      {isRefetching && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-md mb-2 text-center text-sm">
           Atualizando dados em tempo real... As pontuações estão sendo recalculadas.
-        </div>}
+        </div>
+      )}
       
-      {/* Sempre exibindo o ranking, independente do status de autenticação */}
-      <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />
+      {concurso && (
+        <RankingTable 
+          rankings={rankings} 
+          concurso={concurso} 
+          isLoading={isLoading} 
+          isError={false} 
+          showSectionTotals={true}
+          onUserClick={(userId) => navigate(`/usuario/${userId}`)}
+        />
+      )}
       
-      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+      {!isAuthenticated && (
+        <div className="mt-1 sm:mt-2 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
           <p className="text-center text-gray-600 dark:text-gray-300">
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default ResultadosPage;

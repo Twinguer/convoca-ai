@@ -3,7 +3,7 @@ import { Concurso, SectionType } from '@/types/concursos';
 import { getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const initializeQuestionTypes = (
-  concurso: Concurso, 
+  concurso: Concurso | null | undefined, 
   questionType: { [key: number]: SectionType },
   setQuestionType: React.Dispatch<React.SetStateAction<{ [key: number]: SectionType }>>
 ) => {

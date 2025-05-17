@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { UserAvatar } from '../profile/UserAvatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ArrowUpDown, Medal } from 'lucide-react';
-import { useResultadosData } from '@/hooks/useResultadosData';
 import { getSectionDisplayName, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 import { Progress } from '@/components/ui/progress';
 import { Concurso } from '@/types/concursos';
@@ -50,13 +49,13 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedTab, setSelectedTab] = useState('all');
   
-  const { data: rankingsData, isLoading: isLoadingInternal } = useResultadosData(
-    concurso.id,
-    selectedTab !== 'all' ? selectedTab : undefined
-  );
+  // Filtramos os rankings com base na aba selecionada
+  const filteredRankings = selectedTab !== 'all' 
+    ? rankings.filter(r => r.reservation_type === selectedTab) 
+    : rankings;
   
-  const actualRankings = rankingsData || rankings;
-  const actualLoading = isLoading || isLoadingInternal;
+  const actualRankings = filteredRankings || [];
+  const actualLoading = isLoading;
   
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
@@ -110,9 +109,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         key: 'position',
         title: 'Pos',
         className: 'w-14',
-        render: (_, __, index) => (
+        render: (value, row) => (
           <div className="font-medium text-center">
-            {index + 1}
+            {sortedRankings.indexOf(row) + 1}
           </div>
         ),
       },
@@ -124,7 +123,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           <div className="flex items-center gap-2 overflow-hidden">
             <UserAvatar 
               avatarUrl={row.avatar_url}
-              userName={name || 'Usuário'}
+              name={name || 'Usuário'}
               size="sm"
             />
             <div 
@@ -448,7 +447,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedRankings.map((row, index) => (
+                sortedRankings.map((row) => (
                   <TableRow 
                     key={row.id}
                     className={`${row.is_classified ? 'bg-emerald-50 hover:bg-emerald-100' : ''}`}
@@ -459,7 +458,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                         className={column.className}
                       >
                         {column.render 
-                          ? column.render(row[column.key], row, index)
+                          ? column.render(row[column.key], row)
                           : row[column.key]
                         }
                       </TableCell>
