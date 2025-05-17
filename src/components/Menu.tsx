@@ -1,157 +1,140 @@
 
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { cn } from '../lib/utils';
-import UserMenu from './UserMenu';
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu"
+import { UserMenu } from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert } from 'lucide-react';
-import { Button } from './ui/button';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-import { UserActions } from './Admin/UserActions';
+import { cn } from '@/lib/utils';
+import { Logo } from '@/assets/logo';
 
-const Menu = () => {
-  const location = useLocation();
-  const pathname = location.pathname;
+export const Menu: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  
-  useEffect(() => {
-    // Check if admin mode is enabled via URL param
-    const urlParams = new URLSearchParams(window.location.search);
-    const adminParam = urlParams.get('admin');
-    setIsAdminMode(adminParam === 'true');
-  }, [location]);
-  
-  const isActive = (path: string) => {
-    if (path === '/' && pathname === '/') return true;
-    if (path !== '/' && pathname.startsWith(path)) return true;
-    return false;
-  };
-  
-  const isAdmin = () => {
-    return user?.email?.includes('admin') || isAdminMode;
-  };
-  
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
-        {/* User login button - Now on the left */}
-        <div className="flex items-center">
-          <UserMenu />
-          {isAdminMode && (
-            <div className="ml-4 bg-amber-100 text-amber-800 px-2 py-1 rounded-md flex items-center">
-              <ShieldAlert className="h-4 w-4 mr-1" />
-              <span className="text-xs font-medium">Modo Administrador</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Navigation - Now on the right */}
-        <div className="flex items-center space-x-2 sm:space-x-4">
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList className="space-x-1">
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="flex items-center gap-4 font-semibold">
+          <div onClick={() => navigate('/')} className="cursor-pointer">
+            <Logo height={30} />
+          </div>
+          <NavigationMenu>
+            <NavigationMenuList>
               <NavigationMenuItem>
-                <Link to="/">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <Link to="/comunidade">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Comunidade
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              <NavigationMenuItem>
-                <Link to="/pre-classificacao">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
-                    Rankings
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              
-              {isAdmin() && <NavigationMenuItem>
-                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
+                <NavigationMenuTrigger>Rankings</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 w-[220px]">
-                    <li>
-                      <Link to="/project/admin/man/dashboard" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <div className="text-sm font-medium leading-none">Dashboard</div>
-                      </Link>
+                  <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                    <li className="row-span-3">
+                      <NavigationMenuLink asChild>
+                        <Link
+                          className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-emerald-500 to-emerald-600 p-6 no-underline outline-none focus:shadow-md"
+                          to="/resultados"
+                        >
+                          <div className="mb-2 mt-4 text-lg font-medium text-white">
+                            Classificações
+                          </div>
+                          <p className="text-sm leading-tight text-white/90">
+                            Veja a classificação de todos os concursos da plataforma.
+                          </p>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link to="/project/admin/man/concursos" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <div className="text-sm font-medium leading-none">Concursos</div>
-                      </Link>
+                      <NavigationMenuLink asChild>
+                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div onClick={() => navigate('/cebraspe')}>
+                            <div className="text-sm font-medium leading-none">Cebraspe</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Todos os concursos do Cebraspe
+                            </p>
+                          </div>
+                        </div>
+                      </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link to="/project/admin/man/usuarios" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <Users className="mr-2 h-4 w-4" />
-                        <div className="text-sm font-medium leading-none">Usuários</div>
-                      </Link>
+                      <NavigationMenuLink asChild>
+                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div onClick={() => navigate('/fgv')}>
+                            <div className="text-sm font-medium leading-none">FGV</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Todos os concursos da FGV
+                            </p>
+                          </div>
+                        </div>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div onClick={() => navigate('/fcc')}>
+                            <div className="text-sm font-medium leading-none">FCC</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Todos os concursos da FCC
+                            </p>
+                          </div>
+                        </div>
+                      </NavigationMenuLink>
+                    </li>
+                    <li>
+                      <NavigationMenuLink asChild>
+                        <div className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <div onClick={() => navigate('/vunesp')}>
+                            <div className="text-sm font-medium leading-none">Vunesp</div>
+                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                              Todos os concursos da Vunesp
+                            </p>
+                          </div>
+                        </div>
+                      </NavigationMenuLink>
                     </li>
                   </ul>
                 </NavigationMenuContent>
-              </NavigationMenuItem>}
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link 
+                    className={navigationMenuTriggerStyle()}
+                    to="/editais"
+                  >
+                    Editais
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link 
+                    className={navigationMenuTriggerStyle()}
+                    to="/nomeacoes"
+                  >
+                    Nomeações
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link 
+                    className={navigationMenuTriggerStyle()}
+                    to="/comunidade"
+                  >
+                    Comunidade
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden">
-                <MenuIcon className="w-6 h-6" />
-                <span className="sr-only">Abrir Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="pr-0 max-w-[280px]">
-              <nav className="flex flex-col gap-4 px-4 pt-8">
-                <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-primary" : "text-foreground/70")}>
-                  <Home className="mr-2 h-4 w-4" />
-                  Home
-                </Link>
-                <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Comunidade
-                </Link>
-                <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
-                  <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
-                  Rankings
-                </Link>
-                
-                {isAdmin() && <>
-                  <div className="h-px bg-border mt-2 mb-2"></div>
-                  <div className="font-bold text-foreground/70 mb-2">Administração</div>
-                  <Link to="/project/admin/man/dashboard" className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                  </Link>
-                  <Link to="/project/admin/man/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Concursos
-                  </Link>
-                  <Link to="/project/admin/man/usuarios" className={cn("flex items-center text-lg font-semibold", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Usuários
-                  </Link>
-                </>}
-              </nav>
-            </SheetContent>
-          </Sheet>
+        </div>
+        <div className="ml-auto flex items-center space-x-4">
+          <UserMenu />
         </div>
       </div>
     </header>
   );
 };
-
-export default Menu;

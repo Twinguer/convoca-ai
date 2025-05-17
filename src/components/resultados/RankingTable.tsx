@@ -1,488 +1,476 @@
 
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserPlus, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { UserAvatar } from '../profile/UserAvatar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ArrowUpDown, Medal } from 'lucide-react';
+import { useResultadosData } from '@/hooks/useResultadosData';
+import { getSectionDisplayName, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+import { Progress } from '@/components/ui/progress';
 import { Concurso } from '@/types/concursos';
-import { UserActions } from '../Admin/UserActions';
-import { getDisciplines, getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
-import { Ranking } from '@/services/rankingService';
 
 interface RankingTableProps {
-  rankings?: Ranking[];
-  concurso?: Concurso;
-  currentUserId?: string | null;
-  isAuthenticated: boolean;
-  isRefetching?: boolean;
+  concurso: Concurso;
+  rankings?: any[];
+  isLoading?: boolean;
+  isError?: boolean;
+  errorMessage?: string;
+  showSectionTotals?: boolean;
+  onUserClick?: (userId: string) => void;
+}
+
+interface Column {
+  title: string;
+  key: string;
+  render?: (value: any, row: any) => React.ReactNode;
+  sortable?: boolean;
+  className?: string;
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({
-  rankings,
   concurso,
-  currentUserId,
-  isAuthenticated,
-  isRefetching = false
+  rankings = [],
+  isLoading = false,
+  isError = false,
+  errorMessage,
+  showSectionTotals = true,
+  onUserClick
 }) => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Ampla Concorrência");
-
-  useEffect(() => {
-    if (concurso) {
-      console.log('Available quotas in concurso:', {
-        ampla: concurso.has_ampla_concorrencia,
-        ppp: concurso.has_ppp,
-        pcd: concurso.has_pcd,
-        hipossuficientes: concurso.has_hipossuficientes,
-        indigenas: concurso.has_indigenas,
-        transsexuais: concurso.has_transsexuais
-      });
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        console.log('Custom disciplines:', concurso.disciplines);
-      }
-    }
-    if (rankings && rankings.length > 0) {
-      console.log('First ranking scores:', {
-        total: rankings[0].score,
-        objective: rankings[0].objectiveScore,
-        customScores: rankings[0].customDisciplineScores,
-        weightedCustomScores: rankings[0].weightedCustomDisciplineScores
-      });
-      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
-      
-      // Debugging minimum scores
-      console.log('Minimum score checks:', rankings.map(r => ({
-        id: r.id,
-        userId: r.userId,
-        name: r.name,
-        score: r.score,
-        objectiveScore: r.objectiveScore,
-        belowMinimum: r.belowMinimum,
-        belowBlockMinimums: r.belowBlockMinimums,
-        belowDisciplineMinimums: r.belowDisciplineMinimums
-      })));
-    }
-  }, [concurso, rankings]);
-
-  // Calcular posições de cota para cada ranking
-  const rankingsWithQuotaPositions = React.useMemo(() => {
-    if (!rankings) return [];
-
-    // Agrupar rankings por tipo de reserva
-    const groupedByQuota: Record<string, Ranking[]> = {};
-    rankings.forEach(ranking => {
-      if (!groupedByQuota[ranking.reservationType]) {
-        groupedByQuota[ranking.reservationType] = [];
-      }
-      groupedByQuota[ranking.reservationType].push(ranking);
-    });
-
-    // Calcular posição dentro de cada grupo de cota
-    return rankings.map(ranking => {
-      const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
-      const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
-      return {
-        ...ranking,
-        quotaPosition
-      };
-    });
-  }, [rankings]);
-
-  const getAvailableQuotas = () => {
-    if (!concurso) return ["Ampla Concorrência"];
-    const quotas = ["Ampla Concorrência"];
-    if (concurso.has_ppp === true) {
-      quotas.push("PPP");
-    }
-    if (concurso.has_pcd === true) {
-      quotas.push("PCD");
-    }
-    if (concurso.has_hipossuficientes === true) {
-      quotas.push("Hipossuficientes");
-    }
-    if (concurso.has_indigenas === true) {
-      quotas.push("Indígenas");
-    }
-    if (concurso.has_transsexuais === true) {
-      quotas.push("Pessoas Trans");
-    }
-    console.log('Available quotas for display:', quotas);
-    return quotas;
-  };
-
-  const availableQuotas = getAvailableQuotas();
-
-  const filterRankingsByQuota = (quota: string) => {
-    if (!rankingsWithQuotaPositions) return [];
-    if (quota === "Ampla Concorrência") {
-      return rankingsWithQuotaPositions;
-    }
-    return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
-  };
-
-  const handleUserClick = (userId: string) => {
-    if (!isAuthenticated) {
-      navigate(`/auth?redirect=/usuario/${userId}`);
-    } else {
-      navigate(`/usuario/${userId}`);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Classificação Pós-prova</CardTitle>
-        {isRefetching && (
-          <div className="flex items-center text-xs text-amber-600 gap-1">
-            <RefreshCw className="h-3 w-3 animate-spin" />
-            <span>Atualizando dados...</span>
-          </div>
-        )}
-        {!isAuthenticated && (
-          <div className="text-sm text-muted-foreground mt-1">
-            <Link to="/auth" className="text-primary hover:underline">
-              Faça login
-            </Link> para participar deste ranking ou para acessar perfis completos.
-          </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        {availableQuotas.length > 1 ? (
-          <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="mb-4 flex flex-wrap h-auto">
-              {availableQuotas.map(quota => (
-                <TabsTrigger key={quota} value={quota} className="text-sm">
-                  {quota}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            
-            {availableQuotas.map(quota => (
-              <TabsContent key={quota} value={quota}>
-                <RankingTableContent
-                  rankings={filterRankingsByQuota(quota)}
-                  currentUserId={currentUserId}
-                  handleUserClick={handleUserClick}
-                  concurso={concurso}
-                  isAmpla={quota === "Ampla Concorrência"}
-                  availableQuotas={availableQuotas}
-                  isAuthenticated={isAuthenticated}
-                  isRefetching={isRefetching}
-                  activeTab={quota}
-                />
-              </TabsContent>
-            ))}
-          </Tabs>
-        ) : (
-          <RankingTableContent
-            rankings={rankingsWithQuotaPositions || []}
-            currentUserId={currentUserId}
-            handleUserClick={handleUserClick}
-            concurso={concurso}
-            isAmpla={true}
-            availableQuotas={availableQuotas}
-            isAuthenticated={isAuthenticated}
-            isRefetching={isRefetching}
-            activeTab="Ampla Concorrência"
-          />
-        )}
-      </CardContent>
-    </Card>
+  const [sortColumn, setSortColumn] = useState<string>('score');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [selectedTab, setSelectedTab] = useState('all');
+  
+  const { data: rankingsData, isLoading: isLoadingInternal } = useResultadosData(
+    concurso.id,
+    selectedTab !== 'all' ? selectedTab : undefined
   );
-};
-
-const getQuotaAbbreviation = (quota: string): string => {
-  if (quota === "Ampla Concorrência") return "AC";
-  const abbreviations: Record<string, string> = {
-    "PPP": "PPP",
-    "PCD": "PCD",
-    "Hipossuficientes": "Hip",
-    "Indígenas": "Ind",
-    "Pessoas Trans": "Tra"
-  };
-  return abbreviations[quota] || quota.substring(0, 3);
-};
-
-const RankingTableContent: React.FC<{
-  rankings: Ranking[];
-  currentUserId?: string | null;
-  handleUserClick: (userId: string) => void;
-  concurso?: Concurso;
-  isAmpla: boolean;
-  availableQuotas: string[];
-  isAuthenticated: boolean;
-  isRefetching?: boolean;
-  activeTab: string;
-}> = ({
-  rankings,
-  currentUserId,
-  handleUserClick,
-  concurso,
-  isAmpla,
-  availableQuotas,
-  isAuthenticated,
-  isRefetching = false,
-  activeTab
-}) => {
-  const isAdminMode = React.useMemo(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('admin') === 'true';
-  }, []);
-
-  // Estado para armazenar as pontuações ao carregar a tabela
-  const [initialScores, setInitialScores] = useState<{
-    [key: string]: number;
-  }>({});
-
-  // Inicializar as pontuações iniciais na primeira renderização
-  useEffect(() => {
-    const scores: {
-      [key: string]: number;
-    } = {};
-    rankings.forEach(ranking => {
-      scores[ranking.id] = ranking.score;
-    });
-    setInitialScores(scores);
-  }, [rankings]);
-
-  // Função para verificar se uma pontuação foi atualizada
-  const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
-    return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
-  };
-
-  // Função para determinar se um ranking está abaixo do mínimo exigido
-  const isBelowMinimum = (ranking: Ranking): boolean => {
-    return !!ranking.belowMinimum || 
-           (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
-           (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
-  };
-
-  // Obter disciplinas customizadas habilitadas
-  const getCustomDisciplines = (): {
-    type: string;
-    name: string;
-  }[] => {
-    if (!concurso || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
-      return [];
+  
+  const actualRankings = rankingsData || rankings;
+  const actualLoading = isLoading || isLoadingInternal;
+  
+  const handleSort = (columnKey: string) => {
+    if (sortColumn === columnKey) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(columnKey);
+      setSortDirection('desc');
     }
+  };
 
-    const disciplines: { type: string; name: string }[] = [];
+  const quotaTabs = [
+    { value: 'all', label: 'Todos' },
+    concurso.has_ampla_concorrencia && { value: 'Ampla Concorrência', label: 'Ampla' },
+    concurso.has_ppp && { value: 'PPP', label: 'PPP' },
+    concurso.has_pcd && { value: 'PCD', label: 'PCD' },
+    concurso.has_indigenas && { value: 'Indígena', label: 'Indígenas' },
+    concurso.has_hipossuficientes && { value: 'Hipossuficiente', label: 'Hipossuficientes' },
+    concurso.has_transsexuais && { value: 'Transgênero', label: 'Transgêneros' },
+  ].filter(Boolean);
 
-    // Iterar por disciplinas no array principal de disciplines do concurso
-    concurso.disciplines.forEach(block => {
-      if (block && block.disciplines && Array.isArray(block.disciplines)) {
-        // Aqui acessamos corretamente o array disciplines do bloco
-        block.disciplines.forEach(d => {
-          if (d.isEnabled) {
-            disciplines.push({
-              type: d.type,
-              name: d.name
-            });
-          }
+  const sortedRankings = [...actualRankings].sort((a, b) => {
+    let valueA = a[sortColumn];
+    let valueB = b[sortColumn];
+    
+    // Para classificação, considerar is_classified primeiro
+    if (sortColumn === 'score') {
+      // Primeiro ordenar por classificação (classificados primeiro)
+      if (a.is_classified !== b.is_classified) {
+        return a.is_classified ? -1 : 1;
+      }
+    }
+    
+    if (typeof valueA === 'string' && typeof valueB === 'string') {
+      valueA = valueA.toLowerCase();
+      valueB = valueB.toLowerCase();
+    } else if (valueA === null || valueA === undefined) {
+      valueA = sortDirection === 'asc' ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+    } else if (valueB === null || valueB === undefined) {
+      valueB = sortDirection === 'asc' ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
+    }
+    
+    if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+    if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Função para gerar colunas
+  const getColumns = (): Column[] => {
+    const baseColumns: Column[] = [
+      {
+        key: 'position',
+        title: 'Pos',
+        className: 'w-14',
+        render: (_, __, index) => (
+          <div className="font-medium text-center">
+            {index + 1}
+          </div>
+        ),
+      },
+      {
+        key: 'user_name',
+        title: 'Candidato',
+        className: 'min-w-[140px]',
+        render: (name, row) => (
+          <div className="flex items-center gap-2 overflow-hidden">
+            <UserAvatar 
+              avatarUrl={row.avatar_url}
+              userName={name || 'Usuário'}
+              size="sm"
+            />
+            <div 
+              className={`truncate font-medium ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
+              onClick={onUserClick ? () => onUserClick(row.user_id) : undefined}
+            >
+              {name || 'Anônimo'}
+              {row.is_classified && (
+                <Medal className="inline ml-1 h-3 w-3 text-yellow-500" />
+              )}
+            </div>
+          </div>
+        ),
+        sortable: true
+      },
+      {
+        key: 'reservation_type',
+        title: 'Cota',
+        className: 'w-28',
+        render: (value) => (
+          <Badge variant="outline" className="font-normal">
+            {value === 'Ampla Concorrência' ? 'Ampla' : value}
+          </Badge>
+        ),
+        sortable: true
+      }
+    ];
+    
+    // Adicionar pontuação total
+    const columns = [
+      ...baseColumns,
+      {
+        key: 'score',
+        title: 'Total',
+        className: 'w-24',
+        render: (value) => (
+          <div className="font-semibold text-right">
+            {typeof value === 'number' ? value.toFixed(2) : '-'}
+          </div>
+        ),
+        sortable: true
+      }
+    ];
+    
+    // Se mostrarmos pontuações por seção
+    if (showSectionTotals) {
+      // Verificar se é um concurso com conhecimentos customizados
+      if (concurso.has_custom_knowledge && concurso.disciplines) {
+        const disciplines = getDisciplines(concurso);
+        
+        // Para cada disciplina habilitada, adicionar uma coluna
+        if (Array.isArray(disciplines)) {
+          disciplines.forEach(discipline => {
+            if (discipline.isEnabled) {
+              const disciplineKey = discipline.type;
+              const columnTitle = discipline.name || discipline.type;
+              
+              columns.push({
+                key: `customScore_${disciplineKey}`,
+                title: columnTitle,
+                className: 'w-24',
+                render: (_, row) => {
+                  // Buscar a pontuação na estrutura customDisciplineScores do ranking
+                  const score = row.customDisciplineScores?.[disciplineKey];
+                  const weightedScore = row.weightedCustomDisciplineScores?.[disciplineKey];
+                  
+                  return (
+                    <div className="text-right">
+                      {score !== undefined ? score.toFixed(2) : '-'}
+                      {weightedScore !== undefined && weightedScore !== score ? (
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({weightedScore.toFixed(1)})
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                },
+                sortable: true
+              });
+            }
+          });
+        }
+      } else {
+        // Estrutura tradicional
+        if (concurso.has_basic_knowledge) {
+          columns.push({
+            key: 'basic_knowledge_score',
+            title: 'Básico',
+            className: 'w-24',
+            render: (value, row) => (
+              <div className="text-right">
+                {typeof value === 'number' ? value.toFixed(2) : '-'}
+                {row.weighted_basic_score !== value ? (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({row.weighted_basic_score?.toFixed(1)})
+                  </span>
+                ) : null}
+              </div>
+            ),
+            sortable: true
+          });
+        }
+        
+        if (concurso.has_specific_knowledge_1) {
+          columns.push({
+            key: 'specific_knowledge_1_score',
+            title: 'Esp. 1',
+            className: 'w-24',
+            render: (value, row) => (
+              <div className="text-right">
+                {typeof value === 'number' ? value.toFixed(2) : '-'}
+                {row.weighted_specific_1_score !== value ? (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({row.weighted_specific_1_score?.toFixed(1)})
+                  </span>
+                ) : null}
+              </div>
+            ),
+            sortable: true
+          });
+        }
+        
+        if (concurso.has_specific_knowledge_2) {
+          columns.push({
+            key: 'specific_knowledge_2_score',
+            title: 'Esp. 2',
+            className: 'w-24',
+            render: (value, row) => (
+              <div className="text-right">
+                {typeof value === 'number' ? value.toFixed(2) : '-'}
+                {row.weighted_specific_2_score !== value ? (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({row.weighted_specific_2_score?.toFixed(1)})
+                  </span>
+                ) : null}
+              </div>
+            ),
+            sortable: true
+          });
+        }
+        
+        if (concurso.has_specific_knowledge_3) {
+          columns.push({
+            key: 'specific_knowledge_3_score',
+            title: 'Esp. 3',
+            className: 'w-24',
+            render: (value, row) => (
+              <div className="text-right">
+                {typeof value === 'number' ? value.toFixed(2) : '-'}
+                {row.weighted_specific_3_score !== value ? (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({row.weighted_specific_3_score?.toFixed(1)})
+                  </span>
+                ) : null}
+              </div>
+            ),
+            sortable: true
+          });
+        }
+      }
+      
+      // Provas subjetivas
+      if (concurso.has_discursive) {
+        columns.push({
+          key: 'discursive_score',
+          title: 'Disc.',
+          className: 'w-20',
+          render: (value, row) => (
+            <div className="text-right">
+              {typeof value === 'number' ? value.toFixed(2) : '-'}
+              {row.weighted_discursive_score !== value ? (
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({row.weighted_discursive_score?.toFixed(1)})
+                </span>
+              ) : null}
+            </div>
+          ),
+          sortable: true
         });
       }
-    });
-
-    return disciplines;
+      
+      if (concurso.has_case_study_1) {
+        columns.push({
+          key: 'case_study_1_score',
+          title: 'Caso 1',
+          className: 'w-20',
+          render: (value, row) => (
+            <div className="text-right">
+              {typeof value === 'number' ? value.toFixed(2) : '-'}
+              {row.weighted_case_study_1_score !== value ? (
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({row.weighted_case_study_1_score?.toFixed(1)})
+                </span>
+              ) : null}
+            </div>
+          ),
+          sortable: true
+        });
+      }
+      
+      if (concurso.has_case_study_2) {
+        columns.push({
+          key: 'case_study_2_score',
+          title: 'Caso 2',
+          className: 'w-20',
+          render: (value, row) => (
+            <div className="text-right">
+              {typeof value === 'number' ? value.toFixed(2) : '-'}
+              {row.weighted_case_study_2_score !== value ? (
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({row.weighted_case_study_2_score?.toFixed(1)})
+                </span>
+              ) : null}
+            </div>
+          ),
+          sortable: true
+        });
+      }
+      
+      if (concurso.has_case_study_3) {
+        columns.push({
+          key: 'case_study_3_score',
+          title: 'Caso 3',
+          className: 'w-20',
+          render: (value, row) => (
+            <div className="text-right">
+              {typeof value === 'number' ? value.toFixed(2) : '-'}
+              {row.weighted_case_study_3_score !== value ? (
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({row.weighted_case_study_3_score?.toFixed(1)})
+                </span>
+              ) : null}
+            </div>
+          ),
+          sortable: true
+        });
+      }
+    }
+    
+    return columns;
   };
   
-  const customDisciplines = getCustomDisciplines();
-  
-  if (!concurso) {
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-center w-16">AC</TableHead>
-            {isAmpla && <TableHead className="text-center w-16">AP</TableHead>}
-            <TableHead>Candidato</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rankings.length > 0 ? rankings.map(ranking => (
-            <TableRow key={ranking.userId} className={currentUserId && ranking.userId === currentUserId ? 'bg-muted' : ''}>
-              <TableCell className="text-center font-bold">{ranking.position}º</TableCell>
-              {isAmpla && <TableCell className="text-center font-bold">
-                {ranking.reservationType === "Ampla Concorrência" ? ranking.position + "º" : ""}
-              </TableCell>}
-              <TableCell>
-                <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                    <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
-                  <span>{ranking.name}</span>
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      {getQuotaAbbreviation(ranking.reservationType)}
-                    </span>}
-                </div>
-              </TableCell>
-              <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
-              {isAdminMode && isAuthenticated && <TableCell>
-                  <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
-                </TableCell>}
-            </TableRow>
-          )) : (
-            <TableRow>
-              <TableCell colSpan={isAdminMode && isAuthenticated ? isAmpla ? 5 : 4 : isAmpla ? 4 : 3} className="text-center py-4">
-                Nenhum participante registrado nesta lista ainda
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    );
-  }
-
-  // Determinar as colunas da tabela com base nas disciplinas do concurso
-  const renderTableHeader = () => (
-    <TableHeader>
-      <TableRow>
-        <TableHead className="text-center w-16">ac</TableHead>
-        {!isAmpla && <TableHead className="text-center w-16">
-          {getQuotaAbbreviation(activeTab)}
-        </TableHead>}
-        <TableHead>part</TableHead>
-        <TableHead className="text-right">tot</TableHead>
-        
-        {/* Colunas de disciplinas customizadas */}
-        {customDisciplines.map((discipline, idx) => (
-          <TableHead key={`custom-${idx}`} className="text-right">
-            {discipline.name}
-          </TableHead>
-        ))}
-        
-        {/* Partes subjetivas */}
-        {concurso.has_discursive === true && <TableHead className="text-right">dis</TableHead>}
-        
-        {concurso.has_case_study_1 === true && <TableHead className="text-right">ec1</TableHead>}
-        
-        {concurso.has_case_study_2 === true && <TableHead className="text-right">ec2</TableHead>}
-        
-        {concurso.has_case_study_3 === true && <TableHead className="text-right">ec3</TableHead>}
-          
-        {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
-      </TableRow>
-    </TableHeader>
-  );
-
-  // Renderizar cada linha de ranking
-  const renderRankingRows = () => (
-    <TableBody className="space-y-0.5">
-      {rankings.length > 0 ? rankings.map(ranking => {
-        const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
-        const belowMinimum = isBelowMinimum(ranking);
-        
-        // Aplicar classe para destacar participantes abaixo do mínimo em vermelho
-        const rowColorClass = belowMinimum 
-          ? 'text-red-600' 
-          : (currentUserId && ranking.userId === currentUserId 
-              ? 'bg-muted' 
-              : scoreChanged 
-                ? 'bg-green-50' 
-                : '');
-        
-        return (
-          <TableRow key={ranking.userId} className={rowColorClass}>
-            <TableCell className="text-center font-bold">
-              {belowMinimum 
-                ? <span className="text-red-600 font-bold">E</span> 
-                : `${ranking.position}º`
-              }
-            </TableCell>
-            
-            {!isAmpla && <TableCell className="text-center font-bold">
-              {belowMinimum 
-                ? <span className="text-red-600 font-bold">E</span>
-                : `${ranking.quotaPosition}º`
-              }
-            </TableCell>}
-            
-            <TableCell>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
-                  <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                </Avatar>
-                <span>
-                  {ranking.name}
-                  {isAmpla && ranking.reservationType !== "Ampla Concorrência" && <span className="ml-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                      ({getQuotaAbbreviation(ranking.reservationType)})
-                    </span>}
-                </span>
-              </div>
-            </TableCell>
-            
-            <TableCell className={`text-right font-medium ${scoreChanged && !belowMinimum ? 'text-emerald-600' : ''}`}>
-              {ranking.score.toFixed(2)}
-              {belowMinimum && <span className="ml-2 text-xs text-red-600">(eliminado)</span>}
-            </TableCell>
-            
-            {/* Pontuações de disciplinas customizadas */}
-            {customDisciplines.map((discipline, idx) => {
-              // Access the score using the discipline type as the key
-              const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
-              // Verificar se esta disciplina específica está abaixo do mínimo
-              const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes(discipline.type);
-              
-              return (
-                <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
-                  {Number(scoreValue).toFixed(2)}
-                </TableCell>
-              );
-            })}
-            
-            {/* Pontuações de partes subjetivas */}
-            {concurso.has_discursive === true && (
-              <TableCell className="text-right">
-                {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_case_study_1 === true && (
-              <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_case_study_2 === true && (
-              <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {concurso.has_case_study_3 === true && (
-              <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
-              </TableCell>
-            )}
-            
-            {isAdminMode && isAuthenticated && (
-              <TableCell>
-                <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
-              </TableCell>
-            )}
-          </TableRow>
-        );
-      }) : (
-        <TableRow>
-          <TableCell colSpan={4 + customDisciplines.length + (concurso.has_discursive ? 1 : 0) + (concurso.has_case_study_1 ? 1 : 0) + (concurso.has_case_study_2 ? 1 : 0) + (concurso.has_case_study_3 ? 1 : 0) + (isAdminMode && isAuthenticated ? 1 : 0)} className="text-center py-4">
-            Nenhum participante registrado nesta lista ainda
-          </TableCell>
-        </TableRow>
-      )}
-    </TableBody>
-  );
+  const columns = getColumns();
 
   return (
-    <Table>
-      {renderTableHeader()}
-      {renderRankingRows()}
-    </Table>
+    <Card className="shadow-sm">
+      <CardContent className="p-0">
+        {quotaTabs.length > 1 ? (
+          <div className="p-2 border-b">
+            <Tabs 
+              value={selectedTab} 
+              onValueChange={setSelectedTab}
+              defaultValue="all"
+            >
+              <TabsList className="grid" style={{ gridTemplateColumns: `repeat(${quotaTabs.length}, 1fr)` }}>
+                {quotaTabs.map((tab: any) => (
+                  <TabsTrigger key={tab.value} value={tab.value}>
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+        ) : null}
+        
+        <div className="max-h-[600px] overflow-auto">
+          <Table>
+            <TableHeader className="bg-muted/50 sticky top-0 z-10">
+              <TableRow>
+                {columns.map((column) => (
+                  <TableHead 
+                    key={column.key} 
+                    className={column.className}
+                  >
+                    <div 
+                      className={`flex items-center justify-end ${column.key === 'user_name' || column.key === 'position' ? 'justify-start' : ''} ${column.key === 'reservation_type' ? 'justify-center' : ''}`}
+                    >
+                      <span>{column.title}</span>
+                      {column.sortable && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="p-0 h-4 w-4 ml-1 hover:bg-transparent"
+                          onClick={() => handleSort(column.key)}
+                        >
+                          <ArrowUpDown size={14} className={`${
+                            sortColumn === column.key 
+                              ? 'text-foreground' 
+                              : 'text-muted-foreground'
+                          }`} />
+                          <span className="sr-only">
+                            Ordenar por {column.title}
+                          </span>
+                        </Button>
+                      )}
+                    </div>
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {actualLoading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-40 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="text-muted-foreground">Carregando resultados...</div>
+                      <Progress className="w-[60%]" value={50} />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-40 text-center">
+                    <div className="text-destructive">{errorMessage || 'Erro ao carregar dados'}</div>
+                  </TableCell>
+                </TableRow>
+              ) : sortedRankings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-40 text-center">
+                    <div className="text-muted-foreground">Nenhum resultado encontrado</div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sortedRankings.map((row, index) => (
+                  <TableRow 
+                    key={row.id}
+                    className={`${row.is_classified ? 'bg-emerald-50 hover:bg-emerald-100' : ''}`}
+                  >
+                    {columns.map(column => (
+                      <TableCell 
+                        key={`${row.id}-${column.key}`} 
+                        className={column.className}
+                      >
+                        {column.render 
+                          ? column.render(row[column.key], row, index)
+                          : row[column.key]
+                        }
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
