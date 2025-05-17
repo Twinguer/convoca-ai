@@ -30,6 +30,8 @@ export interface Ranking {
   belowMinimum?: boolean; // Não atingiu mínimo geral
   belowBlockMinimums?: string[]; // Blocos com mínimo não atingido (IDs)
   belowDisciplineMinimums?: string[]; // Disciplinas com mínimo não atingido (IDs)
+  // Total da pontuação objetiva (excluindo discursivas e estudos de caso)
+  objectiveScore?: number; // Para cálculo de mínimos
 }
 
 // Helper function to get abbreviation for reservation type
@@ -52,7 +54,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         id,
         total_minimum_score,
         has_minimum_score,
-        disciplines
+        disciplines,
+        has_discursive,
+        has_case_study_1,
+        has_case_study_2,
+        has_case_study_3
       `)
       .eq('id', concursoId)
       .single();
@@ -118,7 +124,11 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     console.log('Concurso minimum settings:', {
       hasMinimumScoreEnabled,
       totalMinimumScore,
-      disciplines: concursoData?.disciplines
+      disciplines: concursoData?.disciplines,
+      hasDiscursive: concursoData?.has_discursive,
+      hasCaseStudy1: concursoData?.has_case_study_1,
+      hasCaseStudy2: concursoData?.has_case_study_2,
+      hasCaseStudy3: concursoData?.has_case_study_3
     });
     
     // Extrair mínimos por bloco e disciplina
@@ -129,7 +139,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       // Iterar pelos blocos
       concursoData.disciplines.forEach(block => {
         if (block.id && block.minimum_score !== undefined && block.minimum_score > 0) {
-          blockMinimums[block.id] = parseFloat(block.minimum_score);
+          blockMinimums[block.id] = parseFloat(block.minimum_score.toString());
           console.log(`Block minimum found: ${block.id} = ${blockMinimums[block.id]}`);
         }
         
@@ -137,7 +147,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         if (block.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines.forEach(discipline => {
             if (discipline.id && discipline.minimum_score !== undefined && discipline.minimum_score > 0) {
-              disciplineMinimums[discipline.type] = parseFloat(discipline.minimum_score);
+              disciplineMinimums[discipline.type] = parseFloat(discipline.minimum_score.toString());
               console.log(`Discipline minimum found: ${discipline.type} = ${disciplineMinimums[discipline.type]}`);
             }
           });
@@ -179,12 +189,36 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         });
       }
       
-      // Verificar se está abaixo do mínimo geral da prova
-      const totalObjScore = ranking.score || 0;
-      const belowMinimum = hasMinimumScoreEnabled && totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
+      // Calcular a pontuação objetiva (excluindo discursivas e estudos de caso)
+      const weightedDiscursiveScore = Number(ranking.weighted_discursive_score || 0);
+      const weightedCaseStudy1Score = Number(ranking.weighted_case_study_1_score || 0);
+      const weightedCaseStudy2Score = Number(ranking.weighted_case_study_2_score || 0);
+      const weightedCaseStudy3Score = Number(ranking.weighted_case_study_3_score || 0);
+      
+      // Pontuação total da prova
+      const totalScore = Number(ranking.score || 0);
+      
+      // Calcular a pontuação apenas das questões objetivas
+      const objectiveScore = totalScore - 
+                          (weightedDiscursiveScore + 
+                           weightedCaseStudy1Score + 
+                           weightedCaseStudy2Score + 
+                           weightedCaseStudy3Score);
+      
+      console.log(`Calculating objective score for user ${ranking.user_id} (${name}):`, {
+        totalScore,
+        weightedDiscursiveScore,
+        weightedCaseStudy1Score,
+        weightedCaseStudy2Score,
+        weightedCaseStudy3Score,
+        calculatedObjectiveScore: objectiveScore
+      });
+      
+      // Verificar se está abaixo do mínimo geral da prova (usando apenas pontuação objetiva)
+      const belowMinimum = hasMinimumScoreEnabled && totalMinimumScore > 0 && objectiveScore < totalMinimumScore;
       
       if (belowMinimum) {
-        console.log(`User ${ranking.user_id} (${name}) is below minimum: ${totalObjScore} < ${totalMinimumScore}`);
+        console.log(`User ${ranking.user_id} (${name}) is below minimum: ${objectiveScore} < ${totalMinimumScore}`);
       }
       
       // Verificar mínimos por bloco e disciplina
@@ -235,7 +269,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       return {
         position: index + 1,
         name: name,
-        score: ranking.score || 0,
+        score: totalScore,
+        objectiveScore: objectiveScore, // Adicionando a pontuação objetiva para uso em comparações
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
         // Pontuações subjetivas
@@ -244,10 +279,10 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         caseStudy2Score: ranking.case_study_2_score || 0,
         caseStudy3Score: ranking.case_study_3_score || 0,
         // Pontuações subjetivas com peso
-        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
-        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
-        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
-        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
+        weightedDiscursiveScore: weightedDiscursiveScore,
+        weightedCaseStudy1Score: weightedCaseStudy1Score,
+        weightedCaseStudy2Score: weightedCaseStudy2Score,
+        weightedCaseStudy3Score: weightedCaseStudy3Score,
         // Pontuações de disciplinas customizadas
         customDisciplineScores,
         weightedCustomDisciplineScores,
