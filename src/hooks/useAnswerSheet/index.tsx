@@ -81,87 +81,46 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
     
     console.log('Getting questions for section:', selectedSection);
+    console.log('Question type mapping:', questionType);
     
-    if (Object.keys(questionType).length === 0) {
-      // Se não temos mapeamento de tipo, precisamos construí-lo dinamicamente
-      console.log("Building question types on-the-fly because questionType is empty");
+    // Verificar se temos mapeamento de tipos de questão
+    if (Object.keys(questionType).length > 0) {
+      console.log("Using existing question type mapping");
       
-      // Verificar se estamos usando conhecimento customizado
-      if (concurso.has_custom_knowledge && concurso.disciplines) {
-        const disciplines = getDisciplines(concurso);
-        const questions: number[] = [];
-        
-        if (Array.isArray(disciplines)) {
-          let currentQuestion = 1;
-          
-          for (const discipline of disciplines) {
-            if (discipline.isEnabled && discipline.type === selectedSection) {
-              const questionCount = getNumericValue(discipline.questionCount);
-              console.log(`Found matching discipline ${discipline.name}: adding ${questionCount} questions starting from ${currentQuestion}`);
-              
-              for (let i = 0; i < questionCount; i++) {
-                questions.push(currentQuestion++);
-              }
-            } else if (discipline.isEnabled) {
-              // Pular questões das outras disciplinas
-              const questionCount = getNumericValue(discipline.questionCount);
-              console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-              currentQuestion += questionCount;
-            }
-          }
-        }
-        
-        console.log(`Generated ${questions.length} questions for section ${selectedSection}:`, questions);
-        return questions;
-      }
-      
-      // Caso não esteja usando conhecimento customizado, use a lógica tradicional
-      let currentQuestionNumber = 1;
       const questions: number[] = [];
-      
-      if (concurso.has_basic_knowledge && selectedSection === 'basic') {
-        for (let i = 0; i < getNumericValue(concurso.basic_knowledge_questions); i++) {
-          questions.push(currentQuestionNumber++);
+      Object.entries(questionType).forEach(([num, type]) => {
+        if (type === selectedSection) {
+          questions.push(parseInt(num));
         }
-      } else if (concurso.has_basic_knowledge) {
-        currentQuestionNumber += getNumericValue(concurso.basic_knowledge_questions);
-      }
-      
-      if (concurso.has_specific_knowledge_1 && selectedSection === 'specific1') {
-        for (let i = 0; i < getNumericValue(concurso.specific_knowledge_1_questions); i++) {
-          questions.push(currentQuestionNumber++);
-        }
-      } else if (concurso.has_specific_knowledge_1) {
-        currentQuestionNumber += getNumericValue(concurso.specific_knowledge_1_questions);
-      }
-      
-      if (concurso.has_specific_knowledge_2 && selectedSection === 'specific2') {
-        for (let i = 0; i < getNumericValue(concurso.specific_knowledge_2_questions); i++) {
-          questions.push(currentQuestionNumber++);
-        }
-      } else if (concurso.has_specific_knowledge_2) {
-        currentQuestionNumber += getNumericValue(concurso.specific_knowledge_2_questions);
-      }
-      
-      if (concurso.has_specific_knowledge_3 && selectedSection === 'specific3') {
-        for (let i = 0; i < getNumericValue(concurso.specific_knowledge_3_questions); i++) {
-          questions.push(currentQuestionNumber++);
-        }
-      }
-      
-      console.log(`Generated ${questions.length} questions using traditional structure for section ${selectedSection}:`, questions);
-      return questions;
+      });
+      console.log(`Found ${questions.length} questions for section ${selectedSection}:`, questions);
+      return questions.sort((a, b) => a - b);
     }
     
-    // Se temos o mapeamento de tipos, usamos ele
-    console.log("Using existing question type mapping");
+    // Se não temos mapeamento, tentar construir com base nas disciplinas
+    console.log("No question type mapping yet, building from disciplines");
     const questions: number[] = [];
+    const disciplines = getDisciplines(concurso);
     
-    Object.entries(questionType).forEach(([num, type]) => {
-      if (type === selectedSection) {
-        questions.push(parseInt(num));
+    if (Array.isArray(disciplines)) {
+      let currentQuestion = 1;
+      
+      for (const discipline of disciplines) {
+        const questionCount = getNumericValue(discipline.questionCount);
+          
+        if (discipline.isEnabled && discipline.type === selectedSection && questionCount > 0) {
+          console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+          
+          for (let i = 0; i < questionCount; i++) {
+            questions.push(currentQuestion++);
+          }
+        } else if (discipline.isEnabled) {
+          // Pular questões de outras disciplinas
+          console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+          currentQuestion += questionCount;
+        }
       }
-    });
+    }
     
     console.log(`Found ${questions.length} questions for section ${selectedSection}:`, questions);
     return questions.sort((a, b) => a - b);
