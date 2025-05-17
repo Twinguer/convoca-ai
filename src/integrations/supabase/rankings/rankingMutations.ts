@@ -191,6 +191,20 @@ export const saveRanking = async (
     let result;
     
     if (editId) {
+      // Se estamos editando, primeiro obtenha os dados atuais para garantir que mantemos a estrutura correta
+      const { data: existingData, error: existingError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', editId)
+        .single();
+        
+      if (existingError) throw existingError;
+      
+      // Certifique-se de preservar a estrutura de disciplines se não foi enviada no formulário
+      if (!dataToSubmit.disciplines || dataToSubmit.disciplines.length === 0) {
+        dataToSubmit.disciplines = existingData.disciplines || [];
+      }
+      
       const { data, error } = await supabase
         .from('concursos')
         .update(dataToSubmit)
