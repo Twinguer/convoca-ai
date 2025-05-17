@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -220,6 +219,17 @@ const RankingTableContent: React.FC<{
            (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
            (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
   };
+  
+  // Função para calcular a pontuação objetiva total do ranking
+  const calculateObjectiveScore = (ranking: Ranking): number => {
+    // Se há disciplinas customizadas
+    if (ranking.weightedCustomDisciplineScores && Object.keys(ranking.weightedCustomDisciplineScores).length > 0) {
+      return Object.values(ranking.weightedCustomDisciplineScores).reduce((sum, score) => sum + Number(score || 0), 0);
+    }
+    
+    // Caso contrário, usar pontuações tradicionais
+    return 0; // Implementar caso necessário
+  };
 
   // Obter disciplinas customizadas habilitadas
   const getCustomDisciplines = (): {
@@ -399,4 +409,3 @@ const RankingTableContent: React.FC<{
       {renderRankingRows()}
     </Table>;
 };
-

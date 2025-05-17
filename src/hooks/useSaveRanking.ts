@@ -24,6 +24,23 @@ const ensureNumeric = (value: any): number => {
 export const useSaveRanking = () => {
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
     try {
+      // Se estivermos editando, buscar dados existentes primeiro para preservar estrutura
+      let existingDisciplines: any[] = [];
+      
+      if (editId) {
+        // Buscar as disciplinas existentes para preservar IDs
+        const { data: existingConcurso, error: fetchError } = await supabase
+          .from('concursos')
+          .select('disciplines')
+          .eq('id', editId)
+          .single();
+        
+        if (!fetchError && existingConcurso?.disciplines) {
+          console.log('Retrieved existing disciplines:', existingConcurso.disciplines);
+          existingDisciplines = existingConcurso.disciplines;
+        }
+      }
+
       // Normalize strings for uniqueness check (handling case and spaces)
       const normalize = (str: string) => (str || "").replace(/\s+/g, " ").trim().toUpperCase();
 
@@ -58,6 +75,63 @@ export const useSaveRanking = () => {
 
       // Always use custom knowledge mode
       formValues.has_custom_knowledge = true;
+      
+      // Se estamos editando e temos disciplinas existentes, preservar a estrutura
+      if (editId && existingDisciplines.length > 0 && formValues.disciplines) {
+        console.log('Merging discipline structures for edit operation');
+        
+        // Verificar se as disciplinas atuais e existentes usam a estrutura de blocos
+        const currentHasBlocks = formValues.disciplines.length > 0 && 
+                                'name' in formValues.disciplines[0] && 
+                                'disciplines' in formValues.disciplines[0];
+        
+        const existingHasBlocks = existingDisciplines.length > 0 && 
+                                'name' in existingDisciplines[0] && 
+                                'disciplines' in existingDisciplines[0];
+        
+        // Se ambas têm estrutura de bloco, preservar IDs
+        if (currentHasBlocks && existingHasBlocks) {
+          formValues.disciplines = formValues.disciplines.map((block: any, blockIdx: number) => {
+            // Procurar bloco correspondente por índice ou nome
+            const existingBlock = existingDisciplines[blockIdx] || 
+                                existingDisciplines.find((b: any) => b.name === block.name);
+            
+            if (existingBlock && existingBlock.id) {
+              // Preservar id do bloco
+              const updatedBlock = { ...block, id: existingBlock.id };
+              
+              // Processar disciplinas dentro do bloco
+              if (block.disciplines && Array.isArray(block.disciplines) && 
+                  existingBlock.disciplines && Array.isArray(existingBlock.disciplines)) {
+                updatedBlock.disciplines = block.disciplines.map((discipline: any, discIdx: number) => {
+                  // Procurar disciplina correspondente por índice, nome ou tipo
+                  const existingDiscipline = existingBlock.disciplines[discIdx] ||
+                                          existingBlock.disciplines.find((d: any) => 
+                                            d.name === discipline.name || d.type === discipline.type
+                                          );
+                  
+                  if (existingDiscipline && existingDiscipline.id) {
+                    // Preservar id da disciplina
+                    return {
+                      ...discipline,
+                      id: existingDiscipline.id,
+                      type: existingDiscipline.type // Manter type também para consistência
+                    };
+                  }
+                  
+                  return discipline;
+                });
+              }
+              
+              return updatedBlock;
+            }
+            
+            return block;
+          });
+          
+          console.log('Merged discipline structure:', formValues.disciplines);
+        }
+      }
 
       // Processar os blocos de disciplinas e gerar disciplinas planas para o banco de dados
       if (formValues.disciplines && Array.isArray(formValues.disciplines)) {
@@ -68,12 +142,14 @@ export const useSaveRanking = () => {
           formValues.disciplines.forEach((block: any) => {
             if (block.disciplines && Array.isArray(block.disciplines)) {
               block.disciplines.forEach((discipline: any) => {
-                // Adicionar informações do bloco à disciplina
+                // Processar cada disciplina e adicionar informações do bloco
                 flattenedDisciplines.push({
                   ...discipline,
                   blockId: block.id,
                   blockName: block.name,
-                  blockWeight: block.weight || 1
+                  minimum_score: ensureNumeric(discipline.minimum_score),
+                  blockWeight: block.weight || 1,
+                  blockMinimumScore: ensureNumeric(block.minimum_score)
                 });
               });
             }
@@ -85,6 +161,7 @@ export const useSaveRanking = () => {
           
           // Substituir o campo disciplines pela versão achatada
           formValues.flattenedDisciplines = flattenedDisciplines;
+          console.log('Created flattened disciplines:', flattenedDisciplines);
         }
       }
       
@@ -107,7 +184,8 @@ export const useSaveRanking = () => {
             ...discipline,
             questionCount: ensureNumeric(discipline.questionCount),
             weight: ensureNumeric(discipline.weight),
-            isEnabled: enabled
+            isEnabled: enabled,
+            minimum_score: ensureNumeric(discipline.minimum_score)
           };
         });
       } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
@@ -215,6 +293,12 @@ export const useSaveRanking = () => {
         }
         result = data;
         concursoIdToUse = editId;
+        
+        // Log para debugging da atualização
+        console.log("Updated ranking successfully:", {
+          id: editId,
+          disciplines: result?.[0]?.disciplines
+        });
       } else {
         const { data, error } = await supabase
           .from('concursos')
