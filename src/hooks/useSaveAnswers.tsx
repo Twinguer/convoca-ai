@@ -44,6 +44,11 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
+      // Verificar limite de edições (aumentado para 5)
+      if (editCount >= 5) {
+        throw new Error("Você já atingiu o limite de 5 edições permitidas para este gabarito.");
+      }
+
       // Preparar os dados de respostas para enviar - garantindo que questionNumber seja número
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber, 10),
