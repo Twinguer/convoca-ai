@@ -79,7 +79,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                   />
                 </FormControl>
                 <FormDescription>
-                  O candidato será destacado em vermelho e considerado eliminado caso sua pontuação na prova objetiva (excluindo discursivas/estudos de caso) seja menor que este valor.
+                  O candidato será destacado em vermelho e considerado eliminado caso sua pontuação total na prova objetiva (excluindo discursivas/estudos de caso) seja menor que este valor.
                 </FormDescription>
               </FormItem>
             )}
@@ -89,7 +89,6 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
           
           <p className="text-sm text-muted-foreground mb-4">
             As pontuações mínimas por bloco e por disciplina podem ser configuradas diretamente na seção de estrutura da prova abaixo.
-            Importante: Os valores mínimos só se aplicam às questões objetivas, nunca às discursivas ou estudos de caso.
           </p>
         </div>
       </CardContent>

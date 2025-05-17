@@ -59,16 +59,10 @@ export const saveRanking = async (
     // Remover campos que não existem mais no modelo
     const dataFormValues = { ...formValues };
     
-    // Garantir que os valores mínimos são numéricos e has_minimum_score é booleano
-    dataFormValues.has_minimum_score = dataFormValues.has_minimum_score === true;
-    
-    // Definir total_minimum_score com base no has_minimum_score
+    // Garantir que os valores mínimos são numéricos
     if (dataFormValues.has_minimum_score) {
-      // Garantir que é um número
       dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
-      console.log(`Valor mínimo total definido: ${dataFormValues.total_minimum_score}`);
     } else {
-      // Se não tem mínimo habilitado, definir como 0
       dataFormValues.total_minimum_score = 0;
     }
     
@@ -78,14 +72,12 @@ export const saveRanking = async (
       dataFormValues.disciplines = dataFormValues.disciplines.map((block: any) => {
         // Garantir que o mínimo do bloco é um número
         const blockMinimumScore = ensureNumeric(block.minimum_score);
-        console.log(`Bloco ${block.id || 'sem id'}: valor mínimo ${blockMinimumScore}`);
         
         // Processar todas as disciplinas do bloco
         if (block.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines = block.disciplines.map((discipline: any) => {
             // Garantir que o mínimo da disciplina é um número
             const disciplineMinimumScore = ensureNumeric(discipline.minimum_score);
-            console.log(`Disciplina ${discipline.type || 'sem tipo'}: valor mínimo ${disciplineMinimumScore}`);
             
             return {
               ...discipline,
@@ -191,20 +183,6 @@ export const saveRanking = async (
     let result;
     
     if (editId) {
-      // Se estamos editando, primeiro obtenha os dados atuais para garantir que mantemos a estrutura correta
-      const { data: existingData, error: existingError } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', editId)
-        .single();
-        
-      if (existingError) throw existingError;
-      
-      // Certifique-se de preservar a estrutura de disciplines se não foi enviada no formulário
-      if (!dataToSubmit.disciplines || dataToSubmit.disciplines.length === 0) {
-        dataToSubmit.disciplines = existingData.disciplines || [];
-      }
-      
       const { data, error } = await supabase
         .from('concursos')
         .update(dataToSubmit)
