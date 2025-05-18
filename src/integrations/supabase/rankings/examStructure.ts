@@ -149,25 +149,93 @@ export const sanitizeSectionType = (sectionType: string): string => {
   return sectionType;
 };
 
-// Função auxiliar para determinar o tipo de seção com base no número da questão
-export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
-  const disciplines = getDisciplines(concurso);
-  let currentIndex = 1;
+// Função para determinar o tipo de seção (section_type) de uma questão com base na estrutura do concurso
+export const getSectionTypeForQuestion = (concurso: any, questionNumber: number): string => {
+  if (!concurso) return 'basic'; // Fallback padrão
   
-  // Iterar pelas disciplinas habilitadas para encontrar em qual está o número da questão
-  for (const discipline of disciplines) {
-    if (discipline.isEnabled && discipline.questionCount) {
-      const disciplineQuestions = getNumericValue(discipline.questionCount);
-      if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-        // É importante retornar um tipo válido para a constraint do banco de dados
-        return sanitizeSectionType(discipline.type) as SectionType;
+  console.log(`Determinando section_type para questão ${questionNumber} no concurso ${concurso.id || 'sem id'}`);
+  
+  // Verificar se estamos usando conhecimento customizado
+  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Determinar se é estrutura hierárquica (blocos -> disciplinas)
+    const isHierarchical = concurso.disciplines[0] && 
+                           typeof concurso.disciplines[0] === 'object' && 
+                           'name' in concurso.disciplines[0] && 
+                           'disciplines' in concurso.disciplines[0];
+    
+    let currentQuestionIndex = 1;
+    
+    if (isHierarchical) {
+      console.log('Processando estrutura hierárquica para determinar section_type');
+      
+      // Iterar pelos blocos
+      for (const block of concurso.disciplines as any[]) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          // Iterar pelas disciplinas de cada bloco
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.type) {
+              const questionCount = getNumericValue(discipline.questionCount);
+              
+              // Verificar se a questão está nesta disciplina
+              if (questionNumber >= currentQuestionIndex && 
+                  questionNumber < currentQuestionIndex + questionCount) {
+                console.log(`Questão ${questionNumber} pertence ao bloco ${block.name}, disciplina ${discipline.name} com type=${discipline.type}`);
+                return discipline.type;
+              }
+              
+              currentQuestionIndex += questionCount;
+            }
+          }
+        }
       }
-      currentIndex += disciplineQuestions;
+    } else {
+      console.log('Processando estrutura plana para determinar section_type');
+      
+      // Iterar pela lista plana de disciplinas
+      for (const discipline of concurso.disciplines) {
+        if (discipline.isEnabled && discipline.type) {
+          const questionCount = getNumericValue(discipline.questionCount);
+          
+          // Verificar se a questão está nesta disciplina
+          if (questionNumber >= currentQuestionIndex && 
+              questionNumber < currentQuestionIndex + questionCount) {
+            console.log(`Questão ${questionNumber} pertence à disciplina ${discipline.name} com type=${discipline.type}`);
+            return discipline.type;
+          }
+          
+          currentQuestionIndex += questionCount;
+        }
+      }
     }
+    
+    console.log(`Não foi possível encontrar section_type para questão ${questionNumber} nas disciplinas customizadas`);
   }
   
-  // Fallback para conhecimentos específicos genéricos
-  console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
+  // Caso não tenha encontrado em disciplinas customizadas, verificar estrutura tradicional
+  console.log('Verificando estrutura tradicional para determinar section_type');
+  
+  const basicKnowledge = getNumericValue(concurso.basic_knowledge_questions);
+  const specific1 = getNumericValue(concurso.specific_knowledge_1_questions);
+  const specific2 = getNumericValue(concurso.specific_knowledge_2_questions);
+  const specific3 = getNumericValue(concurso.specific_knowledge_3_questions);
+  
+  if (concurso.has_basic_knowledge && questionNumber <= basicKnowledge) {
+    return 'basic';
+  } else if (concurso.has_specific_knowledge_1 && 
+             questionNumber <= basicKnowledge + specific1 && 
+             questionNumber > basicKnowledge) {
+    return 'specific1';
+  } else if (concurso.has_specific_knowledge_2 && 
+             questionNumber <= basicKnowledge + specific1 + specific2 && 
+             questionNumber > basicKnowledge + specific1) {
+    return 'specific2';
+  } else if (concurso.has_specific_knowledge_3 && 
+             questionNumber > basicKnowledge + specific1 + specific2) {
+    return 'specific3';
+  }
+  
+  // Fallback final se nenhuma correspondência for encontrada
+  console.log(`Usando fallback 'specific1' para questão ${questionNumber}`);
   return 'specific1';
 };
 
