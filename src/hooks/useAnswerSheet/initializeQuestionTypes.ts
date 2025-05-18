@@ -24,7 +24,7 @@ export const initializeQuestionTypes = (
       
       if (isHierarchical) {
         // Processar a estrutura hierárquica
-        for (const block of concurso.disciplines) {
+        for (const block of concurso.disciplines as any[]) {
           console.log(`Processing block: ${block.name}`);
           
           if (block.disciplines && Array.isArray(block.disciplines)) {
