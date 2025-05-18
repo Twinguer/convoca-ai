@@ -219,7 +219,7 @@ export const saveRanking = async (
     
     // Definir has_minimum_score com base no valor de total_minimum_score
     if ('total_minimum_score' in dataFormValues) {
-      dataToSubmit.has_minimum_score = dataFormValues.total_minimum_score > 0;
+      dataToSubmit.has_minimum_score = ensureNumeric(dataFormValues.total_minimum_score) > 0;
     }
     
     // Definir explicitamente título e órgão

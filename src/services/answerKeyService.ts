@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
 import { Concurso } from '@/types/concursos';

@@ -1,3 +1,4 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -361,7 +362,7 @@ export const useSaveRanking = () => {
               
               if (isHierarchical) {
                 // Processar estrutura hierárquica (blocos -> disciplinas)
-                for (const block of disciplines) {
+                for (const block of disciplines as any[]) {
                   console.log(`Processando bloco: ${block.name}`);
                   
                   if (block.disciplines && Array.isArray(block.disciplines)) {
