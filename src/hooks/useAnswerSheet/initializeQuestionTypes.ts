@@ -27,6 +27,7 @@ export const initializeQuestionTypes = (
         for (const block of concurso.disciplines as any[]) {
           console.log(`Processing block: ${block.name}`);
           
+          // Verificar se o bloco tem disciplines e é um array
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled && discipline.type) {

@@ -15,7 +15,7 @@ const ensureNumeric = (value: any): number => {
 
 // Função para salvar um novo ranking ou atualizar um existente
 export const saveRanking = async (
-  formValues: Partial<Concurso>, 
+  formValues: any, // Alterado de Partial<Concurso> para any para evitar problemas de tipagem
   userId: string | undefined, 
   editId?: string | null
 ): Promise<{id?: string; duplicated?: boolean; error?: boolean}> => {
