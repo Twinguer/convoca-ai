@@ -1,5 +1,6 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
+import { getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const initializeQuestionTypes = (
   concurso: Concurso, 
@@ -12,17 +13,46 @@ export const initializeQuestionTypes = (
     let questionNumber = 1;
     
     // Verificar se estamos usando conhecimentos customizáveis
-    if (concurso.has_custom_knowledge) {
-      console.log('Initializing custom knowledge question types, disciplines:', concurso.disciplines);
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      console.log('Initializing hierarchical question types structure');
       
-      // Inicializar disciplinas customizadas
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        concurso.disciplines.forEach(discipline => {
+      // Verificar se estamos lidando com a estrutura de blocos
+      const isHierarchical = concurso.disciplines[0] && 
+                            typeof concurso.disciplines[0] === 'object' && 
+                            'name' in concurso.disciplines[0] && 
+                            'disciplines' in concurso.disciplines[0];
+      
+      if (isHierarchical) {
+        // Processar a estrutura hierárquica
+        for (const block of concurso.disciplines as any[]) {
+          console.log(`Processing block: ${block.name}`);
+          
+          // Verificar se o bloco tem disciplines e é um array
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type) {
+                const questionCount = getNumericValue(discipline.questionCount);
+                
+                console.log(`Block ${block.name}, Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);
+                
+                for (let i = 0; i < questionCount; i++) {
+                  typesMap[questionNumber] = discipline.type as SectionType;
+                  questionNumber++;
+                }
+              } else {
+                console.log(`Skipping disabled discipline in block ${block.name}:`, discipline);
+              }
+            }
+          }
+        }
+      } else {
+        // Processar estrutura plana legada para compatibilidade
+        console.log('Processing flat structure for backward compatibility');
+        
+        for (const discipline of concurso.disciplines) {
           if (discipline.isEnabled && discipline.type) {
-            const questionCount = typeof discipline.questionCount === 'number' 
-              ? discipline.questionCount 
-              : parseInt(String(discipline.questionCount || '0'));
-              
+            const questionCount = getNumericValue(discipline.questionCount);
+            
             console.log(`Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);
             
             for (let i = 0; i < questionCount; i++) {
@@ -32,17 +62,12 @@ export const initializeQuestionTypes = (
           } else {
             console.log(`Skipping disabled discipline or invalid type:`, discipline);
           }
-        });
-      } else {
-        console.warn('No disciplines array found in concurso with custom_knowledge enabled');
+        }
       }
     } else {
       // Estrutura tradicional
       if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-        const basicCount = typeof concurso.basic_knowledge_questions === 'number' 
-          ? concurso.basic_knowledge_questions 
-          : parseInt(String(concurso.basic_knowledge_questions || '0'));
-          
+        const basicCount = getNumericValue(concurso.basic_knowledge_questions);
         console.log(`Traditional structure: basic knowledge has ${basicCount} questions`);
         for (let i = 0; i < basicCount; i++) {
           typesMap[questionNumber] = 'basic';
@@ -51,10 +76,7 @@ export const initializeQuestionTypes = (
       }
       
       if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-        const count = typeof concurso.specific_knowledge_1_questions === 'number'
-          ? concurso.specific_knowledge_1_questions
-          : parseInt(String(concurso.specific_knowledge_1_questions || '0'));
-          
+        const count = getNumericValue(concurso.specific_knowledge_1_questions);
         console.log(`Traditional structure: specific knowledge 1 has ${count} questions`);
         for (let i = 0; i < count; i++) {
           typesMap[questionNumber] = 'specific1';
@@ -63,10 +85,7 @@ export const initializeQuestionTypes = (
       }
       
       if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-        const count = typeof concurso.specific_knowledge_2_questions === 'number'
-          ? concurso.specific_knowledge_2_questions
-          : parseInt(String(concurso.specific_knowledge_2_questions || '0'));
-          
+        const count = getNumericValue(concurso.specific_knowledge_2_questions);
         console.log(`Traditional structure: specific knowledge 2 has ${count} questions`);
         for (let i = 0; i < count; i++) {
           typesMap[questionNumber] = 'specific2';
@@ -75,10 +94,7 @@ export const initializeQuestionTypes = (
       }
       
       if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-        const count = typeof concurso.specific_knowledge_3_questions === 'number'
-          ? concurso.specific_knowledge_3_questions
-          : parseInt(String(concurso.specific_knowledge_3_questions || '0'));
-          
+        const count = getNumericValue(concurso.specific_knowledge_3_questions);
         console.log(`Traditional structure: specific knowledge 3 has ${count} questions`);
         for (let i = 0; i < count; i++) {
           typesMap[questionNumber] = 'specific3';
