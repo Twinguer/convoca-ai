@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +11,12 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { answerKeyService } from '@/services/answerKeyService';
-import { getSectionTypeForQuestion, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+
 interface AnswerKeyFormProps {
   concursoId: string;
 }
+
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   concursoId
 }) => {
@@ -27,9 +30,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     [key: number]: string;
   }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
   const {
     data: concurso,
     isLoading: isLoadingConcurso
@@ -44,6 +46,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return data as Concurso;
     }
   });
+  
   const {
     data: existingAnswers,
     isLoading: isLoadingAnswers
@@ -60,6 +63,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return data || {};
     }
   });
+  
   useEffect(() => {
     if (existingAnswers && Object.keys(existingAnswers).length > 0) {
       const answersMap: {
@@ -77,6 +81,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       setNullifiedQuestions(nullifiedSet);
     }
   }, [existingAnswers]);
+  
   if (isLoadingConcurso || isLoadingAnswers) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -85,6 +90,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         </CardContent>
       </Card>;
   }
+  
   if (!concurso) {
     return <Card>
         <CardContent className="p-6">
@@ -98,67 +104,125 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
   // Atualizar os nomes de exibição com conhecimentos customizados
   const sectionNames = updateSectionDisplayNames(concurso);
+  
+  // Função para obter todas as questões de todas as seções
   const getAllQuestionsFromAllSections = () => {
     const allQuestions: number[] = [];
     let currentQuestionNumber = 1;
 
-    // Seções padrão
-    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-
-    // Disciplinas customizadas
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      for (const discipline of concurso.disciplines) {
-        if (discipline.isEnabled && discipline.questionCount) {
-          for (let i = 0; i < discipline.questionCount; i++) {
-            allQuestions.push(currentQuestionNumber++);
+    // Verificar se estamos lidando com a estrutura hierárquica (blocos -> disciplinas)
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const isHierarchical = concurso.disciplines[0] && 
+                           typeof concurso.disciplines[0] === 'object' && 
+                           'name' in concurso.disciplines[0] && 
+                           'disciplines' in concurso.disciplines[0];
+      
+      if (isHierarchical) {
+        // Estrutura hierárquica
+        for (const block of concurso.disciplines as any[]) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled) {
+                const questionCount = getNumericValue(discipline.questionCount);
+                for (let i = 0; i < questionCount; i++) {
+                  allQuestions.push(currentQuestionNumber++);
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Estrutura plana
+        for (const discipline of concurso.disciplines) {
+          if (discipline.isEnabled && discipline.questionCount) {
+            const questionCount = getNumericValue(discipline.questionCount);
+            for (let i = 0; i < questionCount; i++) {
+              allQuestions.push(currentQuestionNumber++);
+            }
           }
         }
       }
-    }
-    return allQuestions;
-  };
-  const getQuestionsCount = (section: string): number => {
-    if (section === 'basic' && concurso.has_basic_knowledge) {
-      return concurso.basic_knowledge_questions || 0;
-    } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
-      return concurso.specific_knowledge_1_questions || 0;
-    } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
-      return concurso.specific_knowledge_2_questions || 0;
-    } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
-      return concurso.specific_knowledge_3_questions || 0;
-    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const customDiscipline = concurso.disciplines.find(d => d.type === section);
-      if (customDiscipline) {
-        return customDiscipline.questionCount || 0;
+    } else {
+      // Seções padrão
+      if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+        for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
+      }
+      if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
+      }
+      if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
+      }
+      if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+          allQuestions.push(currentQuestionNumber++);
+        }
       }
     }
-    return 0;
+    
+    return allQuestions;
   };
+
+  // Função para obter o número de questões por seção
+  const getQuestionsCount = (section: string): number => {
+    if (!concurso) return 0;
+    
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const isHierarchical = concurso.disciplines[0] && 
+                          typeof concurso.disciplines[0] === 'object' && 
+                          'name' in concurso.disciplines[0] && 
+                          'disciplines' in concurso.disciplines[0];
+      
+      if (isHierarchical) {
+        // Estrutura hierárquica
+        for (const block of concurso.disciplines as any[]) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.type === section && discipline.isEnabled) {
+                return getNumericValue(discipline.questionCount);
+              }
+            }
+          }
+        }
+      } else {
+        // Estrutura plana
+        for (const discipline of concurso.disciplines) {
+          if (discipline.type === section && discipline.isEnabled) {
+            return getNumericValue(discipline.questionCount);
+          }
+        }
+      }
+      
+      return 0;
+    } else {
+      // Estrutura tradicional
+      if (section === 'basic' && concurso.has_basic_knowledge) {
+        return concurso.basic_knowledge_questions || 0;
+      } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
+        return concurso.specific_knowledge_1_questions || 0;
+      } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
+        return concurso.specific_knowledge_2_questions || 0;
+      } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
+        return concurso.specific_knowledge_3_questions || 0;
+      }
+      
+      return 0;
+    }
+  };
+  
   const handleAnswerChange = (questionNumber: number, answer: string) => {
     setAnswers(prev => ({
       ...prev,
       [questionNumber]: answer
     }));
   };
+  
   const handleNullifyQuestion = (questionNumber: number) => {
     setNullifiedQuestions(prev => {
       const newSet = new Set(prev);
@@ -170,6 +234,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return newSet;
     });
   };
+  
   const createAnswerMatrix = () => {
     const questions = getQuestionsRange();
     if (questions.length === 0) return [];
@@ -190,6 +255,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     }
     return matrix;
   };
+  
   const performRecalculation = async () => {
     try {
       setIsRecalculating(true);
@@ -227,6 +293,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       setIsRecalculating(false);
     }
   };
+  
   const handleSaveAnswerKey = async () => {
     try {
       setIsSaving(true);
@@ -287,6 +354,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       setIsSaving(false);
     }
   };
+  
   const getOptionsForQuestion = () => {
     if (concurso.exam_type === 'Certo ou Errado') {
       return ['C', 'E'];
@@ -296,15 +364,16 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       length: count
     }, (_, i) => String.fromCharCode(65 + i));
   };
+  
   const getObjectiveSectionList = () => {
     const sections = [];
     
     // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
     if (concurso?.has_custom_knowledge && concurso?.disciplines && Array.isArray(concurso.disciplines)) {
       const isHierarchical = concurso.disciplines[0] && 
-                            typeof concurso.disciplines[0] === 'object' && 
-                            'name' in concurso.disciplines[0] && 
-                            'disciplines' in concurso.disciplines[0];
+                           typeof concurso.disciplines[0] === 'object' && 
+                           'name' in concurso.disciplines[0] && 
+                           'disciplines' in concurso.disciplines[0];
       
       if (isHierarchical) {
         // Processar a estrutura hierárquica para criar as abas
@@ -369,9 +438,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     // Verificar se estamos usando a estrutura hierárquica
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
+                          typeof concurso.disciplines[0] === 'object' && 
+                          'name' in concurso.disciplines[0] && 
+                          'disciplines' in concurso.disciplines[0];
       
       let startQuestion = 1; 
       
@@ -412,7 +481,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return []; // Retornar vazio se não encontrou a disciplina selecionada
     } else {
       // Para a estrutura tradicional, manter o código original
-      // ... keep existing code (caso seja estrutura tradicional)
       if (selectedSection === 'basic') {
         return Array.from({
           length: getQuestionsCount('basic')
@@ -455,99 +523,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return [];
     }
   };
-
-  // Atualizar a função getQuestionsCount para suportar estrutura hierárquica
-  const getQuestionsCount = (section: string): number => {
-    if (!concurso) return 0;
-    
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
-      if (isHierarchical) {
-        // Estrutura hierárquica
-        for (const block of concurso.disciplines as any[]) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.type === section && discipline.isEnabled) {
-                return getNumericValue(discipline.questionCount);
-              }
-            }
-          }
-        }
-      } else {
-        // Estrutura plana
-        for (const discipline of concurso.disciplines) {
-          if (discipline.type === section && discipline.isEnabled) {
-            return getNumericValue(discipline.questionCount);
-          }
-        }
-      }
-      
-      return 0;
-    } else {
-      // Estrutura tradicional
-      if (section === 'basic' && concurso.has_basic_knowledge) {
-        return concurso.basic_knowledge_questions || 0;
-      } else if (section === 'specific1' && concurso.has_specific_knowledge_1) {
-        return concurso.specific_knowledge_1_questions || 0;
-      } else if (section === 'specific2' && concurso.has_specific_knowledge_2) {
-        return concurso.specific_knowledge_2_questions || 0;
-      } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
-        return concurso.specific_knowledge_3_questions || 0;
-      }
-      
-      return 0;
-    }
-  };
-  
-  // Função para obter todas as questões de todas as seções
-  const getAllQuestionsFromAllSections = () => {
-    if (!concurso) return [];
-    
-    const allQuestions: number[] = [];
-    let currentQuestion = 1;
-    
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
-      if (isHierarchical) {
-        // Estrutura hierárquica
-        for (const block of concurso.disciplines as any[]) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                const questionCount = getNumericValue(discipline.questionCount);
-                for (let i = 0; i < questionCount; i++) {
-                  allQuestions.push(currentQuestion++);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        // Estrutura plana
-        for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled) {
-            const questionCount = getNumericValue(discipline.questionCount);
-            for (let i = 0; i < questionCount; i++) {
-              allQuestions.push(currentQuestion++);
-            }
-          }
-        }
-      }
-    } else {
-      // Estrutura tradicional
-      // ... keep existing code (seções tradicionais)
-    }
-    
-    return allQuestions;
-  };
   
   // Ajustar o início do componente para selecionar a primeira seção por padrão
   useEffect(() => {
@@ -559,17 +534,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     }
   }, [concurso]);
 
-  const getNumericValue = (value: any): number => {
-    if (typeof value === 'string') {
-      return parseInt(value, 10);
-    }
-    return value;
-  };
-
   const totalQuestions = getAllQuestionsFromAllSections().length;
   const answeredQuestions = Object.keys(answers).length;
   const percentageComplete = totalQuestions > 0 ? Math.floor(answeredQuestions / totalQuestions * 100) : 0;
   const objectiveSections = getObjectiveSectionList();
+  
   return <Card>
       <CardHeader>
         <CardTitle>Gabarito Oficial - {concurso?.titulo}</CardTitle>
@@ -592,9 +561,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
             <CheckCircle className="h-4 w-4" />
             <p>Recálculo de pontuações concluído com sucesso!</p>
           </div>}
-        
-        {/* Nullified questions info */}
-        
         
         {/* Progress indicator */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -628,8 +594,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
               {objectiveSections.map(section => <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {createAnswerMatrix().map((row, rowIndex) => (/* Remove data-lov-id to avoid React Fragment warning */
-                <React.Fragment key={`row-${rowIndex}`}>
+                      {createAnswerMatrix().map((row, rowIndex) => (
+                        <React.Fragment key={`row-${rowIndex}`}>
                           {row.map((questionNumber, colIndex) => questionNumber !== null ? <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
                                 <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
