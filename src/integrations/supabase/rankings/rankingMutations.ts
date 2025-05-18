@@ -215,8 +215,12 @@ export const saveRanking = async (
       ...dataFormValues,
       created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
       has_custom_knowledge: true, // Sempre usar conhecimento customizado (disciplinas)
-      has_minimum_score: dataToSubmit?.total_minimum_score > 0 // Definir has_minimum_score com base no valor
     };
+    
+    // Definir has_minimum_score com base no valor de total_minimum_score
+    if ('total_minimum_score' in dataFormValues) {
+      dataToSubmit.has_minimum_score = dataFormValues.total_minimum_score > 0;
+    }
     
     // Definir explicitamente título e órgão
     if (title) dataToSubmit.titulo = title;

@@ -1,4 +1,3 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -352,14 +351,15 @@ export const useSaveRanking = () => {
             let questionCounter = 1;
 
             if (disciplines && Array.isArray(disciplines)) {
-              console.log(`Processando ${disciplines.length} disciplinas para inserir em official_answer_weights`);
+              console.log(`Processando ${disciplines.length} disciplinas/blocos para inserir em official_answer_weights`);
               
               // Verificar se estamos lidando com estrutura hierárquica
-              const hasBlockStructure = disciplines.length > 0 && 
-                                        'name' in disciplines[0] && 
-                                        'disciplines' in disciplines[0];
+              const isHierarchical = disciplines.length > 0 && 
+                                    typeof disciplines[0] === 'object' && 
+                                    'name' in disciplines[0] && 
+                                    'disciplines' in disciplines[0];
               
-              if (hasBlockStructure) {
+              if (isHierarchical) {
                 // Processar estrutura hierárquica (blocos -> disciplinas)
                 for (const block of disciplines) {
                   console.log(`Processando bloco: ${block.name}`);
@@ -371,7 +371,7 @@ export const useSaveRanking = () => {
                         continue;
                       }
                       
-                      const disciplineType = discipline.type;
+                      const disciplineType = discipline.type || `discipline_${questionCounter}`;
                       const questionCount = ensureNumeric(discipline.questionCount);
                       const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
                       
@@ -402,13 +402,13 @@ export const useSaveRanking = () => {
                     continue;
                   }
 
-                  const disciplineType = discipline.type;
+                  const disciplineType = discipline.type || `discipline_${questionCounter}`;
                   const questionCount = ensureNumeric(discipline.questionCount);
                   const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
 
                   console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
 
-                  if (disciplineType && questionCount > 0) {
+                  if (questionCount > 0) {
                     for (let i = 0; i < questionCount; i++) {
                       officialAnswerWeightsToInsert.push({
                         concurso_id: concursoIdToUse,
@@ -422,7 +422,7 @@ export const useSaveRanking = () => {
                       questionCounter++;
                     }
                   } else {
-                    console.warn(`Disciplina com type ou questionCount inválido ignorada:`, discipline);
+                    console.warn(`Disciplina com questionCount inválido ignorada:`, discipline);
                   }
                 }
               }
