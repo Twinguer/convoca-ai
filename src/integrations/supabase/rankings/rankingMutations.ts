@@ -60,11 +60,7 @@ export const saveRanking = async (
     const dataFormValues = { ...formValues };
     
     // Garantir que os valores mínimos são numéricos
-    if ('total_minimum_score' in dataFormValues) {
-      dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
-    } else {
-      dataFormValues.total_minimum_score = 0;
-    }
+    dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
     
     // Se estamos editando um ranking existente, buscar os dados originais para preservar a estrutura de disciplinas
     if (editId) {
@@ -86,27 +82,17 @@ export const saveRanking = async (
         else if (Array.isArray(dataFormValues.disciplines) && dataFormValues.disciplines.length > 0 && 
                 Array.isArray(existingConcurso.disciplines) && existingConcurso.disciplines.length > 0) {
           // Verificar se estamos lidando com a estrutura de blocos
-          const isBlockStructure = dataFormValues.disciplines[0] && 
-                                  typeof dataFormValues.disciplines[0] === 'object' && 
-                                  'name' in dataFormValues.disciplines[0] && 
-                                  'disciplines' in dataFormValues.disciplines[0];
-                                  
-          const isExistingBlockStructure = existingConcurso.disciplines[0] && 
-                                          typeof existingConcurso.disciplines[0] === 'object' && 
-                                          'name' in existingConcurso.disciplines[0] && 
-                                          'disciplines' in existingConcurso.disciplines[0];
-                                          
-          if (isBlockStructure && isExistingBlockStructure) {
+          if ('name' in dataFormValues.disciplines[0] && 'disciplines' in dataFormValues.disciplines[0]) {
             console.log('Preserving block IDs in discipline structure');
             // Preservar IDs dos blocos e disciplinas
-            dataFormValues.disciplines = dataFormValues.disciplines.map((block: any, blockIdx) => {
+            dataFormValues.disciplines = dataFormValues.disciplines.map((block, blockIdx) => {
               // Encontrar bloco correspondente por posição ou nome
               const existingBlock = existingConcurso.disciplines[blockIdx] || 
                 existingConcurso.disciplines.find((b: any) => b.name === block.name);
               
               if (existingBlock && existingBlock.id) {
                 // Preservar disciplinas com IDs
-                const updatedDisciplines = block.disciplines?.map((discipline: any, discIdx) => {
+                const updatedDisciplines = block.disciplines?.map((discipline, discIdx) => {
                   // Encontrar disciplina correspondente por posição ou nome/tipo
                   const existingDiscipline = existingBlock.disciplines?.[discIdx] || 
                     existingBlock.disciplines?.find((d: any) => 
@@ -215,7 +201,7 @@ export const saveRanking = async (
       ...dataFormValues,
       created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
       has_custom_knowledge: true, // Sempre usar conhecimento customizado (disciplinas)
-      has_minimum_score: dataToSubmit?.total_minimum_score > 0 // Definir has_minimum_score com base no valor
+      has_minimum_score: dataFormValues.total_minimum_score > 0 // Definir has_minimum_score com base no valor
     };
     
     // Definir explicitamente título e órgão
@@ -236,9 +222,6 @@ export const saveRanking = async (
     if (!dataToSubmit.total_minimum_score) {
       dataToSubmit.total_minimum_score = 0;
     }
-
-    // Atualizar has_minimum_score com base no valor de total_minimum_score
-    dataToSubmit.has_minimum_score = dataToSubmit.total_minimum_score > 0;
 
     // Desabilitar conhecimentos básicos/específicos padrão
     dataToSubmit.has_basic_knowledge = false;
