@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface RecalculationResponse {
@@ -12,7 +13,6 @@ const isPositionThreshold = (value: string): value is PositionThreshold => {
   return ['ampla', 'cota_racial', 'pcd'].includes(value);
 };
 
-// Corrigir a referência ao tipo que causa o erro
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
     // Obter dados do concurso para aplicar regras específicas
@@ -33,9 +33,15 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
     // Se o concurso exige pontuação mínima verificamos isso
     let minimumScoreRequired = 0;
+    
     // Verificar se tem score mínimo e buscar o valor corretamente
-    if (concurso?.has_minimum_score && typeof concurso?.total_minimum_score === 'number') {
-      minimumScoreRequired = concurso.total_minimum_score;
+    if (concurso?.has_minimum_score === true) {
+      // Usar acesso seguro à propriedade para evitar erro TypeScript
+      minimumScoreRequired = typeof concurso?.total_minimum_score === 'number' 
+        ? concurso.total_minimum_score 
+        : parseInt(String(concurso?.total_minimum_score || '0'), 10);
+        
+      console.log(`Pontuação mínima requerida: ${minimumScoreRequired}`);
     }
 
     // Obter as respostas do usuário
@@ -184,9 +190,12 @@ export const getUserRankingPosition = async (
 
     const vacanciesCount = concurso?.vagas;
 
-    // Corrigir a expressão com o operador > para usar uma verificação segura de tipo
-    if (isPositionThreshold(cota) && typeof data?.[0]?.position === 'number' && 
-        typeof vacanciesCount === 'number' && data[0].position > vacanciesCount) {
+    // Corrigir a expressão com o operador > para verificar as posições
+    // Verificamos valores válidos antes da comparação
+    if (cota && isPositionThreshold(cota) && 
+        typeof data?.[0]?.position === 'number' && 
+        typeof vacanciesCount === 'number' && 
+        data[0].position > vacanciesCount) {
       return null;
     }
 

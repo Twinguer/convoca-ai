@@ -20,7 +20,7 @@ export const initializeQuestionTypes = (
       const isHierarchical = concurso.disciplines[0] && 
                             typeof concurso.disciplines[0] === 'object' && 
                             'name' in concurso.disciplines[0] && 
-                            'disciplines' in concurso.disciplines[0];
+                            'disciplines' in (concurso.disciplines[0] as any);
       
       if (isHierarchical) {
         // Processar a estrutura hierárquica

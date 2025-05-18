@@ -3,7 +3,9 @@
 // All functionality has been moved to dedicated modules
 export * from './rankings/examStructure';
 export * from './rankings/rankingQueries';
-export * from './rankings/rankingMutations';
+// Use named import/export para evitar ambiguidade
+import { recalculateUserScore, getUserRankingPosition } from './rankings/rankingMutations';
+export { recalculateUserScore, getUserRankingPosition };
 export * from './rankings/sectionUtils';
 export * from './rankings/answerManagement';
 export * from './rankings/batchOperations';
