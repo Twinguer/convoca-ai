@@ -7,5 +7,7 @@ export * from './rankings/rankingQueries';
 import { recalculateUserScore, getUserRankingPosition } from './rankings/rankingMutations';
 export { recalculateUserScore, getUserRankingPosition };
 export * from './rankings/sectionUtils';
-export * from './rankings/answerManagement';
+// Export the answerManagement as a namespace
+import * as answerManagement from './rankings/answerManagement';
+export { answerManagement };
 export * from './rankings/batchOperations';
