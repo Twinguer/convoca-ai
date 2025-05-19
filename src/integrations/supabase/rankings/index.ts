@@ -6,6 +6,7 @@ export * from './rankingQueries';
 import { recalculateUserScore, getUserRankingPosition } from './rankingMutations';
 export { recalculateUserScore, getUserRankingPosition };
 export * from './sectionUtils';
+// Usar named exports para answerManagement
 import * as answerManagement from './answerManagement';
 export { answerManagement };
 export * from './batchOperations';

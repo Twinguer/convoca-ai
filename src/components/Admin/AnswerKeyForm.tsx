@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -82,31 +82,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     }
   }, [existingAnswers]);
   
-  if (isLoadingConcurso || isLoadingAnswers) {
-    return <Card>
-        <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-          <p className="text-center text-gray-600">Carregando informações do gabarito...</p>
-        </CardContent>
-      </Card>;
-  }
-  
-  if (!concurso) {
-    return <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center text-destructive space-x-2">
-            <AlertTriangle className="h-5 w-5" />
-            <p>Não foi possível carregar as informações do concurso.</p>
-          </div>
-        </CardContent>
-      </Card>;
-  }
-
   // Atualizar os nomes de exibição com conhecimentos customizados
-  const sectionNames = updateSectionDisplayNames(concurso);
-  
+  const sectionNames = concurso ? updateSectionDisplayNames(concurso) : {};
+
   // Função para obter todas as questões de todas as seções
   const getAllQuestionsFromAllSections = () => {
+    if (!concurso) return [];
+    
     const allQuestions: number[] = [];
     let currentQuestionNumber = 1;
 
@@ -169,15 +151,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     return allQuestions;
   };
 
-  // Função para obter o número de questões por seção
+  // Função unificada para obter o número de questões por seção
   const getQuestionsCount = (section: string): number => {
     if (!concurso) return 0;
     
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const isHierarchical = concurso.disciplines[0] && 
-                          typeof concurso.disciplines[0] === 'object' && 
-                          'name' in concurso.disciplines[0] && 
-                          'disciplines' in concurso.disciplines[0];
+                           typeof concurso.disciplines[0] === 'object' && 
+                           'name' in concurso.disciplines[0] && 
+                           'disciplines' in concurso.disciplines[0];
       
       if (isHierarchical) {
         // Estrutura hierárquica
@@ -356,6 +338,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   };
   
   const getOptionsForQuestion = () => {
+    if (!concurso) return ['A', 'B', 'C', 'D', 'E'];
     if (concurso.exam_type === 'Certo ou Errado') {
       return ['C', 'E'];
     }
@@ -366,10 +349,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   };
   
   const getObjectiveSectionList = () => {
+    if (!concurso) return [];
     const sections = [];
     
     // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-    if (concurso?.has_custom_knowledge && concurso?.disciplines && Array.isArray(concurso.disciplines)) {
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const isHierarchical = concurso.disciplines[0] && 
                            typeof concurso.disciplines[0] === 'object' && 
                            'name' in concurso.disciplines[0] && 
@@ -402,25 +386,25 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       }
     } else {
       // Estrutura tradicional
-      if (concurso?.has_basic_knowledge) {
+      if (concurso.has_basic_knowledge) {
         sections.push({
           key: 'basic',
           label: 'Conhecimentos Básicos'
         });
       }
-      if (concurso?.has_specific_knowledge_1) {
+      if (concurso.has_specific_knowledge_1) {
         sections.push({
           key: 'specific1',
           label: 'C. Específicos 1'
         });
       }
-      if (concurso?.has_specific_knowledge_2) {
+      if (concurso.has_specific_knowledge_2) {
         sections.push({
           key: 'specific2',
           label: 'C. Específicos 2'
         });
       }
-      if (concurso?.has_specific_knowledge_3) {
+      if (concurso.has_specific_knowledge_3) {
         sections.push({
           key: 'specific3',
           label: 'C. Específicos 3'
@@ -480,7 +464,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       
       return []; // Retornar vazio se não encontrou a disciplina selecionada
     } else {
-      // Para a estrutura tradicional, manter o código original
+      // Para a estrutura tradicional
       if (selectedSection === 'basic') {
         return Array.from({
           length: getQuestionsCount('basic')
@@ -524,43 +508,72 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     }
   };
   
-  // Ajustar o início do componente para selecionar a primeira seção por padrão
+  // Inicializar a primeira seção disponível
   useEffect(() => {
     if (concurso) {
       const sections = getObjectiveSectionList();
-      if (sections.length > 0 && !selectedSection) {
+      if (sections.length > 0) {
         setSelectedSection(sections[0].key);
       }
     }
   }, [concurso]);
+
+  // Avaliação de carregamento
+  if (isLoadingConcurso || isLoadingAnswers) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <p className="text-center text-gray-600">Carregando informações do gabarito...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!concurso) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center text-destructive space-x-2">
+            <AlertTriangle className="h-5 w-5" />
+            <p>Não foi possível carregar as informações do concurso.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const totalQuestions = getAllQuestionsFromAllSections().length;
   const answeredQuestions = Object.keys(answers).length;
   const percentageComplete = totalQuestions > 0 ? Math.floor(answeredQuestions / totalQuestions * 100) : 0;
   const objectiveSections = getObjectiveSectionList();
   
-  return <Card>
-      <CardHeader>
-        <CardTitle>Gabarito Oficial - {concurso?.titulo}</CardTitle>
-      </CardHeader>
+  return (
+    <Card>
       <CardContent className="space-y-6">
         {/* Error message */}
-        {error && <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
+        {error && (
+          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
             <p>{error}</p>
-          </div>}
+          </div>
+        )}
         
         {/* Success message */}
-        {savedSuccess && <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
+        {savedSuccess && (
+          <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <CheckCircle className="h-4 w-4" />
             <p>Gabarito salvo com sucesso!</p>
-          </div>}
+          </div>
+        )}
         
         {/* Recalculation success message */}
-        {recalculationSuccess && <div className="bg-blue-100 p-3 rounded-md flex items-center gap-2 text-blue-800">
+        {recalculationSuccess && (
+          <div className="bg-blue-100 p-3 rounded-md flex items-center gap-2 text-blue-800">
             <CheckCircle className="h-4 w-4" />
             <p>Recálculo de pontuações concluído com sucesso!</p>
-          </div>}
+          </div>
+        )}
         
         {/* Progress indicator */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -570,9 +583,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
               {answeredQuestions} de {totalQuestions} questões respondidas ({percentageComplete}%)
             </p>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-              <div className="bg-blue-600 h-2.5 rounded-full" style={{
-              width: `${percentageComplete}%`
-            }}></div>
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{
+                  width: `${percentageComplete}%`
+                }}
+              ></div>
             </div>
             <p className="text-xs text-blue-600 mt-2">
               Todas as questões precisam ser respondidas antes de salvar o gabarito.
@@ -581,60 +597,107 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         </div>
         
         {/* Tabs for sections */}
-        {objectiveSections.length > 0 && <div className="border rounded-md overflow-hidden shadow-sm">
-            <Tabs value={selectedSection} onValueChange={value => setSelectedSection(value)} className="w-full">
-              <TabsList className="grid w-full" style={{
-            gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))`
-          }}>
-                {objectiveSections.map(section => <TabsTrigger key={section.key} value={section.key}>
+        {objectiveSections.length > 0 && (
+          <div className="border rounded-md overflow-hidden shadow-sm">
+            <Tabs 
+              value={selectedSection} 
+              onValueChange={value => setSelectedSection(value)} 
+              className="w-full"
+            >
+              <TabsList 
+                className="grid w-full" 
+                style={{
+                  gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))`
+                }}
+              >
+                {objectiveSections.map(section => (
+                  <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
-                  </TabsTrigger>)}
+                  </TabsTrigger>
+                ))}
               </TabsList>
               
-              {objectiveSections.map(section => <TabsContent key={section.key} value={section.key}>
+              {objectiveSections.map(section => (
+                <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => (
                         <React.Fragment key={`row-${rowIndex}`}>
-                          {row.map((questionNumber, colIndex) => questionNumber !== null ? <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
+                          {row.map((questionNumber, colIndex) => 
+                            questionNumber !== null ? (
+                              <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
                                 <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
-                                  {getOptionsForQuestion().map(option => <button key={option} className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
-                                        ${answers[questionNumber] === option ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
+                                  {getOptionsForQuestion().map(option => (
+                                    <button 
+                                      key={option} 
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
+                                        ${answers[questionNumber] === option ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} 
+                                      onClick={() => handleAnswerChange(questionNumber, option)} 
+                                      disabled={nullifiedQuestions.has(questionNumber)} 
+                                      type="button"
+                                    >
                                       {option}
-                                    </button>)}
+                                    </button>
+                                  ))}
                                 </div>
-                                <NullifyQuestionButton questionNumber={questionNumber} isNullified={nullifiedQuestions.has(questionNumber)} onNullify={handleNullifyQuestion} />
-                              </div> : null)}
-                        </React.Fragment>))}
+                                <NullifyQuestionButton 
+                                  questionNumber={questionNumber} 
+                                  isNullified={nullifiedQuestions.has(questionNumber)} 
+                                  onNullify={handleNullifyQuestion} 
+                                />
+                              </div>
+                            ) : null
+                          )}
+                        </React.Fragment>
+                      ))}
                     </div>
                   </div>
-                </TabsContent>)}
+                </TabsContent>
+              ))}
             </Tabs>
-          </div>}
+          </div>
+        )}
         
         {/* Action buttons */}
         <div className="flex justify-between mt-4">
-          <Button onClick={performRecalculation} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isSaving || isRecalculating}>
-            {isRecalculating ? <>
+          <Button 
+            onClick={performRecalculation} 
+            className="bg-blue-600 hover:bg-blue-700 text-white" 
+            disabled={isSaving || isRecalculating}
+          >
+            {isRecalculating ? (
+              <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Recalculando...
-              </> : <>
+              </>
+            ) : (
+              <>
                 <CheckCircle className="mr-2 h-4 w-4" />
                 Recalcular Pontuações
-              </>}
+              </>
+            )}
           </Button>
           
-          <Button onClick={handleSaveAnswerKey} className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSaving || isRecalculating}>
-            {isSaving ? <>
+          <Button 
+            onClick={handleSaveAnswerKey} 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white" 
+            disabled={isSaving || isRecalculating}
+          >
+            {isSaving ? (
+              <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Salvando...
-              </> : <>
+              </>
+            ) : (
+              <>
                 <Save className="mr-2 h-4 w-4" />
                 Salvar Gabarito
-              </>}
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
