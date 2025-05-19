@@ -21,6 +21,123 @@ export const sectionDisplayNames: Record<string, string> = {
   case_study3: 'Estudo de Caso 3'
 };
 
+// Função para auxiliar a obter o nome de exibição de uma seção
+export const getSectionDisplayName = (sectionType: string): string => {
+  return sectionDisplayNames[sectionType] || sectionType;
+};
+
+// Função para obter a estrutura completa do exame
+export const getExamStructure = (concurso: Concurso) => {
+  if (!concurso) return { sections: [], totalQuestions: 0 };
+  
+  const result: {
+    sections: Array<{
+      type: string,
+      name: string,
+      questionCount: number,
+      weight: number,
+      isEnabled: boolean,
+      blockName?: string
+    }>,
+    totalQuestions: number
+  } = {
+    sections: [],
+    totalQuestions: 0
+  };
+  
+  // Verificar se estamos usando conhecimentos customizados
+  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    const isHierarchical = concurso.disciplines[0] && 
+                         typeof concurso.disciplines[0] === 'object' && 
+                         'name' in concurso.disciplines[0] && 
+                         'disciplines' in concurso.disciplines[0];
+    
+    if (isHierarchical) {
+      // Processar estrutura hierárquica (blocos -> disciplinas)
+      for (const block of concurso.disciplines as any[]) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled) {
+              const questionCount = getNumericValue(discipline.questionCount);
+              result.sections.push({
+                type: discipline.type,
+                name: `${block.name} - ${discipline.name}`,
+                questionCount,
+                weight: getNumericValue(discipline.weight) || 1,
+                isEnabled: true,
+                blockName: block.name
+              });
+              result.totalQuestions += questionCount;
+            }
+          }
+        }
+      }
+    } else {
+      // Processar estrutura plana
+      for (const discipline of concurso.disciplines) {
+        if (discipline.isEnabled) {
+          const questionCount = getNumericValue(discipline.questionCount);
+          result.sections.push({
+            type: discipline.type,
+            name: discipline.name,
+            questionCount,
+            weight: getNumericValue(discipline.weight) || 1,
+            isEnabled: true
+          });
+          result.totalQuestions += questionCount;
+        }
+      }
+    }
+  } else {
+    // Estrutura tradicional
+    if (concurso.has_basic_knowledge) {
+      result.sections.push({
+        type: 'basic',
+        name: sectionDisplayNames.basic,
+        questionCount: getNumericValue(concurso.basic_knowledge_questions),
+        weight: concurso.basic_knowledge_weight || 1,
+        isEnabled: true
+      });
+      result.totalQuestions += getNumericValue(concurso.basic_knowledge_questions);
+    }
+    
+    if (concurso.has_specific_knowledge_1) {
+      result.sections.push({
+        type: 'specific1',
+        name: sectionDisplayNames.specific1,
+        questionCount: getNumericValue(concurso.specific_knowledge_1_questions),
+        weight: concurso.specific_knowledge_1_weight || 1,
+        isEnabled: true
+      });
+      result.totalQuestions += getNumericValue(concurso.specific_knowledge_1_questions);
+    }
+    
+    if (concurso.has_specific_knowledge_2) {
+      result.sections.push({
+        type: 'specific2',
+        name: sectionDisplayNames.specific2,
+        questionCount: getNumericValue(concurso.specific_knowledge_2_questions),
+        weight: concurso.specific_knowledge_2_weight || 1,
+        isEnabled: true
+      });
+      result.totalQuestions += getNumericValue(concurso.specific_knowledge_2_questions);
+    }
+    
+    if (concurso.has_specific_knowledge_3) {
+      result.sections.push({
+        type: 'specific3',
+        name: sectionDisplayNames.specific3,
+        questionCount: getNumericValue(concurso.specific_knowledge_3_questions),
+        weight: concurso.specific_knowledge_3_weight || 1,
+        isEnabled: true
+      });
+      result.totalQuestions += getNumericValue(concurso.specific_knowledge_3_questions);
+    }
+  }
+  
+  return result;
+};
+
 // Função para obter todas as disciplinas de um concurso (incluindo seções tradicionais)
 export const getDisciplines = (concurso: Concurso): Discipline[] => {
   const disciplines: Discipline[] = [];
@@ -218,6 +335,22 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   
   // Fallback para 'custom' se não encontrou correspondência
   return 'custom';
+};
+
+// Função para garantir compatibilidade do tipo de seção com o banco de dados
+export const sanitizeSectionType = (sectionType: string): string => {
+  const standardSections: Record<string, string> = {
+    'basic': 'basic',
+    'specific1': 'specific1',
+    'specific2': 'specific2', 
+    'specific3': 'specific3',
+    'discursive': 'discursive',
+    'case_study1': 'case_study1',
+    'case_study2': 'case_study2',
+    'case_study3': 'case_study3'
+  };
+  
+  return standardSections[sectionType] || sectionType;
 };
 
 // Função para converter valores para número, garantindo que não seja NaN
