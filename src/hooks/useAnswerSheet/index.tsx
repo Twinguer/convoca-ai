@@ -8,7 +8,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { getSectionDisplayName, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
