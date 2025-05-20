@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
-import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, getSectionDisplayName } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
 
 interface RankingTableProps {

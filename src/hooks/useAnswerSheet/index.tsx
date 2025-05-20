@@ -8,7 +8,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { sectionDisplayNames, getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionDisplayName, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -83,7 +83,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('Getting questions for section:', selectedSection);
     console.log('Question type mapping:', questionType);
     
-    // If we have question type mapping, use it
+    // Verificar se temos mapeamento de tipos de questão
     if (Object.keys(questionType).length > 0) {
       console.log("Using existing question type mapping");
       
@@ -97,95 +97,27 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       return questions.sort((a, b) => a - b);
     }
     
-    // If no question type mapping yet, build it from disciplines
+    // Se não temos mapeamento, tentar construir com base nas disciplinas
     console.log("No question type mapping yet, building from disciplines");
     const questions: number[] = [];
+    const disciplines = getDisciplines(concurso);
     
-    // Custom knowledge with disciplines
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const hierarchical = isHierarchicalStructure(concurso);
+    if (Array.isArray(disciplines)) {
       let currentQuestion = 1;
       
-      if (hierarchical) {
-        // Hierarchical structure (blocks -> disciplines)
-        console.log("Using hierarchical structure to determine questions");
-        for (const block of concurso.disciplines as any[]) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                const questionCount = getNumericValue(discipline.questionCount);
-                
-                if (discipline.type === selectedSection) {
-                  console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-                  
-                  for (let i = 0; i < questionCount; i++) {
-                    questions.push(currentQuestion++);
-                  }
-                } else {
-                  // Skip questions from other disciplines
-                  console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-                  currentQuestion += questionCount;
-                }
-              }
-            }
+      for (const discipline of disciplines) {
+        const questionCount = getNumericValue(discipline.questionCount);
+          
+        if (discipline.isEnabled && discipline.type === selectedSection && questionCount > 0) {
+          console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+          
+          for (let i = 0; i < questionCount; i++) {
+            questions.push(currentQuestion++);
           }
-        }
-      } else {
-        // Flat structure
-        console.log("Using flat structure to determine questions");
-        for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled) {
-            const questionCount = getNumericValue(discipline.questionCount);
-            
-            if (discipline.type === selectedSection) {
-              console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-              
-              for (let i = 0; i < questionCount; i++) {
-                questions.push(currentQuestion++);
-              }
-            } else {
-              // Skip questions from other disciplines
-              console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-              currentQuestion += questionCount;
-            }
-          }
-        }
-      }
-    } else {
-      // Traditional structure
-      let currentQuestion = 1;
-      
-      if (concurso.has_basic_knowledge && selectedSection === 'basic') {
-        const count = getNumericValue(concurso.basic_knowledge_questions);
-        for (let i = 0; i < count; i++) {
-          questions.push(currentQuestion++);
-        }
-      } else if (concurso.has_basic_knowledge) {
-        currentQuestion += getNumericValue(concurso.basic_knowledge_questions);
-      }
-      
-      if (concurso.has_specific_knowledge_1 && selectedSection === 'specific1') {
-        const count = getNumericValue(concurso.specific_knowledge_1_questions);
-        for (let i = 0; i < count; i++) {
-          questions.push(currentQuestion++);
-        }
-      } else if (concurso.has_specific_knowledge_1) {
-        currentQuestion += getNumericValue(concurso.specific_knowledge_1_questions);
-      }
-      
-      if (concurso.has_specific_knowledge_2 && selectedSection === 'specific2') {
-        const count = getNumericValue(concurso.specific_knowledge_2_questions);
-        for (let i = 0; i < count; i++) {
-          questions.push(currentQuestion++);
-        }
-      } else if (concurso.has_specific_knowledge_2) {
-        currentQuestion += getNumericValue(concurso.specific_knowledge_2_questions);
-      }
-      
-      if (concurso.has_specific_knowledge_3 && selectedSection === 'specific3') {
-        const count = getNumericValue(concurso.specific_knowledge_3_questions);
-        for (let i = 0; i < count; i++) {
-          questions.push(currentQuestion++);
+        } else if (discipline.isEnabled) {
+          // Pular questões de outras disciplinas
+          console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+          currentQuestion += questionCount;
         }
       }
     }
@@ -203,89 +135,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     const count = concurso.alternatives_count || 5;
     return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
-  };
-
-  // Function to get all questions from all sections
-  const getAllQuestionsFromAllSections = () => {
-    if (!concurso) return [];
-    
-    const allQuestions: number[] = [];
-    
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      let currentQuestionNumber = 1;
-      const hierarchical = isHierarchicalStructure(concurso);
-      
-      console.log("getAllQuestionsFromAllSections - Using hierarchical structure:", hierarchical);
-      
-      if (hierarchical) {
-        // Process hierarchical structure (blocks -> disciplines)
-        for (const block of concurso.disciplines as any[]) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                const count = getNumericValue(discipline.questionCount);
-                console.log(`Block ${block.name}, discipline ${discipline.name} has ${count} questions starting at ${currentQuestionNumber}`);
-                
-                for (let i = 0; i < count; i++) {
-                  allQuestions.push(currentQuestionNumber++);
-                }
-              }
-            }
-          }
-        }
-      } else {
-        // Process flat structure of disciplines
-        for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled) {
-            const count = getNumericValue(discipline.questionCount);
-            console.log(`Discipline ${discipline.name} has ${count} questions starting at ${currentQuestionNumber}`);
-            
-            for (let i = 0; i < count; i++) {
-              allQuestions.push(currentQuestionNumber++);
-            }
-          }
-        }
-      }
-      
-      return allQuestions;
-    }
-    
-    // Traditional structure
-    let currentQuestionNumber = 1;
-    
-    // Basic
-    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      const count = getNumericValue(concurso.basic_knowledge_questions);
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Specific 1
-    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      const count = getNumericValue(concurso.specific_knowledge_1_questions);
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Specific 2
-    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      const count = getNumericValue(concurso.specific_knowledge_2_questions);
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Specific 3
-    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      const count = getNumericValue(concurso.specific_knowledge_3_questions);
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    return allQuestions;
   };
 
   return {
@@ -314,7 +163,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     caseStudy3Score, 
     setCaseStudy3Score,
     isDiscursiveSection,
-    getSectionQuestions,
-    getAllQuestionsFromAllSections
+    getSectionQuestions
   };
 };

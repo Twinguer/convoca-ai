@@ -180,6 +180,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       }
       
       // Calcular o total objetivo (excluindo discursivas e estudos de caso)
+      // Esta é a principal alteração para resolver o problema
       const totalObjScore = calculateObjectiveScore(ranking, weightedCustomDisciplineScores);
       
       // Verificar se está abaixo do mínimo geral da prova

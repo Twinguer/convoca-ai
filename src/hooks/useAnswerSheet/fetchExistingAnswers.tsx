@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { SectionType } from '@/types/concursos';
-import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const fetchExistingAnswers = async (
   rankingId: string,
@@ -29,55 +28,26 @@ export const fetchExistingAnswers = async (
       const answersMap: { [key: number]: string } = {};
       const typesMap: { [key: number]: SectionType } = {};
       
-      // Fetch the concurso to determine if it uses hierarchical structure
-      const { data: rankingData } = await supabase
-        .from('user_rankings')
-        .select('concurso_id')
-        .eq('id', rankingId)
-        .single();
+      answersData.forEach((item: any) => {
+        answersMap[item.question_number] = item.answer;
         
-      if (rankingData?.concurso_id) {
-        const { data: concurso } = await supabase
-          .from('concursos')
-          .select('*')
-          .eq('id', rankingData.concurso_id)
-          .single();
-        
-        if (concurso) {
-          console.log('Retrieved concurso data for question types:', concurso.id);
-          const hierarchical = isHierarchicalStructure(concurso);
-          console.log('Using hierarchical structure:', hierarchical);
-          
-          // Process each answer and map it correctly
-          answersData.forEach((item: any) => {
-            // Parse question number as integer to ensure consistency
-            const questionNumber = parseInt(item.question_number, 10);
-            answersMap[questionNumber] = item.answer;
-            
-            // For traditional structure, use the is_* fields
-            if (item.is_basic_knowledge) {
-              typesMap[questionNumber] = 'basic';
-            } else if (item.is_specific_1) {
-              typesMap[questionNumber] = 'specific1';
-            } else if (item.is_specific_2) {
-              typesMap[questionNumber] = 'specific2';
-            } else if (item.is_specific_3) {
-              typesMap[questionNumber] = 'specific3';
-            } else {
-              // For custom knowledge structure, try to determine section type
-              // This will be populated in initializeQuestionTypes when concurso loads
-            }
-          });
-          
-          console.log('Parsed answers map:', answersMap);
-          console.log('Parsed question types map:', typesMap);
+        if (item.is_basic_knowledge) {
+          typesMap[item.question_number] = 'basic';
+        } else if (item.is_specific_1) {
+          typesMap[item.question_number] = 'specific1';
+        } else if (item.is_specific_2) {
+          typesMap[item.question_number] = 'specific2';
+        } else if (item.is_specific_3) {
+          typesMap[item.question_number] = 'specific3';
         }
-      }
+        // Disciplinas customizadas serão tratadas em implementações futuras
+      });
+      
+      console.log('Parsed answers map:', answersMap);
+      console.log('Parsed question types map:', typesMap);
       
       setAnswers(answersMap);
       setQuestionType(typesMap);
-    } else {
-      console.log('No existing answers found for ranking ID:', rankingId);
     }
     
     // Fetch user ranking for scores
