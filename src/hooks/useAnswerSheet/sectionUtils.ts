@@ -1,6 +1,6 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
-import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
@@ -11,15 +11,12 @@ export const handleQuestionSectionSelection = (
   // Se estamos usando conhecimentos customizáveis
   if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
     // Verificar se temos estrutura hierárquica (blocos -> disciplinas)
-    const isHierarchical = concurso.disciplines[0] && 
-                         typeof concurso.disciplines[0] === 'object' && 
-                         'name' in concurso.disciplines[0] && 
-                         'disciplines' in concurso.disciplines[0];
+    const hierarchical = isHierarchicalStructure(concurso);
     
-    console.log('Using hierarchical structure:', isHierarchical);
+    console.log('Using hierarchical structure:', hierarchical);
     
     // Processar estrutura hierárquica
-    if (isHierarchical) {
+    if (hierarchical) {
       for (const block of concurso.disciplines as any[]) {
         console.log('Checking block:', block.name);
         

@@ -1,6 +1,6 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
-import { getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const initializeQuestionTypes = (
   concurso: Concurso, 
@@ -17,12 +17,9 @@ export const initializeQuestionTypes = (
       console.log('Initializing hierarchical question types structure');
       
       // Verificar se estamos lidando com a estrutura de blocos
-      const isHierarchical = concurso.disciplines[0] && 
-                            typeof concurso.disciplines[0] === 'object' && 
-                            'name' in concurso.disciplines[0] && 
-                            'disciplines' in concurso.disciplines[0];
+      const hierarchical = isHierarchicalStructure(concurso);
       
-      if (isHierarchical) {
+      if (hierarchical) {
         // Processar a estrutura hierárquica
         for (const block of concurso.disciplines as any[]) {
           console.log(`Processing block: ${block.name}`);

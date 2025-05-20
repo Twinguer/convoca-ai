@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
-import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 interface SectionToggleProps {
   selectedSection: SectionType;
@@ -22,12 +22,9 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
     
     // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
+      const hierarchical = isHierarchicalStructure(concurso);
       
-      if (isHierarchical) {
+      if (hierarchical) {
         // Processar estrutura hierárquica
         for (const block of concurso.disciplines as any[]) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
