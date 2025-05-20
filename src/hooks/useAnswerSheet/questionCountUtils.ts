@@ -1,6 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
-import { getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { supabase } from '@/integrations/supabase/client';
 
 export const getTotalQuestions = (concurso: Concurso): number => {
@@ -8,14 +8,29 @@ export const getTotalQuestions = (concurso: Concurso): number => {
   
   let total = 0;
   
-  // Contar questões de todas as disciplinas habilitadas
-  const disciplines = getDisciplines(concurso);
-  if (Array.isArray(disciplines)) {
-    disciplines.forEach(discipline => {
-      if (discipline.isEnabled && discipline.questionCount) {
-        total += getNumericValue(discipline.questionCount);
+  // Check if using hierarchical structure
+  if (isHierarchicalStructure(concurso)) {
+    if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+      for (const block of concurso.discipline_blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.questionCount) {
+              total += getNumericValue(discipline.questionCount);
+            }
+          }
+        }
       }
-    });
+    }
+  } else {
+    // Traditional flat disciplines structure
+    const disciplines = getDisciplines(concurso);
+    if (Array.isArray(disciplines)) {
+      disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.questionCount) {
+          total += getNumericValue(discipline.questionCount);
+        }
+      });
+    }
   }
   
   return total;

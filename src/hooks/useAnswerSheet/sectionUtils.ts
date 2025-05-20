@@ -1,15 +1,33 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
-import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const handleQuestionSectionSelection = (
   concurso: Concurso,
   setSelectedSection: (section: SectionType) => void
 ) => {
-  // Pegar todas as disciplinas habilitadas
+  // Check if using hierarchical structure
+  if (isHierarchicalStructure(concurso)) {
+    if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+      // Find first enabled discipline in first block
+      for (const block of concurso.discipline_blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.type) {
+              const sectionType = discipline.type as SectionType;
+              setSelectedSection(sectionType);
+              console.log(`Selected hierarchical discipline section: ${sectionType} from block: ${block.name}`);
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // If not hierarchical or no enabled disciplines found in blocks, try regular disciplines
   const disciplines = getDisciplines(concurso);
   
-  // Procurar a primeira disciplina habilitada
   if (Array.isArray(disciplines) && disciplines.length > 0) {
     const firstEnabledDiscipline = disciplines.find(d => d.isEnabled);
     if (firstEnabledDiscipline) {

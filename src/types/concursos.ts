@@ -1,3 +1,4 @@
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -40,7 +41,7 @@ export interface Concurso {
   // Flag de administrador
   is_admin_update?: boolean;
   
-  // Array de disciplinas (modo customizável)
+  // Array de disciplinas (modo customizável - legado)
   disciplines?: Array<{
     id?: string;
     type: string;
@@ -53,7 +54,7 @@ export interface Concurso {
     blockWeight?: number; // Peso do bloco
   }>;
   
-  // Array de blocos de disciplinas
+  // Array de blocos de disciplinas (nova estrutura hierárquica)
   discipline_blocks?: Array<{
     id: string;
     name: string;
@@ -137,7 +138,21 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
     useCustomKnowledge: true
   };
   
-  // Adicionar seções customizadas baseadas nas disciplinas
+  // Add disciplines from blocks if using hierarchical structure
+  if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+    concurso.discipline_blocks.forEach(block => {
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        block.disciplines.forEach(discipline => {
+          if (discipline.isEnabled && discipline.type) {
+            enabledSections[discipline.type] = true;
+          }
+        });
+      }
+    });
+    return enabledSections;
+  }
+  
+  // Traditional flat disciplines
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
     concurso.disciplines.forEach(discipline => {
       if (discipline.isEnabled && discipline.type) {
@@ -157,9 +172,23 @@ export const getRankingTableColumns = (concurso: Concurso) => {
     { id: 'score', label: 'Total', align: 'right' }
   ];
 
-  // Adicionar colunas baseadas nas disciplinas customizadas
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    // Adicionar colunas baseadas nas disciplinas customizadas
+  // Add columns based on hierarchical structure
+  if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+    for (const block of concurso.discipline_blocks) {
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const discipline of block.disciplines) {
+          if (discipline.isEnabled) {
+            columns.push({
+              id: `${discipline.type}Score`,
+              label: discipline.name,
+              align: 'right'
+            });
+          }
+        }
+      }
+    }
+  } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Add columns based on flat disciplines
     concurso.disciplines.forEach(discipline => {
       if (discipline.isEnabled) {
         columns.push({
@@ -171,7 +200,7 @@ export const getRankingTableColumns = (concurso: Concurso) => {
     });
   }
   
-  // Adicionar colunas para partes subjetivas
+  // Add columns for subjective parts
   if (concurso.has_discursive) {
     columns.push({ id: 'discursiveScore', label: 'Discursiva', align: 'right' });
   }

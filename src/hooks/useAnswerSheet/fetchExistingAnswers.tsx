@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { SectionType } from '@/types/concursos';
+import { fetchUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
 
 export const fetchExistingAnswers = async (
   rankingId: string,
@@ -14,54 +15,50 @@ export const fetchExistingAnswers = async (
   try {
     console.log('Fetching existing answers for ranking ID:', rankingId);
     
-    // Fetch answers
-    const { data: answersData, error: answersError } = await supabase
-      .from('user_answers')
-      .select('*')
-      .eq('user_ranking_id', rankingId);
+    // Get user answers
+    const answerData = await fetchUserAnswers(rankingId);
+    
+    if (answerData && answerData.length > 0) {
+      console.log('[fetchExistingAnswers] Respostas existentes encontradas:', answerData.length);
       
-    if (answersError) throw answersError;
-    
-    console.log('Fetched answers data:', answersData);
-    
-    if (answersData?.length) {
+      // Convert answers to the correct format
       const answersMap: { [key: number]: string } = {};
-      const typesMap: { [key: number]: SectionType } = {};
+      const questionTypeMap: { [key: number]: SectionType } = {};
       
-      answersData.forEach((item: any) => {
-        answersMap[item.question_number] = item.answer;
+      answerData.forEach(item => {
+        // No need to convert question_number as it's now stored as integer in the database
+        const questionNumber: number = item.question_number;
+        answersMap[questionNumber] = item.answer;
         
+        // Determine question type
         if (item.is_basic_knowledge) {
-          typesMap[item.question_number] = 'basic';
+          questionTypeMap[questionNumber] = 'basic';
         } else if (item.is_specific_1) {
-          typesMap[item.question_number] = 'specific1';
+          questionTypeMap[questionNumber] = 'specific1';
         } else if (item.is_specific_2) {
-          typesMap[item.question_number] = 'specific2';
+          questionTypeMap[questionNumber] = 'specific2';
         } else if (item.is_specific_3) {
-          typesMap[item.question_number] = 'specific3';
+          questionTypeMap[questionNumber] = 'specific3';
         }
-        // Disciplinas customizadas serão tratadas em implementações futuras
       });
       
-      console.log('Parsed answers map:', answersMap);
-      console.log('Parsed question types map:', typesMap);
-      
+      // Set state values
       setAnswers(answersMap);
-      setQuestionType(typesMap);
+      setQuestionType(questionTypeMap);
+    } else {
+      console.log('Fetched answers data:', answerData);
     }
     
-    // Fetch user ranking for scores
+    // Get ranking data for subjective scores
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
-      .select('*')
+      .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
       .eq('id', rankingId)
       .single();
       
-    if (rankingError) throw rankingError;
-    
-    console.log('Fetched ranking data:', rankingData);
-    
     if (rankingData) {
+      console.log('Fetched ranking data:', rankingData);
+      
       setDiscursiveScore(
         rankingData.discursive_score !== null && rankingData.discursive_score !== undefined
           ? rankingData.discursive_score
@@ -84,6 +81,6 @@ export const fetchExistingAnswers = async (
       );
     }
   } catch (error) {
-    console.error('Error fetching answers:', error);
+    console.error('[fetchExistingAnswers] Error fetching existing answers:', error);
   }
 };

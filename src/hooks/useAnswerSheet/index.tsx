@@ -8,7 +8,12 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { getSectionDisplayName, getDisciplines, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+import { 
+  getSectionDisplayName, 
+  getDisciplines, 
+  getNumericValue, 
+  isHierarchicalStructure 
+} from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -97,27 +102,56 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       return questions.sort((a, b) => a - b);
     }
     
-    // Se não temos mapeamento, tentar construir com base nas disciplinas
-    console.log("No question type mapping yet, building from disciplines");
+    // Se não temos mapeamento, tentar construir com base na estrutura
+    console.log("No question type mapping yet, building from structure");
     const questions: number[] = [];
-    const disciplines = getDisciplines(concurso);
     
-    if (Array.isArray(disciplines)) {
-      let currentQuestion = 1;
+    // Check if using hierarchical structure
+    if (isHierarchicalStructure(concurso)) {
+      console.log("Building questions from hierarchical structure");
+      let currentQuestionNumber = 1;
       
-      for (const discipline of disciplines) {
-        const questionCount = getNumericValue(discipline.questionCount);
-          
-        if (discipline.isEnabled && discipline.type === selectedSection && questionCount > 0) {
-          console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-          
-          for (let i = 0; i < questionCount; i++) {
-            questions.push(currentQuestion++);
+      if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+        for (const block of concurso.discipline_blocks) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type === selectedSection && discipline.questionCount) {
+                const questionCount = getNumericValue(discipline.questionCount);
+                
+                console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type}) from block ${block.name}`);
+                
+                for (let i = 0; i < questionCount; i++) {
+                  questions.push(currentQuestionNumber++);
+                }
+              } else if (discipline.isEnabled) {
+                // Skip questions from other disciplines
+                currentQuestionNumber += getNumericValue(discipline.questionCount);
+              }
+            }
           }
-        } else if (discipline.isEnabled) {
-          // Pular questões de outras disciplinas
-          console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-          currentQuestion += questionCount;
+        }
+      }
+    } else {
+      // Traditional flat disciplines structure
+      const disciplines = getDisciplines(concurso);
+      
+      if (Array.isArray(disciplines)) {
+        let currentQuestion = 1;
+        
+        for (const discipline of disciplines) {
+          const questionCount = getNumericValue(discipline.questionCount);
+            
+          if (discipline.isEnabled && discipline.type === selectedSection && questionCount > 0) {
+            console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+            
+            for (let i = 0; i < questionCount; i++) {
+              questions.push(currentQuestion++);
+            }
+          } else if (discipline.isEnabled) {
+            // Skip questions from other disciplines
+            console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+            currentQuestion += questionCount;
+          }
         }
       }
     }
@@ -135,6 +169,41 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     const count = concurso.alternatives_count || 5;
     return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
+  };
+  
+  // Function to get all sections available in the exam
+  const getAllSections = () => {
+    const sections: SectionType[] = [];
+    
+    // Check if using hierarchical structure
+    if (isHierarchicalStructure(concurso)) {
+      if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+        for (const block of concurso.discipline_blocks) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type) {
+                sections.push(discipline.type as SectionType);
+              }
+            }
+          }
+        }
+      }
+    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      // Traditional flat disciplines
+      for (const discipline of concurso.disciplines) {
+        if (discipline.isEnabled && discipline.type) {
+          sections.push(discipline.type as SectionType);
+        }
+      }
+    }
+    
+    // Add subjective sections
+    if (concurso.has_discursive) sections.push('discursive');
+    if (concurso.has_case_study_1) sections.push('case_study1');
+    if (concurso.has_case_study_2) sections.push('case_study2');
+    if (concurso.has_case_study_3) sections.push('case_study3');
+    
+    return sections;
   };
 
   return {
@@ -163,6 +232,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     caseStudy3Score, 
     setCaseStudy3Score,
     isDiscursiveSection,
-    getSectionQuestions
+    getSectionQuestions,
+    getAllSections
   };
 };

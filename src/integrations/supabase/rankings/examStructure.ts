@@ -1,3 +1,4 @@
+
 import { Concurso } from '@/types/concursos';
 import type { SectionType } from '@/types/concursos';
 
@@ -24,14 +25,48 @@ export const getNumericValue = (value: any): number => {
   return 0;
 };
 
+// Helper function to check if exam structure is hierarchical (blocks and disciplines)
+export const isHierarchicalStructure = (concurso: Concurso): boolean => {
+  // Check if discipline_blocks is defined and has items
+  if (concurso?.discipline_blocks && 
+      Array.isArray(concurso.discipline_blocks) && 
+      concurso.discipline_blocks.length > 0) {
+    return true;
+  }
+  return false;
+};
+
 // Helper function to safely handle the disciplines array
 export const getDisciplines = (concurso: Concurso) => {
-  // Se disciplines está definido no concurso, retorne-o, caso contrário, retorne um array vazio
+  // Handle hierarchical structure first
+  if (isHierarchicalStructure(concurso)) {
+    // For hierarchical structure, flatten all disciplines from all blocks
+    let allDisciplines: any[] = [];
+    
+    if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+      concurso.discipline_blocks.forEach(block => {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          // Add block information to each discipline
+          const disciplinesWithBlock = block.disciplines.map(discipline => ({
+            ...discipline,
+            blockId: block.id,
+            blockName: block.name,
+            blockWeight: block.weight
+          }));
+          allDisciplines = [...allDisciplines, ...disciplinesWithBlock];
+        }
+      });
+    }
+    
+    return allDisciplines;
+  }
+  
+  // If not hierarchical, use the regular disciplines array if available
   if (!concurso.disciplines) {
     return [];
   }
   
-  // Se for uma string JSON, tente fazer o parse
+  // If it's a string JSON, try to parse it
   if (typeof concurso.disciplines === 'string') {
     try {
       return JSON.parse(concurso.disciplines);
@@ -41,13 +76,23 @@ export const getDisciplines = (concurso: Concurso) => {
     }
   }
   
-  // Se já for um array, retorne-o
+  // If already an array, return it
   if (Array.isArray(concurso.disciplines)) {
     return concurso.disciplines;
   }
   
-  // Se for um objeto, verifique se é um objeto JSONB do Postgres
+  // If it's an object, check if it's a JSONB object from Postgres
   return concurso.disciplines || [];
+};
+
+// Helper function to get all blocks
+export const getBlocks = (concurso: Concurso) => {
+  if (isHierarchicalStructure(concurso) && 
+      concurso.discipline_blocks && 
+      Array.isArray(concurso.discipline_blocks)) {
+    return concurso.discipline_blocks;
+  }
+  return [];
 };
 
 // Função para obter a estrutura de exame de um concurso
@@ -62,6 +107,10 @@ export const getExamStructure = (concurso: Concurso) => {
     exam_type: concurso.exam_type || 'Alternativas',
     alternatives_count: getNumericValue(concurso.alternatives_count),
     wrong_answer_penalty: getNumericValue(concurso.wrong_answer_penalty),
+    
+    // New - Hierarchical structure information
+    isHierarchical: isHierarchicalStructure(concurso),
+    blocks: getBlocks(concurso),
     
     // Para compatibilidade com código que ainda usa essas propriedades
     hasBasicKnowledge: false,
@@ -97,14 +146,32 @@ export const getExamStructure = (concurso: Concurso) => {
   return examStructure;
 };
 
+// Function to get display name for section
+export const getSectionDisplayName = (concurso: Concurso, sectionType: string): string => {
+  // Check standard section names first
+  if (sectionDisplayNames[sectionType]) {
+    return sectionDisplayNames[sectionType];
+  }
+  
+  // Check for custom disciplines
+  const disciplines = getDisciplines(concurso);
+  const discipline = disciplines.find((d: any) => d.type === sectionType);
+  if (discipline) {
+    return discipline.name || sectionType;
+  }
+  
+  return sectionType;
+};
+
 // Função para atualizar os nomes de exibição com disciplinas customizadas
 export const updateSectionDisplayNames = (concurso: Concurso): Record<string, string> => {
   // Criar uma cópia do objeto padrão
   const updatedNames = { ...sectionDisplayNames };
   
   // Adicionar nomes das disciplinas ao mapeamento
-  if (concurso?.disciplines && Array.isArray(concurso.disciplines)) {
-    concurso.disciplines.forEach((discipline: any) => {
+  const disciplines = getDisciplines(concurso);
+  if (Array.isArray(disciplines)) {
+    disciplines.forEach((discipline: any) => {
       if (discipline.type && discipline.name) {
         updatedNames[discipline.type] = discipline.name;
       }
@@ -112,26 +179,6 @@ export const updateSectionDisplayNames = (concurso: Concurso): Record<string, st
   }
   
   return updatedNames;
-};
-
-// Esta função é usada para obter o nome de exibição correto para uma disciplina/seção
-export const getSectionDisplayName = (concurso: Concurso, sectionType: string): string => {
-  // Verificar se é uma das seções padrão
-  if (sectionDisplayNames[sectionType]) {
-    return sectionDisplayNames[sectionType];
-  }
-  
-  // Verificar se é uma disciplina customizada
-  if (concurso?.disciplines) {
-    const disciplines = getDisciplines(concurso);
-    const discipline = disciplines.find((d: any) => d.type === sectionType);
-    if (discipline) {
-      return discipline.name;
-    }
-  }
-  
-  // Retornar o código da disciplina se não encontrar um nome melhor
-  return sectionType;
 };
 
 // Lista de tipos de seção válidos para o banco de dados
@@ -151,38 +198,92 @@ export const sanitizeSectionType = (sectionType: string): string => {
 
 // Função auxiliar para determinar o tipo de seção com base no número da questão
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): SectionType => {
-  const disciplines = getDisciplines(concurso);
-  let currentIndex = 1;
-  
-  // Iterar pelas disciplinas habilitadas para encontrar em qual está o número da questão
-  for (const discipline of disciplines) {
-    if (discipline.isEnabled && discipline.questionCount) {
-      const disciplineQuestions = getNumericValue(discipline.questionCount);
-      if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-        // É importante retornar um tipo válido para a constraint do banco de dados
-        return sanitizeSectionType(discipline.type) as SectionType;
+  if (isHierarchicalStructure(concurso)) {
+    // For hierarchical structure, go through each block and its disciplines
+    let currentQuestionNumber = 1;
+    
+    if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+      for (const block of concurso.discipline_blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.questionCount) {
+              const questionCount = getNumericValue(discipline.questionCount);
+              if (questionCount > 0 && 
+                  questionNumber >= currentQuestionNumber && 
+                  questionNumber < currentQuestionNumber + questionCount) {
+                return sanitizeSectionType(discipline.type) as SectionType;
+              }
+              currentQuestionNumber += questionCount;
+            }
+          }
+        }
       }
-      currentIndex += disciplineQuestions;
+    }
+  } else {
+    // Traditional flat structure
+    const disciplines = getDisciplines(concurso);
+    let currentIndex = 1;
+    
+    for (const discipline of disciplines) {
+      if (discipline.isEnabled && discipline.questionCount) {
+        const disciplineQuestions = getNumericValue(discipline.questionCount);
+        if (disciplineQuestions > 0 && 
+            questionNumber >= currentIndex && 
+            questionNumber <= currentIndex + disciplineQuestions - 1) {
+          return sanitizeSectionType(discipline.type) as SectionType;
+        }
+        currentIndex += disciplineQuestions;
+      }
     }
   }
   
   // Fallback para conhecimentos específicos genéricos
-  console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina customizada`);
+  console.warn(`Questão ${questionNumber} não encontrada em nenhuma disciplina`);
   return 'specific1';
 };
 
 // Helper function to get discipline data for a specific question
 export const getDisciplineForQuestion = (concurso: Concurso, questionNumber: number): any => {
-  const disciplines = getDisciplines(concurso);
-  let currentIndex = 1;
-  
-  for (const discipline of disciplines) {
-    if (discipline.isEnabled && discipline.questionCount) {
-      const disciplineQuestions = getNumericValue(discipline.questionCount);
-      if (disciplineQuestions > 0 && questionNumber >= currentIndex && questionNumber <= currentIndex + disciplineQuestions - 1) {
-        return discipline;
+  if (isHierarchicalStructure(concurso)) {
+    // For hierarchical structure
+    let currentQuestionNumber = 1;
+    
+    if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
+      for (const block of concurso.discipline_blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.questionCount) {
+              const questionCount = getNumericValue(discipline.questionCount);
+              if (questionCount > 0 && 
+                  questionNumber >= currentQuestionNumber && 
+                  questionNumber < currentQuestionNumber + questionCount) {
+                return {
+                  ...discipline,
+                  blockId: block.id,
+                  blockName: block.name
+                };
+              }
+              currentQuestionNumber += questionCount;
+            }
+          }
+        }
       }
-      currentIndex += disciplineQuestions;
+    }
+  } else {
+    // Traditional flat structure
+    const disciplines = getDisciplines(concurso);
+    let currentIndex = 1;
+    
+    for (const discipline of disciplines) {
+      if (discipline.isEnabled && discipline.questionCount) {
+        const disciplineQuestions = getNumericValue(discipline.questionCount);
+        if (disciplineQuestions > 0 && 
+            questionNumber >= currentIndex && 
+            questionNumber <= currentIndex + disciplineQuestions - 1) {
+          return discipline;
+        }
+        currentIndex += disciplineQuestions;
+      }
     }
   }
   
