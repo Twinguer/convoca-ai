@@ -8,31 +8,55 @@ export const getTotalQuestions = (concurso: Concurso): number => {
   
   let total = 0;
   
-  // Check if using hierarchical structure
-  if (isHierarchicalStructure(concurso)) {
-    if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
-      for (const block of concurso.discipline_blocks) {
+  // Verificar se estamos usando conhecimentos customizáveis
+  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    const hierarchical = isHierarchicalStructure(concurso);
+    
+    console.log(`[getTotalQuestions] Using hierarchical structure: ${hierarchical}`);
+    
+    if (hierarchical) {
+      // Contar em estrutura hierárquica
+      for (const block of concurso.disciplines as any[]) {
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
-            if (discipline.isEnabled && discipline.questionCount) {
+            if (discipline.isEnabled) {
               total += getNumericValue(discipline.questionCount);
             }
           }
         }
       }
+      console.log(`[getTotalQuestions] Total hierarchical questions: ${total}`);
+      return total;
     }
-  } else {
-    // Traditional flat disciplines structure
-    const disciplines = getDisciplines(concurso);
-    if (Array.isArray(disciplines)) {
-      disciplines.forEach(discipline => {
-        if (discipline.isEnabled && discipline.questionCount) {
-          total += getNumericValue(discipline.questionCount);
-        }
-      });
+    
+    // Contar em estrutura plana
+    for (const discipline of concurso.disciplines) {
+      if (discipline.isEnabled) {
+        total += getNumericValue(discipline.questionCount);
+      }
     }
+    console.log(`[getTotalQuestions] Total flat questions: ${total}`);
+    return total;
   }
   
+  // Estrutura tradicional
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    total += getNumericValue(concurso.basic_knowledge_questions);
+  }
+  
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    total += getNumericValue(concurso.specific_knowledge_1_questions);
+  }
+  
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    total += getNumericValue(concurso.specific_knowledge_2_questions);
+  }
+  
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    total += getNumericValue(concurso.specific_knowledge_3_questions);
+  }
+  
+  console.log(`[getTotalQuestions] Total traditional questions: ${total}`);
   return total;
 };
 

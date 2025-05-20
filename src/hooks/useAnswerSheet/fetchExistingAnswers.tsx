@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { SectionType } from '@/types/concursos';
-import { fetchUserAnswers } from '@/integrations/supabase/rankings/userAnswers';
+import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const fetchExistingAnswers = async (
   rankingId: string,
@@ -15,50 +15,83 @@ export const fetchExistingAnswers = async (
   try {
     console.log('Fetching existing answers for ranking ID:', rankingId);
     
-    // Get user answers
-    const answerData = await fetchUserAnswers(rankingId);
+    // Fetch answers
+    const { data: answersData, error: answersError } = await supabase
+      .from('user_answers')
+      .select('*')
+      .eq('user_ranking_id', rankingId);
+      
+    if (answersError) throw answersError;
     
-    if (answerData && answerData.length > 0) {
-      console.log('[fetchExistingAnswers] Respostas existentes encontradas:', answerData.length);
-      
-      // Convert answers to the correct format
+    console.log('Fetched answers data:', answersData);
+    
+    if (answersData?.length) {
       const answersMap: { [key: number]: string } = {};
-      const questionTypeMap: { [key: number]: SectionType } = {};
+      const typesMap: { [key: number]: SectionType } = {};
       
-      answerData.forEach(item => {
-        // No need to convert question_number as it's now stored as integer in the database
-        const questionNumber: number = item.question_number;
-        answersMap[questionNumber] = item.answer;
+      // Fetch the concurso to determine if it uses hierarchical structure
+      const { data: rankingData } = await supabase
+        .from('user_rankings')
+        .select('concurso_id')
+        .eq('id', rankingId)
+        .single();
         
-        // Determine question type
-        if (item.is_basic_knowledge) {
-          questionTypeMap[questionNumber] = 'basic';
-        } else if (item.is_specific_1) {
-          questionTypeMap[questionNumber] = 'specific1';
-        } else if (item.is_specific_2) {
-          questionTypeMap[questionNumber] = 'specific2';
-        } else if (item.is_specific_3) {
-          questionTypeMap[questionNumber] = 'specific3';
+      if (rankingData?.concurso_id) {
+        const { data: concurso } = await supabase
+          .from('concursos')
+          .select('*')
+          .eq('id', rankingData.concurso_id)
+          .single();
+        
+        if (concurso) {
+          console.log('Retrieved concurso data for question types:', concurso.id);
+          const hierarchical = isHierarchicalStructure(concurso);
+          console.log('Using hierarchical structure:', hierarchical);
+          
+          // Process each answer and map it correctly
+          answersData.forEach((item: any) => {
+            // Parse question number as integer to ensure consistency
+            const questionNumber = parseInt(item.question_number, 10);
+            answersMap[questionNumber] = item.answer;
+            
+            // For traditional structure, use the is_* fields
+            if (item.is_basic_knowledge) {
+              typesMap[questionNumber] = 'basic';
+            } else if (item.is_specific_1) {
+              typesMap[questionNumber] = 'specific1';
+            } else if (item.is_specific_2) {
+              typesMap[questionNumber] = 'specific2';
+            } else if (item.is_specific_3) {
+              typesMap[questionNumber] = 'specific3';
+            } else {
+              // For custom knowledge structure, try to determine section type
+              // This will be populated in initializeQuestionTypes when concurso loads
+            }
+          });
+          
+          console.log('Parsed answers map:', answersMap);
+          console.log('Parsed question types map:', typesMap);
         }
-      });
+      }
       
-      // Set state values
       setAnswers(answersMap);
-      setQuestionType(questionTypeMap);
+      setQuestionType(typesMap);
     } else {
-      console.log('Fetched answers data:', answerData);
+      console.log('No existing answers found for ranking ID:', rankingId);
     }
     
-    // Get ranking data for subjective scores
+    // Fetch user ranking for scores
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
-      .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
+      .select('*')
       .eq('id', rankingId)
       .single();
       
+    if (rankingError) throw rankingError;
+    
+    console.log('Fetched ranking data:', rankingData);
+    
     if (rankingData) {
-      console.log('Fetched ranking data:', rankingData);
-      
       setDiscursiveScore(
         rankingData.discursive_score !== null && rankingData.discursive_score !== undefined
           ? rankingData.discursive_score
@@ -81,6 +114,6 @@ export const fetchExistingAnswers = async (
       );
     }
   } catch (error) {
-    console.error('[fetchExistingAnswers] Error fetching existing answers:', error);
+    console.error('Error fetching answers:', error);
   }
 };

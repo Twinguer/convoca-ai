@@ -8,13 +8,6 @@ export class ExamStructureBuilder {
   private wrongAnswerPenalty: number = 0;
   private sections: ExamSectionConfig[] = [];
   private disciplines: any[] = [];
-  private blocks: Array<{
-    id: string;
-    name: string;
-    weight: number;
-    disciplines: any[];
-  }> = [];
-  private useHierarchicalStructure: boolean = false;
 
   constructor() {
     // Inicialização vazia
@@ -37,21 +30,6 @@ export class ExamStructureBuilder {
 
   withDisciplines(disciplines: any[]): ExamStructureBuilder {
     this.disciplines = disciplines;
-    return this;
-  }
-
-  withHierarchicalStructure(useHierarchical: boolean): ExamStructureBuilder {
-    this.useHierarchicalStructure = useHierarchical;
-    return this;
-  }
-
-  withBlocks(blocks: Array<{
-    id: string;
-    name: string;
-    weight: number;
-    disciplines: any[];
-  }>): ExamStructureBuilder {
-    this.blocks = blocks;
     return this;
   }
 
@@ -145,56 +123,39 @@ export class ExamStructureBuilder {
       case_study_3_weight: 1
     };
     
-    // Handle hierarchical structure
-    if (this.useHierarchicalStructure && this.blocks.length > 0) {
-      concurso.discipline_blocks = this.blocks.map(block => ({
-        id: block.id || crypto.randomUUID(),
-        name: block.name,
-        weight: block.weight || 1,
-        disciplines: block.disciplines.map(discipline => ({
-          id: discipline.id || crypto.randomUUID(),
-          type: discipline.type,
-          name: discipline.name,
-          isEnabled: discipline.isEnabled !== false,
-          questionCount: Number(discipline.questionCount || 0),
-          weight: Number(discipline.weight || 1)
-        }))
-      }));
-    } else {
-      // Converter seções para disciplinas (flat structure)
-      const disciplines = this.sections.map(section => {
-        // Verificar se é um tipo de seção subjetiva
-        if (section.sectionType === 'discursive') {
-          concurso.has_discursive = true;
-          concurso.discursive_weight = Number(section.weight);
-          return null; // Não criar disciplina para seções subjetivas
-        } else if (section.sectionType === 'case_study1') {
-          concurso.has_case_study_1 = true;
-          concurso.case_study_1_weight = Number(section.weight);
-          return null;
-        } else if (section.sectionType === 'case_study2') {
-          concurso.has_case_study_2 = true;
-          concurso.case_study_2_weight = Number(section.weight);
-          return null;
-        } else if (section.sectionType === 'case_study3') {
-          concurso.has_case_study_3 = true;
-          concurso.case_study_3_weight = Number(section.weight);
-          return null;
-        }
-        
-        // Criar disciplina para tipos de questões objetivas
-        return {
-          id: crypto.randomUUID(),
-          type: section.sectionType,
-          name: section.displayName,
-          isEnabled: true,
-          questionCount: Number(section.questionCount),
-          weight: Number(section.weight)
-        };
-      }).filter(Boolean); // Remove null entries
+    // Converter seções para disciplinas
+    const disciplines = this.sections.map(section => {
+      // Verificar se é um tipo de seção subjetiva
+      if (section.sectionType === 'discursive') {
+        concurso.has_discursive = true;
+        concurso.discursive_weight = Number(section.weight);
+        return null; // Não criar disciplina para seções subjetivas
+      } else if (section.sectionType === 'case_study1') {
+        concurso.has_case_study_1 = true;
+        concurso.case_study_1_weight = Number(section.weight);
+        return null;
+      } else if (section.sectionType === 'case_study2') {
+        concurso.has_case_study_2 = true;
+        concurso.case_study_2_weight = Number(section.weight);
+        return null;
+      } else if (section.sectionType === 'case_study3') {
+        concurso.has_case_study_3 = true;
+        concurso.case_study_3_weight = Number(section.weight);
+        return null;
+      }
       
-      concurso.disciplines = disciplines;
-    }
+      // Criar disciplina para tipos de questões objetivas
+      return {
+        id: crypto.randomUUID(),
+        type: section.sectionType,
+        name: section.displayName,
+        isEnabled: true,
+        questionCount: Number(section.questionCount),
+        weight: Number(section.weight)
+      };
+    }).filter(Boolean); // Remove null entries
+    
+    concurso.disciplines = disciplines;
     
     return concurso;
   }

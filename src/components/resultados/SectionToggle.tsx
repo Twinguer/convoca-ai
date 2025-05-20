@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
-import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
+import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 interface SectionToggleProps {
   selectedSection: SectionType;
@@ -14,16 +14,84 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   onSectionChange,
   concurso
 }) => {
-  const disciplines = getDisciplines(concurso);
+  // Função para obter disciplinas considerando a estrutura hierárquica
+  const getDisplayDisciplines = () => {
+    if (!concurso) return [];
+    
+    const result: {type: string, name: string, weight?: number}[] = [];
+    
+    // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const hierarchical = isHierarchicalStructure(concurso);
+      
+      if (hierarchical) {
+        // Processar estrutura hierárquica
+        for (const block of concurso.disciplines as any[]) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled) {
+                result.push({
+                  type: discipline.type,
+                  name: `${block.name} - ${discipline.name}`,
+                  weight: discipline.weight
+                });
+              }
+            }
+          }
+        }
+      } else {
+        // Usar a função original getDisciplines para estrutura plana
+        return getDisciplines(concurso).filter(d => d.isEnabled);
+      }
+    } else {
+      // Estrutura tradicional
+      if (concurso.has_basic_knowledge) {
+        result.push({
+          type: 'basic',
+          name: 'Conhecimentos Básicos',
+          weight: concurso.basic_knowledge_weight
+        });
+      }
+      
+      if (concurso.has_specific_knowledge_1) {
+        result.push({
+          type: 'specific1',
+          name: 'Conhecimentos Específicos 1',
+          weight: concurso.specific_knowledge_1_weight
+        });
+      }
+      
+      if (concurso.has_specific_knowledge_2) {
+        result.push({
+          type: 'specific2',
+          name: 'Conhecimentos Específicos 2',
+          weight: concurso.specific_knowledge_2_weight
+        });
+      }
+      
+      if (concurso.has_specific_knowledge_3) {
+        result.push({
+          type: 'specific3',
+          name: 'Conhecimentos Específicos 3',
+          weight: concurso.specific_knowledge_3_weight
+        });
+      }
+    }
+    
+    return result;
+  };
   
-  // Filtrar apenas disciplinas habilitadas
-  const enabledDisciplines = disciplines.filter(d => d.isEnabled);
+  const enabledDisciplines = getDisplayDisciplines();
 
   // Verificar seções subjetivas
   const hasDiscursive = concurso.has_discursive;
   const hasCaseStudy1 = concurso.has_case_study_1;
   const hasCaseStudy2 = concurso.has_case_study_2;
   const hasCaseStudy3 = concurso.has_case_study_3;
+
+  // Registrar no console para depuração
+  console.log('SectionToggle - enabled disciplines:', enabledDisciplines);
+  console.log('SectionToggle - selected section:', selectedSection);
 
   return (
     <div className="bg-gray-100 border-b overflow-x-auto">
