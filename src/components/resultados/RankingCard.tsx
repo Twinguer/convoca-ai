@@ -29,24 +29,24 @@ export const RankingCard: React.FC<RankingCardProps> = ({
         <div className="space-y-3">
           <div className="flex items-center bg-slate-50 p-2 rounded-md">
             <Users className="mr-2 h-5 w-5 text-emerald-600" />
-            <div className="font-medium text-slate-700 flex items-center">
+            <p className="font-medium text-slate-700">
               Participantes: <Badge className="ml-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-200">{participantCount}</Badge>
-            </div>
+            </p>
           </div>
           
           <div className="flex items-center bg-slate-50 p-2 rounded-md">
             <Users className="mr-2 h-5 w-5 text-blue-600" />
-            <div className="font-medium text-slate-700 flex items-center">
+            <p className="font-medium text-slate-700">
               Inscritos: <Badge className="ml-2 bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200" variant="outline">{inscritos}</Badge>
-            </div>
+            </p>
           </div>
           
           {userRanking && <div className="mt-4 text-sm p-3 rounded-lg border border-yellow-100 bg-emerald-50">
-              <div className="font-medium text-slate-700 flex flex-wrap gap-2 items-center">
+              <p className="font-medium text-slate-700 flex flex-wrap gap-2 items-center">
                 Sua posição: 
                 <Badge className="bg-yellow-500">{userRanking.position}º</Badge> com{' '}
                 <Badge variant="secondary" className="bg-slate-100 text-slate-700">{userRanking.score} pontos</Badge>
-              </div>
+              </p>
             </div>}
         </div>
       </CardContent>

@@ -44,12 +44,6 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Verificar se o usuário já atingiu o limite de edições (agora 5)
-      if (editCount >= 5) {
-        setError("Você já atingiu o limite de 5 edições permitidas para este cartão de respostas.");
-        return;
-      }
-
       // Preparar os dados de respostas para enviar - garantindo que questionNumber seja número
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => ({
         questionNumber: parseInt(questionNumber, 10),
@@ -103,6 +97,9 @@ export const useSaveAnswers = ({
       if (!data.success) {
         throw new Error(data.error || "Erro ao salvar respostas");
       }
+      
+      // Removemos o recálculo automático de todas as pontuações
+      // Cada usuário verá apenas sua pontuação atualizada
 
       // Atualizar estado da UI
       setSavedSuccess(true);

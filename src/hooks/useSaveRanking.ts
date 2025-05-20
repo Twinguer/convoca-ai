@@ -78,19 +78,19 @@ export const useSaveRanking = () => {
       
       // Se estamos editando e temos disciplinas existentes, preservar a estrutura
       if (editId && existingDisciplines.length > 0 && formValues.disciplines) {
-        console.log('Preservando estrutura de disciplinas para operação de edição');
+        console.log('Merging discipline structures for edit operation');
         
         // Verificar se as disciplinas atuais e existentes usam a estrutura de blocos
-        const hasCurrBlocks = formValues.disciplines.length > 0 && 
-                              'name' in formValues.disciplines[0] && 
-                              'disciplines' in formValues.disciplines[0];
+        const currentHasBlocks = formValues.disciplines.length > 0 && 
+                                'name' in formValues.disciplines[0] && 
+                                'disciplines' in formValues.disciplines[0];
         
-        const hasExistingBlocks = existingDisciplines.length > 0 && 
+        const existingHasBlocks = existingDisciplines.length > 0 && 
                                 'name' in existingDisciplines[0] && 
                                 'disciplines' in existingDisciplines[0];
         
         // Se ambas têm estrutura de bloco, preservar IDs
-        if (hasCurrBlocks && hasExistingBlocks) {
+        if (currentHasBlocks && existingHasBlocks) {
           formValues.disciplines = formValues.disciplines.map((block: any, blockIdx: number) => {
             // Procurar bloco correspondente por índice ou nome
             const existingBlock = existingDisciplines[blockIdx] || 
@@ -115,7 +115,7 @@ export const useSaveRanking = () => {
                     return {
                       ...discipline,
                       id: existingDiscipline.id,
-                      type: discipline.type || existingDiscipline.type // Manter type também para consistência
+                      type: existingDiscipline.type // Manter type também para consistência
                     };
                   }
                   
@@ -129,7 +129,7 @@ export const useSaveRanking = () => {
             return block;
           });
           
-          console.log('Estrutura de disciplinas mesclada:', JSON.stringify(formValues.disciplines, null, 2));
+          console.log('Merged discipline structure:', formValues.disciplines);
         }
       }
 
@@ -138,10 +138,6 @@ export const useSaveRanking = () => {
         // Verificar se estamos lidando com a nova estrutura de blocos
         if (formValues.disciplines.length > 0 && 'name' in formValues.disciplines[0] && 'disciplines' in formValues.disciplines[0]) {
           const flattenedDisciplines: any[] = [];
-          const originalDisciplines = JSON.parse(JSON.stringify(formValues.disciplines)); // Deep clone
-          
-          // Criar uma cópia original para manter a estrutura hierárquica
-          const disciplinesWithHierarchy = JSON.parse(JSON.stringify(formValues.disciplines));
           
           formValues.disciplines.forEach((block: any) => {
             if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -161,14 +157,10 @@ export const useSaveRanking = () => {
           
           // Criar uma cópia da estrutura original para preservar os blocos no frontend
           // mas enviar a estrutura achatada para o backend
+          const originalStructure = JSON.parse(JSON.stringify(formValues.disciplines));
           
           // Substituir o campo disciplines pela versão achatada
           formValues.flattenedDisciplines = flattenedDisciplines;
-          
-          // Preservar a estrutura hierárquica para o banco de dados
-          formValues.hierarchicalDisciplines = disciplinesWithHierarchy;
-          
-          console.log('Estrutura original preservada:', JSON.stringify(disciplinesWithHierarchy, null, 2));
           console.log('Created flattened disciplines:', flattenedDisciplines);
         }
       }
@@ -249,8 +241,8 @@ export const useSaveRanking = () => {
         localidades: formValues.localidades,
         has_custom_knowledge: true,
         
-        // Use the hierarchical structure if available, otherwise use flattened or original
-        disciplines: formValues.hierarchicalDisciplines || formValues.disciplines,
+        // Use the processed disciplines array
+        disciplines: formValues.flattenedDisciplines || formValues.disciplines,
         
         // Process minimum score fields
         has_minimum_score: formValues.has_minimum_score === true,
@@ -265,7 +257,6 @@ export const useSaveRanking = () => {
 
       // Remove any temporary fields not needed in database
       delete dataToSubmit.flattenedDisciplines;
-      delete dataToSubmit.hierarchicalDisciplines;
 
       // Add admin flags if provided
       if (formValues.is_admin_created !== undefined) {
@@ -352,79 +343,35 @@ export const useSaveRanking = () => {
             let questionCounter = 1;
 
             if (disciplines && Array.isArray(disciplines)) {
-              console.log(`Processando ${disciplines.length} disciplinas/blocos para inserir em official_answer_weights`);
+              console.log(`Processando ${disciplines.length} disciplinas para inserir em official_answer_weights`);
               
-              // Verificar se estamos lidando com estrutura hierárquica
-              const isHierarchical = disciplines.length > 0 && 
-                                    typeof disciplines[0] === 'object' && 
-                                    'name' in disciplines[0] && 
-                                    'disciplines' in disciplines[0];
-              
-              if (isHierarchical) {
-                // Processar estrutura hierárquica (blocos -> disciplinas)
-                for (const block of disciplines as any[]) {
-                  console.log(`Processando bloco: ${block.name}`);
-                  
-                  if (block.disciplines && Array.isArray(block.disciplines)) {
-                    for (const discipline of block.disciplines) {
-                      if (discipline.isEnabled !== true) {
-                        console.log(`Pulando disciplina desabilitada: ${discipline.name}`);
-                        continue;
-                      }
-                      
-                      const disciplineType = discipline.type || `discipline_${questionCounter}`;
-                      const questionCount = ensureNumeric(discipline.questionCount);
-                      const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
-                      
-                      console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
-                      
-                      if (disciplineType && questionCount > 0) {
-                        for (let i = 0; i < questionCount; i++) {
-                          officialAnswerWeightsToInsert.push({
-                            concurso_id: concursoIdToUse,
-                            question_number: questionCounter,
-                            correct_answer: 'A', // Default initial value
-                            section_type: disciplineType,
-                            weight: disciplineWeight,
-                            is_nullified: false,
-                            question_type: 'MULTIPLE_CHOICE'
-                          });
-                          questionCounter++;
-                        }
-                      }
-                    }
-                  }
+              for (const discipline of disciplines) {
+                if (discipline.isEnabled !== true) {
+                  console.log(`Pulando disciplina desabilitada: ${discipline.name}`);
+                  continue;
                 }
-              } else {
-                // Processar estrutura plana (compatibilidade)
-                for (const discipline of disciplines) {
-                  if (discipline.isEnabled !== true) {
-                    console.log(`Pulando disciplina desabilitada: ${discipline.name}`);
-                    continue;
+
+                const disciplineType = discipline.type;
+                const questionCount = ensureNumeric(discipline.questionCount);
+                const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
+
+                console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
+
+                if (disciplineType && questionCount > 0) {
+                  for (let i = 0; i < questionCount; i++) {
+                    officialAnswerWeightsToInsert.push({
+                      concurso_id: concursoIdToUse,
+                      question_number: questionCounter,
+                      correct_answer: 'A', // Default initial value
+                      section_type: disciplineType, // CRUCIAL: Use discipline type as section_type
+                      weight: disciplineWeight,
+                      is_nullified: false,
+                      question_type: 'MULTIPLE_CHOICE'
+                    });
+                    questionCounter++;
                   }
-
-                  const disciplineType = discipline.type || `discipline_${questionCounter}`;
-                  const questionCount = ensureNumeric(discipline.questionCount);
-                  const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
-
-                  console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
-
-                  if (questionCount > 0) {
-                    for (let i = 0; i < questionCount; i++) {
-                      officialAnswerWeightsToInsert.push({
-                        concurso_id: concursoIdToUse,
-                        question_number: questionCounter,
-                        correct_answer: 'A', // Default initial value
-                        section_type: disciplineType, // CRUCIAL: Use discipline type as section_type
-                        weight: disciplineWeight,
-                        is_nullified: false,
-                        question_type: 'MULTIPLE_CHOICE'
-                      });
-                      questionCounter++;
-                    }
-                  } else {
-                    console.warn(`Disciplina com questionCount inválido ignorada:`, discipline);
-                  }
+                } else {
+                  console.warn(`Disciplina com type ou questionCount inválido ignorada:`, discipline);
                 }
               }
             }

@@ -2,11 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
-import { getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
-  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>({});
+  const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' }>({});
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,32 +18,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
-      if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-        const isHierarchical = concurso.disciplines[0] && 
-                               typeof concurso.disciplines[0] === 'object' && 
-                               'name' in concurso.disciplines[0] && 
-                               'disciplines' in concurso.disciplines[0];
-        
-        if (isHierarchical) {
-          // Encontrar a primeira disciplina ativa em qualquer bloco
-          for (const block of concurso.disciplines as any[]) {
-            if (block.disciplines && Array.isArray(block.disciplines)) {
-              const firstDiscipline = block.disciplines.find((d: any) => d.isEnabled);
-              if (firstDiscipline) {
-                setSelectedSection(firstDiscipline.type as SectionType);
-                break;
-              }
-            }
-          }
-        } else {
-          // Modo antigo (disciplinas sem blocos)
-          const firstDiscipline = concurso.disciplines.find(d => d.isEnabled);
-          if (firstDiscipline) {
-            setSelectedSection(firstDiscipline.type as SectionType);
-          }
-        }
-      } else if (concurso.has_basic_knowledge) {
+      if (concurso.has_basic_knowledge) {
         setSelectedSection('basic');
       } else if (concurso.has_specific_knowledge_1) {
         setSelectedSection('specific1');
@@ -52,6 +26,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setSelectedSection('specific2');
       } else if (concurso.has_specific_knowledge_3) {
         setSelectedSection('specific3');
+      } else if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+        // Se for um conhecimento customizado, use o tipo da primeira disciplina ativa
+        const firstDiscipline = concurso.disciplines.find(d => d.isEnabled);
+        if (firstDiscipline) {
+          setSelectedSection(firstDiscipline.type as SectionType);
+        }
       }
     }
   }, [concurso]);
@@ -72,7 +52,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       
       if (answersData?.length) {
         const answersMap: { [key: number]: string } = {};
-        const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
+        const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
         
         answersData.forEach((item: any) => {
           answersMap[item.question_number] = item.answer;
@@ -135,74 +115,34 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const initializeQuestionTypes = () => {
     if (concurso && Object.keys(questionType).length === 0) {
-      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
+      const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' } = {};
+      let questionNumber = 1;
       
-      // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-      if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        const isHierarchical = concurso.disciplines[0] && 
-                              typeof concurso.disciplines[0] === 'object' && 
-                              'name' in concurso.disciplines[0] && 
-                              'disciplines' in concurso.disciplines[0];
-        
-        let questionNumber = 1;
-        
-        if (isHierarchical) {
-          // Processar estrutura hierárquica
-          for (const block of concurso.disciplines as any[]) {
-            if (block.disciplines && Array.isArray(block.disciplines)) {
-              for (const discipline of block.disciplines) {
-                if (discipline.isEnabled) {
-                  const questionCount = getNumericValue(discipline.questionCount);
-                  for (let i = 0; i < questionCount; i++) {
-                    typesMap[questionNumber] = discipline.type;
-                    questionNumber++;
-                  }
-                }
-              }
-            }
-          }
-        } else {
-          // Processar estrutura plana
-          for (const discipline of concurso.disciplines) {
-            if (discipline.isEnabled) {
-              const questionCount = getNumericValue(discipline.questionCount);
-              for (let i = 0; i < questionCount; i++) {
-                typesMap[questionNumber] = discipline.type;
-                questionNumber++;
-              }
-            }
-          }
+      if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+        for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
+          typesMap[questionNumber] = 'basic';
+          questionNumber++;
         }
-      } else {
-        // Processar estrutura tradicional
-        let questionNumber = 1;
-        
-        if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-          for (let i = 0; i < concurso.basic_knowledge_questions; i++) {
-            typesMap[questionNumber] = 'basic';
-            questionNumber++;
-          }
+      }
+      
+      if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
+          typesMap[questionNumber] = 'specific1';
+          questionNumber++;
         }
-        
-        if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-          for (let i = 0; i < concurso.specific_knowledge_1_questions; i++) {
-            typesMap[questionNumber] = 'specific1';
-            questionNumber++;
-          }
+      }
+      
+      if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
+          typesMap[questionNumber] = 'specific2';
+          questionNumber++;
         }
-        
-        if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-          for (let i = 0; i < concurso.specific_knowledge_2_questions; i++) {
-            typesMap[questionNumber] = 'specific2';
-            questionNumber++;
-          }
-        }
-        
-        if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-          for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
-            typesMap[questionNumber] = 'specific3';
-            questionNumber++;
-          }
+      }
+      
+      if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+        for (let i = 0; i < concurso.specific_knowledge_3_questions; i++) {
+          typesMap[questionNumber] = 'specific3';
+          questionNumber++;
         }
       }
       
@@ -239,49 +179,28 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     let total = 0;
     
-    // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      total += concurso.basic_knowledge_questions;
+    }
+    
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      total += concurso.specific_knowledge_1_questions;
+    }
+    
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      total += concurso.specific_knowledge_2_questions;
+    }
+    
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      total += concurso.specific_knowledge_3_questions;
+    }
+    
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
-      if (isHierarchical) {
-        // Processar estrutura hierárquica
-        for (const block of concurso.disciplines as any[]) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.questionCount) {
-                total += getNumericValue(discipline.questionCount);
-              }
-            }
-          }
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.questionCount) {
+          total += Number(discipline.questionCount);
         }
-      } else {
-        // Processar estrutura plana
-        for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled && discipline.questionCount) {
-            total += getNumericValue(discipline.questionCount);
-          }
-        }
-      }
-    } else {
-      // Processar estrutura tradicional
-      if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-        total += concurso.basic_knowledge_questions;
-      }
-      
-      if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-        total += concurso.specific_knowledge_1_questions;
-      }
-      
-      if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-        total += concurso.specific_knowledge_2_questions;
-      }
-      
-      if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-        total += concurso.specific_knowledge_3_questions;
-      }
+      });
     }
     
     return total;
@@ -304,62 +223,27 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     
     console.log('Getting questions for section:', selectedSection);
     
-    // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
+    // Se estamos lidando com conhecimentos customizados
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
-      let startIndex = 1;
-      
-      if (isHierarchical) {
-        // Processar estrutura hierárquica
-        for (const block of concurso.disciplines as any[]) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                const questionCount = getNumericValue(discipline.questionCount);
-                
-                if (discipline.type === selectedSection) {
-                  // Retornar o range de questões para esta disciplina
-                  const questions = Array.from(
-                    { length: questionCount }, 
-                    (_, i) => startIndex + i
-                  );
-                  console.log(`Questions for discipline ${discipline.name}:`, questions);
-                  return questions;
-                }
-                
-                // Atualizar índice inicial para a próxima disciplina
-                startIndex += questionCount;
-              }
-            }
-          }
-        }
-      } else {
-        // Processar estrutura plana
+      const selectedDiscipline = concurso.disciplines.find(d => d.type === selectedSection);
+      if (selectedDiscipline && selectedDiscipline.isEnabled) {
+        // Calcular o índice inicial da disciplina
+        let startIndex = 1;
         for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled) {
-            const questionCount = getNumericValue(discipline.questionCount);
-            
-            if (discipline.type === selectedSection) {
-              // Retornar o range de questões para esta disciplina
-              const questions = Array.from(
-                { length: questionCount }, 
-                (_, i) => startIndex + i
-              );
-              console.log(`Questions for discipline ${discipline.name}:`, questions);
-              return questions;
-            }
-            
-            // Atualizar índice inicial para a próxima disciplina
-            startIndex += questionCount;
+          if (discipline.type === selectedSection) break;
+          if (discipline.isEnabled && discipline.questionCount) {
+            startIndex += Number(discipline.questionCount);
           }
         }
+        
+        // Retornar o range de questões para esta disciplina
+        const questions = Array.from(
+          { length: Number(selectedDiscipline.questionCount || 0) }, 
+          (_, i) => startIndex + i
+        );
+        console.log(`Questions for custom discipline ${selectedSection}:`, questions);
+        return questions;
       }
-      
-      return [];
     }
     
     // Lidar com tipos tradicionais de seção

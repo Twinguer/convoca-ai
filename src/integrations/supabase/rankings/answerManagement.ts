@@ -1,6 +1,6 @@
 
 import { supabase } from '../client';
-import { getSectionTypeForQuestion, sanitizeSectionType } from './examStructure';
+import { getExamStructure, getSectionTypeForQuestion } from './examStructure';
 
 // Função para salvar as respostas do usuário no banco de dados
 export const saveUserAnswersData = async (
@@ -24,8 +24,7 @@ export const saveUserAnswersData = async (
       const qNum = a.questionNumber;
       // Determinar o tipo de seção para esta questão
       const sectionType = getSectionTypeForQuestion(concurso, qNum);
-      
-      // Mapear o tipo de seção para os campos do banco de dados
+
       return {
         user_ranking_id: rankingId,
         question_number: qNum,

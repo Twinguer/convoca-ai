@@ -19,7 +19,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
         <div className="mb-4">
           <h3 className="text-lg font-semibold">Pontuação Mínima da Prova</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Configure a pontuação mínima geral da prova objetiva. Os candidatos que não atingirem este valor serão destacados em vermelho e considerados eliminados.
+            Configure a pontuação mínima geral da prova. Os candidatos que não atingirem este valor serão destacados em vermelho e considerados eliminados.
           </p>
           
           <Alert className="mb-4">
@@ -57,7 +57,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
             name="total_minimum_score"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
+                <FormLabel>Pontuação mínima geral da prova (valor absoluto)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
