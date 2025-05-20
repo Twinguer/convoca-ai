@@ -1,66 +1,68 @@
+import { Concurso } from '@/types/concursos';
 
-import { Concurso } from "@/types/concursos";
-
-export interface Discipline {
-  type: string;
-  name: string;
-  isEnabled: boolean;
-  questionCount?: number;
-  weight?: number;
-}
-
-// Mapeamento padrão de nomes para exibição das seções
-export const sectionDisplayNames: Record<string, string> = {
-  basic: 'Conhecimentos Básicos',
-  specific1: 'Conhecimentos Específicos 1',
-  specific2: 'Conhecimentos Específicos 2',
-  specific3: 'Conhecimentos Específicos 3',
-  discursive: 'Discursiva',
-  case_study1: 'Estudo de Caso 1',
-  case_study2: 'Estudo de Caso 2', 
-  case_study3: 'Estudo de Caso 3'
+// Mapa para exibição amigável dos nomes das seções
+export let sectionDisplayNames: Record<string, string> = {
+  'basic': 'Conhecimentos Básicos',
+  'specific1': 'C. Específicos 1',
+  'specific2': 'C. Específicos 2',
+  'specific3': 'C. Específicos 3',
+  'discursive': 'Discursiva',
+  'case_study1': 'Estudo de Caso 1',
+  'case_study2': 'Estudo de Caso 2',
+  'case_study3': 'Estudo de Caso 3'
 };
 
-// Nova função para verificar consistentemente se a estrutura é hierárquica
-export const isHierarchicalStructure = (concurso: Concurso): boolean => {
-  if (!concurso || !concurso.has_custom_knowledge || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
-    return false;
-  }
-
-  return concurso.disciplines[0] && 
-         typeof concurso.disciplines[0] === 'object' && 
-         'name' in concurso.disciplines[0] && 
-         'disciplines' in concurso.disciplines[0];
-};
-
-// Função para auxiliar a obter o nome de exibição de uma seção
+// Helper function to get display name for a section
 export const getSectionDisplayName = (sectionType: string): string => {
   return sectionDisplayNames[sectionType] || sectionType;
 };
 
-// Função para obter a estrutura completa do exame
-export const getExamStructure = (concurso: Concurso) => {
-  if (!concurso) return { sections: [], totalQuestions: 0 };
+// Função para garantir tipo de seção válido
+export const sanitizeSectionType = (sectionType: string | undefined): string => {
+  if (!sectionType) return 'basic';
   
-  const result: {
-    sections: Array<{
-      type: string,
-      name: string,
-      questionCount: number,
-      weight: number,
-      isEnabled: boolean,
-      blockName?: string
-    }>,
-    totalQuestions: number
-  } = {
-    sections: [],
-    totalQuestions: 0
-  };
+  if (
+    sectionType === 'basic' || 
+    sectionType === 'specific1' || 
+    sectionType === 'specific2' || 
+    sectionType === 'specific3' ||
+    sectionType === 'discursive' ||
+    sectionType === 'case_study1' ||
+    sectionType === 'case_study2' ||
+    sectionType === 'case_study3'
+  ) {
+    return sectionType;
+  }
   
-  // Verificar se estamos usando conhecimentos customizados
+  // Tipos customizados são permitidos (começam com custom_)
+  if (sectionType.startsWith('custom_')) {
+    return sectionType;
+  }
+  
+  // Fallback para basic por padrão
+  return 'basic';
+};
+
+// Wrapper function to safely convert string/number/any to numeric value
+export const getNumericValue = (value: any): number => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+// Determinar o tipo de seção para uma questão específica
+export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): string => {
+  if (!concurso) return 'basic';
+
+  // Se estamos usando conhecimentos customizáveis
   if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Verificar se temos estrutura hierárquica
     const hierarchical = isHierarchicalStructure(concurso);
-    
+    let currentIndex = 1;
+
     if (hierarchical) {
       // Processar estrutura hierárquica (blocos -> disciplinas)
       for (const block of concurso.disciplines as any[]) {
@@ -68,15 +70,13 @@ export const getExamStructure = (concurso: Concurso) => {
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
-              result.sections.push({
-                type: discipline.type,
-                name: `${block.name} - ${discipline.name}`,
-                questionCount,
-                weight: getNumericValue(discipline.weight) || 1,
-                isEnabled: true,
-                blockName: block.name
-              });
-              result.totalQuestions += questionCount;
+              
+              // Se a questão está nesta disciplina
+              if (questionNumber >= currentIndex && questionNumber < currentIndex + questionCount) {
+                return discipline.type;
+              }
+              
+              currentIndex += questionCount;
             }
           }
         }
@@ -86,277 +86,170 @@ export const getExamStructure = (concurso: Concurso) => {
       for (const discipline of concurso.disciplines) {
         if (discipline.isEnabled) {
           const questionCount = getNumericValue(discipline.questionCount);
-          result.sections.push({
-            type: discipline.type,
-            name: discipline.name,
-            questionCount,
-            weight: getNumericValue(discipline.weight) || 1,
-            isEnabled: true
-          });
-          result.totalQuestions += questionCount;
+          
+          // Se a questão está nesta disciplina
+          if (questionNumber >= currentIndex && questionNumber < currentIndex + questionCount) {
+            return discipline.type;
+          }
+          
+          currentIndex += questionCount;
         }
       }
     }
-  } else {
-    // Estrutura tradicional
-    if (concurso.has_basic_knowledge) {
-      result.sections.push({
-        type: 'basic',
-        name: sectionDisplayNames.basic,
-        questionCount: getNumericValue(concurso.basic_knowledge_questions),
-        weight: concurso.basic_knowledge_weight || 1,
-        isEnabled: true
-      });
-      result.totalQuestions += getNumericValue(concurso.basic_knowledge_questions);
+  }
+
+  // Estrutura tradicional
+  let index = 1;
+  
+  // Conhecimentos Básicos
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    const basicCount = getNumericValue(concurso.basic_knowledge_questions);
+    if (questionNumber >= index && questionNumber < index + basicCount) {
+      return 'basic';
     }
-    
-    if (concurso.has_specific_knowledge_1) {
-      result.sections.push({
-        type: 'specific1',
-        name: sectionDisplayNames.specific1,
-        questionCount: getNumericValue(concurso.specific_knowledge_1_questions),
-        weight: concurso.specific_knowledge_1_weight || 1,
-        isEnabled: true
-      });
-      result.totalQuestions += getNumericValue(concurso.specific_knowledge_1_questions);
+    index += basicCount;
+  }
+  
+  // Conhecimentos Específicos 1
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    const specificCount = getNumericValue(concurso.specific_knowledge_1_questions);
+    if (questionNumber >= index && questionNumber < index + specificCount) {
+      return 'specific1';
     }
-    
-    if (concurso.has_specific_knowledge_2) {
-      result.sections.push({
-        type: 'specific2',
-        name: sectionDisplayNames.specific2,
-        questionCount: getNumericValue(concurso.specific_knowledge_2_questions),
-        weight: concurso.specific_knowledge_2_weight || 1,
-        isEnabled: true
-      });
-      result.totalQuestions += getNumericValue(concurso.specific_knowledge_2_questions);
+    index += specificCount;
+  }
+  
+  // Conhecimentos Específicos 2
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    const specificCount = getNumericValue(concurso.specific_knowledge_2_questions);
+    if (questionNumber >= index && questionNumber < index + specificCount) {
+      return 'specific2';
     }
-    
-    if (concurso.has_specific_knowledge_3) {
-      result.sections.push({
-        type: 'specific3',
-        name: sectionDisplayNames.specific3,
-        questionCount: getNumericValue(concurso.specific_knowledge_3_questions),
-        weight: concurso.specific_knowledge_3_weight || 1,
-        isEnabled: true
-      });
-      result.totalQuestions += getNumericValue(concurso.specific_knowledge_3_questions);
+    index += specificCount;
+  }
+  
+  // Conhecimentos Específicos 3
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    const specificCount = getNumericValue(concurso.specific_knowledge_3_questions);
+    if (questionNumber >= index && questionNumber < index + specificCount) {
+      return 'specific3';
     }
   }
   
-  return result;
+  // Fallback
+  return 'basic';
 };
 
-// Função para obter todas as disciplinas de um concurso (incluindo seções tradicionais)
-export const getDisciplines = (concurso: Concurso): Discipline[] => {
-  const disciplines: Discipline[] = [];
+// Consistent function to check if the structure is hierarchical
+export const isHierarchicalStructure = (concurso: Concurso): boolean => {
+  if (!concurso?.disciplines || !Array.isArray(concurso.disciplines) || concurso.disciplines.length === 0) {
+    return false;
+  }
+  
+  // Check if at least one element in the disciplines array has the expected structure
+  const firstDiscipline = concurso.disciplines[0];
+  const isHierarchical = 
+    typeof firstDiscipline === 'object' && 
+    firstDiscipline !== null &&
+    'name' in firstDiscipline && 
+    'disciplines' in firstDiscipline;
+    
+  console.log(`[isHierarchicalStructure] Analyzed concurso ${concurso.id}, structure is ${isHierarchical ? 'hierarchical' : 'flat'}`);
+  
+  return isHierarchical;
+};
 
-  // Verificar se o concurso está usando a estrutura hierárquica
-  if (concurso && concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+// Get disciplines from both hierarchical and flat structures
+export const getDisciplines = (concurso: Concurso) => {
+  if (!concurso) return [];
+  
+  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
     const hierarchical = isHierarchicalStructure(concurso);
-
+    
     if (hierarchical) {
-      // Processar estrutura hierárquica (blocos -> disciplinas)
+      // Flatten the hierarchical structure to get all disciplines
+      const disciplines: any[] = [];
+      
       for (const block of concurso.disciplines as any[]) {
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
+            // Add block information to the discipline
             disciplines.push({
-              type: discipline.type,
-              name: `${block.name} - ${discipline.name}`,
-              isEnabled: discipline.isEnabled === undefined ? true : !!discipline.isEnabled,
-              questionCount: getNumericValue(discipline.questionCount),
-              weight: getNumericValue(discipline.weight) || 1
+              ...discipline,
+              blockName: block.name,
+              blockId: block.id,
+              blockWeight: block.weight
             });
           }
         }
       }
+      
+      return disciplines;
     } else {
-      // Processar estrutura plana
-      for (const discipline of concurso.disciplines) {
-        disciplines.push({
-          type: discipline.type,
-          name: discipline.name,
-          isEnabled: discipline.isEnabled === undefined ? true : !!discipline.isEnabled,
-          questionCount: getNumericValue(discipline.questionCount),
-          weight: getNumericValue(discipline.weight) || 1
-        });
-      }
-    }
-  } else {
-    // Seções tradicionais
-    if (concurso?.has_basic_knowledge) {
-      disciplines.push({
-        type: 'basic',
-        name: sectionDisplayNames.basic,
-        isEnabled: true,
-        questionCount: concurso.basic_knowledge_questions,
-        weight: concurso.basic_knowledge_weight
-      });
-    }
-
-    if (concurso?.has_specific_knowledge_1) {
-      disciplines.push({
-        type: 'specific1',
-        name: sectionDisplayNames.specific1,
-        isEnabled: true,
-        questionCount: concurso.specific_knowledge_1_questions,
-        weight: concurso.specific_knowledge_1_weight
-      });
-    }
-
-    if (concurso?.has_specific_knowledge_2) {
-      disciplines.push({
-        type: 'specific2',
-        name: sectionDisplayNames.specific2,
-        isEnabled: true,
-        questionCount: concurso.specific_knowledge_2_questions,
-        weight: concurso.specific_knowledge_2_weight
-      });
-    }
-
-    if (concurso?.has_specific_knowledge_3) {
-      disciplines.push({
-        type: 'specific3',
-        name: sectionDisplayNames.specific3,
-        isEnabled: true,
-        questionCount: concurso.specific_knowledge_3_questions,
-        weight: concurso.specific_knowledge_3_weight
-      });
+      // Return flat structure directly
+      return concurso.disciplines;
     }
   }
-
+  
+  // For traditional structure, create discipline objects
+  const disciplines: any[] = [];
+  
+  if (concurso.has_basic_knowledge) {
+    disciplines.push({
+      name: 'Conhecimentos Básicos',
+      type: 'basic',
+      isEnabled: true,
+      questionCount: concurso.basic_knowledge_questions || 0,
+      weight: concurso.basic_knowledge_weight || 1
+    });
+  }
+  
+  if (concurso.has_specific_knowledge_1) {
+    disciplines.push({
+      name: 'Conhecimentos Específicos 1',
+      type: 'specific1',
+      isEnabled: true,
+      questionCount: concurso.specific_knowledge_1_questions || 0,
+      weight: concurso.specific_knowledge_1_weight || 1
+    });
+  }
+  
+  if (concurso.has_specific_knowledge_2) {
+    disciplines.push({
+      name: 'Conhecimentos Específicos 2',
+      type: 'specific2',
+      isEnabled: true,
+      questionCount: concurso.specific_knowledge_2_questions || 0,
+      weight: concurso.specific_knowledge_2_weight || 1
+    });
+  }
+  
+  if (concurso.has_specific_knowledge_3) {
+    disciplines.push({
+      name: 'Conhecimentos Específicos 3',
+      type: 'specific3',
+      isEnabled: true,
+      questionCount: concurso.specific_knowledge_3_questions || 0,
+      weight: concurso.specific_knowledge_3_weight || 1
+    });
+  }
+  
   return disciplines;
 };
 
-// Função para atualizar os nomes de exibição das seções
-export const updateSectionDisplayNames = (concurso: Concurso): Record<string, string> => {
-  const updatedNames = { ...sectionDisplayNames };
+// Atualizar os nomes de exibição para disciplinas customizadas
+export const updateSectionDisplayNames = (concurso: Concurso) => {
+  const displayNames = { ...sectionDisplayNames };
   
-  // Verificar se estamos usando conhecimentos customizados
   if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    const hierarchical = isHierarchicalStructure(concurso);
+    const disciplines = getDisciplines(concurso);
     
-    if (hierarchical) {
-      // Processar estrutura hierárquica
-      for (const block of concurso.disciplines as any[]) {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          for (const discipline of block.disciplines) {
-            if (discipline.type && discipline.name) {
-              updatedNames[discipline.type] = `${block.name} - ${discipline.name}`;
-            }
-          }
-        }
+    disciplines.forEach(discipline => {
+      if (discipline.isEnabled && discipline.type && discipline.name) {
+        displayNames[discipline.type] = discipline.name;
       }
-    } else {
-      // Processar disciplinas simples
-      for (const discipline of concurso.disciplines) {
-        if (discipline.type && discipline.name) {
-          updatedNames[discipline.type] = discipline.name;
-        }
-      }
-    }
+    });
   }
   
-  return updatedNames;
-};
-
-// Função para obter o type de seção para uma questão específica
-export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): string => {
-  if (!concurso) return 'basic';
-  
-  // Verificar se estamos usando a estrutura hierárquica
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    const hierarchical = isHierarchicalStructure(concurso);
-    
-    let currentPosition = 1;
-    
-    if (hierarchical) {
-      // Processar estrutura hierárquica
-      for (const block of concurso.disciplines as any[]) {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          for (const discipline of block.disciplines) {
-            if (discipline.isEnabled) {
-              const questionCount = getNumericValue(discipline.questionCount);
-              if (questionNumber >= currentPosition && questionNumber < currentPosition + questionCount) {
-                return discipline.type;
-              }
-              currentPosition += questionCount;
-            }
-          }
-        }
-      }
-    } else {
-      // Processar estrutura plana
-      for (const discipline of concurso.disciplines) {
-        if (discipline.isEnabled) {
-          const questionCount = getNumericValue(discipline.questionCount);
-          if (questionNumber >= currentPosition && questionNumber < currentPosition + questionCount) {
-            return discipline.type;
-          }
-          currentPosition += questionCount;
-        }
-      }
-    }
-  } else {
-    // Estrutura tradicional
-    let position = 1;
-    
-    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      const basicCount = getNumericValue(concurso.basic_knowledge_questions);
-      if (questionNumber >= position && questionNumber < position + basicCount) {
-        return 'basic';
-      }
-      position += basicCount;
-    }
-    
-    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      const spec1Count = getNumericValue(concurso.specific_knowledge_1_questions);
-      if (questionNumber >= position && questionNumber < position + spec1Count) {
-        return 'specific1';
-      }
-      position += spec1Count;
-    }
-    
-    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      const spec2Count = getNumericValue(concurso.specific_knowledge_2_questions);
-      if (questionNumber >= position && questionNumber < position + spec2Count) {
-        return 'specific2';
-      }
-      position += spec2Count;
-    }
-    
-    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      const spec3Count = getNumericValue(concurso.specific_knowledge_3_questions);
-      if (questionNumber >= position && questionNumber < position + spec3Count) {
-        return 'specific3';
-      }
-    }
-  }
-  
-  // Fallback para 'custom' se não encontrou correspondência
-  return 'custom';
-};
-
-// Função para garantir compatibilidade do tipo de seção com o banco de dados
-export const sanitizeSectionType = (sectionType: string): string => {
-  const standardSections: Record<string, string> = {
-    'basic': 'basic',
-    'specific1': 'specific1',
-    'specific2': 'specific2', 
-    'specific3': 'specific3',
-    'discursive': 'discursive',
-    'case_study1': 'case_study1',
-    'case_study2': 'case_study2',
-    'case_study3': 'case_study3'
-  };
-  
-  return standardSections[sectionType] || sectionType;
-};
-
-// Função para converter valores para número, garantindo que não seja NaN
-export const getNumericValue = (value: any): number => {
-  if (value === undefined || value === null) return 0;
-  
-  const num = typeof value === 'string' ? parseFloat(value) : Number(value);
-  return isNaN(num) ? 0 : num;
+  return displayNames;
 };
