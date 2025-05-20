@@ -232,7 +232,7 @@ const RankingTableContent: React.FC<{
     return 0; // Implementar caso necessário
   };
 
-  // Obter disciplinas customizadas habilitadas
+  // Obter disciplinas customizadas habilitadas da estrutura aninhada (blocos com disciplinas)
   const getCustomDisciplines = (): {
     type: string;
     name: string;
@@ -240,11 +240,35 @@ const RankingTableContent: React.FC<{
     if (!concurso || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
       return [];
     }
-    return concurso.disciplines.filter(d => d.isEnabled).map(d => ({
-      type: d.type,
-      name: d.name
-    }));
+
+    let allEnabledDisciplines: { type: string; name: string }[] = [];
+
+    // Iterar sobre os blocos (o primeiro nível da array disciplines)
+    for (const block of concurso.disciplines) {
+      // Verificar se o bloco é válido e tem uma array de disciplinas
+      if (block && typeof block === 'object' && Array.isArray(block.disciplines)) {
+        // Iterar sobre as disciplinas dentro do bloco
+        for (const discipline of block.disciplines) {
+          // Verificar se a disciplina é válida, habilitada e tem as propriedades type e name
+          if (
+            discipline &&
+            typeof discipline === 'object' &&
+            discipline.isEnabled === true &&
+            typeof discipline.type === 'string' &&
+            typeof discipline.name === 'string'
+          ) {
+            allEnabledDisciplines.push({
+              type: discipline.type,
+              name: discipline.name,
+            });
+          }
+        }
+      }
+    }
+
+    return allEnabledDisciplines;
   };
+
   const customDisciplines = getCustomDisciplines();
   if (!concurso) {
     return <Table>
