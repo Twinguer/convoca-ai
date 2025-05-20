@@ -8,9 +8,11 @@ export const getTotalQuestions = (concurso: Concurso): number => {
   
   let total = 0;
   
-  // Contar questões de todas as disciplinas habilitadas
+  // Verificar se estamos usando conhecimentos customizáveis
   if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
     const hierarchical = isHierarchicalStructure(concurso);
+    
+    console.log(`[getTotalQuestions] Using hierarchical structure: ${hierarchical}`);
     
     if (hierarchical) {
       // Contar em estrutura hierárquica
@@ -23,6 +25,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
           }
         }
       }
+      console.log(`[getTotalQuestions] Total hierarchical questions: ${total}`);
       return total;
     }
     
@@ -32,6 +35,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
         total += getNumericValue(discipline.questionCount);
       }
     }
+    console.log(`[getTotalQuestions] Total flat questions: ${total}`);
     return total;
   }
   
@@ -52,6 +56,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
     total += getNumericValue(concurso.specific_knowledge_3_questions);
   }
   
+  console.log(`[getTotalQuestions] Total traditional questions: ${total}`);
   return total;
 };
 

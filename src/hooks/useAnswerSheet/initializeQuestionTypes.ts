@@ -1,6 +1,6 @@
 
 import { Concurso, SectionType } from '@/types/concursos';
-import { getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
+import { getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const initializeQuestionTypes = (
   concurso: Concurso, 
@@ -12,22 +12,24 @@ export const initializeQuestionTypes = (
     const typesMap: { [key: number]: SectionType } = {};
     let questionNumber = 1;
     
-    // Processar estrutura hierárquica (blocos -> disciplinas)
+    // Verificar se estamos usando conhecimentos customizáveis
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      console.log('Initializing hierarchical question types structure');
+      console.log('Initializing custom knowledge structure');
       
       // Verificar se estamos lidando com a estrutura de blocos
       const hierarchical = isHierarchicalStructure(concurso);
       
+      console.log('Using hierarchical structure:', hierarchical);
+      
       if (hierarchical) {
-        // Processar a estrutura hierárquica
+        // Processar estrutura hierárquica
         for (const block of concurso.disciplines as any[]) {
           console.log(`Processing block: ${block.name}`);
           
           // Verificar se o bloco tem disciplines e é um array
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.type) {
+              if (discipline.isEnabled) {
                 const questionCount = getNumericValue(discipline.questionCount);
                 
                 console.log(`Block ${block.name}, Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);
@@ -43,7 +45,7 @@ export const initializeQuestionTypes = (
           }
         }
       } else {
-        // Processar a estrutura plana legada para compatibilidade
+        // Processar estrutura plana legada para compatibilidade
         console.log('Processing flat structure for backward compatibility');
         
         for (const discipline of concurso.disciplines) {
