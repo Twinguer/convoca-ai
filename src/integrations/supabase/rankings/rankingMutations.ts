@@ -1,288 +1,207 @@
 
-import { supabase } from '../client';
-import { Concurso } from '@/types/concursos';
+import { supabase } from '@/integrations/supabase/client';
 
-// Helper function to safely handle numeric values
-const ensureNumeric = (value: any): number => {
-  if (value === null || value === undefined) return 0;
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? 0 : parsed;
-  }
-  return 0;
+interface RecalculationResponse {
+  success: boolean;
+  message?: string;
+  error?: any;
+}
+
+type PositionThreshold = 'ampla' | 'cota_racial' | 'pcd';
+
+const isPositionThreshold = (value: string): value is PositionThreshold => {
+  return ['ampla', 'cota_racial', 'pcd'].includes(value);
 };
 
-// Função para salvar um novo ranking ou atualizar um existente
-export const saveRanking = async (
-  formValues: Partial<Concurso>, 
-  userId: string | undefined, 
-  editId?: string | null
-): Promise<{id?: string; duplicated?: boolean; error?: boolean}> => {
+export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
-    // Normalizar strings para verificação de unicidade (tratando maiúsculas/minúsculas e espaços)
-    const normalize = (str: string) => (str || "").replace(/\s+/g, " ").trim().toUpperCase();
-
-    // Truncar títulos longos para melhor exibição
-    let title = formValues.custom_job_title || formValues.predefined_job_title || '';
-    if (title && title.length > 30) {
-      title = title.substring(0, 30) + '...';
-    }
-    
-    // Truncar nome de órgão longo para melhor exibição
-    let orgao = formValues.orgao || '';
-    if (orgao && orgao.length > 30) {
-      orgao = orgao.substring(0, 30) + '...';
-    }
-
-    // Buscar concursos existentes e fazer a comparação de unicidade em JS
-    const { data: founds, error: findError } = await supabase
+    // Obter dados do concurso para aplicar regras específicas
+    const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('id, titulo, orgao, banca, custom_banca, data_publicacao')
-      .eq('data_publicacao', formValues.data_publicacao);
+      .select('*')
+      .eq('id', concursoId)
+      .single();
 
-    if (findError) throw findError;
-
-    // Não verificar duplicatas ao editar como administrador
-    const isAdminEditing = editId && formValues.is_admin_update;
-    
-    const isDuplicate = !editId && !isAdminEditing && founds?.some(item =>
-      normalize(item.titulo) === normalize(title) &&
-      normalize(item.orgao) === normalize(orgao) &&
-      normalize(item.custom_banca || item.banca || '') === normalize(formValues.custom_banca || formValues.banca || '')
-    );
-
-    if (isDuplicate) {
-      return { duplicated: true };
+    if (concursoError) {
+      console.error('Erro ao buscar dados do concurso:', concursoError);
+      return { 
+        success: false, 
+        message: 'Erro ao obter dados do concurso', 
+        error: concursoError 
+      };
     }
 
-    // Remover campos que não existem mais no modelo
-    const dataFormValues = { ...formValues };
+    // Se o concurso exige pontuação mínima verificamos isso
+    let minimumScoreRequired = 0;
     
-    // Garantir que os valores mínimos são numéricos
-    dataFormValues.total_minimum_score = ensureNumeric(dataFormValues.total_minimum_score);
-    
-    // Se estamos editando um ranking existente, buscar os dados originais para preservar a estrutura de disciplinas
-    if (editId) {
-      const { data: existingConcurso, error: getConcursoError } = await supabase
-        .from('concursos')
-        .select('disciplines')
-        .eq('id', editId)
-        .single();
-      
-      if (!getConcursoError && existingConcurso && existingConcurso.disciplines) {
-        // Se estamos editando e não há disciplines no formValues, preservar as existentes
-        if (!dataFormValues.disciplines || 
-            !Array.isArray(dataFormValues.disciplines) || 
-            dataFormValues.disciplines.length === 0) {
-          console.log('Preserving existing disciplines structure:', existingConcurso.disciplines);
-          dataFormValues.disciplines = existingConcurso.disciplines;
+    // Verificar se tem score mínimo e buscar o valor corretamente
+    if (concurso?.has_minimum_score === true) {
+      // Usar acesso seguro à propriedade para evitar erro TypeScript
+      minimumScoreRequired = typeof concurso?.total_minimum_score === 'number' 
+        ? concurso.total_minimum_score 
+        : parseInt(String(concurso?.total_minimum_score || '0'), 10);
+        
+      console.log(`Pontuação mínima requerida: ${minimumScoreRequired}`);
+    }
+
+    // Obter as respostas do usuário
+    const { data: userAnswers, error: userAnswersError } = await supabase
+      .from('user_answers')
+      .select('question_number, answer')
+      .eq('user_id', userId)
+      .eq('concurso_id', concursoId);
+
+    if (userAnswersError) {
+      console.error('Erro ao buscar respostas do usuário:', userAnswersError);
+      return { 
+        success: false, 
+        message: 'Erro ao obter respostas do usuário', 
+        error: userAnswersError 
+      };
+    }
+
+    // Obter os pesos das respostas corretas
+    const { data: officialAnswers, error: officialAnswersError } = await supabase
+      .from('official_answer_weights')
+      .select('question_number, correct_answer, weight, is_nullified')
+      .eq('concurso_id', concursoId);
+
+    if (officialAnswersError) {
+      console.error('Erro ao buscar pesos das respostas corretas:', officialAnswersError);
+      return { 
+        success: false, 
+        message: 'Erro ao obter pesos das respostas corretas', 
+        error: officialAnswersError 
+      };
+    }
+
+    let totalScore = 0;
+    let totalWeight = 0;
+
+    // Calcular a pontuação do usuário
+    for (const userAnswer of userAnswers || []) {
+      const officialAnswer = officialAnswers?.find(oa => oa.question_number === userAnswer.question_number);
+
+      if (officialAnswer) {
+        const isCorrect = officialAnswer.correct_answer === userAnswer.answer || officialAnswer.is_nullified === true;
+
+        if (isCorrect) {
+          totalScore += officialAnswer.weight || 1;
         }
-        // Se estamos editando e há disciplines nas duas, verificar estrutura e preservar IDs
-        else if (Array.isArray(dataFormValues.disciplines) && dataFormValues.disciplines.length > 0 && 
-                Array.isArray(existingConcurso.disciplines) && existingConcurso.disciplines.length > 0) {
-          // Verificar se estamos lidando com a estrutura de blocos
-          if ('name' in dataFormValues.disciplines[0] && 'disciplines' in dataFormValues.disciplines[0]) {
-            console.log('Preserving block IDs in discipline structure');
-            // Preservar IDs dos blocos e disciplinas
-            dataFormValues.disciplines = dataFormValues.disciplines.map((block, blockIdx) => {
-              // Encontrar bloco correspondente por posição ou nome
-              const existingBlock = existingConcurso.disciplines[blockIdx] || 
-                existingConcurso.disciplines.find((b: any) => b.name === block.name);
-              
-              if (existingBlock && existingBlock.id) {
-                // Preservar disciplinas com IDs
-                const updatedDisciplines = block.disciplines?.map((discipline, discIdx) => {
-                  // Encontrar disciplina correspondente por posição ou nome/tipo
-                  const existingDiscipline = existingBlock.disciplines?.[discIdx] || 
-                    existingBlock.disciplines?.find((d: any) => 
-                      d.name === discipline.name || d.type === discipline.type
-                    );
-                  
-                  if (existingDiscipline && existingDiscipline.id) {
-                    return {
-                      ...discipline,
-                      id: existingDiscipline.id
-                    };
-                  }
-                  return discipline;
-                });
-                
-                return {
-                  ...block,
-                  id: existingBlock.id,
-                  disciplines: updatedDisciplines
-                };
-              }
-              return block;
-            });
-            
-            console.log('Updated disciplines structure with preserved IDs:', 
-              JSON.stringify(dataFormValues.disciplines, null, 2)
-            );
-          }
-        }
+        totalWeight += officialAnswer.weight || 1;
       }
     }
+
+    // Atualizar a pontuação do usuário no ranking
+    const { error: updateError } = await supabase
+      .from('user_rankings')
+      .update({ score: totalScore })
+      .eq('user_id', userId)
+      .eq('concurso_id', concursoId);
+
+    if (updateError) {
+      console.error('Erro ao atualizar pontuação do usuário:', updateError);
+      return { 
+        success: false, 
+        message: 'Erro ao atualizar pontuação do usuário', 
+        error: updateError 
+      };
+    }
     
-    // Processar os blocos de disciplinas e garantir que as pontuações mínimas sejam numéricas
-    if (dataFormValues.disciplines && Array.isArray(dataFormValues.disciplines)) {
-      // Processar todos os blocos
-      dataFormValues.disciplines = dataFormValues.disciplines.map((block: any) => {
-        // Garantir que o mínimo do bloco é um número
-        const blockMinimumScore = ensureNumeric(block.minimum_score);
+    // Verificar se o usuário atingiu a pontuação mínima
+    if (minimumScoreRequired > 0 && totalScore < minimumScoreRequired) {
+      // Atualizar o status do usuário para "eliminado"
+      const { error: updateStatusError } = await supabase
+        .from('user_rankings')
+        .update({ status: 'eliminado' })
+        .eq('user_id', userId)
+        .eq('concurso_id', concursoId);
         
-        // Processar todas as disciplinas do bloco
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          block.disciplines = block.disciplines.map((discipline: any) => {
-            // Garantir que o mínimo da disciplina é um número
-            const disciplineMinimumScore = ensureNumeric(discipline.minimum_score);
-            
-            return {
-              ...discipline,
-              questionCount: ensureNumeric(discipline.questionCount),
-              weight: ensureNumeric(discipline.weight),
-              isEnabled: discipline.isEnabled === true,
-              minimum_score: disciplineMinimumScore
-            };
-          });
-        }
-        
-        return {
-          ...block,
-          minimum_score: blockMinimumScore
+      if (updateStatusError) {
+        console.error('Erro ao atualizar status do usuário:', updateStatusError);
+        return { 
+          success: false, 
+          message: 'Erro ao atualizar status do usuário', 
+          error: updateStatusError 
         };
-      });
-    }
-    
-    // Garantir que disciplines é um array válido
-    if (!dataFormValues.disciplines) {
-      dataFormValues.disciplines = [];
-    }
-
-    // Validar e processar disciplinas customizadas
-    if (Array.isArray(dataFormValues.disciplines)) {
-      // Verificar se pelo menos uma disciplina está habilitada
-      let hasEnabledDiscipline = false;
-      
-      // Verificar em todos os blocos
-      for (const block of dataFormValues.disciplines) {
-        if (block && typeof block === 'object' && 'disciplines' in block && Array.isArray(block.disciplines)) {
-          // Verificar cada disciplina no bloco
-          for (const discipline of block.disciplines) {
-            if (discipline.isEnabled === true) {
-              hasEnabledDiscipline = true;
-              break;
-            }
-          }
-        }
-        if (hasEnabledDiscipline) break;
       }
-      
-      if (!hasEnabledDiscipline && dataFormValues.disciplines.length > 0) {
-        throw new Error("Você precisa habilitar pelo menos uma disciplina quando usar conhecimentos customizados");
-      }
-    }
-    
-    // Converter campos numéricos adequadamente
-    const numericFields = [
-      'basic_knowledge_questions', 'specific_knowledge_1_questions', 
-      'specific_knowledge_2_questions', 'specific_knowledge_3_questions',
-      'basic_knowledge_weight', 'specific_knowledge_1_weight',
-      'specific_knowledge_2_weight', 'specific_knowledge_3_weight',
-      'discursive_weight', 'case_study_1_weight',
-      'case_study_2_weight', 'case_study_3_weight',
-      'alternatives_count', 'wrong_answer_penalty',
-      'total_minimum_score'
-    ];
-
-    // Criar objeto limpo com dados para submissão
-    const dataToSubmit: Record<string, any> = {
-      ...dataFormValues,
-      created_by_user_id: dataFormValues.created_by_user_id || userId, // Manter criador original quando admin está editando
-      has_custom_knowledge: true, // Sempre usar conhecimento customizado (disciplinas)
-      has_minimum_score: dataFormValues.total_minimum_score > 0 // Definir has_minimum_score com base no valor
-    };
-    
-    // Definir explicitamente título e órgão
-    if (title) dataToSubmit.titulo = title;
-    if (orgao) dataToSubmit.orgao = orgao;
-    if (dataFormValues.banca || dataFormValues.custom_banca) {
-      dataToSubmit.banca = dataFormValues.custom_banca || dataFormValues.banca;
-    }
-
-    // Converter todos os campos numéricos
-    numericFields.forEach(field => {
-      if (field in dataToSubmit) {
-        dataToSubmit[field] = ensureNumeric(dataToSubmit[field]);
-      }
-    });
-    
-    // Garantir que temos um valor para pontuação mínima geral
-    if (!dataToSubmit.total_minimum_score) {
-      dataToSubmit.total_minimum_score = 0;
-    }
-
-    // Desabilitar conhecimentos básicos/específicos padrão
-    dataToSubmit.has_basic_knowledge = false;
-    dataToSubmit.has_specific_knowledge_1 = false;
-    dataToSubmit.has_specific_knowledge_2 = false;
-    dataToSubmit.has_specific_knowledge_3 = false;
-
-    // Log para verificar o que estamos enviando
-    console.log('Submitting data to Supabase:', 
-      JSON.stringify({
-        disciplines: dataToSubmit.disciplines,
-        has_custom_knowledge: dataToSubmit.has_custom_knowledge,
-        total_minimum_score: dataToSubmit.total_minimum_score,
-        has_minimum_score: dataToSubmit.has_minimum_score
-      }, null, 2)
-    );
-
-    let result;
-    
-    if (editId) {
-      const { data, error } = await supabase
-        .from('concursos')
-        .update(dataToSubmit)
-        .eq('id', editId)
-        .select();
-
-      if (error) throw error;
-      result = data;
-      return { id: editId };
     } else {
-      const { data, error } = await supabase.from('concursos').insert(dataToSubmit).select();
-      if (error) throw error;
-      result = data;
-      return { id: result?.[0]?.id };
+      // Se o usuário atingiu a pontuação mínima, atualizar o status para "classificado"
+      const { error: updateStatusError } = await supabase
+        .from('user_rankings')
+        .update({ status: 'classificado' })
+        .eq('user_id', userId)
+        .eq('concurso_id', concursoId);
+        
+      if (updateStatusError) {
+        console.error('Erro ao atualizar status do usuário:', updateStatusError);
+        return { 
+          success: false, 
+          message: 'Erro ao atualizar status do usuário', 
+          error: updateStatusError 
+        };
+      }
     }
+
+    return { success: true, message: 'Pontuação recalculada com sucesso' };
   } catch (error) {
-    console.error("Erro ao salvar ranking:", error);
-    return { error: true };
+    console.error('Erro ao recalcular pontuação:', error);
+    return { 
+      success: false, 
+      message: 'Erro ao recalcular pontuação', 
+      error: error 
+    };
   }
 };
 
-// Função para salvar o gabarito oficial
-export const saveOfficialAnswers = async (
+export const getUserRankingPosition = async (
+  userId: string,
   concursoId: string,
-  answers: Array<{ questionNumber: number; answer: string; weight?: number; isNullified?: boolean }>
-) => {
+  cota?: string
+): Promise<number | null> => {
   try {
-    for (const answer of answers) {
-      await supabase.rpc('update_answer_with_weight', {
-        p_concurso_id: concursoId,
-        p_question_number: answer.questionNumber,
-        p_correct_answer: answer.answer,
-        p_weight: answer.weight || 1.0,
-        p_is_nullified: answer.isNullified || false
-      });
+    let query = supabase
+      .from('user_rankings')
+      .select('position')
+      .eq('user_id', userId)
+      .eq('concurso_id', concursoId);
+
+    if (cota && isPositionThreshold(cota)) {
+      query = query.eq('cota', cota);
     }
-    return true;
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Erro ao buscar posição do usuário:', error);
+      return null;
+    }
+
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select('vagas')
+      .eq('id', concursoId)
+      .single();
+
+    if (concursoError) {
+      console.error('Erro ao buscar número de vagas:', concursoError);
+      return null;
+    }
+
+    const vacanciesCount = concurso?.vagas;
+
+    // Corrigir a expressão com o operador > para verificar as posições
+    // Verificamos valores válidos antes da comparação
+    if (cota && isPositionThreshold(cota) && 
+        typeof data?.[0]?.position === 'number' && 
+        typeof vacanciesCount === 'number' && 
+        data[0].position > vacanciesCount) {
+      return null;
+    }
+
+    return data?.[0]?.position || null;
   } catch (error) {
-    console.error('Erro ao salvar gabarito oficial:', error);
-    return false;
+    console.error('Erro ao obter posição do usuário:', error);
+    return null;
   }
 };
-
-// Outras funções de mutação relacionadas a rankings...

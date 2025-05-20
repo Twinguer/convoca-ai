@@ -8,12 +8,7 @@ import { createAnswerMatrix } from './matrixUtils';
 import { handleQuestionSectionSelection } from './sectionUtils';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
-import { 
-  getSectionDisplayName, 
-  getDisciplines, 
-  getNumericValue, 
-  isHierarchicalStructure 
-} from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -88,7 +83,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('Getting questions for section:', selectedSection);
     console.log('Question type mapping:', questionType);
     
-    // Verificar se temos mapeamento de tipos de questão
+    // If we have question type mapping, use it
     if (Object.keys(questionType).length > 0) {
       console.log("Using existing question type mapping");
       
@@ -102,56 +97,95 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       return questions.sort((a, b) => a - b);
     }
     
-    // Se não temos mapeamento, tentar construir com base na estrutura
-    console.log("No question type mapping yet, building from structure");
+    // If no question type mapping yet, build it from disciplines
+    console.log("No question type mapping yet, building from disciplines");
     const questions: number[] = [];
     
-    // Check if using hierarchical structure
-    if (isHierarchicalStructure(concurso)) {
-      console.log("Building questions from hierarchical structure");
-      let currentQuestionNumber = 1;
+    // Custom knowledge with disciplines
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      const hierarchical = isHierarchicalStructure(concurso);
+      let currentQuestion = 1;
       
-      if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
-        for (const block of concurso.discipline_blocks) {
+      if (hierarchical) {
+        // Hierarchical structure (blocks -> disciplines)
+        console.log("Using hierarchical structure to determine questions");
+        for (const block of concurso.disciplines as any[]) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.type === selectedSection && discipline.questionCount) {
+              if (discipline.isEnabled) {
                 const questionCount = getNumericValue(discipline.questionCount);
                 
-                console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type}) from block ${block.name}`);
-                
-                for (let i = 0; i < questionCount; i++) {
-                  questions.push(currentQuestionNumber++);
+                if (discipline.type === selectedSection) {
+                  console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+                  
+                  for (let i = 0; i < questionCount; i++) {
+                    questions.push(currentQuestion++);
+                  }
+                } else {
+                  // Skip questions from other disciplines
+                  console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+                  currentQuestion += questionCount;
                 }
-              } else if (discipline.isEnabled) {
-                // Skip questions from other disciplines
-                currentQuestionNumber += getNumericValue(discipline.questionCount);
               }
+            }
+          }
+        }
+      } else {
+        // Flat structure
+        console.log("Using flat structure to determine questions");
+        for (const discipline of concurso.disciplines) {
+          if (discipline.isEnabled) {
+            const questionCount = getNumericValue(discipline.questionCount);
+            
+            if (discipline.type === selectedSection) {
+              console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+              
+              for (let i = 0; i < questionCount; i++) {
+                questions.push(currentQuestion++);
+              }
+            } else {
+              // Skip questions from other disciplines
+              console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
+              currentQuestion += questionCount;
             }
           }
         }
       }
     } else {
-      // Traditional flat disciplines structure
-      const disciplines = getDisciplines(concurso);
+      // Traditional structure
+      let currentQuestion = 1;
       
-      if (Array.isArray(disciplines)) {
-        let currentQuestion = 1;
-        
-        for (const discipline of disciplines) {
-          const questionCount = getNumericValue(discipline.questionCount);
-            
-          if (discipline.isEnabled && discipline.type === selectedSection && questionCount > 0) {
-            console.log(`Adding ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-            
-            for (let i = 0; i < questionCount; i++) {
-              questions.push(currentQuestion++);
-            }
-          } else if (discipline.isEnabled) {
-            // Skip questions from other disciplines
-            console.log(`Skipping ${questionCount} questions for discipline ${discipline.name} (${discipline.type})`);
-            currentQuestion += questionCount;
-          }
+      if (concurso.has_basic_knowledge && selectedSection === 'basic') {
+        const count = getNumericValue(concurso.basic_knowledge_questions);
+        for (let i = 0; i < count; i++) {
+          questions.push(currentQuestion++);
+        }
+      } else if (concurso.has_basic_knowledge) {
+        currentQuestion += getNumericValue(concurso.basic_knowledge_questions);
+      }
+      
+      if (concurso.has_specific_knowledge_1 && selectedSection === 'specific1') {
+        const count = getNumericValue(concurso.specific_knowledge_1_questions);
+        for (let i = 0; i < count; i++) {
+          questions.push(currentQuestion++);
+        }
+      } else if (concurso.has_specific_knowledge_1) {
+        currentQuestion += getNumericValue(concurso.specific_knowledge_1_questions);
+      }
+      
+      if (concurso.has_specific_knowledge_2 && selectedSection === 'specific2') {
+        const count = getNumericValue(concurso.specific_knowledge_2_questions);
+        for (let i = 0; i < count; i++) {
+          questions.push(currentQuestion++);
+        }
+      } else if (concurso.has_specific_knowledge_2) {
+        currentQuestion += getNumericValue(concurso.specific_knowledge_2_questions);
+      }
+      
+      if (concurso.has_specific_knowledge_3 && selectedSection === 'specific3') {
+        const count = getNumericValue(concurso.specific_knowledge_3_questions);
+        for (let i = 0; i < count; i++) {
+          questions.push(currentQuestion++);
         }
       }
     }
@@ -170,40 +204,88 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     const count = concurso.alternatives_count || 5;
     return Array.from({ length: count }, (_, i) => String.fromCharCode(65 + i));
   };
-  
-  // Function to get all sections available in the exam
-  const getAllSections = () => {
-    const sections: SectionType[] = [];
+
+  // Function to get all questions from all sections
+  const getAllQuestionsFromAllSections = () => {
+    if (!concurso) return [];
     
-    // Check if using hierarchical structure
-    if (isHierarchicalStructure(concurso)) {
-      if (concurso.discipline_blocks && Array.isArray(concurso.discipline_blocks)) {
-        for (const block of concurso.discipline_blocks) {
+    const allQuestions: number[] = [];
+    
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      let currentQuestionNumber = 1;
+      const hierarchical = isHierarchicalStructure(concurso);
+      
+      console.log("getAllQuestionsFromAllSections - Using hierarchical structure:", hierarchical);
+      
+      if (hierarchical) {
+        // Process hierarchical structure (blocks -> disciplines)
+        for (const block of concurso.disciplines as any[]) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.type) {
-                sections.push(discipline.type as SectionType);
+              if (discipline.isEnabled) {
+                const count = getNumericValue(discipline.questionCount);
+                console.log(`Block ${block.name}, discipline ${discipline.name} has ${count} questions starting at ${currentQuestionNumber}`);
+                
+                for (let i = 0; i < count; i++) {
+                  allQuestions.push(currentQuestionNumber++);
+                }
               }
             }
           }
         }
-      }
-    } else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      // Traditional flat disciplines
-      for (const discipline of concurso.disciplines) {
-        if (discipline.isEnabled && discipline.type) {
-          sections.push(discipline.type as SectionType);
+      } else {
+        // Process flat structure of disciplines
+        for (const discipline of concurso.disciplines) {
+          if (discipline.isEnabled) {
+            const count = getNumericValue(discipline.questionCount);
+            console.log(`Discipline ${discipline.name} has ${count} questions starting at ${currentQuestionNumber}`);
+            
+            for (let i = 0; i < count; i++) {
+              allQuestions.push(currentQuestionNumber++);
+            }
+          }
         }
+      }
+      
+      return allQuestions;
+    }
+    
+    // Traditional structure
+    let currentQuestionNumber = 1;
+    
+    // Basic
+    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+      const count = getNumericValue(concurso.basic_knowledge_questions);
+      for (let i = 0; i < count; i++) {
+        allQuestions.push(currentQuestionNumber++);
       }
     }
     
-    // Add subjective sections
-    if (concurso.has_discursive) sections.push('discursive');
-    if (concurso.has_case_study_1) sections.push('case_study1');
-    if (concurso.has_case_study_2) sections.push('case_study2');
-    if (concurso.has_case_study_3) sections.push('case_study3');
+    // Specific 1
+    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+      const count = getNumericValue(concurso.specific_knowledge_1_questions);
+      for (let i = 0; i < count; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
     
-    return sections;
+    // Specific 2
+    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+      const count = getNumericValue(concurso.specific_knowledge_2_questions);
+      for (let i = 0; i < count; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    // Specific 3
+    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+      const count = getNumericValue(concurso.specific_knowledge_3_questions);
+      for (let i = 0; i < count; i++) {
+        allQuestions.push(currentQuestionNumber++);
+      }
+    }
+    
+    return allQuestions;
   };
 
   return {
@@ -233,6 +315,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy3Score,
     isDiscursiveSection,
     getSectionQuestions,
-    getAllSections
+    getAllQuestionsFromAllSections
   };
 };

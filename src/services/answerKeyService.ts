@@ -77,11 +77,27 @@ export const answerKeyService = {
         throw concursoError;
       }
       
+      // Verificar se estamos lidando com a estrutura hierárquica
+      const isHierarchical = concurso?.disciplines && 
+                         Array.isArray(concurso.disciplines) && 
+                         concurso.disciplines[0] && 
+                         typeof concurso.disciplines[0] === 'object' && 
+                         'name' in concurso.disciplines[0] && 
+                         'disciplines' in concurso.disciplines[0];
+
+      console.log(`[answerKeyService] Estrutura hierárquica detectada: ${isHierarchical}`);
+      
       // Registrar todas as questões que vamos salvar para debug
       answerKeyData.forEach((item, index) => {
-        // Determine the correct section type for this question
-        // Usar apenas tipos válidos reconhecidos pelo banco de dados
-        const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
+        // Use section_type sem modificação para disciplinas customizadas
+        // ou obtenha o tipo correto para questões tradicionais
+        let correctedSectionType: string;
+        
+        if (item.section_type.startsWith('custom_')) {
+          correctedSectionType = item.section_type;
+        } else {
+          correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
+        }
         
         // Log para debug
         console.log(`[answerKeyService] Questão ${index + 1}: assigning section_type=${correctedSectionType} for question=${item.question_number}`);
@@ -184,7 +200,7 @@ export const answerKeyService = {
 
       return {
         success: true,
-        updatedCount: verifyData?.length || 0
+        updatedCount: answerKeyData.length
       };
     } catch (error) {
       console.error('[answerKeyService] Erro ao salvar gabarito:', error);
@@ -224,7 +240,7 @@ export const answerKeyService = {
     }
   },
   
-  // Nova função para inserir diretamente na tabela official_answer_weights
+  // Atualizada a função para inserir diretamente na tabela official_answer_weights
   async insertAnswersDirectly(concursoId: string, answerKeyData: AnswerKeyItem[]) {
     try {
       console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
@@ -252,11 +268,27 @@ export const answerKeyService = {
         throw deleteError;
       }
       
+      // Verificar se estamos lidando com a estrutura hierárquica
+      const isHierarchical = concurso?.disciplines && 
+                         Array.isArray(concurso.disciplines) && 
+                         concurso.disciplines[0] && 
+                         typeof concurso.disciplines[0] === 'object' && 
+                         'name' in concurso.disciplines[0] && 
+                         'disciplines' in concurso.disciplines[0];
+
+      console.log(`[answerKeyService] Estrutura hierárquica detectada: ${isHierarchical}`);
+      
       // Preparar dados para inserção e garantir que section_type seja válido
       const insertData = answerKeyData.map(item => {
-        // Determinar o tipo de seção correto baseado na estrutura do concurso
-        // Usar APENAS tipos válidos conhecidos pelo banco de dados
-        const correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
+        // Para disciplinas customizadas, mantém o tipo original
+        let correctedSectionType: string;
+        
+        if (item.section_type.startsWith('custom_')) {
+          correctedSectionType = item.section_type;
+        } else {
+          // Para tipos tradicionais, usa a função de mapeamento
+          correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
+        }
         
         return {
           concurso_id: item.concurso_id,
@@ -288,7 +320,7 @@ export const answerKeyService = {
       
       return {
         success: true,
-        insertedCount: data?.length || 0
+        insertedCount: insertData.length
       };
     } catch (error) {
       console.error('[answerKeyService] Erro na inserção direta:', error);
