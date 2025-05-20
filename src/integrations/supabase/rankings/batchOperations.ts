@@ -1,90 +1,75 @@
 
 import { supabase } from '../client';
 
-// Função para recalcular todas as pontuações de usuários para um concurso específico
+/**
+ * Função para recalcular as pontuações de todos os usuários em um concurso
+ */
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
+    // Use the improved recalculate function from the database
     const { data, error } = await supabase.rpc(
-      'recalculate_all_scores',
+      'recalculate_all_scores_improved',
       { p_concurso_id: concursoId }
     );
-
-    if (error) {
-      console.error('Error recalculating scores:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { 
-      success: true, 
-      updatedCount: data?.updatedCount || 0 
-    };
-  } catch (error) {
-    console.error('Exception recalculating scores:', error);
+    
+    if (error) throw error;
+    
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Error recalculating all user scores:', error);
     return { 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+      error: error.message || 'Unknown error' 
     };
   }
 };
 
-// Função para recalcular a pontuação de um usuário específico
-export const recalculateUserScore = async (userRankingId: string) => {
-  try {
-    const { data, error } = await supabase.rpc(
-      'calculate_user_score_realtime',
-      { p_ranking_id: userRankingId }
-    );
-
-    if (error) {
-      console.error('Error recalculating user score:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { 
-      success: true, 
-      score: data 
-    };
-  } catch (error) {
-    console.error('Exception recalculating user score:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-};
-
-// Função para atualizar as pontuações subjetivas de um usuário
-export const updateSubjectiveScores = async (
-  userRankingId: string, 
-  discursiveScore: number, 
-  caseStudy1Score: number, 
-  caseStudy2Score: number, 
-  caseStudy3Score: number
+/**
+ * Function to handle saving answers with score calculation in real-time
+ */
+export const saveAnswersAndCalculateScore = async (
+  rankingId: string,
+  concursoId: string,
+  answers: { questionNumber: number; answer: string }[],
+  subjectiveScores: {
+    discursiveScore?: number | null;
+    caseStudy1Score?: number | null;
+    caseStudy2Score?: number | null;
+    caseStudy3Score?: number | null;
+  } = {}
 ) => {
   try {
-    const { error } = await supabase
-      .from('user_rankings')
-      .update({
-        discursive_score: discursiveScore,
-        case_study_1_score: caseStudy1Score,
-        case_study_2_score: caseStudy2Score,
-        case_study_3_score: caseStudy3Score,
-        is_score_recalculated: false
-      })
-      .eq('id', userRankingId);
-
-    if (error) {
-      console.error('Error updating subjective scores:', error);
-      return { success: false, error: error.message };
-    }
-
-    // Recalcular pontuação após atualizar notas subjetivas
-    return await recalculateUserScore(userRankingId);
-  } catch (error) {
-    console.error('Exception updating subjective scores:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+    console.log('[saveAnswersAndCalculateScore] Saving answers for ranking:', rankingId);
+    
+    // Format answers as required by the RPC
+    const formattedAnswers = answers.map(answer => ({
+      questionNumber: answer.questionNumber,
+      answer: answer.answer
+    }));
+    
+    // Call the RPC function that handles saving answers and calculating scores
+    const { data, error } = await supabase.rpc(
+      'save_user_answers_and_calculate_scores',
+      {
+        p_ranking_id: rankingId,
+        p_concurso_id: concursoId,
+        p_answers: formattedAnswers,
+        p_discursive_score: subjectiveScores.discursiveScore || 0,
+        p_case_study_1_score: subjectiveScores.caseStudy1Score || 0,
+        p_case_study_2_score: subjectiveScores.caseStudy2Score || 0,
+        p_case_study_3_score: subjectiveScores.caseStudy3Score || 0
+      }
+    );
+    
+    if (error) throw error;
+    
+    console.log('[saveAnswersAndCalculateScore] Success response:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('[saveAnswersAndCalculateScore] Error:', error);
+    return {
+      success: false,
+      error: error.message || 'Unknown error'
     };
   }
 };
