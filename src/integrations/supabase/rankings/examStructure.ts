@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 
 // Mapa para exibição amigável dos nomes das seções
@@ -11,6 +10,11 @@ export let sectionDisplayNames: Record<string, string> = {
   'case_study1': 'Estudo de Caso 1',
   'case_study2': 'Estudo de Caso 2',
   'case_study3': 'Estudo de Caso 3'
+};
+
+// Helper function to get display name for a section
+export const getSectionDisplayName = (sectionType: string): string => {
+  return sectionDisplayNames[sectionType] || sectionType;
 };
 
 // Função para garantir tipo de seção válido
