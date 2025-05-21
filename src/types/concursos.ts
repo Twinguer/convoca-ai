@@ -1,3 +1,4 @@
+
 export interface NestedDiscipline {
   id?: string;
   type: string;
@@ -14,9 +15,9 @@ export interface DisciplineBlock {
   weight?: number;
   minimum_score?: number;
   disciplines: NestedDiscipline[]; 
-  isEnabled?: boolean;  // Apenas para compatibilidade temporária com código existente
-  type?: string;       // Apenas para compatibilidade temporária com código existente
-  questionCount?: number; // Apenas para compatibilidade temporária com código existente
+  isEnabled?: boolean;  // Para compatibilidade com código que verifica isEnabled em qualquer item
+  type?: string;       // Para compatibilidade com código que verifica type em qualquer item
+  questionCount?: number; // Para compatibilidade com código que verifica questionCount em qualquer item
 }
 
 export interface Concurso {
@@ -159,69 +160,48 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
           }
         }
       } 
-      // Verificar se é uma disciplina direta (tem propriedade isEnabled)
+      // Verificar se é uma disciplina direta 
       else if ('isEnabled' in item && item.isEnabled && item.type) {
-        // É uma disciplina direta
         enabledSections[item.type] = true;
       }
     }
   }
 
+  // Legacy sections
+  if (concurso.has_basic_knowledge) {
+    enabledSections.basic = true;
+  }
+  if (concurso.has_specific_knowledge_1) {
+    enabledSections.specific1 = true;
+  }
+  if (concurso.has_specific_knowledge_2) {
+    enabledSections.specific2 = true;
+  }
+  if (concurso.has_specific_knowledge_3) {
+    enabledSections.specific3 = true;
+  }
+  if (concurso.has_discursive) {
+    enabledSections.discursive = true;
+  }
+  if (concurso.has_case_study_1) {
+    enabledSections.case_study1 = true;
+  }
+  if (concurso.has_case_study_2) {
+    enabledSections.case_study2 = true;
+  }
+  if (concurso.has_case_study_3) {
+    enabledSections.case_study3 = true;
+  }
+
   return enabledSections;
 };
 
-// Função para obter as colunas de tabela para um ranking baseado na estrutura do concurso
-export const getRankingTableColumns = (concurso: Concurso) => {
-  const columns = [
-    { id: 'position', label: '#', align: 'center', width: '16' },
-    { id: 'name', label: 'Candidato', align: 'left' },
-    { id: 'score', label: 'Total', align: 'right' }
-  ];
+// Função auxiliar para verificar se um item é um bloco de disciplinas
+export const isDisciplineBlock = (item: DisciplineBlock | NestedDiscipline): item is DisciplineBlock => {
+  return 'disciplines' in item && Array.isArray(item.disciplines);
+};
 
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    for (const item of concurso.disciplines) {
-      // Verificar se é um bloco (tem propriedade disciplines)
-      if ('disciplines' in item && Array.isArray(item.disciplines)) {
-        // É um bloco
-        for (const discipline of item.disciplines) {
-          if (discipline.isEnabled) {
-            columns.push({
-              id: `${discipline.type}Score`, 
-              label: discipline.name,
-              align: 'right'
-            });
-          }
-        }
-      } 
-      // Verificar se é uma disciplina direta (tem propriedade isEnabled)
-      else if ('isEnabled' in item && item.isEnabled) {
-        // É uma disciplina direta com typeguard
-        const discipline = item as NestedDiscipline;
-        columns.push({
-          id: `${discipline.type}Score`,
-          label: discipline.name,
-          align: 'right'
-        });
-      }
-    }
-  }
-
-  // Adicionar colunas para partes subjetivas
-  if (concurso.has_discursive) {
-    columns.push({ id: 'discursiveScore', label: 'Discursiva', align: 'right' });
-  }
-
-  if (concurso.has_case_study_1) {
-    columns.push({ id: 'case1Score', label: 'Estudo 1', align: 'right' });
-  }
-
-  if (concurso.has_case_study_2) {
-    columns.push({ id: 'case2Score', label: 'Estudo 2', align: 'right' });
-  }
-
-  if (concurso.has_case_study_3) {
-    columns.push({ id: 'case3Score', label: 'Estudo 3', align: 'right' });
-  }
-
-  return columns;
+// Função auxiliar para verificar se um item é uma disciplina
+export const isNestedDiscipline = (item: DisciplineBlock | NestedDiscipline): item is NestedDiscipline => {
+  return 'isEnabled' in item && 'type' in item && !('disciplines' in item);
 };

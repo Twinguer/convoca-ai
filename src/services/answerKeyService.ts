@@ -99,3 +99,86 @@ export const extractDisciplineTypes = async (concursoId: string) => {
     return { success: false, error: error.message || String(error) };
   }
 };
+
+// Função para obter o gabarito de um concurso
+export const getAnswerKey = async (concursoId: string) => {
+  try {
+    const { data, error } = await supabase.rpc(
+      'get_official_answer_weights',
+      {
+        p_concurso_id: concursoId,
+      }
+    );
+
+    if (error) throw error;
+    
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Error retrieving answer key:', error);
+    return { success: false, error: error.message || String(error) };
+  }
+};
+
+// Função para salvar o gabarito e recalcular pontuações
+export const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
+  try {
+    // Use a RPC para atualizar o gabarito e recalcular as pontuações
+    const { data, error } = await supabase.rpc(
+      'update_official_answers_and_recalculate',
+      {
+        p_concurso_id: concursoId,
+        p_answers_data: answerKeyData
+      }
+    );
+    
+    if (error) {
+      console.error('Error saving answer key:', error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, updatedCount: data?.updated_count || 0 };
+  } catch (error: any) {
+    console.error('Error in saveAnswerKeyAndRecalculate:', error);
+    return { success: false, error: error.message || String(error) };
+  }
+};
+
+// Função para inserir gabarito diretamente - alternativa caso a RPC falhe
+export const insertAnswersDirectly = async (concursoId: string, answerKeyData: any[]) => {
+  try {
+    // Deletar registros existentes
+    const { error: deleteError } = await supabase
+      .from('official_answer_weights')
+      .delete()
+      .eq('concurso_id', concursoId);
+    
+    if (deleteError) {
+      console.error('Error deleting existing answer key:', deleteError);
+      return { success: false, error: deleteError.message };
+    }
+    
+    // Inserir novos registros
+    const { data, error } = await supabase
+      .from('official_answer_weights')
+      .insert(answerKeyData);
+    
+    if (error) {
+      console.error('Error inserting new answers:', error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error in insertAnswersDirectly:', error);
+    return { success: false, error: error.message || String(error) };
+  }
+};
+
+// Exportar os métodos como um objeto de serviço
+export const answerKeyService = {
+  updateSectionTypeForConcurso,
+  extractDisciplineTypes,
+  getAnswerKey,
+  saveAnswerKeyAndRecalculate,
+  insertAnswersDirectly
+};

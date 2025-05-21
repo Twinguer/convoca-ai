@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, AlertTriangle, Check, HelpCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso, SectionType } from '@/types/concursos';
+import { Concurso, SectionType, DisciplineBlock, NestedDiscipline, isDisciplineBlock } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
@@ -306,9 +306,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         // Estrutura hierárquica (blocos -> disciplinas)
         for (const item of concurso.disciplines) {
           // TypeGuard para verificar se é um bloco
-          if ('disciplines' in item && Array.isArray(item.disciplines)) {
-            const block = item as DisciplineBlock;
-            for (const discipline of block.disciplines) {
+          if (isDisciplineBlock(item)) {
+            for (const discipline of item.disciplines) {
               if (discipline.isEnabled && discipline.type) {
                 sections.push({
                   key: discipline.type,
@@ -524,17 +523,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   );
 };
 
-// TypeGuard para verificar se é um bloco
-interface DisciplineBlock {
-  disciplines: NestedDiscipline[];
-}
-
-// TypeGuard para verificar se é uma disciplina
-interface NestedDiscipline {
-  isEnabled: boolean;
-  type: string;
-}
-
+// TypeGuard para verificar se estamos usando estrutura hierárquica
 const isHierarchicalStructure = (concurso: Concurso): boolean => {
   return concurso.disciplines && Array.isArray(concurso.disciplines) &&
     concurso.disciplines[0] &&

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Concurso } from '@/types/concursos';
+import { Concurso, isDisciplineBlock } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
@@ -246,7 +246,7 @@ const RankingTableContent: React.FC<{
     // Iterar sobre os blocos (o primeiro nível da array disciplines)
     for (const block of concurso.disciplines) {
       // Verificar se o bloco é válido e tem uma array de disciplinas
-      if (block && typeof block === 'object' && Array.isArray(block.disciplines)) {
+      if (isDisciplineBlock(block)) {
         // Iterar sobre as disciplinas dentro do bloco
         for (const discipline of block.disciplines) {
           // Verificar se a disciplina é válida, habilitada e tem as propriedades type e name
