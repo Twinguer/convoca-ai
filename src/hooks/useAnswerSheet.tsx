@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { Concurso, SectionType } from '@/types/concursos';
+import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './useAnswerSheet/sectionUtils';
@@ -117,8 +116,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         if (hierarchical) {
           // Processar estrutura hierárquica (blocos -> disciplinas)
           for (const block of concurso.disciplines) {
-            console.log('[initializeQuestionTypes] Processing block:', block.name);
-            if (block.disciplines && Array.isArray(block.disciplines)) {
+            // Use TypeGuard to check if this is a DisciplineBlock
+            if (isDisciplineBlock(block)) {
+              console.log('[initializeQuestionTypes] Processing block:', block.name);
               for (const discipline of block.disciplines) {
                 if (discipline.isEnabled) {
                   const questionCount = getNumericValue(discipline.questionCount);
@@ -134,8 +134,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           }
         } else {
           // Processar estrutura plana
-          for (const discipline of concurso.disciplines as any[]) {
-            if (discipline.isEnabled) {
+          for (const discipline of concurso.disciplines) {
+            if (!isDisciplineBlock(discipline) && discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
               console.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from flat discipline ${discipline.name}`);
               
@@ -234,7 +234,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       if (hierarchical) {
         // Processar estrutura hierárquica (blocos -> disciplinas)
         for (const block of concurso.disciplines) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
+          if (isDisciplineBlock(block)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled && discipline.questionCount) {
                 const count = getNumericValue(discipline.questionCount);
@@ -246,8 +246,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
       } else {
         // Processar estrutura plana
-        for (const discipline of concurso.disciplines as any[]) {
-          if (discipline.isEnabled && discipline.questionCount) {
+        for (const discipline of concurso.disciplines) {
+          if (!isDisciplineBlock(discipline) && discipline.isEnabled && discipline.questionCount) {
             const count = getNumericValue(discipline.questionCount);
             console.log(`[getTotalQuestions] Adding ${count} questions from flat discipline ${discipline.name}`);
             total += count;
@@ -312,7 +312,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       if (hierarchical) {
         // Processar estrutura hierárquica (blocos -> disciplinas)
         for (const block of concurso.disciplines) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
+          if (isDisciplineBlock(block)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled) {
                 const questionCount = getNumericValue(discipline.questionCount);
@@ -335,8 +335,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
       } else {
         // Processar estrutura plana
-        for (const discipline of concurso.disciplines as any[]) {
-          if (discipline.isEnabled) {
+        for (const discipline of concurso.disciplines) {
+          if (!isDisciplineBlock(discipline) && discipline.isEnabled) {
             const questionCount = getNumericValue(discipline.questionCount);
 
             if (discipline.type === selectedSection) {

@@ -182,3 +182,6 @@ export const answerKeyService = {
   saveAnswerKeyAndRecalculate,
   insertAnswersDirectly
 };
+
+// Este export default é necessário para compatibilidade com imports existentes
+export default answerKeyService;

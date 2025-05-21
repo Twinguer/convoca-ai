@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Concurso, SectionType } from '@/types/concursos';
+import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
@@ -25,30 +25,26 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
                                'name' in concurso.disciplines[0] &&
                                'disciplines' in concurso.disciplines[0];
 
-                               if (isHierarchical) {
-                                // Encontrar a primeira disciplina ativa em qualquer bloco
-                                for (const block of concurso.disciplines as any[]) { // Manter as any[] por enquanto para compatibilidade com dados, idealmente remover após refatoração completa
-                                  if (block.disciplines && Array.isArray(block.disciplines)) {
-                                    const firstDiscipline = block.disciplines.find((d: any) => d.isEnabled); // Acessa isEnabled nas disciplinas aninhadas
-                                    if (firstDiscipline) {
-                                      setSelectedSection(firstDiscipline.type as SectionType); // Acessa type nas disciplinas aninhadas
-                                      break; // Sair do loop de blocos assim que encontrar
-                                    }
-                                  }
-                                }
-                              } else {
-                                // Como a tipagem agora é sempre aninhada para has_custom_knowledge,
-                                // precisamos iterar sobre blocos e disciplinas mesmo no "modo antigo"
-                                for (const block of concurso.disciplines as any[]) { // Manter as any[] por enquanto
-                                  if (block.disciplines && Array.isArray(block.disciplines)) {
-                                    const firstDiscipline = block.disciplines.find((d: any) => d.isEnabled);
-                                    if (firstDiscipline) {
-                                      setSelectedSection(firstDiscipline.type as SectionType);
-                                      break; // Sair do loop de blocos assim que encontrar
-                                    }
-                                  }
-                                }
-                              }
+        if (isHierarchical) {
+          // Encontrar a primeira disciplina ativa em qualquer bloco
+          for (const block of concurso.disciplines) {
+            if (isDisciplineBlock(block)) {
+              const firstDiscipline = block.disciplines.find((d) => d.isEnabled);
+              if (firstDiscipline) {
+                setSelectedSection(firstDiscipline.type as SectionType);
+                break; // Sair do loop de blocos assim que encontrar
+              }
+            }
+          }
+        } else {
+          // Estrutura plana - procurar a primeira disciplina ativa
+          for (const discipline of concurso.disciplines) {
+            if (!isDisciplineBlock(discipline) && discipline.isEnabled) {
+              setSelectedSection(discipline.type as SectionType);
+              break;
+            }
+          }
+        }
       } else if (concurso.has_basic_knowledge) {
         setSelectedSection('basic');
       } else if (concurso.has_specific_knowledge_1) {
@@ -147,13 +143,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         let questionNumber = 1;
 
         // Processar estrutura hierárquica (blocos com disciplinas aninhadas)
-        for (const block of concurso.disciplines) { // Iterar sobre os blocos
-          if (block.disciplines && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) { // Iterar sobre as disciplinas dentro do bloco
+        for (const block of concurso.disciplines) {
+          if (isDisciplineBlock(block)) {
+            for (const discipline of block.disciplines) {
               if (discipline.isEnabled) {
                 const questionCount = getNumericValue(discipline.questionCount);
                 for (let i = 0; i < questionCount; i++) {
-                  typesMap[questionNumber] = discipline.type; // <-- Correção: Acessando type na disciplina
+                  typesMap[questionNumber] = discipline.type;
                   questionNumber++;
                 }
               }
@@ -229,9 +225,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     // Verificar se estamos usando a estrutura customizada (blocos -> disciplinas)
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       // Processar estrutura hierárquica (blocos com disciplinas aninhadas)
-      for (const block of concurso.disciplines) { // Iterar sobre os blocos
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          for (const discipline of block.disciplines) { // Iterar sobre as disciplinas dentro do bloco
+      for (const block of concurso.disciplines) {
+        if (isDisciplineBlock(block)) {
+          for (const discipline of block.disciplines) {
             if (discipline.isEnabled && discipline.questionCount) {
               total += getNumericValue(discipline.questionCount);
             }
@@ -260,7 +256,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     return total;
   };
 
-
   const getAnsweredQuestionsCount = () => {
     return Object.keys(answers).length;
   };
@@ -283,13 +278,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       let startIndex = 1;
 
       // Processar estrutura hierárquica (blocos com disciplinas aninhadas)
-      for (const block of concurso.disciplines) { // Iterar sobre os blocos
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          for (const discipline of block.disciplines) { // Iterar sobre as disciplinas dentro do bloco
+      for (const block of concurso.disciplines) {
+        if (isDisciplineBlock(block)) {
+          for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
 
-              if (discipline.type === selectedSection) { // <-- Acessando type na disciplina
+              if (discipline.type === selectedSection) {
                 // Retornar o range de questões para esta disciplina
                 const questions = Array.from(
                   { length: questionCount },

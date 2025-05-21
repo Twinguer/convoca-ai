@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
@@ -94,7 +95,7 @@ export const useSaveAnswers = ({
       const hierarchical = isHierarchicalStructure(concurso);
       console.log('[useSaveAnswers] Estrutura hierárquica?', hierarchical);
 
-      // Chamar a função RPC centralizada
+      // Chamar a função RPC centralizada com a ordem correta dos parâmetros
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
