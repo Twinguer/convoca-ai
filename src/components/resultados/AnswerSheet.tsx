@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -301,15 +300,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-      const hierarchical = concurso.disciplines[0] &&
-        typeof concurso.disciplines[0] === 'object' &&
-        'name' in concurso.disciplines[0] &&
-        'disciplines' in concurso.disciplines[0];
+      const hierarchical = isHierarchicalStructure(concurso);
         
       if (hierarchical) {
         // Estrutura hierárquica (blocos -> disciplinas)
-        for (const block of concurso.disciplines) {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const item of concurso.disciplines) {
+          // TypeGuard para verificar se é um bloco
+          if ('disciplines' in item && Array.isArray(item.disciplines)) {
+            const block = item as DisciplineBlock;
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled && discipline.type) {
                 sections.push({
@@ -322,8 +320,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         }
       } else {
         // Estrutura plana
-        for (const discipline of concurso.disciplines as any) {
-          if (discipline.isEnabled && discipline.type) {
+        for (const item of concurso.disciplines) {
+          // TypeGuard para verificar se é uma disciplina
+          if ('isEnabled' in item && item.isEnabled && item.type) {
+            const discipline = item as NestedDiscipline;
             sections.push({
               key: discipline.type,
               label: discipline.name || discipline.type
@@ -522,4 +522,23 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       </CardFooter>
     </Card>
   );
+};
+
+// TypeGuard para verificar se é um bloco
+interface DisciplineBlock {
+  disciplines: NestedDiscipline[];
+}
+
+// TypeGuard para verificar se é uma disciplina
+interface NestedDiscipline {
+  isEnabled: boolean;
+  type: string;
+}
+
+const isHierarchicalStructure = (concurso: Concurso): boolean => {
+  return concurso.disciplines && Array.isArray(concurso.disciplines) &&
+    concurso.disciplines[0] &&
+    typeof concurso.disciplines[0] === 'object' &&
+    'name' in concurso.disciplines[0] &&
+    'disciplines' in concurso.disciplines[0];
 };

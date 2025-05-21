@@ -15,9 +15,12 @@ export const getTotalQuestions = (concurso: Concurso): number => {
 
     if (hierarchical) {
       // Contar em estrutura hierárquica (blocos -> disciplinas)
-      for (const block of concurso.disciplines as DisciplineBlock[]) {
-        console.log(`[getTotalQuestions] Processing block: ${block.name}`);
-        if (block.disciplines && Array.isArray(block.disciplines)) {
+      for (const item of concurso.disciplines) {
+        // TypeGuard para verificar se é um bloco
+        if ('disciplines' in item && Array.isArray(item.disciplines)) {
+          const block = item as DisciplineBlock;
+          console.log(`[getTotalQuestions] Processing block: ${block.name}`);
+          
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
@@ -31,8 +34,10 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       return total;
     } else {
       // Contar em estrutura plana
-      for (const discipline of concurso.disciplines as NestedDiscipline[]) {
-        if (discipline.isEnabled) {
+      for (const item of concurso.disciplines) {
+        // TypeGuard para verificar se é uma disciplina
+        if ('isEnabled' in item && item.isEnabled) {
+          const discipline = item as NestedDiscipline;
           const questionCount = getNumericValue(discipline.questionCount);
           console.log(`[getTotalQuestions] Adding ${questionCount} questions from flat discipline ${discipline.name}`);
           total += questionCount;

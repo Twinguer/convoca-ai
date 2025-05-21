@@ -1,333 +1,101 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { getSectionTypeForQuestion, sanitizeSectionType } from '@/integrations/supabase/rankings/examStructure';
-import { Concurso } from '@/types/concursos';
-import { toast } from 'sonner';
+import { isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
-interface AnswerKeyItem {
-  concurso_id: string;
-  question_number: number;
-  correct_answer: string;
-  weight: number;
-  section_type: string;
-  is_nullified: boolean;
-}
-
-// Função para atualizar o tipo de seção para determinado concurso
-export const updateSectionTypeForConcurso = async (
-  concursoId: string
-): Promise<{ success: boolean; error?: string }> => {
+/**
+ * Atualiza os tipos de seção para o gabarito de um concurso
+ */
+export const updateSectionTypeForConcurso = async (concursoId: string) => {
   try {
-    // Primeiro obter o concurso
+    // Obter o concurso
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
       .select('*')
       .eq('id', concursoId)
       .single();
       
-    if (concursoError) throw concursoError;
+    if (concursoError) {
+      console.error('Erro ao buscar concurso:', concursoError);
+      return { success: false, error: concursoError.message };
+    }
+
+    // Verificar se estamos usando estrutura hierárquica
+    const hierarchical = isHierarchicalStructure(concurso);
+    console.log(`[updateSectionTypeForConcurso] Concurso ${concursoId} usa estrutura hierárquica? ${hierarchical}`);
+
+    // Chamar a função RPC existente para atualizar tipos de seção
+    const { data, error } = await supabase.rpc('update_section_types', {
+      p_concurso_id: concursoId,
+      p_hierarchical: hierarchical // Passar o indicador de estrutura hierárquica
+    });
     
-    // Obter todas as questões do gabarito oficial
-    const { data: questions, error: questionsError } = await supabase
-      .from('official_answer_weights')
-      .select('id, question_number')
-      .eq('concurso_id', concursoId);
-      
-    if (questionsError) throw questionsError;
-    
-    // Para cada questão, atualizar o section_type com base na função de mapeamento
-    for (const question of questions || []) {
-      const sectionType = getSectionTypeForQuestion(concurso, question.question_number);
-      
-      console.log(`Atualizando questão ${question.question_number} para section_type: ${sectionType}`);
-      
-      const { error } = await supabase
-        .from('official_answer_weights')
-        .update({ section_type: sectionType })
-        .eq('id', question.id);
-        
-      if (error) throw error;
+    if (error) {
+      console.error('Error updating section types:', error);
+      return { success: false, error: error.message };
     }
     
-    return { success: true };
-  } catch (error) {
+    return { success: true, data };
+  } catch (error: any) {
     console.error('Error updating section types:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+    return { success: false, error: error.message || String(error) };
   }
-}
+};
 
-export const answerKeyService = {
-  // Função para salvar o gabarito e recalcular pontuações
-  async saveAnswerKeyAndRecalculate(concursoId: string, answerKeyData: AnswerKeyItem[]) {
-    try {
-      console.log(`[answerKeyService] Iniciando salvamento de gabarito para concurso: ${concursoId}`);
-      console.log(`[answerKeyService] Total de questões a salvar: ${answerKeyData.length}`);
+// Função para extrair tipos de disciplina de um concurso
+export const extractDisciplineTypes = async (concursoId: string) => {
+  try {
+    // Obter o concurso
+    const { data: concurso, error: concursoError } = await supabase
+      .from('concursos')
+      .select('*')
+      .eq('id', concursoId)
+      .single();
       
-      // Primeiro obter o concurso para ter acesso às disciplinas customizadas
-      const { data: concurso, error: concursoError } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', concursoId)
-        .single();
-        
-      if (concursoError) {
-        console.error('[answerKeyService] Erro ao obter concurso:', concursoError);
-        throw concursoError;
-      }
-      
-      // Verificar se estamos lidando com a estrutura hierárquica
-      const isHierarchical = concurso?.disciplines && 
-                         Array.isArray(concurso.disciplines) && 
-                         concurso.disciplines[0] && 
-                         typeof concurso.disciplines[0] === 'object' && 
-                         'name' in concurso.disciplines[0] && 
-                         'disciplines' in concurso.disciplines[0];
+    if (concursoError) {
+      console.error('Erro ao buscar concurso:', concursoError);
+      return { success: false, error: concursoError.message };
+    }
 
-      console.log(`[answerKeyService] Estrutura hierárquica detectada: ${isHierarchical}`);
-      
-      // Registrar todas as questões que vamos salvar para debug
-      answerKeyData.forEach((item, index) => {
-        // Use section_type sem modificação para disciplinas customizadas
-        // ou obtenha o tipo correto para questões tradicionais
-        let correctedSectionType: string;
-        
-        if (item.section_type.startsWith('custom_')) {
-          correctedSectionType = item.section_type;
-        } else {
-          correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
-        }
-        
-        // Log para debug
-        console.log(`[answerKeyService] Questão ${index + 1}: assigning section_type=${correctedSectionType} for question=${item.question_number}`);
-        
-        // Sempre atribuir section_type para garantir compatibilidade com o banco
-        item.section_type = correctedSectionType;
-        
-        console.log(`[answerKeyService] Questão ${index + 1}:`, {
-          numero: item.question_number,
-          resposta: item.correct_answer,
-          seção: item.section_type,
-          anulada: item.is_nullified
-        });
-      });
-
-      // Verificar se já existem respostas no gabarito
-      const { data: existingAnswers, error: checkError } = await supabase
-        .from('official_answer_weights')
-        .select('question_number, correct_answer')
-        .eq('concurso_id', concursoId);
-
-      if (checkError) {
-        console.error('[answerKeyService] Erro ao verificar gabarito existente:', checkError);
-        throw checkError;
-      }
-      
-      console.log(`[answerKeyService] Respostas existentes: ${existingAnswers?.length || 0}`);
-
-      // Processar cada questão individualmente para identificar erros específicos
-      const errors = [];
-      
-      for (const item of answerKeyData) {
-        try {
-          console.log(`[answerKeyService] Processando questão ${item.question_number}, resposta: ${item.correct_answer}, seção: ${item.section_type}`);
-          
-          const { data, error } = await supabase.rpc('update_answer_with_weight', {
-            p_concurso_id: item.concurso_id,
-            p_question_number: item.question_number,
-            p_correct_answer: item.correct_answer,
-            p_weight: item.weight || 1.0,
-            p_is_nullified: item.is_nullified || false,
-            p_section_type: item.section_type
-          });
-
-          if (error) {
-            console.error(`[answerKeyService] Erro ao salvar questão ${item.question_number}:`, error);
-            errors.push(`Questão ${item.question_number}: ${error.message}`);
-            // Continue trying other questions despite errors
-          } else {
-            console.log(`[answerKeyService] Questão ${item.question_number} salva com sucesso`);
+    // Verificar se estamos usando estrutura hierárquica
+    const hierarchical = isHierarchicalStructure(concurso);
+    
+    // Extrair tipos de disciplina
+    const disciplineTypes: Array<{type: string, name: string}> = [];
+    
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      if (hierarchical) {
+        // Estrutura hierárquica (blocos -> disciplinas)
+        for (const item of concurso.disciplines) {
+          if ('disciplines' in item && Array.isArray(item.disciplines)) {
+            const block = item;
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type) {
+                disciplineTypes.push({
+                  type: discipline.type,
+                  name: discipline.name
+                });
+              }
+            }
           }
-        } catch (error) {
-          console.error(`[answerKeyService] Exceção ao salvar questão ${item.question_number}:`, error);
-          errors.push(`Questão ${item.question_number}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+        }
+      } else {
+        // Estrutura plana
+        for (const item of concurso.disciplines) {
+          if ('isEnabled' in item && item.isEnabled && item.type) {
+            disciplineTypes.push({
+              type: item.type,
+              name: item.name
+            });
+          }
         }
       }
-
-      // Verificar se houve erros
-      if (errors.length > 0) {
-        console.error('[answerKeyService] Erros ao salvar gabarito:', errors);
-        // Throw comprehensive error with all question-specific errors
-        throw new Error(`Erros ao salvar questões: ${errors.join(', ')}`);
-      }
-
-      // Verificar se os dados foram realmente salvos
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('official_answer_weights')
-        .select('question_number, correct_answer, section_type')
-        .eq('concurso_id', concursoId);
-
-      if (verifyError) {
-        console.error('[answerKeyService] Erro ao verificar salvamento:', verifyError);
-        throw verifyError;
-      }
-
-      console.log(`[answerKeyService] Verificação: ${verifyData?.length || 0} questões encontradas no banco`);
-      if (verifyData) {
-        verifyData.forEach(item => {
-          console.log(`[answerKeyService] Questão ${item.question_number}: ${item.correct_answer}, seção: ${item.section_type}`);
-        });
-      }
-
-      // Try to recalculate all scores
-      try {
-        const { data: recalcResult, error: recalcError } = await supabase.rpc(
-          'recalculate_all_scores',
-          { p_concurso_id: concursoId }
-        );
-
-        if (recalcError) {
-          console.error('[answerKeyService] Erro ao recalcular pontuações:', recalcError);
-          // Don't throw here, we'll return success for saving the answers
-        } else {
-          console.log('[answerKeyService] Pontuações recalculadas com sucesso:', recalcResult);
-        }
-      } catch (error) {
-        console.error('[answerKeyService] Erro ao chamar recalculate_all_scores:', error);
-        // Don't throw here, we'll return success for saving the answers
-      }
-
-      return {
-        success: true,
-        updatedCount: answerKeyData.length
-      };
-    } catch (error) {
-      console.error('[answerKeyService] Erro ao salvar gabarito:', error);
-      return {
-        success: false,
-        error: (error as Error).message
-      };
     }
-  },
-
-  // Função para obter o gabarito de um concurso
-  async getAnswerKey(concursoId: string) {
-    try {
-      console.log(`[answerKeyService] Buscando gabarito do concurso: ${concursoId}`);
-      
-      const { data, error } = await supabase.rpc('get_official_answer_weights', {
-        p_concurso_id: concursoId
-      });
-
-      if (error) {
-        console.error('[answerKeyService] Erro ao buscar gabarito:', error);
-        throw error;
-      }
-
-      console.log(`[answerKeyService] Gabarito encontrado:`, data);
-      return {
-        success: true,
-        data: data || {}
-      };
-    } catch (error) {
-      console.error('[answerKeyService] Erro ao buscar gabarito:', error);
-      return {
-        success: false,
-        error: (error as Error).message,
-        data: {}
-      };
-    }
-  },
-  
-  // Atualizada a função para inserir diretamente na tabela official_answer_weights
-  async insertAnswersDirectly(concursoId: string, answerKeyData: AnswerKeyItem[]) {
-    try {
-      console.log(`[answerKeyService] Tentando inserir diretamente no banco de dados para concurso: ${concursoId}`);
-      
-      // Primeiro obter o concurso para ter acesso às disciplinas customizadas
-      const { data: concurso, error: concursoError } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', concursoId)
-        .single();
-        
-      if (concursoError) {
-        console.error('[answerKeyService] Erro ao obter concurso:', concursoError);
-        throw concursoError;
-      }
-      
-      // Primeiro, remover registros existentes para este concurso para evitar conflitos
-      const { error: deleteError } = await supabase
-        .from('official_answer_weights')
-        .delete()
-        .eq('concurso_id', concursoId);
-      
-      if (deleteError) {
-        console.error('[answerKeyService] Erro ao limpar gabarito existente:', deleteError);
-        throw deleteError;
-      }
-      
-      // Verificar se estamos lidando com a estrutura hierárquica
-      const isHierarchical = concurso?.disciplines && 
-                         Array.isArray(concurso.disciplines) && 
-                         concurso.disciplines[0] && 
-                         typeof concurso.disciplines[0] === 'object' && 
-                         'name' in concurso.disciplines[0] && 
-                         'disciplines' in concurso.disciplines[0];
-
-      console.log(`[answerKeyService] Estrutura hierárquica detectada: ${isHierarchical}`);
-      
-      // Preparar dados para inserção e garantir que section_type seja válido
-      const insertData = answerKeyData.map(item => {
-        // Para disciplinas customizadas, mantém o tipo original
-        let correctedSectionType: string;
-        
-        if (item.section_type.startsWith('custom_')) {
-          correctedSectionType = item.section_type;
-        } else {
-          // Para tipos tradicionais, usa a função de mapeamento
-          correctedSectionType = getSectionTypeForQuestion(concurso, item.question_number);
-        }
-        
-        return {
-          concurso_id: item.concurso_id,
-          question_number: item.question_number,
-          correct_answer: item.correct_answer,
-          weight: item.weight || 1.0,
-          is_nullified: item.is_nullified || false,
-          section_type: correctedSectionType
-        };
-      });
-      
-      // Registrar os section_types para debug
-      insertData.forEach(item => {
-        console.log(`[answerKeyService] Questão ${item.question_number} com section_type: ${item.section_type}`);
-      });
-      
-      // Inserir todos os registros de uma vez
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .insert(insertData)
-        .select();
-      
-      if (error) {
-        console.error('[answerKeyService] Erro ao inserir gabarito diretamente:', error);
-        throw error;
-      }
-      
-      console.log(`[answerKeyService] Inserção direta: ${data?.length || 0} questões inseridas com sucesso`);
-      
-      return {
-        success: true,
-        insertedCount: insertData.length
-      };
-    } catch (error) {
-      console.error('[answerKeyService] Erro na inserção direta:', error);
-      return {
-        success: false,
-        error: (error as Error).message
-      };
-    }
+    
+    console.log(`[extractDisciplineTypes] Encontrados ${disciplineTypes.length} tipos de disciplina`);
+    return { success: true, disciplineTypes };
+    
+  } catch (error: any) {
+    console.error('Error extracting discipline types:', error);
+    return { success: false, error: error.message || String(error) };
   }
 };

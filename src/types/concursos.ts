@@ -1,4 +1,3 @@
-
 export interface NestedDiscipline {
   id?: string;
   type: string;
@@ -14,7 +13,10 @@ export interface DisciplineBlock {
   name: string;
   weight?: number;
   minimum_score?: number;
-  disciplines: NestedDiscipline[]; // Usando a nova interface para disciplinas aninhadas
+  disciplines: NestedDiscipline[]; 
+  isEnabled?: boolean;  // Apenas para compatibilidade temporária com código existente
+  type?: string;       // Apenas para compatibilidade temporária com código existente
+  questionCount?: number; // Apenas para compatibilidade temporária com código existente
 }
 
 export interface Concurso {
@@ -140,34 +142,35 @@ export type SectionType =
   | 'case_study3'
   | string;
 
-// Função auxiliar para determinar quais seções estão habilitadas (Pode precisar de ajuste)
+// Função auxiliar para determinar quais seções estão habilitadas
 export const getEnabledKnowledgeSections = (concurso: Concurso) => {
   const enabledSections: Record<string, boolean> = {
     useCustomKnowledge: true
   };
 
-  // A lógica aqui precisaria ser ajustada para percorrer a nova estrutura aninhada
-  // Se esta função ainda for usada, precisará de uma refatoração similar à getCustomDisciplines
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    concurso.disciplines.forEach(block => {
-      if ('disciplines' in block && Array.isArray(block.disciplines)) {
+    for (const item of concurso.disciplines) {
+      // Verificar se é um bloco (tem propriedade disciplines)
+      if ('disciplines' in item && Array.isArray(item.disciplines)) {
         // É um bloco
-        block.disciplines.forEach(discipline => {
+        for (const discipline of item.disciplines) {
           if (discipline.isEnabled && discipline.type) {
             enabledSections[discipline.type] = true;
           }
-        });
-      } else if ('isEnabled' in block && block.isEnabled && block.type) {
+        }
+      } 
+      // Verificar se é uma disciplina direta (tem propriedade isEnabled)
+      else if ('isEnabled' in item && item.isEnabled && item.type) {
         // É uma disciplina direta
-        enabledSections[block.type] = true;
+        enabledSections[item.type] = true;
       }
-    });
+    }
   }
 
   return enabledSections;
 };
 
-// Função para obter as colunas de tabela para um ranking baseado na estrutura do concurso (Precisa de ajuste)
+// Função para obter as colunas de tabela para um ranking baseado na estrutura do concurso
 export const getRankingTableColumns = (concurso: Concurso) => {
   const columns = [
     { id: 'position', label: '#', align: 'center', width: '16' },
@@ -175,30 +178,33 @@ export const getRankingTableColumns = (concurso: Concurso) => {
     { id: 'score', label: 'Total', align: 'right' }
   ];
 
-  // A lógica aqui precisaria ser ajustada para percorrer a nova estrutura aninhada
-   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-     concurso.disciplines.forEach(block => {
-       if ('disciplines' in block && Array.isArray(block.disciplines)) {
-         // É um bloco
-         block.disciplines.forEach(discipline => {
-           if (discipline.isEnabled) {
-             columns.push({
-               id: `${discipline.type}Score`, // Assumindo que o score vem nesse formato no ranking do usuário
-               label: discipline.name,
-               align: 'right'
-             });
-           }
-         });
-       } else if ('isEnabled' in block && block.isEnabled) {
-         // É uma disciplina direta
-         columns.push({
-           id: `${(block as NestedDiscipline).type}Score`,
-           label: (block as NestedDiscipline).name,
-           align: 'right'
-         });
-       }
-     });
-   }
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    for (const item of concurso.disciplines) {
+      // Verificar se é um bloco (tem propriedade disciplines)
+      if ('disciplines' in item && Array.isArray(item.disciplines)) {
+        // É um bloco
+        for (const discipline of item.disciplines) {
+          if (discipline.isEnabled) {
+            columns.push({
+              id: `${discipline.type}Score`, 
+              label: discipline.name,
+              align: 'right'
+            });
+          }
+        }
+      } 
+      // Verificar se é uma disciplina direta (tem propriedade isEnabled)
+      else if ('isEnabled' in item && item.isEnabled) {
+        // É uma disciplina direta com typeguard
+        const discipline = item as NestedDiscipline;
+        columns.push({
+          id: `${discipline.type}Score`,
+          label: discipline.name,
+          align: 'right'
+        });
+      }
+    }
+  }
 
   // Adicionar colunas para partes subjetivas
   if (concurso.has_discursive) {
@@ -219,4 +225,3 @@ export const getRankingTableColumns = (concurso: Concurso) => {
 
   return columns;
 };
-

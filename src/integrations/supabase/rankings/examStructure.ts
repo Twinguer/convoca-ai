@@ -65,8 +65,9 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
 
     if (hierarchical) {
       // Processar estrutura hierárquica (blocos -> disciplinas)
-      for (const block of concurso.disciplines as any[]) {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
+      for (const block of concurso.disciplines) {
+        // Verificar se o item é um bloco usando typeguard
+        if ('disciplines' in block && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
@@ -84,7 +85,8 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
     } else {
       // Processar estrutura plana
       for (const discipline of concurso.disciplines) {
-        if (discipline.isEnabled) {
+        // Verificar se o item é uma disciplina direta usando typeguard
+        if ('isEnabled' in discipline && discipline.isEnabled) {
           const questionCount = getNumericValue(discipline.questionCount);
           
           // Se a questão está nesta disciplina
@@ -146,12 +148,12 @@ export const isHierarchicalStructure = (concurso: Concurso): boolean => {
     return false;
   }
   
-  // Check if at least one element in the disciplines array has the expected structure
-  const firstDiscipline = concurso.disciplines[0];
+  // Check if at least one element in the disciplines array has the disciplines property
+  const firstItem = concurso.disciplines[0];
   const isHierarchical = 
-    typeof firstDiscipline === 'object' && 
-    firstDiscipline !== null &&
-    'disciplines' in firstDiscipline;
+    typeof firstItem === 'object' && 
+    firstItem !== null &&
+    'disciplines' in firstItem;
     
   console.log(`[isHierarchicalStructure] Analyzed concurso ${concurso.id}, structure is ${isHierarchical ? 'hierarchical' : 'flat'}`);
   
@@ -169,8 +171,10 @@ export const getDisciplines = (concurso: Concurso) => {
       // Flatten the hierarchical structure to get all disciplines
       const disciplines: NestedDiscipline[] = [];
       
-      for (const block of concurso.disciplines as DisciplineBlock[]) {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
+      for (const item of concurso.disciplines) {
+        // Verificar se é um bloco usando typeguard
+        if ('disciplines' in item && Array.isArray(item.disciplines)) {
+          const block = item as DisciplineBlock;
           for (const discipline of block.disciplines) {
             // Add block information to the discipline
             disciplines.push({
@@ -185,8 +189,8 @@ export const getDisciplines = (concurso: Concurso) => {
       
       return disciplines;
     } else {
-      // Return flat structure directly
-      return concurso.disciplines as NestedDiscipline[];
+      // Return flat structure directly as NestedDiscipline array
+      return concurso.disciplines.filter(item => 'isEnabled' in item) as NestedDiscipline[];
     }
   }
   

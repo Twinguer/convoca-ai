@@ -17,10 +17,12 @@ export const handleQuestionSectionSelection = (
 
     // Processar estrutura hierárquica (blocos -> disciplinas)
     if (hierarchical) {
-      for (const block of concurso.disciplines as DisciplineBlock[]) {
-        console.log('Checking block:', block.name);
+      for (const item of concurso.disciplines) {
+        // TypeGuard para verificar se é um bloco
+        if ('disciplines' in item && Array.isArray(item.disciplines)) {
+          console.log('Checking block:', item.name);
+          const block = item as DisciplineBlock;
 
-        if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled && discipline.type) {
               console.log('Selected first enabled discipline (hierarchical):', discipline.name, discipline.type);
@@ -32,8 +34,10 @@ export const handleQuestionSectionSelection = (
       }
     } else {
       // Estrutura plana de disciplinas
-      for (const discipline of concurso.disciplines as NestedDiscipline[]) {
-        if (discipline.isEnabled && discipline.type) {
+      for (const item of concurso.disciplines) {
+        // TypeGuard para verificar se é uma disciplina
+        if ('isEnabled' in item && item.isEnabled && item.type) {
+          const discipline = item as NestedDiscipline;
           console.log('Selected first enabled discipline (flat):', discipline.name, discipline.type);
           setSelectedSection(discipline.type as SectionType);
           return; // Sair da função assim que encontrar

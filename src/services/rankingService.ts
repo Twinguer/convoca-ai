@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -177,6 +176,16 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
             }
           }
         });
+
+        console.log(`[fetchUserRankings] Generated discipline scores for user ${ranking.user_id}:`, customDisciplineScores);
+      }
+      
+      // Registrar pontuações personalizadas
+      if (index === 0) {
+        console.log(`[fetchUserRankings] First user discipline scores:`, {
+          raw: customDisciplineScores,
+          weighted: weightedCustomDisciplineScores
+        });
       }
       
       // Calcular o total objetivo (excluindo discursivas e estudos de caso)
@@ -251,8 +260,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         // Pontuações de disciplinas customizadas
-        customDisciplineScores,
-        weightedCustomDisciplineScores,
+        customDisciplineScores: customDisciplineScores || {},
+        weightedCustomDisciplineScores: weightedCustomDisciplineScores || {},
         // Flags de mínimos não atingidos
         belowMinimum,
         belowBlockMinimums: belowBlockMinimums.length > 0 ? belowBlockMinimums : undefined,
