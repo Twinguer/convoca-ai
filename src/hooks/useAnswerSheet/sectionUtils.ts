@@ -1,5 +1,5 @@
 
-import { Concurso, SectionType } from '@/types/concursos';
+import { Concurso, SectionType, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
 import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const handleQuestionSectionSelection = (
@@ -17,7 +17,7 @@ export const handleQuestionSectionSelection = (
 
     // Processar estrutura hierárquica (blocos -> disciplinas)
     if (hierarchical) {
-      for (const block of concurso.disciplines) {
+      for (const block of concurso.disciplines as DisciplineBlock[]) {
         console.log('Checking block:', block.name);
 
         if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -32,7 +32,7 @@ export const handleQuestionSectionSelection = (
       }
     } else {
       // Estrutura plana de disciplinas
-      for (const discipline of concurso.disciplines as any[]) {
+      for (const discipline of concurso.disciplines as NestedDiscipline[]) {
         if (discipline.isEnabled && discipline.type) {
           console.log('Selected first enabled discipline (flat):', discipline.name, discipline.type);
           setSelectedSection(discipline.type as SectionType);

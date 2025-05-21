@@ -1,3 +1,4 @@
+
 export interface NestedDiscipline {
   id?: string;
   type: string;
@@ -59,7 +60,7 @@ export interface Concurso {
   is_admin_update?: boolean;
 
   // Array de blocos de disciplinas (NOVA ESTRUTURA - RENOMEADA PARA disciplines)
-  disciplines?: DisciplineBlock[]; // Usando a nova interface para blocos de disciplinas
+  disciplines?: (DisciplineBlock | NestedDiscipline)[]; // Pode conter tanto blocos quanto disciplinas diretas
 
   // Manteremos por retrocompatibilidade, mas não serão mais usados ativamente
   has_basic_knowledge?: boolean;
@@ -149,12 +150,16 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
   // Se esta função ainda for usada, precisará de uma refatoração similar à getCustomDisciplines
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
     concurso.disciplines.forEach(block => {
-      if (block && Array.isArray(block.disciplines)) {
+      if ('disciplines' in block && Array.isArray(block.disciplines)) {
+        // É um bloco
         block.disciplines.forEach(discipline => {
-           if (discipline.isEnabled && discipline.type) {
+          if (discipline.isEnabled && discipline.type) {
             enabledSections[discipline.type] = true;
           }
         });
+      } else if ('isEnabled' in block && block.isEnabled && block.type) {
+        // É uma disciplina direta
+        enabledSections[block.type] = true;
       }
     });
   }
@@ -173,15 +178,23 @@ export const getRankingTableColumns = (concurso: Concurso) => {
   // A lógica aqui precisaria ser ajustada para percorrer a nova estrutura aninhada
    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
      concurso.disciplines.forEach(block => {
-       if (block && Array.isArray(block.disciplines)) {
+       if ('disciplines' in block && Array.isArray(block.disciplines)) {
+         // É um bloco
          block.disciplines.forEach(discipline => {
-            if (discipline.isEnabled) {
+           if (discipline.isEnabled) {
              columns.push({
                id: `${discipline.type}Score`, // Assumindo que o score vem nesse formato no ranking do usuário
                label: discipline.name,
                align: 'right'
              });
            }
+         });
+       } else if ('isEnabled' in block && block.isEnabled) {
+         // É uma disciplina direta
+         columns.push({
+           id: `${(block as NestedDiscipline).type}Score`,
+           label: (block as NestedDiscipline).name,
+           align: 'right'
          });
        }
      });
@@ -206,3 +219,4 @@ export const getRankingTableColumns = (concurso: Concurso) => {
 
   return columns;
 };
+

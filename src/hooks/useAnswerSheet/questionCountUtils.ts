@@ -1,5 +1,4 @@
-
-import { Concurso } from '@/types/concursos';
+import { Concurso, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
 import { getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,7 +15,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
 
     if (hierarchical) {
       // Contar em estrutura hierárquica (blocos -> disciplinas)
-      for (const block of concurso.disciplines) {
+      for (const block of concurso.disciplines as DisciplineBlock[]) {
         console.log(`[getTotalQuestions] Processing block: ${block.name}`);
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
@@ -32,7 +31,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       return total;
     } else {
       // Contar em estrutura plana
-      for (const discipline of concurso.disciplines as any[]) {
+      for (const discipline of concurso.disciplines as NestedDiscipline[]) {
         if (discipline.isEnabled) {
           const questionCount = getNumericValue(discipline.questionCount);
           console.log(`[getTotalQuestions] Adding ${questionCount} questions from flat discipline ${discipline.name}`);

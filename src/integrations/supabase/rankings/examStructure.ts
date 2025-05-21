@@ -1,4 +1,4 @@
-import { Concurso } from '@/types/concursos';
+import { Concurso, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
 
 // Mapa para exibição amigável dos nomes das seções
 export let sectionDisplayNames: Record<string, string> = {
@@ -151,7 +151,6 @@ export const isHierarchicalStructure = (concurso: Concurso): boolean => {
   const isHierarchical = 
     typeof firstDiscipline === 'object' && 
     firstDiscipline !== null &&
-    'name' in firstDiscipline && 
     'disciplines' in firstDiscipline;
     
   console.log(`[isHierarchicalStructure] Analyzed concurso ${concurso.id}, structure is ${isHierarchical ? 'hierarchical' : 'flat'}`);
@@ -168,9 +167,9 @@ export const getDisciplines = (concurso: Concurso) => {
     
     if (hierarchical) {
       // Flatten the hierarchical structure to get all disciplines
-      const disciplines: any[] = [];
+      const disciplines: NestedDiscipline[] = [];
       
-      for (const block of concurso.disciplines as any[]) {
+      for (const block of concurso.disciplines as DisciplineBlock[]) {
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
             // Add block information to the discipline
@@ -179,7 +178,7 @@ export const getDisciplines = (concurso: Concurso) => {
               blockName: block.name,
               blockId: block.id,
               blockWeight: block.weight
-            });
+            } as any);
           }
         }
       }
@@ -187,7 +186,7 @@ export const getDisciplines = (concurso: Concurso) => {
       return disciplines;
     } else {
       // Return flat structure directly
-      return concurso.disciplines;
+      return concurso.disciplines as NestedDiscipline[];
     }
   }
   
