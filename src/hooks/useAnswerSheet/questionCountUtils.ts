@@ -1,3 +1,4 @@
+
 import { Concurso } from '@/types/concursos';
 import { getDisciplines, getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,40 +10,41 @@ export const getTotalQuestions = (concurso: Concurso): number => {
 
   // Verificar se estamos usando conhecimentos customizáveis
   if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    const hierarchical = isHierarchicalStructure(concurso); // Supondo que isHierarchicalStructure é definida e funciona
+    const hierarchical = isHierarchicalStructure(concurso);
 
     console.log(`[getTotalQuestions] Using hierarchical structure: ${hierarchical}`);
 
     if (hierarchical) {
-      // Contar em estrutura hierárquica
-      for (const block of concurso.disciplines as any[]) { // Manter as any[] por enquanto para compatibilidade com dados, idealmente remover após refatoração completa
+      // Contar em estrutura hierárquica (blocos -> disciplinas)
+      for (const block of concurso.disciplines) {
+        console.log(`[getTotalQuestions] Processing block: ${block.name}`);
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
-              total += getNumericValue(discipline.questionCount);
+              const questionCount = getNumericValue(discipline.questionCount);
+              console.log(`[getTotalQuestions] Adding ${questionCount} questions from discipline ${discipline.name}`);
+              total += questionCount;
             }
           }
         }
       }
       console.log(`[getTotalQuestions] Total hierarchical questions: ${total}`);
       return total;
-    }
-
-    // Contar em estrutura plana (ajustado para iterar sobre blocos e disciplinas aninhadas)
-    for (const block of concurso.disciplines as any[]) { // Manter as any[] por enquanto para compatibilidade com dados
-      if (block.disciplines && Array.isArray(block.disciplines)) {
-        for (const discipline of block.disciplines) {
-          if (discipline.isEnabled) {
-            total += getNumericValue(discipline.questionCount);
-          }
+    } else {
+      // Contar em estrutura plana
+      for (const discipline of concurso.disciplines as any[]) {
+        if (discipline.isEnabled) {
+          const questionCount = getNumericValue(discipline.questionCount);
+          console.log(`[getTotalQuestions] Adding ${questionCount} questions from flat discipline ${discipline.name}`);
+          total += questionCount;
         }
       }
+      console.log(`[getTotalQuestions] Total flat questions: ${total}`);
+      return total;
     }
-    console.log(`[getTotalQuestions] Total flat questions (adjusted): ${total}`); // Log ajustado
-    return total;
   }
 
-  // Estrutura tradicional (legacy) - Manter por retrocompatibilidade
+  // Estrutura tradicional (legacy)
   if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
     total += getNumericValue(concurso.basic_knowledge_questions);
   }
@@ -59,7 +61,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
     total += getNumericValue(concurso.specific_knowledge_3_questions);
   }
 
-  console.log(`[getTotalQuestions] Total traditional questions: ${total}`); // Log para estrutura tradicional
+  console.log(`[getTotalQuestions] Total traditional questions: ${total}`);
   return total;
 };
 

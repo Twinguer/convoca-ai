@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -102,6 +103,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
       setSectionLabels(updatedNames);
+      console.log('[AnswerSheet] Updated section labels:', updatedNames);
     }
   }, [concurso]);
 
@@ -275,91 +277,94 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
- // Função utilitária para obter todas as questões de todas as seções
- const getAllQuestionsFromAllSections = () => {
-  const allQuestions: number[] = [];
+  // Função utilitária para obter todas as questões de todas as seções
+  const getAllQuestionsFromAllSections = () => {
+    // Usar a função importada para calcular o total de questões
+    const allQuestions = [];
+    let questionNumber = 1;
+    
+    // Iterar sobre todas as questões possíveis até o total esperado
+    const totalQuestions = getTotalQuestions();
+    for (let i = 1; i <= totalQuestions; i++) {
+      allQuestions.push(i);
+    }
+    
+    console.log('[AnswerSheet] getAllQuestionsFromAllSections result:', allQuestions);
+    return allQuestions;
+  };
 
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    // Usar disciplinas customizadas (estrutura aninhada)
-    let currentQuestionNumber = 1;
-    for (const block of concurso.disciplines) { // Iterar sobre os blocos
-      if (block.disciplines && Array.isArray(block.disciplines)) {
-        for (const discipline of block.disciplines) { // Iterar sobre as disciplinas dentro do bloco
-          if (discipline.isEnabled && discipline.questionCount) { // <-- Verificação isEnabled na disciplina
-            const count = typeof discipline.questionCount === 'number'
-              ? discipline.questionCount
-              : parseInt(String(discipline.questionCount) || '0');
-
-            for (let i = 0; i < count; i++) {
-              allQuestions.push(currentQuestionNumber++);
+  // Obter seções de questões objetivas
+  const getObjectiveSections = () => {
+    if (!concurso) return [];
+    
+    const sections = [];
+    
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
+      const hierarchical = concurso.disciplines[0] &&
+        typeof concurso.disciplines[0] === 'object' &&
+        'name' in concurso.disciplines[0] &&
+        'disciplines' in concurso.disciplines[0];
+        
+      if (hierarchical) {
+        // Estrutura hierárquica (blocos -> disciplinas)
+        for (const block of concurso.disciplines) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type) {
+                sections.push({
+                  key: discipline.type,
+                  label: discipline.name || discipline.type
+                });
+              }
             }
           }
         }
+      } else {
+        // Estrutura plana
+        for (const discipline of concurso.disciplines as any) {
+          if (discipline.isEnabled && discipline.type) {
+            sections.push({
+              key: discipline.type,
+              label: discipline.name || discipline.type
+            });
+          }
+        }
+      }
+    } else {
+      // Estrutura tradicional
+      if (concurso.has_basic_knowledge) {
+        sections.push({ key: 'basic', label: sectionLabels.basic || 'Conhecimentos Básicos' });
+      }
+      
+      if (concurso.has_specific_knowledge_1) {
+        sections.push({ key: 'specific1', label: sectionLabels.specific1 || 'Conhecimentos Específicos 1' });
+      }
+      
+      if (concurso.has_specific_knowledge_2) {
+        sections.push({ key: 'specific2', label: sectionLabels.specific2 || 'Conhecimentos Específicos 2' });
+      }
+      
+      if (concurso.has_specific_knowledge_3) {
+        sections.push({ key: 'specific3', label: sectionLabels.specific3 || 'Conhecimentos Específicos 3' });
       }
     }
-    return allQuestions;
-  }
-
-  // Estrutura tradicional (legacy) - Manter por retrocompatibilidade se ainda necessário
-  let currentQuestionNumber = 1;
-
-  // Básico
-  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-    const count = typeof concurso.basic_knowledge_questions === 'number'
-      ? concurso.basic_knowledge_questions
-      : parseInt(String(concurso.basic_knowledge_questions) || '0');
-
-    for (let i = 0; i < count; i++) {
-      allQuestions.push(currentQuestionNumber++);
-    }
-  }
-
-  // Específico 1
-  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-    const count = typeof concurso.specific_knowledge_1_questions === 'number'
-      ? concurso.specific_knowledge_1_questions
-      : parseInt(String(concurso.specific_knowledge_1_questions) || '0');
-
-    for (let i = 0; i < count; i++) {
-      allQuestions.push(currentQuestionNumber++);
-    }
-  }
-
-  // Específico 2
-  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-    const count = typeof concurso.specific_knowledge_2_questions === 'number'
-      ? concurso.specific_knowledge_2_questions
-      : parseInt(String(concurso.specific_knowledge_2_questions) || '0');
-
-    for (let i = 0; i < count; i++) {
-      allQuestions.push(currentQuestionNumber++);
-    }
-  }
-
-  // Específico 3
-  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-    const count = typeof concurso.specific_knowledge_3_questions === 'number'
-      ? concurso.specific_knowledge_3_questions
-      : parseInt(String(concurso.specific_knowledge_3_questions) || '0');
-
-    for (let i = 0; i < count; i++) {
-      allQuestions.push(currentQuestionNumber++);
-    }
-  }
-
-  return allQuestions;
-};
-
+    
+    console.log('[AnswerSheet] Objective sections:', sections);
+    return sections;
+  };
 
   // Modified function to handle section changes with proper typing
   const handleSectionChange = (value: string) => {
+    console.log('[AnswerSheet] Changing section to:', value);
     setSelectedSection(value as SectionType);
   };
 
-  const objectiveSections = [ // Adicionar esta definição ou garantir que esteja presente e correta
-    // ... (defina suas seções objetivas aqui com key e label)
-  ];
-
+  const objectiveSections = getObjectiveSections();
+  const matrix = createAnswerMatrix();
+  
+  console.log('[AnswerSheet] Selected section:', selectedSection);
+  console.log('[AnswerSheet] Answer matrix:', matrix);
 
   return (
     <Card className="shadow-lg">
@@ -458,7 +463,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               {objectiveSections.map(section => (
                 <TabsContent key={section.key} value={section.key}>
                   <AnswerMatrix
-                    matrix={createAnswerMatrix()}
+                    matrix={section.key === selectedSection ? matrix : []}
                     answers={answers}
                     onAnswerChange={handleAnswerChange}
                     onClearAnswer={handleClearAnswer}
