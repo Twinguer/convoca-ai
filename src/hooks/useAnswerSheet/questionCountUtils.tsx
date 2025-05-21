@@ -1,4 +1,3 @@
-
 import { Concurso } from '@/types/concursos';
 
 // Calculate the total number of objective questions in the exam

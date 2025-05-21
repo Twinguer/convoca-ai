@@ -1,3 +1,21 @@
+export interface NestedDiscipline {
+  id?: string;
+  type: string;
+  name: string;
+  isEnabled: boolean;
+  questionCount?: number;
+  weight?: number;
+  minimum_score?: number;
+}
+
+export interface DisciplineBlock {
+  id: string;
+  name: string;
+  weight?: number;
+  minimum_score?: number;
+  disciplines: NestedDiscipline[]; // Usando a nova interface para disciplinas aninhadas
+}
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -41,21 +59,7 @@ export interface Concurso {
   is_admin_update?: boolean;
 
   // Array de blocos de disciplinas (NOVA ESTRUTURA - RENOMEADA PARA disciplines)
-  disciplines?: Array<{
-    id: string;
-    name: string;
-    weight?: number;
-    minimum_score?: number; // Adicionado com base nos logs de dados
-    disciplines: Array<{
-      id?: string;
-      type: string;
-      name: string;
-      isEnabled: boolean;
-      questionCount?: number;
-      weight?: number;
-       minimum_score?: number; // Adicionado com base nos logs de dados
-    }>;
-  }>;
+  disciplines?: DisciplineBlock[]; // Usando a nova interface para blocos de disciplinas
 
   // Manteremos por retrocompatibilidade, mas não serão mais usados ativamente
   has_basic_knowledge?: boolean;
@@ -108,7 +112,7 @@ export interface UserRankingDisplay {
   specific_knowledge_score?: number; // Manter por retrocompatibilidade?
   discursive_score?: number; // Manter
   rankingId?: string;
-  
+
   // Campos para indicar se falhou algum mínimo
   belowMinimum?: boolean;
   belowBlockMinimums?: string[]; // Array de IDs de blocos que falharam o mínimo

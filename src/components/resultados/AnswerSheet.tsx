@@ -33,7 +33,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
   const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
-  
+
   const {
     answers,
     selectedSection,
@@ -62,25 +62,25 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isDiscursiveSection,
     getSectionQuestions
   } = useAnswerSheet(concurso, rankingId);
-  
+
   // Verificar se o gabarito oficial existe
   useEffect(() => {
     const checkOfficialAnswerKey = async () => {
       if (!concurso?.id) return;
-      
+
       setCheckingOfficialAnswers(true);
       try {
         console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
         const result = await checkMissingOfficialAnswers(concurso.id);
-        
+
         if (result.missing) {
           console.warn(`[AnswerSheet] Gabarito oficial incompleto ou não encontrado!`, result);
           setMissingOfficialAnswers(true);
-          
+
           // Exibir toast apenas uma vez
           toast.warning(
             "O gabarito oficial deste concurso parece estar incompleto ou não foi configurado. " +
-            "Entre em contato com o administrador.", 
+            "Entre em contato com o administrador.",
             { duration: 8000 }
           );
         } else {
@@ -93,10 +93,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         setCheckingOfficialAnswers(false);
       }
     };
-    
+
     checkOfficialAnswerKey();
   }, [concurso?.id]);
-  
+
   // Atualizar os nomes de exibição das seções com disciplinas customizadas
   useEffect(() => {
     if (concurso) {
@@ -104,7 +104,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setSectionLabels(updatedNames);
     }
   }, [concurso]);
-  
+
   const {
     data: userRankingData,
     isLoading: isLoadingRanking
@@ -121,11 +121,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     },
     staleTime: 1000
   });
-  
+
   // Definir a variável editsLeft e canEdit antes de useEffect
   const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
   const canEdit = editsLeft > 0;
-  
+
   const {
     data: nullifiedData,
     isLoading: isLoadingNullified,
@@ -144,7 +144,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       staleTime: 30000, // Aumentado para reduzir consultas desnecessárias
       refetchOnWindowFocus: true
   });
-  
+
   // Renomeie a função importada de useSaveAnswers para saveAnswersService
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
@@ -161,7 +161,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     editCount: userRankingData?.edit_count || 0,
     nullifiedQuestions // Passar as questões anuladas para o hook
   });
-  
+
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
@@ -176,23 +176,23 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setCaseStudy3Score(userRankingData.case_study_3_score);
     }
   }, [userRankingData]);
-  
+
   useEffect(() => {
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
       console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
-      
+
       // Verificar se houve alteração no número de questões anuladas
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
-        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:', 
+        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:',
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
-        
+
         setLastCheckedNullifiedCount(nullifiedSet.size);
       }
     }
   }, [nullifiedData]);
-  
+
   const handleSaveAnswers = async () => {
     if (!concurso?.id) {
       setError("ID do concurso não encontrado");
@@ -201,23 +201,23 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
-    
+
     // Considerar também as questões anuladas como "respondidas" para a validação
-    const effectivelyAnsweredQuestions = answeredQuestions + 
+    const effectivelyAnsweredQuestions = answeredQuestions +
       Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
     if (effectivelyAnsweredQuestions < totalQuestions) {
       // Identificar quais questões ainda não foram respondidas (excluindo as anuladas)
       const unansweredQuestions = [];
-      const allQuestions = getAllQuestionsFromAllSections();
-      
+      const allQuestions = getAllQuestionsFromAllSections(); // <-- Adicionada esta linha crucial
+
       // Para cada questão, verificar se está respondida ou anulada
       for (const qNum of allQuestions) {
         if (!answers[qNum] && !nullifiedQuestions.has(qNum)) {
           unansweredQuestions.push(qNum);
         }
       }
-      
+
       if (unansweredQuestions.length > 0) {
         setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
         return;
@@ -228,7 +228,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       console.log("[AnswerSheet] Iniciando processo de salvamento");
       setIsSaving(true);
       setError(null);
-      
+
       // Chamando o serviço correto renomeado
       await saveAnswersService();
       await refetchNullified();
@@ -239,9 +239,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setError(error.message || "Erro ao salvar respostas");
     }
   };
-  
+
   const handleScoreChange = (
-    value: string, 
+    value: string,
     setter: React.Dispatch<React.SetStateAction<number | null>>,
     scoreName: string
   ) => {
@@ -249,18 +249,18 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setter(null);
       return;
     }
-    
+
     const numberValue = parseFloat(value);
     if (isNaN(numberValue)) return;
-    
+
     if (numberValue < 0 || numberValue > 100) {
       setError(`A nota da ${scoreName} deve estar entre 0 e 100.`);
       return;
     }
-    
+
     setter(numberValue);
   };
-  
+
   if (isLoadingRanking || (checkingOfficialAnswers && !missingOfficialAnswers)) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -269,119 +269,97 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         </CardContent>
       </Card>;
   }
-  
+
   const totalQuestions = getTotalQuestions();
   const answeredQuestions = getAnsweredQuestionsCount();
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  // Função para obter lista de seções para renderizar as abas
-  const getObjectiveSectionList = () => {
-    const sections: {key: SectionType, label: string}[] = [];
-    
-    // Se estamos usando conhecimentos customizáveis
-    if (concurso.has_custom_knowledge) {
-      // Adicionar cada disciplina customizada como uma seção
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        concurso.disciplines.forEach(discipline => {
-          if (discipline.isEnabled && discipline.type) {
-            sections.push({ 
-              key: discipline.type as SectionType, 
-              label: discipline.name || discipline.type 
-            });
-          }
-        });
-      }
-    } else {
-      // Estrutura tradicional
-      if (concurso.has_basic_knowledge) sections.push({ key: 'basic', label: 'Conhecimentos Básicos' });
-      if (concurso.has_specific_knowledge_1) sections.push({ key: 'specific1', label: 'C. Específicos 1' });
-      if (concurso.has_specific_knowledge_2) sections.push({ key: 'specific2', label: 'C. Específicos 2' });
-      if (concurso.has_specific_knowledge_3) sections.push({ key: 'specific3', label: 'C. Específicos 3' });
-    }
-    
-    return sections;
-  };
-  
-  const objectiveSections = getObjectiveSectionList();
-  
-  // Função utilitária para obter todas as questões de todas as seções
-  const getAllQuestionsFromAllSections = () => {
-    const allQuestions: number[] = [];
-    
-    if (concurso.has_custom_knowledge) {
-      // Usar disciplinas customizadas
-      let currentQuestionNumber = 1;
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled && discipline.questionCount) {
-            const count = typeof discipline.questionCount === 'number' 
-              ? discipline.questionCount 
+ // Função utilitária para obter todas as questões de todas as seções
+ const getAllQuestionsFromAllSections = () => {
+  const allQuestions: number[] = [];
+
+  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Usar disciplinas customizadas (estrutura aninhada)
+    let currentQuestionNumber = 1;
+    for (const block of concurso.disciplines) { // Iterar sobre os blocos
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const discipline of block.disciplines) { // Iterar sobre as disciplinas dentro do bloco
+          if (discipline.isEnabled && discipline.questionCount) { // <-- Verificação isEnabled na disciplina
+            const count = typeof discipline.questionCount === 'number'
+              ? discipline.questionCount
               : parseInt(String(discipline.questionCount) || '0');
-              
+
             for (let i = 0; i < count; i++) {
               allQuestions.push(currentQuestionNumber++);
             }
           }
         }
       }
-      return allQuestions;
     }
-    
-    // Estrutura tradicional
-    let currentQuestionNumber = 1;
-    
-    // Básico
-    if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-      const count = typeof concurso.basic_knowledge_questions === 'number' 
-        ? concurso.basic_knowledge_questions 
-        : parseInt(String(concurso.basic_knowledge_questions) || '0');
-        
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Específico 1
-    if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-      const count = typeof concurso.specific_knowledge_1_questions === 'number' 
-        ? concurso.specific_knowledge_1_questions 
-        : parseInt(String(concurso.specific_knowledge_1_questions) || '0');
-        
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Específico 2
-    if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-      const count = typeof concurso.specific_knowledge_2_questions === 'number' 
-        ? concurso.specific_knowledge_2_questions 
-        : parseInt(String(concurso.specific_knowledge_2_questions) || '0');
-        
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
-    // Específico 3
-    if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-      const count = typeof concurso.specific_knowledge_3_questions === 'number' 
-        ? concurso.specific_knowledge_3_questions 
-        : parseInt(String(concurso.specific_knowledge_3_questions) || '0');
-        
-      for (let i = 0; i < count; i++) {
-        allQuestions.push(currentQuestionNumber++);
-      }
-    }
-    
     return allQuestions;
-  };
-  
+  }
+
+  // Estrutura tradicional (legacy) - Manter por retrocompatibilidade se ainda necessário
+  let currentQuestionNumber = 1;
+
+  // Básico
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    const count = typeof concurso.basic_knowledge_questions === 'number'
+      ? concurso.basic_knowledge_questions
+      : parseInt(String(concurso.basic_knowledge_questions) || '0');
+
+    for (let i = 0; i < count; i++) {
+      allQuestions.push(currentQuestionNumber++);
+    }
+  }
+
+  // Específico 1
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    const count = typeof concurso.specific_knowledge_1_questions === 'number'
+      ? concurso.specific_knowledge_1_questions
+      : parseInt(String(concurso.specific_knowledge_1_questions) || '0');
+
+    for (let i = 0; i < count; i++) {
+      allQuestions.push(currentQuestionNumber++);
+    }
+  }
+
+  // Específico 2
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    const count = typeof concurso.specific_knowledge_2_questions === 'number'
+      ? concurso.specific_knowledge_2_questions
+      : parseInt(String(concurso.specific_knowledge_2_questions) || '0');
+
+    for (let i = 0; i < count; i++) {
+      allQuestions.push(currentQuestionNumber++);
+    }
+  }
+
+  // Específico 3
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    const count = typeof concurso.specific_knowledge_3_questions === 'number'
+      ? concurso.specific_knowledge_3_questions
+      : parseInt(String(concurso.specific_knowledge_3_questions) || '0');
+
+    for (let i = 0; i < count; i++) {
+      allQuestions.push(currentQuestionNumber++);
+    }
+  }
+
+  return allQuestions;
+};
+
+
   // Modified function to handle section changes with proper typing
   const handleSectionChange = (value: string) => {
     setSelectedSection(value as SectionType);
   };
+
+  const objectiveSections = [ // Adicionar esta definição ou garantir que esteja presente e correta
+    // ... (defina suas seções objetivas aqui com key e label)
+  ];
+
 
   return (
     <Card className="shadow-lg">
@@ -400,7 +378,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           )}
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6 pt-6">
         {error && (
           <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
@@ -408,14 +386,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             <p>{error}</p>
           </div>
         )}
-        
+
         {savedSuccess && (
           <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <Check className="h-4 w-4" />
             <p>Respostas salvas com sucesso! Calculando pontuação...</p>
           </div>
         )}
-        
+
         {missingOfficialAnswers && (
           <div className="bg-amber-100 border border-amber-300 rounded-md p-4">
             <div className="flex items-start gap-3">
@@ -423,7 +401,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               <div>
                 <h4 className="font-medium text-amber-800">Gabarito Oficial Incompleto</h4>
                 <p className="text-sm text-amber-700 mt-1">
-                  O gabarito oficial deste concurso parece estar incompleto ou não foi configurado. 
+                  O gabarito oficial deste concurso parece estar incompleto ou não foi configurado.
                   Você ainda pode preencher suas respostas, mas a pontuação pode não ser calculada corretamente.
                 </p>
                 <p className="text-xs text-amber-600 mt-2">
@@ -433,11 +411,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             </div>
           </div>
         )}
-        
+
         <AnswerSheetHeader concurso={concurso} getTotalQuestions={getTotalQuestions} />
-        
+
         <ExamTypeWarning examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
-        
+
         {hasNullifiedQuestions && (
           <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
             <div className="flex items-start gap-3">
@@ -455,17 +433,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             </div>
           </div>
         )}
-        
+
         <div className="flex items-center justify-between">
           <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
           <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
         </div>
         <Progress value={progressPercentage} className="h-2 bg-gray-200" />
-        
+
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
-            <Tabs 
-              value={selectedSection} 
+            <Tabs
+              value={selectedSection}
               onValueChange={handleSectionChange}
               className="w-full"
             >
@@ -476,7 +454,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
                   </TabsTrigger>
                 ))}
               </TabsList>
-              
+
               {objectiveSections.map(section => (
                 <TabsContent key={section.key} value={section.key}>
                   <AnswerMatrix
@@ -494,9 +472,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             </Tabs>
           </div>
         )}
-        
+
         {(concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3) && (
-          <DiscursiveScoresSection 
+          <DiscursiveScoresSection
             concurso={concurso}
             discursiveScore={discursiveScore}
             caseStudy1Score={caseStudy1Score}
@@ -511,12 +489,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           />
         )}
       </CardContent>
-      
+
       <CardFooter className="p-4 bg-gray-50 border-t">
-        <Button 
-          onClick={handleSaveAnswers} 
-          className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white" 
-          disabled={isSaving || (!canEdit && userRankingData?.edit_count !== undefined)} 
+        <Button
+          onClick={handleSaveAnswers}
+          className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+          disabled={isSaving || (!canEdit && userRankingData?.edit_count !== undefined)}
           size="lg"
         >
           {isSaving ? (

@@ -45,28 +45,37 @@ export const initializeQuestionTypes = (
           }
         }
       } else {
-        // Processar estrutura plana legada para compatibilidade
-        console.log('Processing flat structure for backward compatibility');
-        
-        for (const discipline of concurso.disciplines) {
-          if (discipline.isEnabled && discipline.type) {
-            const questionCount = getNumericValue(discipline.questionCount);
-            
-            console.log(`Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`);
-            
-            for (let i = 0; i < questionCount; i++) {
-              typesMap[questionNumber] = discipline.type as SectionType;
-              questionNumber++;
-            }
-          } else {
-            console.log(`Skipping disabled discipline or invalid type:`, discipline);
-          }
+        // Processar estrutura plana legada para compatibilidade (ajustado para iterar sobre blocos e disciplinas aninhadas)
+console.log('Processing flat structure for backward compatibility (adjusted)');
+
+// Iterar sobre os blocos
+for (const block of concurso.disciplines as any[]) { // Manter as any[] por enquanto para compatibilidade com dados, idealmente remover após refatoração completa
+  // Verificar se o bloco tem disciplines e é um array
+  if (block.disciplines && Array.isArray(block.disciplines)) {
+    // Iterar sobre as disciplinas aninhadas dentro do bloco
+    for (const discipline of block.disciplines) {
+      if (discipline.isEnabled && discipline.type) {
+        const questionCount = getNumericValue(discipline.questionCount);
+
+        console.log(`Block ${block.name}, Discipline ${discipline.name} (${discipline.type}) has ${questionCount} questions, starting from ${questionNumber}`); // Log ajustado para incluir nome do bloco
+
+        for (let i = 0; i < questionCount; i++) {
+          typesMap[questionNumber] = discipline.type as SectionType;
+          questionNumber++;
         }
+      } else {
+        console.log(`Skipping disabled discipline or invalid type in block ${block.name}:`, discipline); // Log ajustado
       }
-    } else {
-      // Processar estrutura tradicional (legado)
-      console.log('Processing traditional structure (legacy)');
-      
+    }
+  } else {
+      console.log(`Skipping block with no disciplines or invalid structure:`, block); // Log para blocos sem disciplinas aninhadas
+  }
+}
+// Manter o restante do código que estava após este trecho, começando com os else
+}
+} else {
+  // Processar estrutura tradicional (legado)
+  console.log('Processing traditional structure (legacy)');   
       if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
         const basicCount = getNumericValue(concurso.basic_knowledge_questions);
         console.log(`Traditional structure: basic knowledge has ${basicCount} questions`);
