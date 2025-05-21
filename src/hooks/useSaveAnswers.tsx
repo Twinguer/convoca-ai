@@ -91,11 +91,9 @@ export const useSaveAnswers = ({
         // Continuamos mesmo com erro, pois isso é apenas uma melhoria
       }
 
-      // Verificar se estamos usando estrutura hierárquica
-      const hierarchical = isHierarchicalStructure(concurso);
-      console.log('[useSaveAnswers] Estrutura hierárquica?', hierarchical);
-
-      // Chamar a função RPC centralizada com a ordem correta dos parâmetros
+      // FIX: Chamar a função RPC centralizada com a ordem correta dos parâmetros
+      // que corresponde à definição da função no banco de dados:
+      // p_ranking_id, p_concurso_id, p_answers, p_discursive_score, p_case_study_1_score, p_case_study_2_score, p_case_study_3_score, p_current_edit_count
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -104,8 +102,8 @@ export const useSaveAnswers = ({
         p_case_study_1_score: caseStudy1Score || 0,
         p_case_study_2_score: caseStudy2Score || 0,
         p_case_study_3_score: caseStudy3Score || 0,
-        p_current_edit_count: editCount,
-        p_hierarchical: hierarchical
+        p_current_edit_count: editCount
+        // Removido o parâmetro p_hierarchical que não existe na definição da função
       });
 
       if (error) {

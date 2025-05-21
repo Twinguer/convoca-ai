@@ -142,22 +142,18 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
   return 'basic';
 };
 
-// Consistent function to check if the structure is hierarchical
-export const isHierarchicalStructure = (concurso: Concurso): boolean => {
-  if (!concurso?.disciplines || !Array.isArray(concurso.disciplines) || concurso.disciplines.length === 0) {
-    return false;
-  }
-  
-  // Check if at least one element in the disciplines array has the disciplines property
-  const firstItem = concurso.disciplines[0];
-  const isHierarchical = 
-    typeof firstItem === 'object' && 
-    firstItem !== null &&
-    'disciplines' in firstItem;
-    
-  console.log(`[isHierarchicalStructure] Analyzed concurso ${concurso.id}, structure is ${isHierarchical ? 'hierarchical' : 'flat'}`);
-  
-  return isHierarchical;
+/**
+ * Verifica se um concurso utiliza a estrutura hierárquica (blocos -> disciplinas)
+ * @param concurso O concurso a ser verificado
+ * @returns true se usa estrutura hierárquica, false se usa estrutura plana
+ */
+export const isHierarchicalStructure = (concurso: any): boolean => {
+  return concurso?.disciplines && 
+         Array.isArray(concurso.disciplines) &&
+         concurso.disciplines[0] &&
+         typeof concurso.disciplines[0] === 'object' &&
+         'name' in concurso.disciplines[0] &&
+         'disciplines' in concurso.disciplines[0];
 };
 
 // Get disciplines from both hierarchical and flat structures
