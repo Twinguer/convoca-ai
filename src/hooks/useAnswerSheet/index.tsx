@@ -136,16 +136,19 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   }, [answers]);
   
   // Check if the selected section is a discursive-type section
-  const isDiscursiveSection = selectedSection === 'discursive' || 
-                             selectedSection === 'case_study1' ||
-                             selectedSection === 'case_study2' ||
-                             selectedSection === 'case_study3';
+  const isDiscursiveSection = useCallback(() => {
+    return selectedSection === 'discursive' || 
+           selectedSection === 'case_study1' ||
+           selectedSection === 'case_study2' ||
+           selectedSection === 'case_study3';
+  }, [selectedSection]);
   
   // Get questions for a specific section
-  const getSectionQuestions = useCallback((section: string): number[] => {
-    if (!sectionQuestions || !sectionQuestions[section]) return [];
-    return sectionQuestions[section];
-  }, [sectionQuestions]);
+  const getSectionQuestions = useCallback((section?: string): number[] => {
+    const sectionToUse = section || selectedSection;
+    if (!sectionQuestions || !sectionQuestions[sectionToUse]) return [];
+    return sectionQuestions[sectionToUse];
+  }, [sectionQuestions, selectedSection]);
 
   return {
     answers,
@@ -172,7 +175,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy2Score,
     caseStudy3Score,
     setCaseStudy3Score,
-    isDiscursiveSection,
+    isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
     isHierarchical, // Export the hierarchical flag
     isLoading,

@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, AlertTriangle, Check, HelpCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso, SectionType } from '@/types/concursos';
+import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
@@ -308,8 +307,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       if (isHierarchical) {
         // Hierarchical structure (blocks -> disciplines)
         for (const block of concurso.disciplines) {
-          // TypeGuard to check if it's a block
-          if (isDisciplineBlock(block)) {
+          // TypeGuard to check if it's a block with disciplines property
+          if ('disciplines' in block) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled && discipline.type) {
                 sections.push({
