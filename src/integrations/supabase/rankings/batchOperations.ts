@@ -12,7 +12,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     // Fetch all users participating in this concurso
     const { data, error } = await supabase
       .from('user_rankings')
-      .select('user_id')
+      .select('id, user_id')
       .eq('concurso_id', concursoId);
       
     if (error) {

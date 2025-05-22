@@ -52,12 +52,28 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       console.log(`[recalculateUserScore] Pontuação mínima requerida: ${minimumScoreRequired}`);
     }
 
-    // Obter as respostas do usuário
+    // Primeiro, busque o ranking_id correspondente ao usuário/concurso
+    const { data: userRanking, error: userRankingError } = await supabase
+      .from('user_rankings')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('concurso_id', concursoId)
+      .single();
+
+    if (userRankingError || !userRanking) {
+      console.error('Erro ao buscar ranking do usuário:', userRankingError);
+      return { 
+        success: false, 
+        message: 'Erro ao buscar ranking do usuário', 
+        error: userRankingError 
+      };
+    }
+
+    // Obter as respostas do usuário usando o ranking_id
     const { data: userAnswers, error: userAnswersError } = await supabase
       .from('user_answers')
       .select('question_number, answer')
-      .eq('user_id', userId)
-      .eq('concurso_id', concursoId);
+      .eq('user_ranking_id', userRanking.id);
 
     if (userAnswersError) {
       console.error('Erro ao buscar respostas do usuário:', userAnswersError);
@@ -134,8 +150,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         customDisciplineScores: disciplineScores,
         weightedCustomDisciplineScores: weightedDisciplineScores
       })
-      .eq('user_id', userId)
-      .eq('concurso_id', concursoId);
+      .eq('id', userRanking.id);
 
     if (updateError) {
       console.error('Erro ao atualizar pontuação do usuário:', updateError);
@@ -152,8 +167,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       const { error: updateStatusError } = await supabase
         .from('user_rankings')
         .update({ status: 'eliminado' })
-        .eq('user_id', userId)
-        .eq('concurso_id', concursoId);
+        .eq('id', userRanking.id);
         
       if (updateStatusError) {
         console.error('Erro ao atualizar status do usuário:', updateStatusError);
@@ -168,8 +182,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       const { error: updateStatusError } = await supabase
         .from('user_rankings')
         .update({ status: 'classificado' })
-        .eq('user_id', userId)
-        .eq('concurso_id', concursoId);
+        .eq('id', userRanking.id);
         
       if (updateStatusError) {
         console.error('Erro ao atualizar status do usuário:', updateStatusError);

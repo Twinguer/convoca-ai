@@ -5,7 +5,7 @@ import { Concurso, SectionType } from '@/types/concursos';
 import { useQuery } from '@tanstack/react-query';
 import { fetchExistingAnswers } from './fetchExistingAnswers';
 import { getSectionQuestionsDict, getQuestionMatrixForSection, SectionQuestions } from './matrixUtils';
-import { createQuestionOptions } from './initializeQuestionTypes';
+import { createQuestionOptions, getTotalQuestions } from './initializeQuestionTypes';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 import { getSectionDisplayName, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
@@ -101,44 +101,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const questionType = concurso?.exam_type === 'Certo ou Errado' ? 'trueOrFalse' : 'multipleChoice';
 
   // Function to get the total number of questions
-  const getTotalQuestions = useCallback(() => {
+  const getTotalQuestionsFunc = useCallback(() => {
     if (!concurso) return 0;
-    
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      // For custom disciplines, sum up all question counts from enabled disciplines
-      let totalQuestions = 0;
-      
-      // Check if hierarchical structure
-      if (isHierarchical) {
-        for (const block of concurso.disciplines) {
-          if ('disciplines' in block) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                totalQuestions += parseInt(String(discipline.questionCount), 10) || 0;
-              }
-            }
-          }
-        }
-      } else {
-        // Flat structure
-        for (const discipline of concurso.disciplines) {
-          if ('isEnabled' in discipline && discipline.isEnabled) {
-            totalQuestions += parseInt(String(discipline.questionCount), 10) || 0;
-          }
-        }
-      }
-      
-      return totalQuestions;
-    } else {
-      // Traditional structure
-      return (
-        (concurso.has_basic_knowledge ? parseInt(String(concurso.basic_knowledge_questions), 10) || 0 : 0) +
-        (concurso.has_specific_knowledge_1 ? parseInt(String(concurso.specific_knowledge_1_questions), 10) || 0 : 0) +
-        (concurso.has_specific_knowledge_2 ? parseInt(String(concurso.specific_knowledge_2_questions), 10) || 0 : 0) +
-        (concurso.has_specific_knowledge_3 ? parseInt(String(concurso.specific_knowledge_3_questions), 10) || 0 : 0)
-      );
-    }
-  }, [concurso, isHierarchical]);
+    return getTotalQuestions(concurso);
+  }, [concurso]);
 
   // Function to get the number of answered questions
   const getAnsweredQuestionsCount = useCallback(() => {
@@ -172,7 +138,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setSavedSuccess,
     handleAnswerChange,
     handleClearAnswer,
-    getTotalQuestions,
+    getTotalQuestions: getTotalQuestionsFunc,
     getOptionsForQuestion,
     createAnswerMatrix,
     questionType,
@@ -194,9 +160,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 };
 
 export * from './useScoreManagement';
-export * from './fetchExistingAnswers';
 export * from './matrixUtils';
-export * from './initializeQuestionTypes';
-export * from './questionCountUtils';
 export * from './useAnswerManagement';
 export * from './sectionUtils';
+// Do not re-export from initializeQuestionTypes to avoid ambiguity
