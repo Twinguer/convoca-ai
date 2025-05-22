@@ -5,6 +5,7 @@ interface RecalculationResponse {
   success: boolean;
   message?: string;
   error?: any;
+  updatedScore?: number;
 }
 
 type PositionThreshold = 'ampla' | 'cota_racial' | 'pcd';
@@ -15,6 +16,8 @@ const isPositionThreshold = (value: string): value is PositionThreshold => {
 
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
+    console.log(`[recalculateUserScore] Recalculating score for user ${userId} in concurso ${concursoId}`);
+    
     // Obter dados do concurso para aplicar regras específicas
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
@@ -30,6 +33,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         error: concursoError 
       };
     }
+    
+    // Log da estrutura de disciplinas do concurso
+    console.log(`[recalculateUserScore] Concurso discipline structure:`, 
+               concurso.disciplines && concurso.disciplines.length > 0 ? 
+               `${concurso.disciplines.length} disciplines/blocks` : 'No custom disciplines');
 
     // Se o concurso exige pontuação mínima verificamos isso
     let minimumScoreRequired = 0;
@@ -41,7 +49,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         ? concurso.total_minimum_score 
         : parseInt(String(concurso?.total_minimum_score || '0'), 10);
         
-      console.log(`Pontuação mínima requerida: ${minimumScoreRequired}`);
+      console.log(`[recalculateUserScore] Pontuação mínima requerida: ${minimumScoreRequired}`);
     }
 
     // Obter as respostas do usuário
@@ -59,11 +67,13 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         error: userAnswersError 
       };
     }
+    
+    console.log(`[recalculateUserScore] Found ${userAnswers?.length || 0} answers for user`);
 
     // Obter os pesos das respostas corretas
     const { data: officialAnswers, error: officialAnswersError } = await supabase
       .from('official_answer_weights')
-      .select('question_number, correct_answer, weight, is_nullified')
+      .select('question_number, correct_answer, weight, is_nullified, section_type')
       .eq('concurso_id', concursoId);
 
     if (officialAnswersError) {
@@ -74,9 +84,15 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         error: officialAnswersError 
       };
     }
+    
+    console.log(`[recalculateUserScore] Found ${officialAnswers?.length || 0} official answers`);
 
     let totalScore = 0;
     let totalWeight = 0;
+    
+    // Para armazenar pontuações por disciplina
+    const disciplineScores: Record<string, number> = {};
+    const weightedDisciplineScores: Record<string, number> = {};
 
     // Calcular a pontuação do usuário
     for (const userAnswer of userAnswers || []) {
@@ -84,18 +100,40 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
       if (officialAnswer) {
         const isCorrect = officialAnswer.correct_answer === userAnswer.answer || officialAnswer.is_nullified === true;
-
-        if (isCorrect) {
-          totalScore += officialAnswer.weight || 1;
+        const questionWeight = officialAnswer.weight || 1;
+        const sectionType = officialAnswer.section_type || 'default';
+        
+        // Inicializar pontuação da disciplina se ainda não existir
+        if (!disciplineScores[sectionType]) {
+            disciplineScores[sectionType] = 0;
+            weightedDisciplineScores[sectionType] = 0;
         }
-        totalWeight += officialAnswer.weight || 1;
+        
+        if (isCorrect) {
+          // Adicionar à pontuação total
+          totalScore += questionWeight;
+          
+          // Adicionar à pontuação da disciplina específica
+          disciplineScores[sectionType] += 1;
+          weightedDisciplineScores[sectionType] += questionWeight;
+          
+          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight}`);
+        }
+        
+        totalWeight += questionWeight;
       }
     }
+    
+    console.log(`[recalculateUserScore] Calculated total score: ${totalScore}, discipline scores:`, disciplineScores);
 
-    // Atualizar a pontuação do usuário no ranking
+    // Atualizar a pontuação do usuário no ranking com as pontuações por disciplina
     const { error: updateError } = await supabase
       .from('user_rankings')
-      .update({ score: totalScore })
+      .update({ 
+        score: totalScore, 
+        customDisciplineScores: disciplineScores,
+        weightedCustomDisciplineScores: weightedDisciplineScores
+      })
       .eq('user_id', userId)
       .eq('concurso_id', concursoId);
 
@@ -143,7 +181,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    return { success: true, message: 'Pontuação recalculada com sucesso' };
+    return { 
+        success: true, 
+        message: 'Pontuação recalculada com sucesso', 
+        updatedScore: totalScore 
+    };
   } catch (error) {
     console.error('Erro ao recalcular pontuação:', error);
     return { 

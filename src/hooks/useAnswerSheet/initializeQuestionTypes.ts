@@ -31,6 +31,7 @@ export const createQuestionOptions = (concurso: Concurso): Record<number, string
   return questionOptions;
 };
 
+// Função auxiliar para obter o número total de questões
 const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
@@ -73,3 +74,5 @@ const getTotalQuestions = (concurso: Concurso): number => {
     );
   }
 };
+
+export { getTotalQuestions };
