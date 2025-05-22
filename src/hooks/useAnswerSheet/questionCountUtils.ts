@@ -69,9 +69,9 @@ export const checkMissingOfficialAnswers = async (concursoId: string): Promise<{
     const expectedQuestions = getTotalQuestions(concursoData);
 
     // Contar quantos gabaritos existem para este concurso
-    const { data: gabaritosData, error: gabaritosError } = await supabase
+    const { count, error: gabaritosError } = await supabase
       .from('official_answer_weights')
-      .select('count', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('concurso_id', concursoId);
 
     if (gabaritosError) {
@@ -79,7 +79,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string): Promise<{
       return { missing: true, expected: expectedQuestions, actual: 0 };
     }
 
-    const actualQuestions = gabaritosData?.count || 0;
+    const actualQuestions = count || 0;
 
     console.log(`[checkMissingOfficialAnswers] Esperado: ${expectedQuestions}, Atual: ${actualQuestions}`);
 

@@ -9,6 +9,7 @@ import { createQuestionOptions } from './initializeQuestionTypes';
 import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 import { getSectionDisplayName, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
+import { handleQuestionSectionSelection } from './sectionUtils';
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
@@ -63,14 +64,23 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   }, [concurso]);
 
+  // Initialize with the first available section
+  useEffect(() => {
+    if (concurso) {
+      handleQuestionSectionSelection(concurso, setSelectedSection);
+    }
+  }, [concurso]);
+
   // Fetch existing answers when rankingId changes
   const { isLoading, refetch } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: () => fetchExistingAnswers(rankingId),
     enabled: !!rankingId,
-    onSuccess: (data) => {
-      if (data && data.answers) {
-        setAnswers(data.answers);
+    meta: {
+      onSuccess: (data: any) => {
+        if (data && data.answers) {
+          setAnswers(data.answers);
+        }
       }
     }
   });
