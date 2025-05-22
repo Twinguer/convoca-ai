@@ -83,6 +83,12 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
       console.log('[useSaveAnswers] Estrutura das respostas:', answersArray.slice(0, 3));
+      console.log('[useSaveAnswers] Pontuações subjetivas:', {
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score
+      });
 
       // Certifique-se de que section_type esteja atualizado para este concurso
       const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
@@ -91,9 +97,7 @@ export const useSaveAnswers = ({
         // Continuamos mesmo com erro, pois isso é apenas uma melhoria
       }
 
-      // FIX: Chamar a função RPC centralizada com a ordem correta dos parâmetros
-      // que corresponde à definição da função no banco de dados:
-      // p_ranking_id, p_concurso_id, p_answers, p_discursive_score, p_case_study_1_score, p_case_study_2_score, p_case_study_3_score, p_current_edit_count
+      // Chamar a função RPC centralizada com a ordem correta dos parâmetros
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -103,7 +107,6 @@ export const useSaveAnswers = ({
         p_case_study_2_score: caseStudy2Score || 0,
         p_case_study_3_score: caseStudy3Score || 0,
         p_current_edit_count: editCount
-        // Removido o parâmetro p_hierarchical que não existe na definição da função
       });
 
       if (error) {

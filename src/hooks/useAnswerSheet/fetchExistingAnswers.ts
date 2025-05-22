@@ -29,6 +29,10 @@ export const fetchExistingAnswers = async (rankingId: string) => {
         .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
         .eq('id', rankingId)
         .single();
+        
+      if (rankingError) {
+        console.error('[fetchExistingAnswers] Error fetching ranking data:', rankingError);
+      }
 
       return {
         answers: answersMap,
