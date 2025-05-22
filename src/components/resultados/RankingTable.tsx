@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -29,6 +28,16 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  const [displayNames, setDisplayNames] = useState<Record<string, string>>(sectionDisplayNames);
+
+  useEffect(() => {
+    // Update section display names with custom disciplines when concurso is available
+    if (concurso) {
+      const updatedNames = updateSectionDisplayNames(concurso);
+      setDisplayNames(updatedNames);
+      console.log('[RankingTable] Updated section display names:', updatedNames);
+    }
+  }, [concurso]);
 
   useEffect(() => {
     if (concurso) {
@@ -64,11 +73,11 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
   }, [concurso, rankings]);
 
-  // Calcular posições de cota para cada ranking
+  // Calculate quota positions for each ranking
   const rankingsWithQuotaPositions = React.useMemo(() => {
     if (!rankings) return [];
 
-    // Agrupar rankings por tipo de reserva
+    // Group rankings by reservation type
     const groupedByQuota: Record<string, Ranking[]> = {};
     rankings.forEach(ranking => {
       if (!groupedByQuota[ranking.reservationType]) {
@@ -77,7 +86,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       groupedByQuota[ranking.reservationType].push(ranking);
     });
 
-    // Calcular posição dentro de cada grupo de cota
+    // Calculate position within each quota group
     return rankings.map(ranking => {
       const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
@@ -148,9 +157,31 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
-                <RankingTableContent rankings={filterRankingsByQuota(quota)} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={quota === "Ampla Concorrência"} availableQuotas={availableQuotas} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab={quota} />
+                <RankingTableContent 
+                  rankings={filterRankingsByQuota(quota)} 
+                  currentUserId={currentUserId} 
+                  handleUserClick={handleUserClick} 
+                  concurso={concurso} 
+                  isAmpla={quota === "Ampla Concorrência"} 
+                  availableQuotas={availableQuotas} 
+                  isAuthenticated={isAuthenticated} 
+                  isRefetching={isRefetching} 
+                  activeTab={quota}
+                  displayNames={displayNames} // Pass display names
+                />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent rankings={rankingsWithQuotaPositions || []} currentUserId={currentUserId} handleUserClick={handleUserClick} concurso={concurso} isAmpla={true} availableQuotas={availableQuotas} isAuthenticated={isAuthenticated} isRefetching={isRefetching} activeTab="Ampla Concorrência" />}
+          </Tabs> : <RankingTableContent 
+                    rankings={rankingsWithQuotaPositions || []} 
+                    currentUserId={currentUserId} 
+                    handleUserClick={handleUserClick} 
+                    concurso={concurso} 
+                    isAmpla={true} 
+                    availableQuotas={availableQuotas} 
+                    isAuthenticated={isAuthenticated} 
+                    isRefetching={isRefetching} 
+                    activeTab="Ampla Concorrência" 
+                    displayNames={displayNames} // Pass display names
+                  />}
       </CardContent>
     </Card>;
 };
@@ -177,6 +208,7 @@ const RankingTableContent: React.FC<{
   isAuthenticated: boolean;
   isRefetching?: boolean;
   activeTab: string;
+  displayNames: Record<string, string>; // Added display names prop
 }> = ({
   rankings,
   currentUserId,
@@ -186,19 +218,20 @@ const RankingTableContent: React.FC<{
   availableQuotas,
   isAuthenticated,
   isRefetching = false,
-  activeTab
+  activeTab,
+  displayNames // Accept display names
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('admin') === 'true';
   }, []);
 
-  // Estado para armazenar as pontuações ao carregar a tabela
+  // State to store scores when table is loaded
   const [initialScores, setInitialScores] = useState<{
     [key: string]: number;
   }>({});
 
-  // Inicializar as pontuações iniciais na primeira renderização
+  // Initialize initial scores on first render
   useEffect(() => {
     const scores: {
       [key: string]: number;
@@ -209,30 +242,30 @@ const RankingTableContent: React.FC<{
     setInitialScores(scores);
   }, [rankings]);
 
-  // Função para verificar se uma pontuação foi atualizada
+  // Function to check if a score has been updated
   const hasScoreChanged = (rankingId: string, currentScore: number): boolean => {
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
 
-  // Função para determinar se um ranking está abaixo do mínimo exigido
+  // Function to determine if a ranking is below the required minimum
   const isBelowMinimum = (ranking: Ranking): boolean => {
     return !!ranking.belowMinimum || 
            (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
            (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
   };
   
-  // Função para calcular a pontuação objetiva total do ranking
+  // Function to calculate the objective total score of the ranking
   const calculateObjectiveScore = (ranking: Ranking): number => {
-    // Se há disciplinas customizadas
+    // If there are custom disciplines
     if (ranking.weightedCustomDisciplineScores && Object.keys(ranking.weightedCustomDisciplineScores).length > 0) {
       return Object.values(ranking.weightedCustomDisciplineScores).reduce((sum, score) => sum + Number(score || 0), 0);
     }
     
-    // Caso contrário, usar pontuações tradicionais
-    return 0; // Implementar caso necessário
+    // Otherwise, use traditional scores
+    return 0; // Implement if necessary
   };
 
-  // Obter disciplinas customizadas habilitadas da estrutura aninhada (blocos com disciplinas)
+  // Get enabled custom disciplines from the nested structure (blocks with disciplines)
   const getCustomDisciplines = (): {
     type: string;
     name: string;
@@ -243,25 +276,48 @@ const RankingTableContent: React.FC<{
 
     let allEnabledDisciplines: { type: string; name: string }[] = [];
 
-    // Iterar sobre os blocos (o primeiro nível da array disciplines)
-    for (const block of concurso.disciplines) {
-      // Verificar se o bloco é válido e tem uma array de disciplinas
-      if (isDisciplineBlock(block)) {
-        // Iterar sobre as disciplinas dentro do bloco
-        for (const discipline of block.disciplines) {
-          // Verificar se a disciplina é válida, habilitada e tem as propriedades type e name
-          if (
-            discipline &&
-            typeof discipline === 'object' &&
-            discipline.isEnabled === true &&
-            typeof discipline.type === 'string' &&
-            typeof discipline.name === 'string'
-          ) {
-            allEnabledDisciplines.push({
-              type: discipline.type,
-              name: discipline.name,
-            });
+    // Check if hierarchical structure
+    const isHierarchical = concurso.disciplines.length > 0 && 
+                          isDisciplineBlock(concurso.disciplines[0]);
+
+    if (isHierarchical) {
+      // Iterate through blocks (first level in the disciplines array)
+      for (const block of concurso.disciplines) {
+        // Check if the block is valid and has a disciplines array
+        if (isDisciplineBlock(block)) {
+          // Iterate through disciplines within the block
+          for (const discipline of block.disciplines) {
+            // Check if discipline is valid, enabled and has type and name properties
+            if (
+              discipline &&
+              typeof discipline === 'object' &&
+              discipline.isEnabled === true &&
+              typeof discipline.type === 'string' &&
+              typeof discipline.name === 'string'
+            ) {
+              allEnabledDisciplines.push({
+                type: discipline.type,
+                name: discipline.name,
+              });
+            }
           }
+        }
+      }
+    } else {
+      // Flat structure - handle disciplines directly
+      for (const discipline of concurso.disciplines) {
+        if (
+          discipline &&
+          typeof discipline === 'object' &&
+          'isEnabled' in discipline &&
+          discipline.isEnabled === true &&
+          'type' in discipline &&
+          'name' in discipline
+        ) {
+          allEnabledDisciplines.push({
+            type: discipline.type as string,
+            name: discipline.name as string,
+          });
         }
       }
     }
@@ -270,7 +326,9 @@ const RankingTableContent: React.FC<{
   };
 
   const customDisciplines = getCustomDisciplines();
+  
   if (!concurso) {
+    // ... keep existing code for the simplified table
     return <Table>
         <TableHeader>
           <TableRow>
@@ -312,7 +370,7 @@ const RankingTableContent: React.FC<{
       </Table>;
   }
 
-  // Determinar as colunas da tabela com base nas disciplinas do concurso
+  // Determine table columns based on concurso disciplines
   const renderTableHeader = () => <TableHeader>
       <TableRow>
         <TableHead className="text-center w-16">ac</TableHead>
@@ -322,12 +380,12 @@ const RankingTableContent: React.FC<{
         <TableHead>part</TableHead>
         <TableHead className="text-right">tot</TableHead>
         
-        {/* Colunas de disciplinas customizadas */}
+        {/* Custom discipline columns */}
         {customDisciplines.map((discipline, idx) => <TableHead key={`custom-${idx}`} className="text-right">
             {discipline.name}
           </TableHead>)}
         
-        {/* Partes subjetivas */}
+        {/* Subjective parts */}
         {concurso.has_discursive === true && <TableHead className="text-right">dis</TableHead>}
         
         {concurso.has_case_study_1 === true && <TableHead className="text-right">ec1</TableHead>}
@@ -340,13 +398,13 @@ const RankingTableContent: React.FC<{
       </TableRow>
     </TableHeader>;
 
-  // Renderizar cada linha de ranking
+  // Render each ranking row
   const renderRankingRows = () => <TableBody className="space-y-0.5">
       {rankings.length > 0 ? rankings.map(ranking => {
       const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
       const belowMinimum = isBelowMinimum(ranking);
       
-      // Aplicar classe para destacar participantes abaixo do mínimo em vermelho
+      // Apply class to highlight participants below minimum in red
       const rowColorClass = belowMinimum 
         ? 'text-red-600' 
         : (currentUserId && ranking.userId === currentUserId 
@@ -390,11 +448,11 @@ const RankingTableContent: React.FC<{
               {belowMinimum && <span className="ml-2 text-xs text-red-600"></span>}
             </TableCell>
             
-            {/* Pontuações de disciplinas customizadas */}
+            {/* Custom discipline scores */}
             {customDisciplines.map((discipline, idx) => {
               // Access the score using the discipline type as the key
               const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
-              // Verificar se esta disciplina específica está abaixo do mínimo
+              // Check if this specific discipline is below minimum
               const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes(discipline.type);
               
               return <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
@@ -402,7 +460,7 @@ const RankingTableContent: React.FC<{
                     </TableCell>;
             })}
             
-            {/* Pontuações de partes subjetivas */}
+            {/* Subjective part scores */}
             {concurso.has_discursive === true && <TableCell className="text-right">
                 {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
               </TableCell>}
@@ -429,6 +487,7 @@ const RankingTableContent: React.FC<{
           </TableCell>
         </TableRow>}
     </TableBody>;
+    
   return <Table>
       {renderTableHeader()}
       {renderRankingRows()}

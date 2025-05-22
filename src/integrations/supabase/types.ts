@@ -1016,6 +1016,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_official_answers_and_recalculate: {
+        Args: { p_concurso_id: string; p_answers_data: Json }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
