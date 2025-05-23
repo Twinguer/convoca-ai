@@ -3,93 +3,115 @@ import { supabase } from '@/integrations/supabase/client';
 import { recalculateUserScore } from './rankingMutations';
 
 /**
- * Recalculates scores for all users in a specific concurso
+ * Recalcula as pontuações para todos os usuários em um concurso específico.
+ * 
+ * @param concursoId - O ID do concurso para recalcular pontuações
+ * @returns Uma promessa que resolve para um objeto com status de sucesso e contagem
  */
 export const recalculateAllUserScores = async (concursoId: string) => {
+  console.log(`[recalculateAllUserScores] Iniciando recálculo para concurso: ${concursoId}`);
+  
   try {
-    console.log(`[recalculateAllUserScores] Starting batch recalculation for concurso ${concursoId}`);
+    // Buscar todos os usuários participando deste concurso
+    const { data: rankings, error } = await supabase
+      .rpc('get_realtime_rankings', { p_concurso_id: concursoId })
+      .select('id, user_id');
     
-    // Fetch all users participating in this concurso
-    const { data, error } = await supabase
-      .from('user_rankings')
-      .select('id, user_id')
-      .eq('concurso_id', concursoId);
-      
     if (error) {
-      console.error('Error fetching users for batch recalculation:', error);
-      return { success: false, error: error.message };
-    }
-    
-    if (!data || data.length === 0) {
-      console.log(`[recalculateAllUserScores] No users found for concurso ${concursoId}`);
-      return { success: true, updatedCount: 0 };
-    }
-    
-    console.log(`[recalculateAllUserScores] Found ${data.length} users to recalculate`);
-    
-    // Create an array of promises for all user score recalculations
-    const recalculationPromises = data.map(item => 
-      recalculateUserScore(item.user_id, concursoId)
-    );
-    
-    // Execute all recalculations in parallel
-    const results = await Promise.allSettled(recalculationPromises);
-    
-    // Count successful updates
-    const successCount = results.filter(result => 
-      result.status === 'fulfilled' && result.value.success
-    ).length;
-    
-    // Count and gather errors
-    const failedResults = results.filter(result => 
-      result.status === 'rejected' || 
-      (result.status === 'fulfilled' && !result.value.success)
-    );
-    
-    // Log failures if any
-    if (failedResults.length > 0) {
-      console.error(`[recalculateAllUserScores] ${failedResults.length} score recalculations failed`);
-      failedResults.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error(`Failed recalculation ${index}:`, result.reason);
-        } else if (result.status === 'fulfilled' && !result.value.success) {
-          console.error(`Failed recalculation ${index}:`, result.value.error);
-        }
-      });
-    }
-    
-    console.log(`[recalculateAllUserScores] Successfully recalculated ${successCount} of ${data.length} scores`);
-    
-    // Insert a log entry for this batch operation
-    await supabase
-      .from('score_calculation_logs')
-      .insert({
-        calculation_type: 'batch_recalculation',
-        calculation_details: {
-          concursoId,
-          totalUsers: data.length,
-          successCount,
-          failedCount: failedResults.length
-        }
-      });
-    
-    if (successCount === data.length) {
-      return { 
-        success: true,
-        updatedCount: successCount,
-        message: `Successfully recalculated all ${successCount} scores`
+      console.error('[recalculateAllUserScores] Erro ao buscar participantes:', error);
+      return {
+        success: false,
+        error: `Erro ao buscar participantes: ${error.message}`,
+        updatedCount: 0
       };
-    } else {
+    }
+    
+    // Log para depuração
+    console.log(`[recalculateAllUserScores] Encontrados ${rankings?.length || 0} participantes`);
+    
+    // Se não há participantes, retornar sem erro
+    if (!rankings || rankings.length === 0) {
       return {
         success: true,
-        updatedCount: successCount,
-        warning: `Successfully recalculated ${successCount} out of ${data.length} scores`,
-        failedCount: failedResults.length
+        message: 'Nenhum participante encontrado para recalcular',
+        updatedCount: 0
       };
     }
     
+    // Processar cada participante em sequência
+    // Isso é mais lento, mas reduz a chance de erros de concorrência
+    let updatedCount = 0;
+    const errors: any[] = [];
+    
+    for (const ranking of rankings) {
+      try {
+        // Recalcular pontuação do usuário usando a função existente
+        const result = await recalculateUserScore(ranking.user_id, concursoId);
+        
+        if (result.success) {
+          updatedCount++;
+        } else {
+          errors.push({
+            userId: ranking.user_id,
+            error: result.error
+          });
+        }
+      } catch (err) {
+        console.error(`[recalculateAllUserScores] Erro ao processar usuário ${ranking.user_id}:`, err);
+        errors.push({
+          userId: ranking.user_id,
+          error: err
+        });
+      }
+    }
+    
+    // Verificar resultados
+    if (errors.length > 0) {
+      console.warn(`[recalculateAllUserScores] Alguns usuários (${errors.length}) não puderam ser atualizados:`, errors);
+    }
+    
+    return {
+      success: true,
+      message: `Pontuações recalculadas: ${updatedCount} de ${rankings.length}`,
+      updatedCount,
+      errors: errors.length > 0 ? errors : undefined
+    };
   } catch (error) {
-    console.error('Error in batch recalculation:', error);
-    return { success: false, error: String(error) };
+    console.error('[recalculateAllUserScores] Erro ao recalcular pontuações:', error);
+    return {
+      success: false,
+      error: `Erro ao recalcular pontuações: ${error}`,
+      updatedCount: 0
+    };
+  }
+};
+
+// Função auxiliar para marcar todas as pontuações para recálculo
+export const markAllScoresForRecalculation = async (concursoId: string) => {
+  console.log(`[markAllScoresForRecalculation] Marcando pontuações para recálculo: ${concursoId}`);
+  
+  try {
+    // Usar RPC para executar função com SECURITY DEFINER que pode atualizar todos os rankings
+    const { error } = await supabase
+      .rpc('recalculate_all_users_scores_realtime', { p_concurso_id: concursoId });
+    
+    if (error) {
+      console.error('[markAllScoresForRecalculation] Erro ao marcar para recálculo:', error);
+      return {
+        success: false,
+        error: `Erro ao marcar para recálculo: ${error.message}`
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Todas as pontuações marcadas para recálculo'
+    };
+  } catch (error) {
+    console.error('[markAllScoresForRecalculation] Erro inesperado:', error);
+    return {
+      success: false,
+      error: `Erro inesperado: ${error}`
+    };
   }
 };
