@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, AlertTriangle, Check, HelpCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
+import { Concurso, SectionType, DisciplineBlock, NestedDiscipline, isDisciplineBlock } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
-import { getDisciplines, isHierarchicalStructure, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
+import { sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCountUtils';
 import { toast } from 'sonner';
 
@@ -60,11 +60,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy3Score,
     setCaseStudy3Score,
     isDiscursiveSection,
-    getSectionQuestions,
-    isHierarchical
+    getSectionQuestions
   } = useAnswerSheet(concurso, rankingId);
 
-  // Verify if the official answer key exists
+  // Verificar se o gabarito oficial existe
   useEffect(() => {
     const checkOfficialAnswerKey = async () => {
       if (!concurso?.id) return;
@@ -78,7 +77,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           console.warn(`[AnswerSheet] Gabarito oficial incompleto ou não encontrado!`, result);
           setMissingOfficialAnswers(true);
 
-          // Show toast only once
+          // Exibir toast apenas uma vez
           toast.warning(
             "O gabarito oficial deste concurso parece estar incompleto ou não foi configurado. " +
             "Entre em contato com o administrador.",
@@ -98,7 +97,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     checkOfficialAnswerKey();
   }, [concurso?.id]);
 
-  // Update section display names with custom disciplines
+  // Atualizar os nomes de exibição das seções com disciplinas customizadas
   useEffect(() => {
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
@@ -107,7 +106,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [concurso]);
 
-  // Fetch user ranking data
   const {
     data: userRankingData,
     isLoading: isLoadingRanking
@@ -125,11 +123,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     staleTime: 1000
   });
 
-  // Define editsLeft and canEdit variables
+  // Definir a variável editsLeft e canEdit antes de useEffect
   const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
   const canEdit = editsLeft > 0;
 
-  // Fetch nullified questions
   const {
     data: nullifiedData,
     isLoading: isLoadingNullified,
@@ -145,11 +142,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           if (error) throw error;
           return data;
       },
-      staleTime: 30000,
+      staleTime: 30000, // Aumentado para reduzir consultas desnecessárias
       refetchOnWindowFocus: true
   });
 
-  // Import saveAnswers hook
+  // Renomeie a função importada de useSaveAnswers para saveAnswersService
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -163,10 +160,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0,
-    nullifiedQuestions
+    nullifiedQuestions // Passar as questões anuladas para o hook
   });
 
-  // Set initial subjective scores from user ranking data
   useEffect(() => {
     if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
       setDiscursiveScore(userRankingData.discursive_score);
@@ -182,14 +178,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData]);
 
-  // Update nullified questions set
   useEffect(() => {
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
       console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
 
-      // Check if there was a change in the number of nullified questions
+      // Verificar se houve alteração no número de questões anuladas
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
         console.log('[AnswerSheet] Alteração detectada nas questões anuladas:',
           `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
@@ -208,16 +203,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
 
-    // Also consider nullified questions as "answered" for validation
+    // Considerar também as questões anuladas como "respondidas" para a validação
     const effectivelyAnsweredQuestions = answeredQuestions +
       Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
     if (effectivelyAnsweredQuestions < totalQuestions) {
-      // Identify unanswered questions (excluding nullified ones)
+      // Identificar quais questões ainda não foram respondidas (excluindo as anuladas)
       const unansweredQuestions = [];
-      const allQuestions = getAllQuestionsFromAllSections();
+      const allQuestions = getAllQuestionsFromAllSections(); // <-- Adicionada esta linha crucial
 
-      // For each question, check if it's answered or nullified
+      // Para cada questão, verificar se está respondida ou anulada
       for (const qNum of allQuestions) {
         if (!answers[qNum] && !nullifiedQuestions.has(qNum)) {
           unansweredQuestions.push(qNum);
@@ -235,7 +230,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setIsSaving(true);
       setError(null);
 
-      // Call the saveAnswersService
+      // Chamando o serviço correto renomeado
       await saveAnswersService();
       await refetchNullified();
       console.log("[AnswerSheet] Salvamento concluído com sucesso");
@@ -281,12 +276,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const progressPercentage = totalQuestions ? answeredQuestions / totalQuestions * 100 : 0;
   const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
-  // Utility function to get all questions from all sections
+  // Função utilitária para obter todas as questões de todas as seções
   const getAllQuestionsFromAllSections = () => {
+    // Usar a função importada para calcular o total de questões
     const allQuestions = [];
     let questionNumber = 1;
     
-    // Iterate through all possible questions up to the total expected
+    // Iterar sobre todas as questões possíveis até o total esperado
     const totalQuestions = getTotalQuestions();
     for (let i = 1; i <= totalQuestions; i++) {
       allQuestions.push(i);
@@ -296,20 +292,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return allQuestions;
   };
 
-  // Get objective sections
+  // Obter seções de questões objetivas
   const getObjectiveSections = () => {
     if (!concurso) return [];
     
     const sections = [];
     
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      // Check if we're using the hierarchical structure (blocks -> disciplines)
-      if (isHierarchical) {
-        // Hierarchical structure (blocks -> disciplines)
-        for (const block of concurso.disciplines) {
-          // TypeGuard to check if it's a block with disciplines property
-          if ('disciplines' in block) {
-            for (const discipline of block.disciplines) {
+      // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
+      const hierarchical = isHierarchicalStructure(concurso);
+        
+      if (hierarchical) {
+        // Estrutura hierárquica (blocos -> disciplinas)
+        for (const item of concurso.disciplines) {
+          // TypeGuard para verificar se é um bloco
+          if (isDisciplineBlock(item)) {
+            for (const discipline of item.disciplines) {
               if (discipline.isEnabled && discipline.type) {
                 sections.push({
                   key: discipline.type,
@@ -320,10 +318,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           }
         }
       } else {
-        // Flat structure
-        for (const discipline of concurso.disciplines) {
-          // TypeGuard to check if it's a discipline
-          if ('isEnabled' in discipline && discipline.isEnabled && discipline.type) {
+        // Estrutura plana
+        for (const item of concurso.disciplines) {
+          // TypeGuard para verificar se é uma disciplina
+          if ('isEnabled' in item && item.isEnabled && item.type) {
+            const discipline = item as NestedDiscipline;
             sections.push({
               key: discipline.type,
               label: discipline.name || discipline.type
@@ -332,7 +331,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         }
       }
     } else {
-      // Traditional structure
+      // Estrutura tradicional
       if (concurso.has_basic_knowledge) {
         sections.push({ key: 'basic', label: sectionLabels.basic || 'Conhecimentos Básicos' });
       }
@@ -354,7 +353,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return sections;
   };
 
-  // Handle section changes
+  // Modified function to handle section changes with proper typing
   const handleSectionChange = (value: string) => {
     console.log('[AnswerSheet] Changing section to:', value);
     setSelectedSection(value as SectionType);
@@ -365,7 +364,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   
   console.log('[AnswerSheet] Selected section:', selectedSection);
   console.log('[AnswerSheet] Answer matrix:', matrix);
-  console.log('[AnswerSheet] Is hierarchical:', isHierarchical);
 
   return (
     <Card className="shadow-lg">
@@ -453,9 +451,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               onValueChange={handleSectionChange}
               className="w-full"
             >
-              <TabsList className="grid w-full" style={{ 
-                gridTemplateColumns: `repeat(${Math.min(objectiveSections.length, 4)}, 1fr)` 
-              }}>
+              <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(objectiveSections.length, 4)}, 1fr)` }}>
                 {objectiveSections.map(section => (
                   <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
@@ -525,4 +521,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       </CardFooter>
     </Card>
   );
+};
+
+// TypeGuard para verificar se estamos usando estrutura hierárquica
+const isHierarchicalStructure = (concurso: Concurso): boolean => {
+  return concurso.disciplines && Array.isArray(concurso.disciplines) &&
+    concurso.disciplines[0] &&
+    typeof concurso.disciplines[0] === 'object' &&
+    'name' in concurso.disciplines[0] &&
+    'disciplines' in concurso.disciplines[0];
 };
