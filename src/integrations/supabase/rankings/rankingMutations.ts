@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { isHierarchicalStructure } from './examStructure';
 
 interface RecalculationResponse {
   success: boolean;
@@ -133,20 +134,44 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const weightedCaseStudy3Score = caseStudy3Score * (concurso.case_study_3_weight || 1);
 
     // Processar pontuações da disciplina baseadas no JSON de disciplinas
-    if (concurso.has_custom_knowledge && concurso.disciplines && concurso.disciplines.length > 0) {
+    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      // Verificar se estamos lidando com estrutura hierárquica (blocos -> disciplinas)
+      const hierarchical = isHierarchicalStructure(concurso);
+      
+      console.log(`[recalculateUserScore] Structure type: ${hierarchical ? 'hierarchical' : 'flat'}`);
+      
       // Criar um mapeamento de tipo para peso com base no JSON de disciplinas
       const disciplineWeights: Record<string, number> = {};
       const disciplineNames: Record<string, string> = {};
       
       // Percorrer as disciplinas e extrair os pesos
-      for (const discipline of concurso.disciplines) {
-        if (discipline.isEnabled && discipline.type) {
-          disciplineWeights[discipline.type] = discipline.weight || 1;
-          disciplineNames[discipline.type] = discipline.name || discipline.type;
-          
-          // Inicializar pontuações como zero
-          disciplineScores[discipline.type] = 0;
-          weightedDisciplineScores[discipline.type] = 0;
+      if (hierarchical) {
+        // Estrutura hierárquica (blocos -> disciplinas)
+        for (const block of concurso.disciplines) {
+          if ('disciplines' in block && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type) {
+                disciplineWeights[discipline.type] = discipline.weight || 1;
+                disciplineNames[discipline.type] = discipline.name || discipline.type;
+                
+                // Inicializar pontuações como zero
+                disciplineScores[discipline.type] = 0;
+                weightedDisciplineScores[discipline.type] = 0;
+              }
+            }
+          }
+        }
+      } else {
+        // Estrutura plana (disciplinas diretamente)
+        for (const discipline of concurso.disciplines) {
+          if ('isEnabled' in discipline && discipline.isEnabled && discipline.type) {
+            disciplineWeights[discipline.type] = discipline.weight || 1;
+            disciplineNames[discipline.type] = discipline.name || discipline.type;
+            
+            // Inicializar pontuações como zero
+            disciplineScores[discipline.type] = 0;
+            weightedDisciplineScores[discipline.type] = 0;
+          }
         }
       }
       
@@ -171,12 +196,29 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         if (isCorrect) {
           // Obter o peso para esta disciplina do JSON de disciplines
           let disciplineWeight = 1;
+          
           if (concurso.has_custom_knowledge && concurso.disciplines) {
-            // Encontrar a disciplina correspondente e obter seu peso
-            for (const discipline of concurso.disciplines) {
-              if (discipline.type === sectionType) {
-                disciplineWeight = discipline.weight || 1;
-                break;
+            const hierarchical = isHierarchicalStructure(concurso);
+            
+            if (hierarchical) {
+              // Procurar em estrutura hierárquica
+              for (const block of concurso.disciplines) {
+                if ('disciplines' in block && Array.isArray(block.disciplines)) {
+                  for (const discipline of block.disciplines) {
+                    if (discipline.type === sectionType) {
+                      disciplineWeight = discipline.weight || 1;
+                      break;
+                    }
+                  }
+                }
+              }
+            } else {
+              // Procurar em estrutura plana
+              for (const discipline of concurso.disciplines) {
+                if ('type' in discipline && discipline.type === sectionType) {
+                  disciplineWeight = discipline.weight || 1;
+                  break;
+                }
               }
             }
           }
