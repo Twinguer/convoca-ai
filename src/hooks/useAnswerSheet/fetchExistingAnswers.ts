@@ -26,7 +26,18 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       // Get ranking data for subjective scores
       const { data: rankingData, error: rankingError } = await supabase
         .from('user_rankings')
-        .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
+        .select(`
+          discursive_score, 
+          case_study_1_score, 
+          case_study_2_score, 
+          case_study_3_score,
+          weighted_discursive_score,
+          weighted_case_study_1_score,
+          weighted_case_study_2_score,
+          weighted_case_study_3_score,
+          customDisciplineScores,
+          weightedCustomDisciplineScores
+        `)
         .eq('id', rankingId)
         .single();
         
@@ -39,7 +50,13 @@ export const fetchExistingAnswers = async (rankingId: string) => {
         discursiveScore: rankingData?.discursive_score || 0,
         caseStudy1Score: rankingData?.case_study_1_score || 0, 
         caseStudy2Score: rankingData?.case_study_2_score || 0,
-        caseStudy3Score: rankingData?.case_study_3_score || 0
+        caseStudy3Score: rankingData?.case_study_3_score || 0,
+        weightedDiscursiveScore: rankingData?.weighted_discursive_score || 0,
+        weightedCaseStudy1Score: rankingData?.weighted_case_study_1_score || 0,
+        weightedCaseStudy2Score: rankingData?.weighted_case_study_2_score || 0,
+        weightedCaseStudy3Score: rankingData?.weighted_case_study_3_score || 0,
+        customDisciplineScores: rankingData?.customDisciplineScores || {},
+        weightedCustomDisciplineScores: rankingData?.weightedCustomDisciplineScores || {}
       };
     }
     

@@ -132,30 +132,63 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const weightedCaseStudy2Score = caseStudy2Score * (concurso.case_study_2_weight || 1);
     const weightedCaseStudy3Score = caseStudy3Score * (concurso.case_study_3_weight || 1);
 
-    // Calcular a pontuação do usuário
+    // Processar pontuações da disciplina baseadas no JSON de disciplinas
+    if (concurso.has_custom_knowledge && concurso.disciplines && concurso.disciplines.length > 0) {
+      // Criar um mapeamento de tipo para peso com base no JSON de disciplinas
+      const disciplineWeights: Record<string, number> = {};
+      const disciplineNames: Record<string, string> = {};
+      
+      // Percorrer as disciplinas e extrair os pesos
+      for (const discipline of concurso.disciplines) {
+        if (discipline.isEnabled && discipline.type) {
+          disciplineWeights[discipline.type] = discipline.weight || 1;
+          disciplineNames[discipline.type] = discipline.name || discipline.type;
+          
+          // Inicializar pontuações como zero
+          disciplineScores[discipline.type] = 0;
+          weightedDisciplineScores[discipline.type] = 0;
+        }
+      }
+      
+      console.log("[recalculateUserScore] Discipline weights:", disciplineWeights);
+    }
+
+    // Calcular a pontuação do usuário para cada resposta
     for (const userAnswer of userAnswers || []) {
       const officialAnswer = officialAnswers?.find(oa => oa.question_number === userAnswer.question_number);
 
       if (officialAnswer) {
-        const isCorrect = officialAnswer.correct_answer === userAnswer.answer || officialAnswer.is_nullified === true;
+        const isCorrect = officialAnswer.is_nullified === true || userAnswer.answer === officialAnswer.correct_answer;
         const questionWeight = officialAnswer.weight || 1;
         const sectionType = officialAnswer.section_type || 'default';
         
         // Inicializar pontuação da disciplina se ainda não existir
         if (!disciplineScores[sectionType]) {
-            disciplineScores[sectionType] = 0;
-            weightedDisciplineScores[sectionType] = 0;
+          disciplineScores[sectionType] = 0;
+          weightedDisciplineScores[sectionType] = 0;
         }
         
         if (isCorrect) {
+          // Obter o peso para esta disciplina do JSON de disciplines
+          let disciplineWeight = 1;
+          if (concurso.has_custom_knowledge && concurso.disciplines) {
+            // Encontrar a disciplina correspondente e obter seu peso
+            for (const discipline of concurso.disciplines) {
+              if (discipline.type === sectionType) {
+                disciplineWeight = discipline.weight || 1;
+                break;
+              }
+            }
+          }
+          
           // Adicionar à pontuação total
           totalScore += questionWeight;
           
           // Adicionar à pontuação da disciplina específica
           disciplineScores[sectionType] += 1;
-          weightedDisciplineScores[sectionType] += questionWeight;
+          weightedDisciplineScores[sectionType] += questionWeight * disciplineWeight;
           
-          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight}`);
+          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight} * weight ${disciplineWeight}`);
         }
         
         totalWeight += questionWeight;
@@ -166,7 +199,19 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
     
     console.log(`[recalculateUserScore] Calculated total score: ${totalScore}, discipline scores:`, disciplineScores);
+    console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
     console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}`);
+
+    // Se estivermos usando pesos de disciplina customizados, recalcular a pontuação total
+    if (concurso.has_custom_knowledge && Object.keys(weightedDisciplineScores).length > 0) {
+      // Resetar a pontuação total para incluir apenas as pontuações ponderadas
+      totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + score, 0);
+      
+      // Adicionar pontuações subjetivas ponderadas
+      totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
+      
+      console.log(`[recalculateUserScore] Recalculated total with custom weights: ${totalScore}`);
+    }
 
     // Atualizar a pontuação do usuário no ranking com as pontuações por disciplina
     const { error: updateError } = await supabase
