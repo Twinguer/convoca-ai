@@ -15,7 +15,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     // Buscar todos os usuários participando deste concurso
     const { data: rankings, error } = await supabase
       .rpc('get_realtime_rankings', { p_concurso_id: concursoId })
-      .select('id, user_id');
+      .select('ranking_id, user_id');
     
     if (error) {
       console.error('[recalculateAllUserScores] Erro ao buscar participantes:', error);
