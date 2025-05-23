@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -128,7 +129,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       // Iterar pelos blocos
       concursoData.disciplines.forEach(block => {
         if (block.id && block.minimum_score !== undefined && block.minimum_score > 0) {
-          blockMinimums[block.id] = parseFloat(block.minimum_score);
+          blockMinimums[block.id] = parseFloat(String(block.minimum_score));
           console.log(`Block minimum found: ${block.id} = ${blockMinimums[block.id]}`);
         }
         
@@ -136,7 +137,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         if (block.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines.forEach(discipline => {
             if (discipline.id && discipline.minimum_score !== undefined && discipline.minimum_score > 0) {
-              disciplineMinimums[discipline.type] = parseFloat(discipline.minimum_score);
+              disciplineMinimums[discipline.type] = parseFloat(String(discipline.minimum_score));
               console.log(`Discipline minimum found: ${discipline.type} = ${disciplineMinimums[discipline.type]}`);
             }
           });
@@ -260,8 +261,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         // Pontuações de disciplinas customizadas
-        customDisciplineScores: customDisciplineScores || {},
-        weightedCustomDisciplineScores: weightedCustomDisciplineScores || {},
+        customDisciplineScores: customDisciplineScores,
+        weightedCustomDisciplineScores: weightedCustomDisciplineScores,
         // Flags de mínimos não atingidos
         belowMinimum,
         belowBlockMinimums: belowBlockMinimums.length > 0 ? belowBlockMinimums : undefined,

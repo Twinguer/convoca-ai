@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,11 +16,21 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [caseStudy1Score, setCaseStudy1Score] = useState<number | null>(null);
   const [caseStudy2Score, setCaseStudy2Score] = useState<number | null>(null);
   const [caseStudy3Score, setCaseStudy3Score] = useState<number | null>(null);
+  const [isHierarchical, setIsHierarchical] = useState<boolean>(false);
 
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {
       handleQuestionSectionSelection(concurso, setSelectedSection);
+    }
+  }, [concurso]);
+
+  // Detect if we're using hierarchical structure
+  useEffect(() => {
+    if (concurso) {
+      const hierarchical = isHierarchicalStructure(concurso);
+      setIsHierarchical(hierarchical);
+      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
     }
   }, [concurso]);
 
@@ -444,6 +455,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     caseStudy3Score,
     setCaseStudy3Score,
     isDiscursiveSection,
-    getSectionQuestions
+    getSectionQuestions,
+    isHierarchical
   };
 };

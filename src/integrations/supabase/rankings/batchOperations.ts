@@ -1,90 +1,95 @@
 
-import { supabase } from '../client';
+import { supabase } from '@/integrations/supabase/client';
+import { recalculateUserScore } from './rankingMutations';
 
-// Função para recalcular todas as pontuações de usuários para um concurso específico
+/**
+ * Recalculates scores for all users in a specific concurso
+ */
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      'recalculate_all_scores',
-      { p_concurso_id: concursoId }
-    );
-
-    if (error) {
-      console.error('Error recalculating scores:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { 
-      success: true, 
-      updatedCount: data?.updatedCount || 0 
-    };
-  } catch (error) {
-    console.error('Exception recalculating scores:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-};
-
-// Função para recalcular a pontuação de um usuário específico
-export const recalculateUserScore = async (userRankingId: string) => {
-  try {
-    const { data, error } = await supabase.rpc(
-      'calculate_user_score_realtime',
-      { p_ranking_id: userRankingId }
-    );
-
-    if (error) {
-      console.error('Error recalculating user score:', error);
-      return { success: false, error: error.message };
-    }
-
-    return { 
-      success: true, 
-      score: data 
-    };
-  } catch (error) {
-    console.error('Exception recalculating user score:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-};
-
-// Função para atualizar as pontuações subjetivas de um usuário
-export const updateSubjectiveScores = async (
-  userRankingId: string, 
-  discursiveScore: number, 
-  caseStudy1Score: number, 
-  caseStudy2Score: number, 
-  caseStudy3Score: number
-) => {
-  try {
-    const { error } = await supabase
+    console.log(`[recalculateAllUserScores] Starting batch recalculation for concurso ${concursoId}`);
+    
+    // Fetch all users participating in this concurso
+    const { data, error } = await supabase
       .from('user_rankings')
-      .update({
-        discursive_score: discursiveScore,
-        case_study_1_score: caseStudy1Score,
-        case_study_2_score: caseStudy2Score,
-        case_study_3_score: caseStudy3Score,
-        is_score_recalculated: false
-      })
-      .eq('id', userRankingId);
-
+      .select('id, user_id')
+      .eq('concurso_id', concursoId);
+      
     if (error) {
-      console.error('Error updating subjective scores:', error);
+      console.error('Error fetching users for batch recalculation:', error);
       return { success: false, error: error.message };
     }
-
-    // Recalcular pontuação após atualizar notas subjetivas
-    return await recalculateUserScore(userRankingId);
+    
+    if (!data || data.length === 0) {
+      console.log(`[recalculateAllUserScores] No users found for concurso ${concursoId}`);
+      return { success: true, updatedCount: 0 };
+    }
+    
+    console.log(`[recalculateAllUserScores] Found ${data.length} users to recalculate`);
+    
+    // Create an array of promises for all user score recalculations
+    const recalculationPromises = data.map(item => 
+      recalculateUserScore(item.user_id, concursoId)
+    );
+    
+    // Execute all recalculations in parallel
+    const results = await Promise.allSettled(recalculationPromises);
+    
+    // Count successful updates
+    const successCount = results.filter(result => 
+      result.status === 'fulfilled' && result.value.success
+    ).length;
+    
+    // Count and gather errors
+    const failedResults = results.filter(result => 
+      result.status === 'rejected' || 
+      (result.status === 'fulfilled' && !result.value.success)
+    );
+    
+    // Log failures if any
+    if (failedResults.length > 0) {
+      console.error(`[recalculateAllUserScores] ${failedResults.length} score recalculations failed`);
+      failedResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed recalculation ${index}:`, result.reason);
+        } else if (result.status === 'fulfilled' && !result.value.success) {
+          console.error(`Failed recalculation ${index}:`, result.value.error);
+        }
+      });
+    }
+    
+    console.log(`[recalculateAllUserScores] Successfully recalculated ${successCount} of ${data.length} scores`);
+    
+    // Insert a log entry for this batch operation
+    await supabase
+      .from('score_calculation_logs')
+      .insert({
+        calculation_type: 'batch_recalculation',
+        calculation_details: {
+          concursoId,
+          totalUsers: data.length,
+          successCount,
+          failedCount: failedResults.length
+        }
+      });
+    
+    if (successCount === data.length) {
+      return { 
+        success: true,
+        updatedCount: successCount,
+        message: `Successfully recalculated all ${successCount} scores`
+      };
+    } else {
+      return {
+        success: true,
+        updatedCount: successCount,
+        warning: `Successfully recalculated ${successCount} out of ${data.length} scores`,
+        failedCount: failedResults.length
+      };
+    }
+    
   } catch (error) {
-    console.error('Exception updating subjective scores:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+    console.error('Error in batch recalculation:', error);
+    return { success: false, error: String(error) };
   }
 };
