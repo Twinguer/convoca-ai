@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -9,33 +8,28 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, Trash2, Settings } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-
 interface ExamStructureSectionProps {
   form: any;
 }
-
 export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> = ({
   form
 }) => {
   // Set custom knowledge to true by default
   const [isCustomKnowledge, setIsCustomKnowledge] = useState<boolean>(true);
-  
   const [hasMinimumScore, setHasMinimumScore] = useState<boolean>(true);
 
   // Determine if we should show penalty options
   const showPenaltyOptions = form.watch('exam_type') === 'Certo ou Errado';
-
   useEffect(() => {
     // Set default values if they don't exist
     // Always use custom knowledge
     form.setValue('has_custom_knowledge', true);
-    
+
     // Check if we have any disciplines and add default if not
     const disciplines = form.watch('disciplines') || [];
     if (disciplines.length === 0) {
       // Migrar disciplinas existentes para blocos se existirem
       const existingDisciplines = form.watch('disciplines') || [];
-      
       if (existingDisciplines.length > 0) {
         // Criar um bloco padrão com as disciplinas existentes
         const defaultBlock = {
@@ -56,14 +50,12 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           weight: 1,
           minimum_score: 0
         };
-        
         const defaultBlock = {
           id: uuidv4(),
           name: "Bloco 1",
           minimum_score: 0,
           disciplines: [newDiscipline]
         };
-        
         form.setValue('disciplines', [defaultBlock]);
       }
     } else {
@@ -77,7 +69,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         }
         return block;
       });
-      
+
       // Garantir que todas as disciplinas têm minimum_score
       const fullyUpdatedDisciplines = updatedDisciplines.map(block => {
         if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -96,31 +88,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         }
         return block;
       });
-      
       form.setValue('disciplines', fullyUpdatedDisciplines);
     }
   }, [form]);
 
   // Helper function for questions count inputs
-  const renderQuestionsInput = (name: string) => (
-    <FormField
-      control={form.control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
+  const renderQuestionsInput = (name: string) => <FormField control={form.control} name={name} render={({
+    field
+  }) => <FormItem>
           <FormLabel>Número de Questões</FormLabel>
           <FormControl>
-            <Input
-              type="number"
-              {...field}
-              min="0"
-              onChange={e => field.onChange(Number(e.target.value))}
-            />
+            <Input type="number" {...field} min="0" onChange={e => field.onChange(Number(e.target.value))} />
           </FormControl>
-        </FormItem>
-      )}
-    />
-  );
+        </FormItem>} />;
 
   // Adicionar um novo bloco
   const handleAddBlock = () => {
@@ -152,18 +132,20 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
   // Atualizar nome de um bloco
   const handleBlockNameChange = (blockId: string, name: string) => {
     const currentBlocks = form.watch('disciplines') || [];
-    const updatedBlocks = currentBlocks.map(block => 
-      block.id === blockId ? { ...block, name } : block
-    );
+    const updatedBlocks = currentBlocks.map(block => block.id === blockId ? {
+      ...block,
+      name
+    } : block);
     form.setValue('disciplines', updatedBlocks);
   };
 
   // Atualizar nota mínima de um bloco
   const handleBlockMinimumScoreChange = (blockId: string, minimumScore: number) => {
     const currentBlocks = form.watch('disciplines') || [];
-    const updatedBlocks = currentBlocks.map(block => 
-      block.id === blockId ? { ...block, minimum_score: minimumScore } : block
-    );
+    const updatedBlocks = currentBlocks.map(block => block.id === blockId ? {
+      ...block,
+      minimum_score: minimumScore
+    } : block);
     form.setValue('disciplines', updatedBlocks);
   };
 
@@ -174,18 +156,15 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       if (block.id === blockId) {
         return {
           ...block,
-          disciplines: [
-            ...(block.disciplines || []),
-            {
-              id: uuidv4(),
-              name: 'Nova Disciplina',
-              type: `custom_${uuidv4().slice(0, 8)}`,
-              isEnabled: true,
-              questionCount: 10,
-              weight: 1,
-              minimum_score: 0
-            }
-          ]
+          disciplines: [...(block.disciplines || []), {
+            id: uuidv4(),
+            name: 'Nova Disciplina',
+            type: `custom_${uuidv4().slice(0, 8)}`,
+            isEnabled: true,
+            questionCount: 10,
+            weight: 1,
+            minimum_score: 0
+          }]
         };
       }
       return block;
@@ -200,9 +179,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       if (block.id === blockId) {
         return {
           ...block,
-          disciplines: (block.disciplines || []).filter(
-            discipline => discipline.id !== disciplineId
-          )
+          disciplines: (block.disciplines || []).filter(discipline => discipline.id !== disciplineId)
         };
       }
       return block;
@@ -219,7 +196,10 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           ...block,
           disciplines: (block.disciplines || []).map(discipline => {
             if (discipline.id === disciplineId) {
-              return { ...discipline, [field]: value };
+              return {
+                ...discipline,
+                [field]: value
+              };
             }
             return discipline;
           })
@@ -248,9 +228,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       form.setValue('basic_knowledge_weight', 1);
     }
   };
-
-  return (
-    <Card>
+  return <Card>
       <CardContent className="pt-6">
         <div className="grid grid-cols-1 gap-4 mb-4">
           <div>
@@ -258,16 +236,11 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           </div>
           <div className="flex flex-col gap-4">
             {/* Tipo de Prova */}
-            <FormField
-              control={form.control}
-              name="exam_type"
-              render={({ field }) => (
-                <FormItem>
+            <FormField control={form.control} name="exam_type" render={({
+            field
+          }) => <FormItem>
                   <FormLabel>Tipo de Prova</FormLabel>
-                  <Select 
-                    defaultValue={field.value || 'Alternativas'} 
-                    onValueChange={field.onChange}
-                  >
+                  <Select defaultValue={field.value || 'Alternativas'} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
@@ -278,22 +251,14 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormItem>
-              )}
-            />
+                </FormItem>} />
             
             {/* Quantidade de Alternativas - apenas para multipla escolha */}
-            {form.watch('exam_type') !== 'Certo ou Errado' && (
-              <FormField
-                control={form.control}
-                name="alternatives_count"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantidade de Alternativas</FormLabel>
-                    <Select 
-                      defaultValue={String(field.value || 5)} 
-                      onValueChange={value => field.onChange(Number(value))}
-                    >
+            {form.watch('exam_type') !== 'Certo ou Errado' && <FormField control={form.control} name="alternatives_count" render={({
+            field
+          }) => <FormItem>
+                    <FormLabel>Qtd de Alternativas</FormLabel>
+                    <Select defaultValue={String(field.value || 5)} onValueChange={value => field.onChange(Number(value))}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
@@ -304,23 +269,14 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                         <SelectItem value="5">5 (A-E)</SelectItem>
                       </SelectContent>
                     </Select>
-                  </FormItem>
-                )}
-              />
-            )}
+                  </FormItem>} />}
             
             {/* Penalidade para Erro - somente para Certo ou Errado */}
-            {showPenaltyOptions && (
-              <FormField
-                control={form.control}
-                name="wrong_answer_penalty"
-                render={({ field }) => (
-                  <FormItem>
+            {showPenaltyOptions && <FormField control={form.control} name="wrong_answer_penalty" render={({
+            field
+          }) => <FormItem>
                     <FormLabel>Penalidade para Erro</FormLabel>
-                    <Select 
-                      defaultValue={String(field.value || 0)} 
-                      onValueChange={value => field.onChange(Number(value))}
-                    >
+                    <Select defaultValue={String(field.value || 0)} onValueChange={value => field.onChange(Number(value))}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione" />
@@ -334,10 +290,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                         <SelectItem value="2">2 pontos</SelectItem>
                       </SelectContent>
                     </Select>
-                  </FormItem>
-                )}
-              />
-            )}
+                  </FormItem>} />}
           </div>
         </div>
 
@@ -345,35 +298,20 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
         <div className="mb-6 border-t pt-4">
           <div className="flex justify-between items-center mb-4">
             <h4 className="font-medium">Blocos de Disciplinas</h4>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleAddBlock}
-            >
+            <Button variant="outline" size="sm" onClick={handleAddBlock}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Bloco
             </Button>
           </div>
           
           {/* Renderização dos blocos */}
-          {form.watch('disciplines')?.map((block, blockIndex) => (
-            <div key={block.id} className="border p-4 rounded-md mb-4">
+          {form.watch('disciplines')?.map((block, blockIndex) => <div key={block.id} className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex-grow">
-                  <input 
-                    className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" 
-                    value={block.name} 
-                    onChange={e => handleBlockNameChange(block.id, e.target.value)} 
-                    placeholder="Nome do Bloco"
-                  />
+                  <input className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={block.name} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Nome do Bloco" />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleRemoveBlock(block.id)} 
-                    className="text-red-500 hover:text-red-700"
-                  >
+                  <Button variant="ghost" size="sm" onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Remover Bloco
                   </Button>
@@ -382,34 +320,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               
               {/* Nota mínima do bloco */}
               <div className="mb-4">
-                <FormLabel>Nota mínima do bloco (valor absoluto)</FormLabel>
-                <Input 
-                  type="number" 
-                  step="0.01"
-                  min="0"
-                  value={block.minimum_score || 0}
-                  onChange={e => handleBlockMinimumScoreChange(block.id, parseFloat(e.target.value) || 0)}
-                  className="w-full md:w-1/3"
-                />
+                <FormLabel>Nota mínima do bloco</FormLabel>
+                <Input type="number" step="0.01" min="0" value={block.minimum_score || 0} onChange={e => handleBlockMinimumScoreChange(block.id, parseFloat(e.target.value) || 0)} className="w-full md:w-1/3" />
               </div>
               
               {/* Disciplinas do bloco */}
               <div className="space-y-4 pl-4 border-l-2 border-gray-200">
-                {block.disciplines?.map((discipline, disciplineIndex) => (
-                  <div key={discipline.id} className="border p-4 rounded-md">
+                {block.disciplines?.map((discipline, disciplineIndex) => <div key={discipline.id} className="border p-4 rounded-md">
                     <div className="flex justify-between items-center mb-4">
-                      <input 
-                        className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" 
-                        value={discipline.name} 
-                        onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value)} 
-                        placeholder="Nome da Disciplina"
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => handleRemoveDiscipline(block.id, discipline.id)} 
-                        className="text-red-500 hover:text-red-700"
-                      >
+                      <input className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={discipline.name} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value)} placeholder="Nome da Disciplina" />
+                      <Button variant="ghost" size="sm" onClick={() => handleRemoveDiscipline(block.id, discipline.id)} className="text-red-500 hover:text-red-700">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remover
                       </Button>
@@ -418,19 +338,11 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <FormLabel>Número de Questões</FormLabel>
-                        <Input 
-                          type="number" 
-                          value={discipline.questionCount || 0} 
-                          min="0" 
-                          onChange={e => handleDisciplineChange(block.id, discipline.id, 'questionCount', Number(e.target.value))} 
-                        />
+                        <Input type="number" value={discipline.questionCount || 0} min="0" onChange={e => handleDisciplineChange(block.id, discipline.id, 'questionCount', Number(e.target.value))} />
                       </div>
                       <div>
                         <FormLabel>Peso</FormLabel>
-                        <Select 
-                          value={String(discipline.weight || 1)} 
-                          onValueChange={value => handleDisciplineChange(block.id, discipline.id, 'weight', Number(value))}
-                        >
+                        <Select value={String(discipline.weight || 1)} onValueChange={value => handleDisciplineChange(block.id, discipline.id, 'weight', Number(value))}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o peso" />
                           </SelectTrigger>
@@ -442,39 +354,24 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                         </Select>
                       </div>
                       <div>
-                        <FormLabel>Nota mínima (valor absoluto)</FormLabel>
-                        <Input 
-                          type="number" 
-                          step="0.01"
-                          min="0" 
-                          value={discipline.minimum_score || 0}
-                          onChange={e => handleDisciplineChange(block.id, discipline.id, 'minimum_score', parseFloat(e.target.value) || 0)} 
-                        />
+                        <FormLabel>Nota mínima</FormLabel>
+                        <Input type="number" step="0.01" min="0" value={discipline.minimum_score || 0} onChange={e => handleDisciplineChange(block.id, discipline.id, 'minimum_score', parseFloat(e.target.value) || 0)} />
                       </div>
                     </div>
-                  </div>
-                ))}
+                  </div>)}
                 
                 {/* Botão para adicionar disciplina ao bloco */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleAddDiscipline(block.id)}
-                  className="mt-2"
-                >
+                <Button variant="outline" size="sm" onClick={() => handleAddDiscipline(block.id)} className="mt-2">
                   <Plus className="h-4 w-4 mr-2" />
                   Adicionar Disciplina
                 </Button>
               </div>
-            </div>
-          ))}
+            </div>)}
           
           {/* Mensagem se não houver blocos */}
-          {(!form.watch('disciplines') || form.watch('disciplines').length === 0) && (
-            <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
+          {(!form.watch('disciplines') || form.watch('disciplines').length === 0) && <div className="text-center p-8 border border-dashed rounded-md text-gray-500">
               Nenhum bloco adicionado. Clique em "Adicionar Bloco" para criar blocos de disciplinas.
-            </div>
-          )}
+            </div>}
         </div>
         
         {/* Dissertativa e Estudos de Caso - Mantém igual ao original */}
@@ -506,16 +403,10 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           </div>
           
           {/* Dissertativa */}
-          {form.watch('has_discursive') && (
-            <div className="border p-4 rounded-md mb-4">
+          {form.watch('has_discursive') && <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Dissertativa</h5>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => form.setValue('has_discursive', false)} 
-                  className="text-red-500 hover:text-red-700"
-                >
+                <Button variant="ghost" size="sm" onClick={() => form.setValue('has_discursive', false)} className="text-red-500 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remover
                 </Button>
@@ -524,10 +415,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <FormLabel>Peso</FormLabel>
-                  <Select 
-                    value={String(form.watch('discursive_weight') || 1)} 
-                    onValueChange={value => form.setValue('discursive_weight', Number(value))}
-                  >
+                  <Select value={String(form.watch('discursive_weight') || 1)} onValueChange={value => form.setValue('discursive_weight', Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o peso" />
                     </SelectTrigger>
@@ -539,20 +427,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   </Select>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
           
           {/* Estudo de Caso 1 */}
-          {form.watch('has_case_study_1') && (
-            <div className="border p-4 rounded-md mb-4">
+          {form.watch('has_case_study_1') && <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Estudo de Caso</h5>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => form.setValue('has_case_study_1', false)} 
-                  className="text-red-500 hover:text-red-700"
-                >
+                <Button variant="ghost" size="sm" onClick={() => form.setValue('has_case_study_1', false)} className="text-red-500 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remover
                 </Button>
@@ -561,10 +442,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <FormLabel>Peso</FormLabel>
-                  <Select 
-                    value={String(form.watch('case_study_1_weight') || 1)} 
-                    onValueChange={value => form.setValue('case_study_1_weight', Number(value))}
-                  >
+                  <Select value={String(form.watch('case_study_1_weight') || 1)} onValueChange={value => form.setValue('case_study_1_weight', Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o peso" />
                     </SelectTrigger>
@@ -576,20 +454,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   </Select>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
           
           {/* Estudo de Caso 2 */}
-          {form.watch('has_case_study_2') && (
-            <div className="border p-4 rounded-md mb-4">
+          {form.watch('has_case_study_2') && <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Estudo de Caso 2</h5>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => form.setValue('has_case_study_2', false)} 
-                  className="text-red-500 hover:text-red-700"
-                >
+                <Button variant="ghost" size="sm" onClick={() => form.setValue('has_case_study_2', false)} className="text-red-500 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remover
                 </Button>
@@ -598,10 +469,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <FormLabel>Peso</FormLabel>
-                  <Select 
-                    value={String(form.watch('case_study_2_weight') || 1)} 
-                    onValueChange={value => form.setValue('case_study_2_weight', Number(value))}
-                  >
+                  <Select value={String(form.watch('case_study_2_weight') || 1)} onValueChange={value => form.setValue('case_study_2_weight', Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o peso" />
                     </SelectTrigger>
@@ -613,20 +481,13 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   </Select>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
           
           {/* Estudo de Caso 3 */}
-          {form.watch('has_case_study_3') && (
-            <div className="border p-4 rounded-md mb-4">
+          {form.watch('has_case_study_3') && <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <h5 className="font-medium">Estudo de Caso 3</h5>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => form.setValue('has_case_study_3', false)} 
-                  className="text-red-500 hover:text-red-700"
-                >
+                <Button variant="ghost" size="sm" onClick={() => form.setValue('has_case_study_3', false)} className="text-red-500 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remover
                 </Button>
@@ -635,10 +496,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <FormLabel>Peso</FormLabel>
-                  <Select 
-                    value={String(form.watch('case_study_3_weight') || 1)} 
-                    onValueChange={value => form.setValue('case_study_3_weight', Number(value))}
-                  >
+                  <Select value={String(form.watch('case_study_3_weight') || 1)} onValueChange={value => form.setValue('case_study_3_weight', Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o peso" />
                     </SelectTrigger>
@@ -650,12 +508,10 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   </Select>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
 
 // Adicionando uma exportação com o nome esperado pela GeneralTab
