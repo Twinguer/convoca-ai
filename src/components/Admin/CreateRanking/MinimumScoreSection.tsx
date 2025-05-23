@@ -15,7 +15,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
   return <Card className="mb-6">
       <CardContent className="pt-6">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold">Pontuação Mínima para a Prova</h3>
+          
           
           
           
@@ -24,7 +24,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
           field
         }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mb-4">
                 <div className="space-y-0.5">
-                  <FormLabel>Habilitar pontuação mínima</FormLabel>
+                  <FormLabel>Habilitar pontuação mínima para a prova</FormLabel>
                   
                 </div>
                 <FormControl>
