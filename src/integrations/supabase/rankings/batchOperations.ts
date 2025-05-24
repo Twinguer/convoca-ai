@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { recalculateUserScore } from './rankingMutations';
 
 /**
  * Recalcula as pontuações para todos os usuários em um concurso específico.
@@ -12,69 +11,38 @@ export const recalculateAllUserScores = async (concursoId: string) => {
   console.log(`[recalculateAllUserScores] Iniciando recálculo para concurso: ${concursoId}`);
   
   try {
-    // Buscar todos os usuários participando deste concurso
-    const { data: rankings, error } = await supabase
-      .rpc('get_realtime_rankings', { p_concurso_id: concursoId })
-      .select('ranking_id, user_id');
+    // Usar a função RPC com SECURITY DEFINER para recálculo em lote
+    const { data, error } = await supabase
+      .rpc('recalculate_all_scores_with_weights', { 
+        p_concurso_id: concursoId 
+      });
     
     if (error) {
-      console.error('[recalculateAllUserScores] Erro ao buscar participantes:', error);
+      console.error('[recalculateAllUserScores] Erro ao executar RPC:', error);
       return {
         success: false,
-        error: `Erro ao buscar participantes: ${error.message}`,
+        error: `Erro ao recalcular pontuações: ${error.message}`,
         updatedCount: 0
       };
     }
     
     // Log para depuração
-    console.log(`[recalculateAllUserScores] Encontrados ${rankings?.length || 0} participantes`);
+    console.log(`[recalculateAllUserScores] Resultado da RPC:`, data);
     
-    // Se não há participantes, retornar sem erro
-    if (!rankings || rankings.length === 0) {
+    // Verificar se a resposta contém os dados esperados
+    if (data && typeof data === 'object') {
       return {
-        success: true,
-        message: 'Nenhum participante encontrado para recalcular',
-        updatedCount: 0
+        success: data.success || true,
+        message: `Pontuações recalculadas com sucesso!`,
+        updatedCount: data.updatedCount || data.updated_count || 0,
+        executionTime: data.executionTimeMs || data.execution_time_ms
       };
-    }
-    
-    // Processar cada participante em sequência
-    // Isso é mais lento, mas reduz a chance de erros de concorrência
-    let updatedCount = 0;
-    const errors: any[] = [];
-    
-    for (const ranking of rankings) {
-      try {
-        // Recalcular pontuação do usuário usando a função existente
-        const result = await recalculateUserScore(ranking.user_id, concursoId);
-        
-        if (result.success) {
-          updatedCount++;
-        } else {
-          errors.push({
-            userId: ranking.user_id,
-            error: result.error
-          });
-        }
-      } catch (err) {
-        console.error(`[recalculateAllUserScores] Erro ao processar usuário ${ranking.user_id}:`, err);
-        errors.push({
-          userId: ranking.user_id,
-          error: err
-        });
-      }
-    }
-    
-    // Verificar resultados
-    if (errors.length > 0) {
-      console.warn(`[recalculateAllUserScores] Alguns usuários (${errors.length}) não puderam ser atualizados:`, errors);
     }
     
     return {
       success: true,
-      message: `Pontuações recalculadas: ${updatedCount} de ${rankings.length}`,
-      updatedCount,
-      errors: errors.length > 0 ? errors : undefined
+      message: 'Pontuações recalculadas com sucesso!',
+      updatedCount: 0
     };
   } catch (error) {
     console.error('[recalculateAllUserScores] Erro ao recalcular pontuações:', error);
@@ -92,7 +60,7 @@ export const markAllScoresForRecalculation = async (concursoId: string) => {
   
   try {
     // Usar RPC para executar função com SECURITY DEFINER que pode atualizar todos os rankings
-    const { error } = await supabase
+    const { data, error } = await supabase
       .rpc('recalculate_all_users_scores_realtime', { p_concurso_id: concursoId });
     
     if (error) {
@@ -105,7 +73,8 @@ export const markAllScoresForRecalculation = async (concursoId: string) => {
     
     return {
       success: true,
-      message: 'Todas as pontuações marcadas para recálculo'
+      message: 'Todas as pontuações marcadas para recálculo',
+      updatedCount: data?.updated_count || 0
     };
   } catch (error) {
     console.error('[markAllScoresForRecalculation] Erro inesperado:', error);
