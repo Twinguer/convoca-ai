@@ -61,7 +61,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       console.error('Error fetching concurso data:', concursoError);
     }
     
-    // Modificando para usar uma abordagem alternativa que evite a ambiguidade de ID
+    // Buscar rankings com as colunas corretas de pontuações customizadas
     const { data, error } = await supabase
       .from('user_rankings')
       .select(`
@@ -77,8 +77,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         subject_scores,
-        customDisciplineScores,
-        weightedCustomDisciplineScores,
+        "customDisciplineScores",
+        "weightedCustomDisciplineScores",
         reservation_type,
         users_profiles(name, avatar_url)
       `)
@@ -156,29 +156,36 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
       
-      // Parse custom discipline scores from subject_scores jsonb if available
-      const subjectScores = ranking.subject_scores || {};
+      // CORREÇÃO PRINCIPAL: Usar as colunas customizadas diretamente
+      let customDisciplineScores: { [key: string]: number } = {};
+      let weightedCustomDisciplineScores: { [key: string]: number } = {};
       
-      // Usar as pontuações customizadas do JSONB, ou criar um objeto vazio se não existir
-      const customDisciplineScores = ranking.customDisciplineScores || {};
-      const weightedCustomDisciplineScores = ranking.weightedCustomDisciplineScores || {};
+      // Primeiro, tentar usar as colunas customizadas
+      if (ranking.customDisciplineScores && typeof ranking.customDisciplineScores === 'object') {
+        customDisciplineScores = { ...ranking.customDisciplineScores };
+        console.log(`[fetchUserRankings] Using customDisciplineScores for user ${ranking.user_id}:`, customDisciplineScores);
+      }
       
-      // Se não tiver pontuações customizadas, tentar criar a partir do subject_scores para compatibilidade
-      if (Object.keys(customDisciplineScores).length === 0) {
-        // Processar pontuações customizadas do subject_scores
+      if (ranking.weightedCustomDisciplineScores && typeof ranking.weightedCustomDisciplineScores === 'object') {
+        weightedCustomDisciplineScores = { ...ranking.weightedCustomDisciplineScores };
+        console.log(`[fetchUserRankings] Using weightedCustomDisciplineScores for user ${ranking.user_id}:`, weightedCustomDisciplineScores);
+      }
+      
+      // Se as colunas customizadas estão vazias, tentar gerar a partir do subject_scores (fallback)
+      if (Object.keys(customDisciplineScores).length === 0 && ranking.subject_scores) {
+        const subjectScores = ranking.subject_scores || {};
         Object.entries(subjectScores).forEach(([key, value]) => {
-          // Processar todas as chaves como disciplinas potencialmente customizadas
           if (key !== 'total') { // Ignorar chave especial 'total' se existir
             customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
-            
-            // Se não houver pontuações ponderadas, usar as pontuações brutas
-            if (Object.keys(weightedCustomDisciplineScores).length === 0) {
-              weightedCustomDisciplineScores[key] = customDisciplineScores[key];
-            }
           }
         });
-
-        console.log(`[fetchUserRankings] Generated discipline scores for user ${ranking.user_id}:`, customDisciplineScores);
+        
+        // Se não há pontuações ponderadas, usar as pontuações brutas
+        if (Object.keys(weightedCustomDisciplineScores).length === 0) {
+          weightedCustomDisciplineScores = { ...customDisciplineScores };
+        }
+        
+        console.log(`[fetchUserRankings] Generated from subject_scores for user ${ranking.user_id}:`, customDisciplineScores);
       }
       
       // Registrar pontuações personalizadas
@@ -260,7 +267,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
-        // Pontuações de disciplinas customizadas
+        // Pontuações de disciplinas customizadas (CORRIGIDAS)
         customDisciplineScores: customDisciplineScores,
         weightedCustomDisciplineScores: weightedCustomDisciplineScores,
         // Flags de mínimos não atingidos
@@ -271,7 +278,6 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
         id: ranking.id,
-        // Não buscamos mais quota_position do banco, será calculado em runtime
       };
     });
     
