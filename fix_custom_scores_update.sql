@@ -299,8 +299,8 @@ BEGIN
         SET
           score = v_total_score,
           subject_scores = v_custom_discipline_scores,
-          customdisciplinescores = v_custom_discipline_scores, -- SEM ASPAS DUPLAS
-          weightedcustomdisciplinescores = v_weighted_custom_discipline_scores, -- SEM ASPAS DUPLAS
+          customDisciplineScores = v_custom_discipline_scores, -- COM CAMELCASE CORRETO
+          weightedCustomDisciplineScores = v_weighted_custom_discipline_scores, -- COM CAMELCASE CORRETO
           -- Set traditional score columns to 0 for custom contests
           basic_knowledge_score = 0,
           specific_knowledge_1_score = 0,
@@ -448,8 +448,8 @@ BEGIN
           'specific3', (v_raw_scores->>'specific3Score')::numeric
         ),
         -- Set custom score JSONB columns to {} for traditional contests
-        customdisciplinescores = '{}'::jsonb,
-        weightedcustomdisciplinescores = '{}'::jsonb,
+        customDisciplineScores = '{}'::jsonb,
+        weightedCustomDisciplineScores = '{}'::jsonb,
         updated_at = NOW(),
         is_score_recalculated = TRUE
       WHERE id = u.id;

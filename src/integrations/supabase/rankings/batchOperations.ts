@@ -11,6 +11,32 @@ export const recalculateAllUserScores = async (concursoId: string) => {
   console.log(`[recalculateAllUserScores] Iniciando recálculo para concurso: ${concursoId}`);
   
   try {
+    // Verificar se existem rankings para este concurso
+    const { data: existingRankings, error: checkError } = await supabase
+      .from('user_rankings')
+      .select('id, user_id, score')
+      .eq('concurso_id', concursoId);
+
+    if (checkError) {
+      console.error('[recalculateAllUserScores] Erro ao verificar rankings existentes:', checkError);
+      return {
+        success: false,
+        error: `Erro ao verificar rankings: ${checkError.message}`,
+        updatedCount: 0
+      };
+    }
+
+    console.log(`[recalculateAllUserScores] Rankings encontrados: ${existingRankings?.length || 0}`);
+
+    if (!existingRankings || existingRankings.length === 0) {
+      console.log(`[recalculateAllUserScores] Nenhum ranking encontrado para recalcular`);
+      return {
+        success: true,
+        message: 'Nenhum ranking encontrado para recalcular',
+        updatedCount: 0
+      };
+    }
+
     // Usar a função RPC com SECURITY DEFINER para recálculo em lote
     const { data, error } = await supabase
       .rpc('recalculate_all_scores_with_weights', { 
@@ -31,6 +57,8 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     
     // Verificar se a resposta contém os dados esperados
     if (data && typeof data === 'object') {
+      console.log(`[recalculateAllUserScores] Recálculo concluído com sucesso: ${data.updatedCount || data.updated_count || 0} rankings atualizados`);
+      
       return {
         success: data.success || true,
         message: `Pontuações recalculadas com sucesso!`,

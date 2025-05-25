@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Defining the Ranking interface to fix TypeScript errors
@@ -60,7 +61,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       console.error('Error fetching concurso data:', concursoError);
     }
     
-    // CORREÇÃO: Usar nomes corretos das colunas (sem aspas duplas)
+    // CORREÇÃO: Usar nomes corretos das colunas (com camelCase)
     const { data, error } = await supabase
       .from('user_rankings')
       .select(`
@@ -76,8 +77,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weighted_case_study_2_score,
         weighted_case_study_3_score,
         subject_scores,
-        customdisciplinescores,
-        weightedcustomdisciplinescores,
+        customDisciplineScores,
+        weightedCustomDisciplineScores,
         reservation_type,
         users_profiles(name, avatar_url)
       `)
@@ -91,6 +92,7 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
     
     // Se não há rankings, retornar array vazio
     if (!data || data.length === 0) {
+      console.log('No rankings found for concurso:', concursoId);
       return [];
     }
     
@@ -103,8 +105,8 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         score: firstRanking.score,
         profile: firstRanking.users_profiles,
         subject_scores: firstRanking.subject_scores,
-        customdisciplinescores: firstRanking.customdisciplinescores,
-        weightedcustomdisciplinescores: firstRanking.weightedcustomdisciplinescores
+        customDisciplineScores: firstRanking.customDisciplineScores,
+        weightedCustomDisciplineScores: firstRanking.weightedCustomDisciplineScores
       });
     }
     
@@ -155,19 +157,19 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const name = userProfile?.name || 'Usuário Anônimo';
       const avatarUrl = userProfile?.avatar_url || null;
       
-      // CORREÇÃO PRINCIPAL: Usar as colunas corretas (sem aspas duplas)
+      // CORREÇÃO PRINCIPAL: Usar as colunas corretas (com camelCase)
       let customDisciplineScores: { [key: string]: number } = {};
       let weightedCustomDisciplineScores: { [key: string]: number } = {};
       
       // Primeiro, tentar usar as colunas customizadas (agora com nomes corretos)
-      if (ranking.customdisciplinescores && typeof ranking.customdisciplinescores === 'object') {
-        customDisciplineScores = { ...ranking.customdisciplinescores };
-        console.log(`[fetchUserRankings] Using customdisciplinescores for user ${ranking.user_id}:`, customDisciplineScores);
+      if (ranking.customDisciplineScores && typeof ranking.customDisciplineScores === 'object') {
+        customDisciplineScores = { ...ranking.customDisciplineScores };
+        console.log(`[fetchUserRankings] Using customDisciplineScores for user ${ranking.user_id}:`, customDisciplineScores);
       }
       
-      if (ranking.weightedcustomdisciplinescores && typeof ranking.weightedcustomdisciplinescores === 'object') {
-        weightedCustomDisciplineScores = { ...ranking.weightedcustomdisciplinescores };
-        console.log(`[fetchUserRankings] Using weightedcustomdisciplinescores for user ${ranking.user_id}:`, weightedCustomDisciplineScores);
+      if (ranking.weightedCustomDisciplineScores && typeof ranking.weightedCustomDisciplineScores === 'object') {
+        weightedCustomDisciplineScores = { ...ranking.weightedCustomDisciplineScores };
+        console.log(`[fetchUserRankings] Using weightedCustomDisciplineScores for user ${ranking.user_id}:`, weightedCustomDisciplineScores);
       }
       
       // Se as colunas customizadas estão vazias, tentar gerar a partir do subject_scores (fallback)
