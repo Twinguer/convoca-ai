@@ -931,11 +931,10 @@ export type Database = {
       get_realtime_rankings: {
         Args: { p_concurso_id: string; p_reservation_type?: string }
         Returns: {
-          id: string
+          ranking_id: string
           user_id: string
           user_name: string
           avatar_url: string
-          score: number
           basic_knowledge_score: number
           specific_knowledge_score: number
           specific_knowledge_1_score: number
@@ -957,6 +956,7 @@ export type Database = {
           weightedCustomDisciplineScores: Json
           reservation_type: string
           is_classified: boolean
+          score: number
         }[]
       }
       is_candidate_classified: {

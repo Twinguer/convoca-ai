@@ -1,4 +1,3 @@
-
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';
@@ -127,7 +126,7 @@ export function useResultadosData() {
   
   const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator || isCheckingParticipation;
   
-  // Function to manually refresh all data
+  // Function to manually refresh all data - NOW WORKS FOR ALL USERS
   const refreshData = async () => {
     console.log("[useResultadosData] Atualizando rankings manualmente");
     
@@ -139,19 +138,10 @@ export function useResultadosData() {
       };
     }
 
-    // Verifica se o usuário está autenticado
-    if (!isAuthenticated) {
-      console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
-      await refetchRankings();
-      await refetchCount();
+    // REMOVED: Authentication check - now works for everyone
+    console.log("[useResultadosData] Executando recálculo de pontuações para todos os usuários");
       
-      return {
-        success: true,
-        message: "Dados atualizados localmente"
-      };
-    }
-      
-    // Recalcular pontuações para todos os usuários apenas se autenticado
+    // Recalcular pontuações para todos os usuários (funciona para qualquer usuário)
     try {
       console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
       const result = await recalculateAllUserScores(id);
