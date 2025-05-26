@@ -127,9 +127,9 @@ export function useResultadosData() {
   
   const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator || isCheckingParticipation;
   
-  // Function to manually refresh all data - AGORA PERMITE PARA TODOS OS USUÁRIOS
+  // Function to manually refresh all data
   const refreshData = async () => {
-    console.log("[useResultadosData] Atualizando rankings para todos os usuários");
+    console.log("[useResultadosData] Atualizando rankings manualmente");
     
     if (!id) {
       console.error("[useResultadosData] ID do concurso não fornecido");
@@ -139,10 +139,21 @@ export function useResultadosData() {
       };
     }
 
+    // Verifica se o usuário está autenticado
+    if (!isAuthenticated) {
+      console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
+      await refetchRankings();
+      await refetchCount();
+      
+      return {
+        success: true,
+        message: "Dados atualizados localmente"
+      };
+    }
+      
+    // Recalcular pontuações para todos os usuários apenas se autenticado
     try {
       console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
-      
-      // MUDANÇA PRINCIPAL: Agora permite recálculo independente do status de autenticação
       const result = await recalculateAllUserScores(id);
       
       if (!result.success) {
@@ -155,11 +166,7 @@ export function useResultadosData() {
         await refetchRankings();
         await refetchCount();
         
-        return { 
-          success: true, 
-          updatedCount: result.updatedCount,
-          message: result.message 
-        };
+        return { success: true, updatedCount: result.updatedCount };
       }
     } catch (err) {
       console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);

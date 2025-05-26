@@ -1,143 +1,95 @@
+
 import { supabase } from '@/integrations/supabase/client';
+import { recalculateUserScore } from './rankingMutations';
 
 /**
- * Recalcula as pontuações para todos os usuários em um concurso específico.
- * 
- * @param concursoId - O ID do concurso para recalcular pontuações
- * @returns Uma promessa que resolve para um objeto com status de sucesso e contagem
+ * Recalculates scores for all users in a specific concurso
  */
 export const recalculateAllUserScores = async (concursoId: string) => {
-  console.log(`[recalculateAllUserScores] Iniciando recálculo para concurso: ${concursoId}`);
-  
   try {
-    // Verificar se existem rankings para este concurso
-    const { data: existingRankings, error: checkError } = await supabase
-      .from('user_rankings')
-      .select('id, user_id, score, customDisciplineScores, weightedCustomDisciplineScores')
-      .eq('concurso_id', concursoId);
-
-    if (checkError) {
-      console.error('[recalculateAllUserScores] Erro ao verificar rankings existentes:', checkError);
-      return {
-        success: false,
-        error: `Erro ao verificar rankings: ${checkError.message}`,
-        updatedCount: 0
-      };
-    }
-
-    console.log(`[recalculateAllUserScores] Rankings encontrados: ${existingRankings?.length || 0}`);
+    console.log(`[recalculateAllUserScores] Starting batch recalculation for concurso ${concursoId}`);
     
-    // Log do estado atual das pontuações customizadas
-    if (existingRankings && existingRankings.length > 0) {
-      console.log('[recalculateAllUserScores] Estado atual das pontuações customizadas:');
-      existingRankings.forEach((ranking, index) => {
-        console.log(`  Ranking ${index + 1} (${ranking.user_id}):`, {
-          customDisciplineScores: ranking.customDisciplineScores,
-          weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores,
-          currentScore: ranking.score
-        });
+    // Fetch all users participating in this concurso
+    const { data, error } = await supabase
+      .from('user_rankings')
+      .select('id, user_id')
+      .eq('concurso_id', concursoId);
+      
+    if (error) {
+      console.error('Error fetching users for batch recalculation:', error);
+      return { success: false, error: error.message };
+    }
+    
+    if (!data || data.length === 0) {
+      console.log(`[recalculateAllUserScores] No users found for concurso ${concursoId}`);
+      return { success: true, updatedCount: 0 };
+    }
+    
+    console.log(`[recalculateAllUserScores] Found ${data.length} users to recalculate`);
+    
+    // Create an array of promises for all user score recalculations
+    const recalculationPromises = data.map(item => 
+      recalculateUserScore(item.user_id, concursoId)
+    );
+    
+    // Execute all recalculations in parallel
+    const results = await Promise.allSettled(recalculationPromises);
+    
+    // Count successful updates
+    const successCount = results.filter(result => 
+      result.status === 'fulfilled' && result.value.success
+    ).length;
+    
+    // Count and gather errors
+    const failedResults = results.filter(result => 
+      result.status === 'rejected' || 
+      (result.status === 'fulfilled' && !result.value.success)
+    );
+    
+    // Log failures if any
+    if (failedResults.length > 0) {
+      console.error(`[recalculateAllUserScores] ${failedResults.length} score recalculations failed`);
+      failedResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed recalculation ${index}:`, result.reason);
+        } else if (result.status === 'fulfilled' && !result.value.success) {
+          console.error(`Failed recalculation ${index}:`, result.value.error);
+        }
       });
     }
-
-    if (!existingRankings || existingRankings.length === 0) {
-      console.log(`[recalculateAllUserScores] Nenhum ranking encontrado para recalcular`);
+    
+    console.log(`[recalculateAllUserScores] Successfully recalculated ${successCount} of ${data.length} scores`);
+    
+    // Insert a log entry for this batch operation
+    await supabase
+      .from('score_calculation_logs')
+      .insert({
+        calculation_type: 'batch_recalculation',
+        calculation_details: {
+          concursoId,
+          totalUsers: data.length,
+          successCount,
+          failedCount: failedResults.length
+        }
+      });
+    
+    if (successCount === data.length) {
+      return { 
+        success: true,
+        updatedCount: successCount,
+        message: `Successfully recalculated all ${successCount} scores`
+      };
+    } else {
       return {
         success: true,
-        message: 'Nenhum ranking encontrado para recalcular',
-        updatedCount: 0
-      };
-    }
-
-    // Usar a função RPC com SECURITY DEFINER para recálculo em lote
-    console.log('[recalculateAllUserScores] Chamando função RPC recalculate_all_scores_with_weights...');
-    const { data, error } = await supabase
-      .rpc('recalculate_all_scores_with_weights', { 
-        p_concurso_id: concursoId 
-      });
-    
-    if (error) {
-      console.error('[recalculateAllUserScores] Erro ao executar RPC:', error);
-      return {
-        success: false,
-        error: `Erro ao recalcular pontuações: ${error.message}`,
-        updatedCount: 0
+        updatedCount: successCount,
+        warning: `Successfully recalculated ${successCount} out of ${data.length} scores`,
+        failedCount: failedResults.length
       };
     }
     
-    // Log para depuração
-    console.log(`[recalculateAllUserScores] Resultado da RPC:`, data);
-    
-    // Verificar o estado após recálculo
-    const { data: updatedRankings, error: verifyError } = await supabase
-      .from('user_rankings')
-      .select('id, user_id, score, customDisciplineScores, weightedCustomDisciplineScores')
-      .eq('concurso_id', concursoId);
-    
-    if (!verifyError && updatedRankings) {
-      console.log('[recalculateAllUserScores] Estado após recálculo:');
-      updatedRankings.forEach((ranking, index) => {
-        console.log(`  Ranking ${index + 1} (${ranking.user_id}):`, {
-          customDisciplineScores: ranking.customDisciplineScores,
-          weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores,
-          newScore: ranking.score
-        });
-      });
-    }
-    
-    // Verificar se a resposta contém os dados esperados
-    if (data && typeof data === 'object') {
-      console.log(`[recalculateAllUserScores] Recálculo concluído com sucesso: ${data.updatedCount || data.updated_count || 0} rankings atualizados`);
-      
-      return {
-        success: data.success || true,
-        message: `Pontuações recalculadas com sucesso!`,
-        updatedCount: data.updatedCount || data.updated_count || 0,
-        executionTime: data.executionTimeMs || data.execution_time_ms
-      };
-    }
-    
-    return {
-      success: true,
-      message: 'Pontuações recalculadas com sucesso!',
-      updatedCount: 0
-    };
   } catch (error) {
-    console.error('[recalculateAllUserScores] Erro ao recalcular pontuações:', error);
-    return {
-      success: false,
-      error: `Erro ao recalcular pontuações: ${error}`,
-      updatedCount: 0
-    };
-  }
-};
-
-// Função auxiliar para marcar todas as pontuações para recálculo
-export const markAllScoresForRecalculation = async (concursoId: string) => {
-  console.log(`[markAllScoresForRecalculation] Marcando pontuações para recálculo: ${concursoId}`);
-  
-  try {
-    // Usar RPC para executar função com SECURITY DEFINER que pode atualizar todos os rankings
-    const { data, error } = await supabase
-      .rpc('recalculate_all_users_scores_realtime', { p_concurso_id: concursoId });
-    
-    if (error) {
-      console.error('[markAllScoresForRecalculation] Erro ao marcar para recálculo:', error);
-      return {
-        success: false,
-        error: `Erro ao marcar para recálculo: ${error.message}`
-      };
-    }
-    
-    return {
-      success: true,
-      message: 'Todas as pontuações marcadas para recálculo',
-      updatedCount: data?.updated_count || 0
-    };
-  } catch (error) {
-    console.error('[markAllScoresForRecalculation] Erro inesperado:', error);
-    return {
-      success: false,
-      error: `Erro inesperado: ${error}`
-    };
+    console.error('Error in batch recalculation:', error);
+    return { success: false, error: String(error) };
   }
 };

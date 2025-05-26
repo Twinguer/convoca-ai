@@ -61,16 +61,14 @@ const ResultadosPage = () => {
     console.log("Manual refresh initiated by user");
     toast({
       title: "Atualizando ranking",
-      description: "As pontuações estão sendo recalculadas para todos os participantes...",
+      description: "As pontuações estão sendo recalculadas em tempo real...",
       duration: 3000
     });
-    
     const result = await refreshData();
-    
     if (result?.success) {
       toast({
-        title: "Ranking atualizado com sucesso!",
-        description: `${result.updatedCount || 'Todas as'} pontuação(ões) foram recalculadas e estão atualizadas.`,
+        title: "Ranking atualizado",
+        description: `As pontuações foram recalculadas com sucesso para ${result.updatedCount} usuário(s)!`,
         duration: 4000
       });
     } else if (result?.error) {
@@ -122,7 +120,7 @@ const ResultadosPage = () => {
       </div>
       
       {isRefetching && <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-md mb-2 text-center text-sm">
-          Atualizando dados em tempo real... As pontuações estão sendo recalculadas para todos os participantes.
+          Atualizando dados em tempo real... As pontuações estão sendo recalculadas.
         </div>}
       
       {/* Sempre exibindo o ranking, independente do status de autenticação */}

@@ -247,7 +247,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Se estivermos usando pesos de disciplina customizados, recalcular a pontuação total
     if (concurso.has_custom_knowledge && Object.keys(weightedDisciplineScores).length > 0) {
       // Resetar a pontuação total para incluir apenas as pontuações ponderadas
-      totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
+      totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + score, 0);
       
       // Adicionar pontuações subjetivas ponderadas
       totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
@@ -284,8 +284,38 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
     
-    // Verificar se o usuário atingiu a pontuação mínima - REMOVER ATUALIZAÇÃO DE STATUS
-    // Removemos a atualização do status já que esse campo não existe na tabela
+    // Verificar se o usuário atingiu a pontuação mínima
+    if (minimumScoreRequired > 0 && totalScore < minimumScoreRequired) {
+      // Atualizar o status do usuário para "eliminado"
+      const { error: updateStatusError } = await supabase
+        .from('user_rankings')
+        .update({ status: 'eliminado' })
+        .eq('id', userRanking.id);
+        
+      if (updateStatusError) {
+        console.error('Erro ao atualizar status do usuário:', updateStatusError);
+        return { 
+          success: false, 
+          message: 'Erro ao atualizar status do usuário', 
+          error: updateStatusError 
+        };
+      }
+    } else {
+      // Se o usuário atingiu a pontuação mínima, atualizar o status para "classificado"
+      const { error: updateStatusError } = await supabase
+        .from('user_rankings')
+        .update({ status: 'classificado' })
+        .eq('id', userRanking.id);
+        
+      if (updateStatusError) {
+        console.error('Erro ao atualizar status do usuário:', updateStatusError);
+        return { 
+          success: false, 
+          message: 'Erro ao atualizar status do usuário', 
+          error: updateStatusError 
+        };
+      }
+    }
 
     return { 
         success: true, 
