@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 /**
@@ -14,7 +13,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     // Verificar se existem rankings para este concurso
     const { data: existingRankings, error: checkError } = await supabase
       .from('user_rankings')
-      .select('id, user_id, score')
+      .select('id, user_id, score, customDisciplineScores, weightedCustomDisciplineScores')
       .eq('concurso_id', concursoId);
 
     if (checkError) {
@@ -27,6 +26,18 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     }
 
     console.log(`[recalculateAllUserScores] Rankings encontrados: ${existingRankings?.length || 0}`);
+    
+    // Log do estado atual das pontuações customizadas
+    if (existingRankings && existingRankings.length > 0) {
+      console.log('[recalculateAllUserScores] Estado atual das pontuações customizadas:');
+      existingRankings.forEach((ranking, index) => {
+        console.log(`  Ranking ${index + 1} (${ranking.user_id}):`, {
+          customDisciplineScores: ranking.customDisciplineScores,
+          weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores,
+          currentScore: ranking.score
+        });
+      });
+    }
 
     if (!existingRankings || existingRankings.length === 0) {
       console.log(`[recalculateAllUserScores] Nenhum ranking encontrado para recalcular`);
@@ -38,6 +49,7 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     }
 
     // Usar a função RPC com SECURITY DEFINER para recálculo em lote
+    console.log('[recalculateAllUserScores] Chamando função RPC recalculate_all_scores_with_weights...');
     const { data, error } = await supabase
       .rpc('recalculate_all_scores_with_weights', { 
         p_concurso_id: concursoId 
@@ -54,6 +66,23 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     
     // Log para depuração
     console.log(`[recalculateAllUserScores] Resultado da RPC:`, data);
+    
+    // Verificar o estado após recálculo
+    const { data: updatedRankings, error: verifyError } = await supabase
+      .from('user_rankings')
+      .select('id, user_id, score, customDisciplineScores, weightedCustomDisciplineScores')
+      .eq('concurso_id', concursoId);
+    
+    if (!verifyError && updatedRankings) {
+      console.log('[recalculateAllUserScores] Estado após recálculo:');
+      updatedRankings.forEach((ranking, index) => {
+        console.log(`  Ranking ${index + 1} (${ranking.user_id}):`, {
+          customDisciplineScores: ranking.customDisciplineScores,
+          weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores,
+          newScore: ranking.score
+        });
+      });
+    }
     
     // Verificar se a resposta contém os dados esperados
     if (data && typeof data === 'object') {

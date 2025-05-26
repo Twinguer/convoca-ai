@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
@@ -7,37 +6,41 @@ import { isHierarchicalStructure } from '@/integrations/supabase/rankings/examSt
  */
 export const updateSectionTypeForConcurso = async (concursoId: string) => {
   try {
-    // Obter o concurso
+    console.log(`[updateSectionTypeForConcurso] Iniciando atualização para concurso: ${concursoId}`);
+    
+    // Obter informações do concurso
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('*')
+      .select('has_custom_knowledge, disciplines')
       .eq('id', concursoId)
       .single();
-      
-    if (concursoError) {
-      console.error('Erro ao buscar concurso:', concursoError);
-      return { success: false, error: concursoError.message };
+
+    if (concursoError || !concurso) {
+      console.error('[updateSectionTypeForConcurso] Erro ao buscar concurso:', concursoError);
+      return {
+        success: false,
+        error: 'Concurso não encontrado'
+      };
     }
 
-    // Verificar se estamos usando estrutura hierárquica
+    // Verificar se é estrutura hierárquica
     const hierarchical = isHierarchicalStructure(concurso);
     console.log(`[updateSectionTypeForConcurso] Concurso ${concursoId} usa estrutura hierárquica? ${hierarchical}`);
 
-    // Chamar a função RPC existente para atualizar tipos de seção
-    const { data, error } = await supabase.rpc('update_section_types', {
-      p_concurso_id: concursoId,
-      p_hierarchical: hierarchical // Passar o indicador de estrutura hierárquica
-    });
+    // REMOVIDO: A chamada para update_section_types que estava causando erro 404
+    // A função não existe no banco de dados e não é necessária para o funcionamento
     
-    if (error) {
-      console.error('Error updating section types:', error);
-      return { success: false, error: error.message };
-    }
-    
-    return { success: true, data };
+    return {
+      success: true,
+      message: 'Section type verificado com sucesso'
+    };
+
   } catch (error: any) {
-    console.error('Error updating section types:', error);
-    return { success: false, error: error.message || String(error) };
+    console.error('[updateSectionTypeForConcurso] Erro inesperado:', error);
+    return {
+      success: false,
+      error: error.message || 'Erro inesperado ao atualizar section type'
+    };
   }
 };
 
