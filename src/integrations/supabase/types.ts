@@ -352,6 +352,41 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_booklets: {
+        Row: {
+          concurso_id: string
+          created_at: string | null
+          display_order: number
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          concurso_id: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          concurso_id?: string
+          created_at?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_booklets_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_titles: {
         Row: {
           created_at: string | null
@@ -396,6 +431,7 @@ export type Database = {
       }
       official_answer_weights: {
         Row: {
+          booklet_id: string | null
           concurso_id: string
           correct_answer: string
           created_at: string
@@ -411,6 +447,7 @@ export type Database = {
           weight: number
         }
         Insert: {
+          booklet_id?: string | null
           concurso_id: string
           correct_answer: string
           created_at?: string
@@ -426,6 +463,7 @@ export type Database = {
           weight?: number
         }
         Update: {
+          booklet_id?: string | null
           concurso_id?: string
           correct_answer?: string
           created_at?: string
@@ -441,6 +479,13 @@ export type Database = {
           weight?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "official_answer_weights_booklet_id_fkey"
+            columns: ["booklet_id"]
+            isOneToOne: false
+            referencedRelation: "exam_booklets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "official_answer_weights_concurso_id_fkey"
             columns: ["concurso_id"]
@@ -672,6 +717,7 @@ export type Database = {
           is_score_recalculated: boolean | null
           reservation_type: string | null
           score: number | null
+          selected_booklet: string | null
           specific_knowledge_1_score: number | null
           specific_knowledge_2_score: number | null
           specific_knowledge_3_score: number | null
@@ -705,6 +751,7 @@ export type Database = {
           is_score_recalculated?: boolean | null
           reservation_type?: string | null
           score?: number | null
+          selected_booklet?: string | null
           specific_knowledge_1_score?: number | null
           specific_knowledge_2_score?: number | null
           specific_knowledge_3_score?: number | null
@@ -738,6 +785,7 @@ export type Database = {
           is_score_recalculated?: boolean | null
           reservation_type?: string | null
           score?: number | null
+          selected_booklet?: string | null
           specific_knowledge_1_score?: number | null
           specific_knowledge_2_score?: number | null
           specific_knowledge_3_score?: number | null
@@ -768,6 +816,13 @@ export type Database = {
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_rankings_selected_booklet_fkey"
+            columns: ["selected_booklet"]
+            isOneToOne: false
+            referencedRelation: "exam_booklets"
             referencedColumns: ["id"]
           },
         ]
@@ -931,11 +986,10 @@ export type Database = {
       get_realtime_rankings: {
         Args: { p_concurso_id: string; p_reservation_type?: string }
         Returns: {
-          id: string
+          ranking_id: string
           user_id: string
           user_name: string
           avatar_url: string
-          score: number
           basic_knowledge_score: number
           specific_knowledge_score: number
           specific_knowledge_1_score: number
@@ -957,11 +1011,16 @@ export type Database = {
           weightedCustomDisciplineScores: Json
           reservation_type: string
           is_classified: boolean
+          score: number
         }[]
       }
       is_candidate_classified: {
         Args: { p_ranking_id: string; p_concurso_id: string }
         Returns: boolean
+      }
+      manage_exam_booklets: {
+        Args: { p_operation: string; p_concurso_id: string; p_booklets?: Json }
+        Returns: Json
       }
       manage_question_blocks: {
         Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
@@ -1006,14 +1065,24 @@ export type Database = {
         Returns: Json
       }
       update_answer_with_weight: {
-        Args: {
-          p_concurso_id: string
-          p_question_number: number
-          p_correct_answer: string
-          p_weight: number
-          p_is_nullified?: boolean
-          p_section_type?: string
-        }
+        Args:
+          | {
+              p_concurso_id: string
+              p_question_number: number
+              p_correct_answer: string
+              p_weight: number
+              p_is_nullified?: boolean
+              p_section_type?: string
+            }
+          | {
+              p_concurso_id: string
+              p_question_number: number
+              p_correct_answer: string
+              p_weight: number
+              p_is_nullified?: boolean
+              p_section_type?: string
+              p_booklet_id?: string
+            }
         Returns: undefined
       }
       update_official_answers_and_recalculate: {

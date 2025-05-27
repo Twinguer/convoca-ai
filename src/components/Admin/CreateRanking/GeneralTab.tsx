@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
 import { ReservationQuotasSection } from './ReservationQuotasSection';
 import { MinimumScoreSection } from './MinimumScoreSection';
+import { ExamBookletsSection } from './ExamBookletsSection';
 import { useToast } from '@/components/ui/use-toast';
 
 interface GeneralTabProps {
@@ -21,6 +21,7 @@ interface GeneralTabProps {
   isSubmitting?: boolean;
   selectedStates: string[];
   setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
+  createdConcursoId?: string;
 }
 
 export const GeneralTab: React.FC<GeneralTabProps> = ({
@@ -36,7 +37,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   onSaveRanking,
   isSubmitting,
   selectedStates,
-  setSelectedStates
+  setSelectedStates,
+  createdConcursoId
 }) => {
   const [rankingSaved, setRankingSaved] = useState<boolean>(false);
   const { toast } = useToast();
@@ -45,12 +47,12 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   useEffect(() => {
     // Verificar se já existe um ID de concurso salvo
     const formValues = form.getValues();
-    if (formValues.id) {
+    if (formValues.id || createdConcursoId) {
       setIsFirstSaveDone(true);
     } else {
       setIsFirstSaveDone(false);
     }
-  }, [form]);
+  }, [form, createdConcursoId]);
 
   useEffect(() => {
     const formValues = form.getValues();
@@ -223,6 +225,13 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       <ExamStructureSection form={form} />
 
       <ReservationQuotasSection form={form} />
+
+      {/* Nova seção de cadernos de prova */}
+      {isFirstSaveDone && (
+        <ExamBookletsSection 
+          concursoId={createdConcursoId || form.getValues().id}
+        />
+      )}
 
       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
         <Button 
