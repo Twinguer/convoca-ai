@@ -61,7 +61,7 @@ const ResultadosPage = () => {
     console.log("Manual refresh initiated by user");
     toast({
       title: "Atualizando ranking",
-      description: "As pontuações estão sendo recalculadas para todos os participantes...",
+      description: "As pontuações estão sendo recalculadas em tempo real...",
       duration: 3000
     });
     const result = await refreshData();
