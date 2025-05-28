@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, X, FileText } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExamBooklet {
   id?: string;
@@ -114,7 +115,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     if (!concursoId) {
       toast({
         title: "Erro",
-        description: "ID do concurso não encontrado",
+        description: "Salve o ranking primeiro para configurar os cadernos",
         variant: "destructive"
       });
       return false;
@@ -133,23 +134,38 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase.rpc('manage_exam_booklets', {
-        p_operation: 'UPDATE',
-        p_concurso_id: concursoId,
-        p_booklets: booklets
-      });
-
-      if (error) throw error;
-      
-      if (data?.success) {
-        toast({
-          title: "Cadernos salvos",
-          description: `${booklets.length} caderno(s) configurado(s) com sucesso`
-        });
-        return true;
-      } else {
-        throw new Error(data?.error || 'Erro ao salvar cadernos');
+      // Salvar cada caderno individualmente
+      for (const booklet of booklets) {
+        if (booklet.id) {
+          // Atualizar caderno existente
+          const { error } = await supabase.rpc('manage_exam_booklets', {
+            p_operation: 'UPDATE',
+            p_concurso_id: concursoId,
+            p_booklet_id: booklet.id,
+            p_name: booklet.name,
+            p_display_order: booklet.display_order
+          });
+          if (error) throw error;
+        } else {
+          // Criar novo caderno
+          const { error } = await supabase.rpc('manage_exam_booklets', {
+            p_operation: 'CREATE',
+            p_concurso_id: concursoId,
+            p_name: booklet.name,
+            p_display_order: booklet.display_order
+          });
+          if (error) throw error;
+        }
       }
+      
+      toast({
+        title: "Cadernos salvos",
+        description: `${booklets.length} caderno(s) configurado(s) com sucesso`
+      });
+      
+      // Recarregar a lista atualizada
+      await loadExistingBooklets();
+      return true;
     } catch (error: any) {
       console.error('Erro ao salvar cadernos:', error);
       toast({
@@ -228,7 +244,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             <Button
               type="button"
               onClick={saveBooklets}
-              disabled={isLoading}
+              disabled={isLoading || !concursoId}
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               {isLoading ? 'Salvando...' : 'Salvar Cadernos'}
@@ -241,12 +257,12 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             <p>• Máximo de 10 cadernos por concurso</p>
             <p>• Nomes são convertidos automaticamente para maiúsculas</p>
             <p>• Cada caderno terá seu próprio gabarito oficial</p>
+            {!concursoId && (
+              <p className="text-amber-600 font-medium">• Salve o ranking primeiro para poder salvar os cadernos</p>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
-
-// Adicionar import do supabase
-import { supabase } from '@/integrations/supabase/client';

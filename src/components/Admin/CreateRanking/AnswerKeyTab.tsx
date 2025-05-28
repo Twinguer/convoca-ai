@@ -1,50 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
+import { AnswerKeyForm } from '../AnswerKeyForm';
 import { BookletAnswerKeySelector } from './BookletAnswerKeySelector';
 import { useBookletAnswerKey } from '@/hooks/useBookletAnswerKey';
-import { AlertTriangle, Save, CheckCircle } from 'lucide-react';
+import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AnswerKeyTabProps {
-  concursoId?: string;
-  formValues?: any;
-  onSaveFullRanking?: (formValues: any, answerKeyData: any) => Promise<void>;
-  hasBasicKnowledge: boolean;
-  hasSpecificKnowledge1: boolean;
-  hasSpecificKnowledge2: boolean;
-  hasSpecificKnowledge3: boolean;
-  basicKnowledgeQuestions: number;
-  specificKnowledge1Questions: number;
-  specificKnowledge2Questions: number;
-  specificKnowledge3Questions: number;
-  examType: string;
-  alternativesCount: number;
+  concursoId: string;
+  onGoToResults?: () => void;
 }
 
-export const AnswerKeyTab = ({
+export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   concursoId,
-  formValues,
-  hasBasicKnowledge,
-  hasSpecificKnowledge1,
-  hasSpecificKnowledge2,
-  hasSpecificKnowledge3,
-  basicKnowledgeQuestions,
-  specificKnowledge1Questions,
-  specificKnowledge2Questions,
-  specificKnowledge3Questions,
-  examType,
-  alternativesCount
-}: AnswerKeyTabProps) => {
-  const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
-  const [isSaving, setIsSaving] = useState(false);
-
+  onGoToResults
+}) => {
   const {
     booklets,
     selectedBookletId,
@@ -55,350 +27,102 @@ export const AnswerKeyTab = ({
     setNullifiedQuestions,
     updateAnswer,
     isLoading,
-    isSaving: isSavingAnswer,
+    isSaving,
     completionStatus
-  } = useBookletAnswerKey(concursoId || '');
+  } = useBookletAnswerKey(concursoId);
 
-  const getQuestionRange = () => {
-    let questions: number[] = [];
-    let startNumber = 1;
+  const [showAnswerForm, setShowAnswerForm] = useState(false);
 
-    if (selectedSection === 'basic' && hasBasicKnowledge) {
-      questions = Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1);
-    } else if (selectedSection === 'specific1' && hasSpecificKnowledge1) {
-      startNumber = (basicKnowledgeQuestions || 0) + 1;
-      questions = Array.from(
-        { length: specificKnowledge1Questions },
-        (_, i) => startNumber + i
-      );
-    } else if (selectedSection === 'specific2' && hasSpecificKnowledge2) {
-      startNumber = (basicKnowledgeQuestions || 0) + (specificKnowledge1Questions || 0) + 1;
-      questions = Array.from(
-        { length: specificKnowledge2Questions },
-        (_, i) => startNumber + i
-      );
-    } else if (selectedSection === 'specific3' && hasSpecificKnowledge3) {
-      startNumber = (basicKnowledgeQuestions || 0) + (specificKnowledge1Questions || 0) + 
-                   (specificKnowledge2Questions || 0) + 1;
-      questions = Array.from(
-        { length: specificKnowledge3Questions },
-        (_, i) => startNumber + i
-      );
+  // Mostrar o formulário apenas quando há um caderno selecionado
+  useEffect(() => {
+    if (selectedBookletId && booklets.length > 0) {
+      setShowAnswerForm(true);
+    } else {
+      setShowAnswerForm(false);
     }
+  }, [selectedBookletId, booklets]);
 
-    return questions;
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
+          <p>Carregando informações dos cadernos...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleAnswerChange = (questionNumber: number, answer: string) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionNumber]: answer
-    }));
-  };
-
-  const handleToggleNullified = (questionNumber: number) => {
-    setNullifiedQuestions(prev => {
-      if (prev.includes(questionNumber)) {
-        return prev.filter(q => q !== questionNumber);
-      } else {
-        return [...prev, questionNumber];
-      }
-    });
-  };
-
-  const getAllQuestions = () => {
-    let allQuestions: number[] = [];
-    let startNumber = 1;
-    
-    if (hasBasicKnowledge) {
-      allQuestions = [...allQuestions, ...Array.from({ length: basicKnowledgeQuestions }, (_, i) => i + 1)];
-      startNumber = basicKnowledgeQuestions + 1;
-    }
-    
-    if (hasSpecificKnowledge1) {
-      allQuestions = [...allQuestions, ...Array.from(
-        { length: specificKnowledge1Questions },
-        (_, i) => startNumber + i
-      )];
-      startNumber += specificKnowledge1Questions;
-    }
-    
-    if (hasSpecificKnowledge2) {
-      allQuestions = [...allQuestions, ...Array.from(
-        { length: specificKnowledge2Questions },
-        (_, i) => startNumber + i
-      )];
-      startNumber += specificKnowledge2Questions;
-    }
-    
-    if (hasSpecificKnowledge3) {
-      allQuestions = [...allQuestions, ...Array.from(
-        { length: specificKnowledge3Questions },
-        (_, i) => startNumber + i
-      )];
-    }
-    
-    return allQuestions;
-  };
-
-  const handleSaveCurrentBookletAnswers = async () => {
-    try {
-      if (!selectedBookletId) {
-        toast.error('Selecione um caderno antes de salvar o gabarito');
-        return;
-      }
-
-      setIsSaving(true);
-      
-      const allQuestions = getAllQuestions();
-      const unansweredQuestions = allQuestions.filter(q => !answers[q]);
-      
-      if (unansweredQuestions.length > 0) {
-        toast.error(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
-        return;
-      }
-
-      const concursoData = formValues || await fetchConcursoData(concursoId);
-      
-      if (!concursoData) {
-        toast.error("Dados do concurso não disponíveis. Não é possível salvar o gabarito.");
-        return;
-      }
-
-      // Salvar cada resposta individualmente para o caderno atual
-      for (const qNum of allQuestions) {
-        const sectionType = getSectionTypeForQuestion(concursoData, qNum);
-        
-        await updateAnswer(
-          qNum,
-          answers[qNum],
-          1.0,
-          nullifiedQuestions.includes(qNum),
-          sectionType
-        );
-      }
-      
-      const selectedBookletName = booklets.find(b => b.id === selectedBookletId)?.name || 'Caderno';
-      toast.success(`Gabarito do ${selectedBookletName} salvo com sucesso!`);
-      
-    } catch (error: any) {
-      console.error('Error saving answer key:', error);
-      toast.error('Erro ao salvar gabarito: ' + error.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const fetchConcursoData = async (id?: string) => {
-    if (!id) return null;
-    
-    try {
-      const { data, error } = await supabase
-        .from('concursos')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (error) throw error;
-      return data;
-    } catch (e) {
-      console.error("Erro ao buscar dados do concurso:", e);
-      return null;
-    }
-  };
-
-  if (isLoading && concursoId) {
-    return <div className="py-4">Carregando gabarito...</div>;
+  // Se não há cadernos configurados, mostrar aviso
+  if (!booklets || booklets.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Gabarito Oficial
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Configuração Necessária:</strong> Para preencher o gabarito oficial, você deve primeiro 
+              configurar os cadernos de prova na aba "Informações Gerais".
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-6">
-      {/* Seletor de Caderno */}
+      {/* Seletor de cadernos sempre visível quando há cadernos */}
       <BookletAnswerKeySelector
         booklets={booklets}
         selectedBookletId={selectedBookletId}
         onBookletChange={setSelectedBookletId}
         completionStatus={completionStatus}
-        disabled={isSaving || isSavingAnswer}
+        disabled={isSaving}
       />
 
-      {/* Conteúdo do Gabarito */}
-      {selectedBookletId ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">
-                Gabarito Oficial - {booklets.find(b => b.id === selectedBookletId)?.name}
-              </h3>
-              <div className="text-sm text-muted-foreground">
-                Caderno Selecionado: <span className="font-medium">{booklets.find(b => b.id === selectedBookletId)?.name}</span>
-              </div>
-            </div>
-            
-            {/* Aviso se nem todos os cadernos estão completos */}
-            {completionStatus && !completionStatus.allComplete && (
-              <div className="mb-4 p-3 rounded bg-amber-50 border border-amber-200">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <p className="text-sm text-amber-800">
-                    <strong>Lembre-se:</strong> Você deve preencher o gabarito de TODOS os cadernos antes de poder ativar o ranking.
-                    Progresso atual: {completionStatus.details.filter(d => d.isComplete).length}/{completionStatus.details.length} cadernos completos.
-                  </p>
-                </div>
-              </div>
-            )}
-            
-            <Tabs 
-              value={selectedSection} 
-              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
-              className="w-full"
-            >
-              <TabsList className="grid w-full" style={{
-                gridTemplateColumns: `repeat(${[
-                  hasBasicKnowledge,
-                  hasSpecificKnowledge1,
-                  hasSpecificKnowledge2,
-                  hasSpecificKnowledge3
-                ].filter(Boolean).length}, minmax(0, 1fr))`
-              }}>
-                {hasBasicKnowledge && (
-                  <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>
-                )}
-                {hasSpecificKnowledge1 && (
-                  <TabsTrigger value="specific1">C. Específicos 1</TabsTrigger>
-                )}
-                {hasSpecificKnowledge2 && (
-                  <TabsTrigger value="specific2">C. Específicos 2</TabsTrigger>
-                )}
-                {hasSpecificKnowledge3 && (
-                  <TabsTrigger value="specific3">C. Específicos 3</TabsTrigger>
-                )}
-              </TabsList>
-
-              {[
-                { value: 'basic', label: 'Conhecimentos Básicos', show: hasBasicKnowledge },
-                { value: 'specific1', label: 'C. Específicos 1', show: hasSpecificKnowledge1 },
-                { value: 'specific2', label: 'C. Específicos 2', show: hasSpecificKnowledge2 },
-                { value: 'specific3', label: 'C. Específicos 3', show: hasSpecificKnowledge3 }
-              ].map(section => section.show && (
-                <TabsContent key={section.value} value={section.value}>
-                  <div className="grid gap-4">
-                    <p className="text-sm text-gray-500">
-                      Digite o gabarito para a seção de {section.label} do caderno {booklets.find(b => b.id === selectedBookletId)?.name}.
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {getQuestionRange().map(questionNumber => (
-                        <div key={questionNumber} className="border p-3 rounded-md">
-                          <div className="flex justify-between items-center mb-2">
-                            <Label className="font-medium">Questão {questionNumber}</Label>
-                            <Button
-                              type="button"
-                              variant={nullifiedQuestions.includes(questionNumber) ? "destructive" : "outline"}
-                              size="sm"
-                              onClick={() => handleToggleNullified(questionNumber)}
-                            >
-                              {nullifiedQuestions.includes(questionNumber) ? "Anulada" : "Anular"}
-                            </Button>
-                          </div>
-                          
-                          {examType === 'Alternativas' ? (
-                            <RadioGroup
-                              value={answers[questionNumber] || ''}
-                              onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                              className="flex flex-row space-x-2 mt-2"
-                            >
-                              {Array.from(
-                                { length: alternativesCount || 5 },
-                                (_, i) => String.fromCharCode(65 + i)
-                              ).map((option) => (
-                                <div key={option} className="flex items-center space-x-1">
-                                  <RadioGroupItem
-                                    value={option}
-                                    id={`q${questionNumber}-${option}`}
-                                    disabled={nullifiedQuestions.includes(questionNumber)}
-                                  />
-                                  <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          ) : (
-                            <RadioGroup
-                              value={answers[questionNumber] || ''}
-                              onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                              className="flex space-x-4 mt-2"
-                            >
-                              <div className="flex items-center space-x-1">
-                                <RadioGroupItem
-                                  value="C"
-                                  id={`q${questionNumber}-C`}
-                                  disabled={nullifiedQuestions.includes(questionNumber)}
-                                />
-                                <Label htmlFor={`q${questionNumber}-C`}>C</Label>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <RadioGroupItem
-                                  value="E"
-                                  id={`q${questionNumber}-E`}
-                                  disabled={nullifiedQuestions.includes(questionNumber)}
-                                />
-                                <Label htmlFor={`q${questionNumber}-E`}>E</Label>
-                              </div>
-                            </RadioGroup>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-            
-            <div className="flex justify-between items-center mt-6">
-              <div className="text-sm text-muted-foreground">
-                {completionStatus && (
-                  <span>
-                    {completionStatus.allComplete ? (
-                      <span className="text-green-600 flex items-center gap-1">
-                        <CheckCircle className="h-4 w-4" />
-                        Todos os cadernos completos
-                      </span>
-                    ) : (
-                      <span className="text-amber-600">
-                        {completionStatus.details.filter(d => d.isComplete).length}/{completionStatus.details.length} cadernos completos
-                      </span>
-                    )}
-                  </span>
-                )}
-              </div>
-              
-              <Button 
-                type="button" 
-                onClick={handleSaveCurrentBookletAnswers}
-                disabled={isSaving || isSavingAnswer || !selectedBookletId}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isSaving ? (
-                  'Salvando...'
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar {booklets.find(b => b.id === selectedBookletId)?.name || 'Caderno'}
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Formulário de gabarito apenas quando um caderno está selecionado */}
+      {showAnswerForm && selectedBookletId ? (
+        <AnswerKeyForm 
+          concursoId={concursoId}
+          selectedBookletId={selectedBookletId}
+          answers={answers}
+          setAnswers={setAnswers}
+          nullifiedQuestions={nullifiedQuestions}
+          setNullifiedQuestions={setNullifiedQuestions}
+          updateAnswer={updateAnswer}
+          isSaving={isSaving}
+        />
       ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-lg">Selecione um caderno para preencher o gabarito</p>
-              <p className="text-sm">Escolha o caderno no seletor acima para começar a inserir as respostas</p>
-            </div>
-          </CardContent>
-        </Card>
+        selectedBookletId && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Carregando gabarito do caderno selecionado...</p>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      )}
+
+      {/* Botão para ir aos resultados - só aparece quando todos os gabaritos estão completos */}
+      {completionStatus?.allComplete && onGoToResults && (
+        <div className="flex justify-center pt-6">
+          <Button 
+            onClick={onGoToResults}
+            className="bg-emerald-600 hover:bg-emerald-700"
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Ver Resultados do Ranking
+          </Button>
+        </div>
       )}
     </div>
   );

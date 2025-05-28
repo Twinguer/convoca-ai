@@ -226,12 +226,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
       <ReservationQuotasSection form={form} />
 
-      {/* Nova seção de cadernos de prova */}
-      {isFirstSaveDone && (
-        <ExamBookletsSection 
-          concursoId={createdConcursoId || form.getValues().id}
-        />
-      )}
+      {/* Seção de cadernos agora sempre visível após ter um ID */}
+      <ExamBookletsSection 
+        concursoId={createdConcursoId || form.getValues().id}
+      />
 
       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
         <Button 
