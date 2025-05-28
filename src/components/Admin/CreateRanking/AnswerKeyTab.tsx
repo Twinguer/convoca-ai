@@ -1,14 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { answerKeyService } from '@/services/answerKeyService';
 import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
+import { BookletAnswerKeySelector } from './BookletAnswerKeySelector';
+import { useBookletAnswerKey } from '@/hooks/useBookletAnswerKey';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -41,61 +42,22 @@ export const AnswerKeyTab = ({
   examType,
   alternativesCount
 }: AnswerKeyTabProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [selectedSection, setSelectedSection] = useState<'basic' | 'specific1' | 'specific2' | 'specific3'>('basic');
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    const fetchAnswerKey = async () => {
-      try {
-        setIsLoading(true);
-        if (!concursoId) {
-          setIsLoading(false);
-          return;
-        }
-        
-        // Usar a RPC get_official_answer_weights
-        const { data, error } = await supabase.rpc(
-          'get_official_answer_weights',
-          {
-            p_concurso_id: concursoId,
-          }
-        );
-
-        if (error) throw error;
-
-        if (data && Object.keys(data).length > 0) {
-          const answerMap: Record<number, string> = {};
-          const nullified: number[] = [];
-          
-          Object.entries(data).forEach(([key, value]: [string, any]) => {
-            // Extract question number from key (e.g., "questao1" -> 1)
-            const questionNumber = parseInt(key.replace('questao', ''));
-            
-            answerMap[questionNumber] = value.resposta;
-            if (value.anulada) {
-              nullified.push(questionNumber);
-            }
-          });
-          
-          setAnswers(answerMap);
-          setNullifiedQuestions(nullified);
-          console.log('Gabarito carregado:', answerMap);
-        } else {
-          console.log('Nenhum gabarito encontrado para este concurso');
-        }
-      } catch (error) {
-        console.error('Error fetching answer key:', error);
-        toast.error('Erro ao carregar gabarito existente');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnswerKey();
-  }, [concursoId]);
+  const {
+    booklets,
+    selectedBookletId,
+    setSelectedBookletId,
+    answers,
+    setAnswers,
+    nullifiedQuestions,
+    setNullifiedQuestions,
+    updateAnswer,
+    isLoading,
+    isSaving: isSavingAnswer,
+    completionStatus
+  } = useBookletAnswerKey(concursoId || '');
 
   const getQuestionRange = () => {
     let questions: number[] = [];
@@ -181,6 +143,11 @@ export const AnswerKeyTab = ({
 
   const handleSaveAnswerKey = async () => {
     try {
+      if (!selectedBookletId) {
+        toast.error('Selecione um caderno antes de salvar o gabarito');
+        return;
+      }
+
       setIsSaving(true);
       
       const allQuestions = getAllQuestions();
@@ -191,8 +158,6 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      // Calcular o section_type baseado no concurso
-      // Se tivermos o formValues (criação) ou o concursoId (edição), podemos determinar os tipos corretos
       const concursoData = formValues || await fetchConcursoData(concursoId);
       
       if (!concursoData) {
@@ -200,67 +165,29 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      const answerKeyData = allQuestions.map(qNum => {
-        // Determinar o tipo de seção para cada questão baseado na estrutura do concurso
+      // Salvar cada resposta individualmente
+      for (const qNum of allQuestions) {
         const sectionType = getSectionTypeForQuestion(concursoData, qNum);
         
-        return {
-          concurso_id: concursoId || '',
-          question_number: qNum,
-          correct_answer: answers[qNum],
-          weight: 1.0, // Default weight
-          section_type: sectionType,
-          is_nullified: nullifiedQuestions.includes(qNum)
-        };
-      });
-      
-      if (onSaveFullRanking && formValues) {
-        console.log('Salvando gabarito via onSaveFullRanking...');
-        await onSaveFullRanking(formValues, answerKeyData);
-        toast.success('Gabarito salvo com sucesso!');
-      } else if (concursoId) {
-        console.log('Salvando gabarito diretamente via answerKeyService...');
-        // Tentar ambos os métodos para garantir que o gabarito seja salvo
-        const saveResult1 = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
-        
-        if (!saveResult1.success) {
-          console.warn('Tentativa de salvar via RPC falhou, tentando inserção direta...');
-          const saveResult2 = await answerKeyService.insertAnswersDirectly(concursoId, answerKeyData);
-          
-          if (saveResult2.success) {
-            toast.success(`Gabarito salvo com sucesso (inserção direta)!`);
-          } else {
-            toast.error('Erro ao salvar gabarito: ' + (saveResult2.error || 'Erro desconhecido'));
-          }
-        } else {
-          toast.success(`Gabarito salvo com sucesso!`);
-        }
-        
-        // Verificar se os dados foram salvos
-        const verifyResult = await answerKeyService.getAnswerKey(concursoId);
-        if (verifyResult.success && Object.keys(verifyResult.data).length > 0) {
-          console.log('Verificação após salvar: dados encontrados no banco!');
-          toast.success('Verificação: Gabarito encontrado no banco de dados!');
-        } else {
-          console.warn('Verificação após salvar: nenhum dado encontrado!');
-          toast.warning('Aviso: Gabarito pode não ter sido salvo corretamente');
-        }
-      } else {
-        toast.error('Não foi possível salvar o gabarito sem um ID de concurso');
+        await updateAnswer(
+          qNum,
+          answers[qNum],
+          1.0,
+          nullifiedQuestions.includes(qNum),
+          sectionType
+        );
       }
+      
+      toast.success(`Gabarito do caderno salvo com sucesso!`);
+      
     } catch (error: any) {
       console.error('Error saving answer key:', error);
-      if (error.message && error.message.includes('Todas as questões do gabarito oficial devem ter uma resposta')) {
-        toast.error('Todas as questões do gabarito oficial devem ter uma resposta');
-      } else {
-        toast.error('Erro ao salvar gabarito: ' + error.message);
-      }
+      toast.error('Erro ao salvar gabarito: ' + error.message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Função auxiliar para buscar dados do concurso pelo ID
   const fetchConcursoData = async (id?: string) => {
     if (!id) return null;
     
@@ -284,126 +211,156 @@ export const AnswerKeyTab = ({
   }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <h3 className="text-lg font-semibold mb-4">Gabarito Oficial</h3>
-        
-        <Tabs 
-          value={selectedSection} 
-          onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
-          className="w-full"
-        >
-          <TabsList className="grid w-full" style={{
-            gridTemplateColumns: `repeat(${[
-              hasBasicKnowledge,
-              hasSpecificKnowledge1,
-              hasSpecificKnowledge2,
-              hasSpecificKnowledge3
-            ].filter(Boolean).length}, minmax(0, 1fr))`
-          }}>
-            {hasBasicKnowledge && (
-              <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>
-            )}
-            {hasSpecificKnowledge1 && (
-              <TabsTrigger value="specific1">C. Específicos 1</TabsTrigger>
-            )}
-            {hasSpecificKnowledge2 && (
-              <TabsTrigger value="specific2">C. Específicos 2</TabsTrigger>
-            )}
-            {hasSpecificKnowledge3 && (
-              <TabsTrigger value="specific3">C. Específicos 3</TabsTrigger>
-            )}
-          </TabsList>
+    <div className="space-y-6">
+      {/* Seletor de Caderno */}
+      <BookletAnswerKeySelector
+        booklets={booklets}
+        selectedBookletId={selectedBookletId}
+        onBookletChange={setSelectedBookletId}
+        completionStatus={completionStatus}
+        disabled={isSaving || isSavingAnswer}
+      />
 
-          {[
-            { value: 'basic', label: 'Conhecimentos Básicos', show: hasBasicKnowledge },
-            { value: 'specific1', label: 'C. Específicos 1', show: hasSpecificKnowledge1 },
-            { value: 'specific2', label: 'C. Específicos 2', show: hasSpecificKnowledge2 },
-            { value: 'specific3', label: 'C. Específicos 3', show: hasSpecificKnowledge3 }
-          ].map(section => section.show && (
-            <TabsContent key={section.value} value={section.value}>
-              <div className="grid gap-4">
-                <p className="text-sm text-gray-500">
-                  Digite o gabarito para a seção de {section.label}.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {getQuestionRange().map(questionNumber => (
-                    <div key={questionNumber} className="border p-3 rounded-md">
-                      <div className="flex justify-between items-center mb-2">
-                        <Label className="font-medium">Questão {questionNumber}</Label>
-                        <Button
-                          type="button"
-                          variant={nullifiedQuestions.includes(questionNumber) ? "destructive" : "outline"}
-                          size="sm"
-                          onClick={() => handleToggleNullified(questionNumber)}
-                        >
-                          {nullifiedQuestions.includes(questionNumber) ? "Anulada" : "Anular"}
-                        </Button>
-                      </div>
-                      
-                      {examType === 'Alternativas' ? (
-                        <RadioGroup
-                          value={answers[questionNumber] || ''}
-                          onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                          className="flex flex-row space-x-2 mt-2"
-                        >
-                          {Array.from(
-                            { length: alternativesCount || 5 },
-                            (_, i) => String.fromCharCode(65 + i)
-                          ).map((option) => (
-                            <div key={option} className="flex items-center space-x-1">
-                              <RadioGroupItem
-                                value={option}
-                                id={`q${questionNumber}-${option}`}
-                                disabled={nullifiedQuestions.includes(questionNumber)}
-                              />
-                              <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
-                            </div>
-                          ))}
-                        </RadioGroup>
-                      ) : (
-                        <RadioGroup
-                          value={answers[questionNumber] || ''}
-                          onValueChange={(value) => handleAnswerChange(questionNumber, value)}
-                          className="flex space-x-4 mt-2"
-                        >
-                          <div className="flex items-center space-x-1">
-                            <RadioGroupItem
-                              value="C"
-                              id={`q${questionNumber}-C`}
-                              disabled={nullifiedQuestions.includes(questionNumber)}
-                            />
-                            <Label htmlFor={`q${questionNumber}-C`}>C</Label>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <RadioGroupItem
-                              value="E"
-                              id={`q${questionNumber}-E`}
-                              disabled={nullifiedQuestions.includes(questionNumber)}
-                            />
-                            <Label htmlFor={`q${questionNumber}-E`}>E</Label>
-                          </div>
-                        </RadioGroup>
-                      )}
-                    </div>
-                  ))}
-                </div>
+      {/* Conteúdo do Gabarito */}
+      {selectedBookletId ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">
+                Gabarito Oficial - {booklets.find(b => b.id === selectedBookletId)?.name}
+              </h3>
+              <div className="text-sm text-muted-foreground">
+                Caderno Selecionado: <span className="font-medium">{booklets.find(b => b.id === selectedBookletId)?.name}</span>
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
-        
-        <div className="flex justify-end mt-6">
-          <Button 
-            type="button" 
-            onClick={handleSaveAnswerKey}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Salvando...' : 'Salvar Gabarito'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            </div>
+            
+            <Tabs 
+              value={selectedSection} 
+              onValueChange={(value) => setSelectedSection(value as 'basic' | 'specific1' | 'specific2' | 'specific3')}
+              className="w-full"
+            >
+              <TabsList className="grid w-full" style={{
+                gridTemplateColumns: `repeat(${[
+                  hasBasicKnowledge,
+                  hasSpecificKnowledge1,
+                  hasSpecificKnowledge2,
+                  hasSpecificKnowledge3
+                ].filter(Boolean).length}, minmax(0, 1fr))`
+              }}>
+                {hasBasicKnowledge && (
+                  <TabsTrigger value="basic">Conhecimentos Básicos</TabsTrigger>
+                )}
+                {hasSpecificKnowledge1 && (
+                  <TabsTrigger value="specific1">C. Específicos 1</TabsTrigger>
+                )}
+                {hasSpecificKnowledge2 && (
+                  <TabsTrigger value="specific2">C. Específicos 2</TabsTrigger>
+                )}
+                {hasSpecificKnowledge3 && (
+                  <TabsTrigger value="specific3">C. Específicos 3</TabsTrigger>
+                )}
+              </TabsList>
+
+              {[
+                { value: 'basic', label: 'Conhecimentos Básicos', show: hasBasicKnowledge },
+                { value: 'specific1', label: 'C. Específicos 1', show: hasSpecificKnowledge1 },
+                { value: 'specific2', label: 'C. Específicos 2', show: hasSpecificKnowledge2 },
+                { value: 'specific3', label: 'C. Específicos 3', show: hasSpecificKnowledge3 }
+              ].map(section => section.show && (
+                <TabsContent key={section.value} value={section.value}>
+                  <div className="grid gap-4">
+                    <p className="text-sm text-gray-500">
+                      Digite o gabarito para a seção de {section.label} do caderno {booklets.find(b => b.id === selectedBookletId)?.name}.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {getQuestionRange().map(questionNumber => (
+                        <div key={questionNumber} className="border p-3 rounded-md">
+                          <div className="flex justify-between items-center mb-2">
+                            <Label className="font-medium">Questão {questionNumber}</Label>
+                            <Button
+                              type="button"
+                              variant={nullifiedQuestions.includes(questionNumber) ? "destructive" : "outline"}
+                              size="sm"
+                              onClick={() => handleToggleNullified(questionNumber)}
+                            >
+                              {nullifiedQuestions.includes(questionNumber) ? "Anulada" : "Anular"}
+                            </Button>
+                          </div>
+                          
+                          {examType === 'Alternativas' ? (
+                            <RadioGroup
+                              value={answers[questionNumber] || ''}
+                              onValueChange={(value) => handleAnswerChange(questionNumber, value)}
+                              className="flex flex-row space-x-2 mt-2"
+                            >
+                              {Array.from(
+                                { length: alternativesCount || 5 },
+                                (_, i) => String.fromCharCode(65 + i)
+                              ).map((option) => (
+                                <div key={option} className="flex items-center space-x-1">
+                                  <RadioGroupItem
+                                    value={option}
+                                    id={`q${questionNumber}-${option}`}
+                                    disabled={nullifiedQuestions.includes(questionNumber)}
+                                  />
+                                  <Label htmlFor={`q${questionNumber}-${option}`}>{option}</Label>
+                                </div>
+                              ))}
+                            </RadioGroup>
+                          ) : (
+                            <RadioGroup
+                              value={answers[questionNumber] || ''}
+                              onValueChange={(value) => handleAnswerChange(questionNumber, value)}
+                              className="flex space-x-4 mt-2"
+                            >
+                              <div className="flex items-center space-x-1">
+                                <RadioGroupItem
+                                  value="C"
+                                  id={`q${questionNumber}-C`}
+                                  disabled={nullifiedQuestions.includes(questionNumber)}
+                                />
+                                <Label htmlFor={`q${questionNumber}-C`}>C</Label>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <RadioGroupItem
+                                  value="E"
+                                  id={`q${questionNumber}-E`}
+                                  disabled={nullifiedQuestions.includes(questionNumber)}
+                                />
+                                <Label htmlFor={`q${questionNumber}-E`}>E</Label>
+                              </div>
+                            </RadioGroup>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+            
+            <div className="flex justify-end mt-6">
+              <Button 
+                type="button" 
+                onClick={handleSaveAnswerKey}
+                disabled={isSaving || isSavingAnswer || !selectedBookletId}
+              >
+                {isSaving ? 'Salvando...' : `Salvar Gabarito - ${booklets.find(b => b.id === selectedBookletId)?.name || 'Caderno'}`}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-lg">Selecione um caderno para preencher o gabarito</p>
+              <p className="text-sm">Escolha o caderno no seletor acima para começar a inserir as respostas</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };

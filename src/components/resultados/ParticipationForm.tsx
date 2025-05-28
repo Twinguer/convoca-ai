@@ -227,6 +227,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             booklets={booklets}
             selectedBooklet={selectedBooklet}
             onBookletChange={setSelectedBooklet}
+            required={booklets.length > 1}
           />
         )}
       </div>
