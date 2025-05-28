@@ -25,9 +25,10 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
 }) => {
   const [booklets, setBooklets] = useState<ExamBooklet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const { toast } = useToast();
 
-  // Carregar cadernos existentes se houver um concursoId
+  // Carregar cadernos existentes sempre que o concursoId mudar
   useEffect(() => {
     if (concursoId) {
       loadExistingBooklets();
@@ -48,9 +49,20 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       
       if (data?.booklets && data.booklets.length > 0) {
         setBooklets(data.booklets);
+        setHasUnsavedChanges(false);
+      } else {
+        // Se não há cadernos salvos, manter o estado local ou inicializar vazio
+        if (booklets.length === 0) {
+          setBooklets([]);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar cadernos:', error);
+      toast({
+        title: "Erro ao carregar cadernos",
+        description: "Não foi possível carregar os cadernos existentes",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +85,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     
     const updatedBooklets = [...booklets, newBooklet];
     setBooklets(updatedBooklets);
+    setHasUnsavedChanges(true);
     onBookletsChange?.(updatedBooklets);
   };
 
@@ -82,6 +95,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       .map((booklet, i) => ({ ...booklet, display_order: i + 1 }));
     
     setBooklets(updatedBooklets);
+    setHasUnsavedChanges(true);
     onBookletsChange?.(updatedBooklets);
   };
 
@@ -92,6 +106,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     );
     
     setBooklets(updatedBooklets);
+    setHasUnsavedChanges(true);
     onBookletsChange?.(updatedBooklets);
   };
 
@@ -134,11 +149,30 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     try {
       setIsLoading(true);
       
-      // Salvar cada caderno individualmente
+      // Primeiro, deletar cadernos que não existem mais no estado local
+      const { data: existingBooklets } = await supabase.rpc('manage_exam_booklets', {
+        p_operation: 'GET',
+        p_concurso_id: concursoId
+      });
+      
+      if (existingBooklets?.booklets) {
+        const currentIds = booklets.filter(b => b.id).map(b => b.id);
+        const toDelete = existingBooklets.booklets.filter((b: any) => !currentIds.includes(b.id));
+        
+        for (const booklet of toDelete) {
+          await supabase.rpc('manage_exam_booklets', {
+            p_operation: 'DELETE',
+            p_booklet_id: booklet.id
+          });
+        }
+      }
+      
+      // Salvar cada caderno individualmente (criar ou atualizar)
+      const savedBooklets = [];
       for (const booklet of booklets) {
         if (booklet.id) {
           // Atualizar caderno existente
-          const { error } = await supabase.rpc('manage_exam_booklets', {
+          const { data, error } = await supabase.rpc('manage_exam_booklets', {
             p_operation: 'UPDATE',
             p_concurso_id: concursoId,
             p_booklet_id: booklet.id,
@@ -146,25 +180,35 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             p_display_order: booklet.display_order
           });
           if (error) throw error;
+          savedBooklets.push(booklet);
         } else {
           // Criar novo caderno
-          const { error } = await supabase.rpc('manage_exam_booklets', {
+          const { data, error } = await supabase.rpc('manage_exam_booklets', {
             p_operation: 'CREATE',
             p_concurso_id: concursoId,
             p_name: booklet.name,
             p_display_order: booklet.display_order
           });
           if (error) throw error;
+          
+          // Atualizar com o ID retornado
+          if (data?.booklet?.id) {
+            savedBooklets.push({
+              ...booklet,
+              id: data.booklet.id
+            });
+          }
         }
       }
       
+      setBooklets(savedBooklets);
+      setHasUnsavedChanges(false);
+      
       toast({
         title: "Cadernos salvos",
-        description: `${booklets.length} caderno(s) configurado(s) com sucesso`
+        description: `${savedBooklets.length} caderno(s) configurado(s) com sucesso`
       });
       
-      // Recarregar a lista atualizada
-      await loadExistingBooklets();
       return true;
     } catch (error: any) {
       console.error('Erro ao salvar cadernos:', error);
@@ -200,7 +244,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         ) : (
           <div className="space-y-3">
             {booklets.map((booklet, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+              <div key={`${booklet.id || index}`} className="flex items-center gap-3 p-3 border rounded-lg">
                 <div className="flex-1">
                   <Label htmlFor={`booklet-${index}`} className="text-sm">
                     Caderno {index + 1}
@@ -241,14 +285,19 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
           </Button>
           
           {booklets.length > 0 && (
-            <Button
-              type="button"
-              onClick={saveBooklets}
-              disabled={isLoading || !concursoId}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {isLoading ? 'Salvando...' : 'Salvar Cadernos'}
-            </Button>
+            <div className="flex items-center gap-2">
+              {hasUnsavedChanges && (
+                <span className="text-sm text-amber-600">● Alterações não salvas</span>
+              )}
+              <Button
+                type="button"
+                onClick={saveBooklets}
+                disabled={isLoading || !concursoId}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {isLoading ? 'Salvando...' : 'Salvar Cadernos'}
+              </Button>
+            </div>
           )}
         </div>
 

@@ -33,7 +33,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
 
   const [showAnswerForm, setShowAnswerForm] = useState(false);
 
-  // Mostrar o formulário apenas quando há um caderno selecionado
+  // Mostrar o formulário quando há um caderno selecionado
   useEffect(() => {
     if (selectedBookletId && booklets.length > 0) {
       setShowAnswerForm(true);
@@ -87,20 +87,20 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         disabled={isSaving}
       />
 
-      {/* Formulário de gabarito apenas quando um caderno está selecionado */}
-      {showAnswerForm && selectedBookletId ? (
-        <AnswerKeyForm 
-          concursoId={concursoId}
-          selectedBookletId={selectedBookletId}
-          answers={answers}
-          setAnswers={setAnswers}
-          nullifiedQuestions={nullifiedQuestions}
-          setNullifiedQuestions={setNullifiedQuestions}
-          updateAnswer={updateAnswer}
-          isSaving={isSaving}
-        />
-      ) : (
-        selectedBookletId && (
+      {/* Formulário de gabarito quando um caderno está selecionado */}
+      {selectedBookletId ? (
+        showAnswerForm ? (
+          <AnswerKeyForm 
+            concursoId={concursoId}
+            selectedBookletId={selectedBookletId}
+            answers={answers}
+            setAnswers={setAnswers}
+            nullifiedQuestions={nullifiedQuestions}
+            setNullifiedQuestions={setNullifiedQuestions}
+            updateAnswer={updateAnswer}
+            isSaving={isSaving}
+          />
+        ) : (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground">
@@ -110,6 +110,17 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
             </CardContent>
           </Card>
         )
+      ) : (
+        <Card>
+          <CardContent className="pt-6">
+            <Alert className="border-blue-200 bg-blue-50">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                <strong>Selecione um caderno:</strong> Escolha o caderno no seletor acima para preencher seu gabarito oficial.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
       )}
 
       {/* Botão para ir aos resultados - só aparece quando todos os gabaritos estão completos */}

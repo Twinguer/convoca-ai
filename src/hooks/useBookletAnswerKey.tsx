@@ -39,13 +39,22 @@ export const useBookletAnswerKey = (concursoId: string) => {
       if (error) throw error;
       return data?.booklets || [];
     },
-    enabled: !!concursoId
+    enabled: !!concursoId,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000 // Refetch a cada 10 segundos para manter sincronizado
   });
 
-  // Selecionar automaticamente o primeiro caderno
+  // Selecionar automaticamente o primeiro caderno disponível
   useEffect(() => {
     if (booklets && booklets.length > 0 && !selectedBookletId) {
       setSelectedBookletId(booklets[0].id);
+    }
+    // Se o caderno selecionado não existe mais na lista, selecionar o primeiro
+    if (booklets && booklets.length > 0 && selectedBookletId) {
+      const exists = booklets.find((b: ExamBooklet) => b.id === selectedBookletId);
+      if (!exists) {
+        setSelectedBookletId(booklets[0].id);
+      }
     }
   }, [booklets, selectedBookletId]);
 
@@ -86,13 +95,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
       setAnswers({});
       setNullifiedQuestions([]);
     }
-  }, [officialAnswers]);
-
-  // Limpar dados ao trocar de caderno
-  useEffect(() => {
-    setAnswers({});
-    setNullifiedQuestions([]);
-  }, [selectedBookletId]);
+  }, [officialAnswers, selectedBookletId]);
 
   // Mutação para salvar gabarito do caderno específico
   const saveAnswerKeyMutation = useMutation({
@@ -216,6 +219,9 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
   const handleBookletChange = (bookletId: string) => {
     setSelectedBookletId(bookletId);
+    // Limpar dados ao trocar de caderno
+    setAnswers({});
+    setNullifiedQuestions([]);
   };
 
   return {
