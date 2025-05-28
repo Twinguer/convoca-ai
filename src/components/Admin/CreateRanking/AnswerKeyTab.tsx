@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 import { BookletAnswerKeySelector } from './BookletAnswerKeySelector';
 import { useBookletAnswerKey } from '@/hooks/useBookletAnswerKey';
+import { AlertTriangle, Save, CheckCircle } from 'lucide-react';
 
 interface AnswerKeyTabProps {
   concursoId?: string;
@@ -30,7 +31,6 @@ interface AnswerKeyTabProps {
 export const AnswerKeyTab = ({
   concursoId,
   formValues,
-  onSaveFullRanking,
   hasBasicKnowledge,
   hasSpecificKnowledge1,
   hasSpecificKnowledge2,
@@ -141,7 +141,7 @@ export const AnswerKeyTab = ({
     return allQuestions;
   };
 
-  const handleSaveAnswerKey = async () => {
+  const handleSaveCurrentBookletAnswers = async () => {
     try {
       if (!selectedBookletId) {
         toast.error('Selecione um caderno antes de salvar o gabarito');
@@ -165,7 +165,7 @@ export const AnswerKeyTab = ({
         return;
       }
 
-      // Salvar cada resposta individualmente
+      // Salvar cada resposta individualmente para o caderno atual
       for (const qNum of allQuestions) {
         const sectionType = getSectionTypeForQuestion(concursoData, qNum);
         
@@ -178,7 +178,8 @@ export const AnswerKeyTab = ({
         );
       }
       
-      toast.success(`Gabarito do caderno salvo com sucesso!`);
+      const selectedBookletName = booklets.find(b => b.id === selectedBookletId)?.name || 'Caderno';
+      toast.success(`Gabarito do ${selectedBookletName} salvo com sucesso!`);
       
     } catch (error: any) {
       console.error('Error saving answer key:', error);
@@ -233,6 +234,19 @@ export const AnswerKeyTab = ({
                 Caderno Selecionado: <span className="font-medium">{booklets.find(b => b.id === selectedBookletId)?.name}</span>
               </div>
             </div>
+            
+            {/* Aviso se nem todos os cadernos estão completos */}
+            {completionStatus && !completionStatus.allComplete && (
+              <div className="mb-4 p-3 rounded bg-amber-50 border border-amber-200">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <p className="text-sm text-amber-800">
+                    <strong>Lembre-se:</strong> Você deve preencher o gabarito de TODOS os cadernos antes de poder ativar o ranking.
+                    Progresso atual: {completionStatus.details.filter(d => d.isComplete).length}/{completionStatus.details.length} cadernos completos.
+                  </p>
+                </div>
+              </div>
+            )}
             
             <Tabs 
               value={selectedSection} 
@@ -340,13 +354,38 @@ export const AnswerKeyTab = ({
               ))}
             </Tabs>
             
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-between items-center mt-6">
+              <div className="text-sm text-muted-foreground">
+                {completionStatus && (
+                  <span>
+                    {completionStatus.allComplete ? (
+                      <span className="text-green-600 flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4" />
+                        Todos os cadernos completos
+                      </span>
+                    ) : (
+                      <span className="text-amber-600">
+                        {completionStatus.details.filter(d => d.isComplete).length}/{completionStatus.details.length} cadernos completos
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+              
               <Button 
                 type="button" 
-                onClick={handleSaveAnswerKey}
+                onClick={handleSaveCurrentBookletAnswers}
                 disabled={isSaving || isSavingAnswer || !selectedBookletId}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                {isSaving ? 'Salvando...' : `Salvar Gabarito - ${booklets.find(b => b.id === selectedBookletId)?.name || 'Caderno'}`}
+                {isSaving ? (
+                  'Salvando...'
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Salvar {booklets.find(b => b.id === selectedBookletId)?.name || 'Caderno'}
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>

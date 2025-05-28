@@ -42,6 +42,13 @@ export const useBookletAnswerKey = (concursoId: string) => {
     enabled: !!concursoId
   });
 
+  // Selecionar automaticamente o primeiro caderno
+  useEffect(() => {
+    if (booklets && booklets.length > 0 && !selectedBookletId) {
+      setSelectedBookletId(booklets[0].id);
+    }
+  }, [booklets, selectedBookletId]);
+
   // Buscar gabarito do caderno selecionado
   const { data: officialAnswers, isLoading: isLoadingAnswers } = useQuery({
     queryKey: ['official-answers-booklet', concursoId, selectedBookletId],
@@ -87,7 +94,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
     setNullifiedQuestions([]);
   }, [selectedBookletId]);
 
-  // Mutação para salvar gabarito
+  // Mutação para salvar gabarito do caderno específico
   const saveAnswerKeyMutation = useMutation({
     mutationFn: async ({ 
       questionNumber, 
@@ -122,6 +129,9 @@ export const useBookletAnswerKey = (concursoId: string) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ['official-answers-booklet', concursoId, selectedBookletId] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['booklets-completion', concursoId] 
       });
       toast.success('Resposta salva com sucesso');
     },
@@ -185,7 +195,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
       return { allComplete, details: completionDetails };
     },
     enabled: !!booklets && booklets.length > 0,
-    refetchInterval: 30000 // Refetch a cada 30 segundos
+    refetchInterval: 5000 // Refetch mais frequente para mostrar progresso
   });
 
   const updateAnswer = (
@@ -204,10 +214,14 @@ export const useBookletAnswerKey = (concursoId: string) => {
     });
   };
 
+  const handleBookletChange = (bookletId: string) => {
+    setSelectedBookletId(bookletId);
+  };
+
   return {
     booklets: booklets || [],
     selectedBookletId,
-    setSelectedBookletId,
+    setSelectedBookletId: handleBookletChange,
     answers,
     setAnswers,
     nullifiedQuestions,

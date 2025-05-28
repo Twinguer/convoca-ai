@@ -3,7 +3,7 @@ import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface ExamBooklet {
@@ -54,13 +54,6 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
     );
   }
 
-  // Se há apenas um caderno, seleciona automaticamente
-  React.useEffect(() => {
-    if (booklets.length === 1 && !selectedBookletId) {
-      onBookletChange(booklets[0].id);
-    }
-  }, [booklets, selectedBookletId, onBookletChange]);
-
   return (
     <Card className="mb-6">
       <CardHeader>
@@ -78,8 +71,8 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
                 </>
               ) : (
                 <>
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Pendente
+                  <Clock className="h-3 w-3 mr-1" />
+                  {completionStatus.details.filter(d => d.isComplete).length}/{completionStatus.details.length} Completos
                 </>
               )}
             </Badge>
@@ -108,6 +101,9 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         <span className="font-medium">{booklet.name}</span>
+                        {completion?.isComplete && (
+                          <CheckCircle className="h-3 w-3 text-green-600" />
+                        )}
                       </div>
                       {completion && (
                         <Badge 
@@ -125,18 +121,21 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
           </Select>
           <p className="text-xs text-muted-foreground">
             Você deve preencher o gabarito oficial para cada caderno configurado no concurso.
+            <strong> É obrigatório preencher TODOS os cadernos antes de salvar.</strong>
           </p>
         </div>
 
         {/* Status de completude por caderno */}
         {completionStatus && completionStatus.details.length > 0 && (
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Status dos Gabaritos</Label>
+            <Label className="text-sm font-medium">Status dos Gabaritos por Caderno</Label>
             <div className="grid gap-2">
               {completionStatus.details.map((detail) => (
                 <div 
                   key={detail.bookletId}
-                  className={`flex items-center justify-between p-2 rounded border ${
+                  className={`flex items-center justify-between p-3 rounded border transition-colors ${
+                    detail.bookletId === selectedBookletId ? 'bg-blue-50 border-blue-200' : ''
+                  } ${
                     detail.isComplete ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
                   }`}
                 >
@@ -146,11 +145,19 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
                     ) : (
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
                     )}
-                    <span className="text-sm font-medium">{detail.bookletName}</span>
+                    <span className="text-sm font-medium">
+                      {detail.bookletName}
+                      {detail.bookletId === selectedBookletId && <span className="text-blue-600 ml-1">(Selecionado)</span>}
+                    </span>
                   </div>
-                  <Badge variant={detail.isComplete ? "default" : "secondary"}>
-                    {detail.completed}/{detail.total} questões
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={detail.isComplete ? "default" : "secondary"}>
+                      {detail.completed}/{detail.total} questões
+                    </Badge>
+                    {detail.isComplete && (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -159,14 +166,33 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
 
         {/* Aviso sobre obrigatoriedade */}
         {completionStatus && !completionStatus.allComplete && (
-          <div className="p-3 rounded bg-amber-50 border border-amber-200">
+          <div className="p-4 rounded bg-amber-50 border border-amber-200">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-amber-800">Atenção!</p>
-                <p className="text-amber-700">
-                  Todos os cadernos devem ter gabarito completo antes de ativar o ranking.
-                  Os participantes só poderão ser avaliados corretamente quando todos os gabaritos estiverem preenchidos.
+                <p className="font-medium text-amber-800">⚠️ Atenção: Gabarito Incompleto!</p>
+                <p className="text-amber-700 mt-1">
+                  Você deve preencher o gabarito completo de <strong>todos os cadernos</strong> antes de poder salvar.
+                  Cada caderno deve ter todas as {completionStatus.details[0]?.total || 0} questões respondidas.
+                </p>
+                <p className="text-amber-700 mt-1">
+                  <strong>Progresso atual:</strong> {completionStatus.details.filter(d => d.isComplete).length} de {completionStatus.details.length} cadernos completos.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mensagem de sucesso quando todos estão completos */}
+        {completionStatus && completionStatus.allComplete && (
+          <div className="p-4 rounded bg-green-50 border border-green-200">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-green-800">✅ Todos os Gabaritos Completos!</p>
+                <p className="text-green-700 mt-1">
+                  Parabéns! Você preencheu o gabarito oficial de todos os {completionStatus.details.length} cadernos.
+                  Agora você pode salvar o ranking e ativá-lo para os participantes.
                 </p>
               </div>
             </div>
