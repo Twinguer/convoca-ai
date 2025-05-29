@@ -17,22 +17,30 @@ interface ExamBooklet {
 interface ExamBookletsSectionProps {
   concursoId?: string;
   onBookletsChange?: (booklets: ExamBooklet[]) => void;
+  onBookletsSaved?: (saved: boolean) => void;
 }
 
 export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
   concursoId,
-  onBookletsChange
+  onBookletsChange,
+  onBookletsSaved
 }) => {
   const [booklets, setBooklets] = useState<ExamBooklet[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isBookletsSaved, setIsBookletsSaved] = useState(false);
   const { toast } = useToast();
 
   // Carregar cadernos existentes sempre que o concursoId mudar
   useEffect(() => {
     if (concursoId) {
       loadExistingBooklets();
+    } else {
+      // Se não há concursoId, permitir adicionar cadernos mesmo assim
+      setBooklets([]);
+      setIsBookletsSaved(false);
+      setHasUnsavedChanges(false);
     }
   }, [concursoId]);
 
@@ -59,12 +67,15 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       if (data && data.length > 0) {
         setBooklets(data);
         setHasUnsavedChanges(false);
+        setIsBookletsSaved(true);
         onBookletsChange?.(data);
+        onBookletsSaved?.(true);
       } else {
-        // Se não há cadernos salvos, manter o estado local ou inicializar vazio
-        if (booklets.length === 0) {
-          setBooklets([]);
-        }
+        // Se não há cadernos salvos, resetar estado
+        setBooklets([]);
+        setIsBookletsSaved(false);
+        setHasUnsavedChanges(false);
+        onBookletsSaved?.(false);
       }
     } catch (error) {
       console.error('Erro ao carregar cadernos:', error);
@@ -96,7 +107,9 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     const updatedBooklets = [...booklets, newBooklet];
     setBooklets(updatedBooklets);
     setHasUnsavedChanges(true);
+    setIsBookletsSaved(false);
     onBookletsChange?.(updatedBooklets);
+    onBookletsSaved?.(false);
   };
 
   const removeBooklet = (index: number) => {
@@ -106,7 +119,9 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     
     setBooklets(updatedBooklets);
     setHasUnsavedChanges(true);
+    setIsBookletsSaved(false);
     onBookletsChange?.(updatedBooklets);
+    onBookletsSaved?.(false);
   };
 
   const updateBookletName = (index: number, name: string) => {
@@ -117,10 +132,16 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     
     setBooklets(updatedBooklets);
     setHasUnsavedChanges(true);
+    setIsBookletsSaved(false);
     onBookletsChange?.(updatedBooklets);
+    onBookletsSaved?.(false);
   };
 
   const validateBooklets = () => {
+    if (booklets.length === 0) {
+      return "Adicione pelo menos um caderno de prova";
+    }
+
     // Verificar nomes únicos e não vazios
     const names = booklets.map(b => b.name.trim()).filter(n => n);
     const uniqueNames = new Set(names);
@@ -137,15 +158,6 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
   };
 
   const saveBooklets = async () => {
-    if (!concursoId) {
-      toast({
-        title: "Erro",
-        description: "ID do concurso é obrigatório para salvar cadernos",
-        variant: "destructive"
-      });
-      return false;
-    }
-
     const validationError = validateBooklets();
     if (validationError) {
       toast({
@@ -154,6 +166,18 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         variant: "destructive"
       });
       return false;
+    }
+
+    // Se não há concursoId ainda, apenas validar e marcar como pronto para salvar
+    if (!concursoId) {
+      setHasUnsavedChanges(false);
+      setIsBookletsSaved(true);
+      onBookletsSaved?.(true);
+      toast({
+        title: "Cadernos validados",
+        description: "Cadernos validados com sucesso. Agora você pode salvar o ranking."
+      });
+      return true;
     }
 
     try {
@@ -237,7 +261,9 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       console.log('Todos os cadernos salvos:', savedBooklets);
       setBooklets(savedBooklets);
       setHasUnsavedChanges(false);
+      setIsBookletsSaved(true);
       onBookletsChange?.(savedBooklets);
+      onBookletsSaved?.(true);
       
       toast({
         title: "Cadernos salvos",
@@ -264,9 +290,17 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Cadernos de Prova
+          {isBookletsSaved && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              Salvos
+            </span>
+          )}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
           Configure diferentes cadernos de prova para este concurso. Cada caderno terá seu próprio gabarito.
+          <strong className="text-amber-600 block mt-1">
+            ⚠️ É obrigatório configurar e salvar os cadernos antes de salvar o ranking.
+          </strong>
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -321,7 +355,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
           
           {booklets.length > 0 && (
             <div className="flex items-center gap-2">
-              {hasUnsavedChanges && (
+              {hasUnsavedChanges && !isBookletsSaved && (
                 <span className="text-sm text-amber-600">● Alterações não salvas</span>
               )}
               <Button
@@ -341,6 +375,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             <p>• Máximo de 10 cadernos por concurso</p>
             <p>• Nomes são convertidos automaticamente para maiúsculas</p>
             <p>• Cada caderno terá seu próprio gabarito oficial</p>
+            <p>• <strong>Os cadernos devem ser salvos antes do ranking</strong></p>
           </div>
         )}
       </CardContent>

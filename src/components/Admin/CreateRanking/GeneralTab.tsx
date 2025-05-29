@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
@@ -40,9 +41,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   setSelectedStates,
   createdConcursoId
 }) => {
-  const [rankingSaved, setRankingSaved] = useState<boolean>(false);
-  const { toast } = useToast();
   const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
+  const [areBookletsSaved, setAreBookletsSaved] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Verificar se já existe um ID de concurso salvo
@@ -64,6 +65,16 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
     console.log("Validando form values:", currentValues);
+
+    // Primeiro verificar se os cadernos foram salvos
+    if (!areBookletsSaved) {
+      toast({
+        title: "Cadernos não salvos",
+        description: "Por favor, configure e salve os cadernos de prova antes de salvar o ranking.",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     if (!currentValues.predefined_job_title) {
       toast({
@@ -205,6 +216,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     handleNextTab();
   };
 
+  const handleBookletsSaved = (saved: boolean) => {
+    setAreBookletsSaved(saved);
+  };
+
   return (
     <div className="space-y-6">
       <BasicInfoSection 
@@ -226,9 +241,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
       <ReservationQuotasSection form={form} />
 
-      {/* Seção de cadernos agora sempre visível após ter um ID */}
+      {/* Seção de cadernos sempre visível */}
       <ExamBookletsSection 
         concursoId={createdConcursoId || form.getValues().id}
+        onBookletsSaved={handleBookletsSaved}
       />
 
       <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
@@ -236,9 +252,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           type="button" 
           onClick={handleSave}
           variant="secondary"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !areBookletsSaved}
+          className={!areBookletsSaved ? "opacity-50 cursor-not-allowed" : ""}
         >
-          Salvar Ranking
+          {!areBookletsSaved ? "Salve os Cadernos Primeiro" : "Salvar Ranking"}
         </Button>
         <Button 
           type="button"
