@@ -43,10 +43,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       setIsLoading(true);
       console.log('Carregando cadernos para concurso:', concursoId);
       
-      const { data, error } = await supabase.rpc('manage_exam_booklets', {
-        p_operation: 'GET',
-        p_concurso_id: concursoId
-      });
+      const { data, error } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', concursoId)
+        .order('display_order');
 
       if (error) {
         console.error('Erro ao carregar cadernos:', error);
@@ -55,10 +56,10 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       
       console.log('Cadernos carregados:', data);
       
-      if (data?.booklets && data.booklets.length > 0) {
-        setBooklets(data.booklets);
+      if (data && data.length > 0) {
+        setBooklets(data);
         setHasUnsavedChanges(false);
-        onBookletsChange?.(data.booklets);
+        onBookletsChange?.(data);
       } else {
         // Se não há cadernos salvos, manter o estado local ou inicializar vazio
         if (booklets.length === 0) {
@@ -139,7 +140,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     if (!concursoId) {
       toast({
         title: "Erro",
-        description: "Salve o ranking primeiro para configurar os cadernos",
+        description: "ID do concurso é obrigatório para salvar cadernos",
         variant: "destructive"
       });
       return false;
@@ -160,27 +161,26 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       console.log('Iniciando salvamento de cadernos para concurso:', concursoId);
       
       // Primeiro, obter cadernos existentes
-      const { data: existingData } = await supabase.rpc('manage_exam_booklets', {
-        p_operation: 'GET',
-        p_concurso_id: concursoId
-      });
+      const { data: existingBooklets } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', concursoId);
       
-      const existingBooklets = existingData?.booklets || [];
-      console.log('Cadernos existentes:', existingBooklets);
+      console.log('Cadernos existentes:', existingBooklets || []);
       
       // Identificar cadernos para deletar (que existem no banco mas não estão no estado local)
       const currentIds = booklets.filter(b => b.id).map(b => b.id);
-      const toDelete = existingBooklets.filter((b: any) => !currentIds.includes(b.id));
+      const toDelete = (existingBooklets || []).filter(b => !currentIds.includes(b.id));
       
       console.log('Cadernos para deletar:', toDelete);
       
       // Deletar cadernos removidos
       for (const booklet of toDelete) {
         console.log('Deletando caderno:', booklet.id);
-        const { error } = await supabase.rpc('manage_exam_booklets', {
-          p_operation: 'DELETE',
-          p_booklet_id: booklet.id
-        });
+        const { error } = await supabase
+          .from('exam_booklets')
+          .delete()
+          .eq('id', booklet.id);
         if (error) {
           console.error('Erro ao deletar caderno:', error);
           throw error;
@@ -195,47 +195,42 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         if (booklet.id) {
           // Atualizar caderno existente
           console.log('Atualizando caderno existente:', booklet.id);
-          const { data, error } = await supabase.rpc('manage_exam_booklets', {
-            p_operation: 'UPDATE',
-            p_concurso_id: concursoId,
-            p_booklet_id: booklet.id,
-            p_name: booklet.name,
-            p_display_order: booklet.display_order
-          });
+          const { data, error } = await supabase
+            .from('exam_booklets')
+            .update({
+              name: booklet.name,
+              display_order: booklet.display_order
+            })
+            .eq('id', booklet.id)
+            .select()
+            .single();
+          
           if (error) {
             console.error('Erro ao atualizar caderno:', error);
             throw error;
           }
           console.log('Caderno atualizado:', data);
-          savedBooklets.push(booklet);
+          savedBooklets.push(data);
         } else {
           // Criar novo caderno
           console.log('Criando novo caderno:', booklet.name);
-          const { data, error } = await supabase.rpc('manage_exam_booklets', {
-            p_operation: 'CREATE',
-            p_concurso_id: concursoId,
-            p_name: booklet.name,
-            p_display_order: booklet.display_order
-          });
+          const { data, error } = await supabase
+            .from('exam_booklets')
+            .insert({
+              concurso_id: concursoId,
+              name: booklet.name,
+              display_order: booklet.display_order
+            })
+            .select()
+            .single();
+          
           if (error) {
             console.error('Erro ao criar caderno:', error);
             throw error;
           }
           
-          console.log('Resposta da criação:', data);
-          
-          // Atualizar com o ID retornado
-          if (data?.booklet?.id) {
-            const savedBooklet = {
-              ...booklet,
-              id: data.booklet.id
-            };
-            console.log('Caderno criado com ID:', savedBooklet);
-            savedBooklets.push(savedBooklet);
-          } else {
-            console.error('ID não retornado na criação do caderno');
-            throw new Error('ID do caderno não foi retornado');
-          }
+          console.log('Caderno criado:', data);
+          savedBooklets.push(data);
         }
       }
       
@@ -332,7 +327,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
               <Button
                 type="button"
                 onClick={saveBooklets}
-                disabled={isLoading || isSaving || !concursoId}
+                disabled={isLoading || isSaving}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
                 {isSaving ? 'Salvando...' : 'Salvar Cadernos'}
@@ -346,9 +341,6 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             <p>• Máximo de 10 cadernos por concurso</p>
             <p>• Nomes são convertidos automaticamente para maiúsculas</p>
             <p>• Cada caderno terá seu próprio gabarito oficial</p>
-            {!concursoId && (
-              <p className="text-amber-600 font-medium">• Salve o ranking primeiro para poder salvar os cadernos</p>
-            )}
           </div>
         )}
       </CardContent>

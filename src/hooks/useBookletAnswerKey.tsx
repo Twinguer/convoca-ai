@@ -24,27 +24,26 @@ interface OfficialAnswerWeights {
 export const useBookletAnswerKey = (concursoId: string) => {
   const queryClient = useQueryClient();
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [nullifiedQuestions, setNullifiedQuestions] = useState<number[]>([]);
 
-  // Buscar cadernos disponíveis
+  // Buscar cadernos disponíveis usando a tabela diretamente
   const { data: booklets, isLoading: isLoadingBooklets } = useQuery({
     queryKey: ['exam-booklets', concursoId],
     queryFn: async () => {
       console.log('Buscando cadernos para concurso:', concursoId);
       
-      const { data, error } = await supabase.rpc('manage_exam_booklets', {
-        p_operation: 'GET',
-        p_concurso_id: concursoId
-      });
+      const { data, error } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', concursoId)
+        .order('display_order');
 
       if (error) {
         console.error('Erro ao buscar cadernos:', error);
         throw error;
       }
       
-      console.log('Cadernos encontrados:', data?.booklets || []);
-      return data?.booklets || [];
+      console.log('Cadernos encontrados:', data || []);
+      return data || [];
     },
     enabled: !!concursoId,
     refetchOnWindowFocus: false,
@@ -68,121 +67,6 @@ export const useBookletAnswerKey = (concursoId: string) => {
     }
   }, [booklets, selectedBookletId]);
 
-  // Buscar gabarito do caderno selecionado
-  const { data: officialAnswers, isLoading: isLoadingAnswers } = useQuery({
-    queryKey: ['official-answers-booklet', concursoId, selectedBookletId],
-    queryFn: async () => {
-      if (!selectedBookletId) {
-        console.log('Nenhum caderno selecionado, retornando vazio');
-        return {};
-      }
-
-      console.log('Buscando gabarito para caderno:', selectedBookletId);
-
-      const { data, error } = await supabase.rpc('get_official_answer_weights_by_booklet', {
-        p_concurso_id: concursoId,
-        p_booklet_id: selectedBookletId
-      });
-
-      if (error) {
-        console.error('Erro ao buscar gabarito:', error);
-        // Não throw aqui, apenas retorna vazio para não quebrar o componente
-        return {};
-      }
-      
-      console.log('Gabarito carregado:', data);
-      return data as OfficialAnswerWeights || {};
-    },
-    enabled: !!concursoId && !!selectedBookletId,
-    refetchOnWindowFocus: false,
-    retry: 2
-  });
-
-  // Atualizar estado local quando carregar gabarito
-  useEffect(() => {
-    if (officialAnswers && Object.keys(officialAnswers).length > 0) {
-      const answerMap: Record<number, string> = {};
-      const nullified: number[] = [];
-      
-      Object.entries(officialAnswers).forEach(([key, value]) => {
-        const questionNumber = parseInt(key.replace('questao', ''));
-        answerMap[questionNumber] = value.resposta;
-        if (value.anulada) {
-          nullified.push(questionNumber);
-        }
-      });
-      
-      console.log('Atualizando estados locais:', { answerMap, nullified });
-      setAnswers(answerMap);
-      setNullifiedQuestions(nullified);
-    } else {
-      console.log('Limpando estados locais');
-      setAnswers({});
-      setNullifiedQuestions([]);
-    }
-  }, [officialAnswers, selectedBookletId]);
-
-  // Mutação para salvar gabarito do caderno específico
-  const saveAnswerKeyMutation = useMutation({
-    mutationFn: async ({ 
-      questionNumber, 
-      answer, 
-      weight = 1.0,
-      isNullified = false,
-      sectionType 
-    }: { 
-      questionNumber: number; 
-      answer: string; 
-      weight?: number;
-      isNullified?: boolean;
-      sectionType?: string;
-    }) => {
-      if (!selectedBookletId) {
-        throw new Error('Caderno deve ser selecionado');
-      }
-
-      console.log('Salvando resposta:', {
-        questionNumber,
-        answer,
-        weight,
-        isNullified,
-        sectionType,
-        bookletId: selectedBookletId
-      });
-
-      const { data, error } = await supabase.rpc('update_answer_with_weight', {
-        p_concurso_id: concursoId,
-        p_question_number: questionNumber,
-        p_correct_answer: answer,
-        p_weight: weight,
-        p_is_nullified: isNullified,
-        p_section_type: sectionType,
-        p_booklet_id: selectedBookletId
-      });
-
-      if (error) {
-        console.error('Erro ao salvar resposta:', error);
-        throw error;
-      }
-      
-      console.log('Resposta salva com sucesso:', data);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['official-answers-booklet', concursoId, selectedBookletId] 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: ['booklets-completion', concursoId] 
-      });
-      toast.success('Resposta salva com sucesso');
-    },
-    onError: (error: any) => {
-      console.error('Erro ao salvar resposta:', error);
-      toast.error(`Erro ao salvar resposta: ${error.message || 'Erro desconhecido'}`);
-    }
-  });
-
   // Verificar completude de todos os cadernos
   const { data: completionStatus } = useQuery({
     queryKey: ['booklets-completion', concursoId],
@@ -198,12 +82,13 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
       for (const booklet of booklets) {
         try {
-          const { data: bookletAnswers } = await supabase.rpc('get_official_answer_weights_by_booklet', {
-            p_concurso_id: concursoId,
-            p_booklet_id: booklet.id
-          });
+          const { data: bookletAnswers } = await supabase
+            .from('official_answer_weights')
+            .select('id')
+            .eq('concurso_id', concursoId)
+            .eq('booklet_id', booklet.id);
 
-          const answerCount = Object.keys(bookletAnswers || {}).length;
+          const answerCount = bookletAnswers?.length || 0;
           
           // Buscar total de questões esperadas do concurso
           const { data: concurso } = await supabase
@@ -258,41 +143,16 @@ export const useBookletAnswerKey = (concursoId: string) => {
     refetchInterval: 10000 // Refetch mais frequente para mostrar progresso
   });
 
-  const updateAnswer = (
-    questionNumber: number, 
-    answer: string, 
-    weight: number = 1.0,
-    isNullified: boolean = false,
-    sectionType?: string
-  ) => {
-    return saveAnswerKeyMutation.mutate({ 
-      questionNumber, 
-      answer, 
-      weight,
-      isNullified,
-      sectionType 
-    });
-  };
-
   const handleBookletChange = (bookletId: string) => {
     console.log('Mudando caderno selecionado para:', bookletId);
     setSelectedBookletId(bookletId);
-    // Limpar dados ao trocar de caderno
-    setAnswers({});
-    setNullifiedQuestions([]);
   };
 
   return {
     booklets: booklets || [],
     selectedBookletId,
     setSelectedBookletId: handleBookletChange,
-    answers,
-    setAnswers,
-    nullifiedQuestions,
-    setNullifiedQuestions,
-    updateAnswer,
-    isLoading: isLoadingBooklets || isLoadingAnswers,
-    isSaving: saveAnswerKeyMutation.isPending,
+    isLoading: isLoadingBooklets,
     completionStatus
   };
 };

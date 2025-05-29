@@ -21,13 +21,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     booklets,
     selectedBookletId,
     setSelectedBookletId,
-    answers,
-    setAnswers,
-    nullifiedQuestions,
-    setNullifiedQuestions,
-    updateAnswer,
     isLoading,
-    isSaving,
     completionStatus
   } = useBookletAnswerKey(concursoId);
 
@@ -84,7 +78,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         selectedBookletId={selectedBookletId}
         onBookletChange={setSelectedBookletId}
         completionStatus={completionStatus}
-        disabled={isSaving}
+        disabled={false}
       />
 
       {/* Formulário de gabarito quando um caderno está selecionado */}
@@ -92,12 +86,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         showAnswerForm ? (
           <AnswerKeyForm 
             concursoId={concursoId}
-            answers={answers}
-            setAnswers={setAnswers}
-            nullifiedQuestions={nullifiedQuestions}
-            setNullifiedQuestions={setNullifiedQuestions}
-            updateAnswer={updateAnswer}
-            isSaving={isSaving}
           />
         ) : (
           <Card>

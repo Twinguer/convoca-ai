@@ -11,24 +11,34 @@ export const useDeleteRanking = () => {
       console.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
-        // 1. Primeiro deletar todos os user_answers associados
-        console.log('Deletando user_answers...');
-        const { error: answersError } = await supabase
-          .from('user_answers')
-          .delete()
-          .in('user_ranking_id', 
-            supabase
-              .from('user_rankings')
-              .select('id')
-              .eq('concurso_id', concursoId)
-          );
+        // 1. Primeiro buscar os IDs dos user_rankings para deletar user_answers
+        console.log('Buscando user_rankings para deletar user_answers...');
+        const { data: userRankings, error: fetchError } = await supabase
+          .from('user_rankings')
+          .select('id')
+          .eq('concurso_id', concursoId);
         
-        if (answersError) {
-          console.error('Erro ao deletar user_answers:', answersError);
-          throw answersError;
+        if (fetchError) {
+          console.error('Erro ao buscar user_rankings:', fetchError);
+          throw fetchError;
         }
 
-        // 2. Depois deletar todos os user_rankings
+        // 2. Deletar user_answers usando os IDs encontrados
+        if (userRankings && userRankings.length > 0) {
+          console.log('Deletando user_answers...');
+          const userRankingIds = userRankings.map(ur => ur.id);
+          const { error: answersError } = await supabase
+            .from('user_answers')
+            .delete()
+            .in('user_ranking_id', userRankingIds);
+          
+          if (answersError) {
+            console.error('Erro ao deletar user_answers:', answersError);
+            throw answersError;
+          }
+        }
+
+        // 3. Deletar todos os user_rankings
         console.log('Deletando user_rankings...');
         const { error: rankingsError } = await supabase
           .from('user_rankings')
@@ -40,7 +50,7 @@ export const useDeleteRanking = () => {
           throw rankingsError;
         }
 
-        // 3. Deletar official_answer_weights
+        // 4. Deletar official_answer_weights
         console.log('Deletando official_answer_weights...');
         const { error: weightsError } = await supabase
           .from('official_answer_weights')
@@ -52,7 +62,7 @@ export const useDeleteRanking = () => {
           // Não joga erro aqui pois pode não existir
         }
 
-        // 4. Deletar answer_keys (gabarito antigo)
+        // 5. Deletar answer_keys (gabarito antigo)
         console.log('Deletando answer_keys...');
         const { error: keysError } = await supabase
           .from('answer_keys')
@@ -64,29 +74,19 @@ export const useDeleteRanking = () => {
           // Não joga erro aqui pois pode não existir
         }
 
-        // 5. Deletar exam_booklets usando a função RPC
+        // 6. Deletar exam_booklets
         console.log('Deletando exam_booklets...');
-        try {
-          // Primeiro buscar os cadernos existentes
-          const { data: bookletsData } = await supabase.rpc('manage_exam_booklets', {
-            p_operation: 'GET',
-            p_concurso_id: concursoId
-          });
-          
-          if (bookletsData?.booklets) {
-            for (const booklet of bookletsData.booklets) {
-              await supabase.rpc('manage_exam_booklets', {
-                p_operation: 'DELETE',
-                p_booklet_id: booklet.id
-              });
-            }
-          }
-        } catch (bookletError) {
-          console.error('Erro ao deletar cadernos:', bookletError);
-          // Não joga erro aqui, continua com a exclusão do concurso
+        const { error: bookletsError } = await supabase
+          .from('exam_booklets')
+          .delete()
+          .eq('concurso_id', concursoId);
+        
+        if (bookletsError) {
+          console.error('Erro ao deletar exam_booklets:', bookletsError);
+          // Continua mesmo com erro nos cadernos
         }
 
-        // 6. Finalmente deletar o concurso
+        // 7. Finalmente deletar o concurso
         console.log('Deletando concurso...');
         const { error: concursoError } = await supabase
           .from('concursos')
