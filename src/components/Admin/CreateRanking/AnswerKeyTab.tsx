@@ -92,7 +92,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         showAnswerForm ? (
           <AnswerKeyForm 
             concursoId={concursoId}
-            selectedBookletId={selectedBookletId}
             answers={answers}
             setAnswers={setAnswers}
             nullifiedQuestions={nullifiedQuestions}

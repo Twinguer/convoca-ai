@@ -31,28 +31,38 @@ export const useBookletAnswerKey = (concursoId: string) => {
   const { data: booklets, isLoading: isLoadingBooklets } = useQuery({
     queryKey: ['exam-booklets', concursoId],
     queryFn: async () => {
+      console.log('Buscando cadernos para concurso:', concursoId);
+      
       const { data, error } = await supabase.rpc('manage_exam_booklets', {
         p_operation: 'GET',
         p_concurso_id: concursoId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar cadernos:', error);
+        throw error;
+      }
+      
+      console.log('Cadernos encontrados:', data?.booklets || []);
       return data?.booklets || [];
     },
     enabled: !!concursoId,
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000 // Refetch a cada 10 segundos para manter sincronizado
+    refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: 1000
   });
 
   // Selecionar automaticamente o primeiro caderno disponível
   useEffect(() => {
     if (booklets && booklets.length > 0 && !selectedBookletId) {
+      console.log('Selecionando primeiro caderno automaticamente:', booklets[0].id);
       setSelectedBookletId(booklets[0].id);
     }
     // Se o caderno selecionado não existe mais na lista, selecionar o primeiro
     if (booklets && booklets.length > 0 && selectedBookletId) {
       const exists = booklets.find((b: ExamBooklet) => b.id === selectedBookletId);
       if (!exists) {
+        console.log('Caderno selecionado não existe mais, selecionando primeiro:', booklets[0].id);
         setSelectedBookletId(booklets[0].id);
       }
     }
@@ -62,17 +72,30 @@ export const useBookletAnswerKey = (concursoId: string) => {
   const { data: officialAnswers, isLoading: isLoadingAnswers } = useQuery({
     queryKey: ['official-answers-booklet', concursoId, selectedBookletId],
     queryFn: async () => {
-      if (!selectedBookletId) return {};
+      if (!selectedBookletId) {
+        console.log('Nenhum caderno selecionado, retornando vazio');
+        return {};
+      }
+
+      console.log('Buscando gabarito para caderno:', selectedBookletId);
 
       const { data, error } = await supabase.rpc('get_official_answer_weights_by_booklet', {
         p_concurso_id: concursoId,
         p_booklet_id: selectedBookletId
       });
 
-      if (error) throw error;
-      return data as OfficialAnswerWeights;
+      if (error) {
+        console.error('Erro ao buscar gabarito:', error);
+        // Não throw aqui, apenas retorna vazio para não quebrar o componente
+        return {};
+      }
+      
+      console.log('Gabarito carregado:', data);
+      return data as OfficialAnswerWeights || {};
     },
-    enabled: !!concursoId && !!selectedBookletId
+    enabled: !!concursoId && !!selectedBookletId,
+    refetchOnWindowFocus: false,
+    retry: 2
   });
 
   // Atualizar estado local quando carregar gabarito
@@ -89,9 +112,11 @@ export const useBookletAnswerKey = (concursoId: string) => {
         }
       });
       
+      console.log('Atualizando estados locais:', { answerMap, nullified });
       setAnswers(answerMap);
       setNullifiedQuestions(nullified);
     } else {
+      console.log('Limpando estados locais');
       setAnswers({});
       setNullifiedQuestions([]);
     }
@@ -116,6 +141,15 @@ export const useBookletAnswerKey = (concursoId: string) => {
         throw new Error('Caderno deve ser selecionado');
       }
 
+      console.log('Salvando resposta:', {
+        questionNumber,
+        answer,
+        weight,
+        isNullified,
+        sectionType,
+        bookletId: selectedBookletId
+      });
+
       const { data, error } = await supabase.rpc('update_answer_with_weight', {
         p_concurso_id: concursoId,
         p_question_number: questionNumber,
@@ -126,7 +160,12 @@ export const useBookletAnswerKey = (concursoId: string) => {
         p_booklet_id: selectedBookletId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao salvar resposta:', error);
+        throw error;
+      }
+      
+      console.log('Resposta salva com sucesso:', data);
       return data;
     },
     onSuccess: () => {
@@ -138,9 +177,9 @@ export const useBookletAnswerKey = (concursoId: string) => {
       });
       toast.success('Resposta salva com sucesso');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Erro ao salvar resposta:', error);
-      toast.error('Erro ao salvar resposta');
+      toast.error(`Erro ao salvar resposta: ${error.message || 'Erro desconhecido'}`);
     }
   });
 
@@ -148,57 +187,75 @@ export const useBookletAnswerKey = (concursoId: string) => {
   const { data: completionStatus } = useQuery({
     queryKey: ['booklets-completion', concursoId],
     queryFn: async () => {
-      if (!booklets || booklets.length === 0) return { allComplete: true, details: [] };
+      if (!booklets || booklets.length === 0) {
+        console.log('Nenhum caderno disponível para verificar completude');
+        return { allComplete: true, details: [] };
+      }
 
+      console.log('Verificando completude dos cadernos...');
       const completionDetails = [];
       let allComplete = true;
 
       for (const booklet of booklets) {
-        const { data: bookletAnswers } = await supabase.rpc('get_official_answer_weights_by_booklet', {
-          p_concurso_id: concursoId,
-          p_booklet_id: booklet.id
-        });
+        try {
+          const { data: bookletAnswers } = await supabase.rpc('get_official_answer_weights_by_booklet', {
+            p_concurso_id: concursoId,
+            p_booklet_id: booklet.id
+          });
 
-        const answerCount = Object.keys(bookletAnswers || {}).length;
-        
-        // Buscar total de questões esperadas do concurso
-        const { data: concurso } = await supabase
-          .from('concursos')
-          .select(`
-            basic_knowledge_questions,
-            specific_knowledge_1_questions,
-            specific_knowledge_2_questions,
-            specific_knowledge_3_questions,
-            has_basic_knowledge,
-            has_specific_knowledge_1,
-            has_specific_knowledge_2,
-            has_specific_knowledge_3
-          `)
-          .eq('id', concursoId)
-          .single();
+          const answerCount = Object.keys(bookletAnswers || {}).length;
+          
+          // Buscar total de questões esperadas do concurso
+          const { data: concurso } = await supabase
+            .from('concursos')
+            .select(`
+              basic_knowledge_questions,
+              specific_knowledge_1_questions,
+              specific_knowledge_2_questions,
+              specific_knowledge_3_questions,
+              has_basic_knowledge,
+              has_specific_knowledge_1,
+              has_specific_knowledge_2,
+              has_specific_knowledge_3
+            `)
+            .eq('id', concursoId)
+            .single();
 
-        const expectedQuestions = 
-          (concurso?.has_basic_knowledge ? (concurso?.basic_knowledge_questions || 0) : 0) +
-          (concurso?.has_specific_knowledge_1 ? (concurso?.specific_knowledge_1_questions || 0) : 0) +
-          (concurso?.has_specific_knowledge_2 ? (concurso?.specific_knowledge_2_questions || 0) : 0) +
-          (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
+          const expectedQuestions = 
+            (concurso?.has_basic_knowledge ? (concurso?.basic_knowledge_questions || 0) : 0) +
+            (concurso?.has_specific_knowledge_1 ? (concurso?.specific_knowledge_1_questions || 0) : 0) +
+            (concurso?.has_specific_knowledge_2 ? (concurso?.specific_knowledge_2_questions || 0) : 0) +
+            (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
 
-        const isComplete = answerCount >= expectedQuestions;
-        if (!isComplete) allComplete = false;
+          const isComplete = answerCount >= expectedQuestions;
+          if (!isComplete) allComplete = false;
 
-        completionDetails.push({
-          bookletId: booklet.id,
-          bookletName: booklet.name,
-          completed: answerCount,
-          total: expectedQuestions,
-          isComplete
-        });
+          completionDetails.push({
+            bookletId: booklet.id,
+            bookletName: booklet.name,
+            completed: answerCount,
+            total: expectedQuestions,
+            isComplete
+          });
+        } catch (error) {
+          console.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
+          // Se houver erro, considera como não completo
+          allComplete = false;
+          completionDetails.push({
+            bookletId: booklet.id,
+            bookletName: booklet.name,
+            completed: 0,
+            total: 0,
+            isComplete: false
+          });
+        }
       }
 
+      console.log('Status de completude:', { allComplete, details: completionDetails });
       return { allComplete, details: completionDetails };
     },
     enabled: !!booklets && booklets.length > 0,
-    refetchInterval: 5000 // Refetch mais frequente para mostrar progresso
+    refetchInterval: 10000 // Refetch mais frequente para mostrar progresso
   });
 
   const updateAnswer = (
@@ -218,6 +275,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
   };
 
   const handleBookletChange = (bookletId: string) => {
+    console.log('Mudando caderno selecionado para:', bookletId);
     setSelectedBookletId(bookletId);
     // Limpar dados ao trocar de caderno
     setAnswers({});
