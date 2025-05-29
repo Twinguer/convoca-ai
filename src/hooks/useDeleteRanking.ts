@@ -11,8 +11,8 @@ export const useDeleteRanking = () => {
       console.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
-        // 1. Primeiro buscar os IDs dos user_rankings para deletar logs e respostas
-        console.log('Buscando user_rankings para deletar dependências...');
+        // 1. Primeiro buscar os IDs dos user_rankings para deletar user_answers
+        console.log('Buscando user_rankings para deletar user_answers...');
         const { data: userRankings, error: fetchError } = await supabase
           .from('user_rankings')
           .select('id')
@@ -23,23 +23,10 @@ export const useDeleteRanking = () => {
           throw fetchError;
         }
 
-        // 2. Deletar score_calculation_logs primeiro (nova dependência)
+        // 2. Deletar user_answers usando os IDs encontrados
         if (userRankings && userRankings.length > 0) {
-          console.log('Deletando score_calculation_logs...');
-          const userRankingIds = userRankings.map(ur => ur.id);
-          
-          const { error: logsError } = await supabase
-            .from('score_calculation_logs')
-            .delete()
-            .in('user_ranking_id', userRankingIds);
-          
-          if (logsError) {
-            console.error('Erro ao deletar score_calculation_logs:', logsError);
-            // Continua mesmo com erro nos logs
-          }
-
-          // 3. Deletar user_answers usando os IDs encontrados
           console.log('Deletando user_answers...');
+          const userRankingIds = userRankings.map(ur => ur.id);
           const { error: answersError } = await supabase
             .from('user_answers')
             .delete()
@@ -51,20 +38,7 @@ export const useDeleteRanking = () => {
           }
         }
 
-        // 4. Deletar logs gerais de cálculo sem user_ranking_id específico
-        console.log('Deletando logs gerais de cálculo...');
-        const { error: generalLogsError } = await supabase
-          .from('score_calculation_logs')
-          .delete()
-          .is('user_ranking_id', null)
-          .like('calculation_details->>concurso_id', `%${concursoId}%`);
-        
-        if (generalLogsError) {
-          console.error('Erro ao deletar logs gerais:', generalLogsError);
-          // Continua mesmo com erro
-        }
-
-        // 5. Deletar todos os user_rankings
+        // 3. Deletar todos os user_rankings
         console.log('Deletando user_rankings...');
         const { error: rankingsError } = await supabase
           .from('user_rankings')
@@ -76,7 +50,7 @@ export const useDeleteRanking = () => {
           throw rankingsError;
         }
 
-        // 6. Deletar official_answer_weights
+        // 4. Deletar official_answer_weights
         console.log('Deletando official_answer_weights...');
         const { error: weightsError } = await supabase
           .from('official_answer_weights')
@@ -88,7 +62,7 @@ export const useDeleteRanking = () => {
           // Não joga erro aqui pois pode não existir
         }
 
-        // 7. Deletar answer_keys (gabarito antigo)
+        // 5. Deletar answer_keys (gabarito antigo)
         console.log('Deletando answer_keys...');
         const { error: keysError } = await supabase
           .from('answer_keys')
@@ -100,7 +74,7 @@ export const useDeleteRanking = () => {
           // Não joga erro aqui pois pode não existir
         }
 
-        // 8. Deletar exam_booklets
+        // 6. Deletar exam_booklets
         console.log('Deletando exam_booklets...');
         const { error: bookletsError } = await supabase
           .from('exam_booklets')
@@ -112,7 +86,7 @@ export const useDeleteRanking = () => {
           // Continua mesmo com erro nos cadernos
         }
 
-        // 9. Finalmente deletar o concurso
+        // 7. Finalmente deletar o concurso
         console.log('Deletando concurso...');
         const { error: concursoError } = await supabase
           .from('concursos')
@@ -135,7 +109,6 @@ export const useDeleteRanking = () => {
       toast.success('Ranking deletado com sucesso');
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
       queryClient.invalidateQueries({ queryKey: ['concursos'] });
-      queryClient.invalidateQueries({ queryKey: ['user-created-rankings'] });
     },
     onError: (error: any) => {
       console.error('Erro ao deletar ranking:', error);
