@@ -86,7 +86,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         showAnswerForm ? (
           <AnswerKeyForm 
             concursoId={concursoId}
-            bookletId={selectedBookletId}
+            key={selectedBookletId} // Force re-render when booklet changes
           />
         ) : (
           <Card>
