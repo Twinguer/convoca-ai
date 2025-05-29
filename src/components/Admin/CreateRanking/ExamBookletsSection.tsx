@@ -37,7 +37,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     if (concursoId) {
       loadExistingBooklets();
     } else {
-      // Se não há concursoId, permitir adicionar cadernos mesmo assim
+      // Se não há concursoId, permitir adicionar cadernos mesmo assim mas não marcar como salvos
       setBooklets([]);
       setIsBookletsSaved(false);
       setHasUnsavedChanges(false);
@@ -71,10 +71,12 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         onBookletsChange?.(data);
         onBookletsSaved?.(true);
       } else {
-        // Se não há cadernos salvos, resetar estado
-        setBooklets([]);
+        // Se não há cadernos salvos, resetar estado mas manter cadernos locais se houver
+        if (booklets.length === 0) {
+          setBooklets([]);
+        }
         setIsBookletsSaved(false);
-        setHasUnsavedChanges(false);
+        setHasUnsavedChanges(booklets.length > 0);
         onBookletsSaved?.(false);
       }
     } catch (error) {

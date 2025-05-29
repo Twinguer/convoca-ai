@@ -48,7 +48,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
     enabled: !!concursoId,
     refetchOnWindowFocus: false,
     retry: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
+    staleTime: 30000 // Cache por 30 segundos para melhorar a persistência
   });
 
   // Selecionar automaticamente o primeiro caderno disponível
@@ -69,7 +70,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
   // Verificar completude de todos os cadernos
   const { data: completionStatus } = useQuery({
-    queryKey: ['booklets-completion', concursoId],
+    queryKey: ['booklets-completion', concursoId, booklets?.length],
     queryFn: async () => {
       if (!booklets || booklets.length === 0) {
         console.log('Nenhum caderno disponível para verificar completude');
@@ -140,7 +141,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
       return { allComplete, details: completionDetails };
     },
     enabled: !!booklets && booklets.length > 0,
-    refetchInterval: 10000 // Refetch mais frequente para mostrar progresso
+    refetchInterval: 10000, // Refetch mais frequente para mostrar progresso
+    staleTime: 5000 // Cache menor para status de completude
   });
 
   const handleBookletChange = (bookletId: string) => {

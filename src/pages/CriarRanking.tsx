@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
-import { AnswerKeyForm } from '@/components/Admin/AnswerKeyForm';
+import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
 
@@ -199,9 +200,8 @@ const CriarRanking = () => {
     form.setValue('localidades', selectedStates, { shouldDirty: true });
     formValues.localidades = selectedStates;
     
-    // Adicionar flags de admin se necessário - corrigir o tipo aqui
+    // Adicionar flags de admin se necessário
     if (isAdmin) {
-      // Usar um tipo de interseção ou criar um novo objeto
       const formValuesWithAdminFlags = {
         ...formValues,
         is_admin_created: true,
@@ -212,7 +212,7 @@ const CriarRanking = () => {
 
       try {
         const saveResult = await saveRanking({
-          formValues: formValuesWithAdminFlags, // Usar a versão com flags
+          formValues: formValuesWithAdminFlags,
           userId: user?.id,
           editId,
           jobTitles,
@@ -227,6 +227,8 @@ const CriarRanking = () => {
           setCreatedConcursoId(saveResult.id);
           toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
           setActiveTab('answer-key');
+          // Invalidar queries para recarregar os cadernos
+          queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
         }
         
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
@@ -257,6 +259,8 @@ const CriarRanking = () => {
           setCreatedConcursoId(saveResult.id);
           toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
           setActiveTab('answer-key');
+          // Invalidar queries para recarregar os cadernos
+          queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
         }
         
         queryClient.invalidateQueries({ queryKey: ['rankings'] });
@@ -336,7 +340,6 @@ const CriarRanking = () => {
                   />
                 </TabsContent>
                 <TabsContent value="answer-key">
-                  {/* Modificado para permitir edição do ranking mesmo enquanto edita gabarito */}
                   <div className="mb-4 flex justify-between items-center">
                     <Button 
                       type="button" 
@@ -354,7 +357,10 @@ const CriarRanking = () => {
                   </div>
                   
                   {(createdConcursoId || editId) && (
-                    <AnswerKeyForm concursoId={createdConcursoId || editId || ''} />
+                    <AnswerKeyTab 
+                      concursoId={createdConcursoId || editId || ''} 
+                      onGoToResults={handleGoToResults}
+                    />
                   )}
                 </TabsContent>
               </Tabs>

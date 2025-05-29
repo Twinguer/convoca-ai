@@ -86,6 +86,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
         showAnswerForm ? (
           <AnswerKeyForm 
             concursoId={concursoId}
+            bookletId={selectedBookletId}
           />
         ) : (
           <Card>
