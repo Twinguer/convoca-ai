@@ -26,7 +26,7 @@ export const useDeleteRanking = () => {
         if (userRankings && userRankings.length > 0) {
           const userRankingIds = userRankings.map(ur => ur.id);
           
-          // 2. Deletar score_calculation_logs primeiro (nova correção)
+          // 2. Deletar score_calculation_logs primeiro - CORREÇÃO CRUCIAL
           console.log('Deletando score_calculation_logs...');
           const { error: logsError } = await supabase
             .from('score_calculation_logs')
@@ -110,6 +110,8 @@ export const useDeleteRanking = () => {
       toast.success('Ranking deletado com sucesso');
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
       queryClient.invalidateQueries({ queryKey: ['concursos'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-concursos'] });
+      queryClient.invalidateQueries({ queryKey: ['user-created-rankings'] });
     },
     onError: (error: any) => {
       console.error('Erro ao deletar ranking:', error);
