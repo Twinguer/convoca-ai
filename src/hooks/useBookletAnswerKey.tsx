@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface ExamBooklet {
   id: string;
@@ -10,22 +9,10 @@ interface ExamBooklet {
   display_order: number;
 }
 
-interface AnswerWeight {
-  resposta: string;
-  peso: number;
-  secao: 'basic' | 'specific1' | 'specific2' | 'specific3';
-  anulada: boolean;
-}
-
-interface OfficialAnswerWeights {
-  [key: string]: AnswerWeight;
-}
-
 export const useBookletAnswerKey = (concursoId: string) => {
-  const queryClient = useQueryClient();
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
 
-  // Buscar cadernos disponíveis usando a tabela diretamente
+  // Buscar cadernos disponíveis
   const { data: booklets, isLoading: isLoadingBooklets } = useQuery({
     queryKey: ['exam-booklets', concursoId],
     queryFn: async () => {
@@ -49,7 +36,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
     refetchOnWindowFocus: false,
     retry: 3,
     retryDelay: 1000,
-    staleTime: 30000 // Cache por 30 segundos para melhorar a persistência
+    staleTime: 30000
   });
 
   // Selecionar automaticamente o primeiro caderno disponível
@@ -57,14 +44,6 @@ export const useBookletAnswerKey = (concursoId: string) => {
     if (booklets && booklets.length > 0 && !selectedBookletId) {
       console.log('Selecionando primeiro caderno automaticamente:', booklets[0].id);
       setSelectedBookletId(booklets[0].id);
-    }
-    // Se o caderno selecionado não existe mais na lista, selecionar o primeiro
-    if (booklets && booklets.length > 0 && selectedBookletId) {
-      const exists = booklets.find((b: ExamBooklet) => b.id === selectedBookletId);
-      if (!exists) {
-        console.log('Caderno selecionado não existe mais, selecionando primeiro:', booklets[0].id);
-        setSelectedBookletId(booklets[0].id);
-      }
     }
   }, [booklets, selectedBookletId]);
 
@@ -81,6 +60,43 @@ export const useBookletAnswerKey = (concursoId: string) => {
       const completionDetails = [];
       let allComplete = true;
 
+      // Primeiro, buscar o total de questões esperadas do concurso
+      const { data: concurso } = await supabase
+        .from('concursos')
+        .select(`
+          basic_knowledge_questions,
+          specific_knowledge_1_questions,
+          specific_knowledge_2_questions,
+          specific_knowledge_3_questions,
+          has_basic_knowledge,
+          has_specific_knowledge_1,
+          has_specific_knowledge_2,
+          has_specific_knowledge_3,
+          has_custom_knowledge,
+          disciplines
+        `)
+        .eq('id', concursoId)
+        .single();
+
+      let expectedQuestions = 0;
+      
+      if (concurso?.has_custom_knowledge && concurso.disciplines) {
+        // Calcular questões para conhecimentos customizados
+        const disciplines = Array.isArray(concurso.disciplines) ? concurso.disciplines : [];
+        disciplines.forEach((discipline: any) => {
+          if (discipline.isEnabled) {
+            expectedQuestions += parseInt(discipline.questionCount) || 0;
+          }
+        });
+      } else {
+        // Calcular questões para estrutura tradicional
+        expectedQuestions = 
+          (concurso?.has_basic_knowledge ? (concurso?.basic_knowledge_questions || 0) : 0) +
+          (concurso?.has_specific_knowledge_1 ? (concurso?.specific_knowledge_1_questions || 0) : 0) +
+          (concurso?.has_specific_knowledge_2 ? (concurso?.specific_knowledge_2_questions || 0) : 0) +
+          (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
+      }
+
       for (const booklet of booklets) {
         try {
           const { data: bookletAnswers } = await supabase
@@ -90,30 +106,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
             .eq('booklet_id', booklet.id);
 
           const answerCount = bookletAnswers?.length || 0;
-          
-          // Buscar total de questões esperadas do concurso
-          const { data: concurso } = await supabase
-            .from('concursos')
-            .select(`
-              basic_knowledge_questions,
-              specific_knowledge_1_questions,
-              specific_knowledge_2_questions,
-              specific_knowledge_3_questions,
-              has_basic_knowledge,
-              has_specific_knowledge_1,
-              has_specific_knowledge_2,
-              has_specific_knowledge_3
-            `)
-            .eq('id', concursoId)
-            .single();
-
-          const expectedQuestions = 
-            (concurso?.has_basic_knowledge ? (concurso?.basic_knowledge_questions || 0) : 0) +
-            (concurso?.has_specific_knowledge_1 ? (concurso?.specific_knowledge_1_questions || 0) : 0) +
-            (concurso?.has_specific_knowledge_2 ? (concurso?.specific_knowledge_2_questions || 0) : 0) +
-            (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
-
           const isComplete = answerCount >= expectedQuestions;
+          
           if (!isComplete) allComplete = false;
 
           completionDetails.push({
@@ -125,13 +119,12 @@ export const useBookletAnswerKey = (concursoId: string) => {
           });
         } catch (error) {
           console.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
-          // Se houver erro, considera como não completo
           allComplete = false;
           completionDetails.push({
             bookletId: booklet.id,
             bookletName: booklet.name,
             completed: 0,
-            total: 0,
+            total: expectedQuestions,
             isComplete: false
           });
         }
@@ -141,8 +134,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
       return { allComplete, details: completionDetails };
     },
     enabled: !!booklets && booklets.length > 0,
-    refetchInterval: 10000, // Refetch mais frequente para mostrar progresso
-    staleTime: 5000 // Cache menor para status de completude
+    refetchInterval: 10000,
+    staleTime: 5000
   });
 
   const handleBookletChange = (bookletId: string) => {

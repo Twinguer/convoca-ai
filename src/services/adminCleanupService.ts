@@ -5,7 +5,7 @@ export const cleanupAllRankings = async () => {
   console.log('Iniciando limpeza de todos os rankings...');
   
   try {
-    // 1. Deletar todos os score_calculation_logs
+    // 1. Deletar todos os score_calculation_logs PRIMEIRO (devido à foreign key)
     console.log('Deletando score_calculation_logs...');
     const { error: logsError } = await supabase
       .from('score_calculation_logs')
