@@ -11,8 +11,8 @@ export const useDeleteRanking = () => {
       console.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
-        // 1. Primeiro buscar os IDs dos user_rankings para deletar user_answers
-        console.log('Buscando user_rankings para deletar user_answers...');
+        // 1. Primeiro buscar os IDs dos user_rankings para deletar dependências
+        console.log('Buscando user_rankings para deletar dependências...');
         const { data: userRankings, error: fetchError } = await supabase
           .from('user_rankings')
           .select('id')
@@ -23,10 +23,23 @@ export const useDeleteRanking = () => {
           throw fetchError;
         }
 
-        // 2. Deletar user_answers usando os IDs encontrados
         if (userRankings && userRankings.length > 0) {
-          console.log('Deletando user_answers...');
           const userRankingIds = userRankings.map(ur => ur.id);
+          
+          // 2. Deletar score_calculation_logs primeiro (nova correção)
+          console.log('Deletando score_calculation_logs...');
+          const { error: logsError } = await supabase
+            .from('score_calculation_logs')
+            .delete()
+            .in('user_ranking_id', userRankingIds);
+          
+          if (logsError) {
+            console.error('Erro ao deletar score_calculation_logs:', logsError);
+            throw logsError;
+          }
+
+          // 3. Deletar user_answers
+          console.log('Deletando user_answers...');
           const { error: answersError } = await supabase
             .from('user_answers')
             .delete()
@@ -38,7 +51,7 @@ export const useDeleteRanking = () => {
           }
         }
 
-        // 3. Deletar todos os user_rankings
+        // 4. Deletar todos os user_rankings
         console.log('Deletando user_rankings...');
         const { error: rankingsError } = await supabase
           .from('user_rankings')
@@ -50,7 +63,7 @@ export const useDeleteRanking = () => {
           throw rankingsError;
         }
 
-        // 4. Deletar official_answer_weights
+        // 5. Deletar official_answer_weights
         console.log('Deletando official_answer_weights...');
         const { error: weightsError } = await supabase
           .from('official_answer_weights')
@@ -59,18 +72,6 @@ export const useDeleteRanking = () => {
         
         if (weightsError) {
           console.error('Erro ao deletar official_answer_weights:', weightsError);
-          // Não joga erro aqui pois pode não existir
-        }
-
-        // 5. Deletar answer_keys (gabarito antigo)
-        console.log('Deletando answer_keys...');
-        const { error: keysError } = await supabase
-          .from('answer_keys')
-          .delete()
-          .eq('concurso_id', concursoId);
-        
-        if (keysError) {
-          console.error('Erro ao deletar answer_keys:', keysError);
           // Não joga erro aqui pois pode não existir
         }
 

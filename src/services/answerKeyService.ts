@@ -3,99 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 /**
- * Atualiza os tipos de seção para o gabarito de um concurso
+ * Função para obter o gabarito de um concurso por caderno
  */
-export const updateSectionTypeForConcurso = async (concursoId: string) => {
+export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: string) => {
   try {
-    // Obter o concurso
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
+    const { data, error } = await supabase
+      .from('official_answer_weights')
       .select('*')
-      .eq('id', concursoId)
-      .single();
-      
-    if (concursoError) {
-      console.error('Erro ao buscar concurso:', concursoError);
-      return { success: false, error: concursoError.message };
-    }
+      .eq('concurso_id', concursoId)
+      .eq('booklet_id', bookletId);
 
-    // Verificar se estamos usando estrutura hierárquica
-    const hierarchical = isHierarchicalStructure(concurso);
-    console.log(`[updateSectionTypeForConcurso] Concurso ${concursoId} usa estrutura hierárquica? ${hierarchical}`);
-
-    // Chamar a função RPC existente para atualizar tipos de seção
-    const { data, error } = await supabase.rpc('update_section_types', {
-      p_concurso_id: concursoId,
-      p_hierarchical: hierarchical // Passar o indicador de estrutura hierárquica
-    });
-    
-    if (error) {
-      console.error('Error updating section types:', error);
-      return { success: false, error: error.message };
-    }
+    if (error) throw error;
     
     return { success: true, data };
   } catch (error: any) {
-    console.error('Error updating section types:', error);
-    return { success: false, error: error.message || String(error) };
-  }
-};
-
-// Função para extrair tipos de disciplina de um concurso
-export const extractDisciplineTypes = async (concursoId: string) => {
-  try {
-    // Obter o concurso
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('*')
-      .eq('id', concursoId)
-      .single();
-      
-    if (concursoError) {
-      console.error('Erro ao buscar concurso:', concursoError);
-      return { success: false, error: concursoError.message };
-    }
-
-    // Verificar se estamos usando estrutura hierárquica
-    const hierarchical = isHierarchicalStructure(concurso);
-    
-    // Extrair tipos de disciplina
-    const disciplineTypes: Array<{type: string, name: string}> = [];
-    
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      if (hierarchical) {
-        // Estrutura hierárquica (blocos -> disciplinas)
-        for (const item of concurso.disciplines) {
-          if ('disciplines' in item && Array.isArray(item.disciplines)) {
-            const block = item;
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.type) {
-                disciplineTypes.push({
-                  type: discipline.type,
-                  name: discipline.name
-                });
-              }
-            }
-          }
-        }
-      } else {
-        // Estrutura plana
-        for (const item of concurso.disciplines) {
-          if ('isEnabled' in item && item.isEnabled && item.type) {
-            disciplineTypes.push({
-              type: item.type,
-              name: item.name
-            });
-          }
-        }
-      }
-    }
-    
-    console.log(`[extractDisciplineTypes] Encontrados ${disciplineTypes.length} tipos de disciplina`);
-    return { success: true, disciplineTypes };
-    
-  } catch (error: any) {
-    console.error('Error extracting discipline types:', error);
+    console.error('Error retrieving answer key for booklet:', error);
     return { success: false, error: error.message || String(error) };
   }
 };
@@ -103,12 +25,10 @@ export const extractDisciplineTypes = async (concursoId: string) => {
 // Função para obter o gabarito de um concurso
 export const getAnswerKey = async (concursoId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      'get_official_answer_weights',
-      {
-        p_concurso_id: concursoId,
-      }
-    );
+    const { data, error } = await supabase
+      .from('official_answer_weights')
+      .select('*')
+      .eq('concurso_id', concursoId);
 
     if (error) throw error;
     
@@ -119,24 +39,52 @@ export const getAnswerKey = async (concursoId: string) => {
   }
 };
 
-// Função para salvar o gabarito e recalcular pontuações
-export const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyData: any[]) => {
+// Função para salvar o gabarito com recálculo automático
+export const saveAnswerKeyAndRecalculate = async (concursoId: string, bookletId: string, answerKeyData: any[]) => {
   try {
-    // Use a RPC para atualizar o gabarito e recalcular as pontuações
-    const { data, error } = await supabase.rpc(
-      'update_official_answers_and_recalculate',
-      {
-        p_concurso_id: concursoId,
-        p_answers_data: answerKeyData
-      }
-    );
+    // Deletar gabarito existente para este caderno
+    const { error: deleteError } = await supabase
+      .from('official_answer_weights')
+      .delete()
+      .eq('concurso_id', concursoId)
+      .eq('booklet_id', bookletId);
+    
+    if (deleteError) {
+      console.error('Error deleting existing answer key:', deleteError);
+      return { success: false, error: deleteError.message };
+    }
+    
+    // Inserir novo gabarito
+    const { data, error } = await supabase
+      .from('official_answer_weights')
+      .insert(answerKeyData.map(item => ({
+        ...item,
+        booklet_id: bookletId
+      })));
     
     if (error) {
       console.error('Error saving answer key:', error);
       return { success: false, error: error.message };
     }
     
-    return { success: true, updatedCount: data?.updated_count || 0 };
+    // Tentar recalcular pontuações (usando função existente)
+    try {
+      const { data: recalcData, error: recalcError } = await supabase.rpc(
+        'recalculate_all_scores_with_weights',
+        { p_concurso_id: concursoId }
+      );
+      
+      if (recalcError) {
+        console.error('Error recalculating scores:', recalcError);
+        // Não falha o salvamento se o recálculo der erro
+        return { success: true, updatedCount: 0, recalcError: recalcError.message };
+      }
+      
+      return { success: true, updatedCount: recalcData?.updatedCount || 0 };
+    } catch (recalcError) {
+      console.error('Error in recalculation:', recalcError);
+      return { success: true, updatedCount: 0, recalcError: 'Erro no recálculo' };
+    }
   } catch (error: any) {
     console.error('Error in saveAnswerKeyAndRecalculate:', error);
     return { success: false, error: error.message || String(error) };
@@ -144,13 +92,14 @@ export const saveAnswerKeyAndRecalculate = async (concursoId: string, answerKeyD
 };
 
 // Função para inserir gabarito diretamente - alternativa caso a RPC falhe
-export const insertAnswersDirectly = async (concursoId: string, answerKeyData: any[]) => {
+export const insertAnswersDirectly = async (concursoId: string, bookletId: string, answerKeyData: any[]) => {
   try {
-    // Deletar registros existentes
+    // Deletar registros existentes para este caderno
     const { error: deleteError } = await supabase
       .from('official_answer_weights')
       .delete()
-      .eq('concurso_id', concursoId);
+      .eq('concurso_id', concursoId)
+      .eq('booklet_id', bookletId);
     
     if (deleteError) {
       console.error('Error deleting existing answer key:', deleteError);
@@ -160,7 +109,10 @@ export const insertAnswersDirectly = async (concursoId: string, answerKeyData: a
     // Inserir novos registros
     const { data, error } = await supabase
       .from('official_answer_weights')
-      .insert(answerKeyData);
+      .insert(answerKeyData.map(item => ({
+        ...item,
+        booklet_id: bookletId
+      })));
     
     if (error) {
       console.error('Error inserting new answers:', error);
@@ -176,8 +128,7 @@ export const insertAnswersDirectly = async (concursoId: string, answerKeyData: a
 
 // Exportar os métodos como um objeto de serviço
 export const answerKeyService = {
-  updateSectionTypeForConcurso,
-  extractDisciplineTypes,
+  getAnswerKeyForBooklet,
   getAnswerKey,
   saveAnswerKeyAndRecalculate,
   insertAnswersDirectly

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,15 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
-import { answerKeyService } from '@/services/answerKeyService';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyFormProps {
   concursoId: string;
+  bookletId: string;
 }
 
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
-  concursoId
+  concursoId,
+  bookletId
 }) => {
   const [selectedSection, setSelectedSection] = useState<string>('basic');
   const [isSaving, setIsSaving] = useState(false);
@@ -51,32 +51,39 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     data: existingAnswers,
     isLoading: isLoadingAnswers
   } = useQuery({
-    queryKey: ['official-answers-weights', concursoId],
+    queryKey: ['official-answers-weights', concursoId, bookletId],
     queryFn: async () => {
-      const {
-        data,
-        error
-      } = await supabase.rpc('get_official_answer_weights', {
-        p_concurso_id: concursoId
-      });
-      if (error) throw error;
-      return data || {};
+      console.log('Buscando gabarito para caderno:', bookletId);
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .select('*')
+        .eq('concurso_id', concursoId)
+        .eq('booklet_id', bookletId);
+      
+      if (error) {
+        console.error('Erro ao buscar gabarito:', error);
+        throw error;
+      }
+      
+      console.log('Gabarito encontrado:', data);
+      return data || [];
     }
   });
   
   useEffect(() => {
-    if (existingAnswers && Object.keys(existingAnswers).length > 0) {
+    if (existingAnswers && existingAnswers.length > 0) {
       const answersMap: {
         [key: number]: string;
       } = {};
       const nullifiedSet = new Set<number>();
-      Object.entries(existingAnswers).forEach(([key, value]: [string, any]) => {
-        const questionNumber = parseInt(key.replace('questao', ''));
-        answersMap[questionNumber] = value.resposta;
-        if (value.anulada) {
-          nullifiedSet.add(questionNumber);
+      
+      existingAnswers.forEach((answer: any) => {
+        answersMap[answer.question_number] = answer.correct_answer;
+        if (answer.is_nullified) {
+          nullifiedSet.add(answer.question_number);
         }
       });
+      
       setAnswers(answersMap);
       setNullifiedQuestions(nullifiedSet);
     }
@@ -295,13 +302,26 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         return;
       }
 
-      // Preparar dados para salvar o gabarito completo de uma vez
+      // Primeiro, deletar gabarito existente para este caderno
+      console.log('Deletando gabarito existente para caderno:', bookletId);
+      const { error: deleteError } = await supabase
+        .from('official_answer_weights')
+        .delete()
+        .eq('concurso_id', concursoId)
+        .eq('booklet_id', bookletId);
+
+      if (deleteError) {
+        console.error('Erro ao deletar gabarito existente:', deleteError);
+        throw deleteError;
+      }
+
+      // Preparar dados para salvar o gabarito completo para este caderno
       const answerKeyData = allQuestions.map(qNum => {
-        // Determinar o tipo de seção para cada questão - usando tipos válidos
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
-        console.log(`Questão ${qNum}: usando section_type=${sectionType}`);
+        console.log(`Questão ${qNum}: usando section_type=${sectionType} para caderno ${bookletId}`);
         return {
           concurso_id: concursoId,
+          booklet_id: bookletId,
           question_number: qNum,
           correct_answer: answers[qNum],
           weight: 1.0,
@@ -310,20 +330,27 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         };
       });
 
-      // Usar o método que evita recrear toda a tabela
-      const saveResult = await answerKeyService.saveAnswerKeyAndRecalculate(concursoId, answerKeyData);
-      if (saveResult.success) {
-        setSavedSuccess(true);
-        toast({
-          title: "Gabarito salvo com sucesso",
-          description: `O gabarito oficial foi atualizado. ${saveResult.updatedCount || 0} pontuações foram recalculadas.`
-        });
-        setTimeout(() => {
-          setSavedSuccess(false);
-        }, 3000);
-      } else {
-        throw new Error(saveResult.error || "Erro ao salvar gabarito");
+      console.log('Salvando gabarito para caderno:', bookletId, 'com', answerKeyData.length, 'questões');
+
+      // Inserir novo gabarito
+      const { error: insertError } = await supabase
+        .from('official_answer_weights')
+        .insert(answerKeyData);
+
+      if (insertError) {
+        console.error('Erro ao inserir gabarito:', insertError);
+        throw insertError;
       }
+
+      console.log('Gabarito salvo com sucesso para caderno:', bookletId);
+      setSavedSuccess(true);
+      toast({
+        title: "Gabarito salvo com sucesso",
+        description: `O gabarito oficial foi atualizado para o caderno selecionado.`
+      });
+      setTimeout(() => {
+        setSavedSuccess(false);
+      }, 3000);
     } catch (error: any) {
       console.error('Error saving answer key:', error);
       setError(error.message || "Ocorreu um erro ao salvar o gabarito oficial.");
