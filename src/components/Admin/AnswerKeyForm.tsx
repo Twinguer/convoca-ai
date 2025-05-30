@@ -22,9 +22,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 }) => {
   const [selectedSection, setSelectedSection] = useState<string>('basic');
   const [isSaving, setIsSaving] = useState(false);
-  const [isRecalculating, setIsRecalculating] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
-  const [recalculationSuccess, setRecalculationSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{
     [key: number]: string;
@@ -49,7 +47,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   
   const {
     data: existingAnswers,
-    isLoading: isLoadingAnswers
+    isLoading: isLoadingAnswers,
+    refetch: refetchAnswers
   } = useQuery({
     queryKey: ['official-answers-weights', concursoId, bookletId],
     queryFn: async () => {
@@ -283,20 +282,20 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     }
   };
   
-  const handleSaveAnswerKey = async () => {
+  const handleSaveCurrentBooklet = async () => {
     try {
       setIsSaving(true);
       setError(null);
       setSavedSuccess(false);
 
-      // Verificar todas as questões em todas as seções, não apenas a aba atual
+      // Verificar apenas as questões do caderno atual
       const allQuestions = getAllQuestionsFromAllSections();
       const unansweredQuestions = allQuestions.filter(q => !answers[q]);
       if (unansweredQuestions.length > 0) {
-        setError(`Todas as questões devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
+        setError(`Todas as questões do caderno ${bookletId} devem ser respondidas. Faltam as questões: ${unansweredQuestions.join(', ')}`);
         toast({
           title: "Erro ao salvar gabarito",
-          description: "Todas as questões devem ser respondidas antes de salvar o gabarito.",
+          description: "Todas as questões deste caderno devem ser respondidas antes de salvar.",
           variant: "destructive"
         });
         return;
@@ -315,7 +314,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         throw deleteError;
       }
 
-      // Preparar dados para salvar o gabarito completo para este caderno
+      // Preparar dados para salvar apenas este caderno
       const answerKeyData = allQuestions.map(qNum => {
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
         console.log(`Questão ${qNum}: usando section_type=${sectionType} para caderno ${bookletId}`);
@@ -344,10 +343,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
       console.log('Gabarito salvo com sucesso para caderno:', bookletId);
       setSavedSuccess(true);
+      
+      // Atualizar dados
+      refetchAnswers();
+      
       toast({
         title: "Gabarito salvo com sucesso",
-        description: `O gabarito oficial foi atualizado para o caderno selecionado.`
+        description: `O gabarito oficial foi salvo para o caderno ${bookletId}.`
       });
+      
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);
@@ -590,15 +594,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         {savedSuccess && (
           <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <CheckCircle className="h-4 w-4" />
-            <p>Gabarito salvo com sucesso!</p>
-          </div>
-        )}
-        
-        {/* Recalculation success message */}
-        {recalculationSuccess && (
-          <div className="bg-blue-100 p-3 rounded-md flex items-center gap-2 text-blue-800">
-            <CheckCircle className="h-4 w-4" />
-            <p>Recálculo de pontuações concluído com sucesso!</p>
+            <p>Gabarito do caderno {bookletId} salvo com sucesso!</p>
           </div>
         )}
         
@@ -618,7 +614,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
               ></div>
             </div>
             <p className="text-xs text-blue-600 mt-2">
-              Todas as questões precisam ser respondidas antes de salvar o gabarito.
+              Todas as questões deste caderno precisam ser respondidas antes de salvar.
             </p>
           </div>
         </div>
@@ -686,30 +682,12 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           </div>
         )}
         
-        {/* Action buttons */}
-        <div className="flex justify-between mt-4">
+        {/* Action button - Save only current booklet */}
+        <div className="flex justify-center mt-4">
           <Button 
-            onClick={performRecalculation} 
-            className="bg-blue-600 hover:bg-blue-700 text-white" 
-            disabled={isSaving || isRecalculating}
-          >
-            {isRecalculating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Recalculando...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Recalcular Pontuações
-              </>
-            )}
-          </Button>
-          
-          <Button 
-            onClick={handleSaveAnswerKey} 
+            onClick={handleSaveCurrentBooklet} 
             className="bg-emerald-600 hover:bg-emerald-700 text-white" 
-            disabled={isSaving || isRecalculating}
+            disabled={isSaving}
           >
             {isSaving ? (
               <>
@@ -719,7 +697,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Gabarito
+                Salvar Gabarito do Caderno {bookletId}
               </>
             )}
           </Button>

@@ -7,6 +7,8 @@ import { BookletAnswerKeySelector } from './BookletAnswerKeySelector';
 import { useBookletAnswerKey } from '@/hooks/useBookletAnswerKey';
 import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cleanupAllRankings } from '@/services/adminCleanupService';
+import { toast } from 'sonner';
 
 interface AnswerKeyTabProps {
   concursoId: string;
@@ -26,6 +28,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   } = useBookletAnswerKey(concursoId);
 
   const [showAnswerForm, setShowAnswerForm] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   // Mostrar o formulário quando há um caderno selecionado
   useEffect(() => {
@@ -35,6 +38,25 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setShowAnswerForm(false);
     }
   }, [selectedBookletId, booklets]);
+
+  const handleCleanupAll = async () => {
+    if (!confirm('⚠️ ATENÇÃO: Esta ação irá deletar TODOS os rankings do sistema! Tem certeza?')) {
+      return;
+    }
+
+    setIsCleaningUp(true);
+    try {
+      await cleanupAllRankings();
+      toast.success('Todos os rankings foram removidos com sucesso!');
+      // Refresh the page to reset the state
+      window.location.reload();
+    } catch (error) {
+      console.error('Erro na limpeza:', error);
+      toast.error('Erro ao limpar rankings: ' + (error as Error).message);
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -72,6 +94,18 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Botão de limpeza para desenvolvimento */}
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleCleanupAll}
+          variant="destructive"
+          size="sm"
+          disabled={isCleaningUp}
+        >
+          {isCleaningUp ? 'Limpando...' : '🗑️ Limpar Todos os Rankings (DEV)'}
+        </Button>
+      </div>
+
       {/* Seletor de cadernos sempre visível quando há cadernos */}
       <BookletAnswerKeySelector
         booklets={booklets}
