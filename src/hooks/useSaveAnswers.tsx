@@ -2,8 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-import { updateSectionTypeForConcurso } from '@/services/answerKeyService';
-import { getSectionTypeForQuestion, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
+import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -89,13 +88,6 @@ export const useSaveAnswers = ({
         caseStudy2Score,
         caseStudy3Score
       });
-
-      // Certifique-se de que section_type esteja atualizado para este concurso
-      const sectionTypeResult = await updateSectionTypeForConcurso(concurso.id);
-      if (!sectionTypeResult.success) {
-        console.warn('[useSaveAnswers] Aviso: Não foi possível atualizar section_type:', sectionTypeResult.error);
-        // Continuamos mesmo com erro, pois isso é apenas uma melhoria
-      }
 
       // Chamar a função RPC centralizada com a ordem correta dos parâmetros
       const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
