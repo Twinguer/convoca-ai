@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
-import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 
 interface AnswerKeyFormProps {
@@ -242,44 +242,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       matrix.push(rowData);
     }
     return matrix;
-  };
-  
-  const performRecalculation = async () => {
-    try {
-      setIsRecalculating(true);
-      toast({
-        title: "Recalculando pontuações",
-        description: "Iniciando recálculo para todos os usuários. Isso pode levar algum tempo."
-      });
-      const recalculationResult = await recalculateAllUserScores(concursoId);
-      console.log('Recalculation result:', recalculationResult);
-      if (recalculationResult.success) {
-        setRecalculationSuccess(true);
-        const updatedCount = recalculationResult.updatedCount || 0;
-        toast({
-          title: "Recálculo completado",
-          description: `As notas de ${updatedCount} usuários foram atualizadas.`
-        });
-        setTimeout(() => {
-          setRecalculationSuccess(false);
-        }, 5000);
-      } else {
-        toast({
-          title: "Erro no recálculo",
-          description: recalculationResult.error || "Ocorreu um erro ao recalcular as notas dos usuários.",
-          variant: "destructive"
-        });
-      }
-    } catch (error: any) {
-      console.error('Error during recalculation:', error);
-      toast({
-        title: "Erro no recálculo",
-        description: error.message || "Ocorreu um erro durante o recálculo das pontuações.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRecalculating(false);
-    }
   };
   
   const handleSaveCurrentBooklet = async () => {
