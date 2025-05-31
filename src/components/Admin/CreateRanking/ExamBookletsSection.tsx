@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, X, FileText } from 'lucide-react';
+import { Plus, X, FileText, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ExamBooklet {
   id?: string;
@@ -37,10 +38,12 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     if (concursoId) {
       loadExistingBooklets();
     } else {
-      // Se não há concursoId, permitir adicionar cadernos mesmo assim mas não marcar como salvos
-      setBooklets([]);
+      // Se não há concursoId, inicializar com um caderno padrão se estiver vazio
+      if (booklets.length === 0) {
+        setBooklets([{ name: '', display_order: 1 }]);
+      }
       setIsBookletsSaved(false);
-      setHasUnsavedChanges(false);
+      setHasUnsavedChanges(booklets.length > 0);
     }
   }, [concursoId]);
 
@@ -71,12 +74,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         onBookletsChange?.(data);
         onBookletsSaved?.(true);
       } else {
-        // Se não há cadernos salvos, resetar estado mas manter cadernos locais se houver
-        if (booklets.length === 0) {
-          setBooklets([]);
-        }
+        // Se não há cadernos salvos, inicializar com um caderno padrão
+        const defaultBooklet = [{ name: '', display_order: 1 }];
+        setBooklets(defaultBooklet);
         setIsBookletsSaved(false);
-        setHasUnsavedChanges(booklets.length > 0);
+        setHasUnsavedChanges(true);
         onBookletsSaved?.(false);
       }
     } catch (error) {
@@ -297,15 +299,26 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
               Salvos
             </span>
           )}
+          {hasUnsavedChanges && !isBookletsSaved && (
+            <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+              Não Salvos
+            </span>
+          )}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
           Configure diferentes cadernos de prova para este concurso. Cada caderno terá seu próprio gabarito.
-          <strong className="text-amber-600 block mt-1">
-            ⚠️ É obrigatório configurar e salvar os cadernos antes de salvar o ranking.
-          </strong>
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {!isBookletsSaved && (
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Atenção:</strong> Os cadernos devem ser salvos antes de salvar o ranking.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {booklets.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -329,15 +342,17 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
                     maxLength={20}
                   />
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => removeBooklet(index)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                {booklets.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeBooklet(index)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -355,21 +370,16 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             Adicionar Caderno
           </Button>
           
-          {booklets.length > 0 && (
-            <div className="flex items-center gap-2">
-              {hasUnsavedChanges && !isBookletsSaved && (
-                <span className="text-sm text-amber-600">● Alterações não salvas</span>
-              )}
-              <Button
-                type="button"
-                onClick={saveBooklets}
-                disabled={isLoading || isSaving}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                {isSaving ? 'Salvando...' : 'Salvar Cadernos'}
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              onClick={saveBooklets}
+              disabled={isLoading || isSaving || isBookletsSaved}
+              className={isBookletsSaved ? "bg-green-600 hover:bg-green-700" : "bg-emerald-600 hover:bg-emerald-700"}
+            >
+              {isSaving ? 'Salvando...' : isBookletsSaved ? 'Cadernos Salvos' : 'Salvar Cadernos'}
+            </Button>
+          </div>
         </div>
 
         {booklets.length > 0 && (

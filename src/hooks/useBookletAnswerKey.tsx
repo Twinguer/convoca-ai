@@ -60,7 +60,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
       const completionDetails = [];
       let allComplete = true;
 
-      // Primeiro, buscar o total de questões esperadas do concurso
+      // Buscar o total de questões esperadas do concurso
       const { data: concurso } = await supabase
         .from('concursos')
         .select(`
@@ -96,7 +96,10 @@ export const useBookletAnswerKey = (concursoId: string) => {
             if (block.disciplines && Array.isArray(block.disciplines)) {
               block.disciplines.forEach((discipline: any) => {
                 if (discipline.isEnabled) {
-                  expectedQuestions += parseInt(discipline.questionCount) || 0;
+                  const questionCount = typeof discipline.questionCount === 'string' 
+                    ? parseInt(discipline.questionCount) || 0 
+                    : discipline.questionCount || 0;
+                  expectedQuestions += questionCount;
                 }
               });
             }
@@ -105,7 +108,10 @@ export const useBookletAnswerKey = (concursoId: string) => {
           // Estrutura plana: disciplinas diretas
           disciplines.forEach((discipline: any) => {
             if (discipline.isEnabled) {
-              expectedQuestions += parseInt(discipline.questionCount) || 0;
+              const questionCount = typeof discipline.questionCount === 'string' 
+                ? parseInt(discipline.questionCount) || 0 
+                : discipline.questionCount || 0;
+              expectedQuestions += questionCount;
             }
           });
         }
@@ -129,7 +135,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
             .eq('booklet_id', booklet.id);
 
           const answerCount = bookletAnswers?.length || 0;
-          const isComplete = answerCount >= expectedQuestions;
+          const isComplete = expectedQuestions > 0 ? answerCount >= expectedQuestions : false;
           
           if (!isComplete) allComplete = false;
 

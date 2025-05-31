@@ -60,8 +60,9 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
       return { success: false, error: error.message };
     }
     
-    console.log(`Gabarito do caderno ${bookletId} salvo com sucesso:`, data?.length || answerKeyData.length, 'questões');
-    return { success: true, data };
+    const insertedCount = Array.isArray(data) ? data.length : answerKeyData.length;
+    console.log(`Gabarito do caderno ${bookletId} salvo com sucesso:`, insertedCount, 'questões');
+    return { success: true, data: data };
   } catch (error: any) {
     console.error('Erro no saveBookletAnswerKey:', error);
     return { success: false, error: error.message || String(error) };
