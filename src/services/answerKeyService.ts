@@ -7,15 +7,22 @@ import { isHierarchicalStructure } from '@/integrations/supabase/rankings/examSt
  */
 export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: string) => {
   try {
+    console.log('Buscando gabarito para caderno:', bookletId, 'concurso:', concursoId);
+    
     const { data, error } = await supabase
       .from('official_answer_weights')
       .select('*')
       .eq('concurso_id', concursoId)
-      .eq('booklet_id', bookletId);
+      .eq('booklet_id', bookletId)
+      .order('question_number');
 
-    if (error) throw error;
+    if (error) {
+      console.error('Erro ao buscar gabarito do caderno:', error);
+      throw error;
+    }
     
-    return { success: true, data };
+    console.log('Gabarito do caderno encontrado:', data?.length || 0, 'questões');
+    return { success: true, data: data || [] };
   } catch (error: any) {
     console.error('Error retrieving answer key for booklet:', error);
     return { success: false, error: error.message || String(error) };
@@ -41,6 +48,8 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
       return { success: false, error: deleteError.message };
     }
     
+    console.log(`Gabarito anterior do caderno ${bookletId} removido, inserindo novo...`);
+    
     // Inserir novo gabarito para este caderno
     const { data, error } = await supabase
       .from('official_answer_weights')
@@ -51,7 +60,7 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
       return { success: false, error: error.message };
     }
     
-    console.log(`Gabarito do caderno ${bookletId} salvo com sucesso`);
+    console.log(`Gabarito do caderno ${bookletId} salvo com sucesso:`, data?.length || answerKeyData.length, 'questões');
     return { success: true, data };
   } catch (error: any) {
     console.error('Erro no saveBookletAnswerKey:', error);
@@ -59,17 +68,20 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
   }
 };
 
-// Função para obter o gabarito de um concurso
+/**
+ * Função para obter o gabarito de um concurso (todos os cadernos)
+ */
 export const getAnswerKey = async (concursoId: string) => {
   try {
     const { data, error } = await supabase
       .from('official_answer_weights')
       .select('*')
-      .eq('concurso_id', concursoId);
+      .eq('concurso_id', concursoId)
+      .order('booklet_id, question_number');
 
     if (error) throw error;
     
-    return { success: true, data };
+    return { success: true, data: data || [] };
   } catch (error: any) {
     console.error('Error retrieving answer key:', error);
     return { success: false, error: error.message || String(error) };

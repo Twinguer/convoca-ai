@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
-import { saveBookletAnswerKey } from '@/services/answerKeyService';
+import { saveBookletAnswerKey, getAnswerKeyForBooklet } from '@/services/answerKeyService';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -53,20 +53,17 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     queryKey: ['official-answers-weights', concursoId, bookletId],
     queryFn: async () => {
       console.log('Buscando gabarito para caderno:', bookletId);
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .select('*')
-        .eq('concurso_id', concursoId)
-        .eq('booklet_id', bookletId);
+      const result = await getAnswerKeyForBooklet(concursoId, bookletId);
       
-      if (error) {
-        console.error('Erro ao buscar gabarito:', error);
-        throw error;
+      if (!result.success) {
+        console.error('Erro ao buscar gabarito:', result.error);
+        throw new Error(result.error);
       }
       
-      console.log('Gabarito encontrado:', data);
-      return data || [];
-    }
+      console.log('Gabarito encontrado:', result.data);
+      return result.data || [];
+    },
+    enabled: !!concursoId && !!bookletId
   });
   
   useEffect(() => {
@@ -280,7 +277,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
       console.log('Salvando gabarito para caderno:', bookletId, 'com', answerKeyData.length, 'questões');
 
-      // Usar o novo serviço para salvar o caderno
+      // Usar o serviço para salvar o caderno
       const result = await saveBookletAnswerKey(concursoId, bookletId, answerKeyData);
 
       if (!result.success) {
@@ -591,7 +588,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => (
-                        <React.Fragment key={`row-${rowIndex}`}>
+                        <div key={`row-${rowIndex}`}>
                           {row.map((questionNumber, colIndex) => 
                             questionNumber !== null ? (
                               <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
@@ -618,7 +615,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
                               </div>
                             ) : null
                           )}
-                        </React.Fragment>
+                        </div>
                       ))}
                     </div>
                   </div>

@@ -83,11 +83,32 @@ export const useBookletAnswerKey = (concursoId: string) => {
       if (concurso?.has_custom_knowledge && concurso.disciplines) {
         // Calcular questões para conhecimentos customizados
         const disciplines = Array.isArray(concurso.disciplines) ? concurso.disciplines : [];
-        disciplines.forEach((discipline: any) => {
-          if (discipline.isEnabled) {
-            expectedQuestions += parseInt(discipline.questionCount) || 0;
-          }
-        });
+        
+        // Verificar se é estrutura hierárquica (blocos -> disciplinas)
+        const isHierarchical = disciplines.length > 0 && 
+                              disciplines[0] && 
+                              typeof disciplines[0] === 'object' && 
+                              'disciplines' in disciplines[0];
+        
+        if (isHierarchical) {
+          // Estrutura hierárquica: blocos contendo disciplinas
+          disciplines.forEach((block: any) => {
+            if (block.disciplines && Array.isArray(block.disciplines)) {
+              block.disciplines.forEach((discipline: any) => {
+                if (discipline.isEnabled) {
+                  expectedQuestions += parseInt(discipline.questionCount) || 0;
+                }
+              });
+            }
+          });
+        } else {
+          // Estrutura plana: disciplinas diretas
+          disciplines.forEach((discipline: any) => {
+            if (discipline.isEnabled) {
+              expectedQuestions += parseInt(discipline.questionCount) || 0;
+            }
+          });
+        }
       } else {
         // Calcular questões para estrutura tradicional
         expectedQuestions = 
@@ -96,6 +117,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
           (concurso?.has_specific_knowledge_2 ? (concurso?.specific_knowledge_2_questions || 0) : 0) +
           (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
       }
+
+      console.log('Total de questões esperadas:', expectedQuestions);
 
       for (const booklet of booklets) {
         try {
@@ -117,6 +140,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
             total: expectedQuestions,
             isComplete
           });
+
+          console.log(`Caderno ${booklet.name}: ${answerCount}/${expectedQuestions} questões (${isComplete ? 'completo' : 'incompleto'})`);
         } catch (error) {
           console.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
           allComplete = false;
@@ -133,7 +158,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
       console.log('Status de completude:', { allComplete, details: completionDetails });
       return { allComplete, details: completionDetails };
     },
-    enabled: !!booklets && booklets.length > 0,
+    enabled: !!booklets && booklets.length > 0 && !!concursoId,
     refetchInterval: 10000,
     staleTime: 5000
   });
