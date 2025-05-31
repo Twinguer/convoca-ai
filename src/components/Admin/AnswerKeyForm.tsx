@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
+import { saveBookletAnswerKey } from '@/services/answerKeyService';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -263,19 +263,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         return;
       }
 
-      // Primeiro, deletar gabarito existente para este caderno
-      console.log('Deletando gabarito existente para caderno:', bookletId);
-      const { error: deleteError } = await supabase
-        .from('official_answer_weights')
-        .delete()
-        .eq('concurso_id', concursoId)
-        .eq('booklet_id', bookletId);
-
-      if (deleteError) {
-        console.error('Erro ao deletar gabarito existente:', deleteError);
-        throw deleteError;
-      }
-
       // Preparar dados para salvar apenas este caderno
       const answerKeyData = allQuestions.map(qNum => {
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
@@ -293,14 +280,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
       console.log('Salvando gabarito para caderno:', bookletId, 'com', answerKeyData.length, 'questões');
 
-      // Inserir novo gabarito
-      const { error: insertError } = await supabase
-        .from('official_answer_weights')
-        .insert(answerKeyData);
+      // Usar o novo serviço para salvar o caderno
+      const result = await saveBookletAnswerKey(concursoId, bookletId, answerKeyData);
 
-      if (insertError) {
-        console.error('Erro ao inserir gabarito:', insertError);
-        throw insertError;
+      if (!result.success) {
+        throw new Error(result.error);
       }
 
       console.log('Gabarito salvo com sucesso para caderno:', bookletId);
