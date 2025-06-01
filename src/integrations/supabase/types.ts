@@ -608,6 +608,7 @@ export type Database = {
       user_answers: {
         Row: {
           answer: string | null
+          booklet_id: string | null
           id: number
           is_basic_knowledge: boolean | null
           is_specific_1: boolean | null
@@ -618,6 +619,7 @@ export type Database = {
         }
         Insert: {
           answer?: string | null
+          booklet_id?: string | null
           id?: number
           is_basic_knowledge?: boolean | null
           is_specific_1?: boolean | null
@@ -628,6 +630,7 @@ export type Database = {
         }
         Update: {
           answer?: string | null
+          booklet_id?: string | null
           id?: number
           is_basic_knowledge?: boolean | null
           is_specific_1?: boolean | null
@@ -637,6 +640,13 @@ export type Database = {
           user_ranking_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "user_answers_booklet_id_fkey"
+            columns: ["booklet_id"]
+            isOneToOne: false
+            referencedRelation: "exam_booklets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_answers_user_ranking_id_fkey"
             columns: ["user_ranking_id"]

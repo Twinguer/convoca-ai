@@ -33,6 +33,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
   const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
+  const [selectedBookletId, setSelectedBookletId] = useState<string>('');
 
   const {
     answers,
@@ -63,6 +64,31 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     getSectionQuestions,
     isHierarchical
   } = useAnswerSheet(concurso, rankingId);
+
+  // Fetch user ranking data
+  const {
+    data: userRankingData,
+    isLoading: isLoadingRanking
+  } = useQuery({
+    queryKey: ['user-ranking-detail', rankingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+      if (error) throw error;
+      return data || {};
+    },
+    staleTime: 1000
+  });
+
+  // Set selected booklet from user ranking data
+  useEffect(() => {
+    if (userRankingData?.selected_booklet && !selectedBookletId) {
+      setSelectedBookletId(userRankingData.selected_booklet);
+    }
+  }, [userRankingData, selectedBookletId]);
 
   // Verify if the official answer key exists
   useEffect(() => {
@@ -107,49 +133,35 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [concurso]);
 
-  // Fetch user ranking data
-  const {
-    data: userRankingData,
-    isLoading: isLoadingRanking
-  } = useQuery({
-    queryKey: ['user-ranking-detail', rankingId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-      if (error) throw error;
-      return data || {};
-    },
-    staleTime: 1000
-  });
-
   // Define editsLeft and canEdit variables
   const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
   const canEdit = editsLeft > 0;
 
-  // Fetch nullified questions
+  // Fetch nullified questions for the selected booklet
   const {
     data: nullifiedData,
     isLoading: isLoadingNullified,
     refetch: refetchNullified
   } = useQuery({
-      queryKey: ['nullified-questions', concurso.id],
+      queryKey: ['nullified-questions', concurso.id, selectedBookletId],
       queryFn: async () => {
+          if (!selectedBookletId) return [];
+          
           const { data, error } = await supabase
               .from('official_answer_weights')
               .select("question_number")
               .eq('concurso_id', concurso.id)
+              .eq('booklet_id', selectedBookletId)
               .eq('is_nullified', true);
           if (error) throw error;
           return data;
       },
+      enabled: !!selectedBookletId,
       staleTime: 30000,
       refetchOnWindowFocus: true
   });
 
-  // Import saveAnswers hook
+  // Import saveAnswers hook with booklet support
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -163,7 +175,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy2Score,
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0,
-    nullifiedQuestions
+    nullifiedQuestions,
+    selectedBookletId // Passar o caderno selecionado
   });
 
   // Set initial subjective scores from user ranking data
@@ -202,6 +215,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const handleSaveAnswers = async () => {
     if (!concurso?.id) {
       setError("ID do concurso não encontrado");
+      return;
+    }
+
+    if (!selectedBookletId) {
+      setError("É necessário selecionar um caderno de prova antes de salvar as respostas");
       return;
     }
 
@@ -266,6 +284,21 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
     setter(numberValue);
   };
+
+  // Show warning if no booklet is selected
+  if (!selectedBookletId && !isLoadingRanking) {
+    return (
+      <Card className="shadow-lg">
+        <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
+          <AlertTriangle className="h-8 w-8 text-amber-500" />
+          <h3 className="text-lg font-semibold">Caderno não selecionado</h3>
+          <p className="text-center text-gray-600">
+            É necessário selecionar um caderno de prova antes de preencher o cartão de respostas.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoadingRanking || (checkingOfficialAnswers && !missingOfficialAnswers)) {
     return <Card>
@@ -370,7 +403,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   return (
     <Card className="shadow-lg">
       <CardHeader className="bg-emerald-50 border-b">
-        <CardTitle className="text-xl md:text-2xl">Cartão de Respostas - {concurso.titulo}</CardTitle>
+        <CardTitle className="text-xl md:text-2xl">
+          Cartão de Respostas - {concurso.titulo}
+          {selectedBookletId && (
+            <span className="text-sm font-normal text-gray-600 ml-2">
+              (Caderno: {userRankingData?.selected_booklet ? 'Selecionado' : 'Não informado'})
+            </span>
+          )}
+        </CardTitle>
         <CardDescription>
           {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
             <div className="text-sm font-medium text-emerald-700 mt-2">

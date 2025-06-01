@@ -51,18 +51,23 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
     console.log(`Gabarito anterior do caderno ${bookletId} removido, inserindo novo...`);
     
     // Inserir novo gabarito para este caderno
-    const { data, error } = await supabase
-      .from('official_answer_weights')
-      .insert(answerKeyData);
-    
-    if (error) {
-      console.error('Erro ao inserir gabarito do caderno:', error);
-      return { success: false, error: error.message };
+    if (answerKeyData.length > 0) {
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .insert(answerKeyData);
+      
+      if (error) {
+        console.error('Erro ao inserir gabarito do caderno:', error);
+        return { success: false, error: error.message };
+      }
+      
+      const insertedCount = Array.isArray(data) ? data.length : answerKeyData.length;
+      console.log(`Gabarito do caderno ${bookletId} salvo com sucesso:`, insertedCount, 'questões');
+      return { success: true, data: data || [] };
+    } else {
+      console.log(`Nenhuma questão para inserir no caderno ${bookletId}`);
+      return { success: true, data: [] };
     }
-    
-    const insertedCount = Array.isArray(data) ? data.length : answerKeyData.length;
-    console.log(`Gabarito do caderno ${bookletId} salvo com sucesso:`, insertedCount, 'questões');
-    return { success: true, data: data };
   } catch (error: any) {
     console.error('Erro no saveBookletAnswerKey:', error);
     return { success: false, error: error.message || String(error) };

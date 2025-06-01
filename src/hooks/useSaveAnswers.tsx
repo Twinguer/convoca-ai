@@ -18,6 +18,7 @@ interface UseSaveAnswersProps {
   caseStudy3Score?: number | null;
   editCount: number;
   nullifiedQuestions?: Set<number>;
+  selectedBookletId?: string; // Novo parâmetro para o caderno selecionado
 }
 
 export const useSaveAnswers = ({
@@ -33,7 +34,8 @@ export const useSaveAnswers = ({
   caseStudy2Score,
   caseStudy3Score,
   editCount,
-  nullifiedQuestions = new Set()
+  nullifiedQuestions = new Set(),
+  selectedBookletId
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
 
@@ -49,6 +51,12 @@ export const useSaveAnswers = ({
         return;
       }
 
+      // Verificar se um caderno foi selecionado
+      if (!selectedBookletId) {
+        setError("É necessário selecionar um caderno de prova antes de salvar as respostas.");
+        return;
+      }
+
       // Preparar os dados de respostas para enviar - garantindo que questionNumber seja número
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber, 10);
@@ -58,6 +66,7 @@ export const useSaveAnswers = ({
           questionNumber: qNum,
           answer,
           sectionType,
+          bookletId: selectedBookletId // Adicionar o ID do caderno
         };
       });
       
@@ -73,7 +82,8 @@ export const useSaveAnswers = ({
             answersArray.push({
               questionNumber,
               answer: defaultAnswer,
-              sectionType
+              sectionType,
+              bookletId: selectedBookletId
             });
           }
         });
@@ -81,18 +91,14 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
+      console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
       console.log('[useSaveAnswers] Estrutura das respostas:', answersArray.slice(0, 3));
-      console.log('[useSaveAnswers] Pontuações subjetivas:', {
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score
-      });
 
-      // Chamar a função RPC centralizada com a ordem correta dos parâmetros
-      const { data, error } = await supabase.rpc('save_user_answers_and_calculate_scores', {
+      // Chamar a função RPC centralizada
+      const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
+        p_booklet_id: selectedBookletId,
         p_answers: answersArray,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
