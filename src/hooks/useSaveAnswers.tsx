@@ -18,7 +18,7 @@ interface UseSaveAnswersProps {
   caseStudy3Score?: number | null;
   editCount: number;
   nullifiedQuestions?: Set<number>;
-  selectedBookletId?: string; // Novo parâmetro para o caderno selecionado
+  selectedBookletId?: string;
 }
 
 export const useSaveAnswers = ({
@@ -57,7 +57,7 @@ export const useSaveAnswers = ({
         return;
       }
 
-      // Preparar os dados de respostas para enviar - garantindo que questionNumber seja número
+      // Preparar os dados de respostas para enviar
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber, 10);
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
@@ -66,16 +66,14 @@ export const useSaveAnswers = ({
           questionNumber: qNum,
           answer,
           sectionType,
-          bookletId: selectedBookletId // Adicionar o ID do caderno
+          bookletId: selectedBookletId
         };
       });
       
-      // Adicionar todas as questões anuladas com uma resposta padrão (se ainda não existirem na lista de respostas)
+      // Adicionar todas as questões anuladas com uma resposta padrão
       if (nullifiedQuestions && nullifiedQuestions.size > 0) {
         nullifiedQuestions.forEach(questionNumber => {
-          // Verificar se a questão anulada já tem uma resposta
           if (!answers[questionNumber]) {
-            // Adicionar uma resposta padrão para questões anuladas ("A" ou "C" dependendo do tipo de prova)
             const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
             const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
             
@@ -92,9 +90,8 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Iniciando salvamento via RPC');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
-      console.log('[useSaveAnswers] Estrutura das respostas:', answersArray.slice(0, 3));
 
-      // Chamar a função RPC centralizada
+      // Chamar a função RPC com os parâmetros corretos
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -118,7 +115,6 @@ export const useSaveAnswers = ({
         throw new Error(data.error || "Erro ao salvar respostas");
       }
 
-      // Atualizar estado da UI
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
@@ -126,7 +122,6 @@ export const useSaveAnswers = ({
         duration: 5000
       });
 
-      // Chamar callback de sucesso
       onSuccess();
     } catch (error: any) {
       console.error('[useSaveAnswers] Erro ao salvar respostas:', error);

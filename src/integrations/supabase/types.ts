@@ -1074,6 +1074,20 @@ export type Database = {
         }
         Returns: Json
       }
+      save_user_answers_with_booklet: {
+        Args: {
+          p_ranking_id: string
+          p_concurso_id: string
+          p_booklet_id: string
+          p_answers: Json
+          p_discursive_score?: number
+          p_case_study_1_score?: number
+          p_case_study_2_score?: number
+          p_case_study_3_score?: number
+          p_current_edit_count?: number
+        }
+        Returns: Json
+      }
       update_answer_with_weight: {
         Args:
           | {

@@ -83,6 +83,23 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     staleTime: 1000
   });
 
+  // Fetch exam booklets for this concurso
+  const {
+    data: examBooklets,
+    isLoading: isLoadingBooklets
+  } = useQuery({
+    queryKey: ['exam-booklets', concurso.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', concurso.id)
+        .order('display_order');
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   // Set selected booklet from user ranking data
   useEffect(() => {
     if (userRankingData?.selected_booklet && !selectedBookletId) {
@@ -285,6 +302,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setter(numberValue);
   };
 
+  // Get booklet name
+  const getBookletName = () => {
+    if (!selectedBookletId || !examBooklets) return 'Não informado';
+    const booklet = examBooklets.find(b => b.id === selectedBookletId);
+    return booklet?.name || 'Não informado';
+  };
+
   // Show warning if no booklet is selected
   if (!selectedBookletId && !isLoadingRanking) {
     return (
@@ -300,7 +324,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     );
   }
 
-  if (isLoadingRanking || (checkingOfficialAnswers && !missingOfficialAnswers)) {
+  if (isLoadingRanking || isLoadingBooklets || (checkingOfficialAnswers && !missingOfficialAnswers)) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
@@ -405,23 +429,26 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       <CardHeader className="bg-emerald-50 border-b">
         <CardTitle className="text-xl md:text-2xl">
           Cartão de Respostas - {concurso.titulo}
-          {selectedBookletId && (
-            <span className="text-sm font-normal text-gray-600 ml-2">
-              (Caderno: {userRankingData?.selected_booklet ? 'Selecionado' : 'Não informado'})
-            </span>
-          )}
         </CardTitle>
         <CardDescription>
-          {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
-            <div className="text-sm font-medium text-emerald-700 mt-2">
-              Edições disponíveis: {editsLeft} de 5
-              {!canEdit && (
-                <span className="text-destructive ml-2">
-                  (Você atingiu o limite de edições permitidas)
-                </span>
-              )}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">Caderno selecionado:</span>
+              <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-md font-medium">
+                {getBookletName()}
+              </span>
             </div>
-          )}
+            {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
+              <div className="text-sm font-medium text-emerald-700">
+                Edições disponíveis: {editsLeft} de 5
+                {!canEdit && (
+                  <span className="text-destructive ml-2">
+                    (Você atingiu o limite de edições permitidas)
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </CardDescription>
       </CardHeader>
 
