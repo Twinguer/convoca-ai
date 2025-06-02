@@ -57,7 +57,7 @@ export const useSaveAnswers = ({
         return;
       }
 
-      // Preparar os dados de respostas para enviar
+      // Preparar os dados de respostas para enviar usando estrutura JSONB
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber, 10);
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
@@ -66,7 +66,12 @@ export const useSaveAnswers = ({
           questionNumber: qNum,
           answer,
           sectionType,
-          bookletId: selectedBookletId
+          bookletId: selectedBookletId,
+          // Estrutura JSONB para flexibilidade futura
+          answerData: {
+            objective_answer: answer,
+            timestamp: new Date().toISOString()
+          }
         };
       });
       
@@ -81,17 +86,22 @@ export const useSaveAnswers = ({
               questionNumber,
               answer: defaultAnswer,
               sectionType,
-              bookletId: selectedBookletId
+              bookletId: selectedBookletId,
+              answerData: {
+                objective_answer: defaultAnswer,
+                timestamp: new Date().toISOString(),
+                nullified_default: true
+              }
             });
           }
         });
       }
 
-      console.log('[useSaveAnswers] Iniciando salvamento via RPC');
+      console.log('[useSaveAnswers] Iniciando salvamento via RPC com estrutura JSONB');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
 
-      // Chamar a função RPC com os parâmetros corretos
+      // Chamar a função RPC atualizada que usa JSONB
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
@@ -118,7 +128,7 @@ export const useSaveAnswers = ({
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada.",
+        description: "Sua pontuação foi recalculada usando a nova estrutura escalável.",
         duration: 5000
       });
 

@@ -1,105 +1,166 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
-/**
- * Função para obter o gabarito de um concurso por caderno
- */
-export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: string) => {
-  try {
-    console.log('Buscando gabarito para caderno:', bookletId, 'concurso:', concursoId);
+export const answerKeyService = {
+  async saveAnswerKey(concursoId: string, answers: Record<string, any>) {
+    console.log('[answerKeyService] Saving answer key for concurso:', concursoId);
     
-    const { data, error } = await supabase
-      .from('official_answer_weights')
-      .select('*')
-      .eq('concurso_id', concursoId)
-      .eq('booklet_id', bookletId)
-      .order('question_number');
+    try {
+      // Delete existing answer keys for this concurso
+      const { error: deleteError } = await supabase
+        .from('official_answer_weights')
+        .delete()
+        .eq('concurso_id', concursoId);
 
-    if (error) {
-      console.error('Erro ao buscar gabarito do caderno:', error);
-      throw error;
-    }
-    
-    console.log('Gabarito do caderno encontrado:', data?.length || 0, 'questões');
-    return { success: true, data: data || [] };
-  } catch (error: any) {
-    console.error('Error retrieving answer key for booklet:', error);
-    return { success: false, error: error.message || String(error) };
-  }
-};
+      if (deleteError) {
+        console.error('[answerKeyService] Error deleting existing answers:', deleteError);
+        throw deleteError;
+      }
 
-/**
- * Função para salvar gabarito por caderno específico
- */
-export const saveBookletAnswerKey = async (concursoId: string, bookletId: string, answerKeyData: any[]) => {
-  try {
-    console.log(`Salvando gabarito do caderno ${bookletId} com ${answerKeyData.length} questões`);
-    
-    // Deletar gabarito existente para este caderno específico
-    const { error: deleteError } = await supabase
-      .from('official_answer_weights')
-      .delete()
-      .eq('concurso_id', concursoId)
-      .eq('booklet_id', bookletId);
-    
-    if (deleteError) {
-      console.error('Erro ao deletar gabarito existente do caderno:', deleteError);
-      return { success: false, error: deleteError.message };
-    }
-    
-    console.log(`Gabarito anterior do caderno ${bookletId} removido, inserindo novo...`);
-    
-    // Inserir novo gabarito para este caderno
-    if (answerKeyData.length > 0) {
+      // Prepare new answer key data using JSONB structure
+      const answerKeyData = Object.entries(answers).map(([questionKey, answerData]) => {
+        const questionNumber = parseInt(questionKey.replace('questao', ''));
+        
+        return {
+          concurso_id: concursoId,
+          question_number: questionNumber,
+          correct_answer: answerData.resposta, // Keep for compatibility
+          answer_data: {
+            correct_answer: answerData.resposta,
+            explanation: answerData.explicacao || null
+          },
+          weight: answerData.peso || 1,
+          section_type: answerData.secao || 'basic',
+          is_nullified: answerData.anulada || false,
+          answer_format: 'OBJECTIVE',
+          question_type: 'MULTIPLE_CHOICE'
+        };
+      });
+
+      console.log('[answerKeyService] Inserting answer key data:', answerKeyData);
+
+      // Insert new answer keys
       const { data, error } = await supabase
         .from('official_answer_weights')
-        .insert(answerKeyData);
-      
+        .insert(answerKeyData)
+        .select();
+
       if (error) {
-        console.error('Erro ao inserir gabarito do caderno:', error);
-        return { success: false, error: error.message };
+        console.error('[answerKeyService] Error inserting answer keys:', error);
+        throw error;
       }
-      
-      const insertedCount = Array.isArray(data) ? data.length : answerKeyData.length;
-      console.log(`Gabarito do caderno ${bookletId} salvo com sucesso:`, insertedCount, 'questões');
+
+      console.log('[answerKeyService] Answer key saved successfully');
       return { success: true, data: data || [] };
-    } else {
-      console.log(`Nenhuma questão para inserir no caderno ${bookletId}`);
-      return { success: true, data: [] };
+    } catch (error) {
+      console.error('[answerKeyService] Error in saveAnswerKey:', error);
+      throw error;
     }
-  } catch (error: any) {
-    console.error('Erro no saveBookletAnswerKey:', error);
-    return { success: false, error: error.message || String(error) };
-  }
-};
+  },
 
-/**
- * Função para obter o gabarito de um concurso (todos os cadernos)
- */
-export const getAnswerKey = async (concursoId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('official_answer_weights')
-      .select('*')
-      .eq('concurso_id', concursoId)
-      .order('booklet_id, question_number');
-
-    if (error) throw error;
+  async getAnswerKey(concursoId: string, bookletId?: string) {
+    console.log('[answerKeyService] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
     
-    return { success: true, data: data || [] };
-  } catch (error: any) {
-    console.error('Error retrieving answer key:', error);
-    return { success: false, error: error.message || String(error) };
+    try {
+      let query = supabase
+        .from('official_answer_weights')
+        .select('*')
+        .eq('concurso_id', concursoId)
+        .order('question_number');
+
+      if (bookletId) {
+        query = query.eq('booklet_id', bookletId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[answerKeyService] Error fetching answer key:', error);
+        throw error;
+      }
+
+      // Transform data to use JSONB structure with fallback
+      const transformedData = (data || []).reduce((acc: Record<string, any>, item: any) => {
+        const questionKey = `questao${item.question_number}`;
+        
+        // Use JSONB structure with fallback to old columns
+        const correctAnswer = item.answer_data?.correct_answer || item.correct_answer;
+        const explanation = item.answer_data?.explanation || null;
+        
+        acc[questionKey] = {
+          resposta: correctAnswer,
+          peso: item.weight || 1,
+          secao: item.section_type || 'basic',
+          anulada: item.is_nullified || false,
+          explicacao: explanation
+        };
+        
+        return acc;
+      }, {});
+
+      console.log('[answerKeyService] Answer key fetched successfully');
+      return transformedData;
+    } catch (error) {
+      console.error('[answerKeyService] Error in getAnswerKey:', error);
+      throw error;
+    }
+  },
+
+  async saveBookletAnswerKey(concursoId: string, bookletId: string, answers: Record<string, any>) {
+    console.log('[answerKeyService] Saving booklet answer key for concurso:', concursoId, 'booklet:', bookletId);
+    
+    try {
+      // Delete existing answer keys for this concurso and booklet
+      const { error: deleteError } = await supabase
+        .from('official_answer_weights')
+        .delete()
+        .eq('concurso_id', concursoId)
+        .eq('booklet_id', bookletId);
+
+      if (deleteError) {
+        console.error('[answerKeyService] Error deleting existing booklet answers:', deleteError);
+        throw deleteError;
+      }
+
+      // Prepare new answer key data using JSONB structure
+      const answerKeyData = Object.entries(answers).map(([questionKey, answerData]) => {
+        const questionNumber = parseInt(questionKey.replace('questao', ''));
+        
+        return {
+          concurso_id: concursoId,
+          booklet_id: bookletId,
+          question_number: questionNumber,
+          correct_answer: answerData.resposta, // Keep for compatibility
+          answer_data: {
+            correct_answer: answerData.resposta,
+            explanation: answerData.explicacao || null
+          },
+          weight: answerData.peso || 1,
+          section_type: answerData.secao || 'basic',
+          is_nullified: answerData.anulada || false,
+          answer_format: 'OBJECTIVE',
+          question_type: 'MULTIPLE_CHOICE'
+        };
+      });
+
+      console.log('[answerKeyService] Inserting booklet answer key data:', answerKeyData);
+
+      // Insert new answer keys
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .insert(answerKeyData)
+        .select();
+
+      if (error) {
+        console.error('[answerKeyService] Error inserting booklet answer keys:', error);
+        throw error;
+      }
+
+      console.log('[answerKeyService] Booklet answer key saved successfully');
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('[answerKeyService] Error in saveBookletAnswerKey:', error);
+      throw error;
+    }
   }
 };
-
-// Exportar os métodos como um objeto de serviço
-export const answerKeyService = {
-  getAnswerKeyForBooklet,
-  getAnswerKey,
-  saveBookletAnswerKey
-};
-
-// Este export default é necessário para compatibilidade com imports existentes
-export default answerKeyService;

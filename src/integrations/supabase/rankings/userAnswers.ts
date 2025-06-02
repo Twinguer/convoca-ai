@@ -11,7 +11,7 @@ export const saveUserAnswers = async (
   return true;
 };
 
-// Função para buscar as respostas de um usuário
+// Função para buscar as respostas de um usuário usando nova estrutura JSONB
 export const fetchUserAnswers = async (rankingId: string) => {
   try {
     const { data, error } = await supabase
@@ -21,8 +21,20 @@ export const fetchUserAnswers = async (rankingId: string) => {
       
     if (error) throw error;
     
-    // No need to convert question_number as it's now stored as integer in the database
-    return data || [];
+    // Process answers using new JSONB structure with fallback
+    const processedAnswers = (data || []).map((item: any) => ({
+      ...item,
+      // Prioritize JSONB structure, fallback to old column
+      answer: item.answers_data?.objective_answer || item.answer,
+      section_type: item.section_type || (
+        item.is_basic_knowledge ? 'basic' :
+        item.is_specific_1 ? 'specific1' :
+        item.is_specific_2 ? 'specific2' :
+        item.is_specific_3 ? 'specific3' : 'basic'
+      )
+    }));
+    
+    return processedAnswers;
   } catch (error) {
     console.error('[fetchUserAnswers] Erro ao buscar respostas:', error);
     return [];

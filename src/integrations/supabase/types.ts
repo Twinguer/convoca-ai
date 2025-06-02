@@ -431,6 +431,8 @@ export type Database = {
       }
       official_answer_weights: {
         Row: {
+          answer_data: Json | null
+          answer_format: string | null
           booklet_id: string | null
           concurso_id: string
           correct_answer: string
@@ -447,6 +449,8 @@ export type Database = {
           weight: number
         }
         Insert: {
+          answer_data?: Json | null
+          answer_format?: string | null
           booklet_id?: string | null
           concurso_id: string
           correct_answer: string
@@ -463,6 +467,8 @@ export type Database = {
           weight?: number
         }
         Update: {
+          answer_data?: Json | null
+          answer_format?: string | null
           booklet_id?: string | null
           concurso_id?: string
           correct_answer?: string
@@ -608,6 +614,8 @@ export type Database = {
       user_answers: {
         Row: {
           answer: string | null
+          answer_format: string | null
+          answers_data: Json | null
           booklet_id: string | null
           id: number
           is_basic_knowledge: boolean | null
@@ -615,10 +623,13 @@ export type Database = {
           is_specific_2: boolean | null
           is_specific_3: boolean | null
           question_number: number | null
+          section_type: string | null
           user_ranking_id: string | null
         }
         Insert: {
           answer?: string | null
+          answer_format?: string | null
+          answers_data?: Json | null
           booklet_id?: string | null
           id?: number
           is_basic_knowledge?: boolean | null
@@ -626,10 +637,13 @@ export type Database = {
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
           question_number?: number | null
+          section_type?: string | null
           user_ranking_id?: string | null
         }
         Update: {
           answer?: string | null
+          answer_format?: string | null
+          answers_data?: Json | null
           booklet_id?: string | null
           id?: number
           is_basic_knowledge?: boolean | null
@@ -637,6 +651,7 @@ export type Database = {
           is_specific_2?: boolean | null
           is_specific_3?: boolean | null
           question_number?: number | null
+          section_type?: string | null
           user_ranking_id?: string | null
         }
         Relationships: [
@@ -1024,6 +1039,10 @@ export type Database = {
           score: number
         }[]
       }
+      get_user_answers_jsonb: {
+        Args: { p_ranking_id: string; p_booklet_id?: string }
+        Returns: Json
+      }
       is_candidate_classified: {
         Args: { p_ranking_id: string; p_concurso_id: string }
         Returns: boolean
@@ -1035,6 +1054,10 @@ export type Database = {
       manage_question_blocks: {
         Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
         Returns: Json
+      }
+      migrate_existing_answers_to_jsonb: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
