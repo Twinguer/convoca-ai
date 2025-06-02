@@ -106,7 +106,7 @@ export const answerKeyService = {
     }
   },
 
-  async saveBookletAnswerKey(concursoId: string, bookletId: string, answers: Record<string, any>) {
+  async saveBookletAnswerKey(concursoId: string, bookletId: string, answers: any[]) {
     console.log('[answerKeyService] Saving booklet answer key for concurso:', concursoId, 'booklet:', bookletId);
     
     try {
@@ -122,33 +122,12 @@ export const answerKeyService = {
         throw deleteError;
       }
 
-      // Prepare new answer key data using JSONB structure
-      const answerKeyData = Object.entries(answers).map(([questionKey, answerData]) => {
-        const questionNumber = parseInt(questionKey.replace('questao', ''));
-        
-        return {
-          concurso_id: concursoId,
-          booklet_id: bookletId,
-          question_number: questionNumber,
-          correct_answer: answerData.resposta, // Keep for compatibility
-          answer_data: {
-            correct_answer: answerData.resposta,
-            explanation: answerData.explicacao || null
-          },
-          weight: answerData.peso || 1,
-          section_type: answerData.secao || 'basic',
-          is_nullified: answerData.anulada || false,
-          answer_format: 'OBJECTIVE',
-          question_type: 'MULTIPLE_CHOICE'
-        };
-      });
+      console.log('[answerKeyService] Inserting booklet answer key data:', answers);
 
-      console.log('[answerKeyService] Inserting booklet answer key data:', answerKeyData);
-
-      // Insert new answer keys
+      // Insert new answer keys directly from the array format
       const { data, error } = await supabase
         .from('official_answer_weights')
-        .insert(answerKeyData)
+        .insert(answers)
         .select();
 
       if (error) {
@@ -160,7 +139,34 @@ export const answerKeyService = {
       return { success: true, data: data || [] };
     } catch (error) {
       console.error('[answerKeyService] Error in saveBookletAnswerKey:', error);
-      throw error;
+      return { success: false, error: error.message };
+    }
+  },
+
+  async getAnswerKeyForBooklet(concursoId: string, bookletId: string) {
+    console.log('[answerKeyService] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
+    
+    try {
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .select('*')
+        .eq('concurso_id', concursoId)
+        .eq('booklet_id', bookletId)
+        .order('question_number');
+
+      if (error) {
+        console.error('[answerKeyService] Error fetching booklet answer key:', error);
+        throw error;
+      }
+
+      console.log('[answerKeyService] Booklet answer key fetched successfully');
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('[answerKeyService] Error in getAnswerKeyForBooklet:', error);
+      return { success: false, error: error.message };
     }
   }
 };
+
+// Export individual functions for easier importing
+export const { saveAnswerKey, getAnswerKey, saveBookletAnswerKey, getAnswerKeyForBooklet } = answerKeyService;

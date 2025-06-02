@@ -90,7 +90,7 @@ export const useSaveAnswers = ({
               answerData: {
                 objective_answer: defaultAnswer,
                 timestamp: new Date().toISOString(),
-                nullified_default: true
+                is_nullified_default: true
               }
             });
           }
