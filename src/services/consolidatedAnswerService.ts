@@ -131,7 +131,7 @@ export const consolidatedAnswerService = {
       let totalAnswers = 0;
       const bookletCount = Object.keys(consolidatedData.booklets || {}).length;
 
-      // Calcular total de respostas corrigindo o tipo
+      // Calcular total de respostas
       if (consolidatedData.booklets) {
         Object.values(consolidatedData.booklets).forEach((booklet) => {
           const bookletData = booklet as BookletData;

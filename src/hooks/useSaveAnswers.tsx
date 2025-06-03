@@ -21,7 +21,7 @@ interface UseSaveAnswersProps {
   selectedBookletId?: string;
 }
 
-// Interface para dados de resposta com campo nullified_default
+// Interface para dados de resposta
 interface AnswerData {
   objective_answer: string;
   timestamp: string;
@@ -52,7 +52,7 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Verificar se o usuário já atingiu o limite de edições (agora 5)
+      // Verificar se o usuário já atingiu o limite de edições (5)
       if (editCount >= 5) {
         setError("Você já atingiu o limite de 5 edições permitidas para este cartão de respostas.");
         return;
@@ -64,7 +64,7 @@ export const useSaveAnswers = ({
         return;
       }
 
-      // Preparar os dados de respostas para enviar usando estrutura JSONB
+      // Preparar os dados de respostas para enviar
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber, 10);
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
@@ -107,15 +107,15 @@ export const useSaveAnswers = ({
         });
       }
 
-      console.log('[useSaveAnswers] Iniciando salvamento via RPC com estrutura JSONB');
+      console.log('[useSaveAnswers] Iniciando salvamento via RPC com estrutura consolidada');
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
 
-      // Chamar a função RPC atualizada que usa JSONB (convertendo booklet para UUID)
+      // Chamar a função RPC usando UUID para booklet_id
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
-        p_booklet_id: selectedBookletId, // Agora como UUID string
+        p_booklet_id: selectedBookletId, // Como UUID string
         p_answers: answersArray,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
@@ -138,7 +138,7 @@ export const useSaveAnswers = ({
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada usando a nova estrutura escalável.",
+        description: "Sua pontuação foi recalculada usando a estrutura consolidada.",
         duration: 5000
       });
 
