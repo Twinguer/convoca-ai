@@ -21,6 +21,13 @@ interface UseSaveAnswersProps {
   selectedBookletId?: string;
 }
 
+// Interface para dados de resposta com campo nullified_default
+interface AnswerData {
+  objective_answer: string;
+  timestamp: string;
+  nullified_default?: boolean;
+}
+
 export const useSaveAnswers = ({
   rankingId,
   concurso,
@@ -62,16 +69,17 @@ export const useSaveAnswers = ({
         const qNum = parseInt(questionNumber, 10);
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
         
+        const answerData: AnswerData = {
+          objective_answer: answer,
+          timestamp: new Date().toISOString()
+        };
+
         return {
           questionNumber: qNum,
           answer,
           sectionType,
           bookletId: selectedBookletId,
-          // Estrutura JSONB para flexibilidade futura
-          answerData: {
-            objective_answer: answer,
-            timestamp: new Date().toISOString()
-          }
+          answerData
         };
       });
       
@@ -82,16 +90,18 @@ export const useSaveAnswers = ({
             const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
             const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
             
+            const answerData: AnswerData = {
+              objective_answer: defaultAnswer,
+              timestamp: new Date().toISOString(),
+              nullified_default: true
+            };
+            
             answersArray.push({
               questionNumber,
               answer: defaultAnswer,
               sectionType,
               bookletId: selectedBookletId,
-              answerData: {
-                objective_answer: defaultAnswer,
-                timestamp: new Date().toISOString(),
-                nullified_default: true
-              }
+              answerData
             });
           }
         });
@@ -101,11 +111,11 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
 
-      // Chamar a função RPC atualizada que usa JSONB
+      // Chamar a função RPC atualizada que usa JSONB (convertendo booklet para UUID)
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
-        p_booklet_id: selectedBookletId,
+        p_booklet_id: selectedBookletId, // Agora como UUID string
         p_answers: answersArray,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
