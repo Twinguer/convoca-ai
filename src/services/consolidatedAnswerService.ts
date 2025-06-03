@@ -26,6 +26,14 @@ interface ConsolidatedAnswerData {
   };
 }
 
+interface BookletData {
+  answers: { [questionNumber: string]: string };
+  metadata: {
+    completed_at: string;
+    answer_count: number;
+  };
+}
+
 export const consolidatedAnswerService = {
   // Buscar dados consolidados de um ranking
   async getConsolidatedAnswers(rankingId: string): Promise<ConsolidatedAnswerData | null> {
@@ -34,6 +42,7 @@ export const consolidatedAnswerService = {
         .from('user_answers')
         .select('answers_data')
         .eq('user_ranking_id', rankingId)
+        .is('question_number', null)
         .single();
 
       if (error) {
@@ -41,7 +50,7 @@ export const consolidatedAnswerService = {
         return null;
       }
 
-      return data?.answers_data || null;
+      return data?.answers_data as ConsolidatedAnswerData || null;
     } catch (error) {
       console.error('[consolidatedAnswerService] Error:', error);
       return null;
@@ -54,7 +63,8 @@ export const consolidatedAnswerService = {
       const consolidatedData = await this.getConsolidatedAnswers(rankingId);
       
       if (consolidatedData?.booklets?.[bookletId]) {
-        return consolidatedData.booklets[bookletId].answers;
+        const bookletData = consolidatedData.booklets[bookletId] as BookletData;
+        return bookletData.answers || {};
       }
       
       return {};
@@ -118,12 +128,22 @@ export const consolidatedAnswerService = {
         };
       }
 
-      const totalAnswers = Object.values(consolidatedData.booklets || {})
-        .reduce((sum, booklet) => sum + Object.keys(booklet.answers || {}).length, 0);
+      let totalAnswers = 0;
+      const bookletCount = Object.keys(consolidatedData.booklets || {}).length;
+
+      // Calcular total de respostas corrigindo o tipo
+      if (consolidatedData.booklets) {
+        Object.values(consolidatedData.booklets).forEach((booklet) => {
+          const bookletData = booklet as BookletData;
+          if (bookletData.answers) {
+            totalAnswers += Object.keys(bookletData.answers).length;
+          }
+        });
+      }
 
       return {
         totalAnswers,
-        bookletCount: Object.keys(consolidatedData.booklets || {}).length,
+        bookletCount,
         editCount: consolidatedData.total_edit_count || 0,
         lastUpdated: consolidatedData.metadata?.last_updated || null,
         selectedBooklet: consolidatedData.selected_booklet || null
