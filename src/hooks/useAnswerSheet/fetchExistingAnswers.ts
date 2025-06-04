@@ -8,7 +8,6 @@ interface ConsolidatedAnswerData {
       metadata: {
         completed_at: string;
         answer_count: number;
-        booklet_name?: string;
       };
     };
   };
@@ -26,10 +25,9 @@ interface ConsolidatedAnswerData {
   };
 }
 
-export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?: string) => {
+export const fetchExistingAnswers = async (rankingId: string) => {
   try {
     console.log('[fetchExistingAnswers] Fetching consolidated answers for ranking ID:', rankingId);
-    console.log('[fetchExistingAnswers] Selected booklet ID:', selectedBookletId);
 
     // Buscar dados consolidados usando nova estrutura
     const { data, error } = await supabase
@@ -68,42 +66,17 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
     const consolidatedData = data.answers_data as ConsolidatedAnswerData;
     console.log('[fetchExistingAnswers] Retrieved consolidated data:', consolidatedData);
 
-    // Se há um caderno selecionado, buscar apenas suas respostas
-    let answers: { [key: number]: string } = {};
+    // Extrair respostas de todos os cadernos para compatibilidade
+    const answers: { [key: number]: string } = {};
     
-    if (selectedBookletId && consolidatedData.booklets?.[selectedBookletId]) {
-      // Buscar respostas apenas do caderno selecionado
-      const bookletAnswers = consolidatedData.booklets[selectedBookletId].answers;
-      if (bookletAnswers) {
-        Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
-          answers[parseInt(questionNum)] = answer;
-        });
-      }
-      console.log('[fetchExistingAnswers] Loaded answers for selected booklet:', selectedBookletId, answers);
-    } else if (!selectedBookletId && consolidatedData.selected_booklet) {
-      // Se não há caderno selecionado, mas há um caderno padrão, usar ele
-      const defaultBookletId = consolidatedData.selected_booklet;
-      if (consolidatedData.booklets?.[defaultBookletId]) {
-        const bookletAnswers = consolidatedData.booklets[defaultBookletId].answers;
-        if (bookletAnswers) {
-          Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
+    if (consolidatedData.booklets) {
+      Object.values(consolidatedData.booklets).forEach(booklet => {
+        if (booklet.answers) {
+          Object.entries(booklet.answers).forEach(([questionNum, answer]) => {
             answers[parseInt(questionNum)] = answer;
           });
         }
-        console.log('[fetchExistingAnswers] Loaded answers for default booklet:', defaultBookletId, answers);
-      }
-    } else {
-      // Fallback: combinar todas as respostas (para compatibilidade)
-      if (consolidatedData.booklets) {
-        Object.values(consolidatedData.booklets).forEach(booklet => {
-          if (booklet.answers) {
-            Object.entries(booklet.answers).forEach(([questionNum, answer]) => {
-              answers[parseInt(questionNum)] = answer;
-            });
-          }
-        });
-      }
-      console.log('[fetchExistingAnswers] Loaded combined answers from all booklets:', answers);
+      });
     }
 
     return {

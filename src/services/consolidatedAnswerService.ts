@@ -9,7 +9,6 @@ interface ConsolidatedAnswerData {
       metadata: {
         completed_at: string;
         answer_count: number;
-        booklet_name?: string;
       };
     };
   };
@@ -32,7 +31,6 @@ interface BookletData {
   metadata: {
     completed_at: string;
     answer_count: number;
-    booklet_name?: string;
   };
 }
 
@@ -62,42 +60,17 @@ export const consolidatedAnswerService = {
   // Buscar respostas de um caderno específico
   async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
     try {
-      console.log('[consolidatedAnswerService] Fetching booklet answers for:', { rankingId, bookletId });
+      const consolidatedData = await this.getConsolidatedAnswers(rankingId);
       
-      const { data, error } = await supabase.rpc('get_booklet_answers', {
-        p_ranking_id: rankingId,
-        p_booklet_id: bookletId
-      });
-      
-      if (error) {
-        console.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
-        return {};
+      if (consolidatedData?.booklets?.[bookletId]) {
+        const bookletData = consolidatedData.booklets[bookletId] as BookletData;
+        return bookletData.answers || {};
       }
       
-      console.log('[consolidatedAnswerService] Booklet answers:', data);
-      return data || {};
+      return {};
     } catch (error) {
       console.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
       return {};
-    }
-  },
-
-  // Listar todos os cadernos com respostas de um usuário
-  async getUserBookletsWithAnswers(rankingId: string): Promise<any[]> {
-    try {
-      const { data, error } = await supabase.rpc('get_user_booklets_with_answers', {
-        p_ranking_id: rankingId
-      });
-      
-      if (error) {
-        console.error('[consolidatedAnswerService] Error fetching user booklets:', error);
-        return [];
-      }
-      
-      return data || [];
-    } catch (error) {
-      console.error('[consolidatedAnswerService] Error fetching user booklets:', error);
-      return [];
     }
   },
 
@@ -114,13 +87,12 @@ export const consolidatedAnswerService = {
     editCount = 0
   ) {
     try {
-      console.log('[consolidatedAnswerService] Saving consolidated answers for booklet:', bookletId);
-      console.log('[consolidatedAnswerService] Total answers:', answers.length);
+      console.log('[consolidatedAnswerService] Saving consolidated answers via RPC');
       
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concursoId,
-        p_booklet_id: bookletId, // UUID do caderno específico
+        p_booklet_id: bookletId, // Agora aceita UUID diretamente
         p_answers: answers,
         p_discursive_score: discursiveScore,
         p_case_study_1_score: caseStudy1Score,
@@ -134,7 +106,6 @@ export const consolidatedAnswerService = {
         return { success: false, error: error.message };
       }
 
-      console.log('[consolidatedAnswerService] Successfully saved for booklet:', bookletId);
       console.log('[consolidatedAnswerService] RPC Response:', data);
       return data;
     } catch (error: any) {
@@ -153,23 +124,19 @@ export const consolidatedAnswerService = {
           totalAnswers: 0,
           bookletCount: 0,
           editCount: 0,
-          lastUpdated: null,
-          bookletBreakdown: {}
+          lastUpdated: null
         };
       }
 
       let totalAnswers = 0;
       const bookletCount = Object.keys(consolidatedData.booklets || {}).length;
-      const bookletBreakdown: { [key: string]: number } = {};
 
-      // Calcular total de respostas por caderno
+      // Calcular total de respostas
       if (consolidatedData.booklets) {
-        Object.entries(consolidatedData.booklets).forEach(([bookletId, booklet]) => {
+        Object.values(consolidatedData.booklets).forEach((booklet) => {
           const bookletData = booklet as BookletData;
           if (bookletData.answers) {
-            const answerCount = Object.keys(bookletData.answers).length;
-            totalAnswers += answerCount;
-            bookletBreakdown[bookletId] = answerCount;
+            totalAnswers += Object.keys(bookletData.answers).length;
           }
         });
       }
@@ -179,8 +146,7 @@ export const consolidatedAnswerService = {
         bookletCount,
         editCount: consolidatedData.total_edit_count || 0,
         lastUpdated: consolidatedData.metadata?.last_updated || null,
-        selectedBooklet: consolidatedData.selected_booklet || null,
-        bookletBreakdown
+        selectedBooklet: consolidatedData.selected_booklet || null
       };
     } catch (error) {
       console.error('[consolidatedAnswerService] Error getting stats:', error);
@@ -188,8 +154,7 @@ export const consolidatedAnswerService = {
         totalAnswers: 0,
         bookletCount: 0,
         editCount: 0,
-        lastUpdated: null,
-        bookletBreakdown: {}
+        lastUpdated: null
       };
     }
   }

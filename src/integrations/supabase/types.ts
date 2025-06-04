@@ -997,10 +997,6 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
-      get_booklet_answers: {
-        Args: { p_ranking_id: string; p_booklet_id: string }
-        Returns: Json
-      }
       get_candidate_subject_scores: {
         Args: { p_ranking_id: string }
         Returns: {
@@ -1053,10 +1049,6 @@ export type Database = {
       }
       get_user_answers_jsonb: {
         Args: { p_ranking_id: string; p_booklet_id?: string }
-        Returns: Json
-      }
-      get_user_booklets_with_answers: {
-        Args: { p_ranking_id: string }
         Returns: Json
       }
       is_candidate_classified: {

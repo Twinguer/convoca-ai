@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso, SectionType } from '@/types/concursos';
@@ -10,7 +11,7 @@ import { useScoreManagement } from './useScoreManagement';
 import { getSectionDisplayName, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './sectionUtils';
 
-export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
+export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,14 +71,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     }
   }, [concurso]);
 
-  // Fetch existing answers when rankingId or selectedBookletId changes
+  // Fetch existing answers when rankingId changes
   const { isLoading, refetch } = useQuery({
-    queryKey: ['user-answers', rankingId, selectedBookletId],
-    queryFn: () => fetchExistingAnswers(rankingId, selectedBookletId),
+    queryKey: ['user-answers', rankingId],
+    queryFn: () => fetchExistingAnswers(rankingId),
     enabled: !!rankingId,
     meta: {
       onSuccess: (data: any) => {
-        console.log('[useAnswerSheet] Query success, updating state with data:', data);
         if (data && data.answers) {
           setAnswers(data.answers);
           
@@ -98,14 +98,6 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
       }
     }
   });
-
-  // Clear answers when booklet changes
-  useEffect(() => {
-    if (selectedBookletId) {
-      console.log('[useAnswerSheet] Booklet changed to:', selectedBookletId, 'refetching answers');
-      refetch();
-    }
-  }, [selectedBookletId, refetch]);
 
   // Function to create the answer matrix for rendering
   const createAnswerMatrix = useCallback(() => {
@@ -175,7 +167,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     setCaseStudy3Score,
     isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
-    isHierarchical,
+    isHierarchical, // Export the hierarchical flag
     isLoading,
     refetchAnswers: refetch
   };
