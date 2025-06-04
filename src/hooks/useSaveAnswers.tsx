@@ -111,11 +111,11 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
 
-      // Chamar a função RPC usando UUID para booklet_id
+      // Chamar a função RPC usando UUID para booklet_id (ATUALIZADA)
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
-        p_booklet_id: selectedBookletId, // Como UUID string
+        p_booklet_id: selectedBookletId, // Agora passa diretamente como UUID
         p_answers: answersArray,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,

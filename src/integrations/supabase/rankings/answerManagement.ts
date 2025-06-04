@@ -2,89 +2,108 @@
 import { supabase } from '../client';
 import { getSectionTypeForQuestion, sanitizeSectionType } from './examStructure';
 
-// Função para salvar as respostas do usuário no banco de dados
+// FUNÇÃO ATUALIZADA PARA TRABALHAR COM DADOS CONSOLIDADOS
 export const saveUserAnswersData = async (
   rankingId: string,
   concursoId: string,
   answers: { questionNumber: number; answer: string }[]
 ) => {
   try {
-    // Carregue os dados do concurso para determinar as faixas das seções
+    console.log('[answerManagement] Redirecionando para estrutura consolidada...');
+    
+    // Carregar dados do concurso para determinar as faixas das seções
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select(`
-        *
-      `)
+      .select('*')
       .eq('id', concursoId)
       .single();
+    
     if (concursoError) throw concursoError;
 
-    // Preparar os dados de resposta com as marcações corretas de seção
-    const answersData = answers.map(a => {
+    // Preparar dados com estrutura consolidada
+    const answersArray = answers.map(a => {
       const qNum = a.questionNumber;
-      // Determinar o tipo de seção para esta questão
       const sectionType = getSectionTypeForQuestion(concurso, qNum);
       
-      // Mapear o tipo de seção para os campos do banco de dados
       return {
-        user_ranking_id: rankingId,
-        question_number: qNum,
+        questionNumber: qNum,
         answer: a.answer,
-        is_basic_knowledge: sectionType === 'basic',
-        is_specific_1: sectionType === 'specific1',
-        is_specific_2: sectionType === 'specific2',
-        is_specific_3: sectionType === 'specific3'
+        sectionType,
+        answerData: {
+          objective_answer: a.answer,
+          timestamp: new Date().toISOString()
+        }
       };
     });
     
-    console.log('Dados de respostas preparados para salvar:', answersData);
+    console.log('[answerManagement] Dados preparados para estrutura consolidada:', answersArray);
 
-    // Primeiro exclui todas as respostas existentes
-    const { error: deleteError } = await supabase
-      .from('user_answers')
-      .delete()
-      .eq('user_ranking_id', rankingId);
+    // Usar a nova função RPC consolidada
+    const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
+      p_ranking_id: rankingId,
+      p_concurso_id: concursoId,
+      p_booklet_id: 'default', // Caderno padrão para compatibilidade
+      p_answers: answersArray,
+      p_discursive_score: 0,
+      p_case_study_1_score: 0,
+      p_case_study_2_score: 0,
+      p_case_study_3_score: 0,
+      p_current_edit_count: 0
+    });
     
-    if (deleteError) {
-      console.error('Erro ao excluir respostas existentes:', deleteError);
-      throw deleteError;
+    if (error) {
+      console.error('[answerManagement] Erro na função RPC consolidada:', error);
+      throw error;
     }
     
-    console.log('Respostas anteriores excluídas com sucesso');
-    
-    // Insere novas respostas apenas se houver respostas para inserir
-    if (answersData.length > 0) {
-      const { error: insertError } = await supabase
-        .from('user_answers')
-        .insert(answersData);
-        
-      if (insertError) {
-        console.error('Erro ao inserir novas respostas:', insertError);
-        throw insertError;
-      }
-      
-      console.log('Novas respostas inseridas com sucesso');
-    }
-    
-    return answersData;
+    console.log('[answerManagement] Respostas salvas com sucesso via estrutura consolidada');
+    return answersArray;
   } catch (error: any) {
-    console.error('Erro ao salvar respostas do usuário:', error);
+    console.error('[answerManagement] Erro ao salvar respostas:', error);
     throw error;
   }
 };
 
-// Função para buscar as respostas de um usuário
+// Função para buscar respostas usando estrutura consolidada
 export const fetchUserAnswers = async (rankingId: string) => {
   try {
     const { data, error } = await supabase
       .from('user_answers')
-      .select('*')
-      .eq('user_ranking_id', rankingId);
+      .select('answers_data')
+      .eq('user_ranking_id', rankingId)
+      .is('question_number', null)
+      .single();
       
-    if (error) throw error;
-    return data || [];
+    if (error) {
+      console.error('[answerManagement] Error fetching consolidated answers:', error);
+      return [];
+    }
+    
+    if (!data?.answers_data) {
+      return [];
+    }
+    
+    // Converter estrutura consolidada para formato legado para compatibilidade
+    const consolidatedData = data.answers_data;
+    const legacyAnswers: any[] = [];
+    
+    if (consolidatedData.booklets) {
+      Object.values(consolidatedData.booklets).forEach((booklet: any) => {
+        if (booklet.answers) {
+          Object.entries(booklet.answers).forEach(([questionNum, answer]) => {
+            legacyAnswers.push({
+              user_ranking_id: rankingId,
+              question_number: parseInt(questionNum),
+              answer: answer
+            });
+          });
+        }
+      });
+    }
+    
+    return legacyAnswers;
   } catch (error) {
-    console.error('Error fetching user answers:', error);
+    console.error('[answerManagement] Error fetching user answers:', error);
     return [];
   }
 };

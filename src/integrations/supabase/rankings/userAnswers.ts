@@ -36,6 +36,7 @@ export const fetchUserAnswers = async (rankingId: string) => {
       .from('user_answers')
       .select('answers_data')
       .eq('user_ranking_id', rankingId)
+      .is('question_number', null)
       .single();
       
     if (error) {
@@ -96,7 +97,7 @@ export const fetchUserAnswersForBooklet = async (rankingId: string, bookletId: s
   }
 };
 
-// Função legada mantida para compatibilidade
+// Função legada mantida para compatibilidade - agora redireciona para consolidatedAnswerService
 export const saveUserAnswers = async (
   rankingId: string, 
   concursoId: string,

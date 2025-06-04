@@ -74,7 +74,7 @@ export const consolidatedAnswerService = {
     }
   },
 
-  // Salvar respostas usando a função RPC consolidada
+  // Salvar respostas usando a função RPC consolidada (ATUALIZADA PARA UUID)
   async saveConsolidatedAnswers(
     rankingId: string,
     concursoId: string,
@@ -92,7 +92,7 @@ export const consolidatedAnswerService = {
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concursoId,
-        p_booklet_id: bookletId,
+        p_booklet_id: bookletId, // Agora aceita UUID diretamente
         p_answers: answers,
         p_discursive_score: discursiveScore,
         p_case_study_1_score: caseStudy1Score,
