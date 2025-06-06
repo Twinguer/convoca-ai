@@ -37,7 +37,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       .is('question_number', null)
       .single();
       
-    if (error) {
+    if (error && error.code !== 'PGRST116') {
       console.error('[fetchExistingAnswers] Error:', error);
       return {
         answers: {},

@@ -76,24 +76,23 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     queryKey: ['user-answers', rankingId],
     queryFn: () => fetchExistingAnswers(rankingId),
     enabled: !!rankingId,
-    meta: {
-      onSuccess: (data: any) => {
-        if (data && data.answers) {
-          setAnswers(data.answers);
-          
-          // Também definir as pontuações subjetivas
-          if (data.discursiveScore !== undefined) {
-            setDiscursiveScore(data.discursiveScore);
-          }
-          if (data.caseStudy1Score !== undefined) {
-            setCaseStudy1Score(data.caseStudy1Score);
-          }
-          if (data.caseStudy2Score !== undefined) {
-            setCaseStudy2Score(data.caseStudy2Score);
-          }
-          if (data.caseStudy3Score !== undefined) {
-            setCaseStudy3Score(data.caseStudy3Score);
-          }
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    onSuccess: (data: any) => {
+      if (data && data.answers) {
+        setAnswers(data.answers);
+        
+        // Também definir as pontuações subjetivas
+        if (data.discursiveScore !== undefined) {
+          setDiscursiveScore(data.discursiveScore);
+        }
+        if (data.caseStudy1Score !== undefined) {
+          setCaseStudy1Score(data.caseStudy1Score);
+        }
+        if (data.caseStudy2Score !== undefined) {
+          setCaseStudy2Score(data.caseStudy2Score);
+        }
+        if (data.caseStudy3Score !== undefined) {
+          setCaseStudy3Score(data.caseStudy3Score);
         }
       }
     }
