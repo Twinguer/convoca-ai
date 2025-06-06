@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save, AlertTriangle, Check, HelpCircle, AlertCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
+import { Concurso, SectionType } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet';
@@ -14,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
 import { ExamTypeWarning } from './ExamTypeWarning';
+import { BookletSwitcher } from './BookletSwitcher';
 import { getDisciplines, isHierarchicalStructure, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCountUtils';
 import { toast } from 'sonner';
@@ -63,7 +63,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setCaseStudy3Score,
     isDiscursiveSection,
     getSectionQuestions,
-    isHierarchical
+    isHierarchical,
+    isLoading,
+    refetchAnswers
   } = useAnswerSheet(concurso, rankingId);
 
   // Fetch user ranking data
@@ -107,6 +109,19 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setSelectedBookletId(userRankingData.selected_booklet);
     }
   }, [userRankingData, selectedBookletId]);
+
+  // Handle booklet change from BookletSwitcher
+  const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
+    console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
+    console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
+    
+    setSelectedBookletId(newBookletId);
+    
+    // Atualizar as respostas no estado local através do refetch
+    await refetchAnswers();
+    
+    toast.success('Caderno alterado com sucesso. Respostas carregadas.');
+  };
 
   // Verify if the official answer key exists
   useEffect(() => {
@@ -211,7 +226,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
       setCaseStudy3Score(userRankingData.case_study_3_score);
     }
-  }, [userRankingData]);
+  }, [userRankingData, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 
   // Update nullified questions set
   useEffect(() => {
@@ -228,7 +243,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         setLastCheckedNullifiedCount(nullifiedSet.size);
       }
     }
-  }, [nullifiedData]);
+  }, [nullifiedData, lastCheckedNullifiedCount]);
 
   const handleSaveAnswers = async () => {
     if (!concurso?.id) {
@@ -342,7 +357,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   // Utility function to get all questions from all sections
   const getAllQuestionsFromAllSections = () => {
     const allQuestions = [];
-    let questionNumber = 1;
     
     // Iterate through all possible questions up to the total expected
     const totalQuestions = getTotalQuestions();
@@ -489,6 +503,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <AnswerSheetHeader concurso={concurso} getTotalQuestions={getTotalQuestions} />
 
         <ExamTypeWarning examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
+
+        {/* Booklet Switcher - NOVO */}
+        {examBooklets && examBooklets.length > 1 && selectedBookletId && (
+          <BookletSwitcher
+            booklets={examBooklets}
+            currentBookletId={selectedBookletId}
+            rankingId={rankingId}
+            onBookletChanged={handleBookletChanged}
+            disabled={isSaving}
+          />
+        )}
 
         {hasNullifiedQuestions && (
           <div className="bg-amber-50 border border-amber-200 rounded-md p-4">

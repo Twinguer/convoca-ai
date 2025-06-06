@@ -624,6 +624,7 @@ export type Database = {
           is_specific_3: boolean | null
           question_number: number | null
           section_type: string | null
+          updated_at: string | null
           user_ranking_id: string | null
         }
         Insert: {
@@ -638,6 +639,7 @@ export type Database = {
           is_specific_3?: boolean | null
           question_number?: number | null
           section_type?: string | null
+          updated_at?: string | null
           user_ranking_id?: string | null
         }
         Update: {
@@ -652,6 +654,7 @@ export type Database = {
           is_specific_3?: boolean | null
           question_number?: number | null
           section_type?: string | null
+          updated_at?: string | null
           user_ranking_id?: string | null
         }
         Relationships: [
@@ -1139,6 +1142,10 @@ export type Database = {
           p_case_study_3_score?: number
           p_current_edit_count?: number
         }
+        Returns: Json
+      }
+      switch_user_booklet: {
+        Args: { p_ranking_id: string; p_booklet_id: string }
         Returns: Json
       }
       update_answer_with_weight: {

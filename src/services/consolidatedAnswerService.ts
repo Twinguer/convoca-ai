@@ -9,6 +9,7 @@ interface ConsolidatedAnswerData {
       metadata: {
         completed_at: string;
         answer_count: number;
+        booklet_name?: string;
       };
     };
   };
@@ -31,6 +32,7 @@ interface BookletData {
   metadata: {
     completed_at: string;
     answer_count: number;
+    booklet_name?: string;
   };
 }
 
@@ -74,6 +76,34 @@ export const consolidatedAnswerService = {
     }
   },
 
+  // Trocar caderno usando a nova função RPC
+  async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
+    try {
+      console.log('[consolidatedAnswerService] Switching to booklet:', bookletId);
+      
+      const { data, error } = await supabase.rpc('switch_user_booklet', {
+        p_ranking_id: rankingId,
+        p_booklet_id: bookletId
+      });
+
+      if (error) {
+        console.error('[consolidatedAnswerService] Switch booklet error:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('[consolidatedAnswerService] Switch response:', data);
+      
+      return {
+        success: data?.success || false,
+        answers: data?.answers || {},
+        error: data?.success ? undefined : 'Falha ao trocar caderno'
+      };
+    } catch (error: any) {
+      console.error('[consolidatedAnswerService] Error switching booklet:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   // Salvar respostas usando a função RPC consolidada (ATUALIZADA PARA UUID)
   async saveConsolidatedAnswers(
     rankingId: string,
@@ -88,11 +118,13 @@ export const consolidatedAnswerService = {
   ) {
     try {
       console.log('[consolidatedAnswerService] Saving consolidated answers via RPC');
+      console.log('[consolidatedAnswerService] Booklet ID:', bookletId);
+      console.log('[consolidatedAnswerService] Answers count:', answers.length);
       
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concursoId,
-        p_booklet_id: bookletId, // Agora aceita UUID diretamente
+        p_booklet_id: bookletId, // UUID direto
         p_answers: answers,
         p_discursive_score: discursiveScore,
         p_case_study_1_score: caseStudy1Score,
@@ -114,8 +146,8 @@ export const consolidatedAnswerService = {
     }
   },
 
-  // Obter estatísticas de resposta
-  async getAnswerStats(rankingId: string) {
+  // Obter estatísticas de resposta por caderno
+  async getAnswerStatsByBooklet(rankingId: string) {
     try {
       const consolidatedData = await this.getConsolidatedAnswers(rankingId);
       
@@ -124,20 +156,28 @@ export const consolidatedAnswerService = {
           totalAnswers: 0,
           bookletCount: 0,
           editCount: 0,
-          lastUpdated: null
+          lastUpdated: null,
+          selectedBooklet: null,
+          bookletStats: {}
         };
       }
 
       let totalAnswers = 0;
       const bookletCount = Object.keys(consolidatedData.booklets || {}).length;
+      const bookletStats: Record<string, { answerCount: number; bookletName?: string; lastUpdate?: string }> = {};
 
-      // Calcular total de respostas
+      // Calcular estatísticas por caderno
       if (consolidatedData.booklets) {
-        Object.values(consolidatedData.booklets).forEach((booklet) => {
+        Object.entries(consolidatedData.booklets).forEach(([bookletId, booklet]) => {
           const bookletData = booklet as BookletData;
-          if (bookletData.answers) {
-            totalAnswers += Object.keys(bookletData.answers).length;
-          }
+          const answerCount = bookletData.answers ? Object.keys(bookletData.answers).length : 0;
+          totalAnswers += answerCount;
+          
+          bookletStats[bookletId] = {
+            answerCount,
+            bookletName: bookletData.metadata?.booklet_name,
+            lastUpdate: bookletData.metadata?.completed_at
+          };
         });
       }
 
@@ -146,7 +186,8 @@ export const consolidatedAnswerService = {
         bookletCount,
         editCount: consolidatedData.total_edit_count || 0,
         lastUpdated: consolidatedData.metadata?.last_updated || null,
-        selectedBooklet: consolidatedData.selected_booklet || null
+        selectedBooklet: consolidatedData.selected_booklet || null,
+        bookletStats
       };
     } catch (error) {
       console.error('[consolidatedAnswerService] Error getting stats:', error);
@@ -154,9 +195,22 @@ export const consolidatedAnswerService = {
         totalAnswers: 0,
         bookletCount: 0,
         editCount: 0,
-        lastUpdated: null
+        lastUpdated: null,
+        selectedBooklet: null,
+        bookletStats: {}
       };
     }
+  },
+
+  // Obter estatísticas de resposta (método legado)
+  async getAnswerStats(rankingId: string) {
+    const stats = await this.getAnswerStatsByBooklet(rankingId);
+    return {
+      totalAnswers: stats.totalAnswers,
+      bookletCount: stats.bookletCount,
+      editCount: stats.editCount,
+      lastUpdated: stats.lastUpdated
+    };
   }
 };
 

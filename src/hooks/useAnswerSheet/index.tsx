@@ -71,32 +71,36 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   }, [concurso]);
 
-  // Fetch existing answers when rankingId changes
-  const { isLoading, refetch } = useQuery({
+  // Fetch existing answers when rankingId changes - FIX: Use useEffect for onSuccess
+  const { data: existingAnswersData, isLoading, refetch } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: () => fetchExistingAnswers(rankingId),
     enabled: !!rankingId,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    onSuccess: (data: any) => {
-      if (data && data.answers) {
-        setAnswers(data.answers);
+  });
+
+  // Handle data loading with useEffect instead of onSuccess
+  useEffect(() => {
+    if (existingAnswersData) {
+      if (existingAnswersData.answers) {
+        setAnswers(existingAnswersData.answers);
         
         // Também definir as pontuações subjetivas
-        if (data.discursiveScore !== undefined) {
-          setDiscursiveScore(data.discursiveScore);
+        if (existingAnswersData.discursiveScore !== undefined) {
+          setDiscursiveScore(existingAnswersData.discursiveScore);
         }
-        if (data.caseStudy1Score !== undefined) {
-          setCaseStudy1Score(data.caseStudy1Score);
+        if (existingAnswersData.caseStudy1Score !== undefined) {
+          setCaseStudy1Score(existingAnswersData.caseStudy1Score);
         }
-        if (data.caseStudy2Score !== undefined) {
-          setCaseStudy2Score(data.caseStudy2Score);
+        if (existingAnswersData.caseStudy2Score !== undefined) {
+          setCaseStudy2Score(existingAnswersData.caseStudy2Score);
         }
-        if (data.caseStudy3Score !== undefined) {
-          setCaseStudy3Score(data.caseStudy3Score);
+        if (existingAnswersData.caseStudy3Score !== undefined) {
+          setCaseStudy3Score(existingAnswersData.caseStudy3Score);
         }
       }
     }
-  });
+  }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 
   // Function to create the answer matrix for rendering
   const createAnswerMatrix = useCallback(() => {
