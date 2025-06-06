@@ -71,7 +71,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   }, [concurso]);
 
-  // Fetch existing answers when rankingId changes - FIX: Use useEffect for onSuccess
+  // Fetch existing answers when rankingId changes
   const { data: existingAnswersData, isLoading, refetch } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: () => fetchExistingAnswers(rankingId),
