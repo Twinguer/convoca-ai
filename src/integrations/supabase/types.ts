@@ -976,6 +976,14 @@ export type Database = {
         Args: { p_user_ranking_id: string }
         Returns: number
       }
+      calculate_user_score_by_booklet: {
+        Args: {
+          p_ranking_id: string
+          p_concurso_id: string
+          p_booklet_id: string
+        }
+        Returns: Json
+      }
       calculate_user_score_realtime: {
         Args: { p_ranking_id: string }
         Returns: number

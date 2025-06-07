@@ -72,7 +72,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   }, [concurso]);
 
   // Fetch existing answers when rankingId changes
-  const { data: existingAnswersData, isLoading, refetch } = useQuery({
+  const { data: existingAnswersData, isLoading, refetch: refetchAnswers } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: () => fetchExistingAnswers(rankingId),
     enabled: !!rankingId,
@@ -171,8 +171,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
     isHierarchical, // Export the hierarchical flag
-    isLoading,
-    refetchAnswers: refetch
+    isLoading, // Adicionado para corrigir erro TS
+    refetchAnswers // Adicionado para corrigir erro TS
   };
 };
 

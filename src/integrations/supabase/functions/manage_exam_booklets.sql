@@ -107,7 +107,162 @@ BEGIN
 END;
 $$;
 
--- Função atualizada para salvar respostas sem chamar função inexistente
+-- Função atualizada para calcular pontuação por caderno específico
+CREATE OR REPLACE FUNCTION public.calculate_user_score_by_booklet(
+    p_ranking_id uuid,
+    p_concurso_id uuid,
+    p_booklet_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_consolidated_data JSONB;
+    v_booklet_key TEXT;
+    v_booklet_answers JSONB;
+    v_total_score NUMERIC := 0;
+    v_concurso RECORD;
+    v_discipline_scores JSONB := '{}';
+    v_weighted_discipline_scores JSONB := '{}';
+    v_answer_key TEXT;
+    v_user_answer TEXT;
+    v_question_num INTEGER;
+    v_weight NUMERIC;
+    v_section_type TEXT;
+    v_is_nullified BOOLEAN;
+    v_is_correct BOOLEAN;
+BEGIN
+    v_booklet_key := p_booklet_id::text;
+    
+    -- Buscar dados do concurso
+    SELECT * INTO v_concurso
+    FROM concursos
+    WHERE id = p_concurso_id;
+    
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Concurso não encontrado');
+    END IF;
+    
+    -- Buscar dados consolidados do usuário
+    SELECT answers_data INTO v_consolidated_data
+    FROM user_answers
+    WHERE user_ranking_id = p_ranking_id
+    AND question_number IS NULL;
+    
+    IF v_consolidated_data IS NULL THEN
+        RETURN jsonb_build_object('success', false, 'error', 'Nenhuma resposta encontrada');
+    END IF;
+    
+    -- Extrair respostas do caderno específico
+    v_booklet_answers := v_consolidated_data->'booklets'->v_booklet_key->'answers';
+    
+    IF v_booklet_answers IS NULL THEN
+        v_booklet_answers := '{}'::jsonb;
+    END IF;
+    
+    -- Percorrer todas as questões do gabarito oficial para este caderno
+    FOR v_question_num, v_answer_key, v_weight, v_section_type, v_is_nullified IN
+        SELECT 
+            question_number, 
+            correct_answer, 
+            COALESCE(weight, 1), 
+            COALESCE(section_type, 'basic'),
+            COALESCE(is_nullified, false)
+        FROM official_answer_weights
+        WHERE concurso_id = p_concurso_id
+        AND (booklet_id = p_booklet_id OR booklet_id IS NULL)
+    LOOP
+        -- Verificar se o usuário respondeu esta questão
+        IF v_booklet_answers ? v_question_num::text THEN
+            v_user_answer := v_booklet_answers->>v_question_num::text;
+            
+            -- Determinar se a resposta está correta
+            v_is_correct := v_is_nullified OR UPPER(TRIM(v_user_answer)) = UPPER(TRIM(v_answer_key));
+            
+            IF v_is_correct THEN
+                -- Adicionar à pontuação total
+                v_total_score := v_total_score + v_weight;
+                
+                -- Atualizar pontuação por disciplina
+                IF v_discipline_scores ? v_section_type THEN
+                    v_discipline_scores := jsonb_set(
+                        v_discipline_scores, 
+                        ARRAY[v_section_type], 
+                        to_jsonb((v_discipline_scores->>v_section_type)::numeric + 1)
+                    );
+                ELSE
+                    v_discipline_scores := jsonb_set(v_discipline_scores, ARRAY[v_section_type], to_jsonb(1));
+                END IF;
+                
+                -- Atualizar pontuação ponderada por disciplina
+                IF v_weighted_discipline_scores ? v_section_type THEN
+                    v_weighted_discipline_scores := jsonb_set(
+                        v_weighted_discipline_scores, 
+                        ARRAY[v_section_type], 
+                        to_jsonb((v_weighted_discipline_scores->>v_section_type)::numeric + v_weight)
+                    );
+                ELSE
+                    v_weighted_discipline_scores := jsonb_set(v_weighted_discipline_scores, ARRAY[v_section_type], to_jsonb(v_weight));
+                END IF;
+            END IF;
+        END IF;
+    END LOOP;
+    
+    -- Adicionar pontuações subjetivas se existirem
+    DECLARE
+        v_subjective_scores JSONB;
+        v_discursive_score NUMERIC := 0;
+        v_case_study_1_score NUMERIC := 0;
+        v_case_study_2_score NUMERIC := 0;
+        v_case_study_3_score NUMERIC := 0;
+    BEGIN
+        v_subjective_scores := v_consolidated_data->'subjective_scores';
+        
+        IF v_subjective_scores IS NOT NULL THEN
+            v_discursive_score := COALESCE((v_subjective_scores->>'discursive')::numeric, 0);
+            v_case_study_1_score := COALESCE((v_subjective_scores->>'case_study_1')::numeric, 0);
+            v_case_study_2_score := COALESCE((v_subjective_scores->>'case_study_2')::numeric, 0);
+            v_case_study_3_score := COALESCE((v_subjective_scores->>'case_study_3')::numeric, 0);
+            
+            -- Aplicar pesos às pontuações subjetivas
+            v_total_score := v_total_score + 
+                (v_discursive_score * COALESCE(v_concurso.discursive_weight, 1)) +
+                (v_case_study_1_score * COALESCE(v_concurso.case_study_1_weight, 1)) +
+                (v_case_study_2_score * COALESCE(v_concurso.case_study_2_weight, 1)) +
+                (v_case_study_3_score * COALESCE(v_concurso.case_study_3_weight, 1));
+        END IF;
+    END;
+    
+    -- Log da operação
+    INSERT INTO score_calculation_logs (
+        calculation_type,
+        calculation_details
+    ) VALUES (
+        'calculate_user_score_by_booklet',
+        jsonb_build_object(
+            'ranking_id', p_ranking_id,
+            'concurso_id', p_concurso_id,
+            'booklet_id', p_booklet_id,
+            'total_score', v_total_score,
+            'discipline_scores', v_discipline_scores,
+            'weighted_discipline_scores', v_weighted_discipline_scores,
+            'timestamp', now()
+        )
+    );
+    
+    RETURN jsonb_build_object(
+        'success', true,
+        'total_score', v_total_score,
+        'discipline_scores', v_discipline_scores,
+        'weighted_discipline_scores', v_weighted_discipline_scores,
+        'booklet_id', v_booklet_key,
+        'message', 'Pontuação calculada com sucesso para o caderno ' || v_booklet_key
+    );
+END;
+$$;
+
+-- Função atualizada para salvar respostas com cálculo automático por caderno
 CREATE OR REPLACE FUNCTION public.save_user_answers_with_booklet(
     p_ranking_id uuid,
     p_concurso_id uuid, 
@@ -129,6 +284,7 @@ DECLARE
     v_booklet_answers JSONB := '{}';
     v_answer RECORD;
     v_booklet_key TEXT;
+    v_calculation_result JSONB;
 BEGIN
     -- Verificar limite de edições
     IF p_current_edit_count >= 5 THEN
@@ -218,6 +374,9 @@ BEGIN
         answer_format = 'CONSOLIDATED',
         updated_at = now();
     
+    -- Calcular pontuação específica para este caderno
+    SELECT calculate_user_score_by_booklet(p_ranking_id, p_concurso_id, p_booklet_id) INTO v_calculation_result;
+    
     -- Atualizar user_rankings
     UPDATE user_rankings
     SET 
@@ -227,10 +386,13 @@ BEGIN
         case_study_2_score = p_case_study_2_score,
         case_study_3_score = p_case_study_3_score,
         selected_booklet = p_booklet_id,
+        score = COALESCE((v_calculation_result->>'total_score')::numeric, 0),
+        customDisciplineScores = COALESCE(v_calculation_result->'discipline_scores', '{}'::jsonb),
+        weightedCustomDisciplineScores = COALESCE(v_calculation_result->'weighted_discipline_scores', '{}'::jsonb),
         updated_at = now()
     WHERE id = p_ranking_id;
     
-    -- Log da operação (removido a chamada da função inexistente)
+    -- Log da operação
     INSERT INTO score_calculation_logs (
         calculation_type,
         calculation_details
@@ -241,6 +403,7 @@ BEGIN
             'concurso_id', p_concurso_id,
             'booklet_id', p_booklet_id,
             'answers_count', jsonb_array_length(p_answers),
+            'calculation_result', v_calculation_result,
             'timestamp', now()
         )
     );
@@ -250,7 +413,8 @@ BEGIN
         'edit_count', p_current_edit_count + 1,
         'booklet_key', v_booklet_key,
         'answers_saved', jsonb_array_length(p_answers),
-        'message', 'Respostas salvas para o caderno ' || v_booklet_key
+        'total_score', COALESCE((v_calculation_result->>'total_score')::numeric, 0),
+        'message', 'Respostas salvas e pontuação calculada para o caderno ' || v_booklet_key
     );
 END;
 $$;
