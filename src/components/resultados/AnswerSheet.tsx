@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Concurso, SectionType } from '@/types/concursos';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
-import { useAnswerSheet } from '@/hooks/useAnswerSheet';
+import { useAnswerSheet } from '@/hooks/useAnswerSheet/index'; // Updated import path
 import { useSaveAnswers } from '@/hooks/useSaveAnswers';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
