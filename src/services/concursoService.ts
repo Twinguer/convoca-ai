@@ -1,21 +1,37 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Concurso, ConcursoFilter } from "@/types/concursos";
 import { fetchUserRankings as fetchRankingsFromService } from "./rankingService";
 
 export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
-  const { data, error } = await supabase
-    .from("concursos")
-    .select("*")
-    .eq("id", id)
-    .single();
+  try {
+    console.log('[fetchConcursoById] Fetching concurso with ID:', id);
+    
+    const { data, error } = await supabase
+      .from("concursos")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-  if (error) {
-    console.error("Error fetching concurso:", error);
+    if (error) {
+      console.error('[fetchConcursoById] Supabase error:', error);
+      
+      if (error.code === 'PGRST116') {
+        throw new Error(`Concurso com ID ${id} não encontrado`);
+      }
+      
+      throw new Error(`Erro ao buscar concurso: ${error.message}`);
+    }
+
+    if (!data) {
+      throw new Error(`Concurso com ID ${id} não encontrado`);
+    }
+
+    console.log('[fetchConcursoById] Concurso found:', data);
+    return data;
+  } catch (error: any) {
+    console.error('[fetchConcursoById] Error:', error);
     throw error;
   }
-
-  return data;
 };
 
 export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {

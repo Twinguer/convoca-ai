@@ -79,9 +79,18 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     error: fetchError 
   } = useQuery({
     queryKey: ['user-answers', rankingId],
-    queryFn: () => fetchExistingAnswers(rankingId),
-    enabled: !!rankingId,
+    queryFn: async () => {
+      if (!rankingId) {
+        console.warn('[useAnswerSheet] No ranking ID provided');
+        return {};
+      }
+      
+      console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
+      return fetchExistingAnswers(rankingId);
+    },
+    enabled: !!rankingId && !!concurso,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2
   });
 
   // Handle data loading with useEffect instead of onSuccess
@@ -113,7 +122,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   useEffect(() => {
     if (fetchError) {
       console.error('[useAnswerSheet] Erro ao carregar dados:', fetchError);
-      setError('Erro ao carregar respostas do usuário');
+      setError('Erro ao carregar respostas do usuário: ' + fetchError.message);
     }
   }, [fetchError]);
 
@@ -186,8 +195,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
     isHierarchical,
-    isLoading, // Agora implementado corretamente
-    refetchAnswers // Agora implementado corretamente
+    isLoading,
+    refetchAnswers
   };
 };
 
