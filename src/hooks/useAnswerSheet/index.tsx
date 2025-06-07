@@ -72,7 +72,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   }, [concurso]);
 
   // Fetch existing answers when rankingId changes
-  const { data: existingAnswersData, isLoading, refetch: refetchAnswers } = useQuery({
+  const { 
+    data: existingAnswersData, 
+    isLoading, 
+    refetch: refetchAnswers,
+    error: fetchError 
+  } = useQuery({
     queryKey: ['user-answers', rankingId],
     queryFn: () => fetchExistingAnswers(rankingId),
     enabled: !!rankingId,
@@ -82,6 +87,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Handle data loading with useEffect instead of onSuccess
   useEffect(() => {
     if (existingAnswersData) {
+      console.log('[useAnswerSheet] Dados carregados:', existingAnswersData);
+      
       if (existingAnswersData.answers) {
         setAnswers(existingAnswersData.answers);
         
@@ -101,6 +108,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       }
     }
   }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
+
+  // Handle fetch errors
+  useEffect(() => {
+    if (fetchError) {
+      console.error('[useAnswerSheet] Erro ao carregar dados:', fetchError);
+      setError('Erro ao carregar respostas do usuário');
+    }
+  }, [fetchError]);
 
   // Function to create the answer matrix for rendering
   const createAnswerMatrix = useCallback(() => {
@@ -170,9 +185,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy3Score,
     isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
-    isHierarchical, // Export the hierarchical flag
-    isLoading, // Adicionado para corrigir erro TS
-    refetchAnswers // Adicionado para corrigir erro TS
+    isHierarchical,
+    isLoading, // Agora implementado corretamente
+    refetchAnswers // Agora implementado corretamente
   };
 };
 
@@ -180,4 +195,3 @@ export * from './useScoreManagement';
 export * from './matrixUtils';
 export * from './useAnswerManagement';
 export * from './sectionUtils';
-// Do not re-export from initializeQuestionTypes to avoid ambiguity

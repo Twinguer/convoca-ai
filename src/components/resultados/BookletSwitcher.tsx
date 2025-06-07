@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { FileText, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
+import { consolidatedAnswerService } from '@/services/consolidatedAnswerService';
 import { toast } from 'sonner';
 
 interface ExamBooklet {
@@ -42,35 +42,27 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
     try {
       console.log('[BookletSwitcher] Trocando para caderno:', selectedBookletId);
       
-      // Chamar a função RPC para trocar caderno
-      const { data, error } = await supabase.rpc('switch_user_booklet', {
-        p_ranking_id: rankingId,
-        p_booklet_id: selectedBookletId
-      });
+      // Usar o serviço consolidado para trocar caderno
+      const result = await consolidatedAnswerService.switchBooklet(rankingId, selectedBookletId);
 
-      if (error) {
-        console.error('[BookletSwitcher] Erro ao trocar caderno:', error);
-        toast.error('Erro ao trocar caderno: ' + error.message);
-        return;
-      }
-
-      console.log('[BookletSwitcher] Resposta da troca:', data);
-
-      if (data?.success) {
+      if (result.success) {
         // Converter as respostas do formato JSON para o formato esperado
         const answers: Record<number, string> = {};
-        if (data.answers && typeof data.answers === 'object') {
-          Object.entries(data.answers).forEach(([questionNum, answer]) => {
+        if (result.answers && typeof result.answers === 'object') {
+          Object.entries(result.answers).forEach(([questionNum, answer]) => {
             answers[parseInt(questionNum)] = answer as string;
           });
         }
 
+        console.log('[BookletSwitcher] Respostas carregadas para o novo caderno:', answers);
+
         // Notificar o componente pai sobre a mudança
         onBookletChanged(selectedBookletId, answers);
         
-        toast.success(data.message || 'Caderno alterado com sucesso');
+        toast.success(`Caderno alterado para ${getBookletName(selectedBookletId)} com sucesso`);
       } else {
-        toast.error('Falha ao trocar caderno');
+        console.error('[BookletSwitcher] Erro ao trocar caderno:', result.error);
+        toast.error(result.error || 'Falha ao trocar caderno');
       }
     } catch (error: any) {
       console.error('[BookletSwitcher] Erro:', error);
@@ -78,6 +70,11 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
     } finally {
       setIsSwitching(false);
     }
+  };
+
+  const getBookletName = (bookletId: string) => {
+    const booklet = booklets.find(b => b.id === bookletId);
+    return booklet?.name || 'Desconhecido';
   };
 
   // Se há apenas um caderno, não mostra o switcher

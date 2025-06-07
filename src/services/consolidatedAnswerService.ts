@@ -40,6 +40,8 @@ export const consolidatedAnswerService = {
   // Buscar dados consolidados de um ranking
   async getConsolidatedAnswers(rankingId: string): Promise<ConsolidatedAnswerData | null> {
     try {
+      console.log('[consolidatedAnswerService] Buscando dados consolidados para ranking:', rankingId);
+      
       const { data, error } = await supabase
         .from('user_answers')
         .select('answers_data')
@@ -52,7 +54,10 @@ export const consolidatedAnswerService = {
         return null;
       }
 
-      return data?.answers_data as ConsolidatedAnswerData || null;
+      const consolidatedData = data?.answers_data as ConsolidatedAnswerData || null;
+      console.log('[consolidatedAnswerService] Dados consolidados encontrados:', consolidatedData);
+      
+      return consolidatedData;
     } catch (error) {
       console.error('[consolidatedAnswerService] Error:', error);
       return null;
@@ -62,13 +67,17 @@ export const consolidatedAnswerService = {
   // Buscar respostas de um caderno específico
   async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
     try {
+      console.log('[consolidatedAnswerService] Buscando respostas do caderno:', bookletId, 'para ranking:', rankingId);
+      
       const consolidatedData = await this.getConsolidatedAnswers(rankingId);
       
       if (consolidatedData?.booklets?.[bookletId]) {
         const bookletData = consolidatedData.booklets[bookletId] as BookletData;
+        console.log('[consolidatedAnswerService] Respostas do caderno encontradas:', bookletData.answers);
         return bookletData.answers || {};
       }
       
+      console.log('[consolidatedAnswerService] Nenhuma resposta encontrada para o caderno:', bookletId);
       return {};
     } catch (error) {
       console.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
@@ -79,7 +88,7 @@ export const consolidatedAnswerService = {
   // Trocar caderno usando a nova função RPC
   async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
     try {
-      console.log('[consolidatedAnswerService] Switching to booklet:', bookletId);
+      console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
       
       const { data, error } = await supabase.rpc('switch_user_booklet', {
         p_ranking_id: rankingId,
@@ -104,7 +113,7 @@ export const consolidatedAnswerService = {
     }
   },
 
-  // Salvar respostas usando a função RPC consolidada (ATUALIZADA PARA UUID)
+  // Salvar respostas usando a função RPC consolidada (CORRIGIDA PARA SALVAR POR CADERNO)
   async saveConsolidatedAnswers(
     rankingId: string,
     concursoId: string,
@@ -117,9 +126,16 @@ export const consolidatedAnswerService = {
     editCount = 0
   ) {
     try {
-      console.log('[consolidatedAnswerService] Saving consolidated answers via RPC');
+      console.log('[consolidatedAnswerService] Salvando respostas consolidadas via RPC');
+      console.log('[consolidatedAnswerService] Ranking ID:', rankingId);
+      console.log('[consolidatedAnswerService] Concurso ID:', concursoId);
       console.log('[consolidatedAnswerService] Booklet ID:', bookletId);
       console.log('[consolidatedAnswerService] Answers count:', answers.length);
+      console.log('[consolidatedAnswerService] Respostas a salvar:', answers);
+      
+      // Primeiro, vamos buscar os dados existentes para garantir que não perdemos nada
+      const existingData = await this.getConsolidatedAnswers(rankingId);
+      console.log('[consolidatedAnswerService] Dados existentes:', existingData);
       
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
@@ -139,6 +155,11 @@ export const consolidatedAnswerService = {
       }
 
       console.log('[consolidatedAnswerService] RPC Response:', data);
+      
+      // Verificar se as respostas foram salvas corretamente
+      const updatedData = await this.getConsolidatedAnswers(rankingId);
+      console.log('[consolidatedAnswerService] Dados após salvamento:', updatedData);
+      
       return data;
     } catch (error: any) {
       console.error('[consolidatedAnswerService] Error saving consolidated answers:', error);
