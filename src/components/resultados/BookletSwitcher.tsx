@@ -47,16 +47,20 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
 
       if (result.success) {
         // Converter as respostas do formato JSON para o formato esperado
+        // APENAS do caderno específico (sem contaminação)
         const answers: Record<number, string> = {};
         if (result.answers && typeof result.answers === 'object') {
           Object.entries(result.answers).forEach(([questionNum, answer]) => {
-            answers[parseInt(questionNum)] = answer as string;
+            const num = parseInt(questionNum);
+            if (!isNaN(num) && answer) {
+              answers[num] = answer as string;
+            }
           });
         }
 
-        console.log('[BookletSwitcher] Respostas carregadas para o novo caderno:', answers);
+        console.log('[BookletSwitcher] Respostas isoladas do novo caderno:', answers);
 
-        // Notificar o componente pai sobre a mudança
+        // Notificar o componente pai sobre a mudança com as respostas isoladas
         onBookletChanged(selectedBookletId, answers);
         
         toast.success(`Caderno alterado para ${getBookletName(selectedBookletId)} com sucesso`);

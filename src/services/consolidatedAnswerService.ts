@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Interface para trabalhar com a estrutura consolidada
@@ -64,7 +63,7 @@ export const consolidatedAnswerService = {
     }
   },
 
-  // Buscar respostas de um caderno específico
+  // Buscar respostas de um caderno específico (ISOLADO)
   async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
     try {
       console.log('[consolidatedAnswerService] Buscando respostas do caderno:', bookletId, 'para ranking:', rankingId);
@@ -85,7 +84,7 @@ export const consolidatedAnswerService = {
     }
   },
 
-  // Trocar caderno usando a nova função RPC
+  // Trocar caderno (CORRIGIDO para limpar estado anterior)
   async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
     try {
       console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
@@ -102,9 +101,12 @@ export const consolidatedAnswerService = {
 
       console.log('[consolidatedAnswerService] Switch response:', data);
       
+      // Buscar as respostas específicas do novo caderno
+      const bookletAnswers = await this.getBookletAnswers(rankingId, bookletId);
+      
       return {
         success: data?.success || false,
-        answers: data?.answers || {},
+        answers: bookletAnswers,
         error: data?.success ? undefined : 'Falha ao trocar caderno'
       };
     } catch (error: any) {

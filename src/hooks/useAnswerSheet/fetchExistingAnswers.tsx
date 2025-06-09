@@ -27,18 +27,21 @@ export const fetchExistingAnswers = async (rankingId: string) => {
     let answers: { [key: number]: string } = {};
 
     if (consolidatedData && rankingData?.selected_booklet) {
-      // Buscar respostas do caderno selecionado
-      const bookletAnswers = await consolidatedAnswerService.getBookletAnswers(
-        rankingId, 
-        rankingData.selected_booklet
-      );
+      // Buscar respostas APENAS do caderno selecionado
+      const selectedBookletId = rankingData.selected_booklet;
+      console.log('[fetchExistingAnswers] Caderno selecionado:', selectedBookletId);
       
-      console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
+      if (consolidatedData.booklets?.[selectedBookletId]) {
+        const bookletAnswers = consolidatedData.booklets[selectedBookletId].answers || {};
+        console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
 
-      // Converter para formato esperado
-      Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
-        answers[parseInt(questionNum)] = answer;
-      });
+        // Converter para formato esperado
+        Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
+          answers[parseInt(questionNum)] = answer;
+        });
+      } else {
+        console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para o caderno selecionado:', selectedBookletId);
+      }
     } else if (consolidatedData?.booklets) {
       // Fallback: se não há caderno selecionado, pegar do primeiro caderno disponível
       const firstBookletId = Object.keys(consolidatedData.booklets)[0];
@@ -52,7 +55,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       }
     }
 
-    console.log('[fetchExistingAnswers] Respostas finais:', answers);
+    console.log('[fetchExistingAnswers] Respostas finais para o caderno atual:', answers);
 
     return {
       answers,

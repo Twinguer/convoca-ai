@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -111,17 +110,33 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData, selectedBookletId]);
 
-  // Handle booklet change from BookletSwitcher
+  // Handle booklet change from BookletSwitcher (CORRIGIDO)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
     console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
     console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
     
     setSelectedBookletId(newBookletId);
     
-    // Atualizar as respostas no estado local através do refetch
-    await refetchAnswers();
+    // IMPORTANTE: Limpar o estado atual de respostas antes de carregar as novas
+    // para evitar contaminação entre cadernos
     
-    toast.success('Caderno alterado com sucesso. Respostas carregadas.');
+    // Primeiro, limpar todas as respostas atuais
+    Object.keys(answers).forEach(questionNumber => {
+      handleClearAnswer(parseInt(questionNumber));
+    });
+    
+    // Aguardar um pequeno delay para garantir que o estado foi limpo
+    setTimeout(() => {
+      // Carregar as respostas do novo caderno
+      Object.entries(newAnswers).forEach(([questionNum, answer]) => {
+        handleAnswerChange(parseInt(questionNum), answer);
+      });
+      
+      // Refetch para garantir sincronização
+      refetchAnswers();
+      
+      toast.success(`Caderno alterado para ${getBookletName(newBookletId)}. Respostas carregadas.`);
+    }, 100);
   };
 
   // Verify if the official answer key exists
@@ -320,9 +335,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   // Get booklet name
-  const getBookletName = () => {
-    if (!selectedBookletId || !examBooklets) return 'Não informado';
-    const booklet = examBooklets.find(b => b.id === selectedBookletId);
+  const getBookletName = (bookletId?: string) => {
+    if (!bookletId || !examBooklets) return 'Não informado';
+    const booklet = examBooklets.find(b => b.id === bookletId);
     return booklet?.name || 'Não informado';
   };
 
@@ -451,7 +466,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium">Caderno selecionado:</span>
               <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-md font-medium">
-                {getBookletName()}
+                {getBookletName(selectedBookletId)}
               </span>
             </div>
             {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
