@@ -11,6 +11,15 @@ import { useScoreManagement } from './useScoreManagement';
 import { getSectionDisplayName, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './sectionUtils';
 
+// Interface para a resposta do fetchExistingAnswers
+interface FetchedAnswersData {
+  answers?: { [key: number]: string };
+  discursiveScore?: number | null;
+  caseStudy1Score?: number | null;
+  caseStudy2Score?: number | null;
+  caseStudy3Score?: number | null;
+}
+
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
@@ -79,16 +88,21 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     error: fetchError 
   } = useQuery({
     queryKey: ['user-answers', rankingId],
-    queryFn: async () => {
+    queryFn: async (): Promise<FetchedAnswersData> => {
       if (!rankingId) {
         console.warn('[useAnswerSheet] No ranking ID provided');
+        return {};
+      }
+      
+      if (!concurso?.id) {
+        console.warn('[useAnswerSheet] No concurso ID provided');
         return {};
       }
       
       console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
       return fetchExistingAnswers(rankingId);
     },
-    enabled: !!rankingId && !!concurso,
+    enabled: !!rankingId && !!concurso?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 2
   });
@@ -102,16 +116,16 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         setAnswers(existingAnswersData.answers);
         
         // Também definir as pontuações subjetivas
-        if (existingAnswersData.discursiveScore !== undefined) {
+        if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
           setDiscursiveScore(existingAnswersData.discursiveScore);
         }
-        if (existingAnswersData.caseStudy1Score !== undefined) {
+        if (existingAnswersData.caseStudy1Score !== undefined && existingAnswersData.caseStudy1Score !== null) {
           setCaseStudy1Score(existingAnswersData.caseStudy1Score);
         }
-        if (existingAnswersData.caseStudy2Score !== undefined) {
+        if (existingAnswersData.caseStudy2Score !== undefined && existingAnswersData.caseStudy2Score !== null) {
           setCaseStudy2Score(existingAnswersData.caseStudy2Score);
         }
-        if (existingAnswersData.caseStudy3Score !== undefined) {
+        if (existingAnswersData.caseStudy3Score !== undefined && existingAnswersData.caseStudy3Score !== null) {
           setCaseStudy3Score(existingAnswersData.caseStudy3Score);
         }
       }
