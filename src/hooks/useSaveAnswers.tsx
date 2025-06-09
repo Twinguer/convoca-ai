@@ -21,13 +21,6 @@ interface UseSaveAnswersProps {
   selectedBookletId?: string;
 }
 
-// Interface para dados de resposta
-interface AnswerData {
-  objective_answer: string;
-  timestamp: string;
-  nullified_default?: boolean;
-}
-
 export const useSaveAnswers = ({
   rankingId,
   concurso,
@@ -64,22 +57,17 @@ export const useSaveAnswers = ({
         return;
       }
 
-      // Preparar os dados de respostas para enviar
+      console.log('[useSaveAnswers] Preparando dados para salvamento');
+      console.log('[useSaveAnswers] Respostas do usuário:', answers);
+      console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+
+      // Preparar os dados de respostas no formato correto para a função RPC
       const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
         const qNum = parseInt(questionNumber, 10);
-        const sectionType = getSectionTypeForQuestion(concurso, qNum);
         
-        const answerData: AnswerData = {
-          objective_answer: answer,
-          timestamp: new Date().toISOString()
-        };
-
         return {
           questionNumber: qNum,
-          answer,
-          sectionType,
-          bookletId: selectedBookletId,
-          answerData
+          answer: answer.trim()
         };
       });
       
@@ -88,34 +76,23 @@ export const useSaveAnswers = ({
         nullifiedQuestions.forEach(questionNumber => {
           if (!answers[questionNumber]) {
             const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-            const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
-            
-            const answerData: AnswerData = {
-              objective_answer: defaultAnswer,
-              timestamp: new Date().toISOString(),
-              nullified_default: true
-            };
             
             answersArray.push({
               questionNumber,
-              answer: defaultAnswer,
-              sectionType,
-              bookletId: selectedBookletId,
-              answerData
+              answer: defaultAnswer
             });
           }
         });
       }
 
-      console.log('[useSaveAnswers] Iniciando salvamento via RPC com estrutura consolidada');
-      console.log('[useSaveAnswers] Total de respostas:', answersArray.length);
-      console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+      console.log('[useSaveAnswers] Dados formatados para RPC:', answersArray);
+      console.log('[useSaveAnswers] Total de respostas a salvar:', answersArray.length);
 
-      // Chamar a função RPC usando UUID para booklet_id (ATUALIZADA)
+      // Chamar a função RPC corrigida
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
-        p_booklet_id: selectedBookletId, // Agora passa diretamente como UUID
+        p_booklet_id: selectedBookletId,
         p_answers: answersArray,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
@@ -135,10 +112,13 @@ export const useSaveAnswers = ({
         throw new Error(data.error || "Erro ao salvar respostas");
       }
 
+      console.log('[useSaveAnswers] Respostas salvas com sucesso:', data.saved_answers);
+      console.log('[useSaveAnswers] Total de respostas salvas:', data.answers_saved);
+
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: "Sua pontuação foi recalculada usando a estrutura consolidada.",
+        description: `${data.answers_saved} respostas foram salvas para o caderno selecionado.`,
         duration: 5000
       });
 

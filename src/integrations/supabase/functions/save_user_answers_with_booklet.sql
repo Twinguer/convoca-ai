@@ -37,7 +37,7 @@ BEGIN
     FROM exam_booklets 
     WHERE id = p_booklet_id;
     
-    -- Log de entrada
+    -- Log de entrada com detalhes das respostas
     INSERT INTO score_calculation_logs (
         calculation_type,
         calculation_details
@@ -47,6 +47,7 @@ BEGIN
             'ranking_id', p_ranking_id,
             'booklet_id', p_booklet_id,
             'booklet_name', v_booklet_name,
+            'answers_received', p_answers,
             'answers_count', jsonb_array_length(p_answers),
             'timestamp', now()
         )
@@ -83,6 +84,8 @@ BEGIN
             (elem->>'questionNumber')::integer as question_number,
             elem->>'answer' as answer
         FROM jsonb_array_elements(p_answers) as elem
+        WHERE elem->>'questionNumber' IS NOT NULL 
+        AND elem->>'answer' IS NOT NULL
     LOOP
         -- Log cada resposta processada
         INSERT INTO score_calculation_logs (
@@ -99,6 +102,7 @@ BEGIN
             )
         );
         
+        -- Adicionar resposta ao objeto de respostas do caderno
         v_booklet_answers := jsonb_set(
             v_booklet_answers,
             ARRAY[v_answer.question_number::text],
@@ -116,7 +120,7 @@ BEGIN
             'ranking_id', p_ranking_id,
             'booklet_id', p_booklet_id,
             'processed_answers', v_booklet_answers,
-            'answers_count', jsonb_object_keys(v_booklet_answers),
+            'answers_count', (SELECT COUNT(*) FROM jsonb_object_keys(v_booklet_answers)),
             'timestamp', now()
         )
     );
@@ -129,7 +133,7 @@ BEGIN
             'answers', v_booklet_answers,
             'metadata', jsonb_build_object(
                 'completed_at', now(),
-                'answer_count', jsonb_array_length(p_answers),
+                'answer_count', (SELECT COUNT(*) FROM jsonb_object_keys(v_booklet_answers)),
                 'booklet_name', v_booklet_name
             )
         )
@@ -203,6 +207,7 @@ BEGIN
             'answers_count', jsonb_array_length(p_answers),
             'calculation_result', v_calculation_result,
             'final_consolidated_data', v_consolidated_data,
+            'saved_answers', v_booklet_answers,
             'timestamp', now()
         )
     );
@@ -211,7 +216,7 @@ BEGIN
         'success', true, 
         'edit_count', p_current_edit_count + 1,
         'booklet_key', v_booklet_key,
-        'answers_saved', jsonb_array_length(p_answers),
+        'answers_saved', (SELECT COUNT(*) FROM jsonb_object_keys(v_booklet_answers)),
         'total_score', COALESCE((v_calculation_result->>'total_score')::numeric, 0),
         'message', 'Respostas salvas e pontuação calculada para o caderno ' || COALESCE(v_booklet_name, v_booklet_key),
         'saved_answers', v_booklet_answers
