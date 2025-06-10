@@ -25,10 +25,10 @@ export const answerKeyService = {
 
       console.log('[answerKeyService] Converted answers data:', answersData);
 
-      // Use consolidated save function
+      // Use consolidated save function with default booklet
       const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
         p_concurso_id: concursoId,
-        p_booklet_id: 'default', // For backwards compatibility
+        p_booklet_id: 'default',
         p_answers: answersData
       });
 
@@ -106,7 +106,7 @@ export const answerKeyService = {
 
       console.log('[answerKeyService] Converted booklet answers data:', answersData);
 
-      // Use consolidated save function
+      // Use the corrected consolidated save function
       const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
         p_concurso_id: concursoId,
         p_booklet_id: bookletId,

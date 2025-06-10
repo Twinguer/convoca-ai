@@ -60,7 +60,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     staleTime: 30000,
   });
 
-  // Mutação para atualizar resposta e peso
+  // Mutação para atualizar resposta e peso usando a nova estrutura consolidada
   const updateAnswerMutation = useMutation({
     mutationFn: async ({ 
       questionNumber, 
@@ -87,8 +87,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
           sectionType
         });
 
-        // For now, we'll use a temporary solution that updates individual records
-        // until we fully migrate to consolidated structure
+        // Use a function to update individual answers in the consolidated structure
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: concursoId,
           p_question_number: questionNumber,
@@ -117,6 +116,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     onSuccess: () => {
       toast.success('Gabarito atualizado com sucesso');
       queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
+      queryClient.invalidateQueries({ queryKey: ['consolidated-answer-key', concursoId] });
       queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
       
       // Invalidate nullified-questions to update UI
