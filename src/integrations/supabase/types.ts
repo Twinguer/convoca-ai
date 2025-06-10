@@ -435,6 +435,7 @@ export type Database = {
           answer_format: string | null
           booklet_id: string | null
           concurso_id: string
+          consolidated_answer_data: Json | null
           correct_answer: string
           created_at: string
           id: string
@@ -453,6 +454,7 @@ export type Database = {
           answer_format?: string | null
           booklet_id?: string | null
           concurso_id: string
+          consolidated_answer_data?: Json | null
           correct_answer: string
           created_at?: string
           id?: string
@@ -471,6 +473,7 @@ export type Database = {
           answer_format?: string | null
           booklet_id?: string | null
           concurso_id?: string
+          consolidated_answer_data?: Json | null
           correct_answer?: string
           created_at?: string
           id?: string
@@ -1023,6 +1026,10 @@ export type Database = {
           knowledge_section: string
         }[]
       }
+      get_consolidated_answer_key: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       get_official_answer_weights: {
         Args: { p_concurso_id: string }
         Returns: Json
@@ -1086,6 +1093,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      migrate_official_answers_to_consolidated: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
         Returns: Json
@@ -1100,6 +1111,10 @@ export type Database = {
       }
       recalculate_all_users_scores_realtime: {
         Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      save_consolidated_answer_key: {
+        Args: { p_concurso_id: string; p_booklet_id: string; p_answers: Json }
         Returns: Json
       }
       save_scores_transaction: {

@@ -6,47 +6,34 @@ export const answerKeyService = {
     console.log('[answerKeyService] Saving answer key for concurso:', concursoId);
     
     try {
-      // Delete existing answer keys for this concurso
-      const { error: deleteError } = await supabase
-        .from('official_answer_weights')
-        .delete()
-        .eq('concurso_id', concursoId);
-
-      if (deleteError) {
-        console.error('[answerKeyService] Error deleting existing answers:', deleteError);
-        throw deleteError;
-      }
-
-      // Prepare new answer key data using JSONB structure
-      const answerKeyData = Object.entries(answers).map(([questionKey, answerData]) => {
+      // Convert answers to the new JSON structure format
+      const answersData = Object.entries(answers).reduce((acc, [questionKey, answerData]) => {
         const questionNumber = parseInt(questionKey.replace('questao', ''));
         
-        return {
-          concurso_id: concursoId,
-          question_number: questionNumber,
-          correct_answer: answerData.resposta, // Keep for compatibility
-          answer_data: {
-            correct_answer: answerData.resposta,
-            explanation: answerData.explicacao || null
-          },
+        acc[questionNumber.toString()] = {
+          correct_answer: answerData.resposta,
+          explanation: answerData.explicacao || null,
           weight: answerData.peso || 1,
           section_type: answerData.secao || 'basic',
           is_nullified: answerData.anulada || false,
           answer_format: 'OBJECTIVE',
           question_type: 'MULTIPLE_CHOICE'
         };
+        
+        return acc;
+      }, {} as Record<string, any>);
+
+      console.log('[answerKeyService] Converted answers data:', answersData);
+
+      // Use consolidated save function
+      const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
+        p_concurso_id: concursoId,
+        p_booklet_id: 'default', // For backwards compatibility
+        p_answers: answersData
       });
 
-      console.log('[answerKeyService] Inserting answer key data:', answerKeyData);
-
-      // Insert new answer keys
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .insert(answerKeyData)
-        .select();
-
       if (error) {
-        console.error('[answerKeyService] Error inserting answer keys:', error);
+        console.error('[answerKeyService] Error saving consolidated answer key:', error);
         throw error;
       }
 
@@ -62,43 +49,37 @@ export const answerKeyService = {
     console.log('[answerKeyService] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
     
     try {
-      let query = supabase
-        .from('official_answer_weights')
-        .select('*')
-        .eq('concurso_id', concursoId)
-        .order('question_number');
-
-      if (bookletId) {
-        query = query.eq('booklet_id', bookletId);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase.rpc('get_consolidated_answer_key', {
+        p_concurso_id: concursoId
+      });
 
       if (error) {
-        console.error('[answerKeyService] Error fetching answer key:', error);
+        console.error('[answerKeyService] Error fetching consolidated answer key:', error);
         throw error;
       }
 
-      // Transform data to use JSONB structure with fallback
-      const transformedData = (data || []).reduce((acc: Record<string, any>, item: any) => {
-        const questionKey = `questao${item.question_number}`;
+      // Transform consolidated data back to legacy format for compatibility
+      const transformedData: Record<string, any> = {};
+      
+      if (data?.booklets) {
+        const targetBookletId = bookletId || Object.keys(data.booklets)[0];
+        const bookletData = data.booklets[targetBookletId];
         
-        // Use JSONB structure with fallback to old columns
-        const correctAnswer = item.answer_data?.correct_answer || item.correct_answer;
-        const explanation = item.answer_data?.explanation || null;
-        
-        acc[questionKey] = {
-          resposta: correctAnswer,
-          peso: item.weight || 1,
-          secao: item.section_type || 'basic',
-          anulada: item.is_nullified || false,
-          explicacao: explanation
-        };
-        
-        return acc;
-      }, {});
+        if (bookletData?.answers) {
+          Object.entries(bookletData.answers).forEach(([questionNum, answerData]: [string, any]) => {
+            const questionKey = `questao${questionNum}`;
+            transformedData[questionKey] = {
+              resposta: answerData.correct_answer,
+              peso: answerData.weight || 1,
+              secao: answerData.section_type || 'basic',
+              anulada: answerData.is_nullified || false,
+              explicacao: answerData.explanation || null
+            };
+          });
+        }
+      }
 
-      console.log('[answerKeyService] Answer key fetched successfully');
+      console.log('[answerKeyService] Transformed answer key fetched successfully');
       return transformedData;
     } catch (error) {
       console.error('[answerKeyService] Error in getAnswerKey:', error);
@@ -110,28 +91,30 @@ export const answerKeyService = {
     console.log('[answerKeyService] Saving booklet answer key for concurso:', concursoId, 'booklet:', bookletId);
     
     try {
-      // Delete existing answer keys for this concurso and booklet
-      const { error: deleteError } = await supabase
-        .from('official_answer_weights')
-        .delete()
-        .eq('concurso_id', concursoId)
-        .eq('booklet_id', bookletId);
+      // Convert array format to JSON object format
+      const answersData = answers.reduce((acc, answer) => {
+        acc[answer.question_number.toString()] = {
+          correct_answer: answer.correct_answer,
+          weight: answer.weight || 1.0,
+          section_type: answer.section_type,
+          is_nullified: answer.is_nullified || false,
+          answer_format: 'OBJECTIVE',
+          question_type: 'MULTIPLE_CHOICE'
+        };
+        return acc;
+      }, {} as Record<string, any>);
 
-      if (deleteError) {
-        console.error('[answerKeyService] Error deleting existing booklet answers:', deleteError);
-        throw deleteError;
-      }
+      console.log('[answerKeyService] Converted booklet answers data:', answersData);
 
-      console.log('[answerKeyService] Inserting booklet answer key data:', answers);
-
-      // Insert new answer keys directly from the array format
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .insert(answers)
-        .select();
+      // Use consolidated save function
+      const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
+        p_concurso_id: concursoId,
+        p_booklet_id: bookletId,
+        p_answers: answersData
+      });
 
       if (error) {
-        console.error('[answerKeyService] Error inserting booklet answer keys:', error);
+        console.error('[answerKeyService] Error saving consolidated booklet answer key:', error);
         throw error;
       }
 
@@ -147,26 +130,63 @@ export const answerKeyService = {
     console.log('[answerKeyService] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
     
     try {
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .select('*')
-        .eq('concurso_id', concursoId)
-        .eq('booklet_id', bookletId)
-        .order('question_number');
+      const { data, error } = await supabase.rpc('get_consolidated_answer_key', {
+        p_concurso_id: concursoId
+      });
 
       if (error) {
-        console.error('[answerKeyService] Error fetching booklet answer key:', error);
+        console.error('[answerKeyService] Error fetching consolidated answer key:', error);
         throw error;
       }
 
+      // Extract specific booklet data
+      const bookletData = data?.booklets?.[bookletId];
+      if (!bookletData) {
+        console.log('[answerKeyService] No data found for booklet:', bookletId);
+        return { success: true, data: [] };
+      }
+
+      // Convert to array format expected by the component
+      const answersArray = Object.entries(bookletData.answers || {}).map(([questionNum, answerData]: [string, any]) => ({
+        question_number: parseInt(questionNum),
+        correct_answer: answerData.correct_answer,
+        weight: answerData.weight || 1.0,
+        section_type: answerData.section_type,
+        is_nullified: answerData.is_nullified || false,
+        answer_format: answerData.answer_format || 'OBJECTIVE',
+        question_type: answerData.question_type || 'MULTIPLE_CHOICE'
+      }));
+
       console.log('[answerKeyService] Booklet answer key fetched successfully');
-      return { success: true, data: data || [] };
+      return { success: true, data: answersArray };
     } catch (error) {
       console.error('[answerKeyService] Error in getAnswerKeyForBooklet:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // New method to get all booklets answer keys for a concurso
+  async getAllBookletsAnswerKeys(concursoId: string) {
+    console.log('[answerKeyService] Fetching all booklets answer keys for concurso:', concursoId);
+    
+    try {
+      const { data, error } = await supabase.rpc('get_consolidated_answer_key', {
+        p_concurso_id: concursoId
+      });
+
+      if (error) {
+        console.error('[answerKeyService] Error fetching consolidated answer key:', error);
+        throw error;
+      }
+
+      console.log('[answerKeyService] All booklets answer keys fetched successfully');
+      return { success: true, data: data || {} };
+    } catch (error) {
+      console.error('[answerKeyService] Error in getAllBookletsAnswerKeys:', error);
       return { success: false, error: error.message };
     }
   }
 };
 
 // Export individual functions for easier importing
-export const { saveAnswerKey, getAnswerKey, saveBookletAnswerKey, getAnswerKeyForBooklet } = answerKeyService;
+export const { saveAnswerKey, getAnswerKey, saveBookletAnswerKey, getAnswerKeyForBooklet, getAllBookletsAnswerKeys } = answerKeyService;

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+import { getAllBookletsAnswerKeys } from '@/services/answerKeyService';
 
 interface AnswerWeight {
   resposta: string;
@@ -20,22 +21,43 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Buscar gabarito oficial com pesos
+  // Buscar gabarito oficial consolidado
   const { data: officialAnswers, isLoading } = useQuery({
     queryKey: ['official-answers-weights', concursoId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_official_answer_weights', {
-        p_concurso_id: concursoId
-      });
-
-      if (error) {
-        console.error('Erro ao buscar gabarito:', error);
-        throw error;
+      console.log('[useOfficialAnswerWeights] Fetching consolidated answer key for:', concursoId);
+      
+      const result = await getAllBookletsAnswerKeys(concursoId);
+      
+      if (!result.success) {
+        console.error('[useOfficialAnswerWeights] Error:', result.error);
+        throw new Error(result.error);
       }
 
-      return data as OfficialAnswerWeights;
+      // Transform consolidated data to legacy format for backwards compatibility
+      const transformedData: OfficialAnswerWeights = {};
+      
+      if (result.data?.booklets) {
+        // For now, use the first booklet or combine all booklets
+        const firstBookletId = Object.keys(result.data.booklets)[0];
+        const bookletData = result.data.booklets[firstBookletId];
+        
+        if (bookletData?.answers) {
+          Object.entries(bookletData.answers).forEach(([questionNum, answerData]: [string, any]) => {
+            const questionKey = `questao${questionNum}`;
+            transformedData[questionKey] = {
+              resposta: answerData.correct_answer,
+              peso: answerData.weight || 1,
+              secao: answerData.section_type || 'basic',
+              anulada: answerData.is_nullified || false
+            };
+          });
+        }
+      }
+
+      return transformedData;
     },
-    staleTime: 30000, // Aumentado para 30 segundos para reduzir consultas
+    staleTime: 30000,
   });
 
   // Mutação para atualizar resposta e peso
@@ -56,7 +78,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       setIsUpdating(true);
       
       try {
-        console.log('Atualizando gabarito:', {
+        console.log('Updating consolidated answer key:', {
           concursoId,
           questionNumber,
           answer,
@@ -65,6 +87,8 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
           sectionType
         });
 
+        // For now, we'll use a temporary solution that updates individual records
+        // until we fully migrate to consolidated structure
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: concursoId,
           p_question_number: questionNumber,
@@ -76,14 +100,13 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
 
         if (error) throw error;
         
-        // Força recálculo para todos os usuários após atualização do gabarito
-        // Esta é a única parte onde devemos ter atualização automática
+        // Force recalculation for all users after answer key update
         const recalcResult = await recalculateAllUserScores(concursoId);
         
         if (!recalcResult.success) {
-          console.warn('Aviso: Recálculo de pontuações falhou após atualização do gabarito:', recalcResult.error);
+          console.warn('Warning: Score recalculation failed after answer key update:', recalcResult.error);
         } else {
-          console.log(`Pontuações recalculadas para ${recalcResult.updatedCount} usuários após atualização do gabarito`);
+          console.log(`Scores recalculated for ${recalcResult.updatedCount} users after answer key update`);
         }
         
         return data;
@@ -96,16 +119,16 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
       queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
       
-      // Invalidar também nullified-questions para atualizar a UI
+      // Invalidate nullified-questions to update UI
       queryClient.invalidateQueries({ queryKey: ['nullified-questions', concursoId] });
     },
     onError: (error) => {
-      console.error('Erro ao atualizar gabarito:', error);
+      console.error('Error updating answer key:', error);
       toast.error('Erro ao atualizar gabarito');
     }
   });
 
-  // Função para atualizar uma resposta específica
+  // Function to update a specific answer
   const updateAnswer = (
     questionNumber: number, 
     answer: string, 
