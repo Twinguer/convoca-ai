@@ -9,7 +9,7 @@ import { getAllBookletsAnswerKeys } from '@/services/answerKeyService';
 interface AnswerWeight {
   resposta: string;
   peso: number;
-  secao: 'basic' | 'specific1' | 'specific2' | 'specific3';
+  secao: 'basic' | 'specific1' | 'specific2' | 'specific3' | string;
   anulada: boolean;
 }
 
@@ -87,14 +87,14 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
           sectionType
         });
 
-        // Use a function to update individual answers in the consolidated structure
+        // Use the new function to update individual answers in the consolidated structure
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: concursoId,
           p_question_number: questionNumber,
           p_correct_answer: answer,
           p_weight: weight,
           p_is_nullified: isNullified,
-          p_section_type: sectionType
+          p_section_type: sectionType || 'basic'
         });
 
         if (error) throw error;
