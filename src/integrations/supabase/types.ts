@@ -431,82 +431,32 @@ export type Database = {
       }
       official_answer_weights: {
         Row: {
-          answer_data: Json | null
-          answer_format: string | null
-          booklet_id: string | null
           concurso_id: string
           consolidated_answer_data: Json | null
-          correct_answer: string
           created_at: string
           id: string
-          is_nullified: boolean
-          points_if_correct: number | null
-          points_if_wrong: number | null
-          question_number: number
-          question_type: string
-          section_type: string | null
-          subject_id: string | null
           updated_at: string
-          weight: number
         }
         Insert: {
-          answer_data?: Json | null
-          answer_format?: string | null
-          booklet_id?: string | null
           concurso_id: string
           consolidated_answer_data?: Json | null
-          correct_answer: string
           created_at?: string
           id?: string
-          is_nullified?: boolean
-          points_if_correct?: number | null
-          points_if_wrong?: number | null
-          question_number: number
-          question_type?: string
-          section_type?: string | null
-          subject_id?: string | null
           updated_at?: string
-          weight?: number
         }
         Update: {
-          answer_data?: Json | null
-          answer_format?: string | null
-          booklet_id?: string | null
           concurso_id?: string
           consolidated_answer_data?: Json | null
-          correct_answer?: string
           created_at?: string
           id?: string
-          is_nullified?: boolean
-          points_if_correct?: number | null
-          points_if_wrong?: number | null
-          question_number?: number
-          question_type?: string
-          section_type?: string | null
-          subject_id?: string | null
           updated_at?: string
-          weight?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "official_answer_weights_booklet_id_fkey"
-            columns: ["booklet_id"]
-            isOneToOne: false
-            referencedRelation: "exam_booklets"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "official_answer_weights_concurso_id_fkey"
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "official_answer_weights_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
