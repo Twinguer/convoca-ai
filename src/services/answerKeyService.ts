@@ -62,7 +62,7 @@ export const answerKeyService = {
       const transformedData: Record<string, any> = {};
       
       if (data?.booklets) {
-        const targetBookletId = bookletId || Object.keys(data.booklets)[0];
+        const targetBookletId = bookletId || 'default';
         const bookletData = data.booklets[targetBookletId];
         
         if (bookletData?.answers) {
@@ -106,7 +106,7 @@ export const answerKeyService = {
 
       console.log('[answerKeyService] Converted booklet answers data:', answersData);
 
-      // Use the corrected consolidated save function
+      // Use the consolidated save function
       const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
         p_concurso_id: concursoId,
         p_booklet_id: bookletId,

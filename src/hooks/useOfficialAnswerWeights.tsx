@@ -38,9 +38,15 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
       const transformedData: OfficialAnswerWeights = {};
       
       if (result.data?.booklets) {
-        // For now, use the first booklet or combine all booklets
-        const firstBookletId = Object.keys(result.data.booklets)[0];
-        const bookletData = result.data.booklets[firstBookletId];
+        // Use the default booklet or the first available booklet
+        const bookletId = 'default';
+        let bookletData = result.data.booklets[bookletId];
+        
+        // If default doesn't exist, use the first available booklet
+        if (!bookletData && Object.keys(result.data.booklets).length > 0) {
+          const firstBookletId = Object.keys(result.data.booklets)[0];
+          bookletData = result.data.booklets[firstBookletId];
+        }
         
         if (bookletData?.answers) {
           Object.entries(bookletData.answers).forEach(([questionNum, answerData]: [string, any]) => {
@@ -60,7 +66,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
     staleTime: 30000,
   });
 
-  // Mutação para atualizar resposta e peso usando a nova estrutura consolidada
+  // Mutação para atualizar resposta e peso usando a nova estrutura simplificada
   const updateAnswerMutation = useMutation({
     mutationFn: async ({ 
       questionNumber, 
@@ -87,7 +93,7 @@ export const useOfficialAnswerWeights = (concursoId: string) => {
           sectionType
         });
 
-        // Use the new function to update individual answers in the consolidated structure
+        // Use the updated function to update individual answers
         const { data, error } = await supabase.rpc('update_answer_with_weight', {
           p_concurso_id: concursoId,
           p_question_number: questionNumber,
