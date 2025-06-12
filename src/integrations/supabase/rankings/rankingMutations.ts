@@ -87,22 +87,47 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     
     console.log(`[recalculateUserScore] Found ${userAnswers?.length || 0} answers for user`);
 
-    // Obter os pesos das respostas corretas
-    const { data: officialAnswers, error: officialAnswersError } = await supabase
+    // Obter os pesos das respostas corretas usando a estrutura consolidada
+    const { data: consolidatedAnswers, error: consolidatedError } = await supabase
       .from('official_answer_weights')
-      .select('question_number, correct_answer, weight, is_nullified, section_type')
-      .eq('concurso_id', concursoId);
+      .select('consolidated_answer_data')
+      .eq('concurso_id', concursoId)
+      .single();
 
-    if (officialAnswersError) {
-      console.error('Erro ao buscar pesos das respostas corretas:', officialAnswersError);
+    if (consolidatedError) {
+      console.error('Erro ao buscar pesos das respostas corretas:', consolidatedError);
       return { 
         success: false, 
         message: 'Erro ao obter pesos das respostas corretas', 
-        error: officialAnswersError 
+        error: consolidatedError 
       };
     }
     
-    console.log(`[recalculateUserScore] Found ${officialAnswers?.length || 0} official answers`);
+    if (!consolidatedAnswers?.consolidated_answer_data) {
+      console.log('[recalculateUserScore] No consolidated answer data found');
+      return { 
+        success: false, 
+        message: 'Gabarito não encontrado para este concurso' 
+      };
+    }
+
+    const answerData = consolidatedAnswers.consolidated_answer_data;
+    const booklets = answerData.booklets || {};
+    
+    // Usar o primeiro caderno disponível ou 'default'
+    const bookletIds = Object.keys(booklets);
+    const primaryBooklet = booklets['default'] || booklets[bookletIds[0]];
+    
+    if (!primaryBooklet?.answers) {
+      console.log('[recalculateUserScore] No answers found in consolidated data');
+      return { 
+        success: false, 
+        message: 'Nenhuma resposta encontrada no gabarito consolidado' 
+      };
+    }
+
+    const officialAnswers = primaryBooklet.answers;
+    console.log(`[recalculateUserScore] Found ${Object.keys(officialAnswers).length} official answers`);
 
     let totalScore = 0;
     let totalWeight = 0;
@@ -180,7 +205,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
     // Calcular a pontuação do usuário para cada resposta
     for (const userAnswer of userAnswers || []) {
-      const officialAnswer = officialAnswers?.find(oa => oa.question_number === userAnswer.question_number);
+      const questionNumberStr = userAnswer.question_number.toString();
+      const officialAnswer = officialAnswers[questionNumberStr];
 
       if (officialAnswer) {
         const isCorrect = officialAnswer.is_nullified === true || userAnswer.answer === officialAnswer.correct_answer;
