@@ -134,15 +134,11 @@ export const consolidatedAnswerService = {
       console.log('[consolidatedAnswerService] Booklet ID:', bookletId);
       console.log('[consolidatedAnswerService] Answers count:', answers.length);
       console.log('[consolidatedAnswerService] Respostas a salvar:', answers);
-      
-      // Primeiro, vamos buscar os dados existentes para garantir que não perdemos nada
-      const existingData = await this.getConsolidatedAnswers(rankingId);
-      console.log('[consolidatedAnswerService] Dados existentes:', existingData);
-      
+
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concursoId,
-        p_booklet_id: bookletId, // UUID direto
+        p_booklet_id: bookletId,
         p_answers: answers,
         p_discursive_score: discursiveScore,
         p_case_study_1_score: caseStudy1Score,
@@ -157,10 +153,6 @@ export const consolidatedAnswerService = {
       }
 
       console.log('[consolidatedAnswerService] RPC Response:', data);
-      
-      // Verificar se as respostas foram salvas corretamente
-      const updatedData = await this.getConsolidatedAnswers(rankingId);
-      console.log('[consolidatedAnswerService] Dados após salvamento:', updatedData);
       
       return data;
     } catch (error: any) {
