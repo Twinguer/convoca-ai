@@ -1064,9 +1064,7 @@ export type Database = {
         Returns: Json
       }
       save_consolidated_answer_key: {
-        Args:
-          | { p_concurso_id: string; p_booklet_id: string; p_answers: Json }
-          | { p_concurso_id: string; p_booklet_id: string; p_answers: Json }
+        Args: { p_concurso_id: string; p_booklet_id: string; p_answers: Json }
         Returns: Json
       }
       save_scores_transaction: {

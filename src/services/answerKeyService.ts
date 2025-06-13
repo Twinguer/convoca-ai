@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AnswerKeyData {
@@ -58,8 +59,12 @@ export const answerKeyService = {
     try {
       console.log('[answerKeyService] Starting saveBookletAnswerKey');
       console.log('[answerKeyService] Concurso ID:', concursoId);
-      console.log('[answerKeyService] Booklet ID:', bookletId);
+      console.log('[answerKeyService] Booklet ID (input):', bookletId, 'Type:', typeof bookletId);
       console.log('[answerKeyService] Input answers structure:', Object.keys(answers));
+
+      // Garantir que bookletId seja sempre string
+      const bookletIdString = String(bookletId);
+      console.log('[answerKeyService] Booklet ID (converted to string):', bookletIdString);
 
       // Converter o formato de answers para o formato esperado pela função RPC
       const formattedAnswers: Record<string, any> = {};
@@ -82,7 +87,7 @@ export const answerKeyService = {
 
       const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
         p_concurso_id: concursoId,
-        p_booklet_id: bookletId,
+        p_booklet_id: bookletIdString, // Garantir que é string
         p_answers: formattedAnswers
       });
 
@@ -260,8 +265,13 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
 export const saveBookletAnswerKey = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
     console.log('[saveBookletAnswerKey] Starting save for booklet:', bookletId);
+    console.log('[saveBookletAnswerKey] Input booklet ID type:', typeof bookletId);
     console.log('[saveBookletAnswerKey] Input answers array length:', answersArray.length);
     console.log('[saveBookletAnswerKey] Sample answer structure:', answersArray[0]);
+    
+    // Garantir que bookletId seja sempre string
+    const bookletIdString = String(bookletId);
+    console.log('[saveBookletAnswerKey] Converted booklet ID to string:', bookletIdString);
     
     // Converter array para o formato esperado pela função RPC save_consolidated_answer_key
     const formattedAnswers: Record<string, any> = {};
@@ -281,13 +291,13 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
     console.log('[saveBookletAnswerKey] Formatted answers for RPC:', formattedAnswers);
     console.log('[saveBookletAnswerKey] Calling RPC with:', {
       concursoId,
-      bookletId,
+      bookletId: bookletIdString,
       answerCount: Object.keys(formattedAnswers).length
     });
 
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
-      p_booklet_id: bookletId,
+      p_booklet_id: bookletIdString, // Garantir que é string
       p_answers: formattedAnswers
     });
 
