@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AnswerKeyData {
@@ -26,6 +25,7 @@ export const answerKeyService = {
         return null;
       }
 
+      console.log('[answerKeyService] Consolidated data found:', data?.consolidated_answer_data ? 'Yes' : 'No');
       return data?.consolidated_answer_data || null;
     } catch (error) {
       console.error('[answerKeyService] Error:', error);
@@ -36,12 +36,16 @@ export const answerKeyService = {
   // Buscar respostas de um caderno específico
   async getBookletAnswers(concursoId: string, bookletId: string = 'default') {
     try {
+      console.log('[answerKeyService] Getting booklet answers for:', { concursoId, bookletId });
       const consolidatedData = await this.getConsolidatedAnswerKey(concursoId);
       
       if (consolidatedData?.booklets?.[bookletId]) {
-        return consolidatedData.booklets[bookletId].answers || {};
+        const answers = consolidatedData.booklets[bookletId].answers || {};
+        console.log('[answerKeyService] Found', Object.keys(answers).length, 'answers for booklet:', bookletId);
+        return answers;
       }
       
+      console.log('[answerKeyService] No answers found for booklet:', bookletId);
       return {};
     } catch (error) {
       console.error('[answerKeyService] Error fetching booklet answers:', error);
@@ -52,15 +56,17 @@ export const answerKeyService = {
   // Salvar gabarito consolidado para um caderno
   async saveBookletAnswerKey(concursoId: string, bookletId: string, answers: Record<string, AnswerKeyData>) {
     try {
-      console.log('[answerKeyService] Saving consolidated booklet answer key');
+      console.log('[answerKeyService] Starting saveBookletAnswerKey');
       console.log('[answerKeyService] Concurso ID:', concursoId);
       console.log('[answerKeyService] Booklet ID:', bookletId);
-      console.log('[answerKeyService] Answers:', answers);
+      console.log('[answerKeyService] Input answers structure:', Object.keys(answers));
 
       // Converter o formato de answers para o formato esperado pela função RPC
       const formattedAnswers: Record<string, any> = {};
       
       Object.entries(answers).forEach(([questionNumber, answerData]) => {
+        console.log(`[answerKeyService] Processing question ${questionNumber}:`, answerData);
+        
         formattedAnswers[questionNumber] = {
           correct_answer: answerData.correctAnswer,
           weight: answerData.weight,
@@ -71,6 +77,9 @@ export const answerKeyService = {
         };
       });
 
+      console.log('[answerKeyService] Formatted answers for RPC:', formattedAnswers);
+      console.log('[answerKeyService] Total questions to save:', Object.keys(formattedAnswers).length);
+
       const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
         p_concurso_id: concursoId,
         p_booklet_id: bookletId,
@@ -78,14 +87,19 @@ export const answerKeyService = {
       });
 
       if (error) {
-        console.error('[answerKeyService] Error saving consolidated booklet answer key:', error);
+        console.error('[answerKeyService] RPC Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         return { success: false, error: error.message };
       }
 
-      console.log('[answerKeyService] Successfully saved consolidated answer key:', data);
+      console.log('[answerKeyService] RPC Success response:', data);
       return { success: true, data };
     } catch (error: any) {
-      console.error('[answerKeyService] Error in saveBookletAnswerKey:', error);
+      console.error('[answerKeyService] Exception in saveBookletAnswerKey:', error);
       return { success: false, error: error.message };
     }
   },
@@ -245,13 +259,16 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
 
 export const saveBookletAnswerKey = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
-    console.log('[saveBookletAnswerKey] Saving answer key for booklet:', bookletId);
+    console.log('[saveBookletAnswerKey] Starting save for booklet:', bookletId);
+    console.log('[saveBookletAnswerKey] Input answers array length:', answersArray.length);
+    console.log('[saveBookletAnswerKey] Sample answer structure:', answersArray[0]);
     
     // Converter array para o formato esperado pela função RPC save_consolidated_answer_key
     const formattedAnswers: Record<string, any> = {};
     
     answersArray.forEach((answer) => {
-      formattedAnswers[answer.question_number.toString()] = {
+      const questionKey = answer.question_number.toString();
+      formattedAnswers[questionKey] = {
         correct_answer: answer.correct_answer,
         weight: answer.weight || 1.0,
         section_type: answer.section_type,
@@ -261,6 +278,13 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
       };
     });
 
+    console.log('[saveBookletAnswerKey] Formatted answers for RPC:', formattedAnswers);
+    console.log('[saveBookletAnswerKey] Calling RPC with:', {
+      concursoId,
+      bookletId,
+      answerCount: Object.keys(formattedAnswers).length
+    });
+
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
       p_booklet_id: bookletId,
@@ -268,26 +292,35 @@ export const saveBookletAnswerKey = async (concursoId: string, bookletId: string
     });
 
     if (error) {
-      console.error('[saveBookletAnswerKey] Error:', error);
+      console.error('[saveBookletAnswerKey] RPC Error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return { success: false, error: error.message };
     }
 
-    console.log('[saveBookletAnswerKey] Success:', data);
+    console.log('[saveBookletAnswerKey] RPC Success:', data);
     return { success: true, data };
   } catch (error: any) {
-    console.error('[saveBookletAnswerKey] Error:', error);
+    console.error('[saveBookletAnswerKey] Exception:', error);
     return { success: false, error: error.message };
   }
 };
 
 export const getAllBookletsAnswerKeys = async (concursoId: string) => {
   try {
+    console.log('[getAllBookletsAnswerKeys] Fetching for concurso:', concursoId);
     const consolidatedData = await answerKeyService.getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData) {
+      console.log('[getAllBookletsAnswerKeys] No consolidated data found');
       return { success: true, data: null };
     }
 
+    console.log('[getAllBookletsAnswerKeys] Found consolidated data with', 
+      Object.keys(consolidatedData.booklets || {}).length, 'booklets');
     return { success: true, data: consolidatedData };
   } catch (error: any) {
     console.error('[getAllBookletsAnswerKeys] Error:', error);
