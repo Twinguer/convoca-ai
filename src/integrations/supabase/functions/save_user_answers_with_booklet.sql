@@ -3,7 +3,7 @@
 CREATE OR REPLACE FUNCTION public.save_user_answers_with_booklet(
     p_ranking_id uuid,
     p_concurso_id uuid, 
-    p_booklet_id uuid,
+    p_booklet_id text,
     p_answers jsonb,
     p_discursive_score numeric DEFAULT 0,
     p_case_study_1_score numeric DEFAULT 0,
@@ -23,19 +23,29 @@ DECLARE
     v_booklet_key TEXT;
     v_calculation_result JSONB;
     v_booklet_name TEXT;
+    v_booklet_uuid UUID;
 BEGIN
     -- Verificar limite de edições
     IF p_current_edit_count >= 5 THEN
         RETURN jsonb_build_object('success', false, 'error', 'Limite de edições atingido');
     END IF;
     
-    -- Criar chave única para o caderno
-    v_booklet_key := p_booklet_id::text;
+    -- Converter booklet_id para UUID se necessário
+    BEGIN
+        v_booklet_uuid := p_booklet_id::uuid;
+        v_booklet_key := p_booklet_id;
+    EXCEPTION WHEN OTHERS THEN
+        -- Se não conseguir converter, usar como string
+        v_booklet_key := p_booklet_id;
+        v_booklet_uuid := NULL;
+    END;
     
     -- Buscar nome do caderno
-    SELECT name INTO v_booklet_name
-    FROM exam_booklets 
-    WHERE id = p_booklet_id;
+    IF v_booklet_uuid IS NOT NULL THEN
+        SELECT name INTO v_booklet_name
+        FROM exam_booklets 
+        WHERE id = v_booklet_uuid;
+    END IF;
     
     -- Log de entrada com detalhes das respostas
     INSERT INTO score_calculation_logs (
@@ -176,8 +186,10 @@ BEGIN
         answer_format = 'CONSOLIDATED',
         updated_at = now();
     
-    -- Calcular pontuação específica para este caderno
-    SELECT calculate_user_score_by_booklet(p_ranking_id, p_concurso_id, p_booklet_id) INTO v_calculation_result;
+    -- Calcular pontuação específica para este caderno se temos UUID válido
+    IF v_booklet_uuid IS NOT NULL THEN
+        SELECT calculate_user_score_by_booklet(p_ranking_id, p_concurso_id, v_booklet_uuid) INTO v_calculation_result;
+    END IF;
     
     -- Atualizar user_rankings
     UPDATE user_rankings
@@ -187,7 +199,7 @@ BEGIN
         case_study_1_score = p_case_study_1_score,
         case_study_2_score = p_case_study_2_score,
         case_study_3_score = p_case_study_3_score,
-        selected_booklet = p_booklet_id,
+        selected_booklet = v_booklet_uuid,
         score = COALESCE((v_calculation_result->>'total_score')::numeric, 0),
         customDisciplineScores = COALESCE(v_calculation_result->'discipline_scores', '{}'::jsonb),
         weightedCustomDisciplineScores = COALESCE(v_calculation_result->'weighted_discipline_scores', '{}'::jsonb),

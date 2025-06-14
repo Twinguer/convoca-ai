@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 interface UseSaveAnswersProps {
   rankingId: string;
@@ -88,11 +87,11 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Dados formatados para RPC:', answersArray);
       console.log('[useSaveAnswers] Total de respostas a salvar:', answersArray.length);
 
-      // Chamar a função RPC corrigida
+      // Chamar a função RPC corrigida - garantindo que booklet_id seja string
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
-        p_booklet_id: selectedBookletId,
+        p_booklet_id: String(selectedBookletId), // Garantir que seja string
         p_answers: answersArray,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
