@@ -1,24 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Concurso } from '@/types/concursos';
 import { useToast } from '@/components/ui/use-toast';
-
-interface UseSaveAnswersProps {
-  rankingId: string;
-  concurso: Concurso;
-  answers: { [key: number]: string };
-  setIsSaving: (saving: boolean) => void;
-  setError: (error: string | null) => void;
-  setSavedSuccess: (success: boolean) => void;
-  onSuccess: () => void;
-  discursiveScore?: number | null;
-  caseStudy1Score?: number | null;
-  caseStudy2Score?: number | null;
-  caseStudy3Score?: number | null;
-  editCount: number;
-  nullifiedQuestions?: Set<number>;
-  selectedBookletId?: string;
-}
+import { UseSaveAnswersProps, SaveAnswersResponse } from './types';
+import { validateSaveAnswers } from './validation';
+import { prepareAnswersData } from './prepareData';
 
 export const useSaveAnswers = ({
   rankingId,
@@ -44,15 +29,10 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Verificar se o usuário já atingiu o limite de edições (5)
-      if (editCount >= 5) {
-        setError("Você já atingiu o limite de 5 edições permitidas para este cartão de respostas.");
-        return;
-      }
-
-      // Verificar se um caderno foi selecionado
-      if (!selectedBookletId) {
-        setError("É necessário selecionar um caderno de prova antes de salvar as respostas.");
+      // Validar dados de entrada
+      const validation = validateSaveAnswers(editCount, selectedBookletId);
+      if (!validation.isValid) {
+        setError(validation.errorMessage!);
         return;
       }
 
@@ -60,29 +40,8 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Respostas do usuário:', answers);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
 
-      // Preparar os dados de respostas no formato correto para a função RPC
-      const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-        const qNum = parseInt(questionNumber, 10);
-        
-        return {
-          questionNumber: qNum,
-          answer: answer.trim()
-        };
-      });
-      
-      // Adicionar todas as questões anuladas com uma resposta padrão
-      if (nullifiedQuestions && nullifiedQuestions.size > 0) {
-        nullifiedQuestions.forEach(questionNumber => {
-          if (!answers[questionNumber]) {
-            const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-            
-            answersArray.push({
-              questionNumber,
-              answer: defaultAnswer
-            });
-          }
-        });
-      }
+      // Preparar dados das respostas
+      const answersArray = prepareAnswersData(answers, concurso, nullifiedQuestions);
 
       console.log('[useSaveAnswers] Dados formatados para RPC:', answersArray);
       console.log('[useSaveAnswers] Total de respostas a salvar:', answersArray.length);
@@ -137,3 +96,5 @@ export const useSaveAnswers = ({
 
   return { handleSaveAnswers };
 };
+
+export * from './types';
