@@ -1,6 +1,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAllBookletsAnswerKeys, saveBookletAnswerKey } from '@/services/answerKeyService';
+import { getAllBookletsAnswerKeys, saveBookletAnswerKeyLegacy } from '@/services/answerKeyService';
 import { toast } from 'sonner';
 
 export const useConsolidatedAnswerKey = (concursoId: string) => {
@@ -30,7 +30,7 @@ export const useConsolidatedAnswerKey = (concursoId: string) => {
       bookletId: string; 
       answers: any[];
     }) => {
-      const result = await saveBookletAnswerKey(concursoId, bookletId, answers);
+      const result = await saveBookletAnswerKeyLegacy(concursoId, bookletId, answers);
       
       if (!result.success) {
         throw new Error(result.error);

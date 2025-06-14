@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { answerKeyService } from '@/services/answerKeyService';
+import { checkAnswerKeyCompleteness } from '@/services/answerKeyService';
 
 interface BookletCompleteness {
   bookletId: string;
@@ -38,7 +38,7 @@ export const useAnswerKeyCompleteness = (
         console.log('Verificando completude dos cadernos...');
         console.log('Total de questões esperadas:', expectedQuestions);
         
-        const result = await answerKeyService.checkAnswerKeyCompleteness(
+        const result = await checkAnswerKeyCompleteness(
           concursoId,
           bookletIds,
           expectedQuestions

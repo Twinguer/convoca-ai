@@ -103,5 +103,10 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
   }
 };
 
-export * from './types';
+// Export the main service as default and named export
 export default answerKeyService;
+export { answerKeyService };
+
+// Export individual functions for direct use
+export { saveBookletAnswerKey, updateSingleAnswer, getConsolidatedAnswerKey, getBookletAnswers, checkAnswerKeyCompleteness, getAnswerKeyStats };
+export * from './types';

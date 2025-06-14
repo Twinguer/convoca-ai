@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
-import { saveBookletAnswerKey, getAnswerKeyForBooklet } from '@/services/answerKeyService';
+import { saveBookletAnswerKeyLegacy, getAnswerKeyForBooklet } from '@/services/answerKeyService';
 
 interface AnswerKeyFormProps {
   concursoId: string;
@@ -278,7 +278,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       console.log('Salvando gabarito para caderno:', bookletId, 'com', answerKeyData.length, 'questões');
 
       // Usar o serviço para salvar o caderno
-      const result = await saveBookletAnswerKey(concursoId, bookletId, answerKeyData);
+      const result = await saveBookletAnswerKeyLegacy(concursoId, bookletId, answerKeyData);
 
       if (!result.success) {
         throw new Error(result.error);
