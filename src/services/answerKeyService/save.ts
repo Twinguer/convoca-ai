@@ -38,7 +38,7 @@ export const saveBookletAnswerKey = async (
 
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
-      p_booklet_id: bookletIdString, // Garantir que é string
+      p_booklet_id: bookletIdString,
       p_answers: formattedAnswers
     });
 
@@ -69,13 +69,23 @@ export const updateSingleAnswer = async (
     console.log('[answerKeyService] Updating single answer');
     console.log('[answerKeyService] Question:', questionNumber, 'Answer:', answerData);
 
-    const { data, error } = await supabase.rpc('update_answer_with_weight', {
+    // Como não temos mais a função update_answer_with_weight que usava booklet_id,
+    // vamos usar a função consolidada para atualizar uma única resposta
+    const singleAnswerData = {
+      [questionNumber.toString()]: {
+        correct_answer: answerData.correctAnswer,
+        weight: answerData.weight,
+        section_type: answerData.sectionType,
+        is_nullified: answerData.isNullified,
+        answer_format: 'OBJECTIVE',
+        question_type: 'MULTIPLE_CHOICE'
+      }
+    };
+
+    const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
-      p_question_number: questionNumber,
-      p_correct_answer: answerData.correctAnswer,
-      p_weight: answerData.weight,
-      p_is_nullified: answerData.isNullified,
-      p_section_type: answerData.sectionType
+      p_booklet_id: 'default', // Usar um booklet padrão para atualizações individuais
+      p_answers: singleAnswerData
     });
 
     if (error) {
