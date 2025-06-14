@@ -67,11 +67,38 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
 // Função legada mantida para compatibilidade
 export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
-    console.log('[saveBookletAnswerKey] Starting save for booklet:', bookletId);
+    console.log('[saveBookletAnswerKeyLegacy] Starting save for booklet:', bookletId);
+
+    // 1. Fetch existing consolidated data for the concurso
+    const { data: existingRecord, error: fetchError } = await supabase
+      .from('official_answer_weights')
+      .select('id, consolidated_answer_data')
+      .eq('concurso_id', concursoId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[saveBookletAnswerKeyLegacy] Error fetching existing data:', fetchError);
+      return { success: false, error: fetchError.message };
+    }
+
+    let consolidatedData = existingRecord?.consolidated_answer_data || {
+      booklets: {},
+      metadata: { version: '1.0', created_at: new Date().toISOString() }
+    };
     
-    const bookletIdString = String(bookletId);
+    // Garantir que a estrutura exista
+    if (typeof consolidatedData !== 'object' || consolidatedData === null) {
+      consolidatedData = {
+        booklets: {},
+        metadata: { version: '1.0', created_at: new Date().toISOString() }
+      };
+    }
+    if (!consolidatedData.booklets) {
+      consolidatedData.booklets = {};
+    }
+
+    // 2. Format answers from array to object
     const formattedAnswers: Record<string, any> = {};
-    
     answersArray.forEach((answer) => {
       const questionKey = answer.question_number.toString();
       formattedAnswers[questionKey] = {
@@ -84,21 +111,58 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
       };
     });
 
-    const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
-      p_concurso_id: concursoId,
-      p_booklet_id: bookletIdString,
-      p_answers: formattedAnswers
-    });
+    // 3. Update the consolidated data object
+    consolidatedData.booklets[bookletId] = {
+        answers: formattedAnswers,
+        metadata: {
+            total_questions: Object.keys(formattedAnswers).length,
+            last_updated: new Date().toISOString(),
+            booklet_name: bookletId
+        }
+    };
+    if (!consolidatedData.metadata) {
+      consolidatedData.metadata = {};
+    }
+    consolidatedData.metadata.last_updated = new Date().toISOString();
 
-    if (error) {
-      console.error('[saveBookletAnswerKey] RPC Error:', error);
-      return { success: false, error: error.message };
+    // 4. Update or Insert
+    if (existingRecord) {
+      // Update
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .update({ consolidated_answer_data: consolidatedData })
+        .eq('id', existingRecord.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('[saveBookletAnswerKeyLegacy] Update Error:', error);
+        return { success: false, error: error.message };
+      }
+      console.log('[saveBookletAnswerKeyLegacy] Update Success:', data);
+      return { success: true, data };
+
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('official_answer_weights')
+        .insert({
+          concurso_id: concursoId,
+          consolidated_answer_data: consolidatedData
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('[saveBookletAnswerKeyLegacy] Insert Error:', error);
+        return { success: false, error: error.message };
+      }
+      console.log('[saveBookletAnswerKeyLegacy] Insert Success:', data);
+      return { success: true, data };
     }
 
-    console.log('[saveBookletAnswerKey] RPC Success:', data);
-    return { success: true, data };
   } catch (error: any) {
-    console.error('[saveBookletAnswerKey] Exception:', error);
+    console.error('[saveBookletAnswerKeyLegacy] Exception:', error);
     return { success: false, error: error.message };
   }
 };
