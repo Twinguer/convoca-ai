@@ -40,14 +40,13 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
 
     setIsSwitching(true);
     try {
-      console.log('[BookletSwitcher] Trocando para caderno:', selectedBookletId);
+      console.log('[BookletSwitcher] Switching to booklet:', selectedBookletId);
       
       // Usar o serviço consolidado para trocar caderno
       const result = await consolidatedAnswerService.switchBooklet(rankingId, selectedBookletId);
 
       if (result.success) {
         // Converter as respostas do formato JSON para o formato esperado
-        // APENAS do caderno específico (sem contaminação)
         const answers: Record<number, string> = {};
         if (result.answers && typeof result.answers === 'object') {
           Object.entries(result.answers).forEach(([questionNum, answer]) => {
@@ -58,18 +57,18 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
           });
         }
 
-        console.log('[BookletSwitcher] Respostas isoladas do novo caderno:', answers);
+        console.log('[BookletSwitcher] Isolated answers for new booklet:', answers);
 
-        // Notificar o componente pai sobre a mudança com as respostas isoladas
+        // Notify parent component about the change with isolated answers
         onBookletChanged(selectedBookletId, answers);
         
         toast.success(`Caderno alterado para ${getBookletName(selectedBookletId)} com sucesso`);
       } else {
-        console.error('[BookletSwitcher] Erro ao trocar caderno:', result.error);
+        console.error('[BookletSwitcher] Error switching booklet:', result.error);
         toast.error(result.error || 'Falha ao trocar caderno');
       }
     } catch (error: any) {
-      console.error('[BookletSwitcher] Erro:', error);
+      console.error('[BookletSwitcher] Error:', error);
       toast.error('Erro inesperado ao trocar caderno');
     } finally {
       setIsSwitching(false);
