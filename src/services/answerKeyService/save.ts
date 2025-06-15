@@ -36,6 +36,7 @@ export const saveBookletAnswerKey = async (
     console.log('[answerKeyService] Formatted answers for RPC:', formattedAnswers);
     console.log('[answerKeyService] Total questions to save:', Object.keys(formattedAnswers).length);
 
+    // Usar a função RPC que agora deve funcionar sem trigger problems
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
       p_concurso_id: concursoId,
       p_booklet_id: bookletIdString,
@@ -53,6 +54,13 @@ export const saveBookletAnswerKey = async (
     }
 
     console.log('[answerKeyService] RPC Success response:', data);
+    
+    // Verificar se a resposta indica sucesso
+    if (data && typeof data === 'object' && 'success' in data && !data.success) {
+      console.error('[answerKeyService] RPC returned failure:', data);
+      return { success: false, error: data.error || 'Falha na função do banco de dados' };
+    }
+
     return { success: true, data };
   } catch (error: any) {
     console.error('[answerKeyService] Exception in saveBookletAnswerKey:', error);
@@ -91,6 +99,12 @@ export const updateSingleAnswer = async (
     if (error) {
       console.error('[answerKeyService] Error updating single answer:', error);
       return { success: false, error: error.message };
+    }
+
+    // Verificar se a resposta indica sucesso
+    if (data && typeof data === 'object' && 'success' in data && !data.success) {
+      console.error('[answerKeyService] RPC returned failure for single answer:', data);
+      return { success: false, error: data.error || 'Falha na atualização da resposta' };
     }
 
     console.log('[answerKeyService] Successfully updated answer:', data);
