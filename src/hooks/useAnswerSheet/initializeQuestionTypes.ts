@@ -1,78 +1,95 @@
 
 import { Concurso } from '@/types/concursos';
-import { getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 
 export const createQuestionOptions = (concurso: Concurso): Record<number, string[]> => {
-  const questionOptions: Record<number, string[]> = {};
+  const options: Record<number, string[]> = {};
   
-  if (!concurso) return questionOptions;
+  // Determine question type based on exam
+  const questionOptions = concurso.exam_type === 'Certo ou Errado' 
+    ? ['C', 'E'] 
+    : ['A', 'B', 'C', 'D', 'E'];
   
-  const examType = concurso.exam_type || 'Alternativas';
-  const alternativesCount = concurso.alternatives_count || 5;
-  
-  let questionNumber = 1;
+  // Calculate total questions and create options
   const totalQuestions = getTotalQuestions(concurso);
   
-  // Se for prova de Certo ou Errado, todas questões tem as mesmas opções
-  if (examType === 'Certo ou Errado') {
-    for (let i = 1; i <= totalQuestions; i++) {
-      questionOptions[i] = ['C', 'E'];
-    }
-    return questionOptions;
-  }
-  
-  // Se for prova de alternativas, todas questões tem opções A, B, C, D, E (ou conforme alternativesCount)
-  const options = Array.from({ length: alternativesCount }, (_, i) => String.fromCharCode(65 + i));
-  
   for (let i = 1; i <= totalQuestions; i++) {
-    questionOptions[i] = [...options];
+    options[i] = questionOptions;
   }
   
-  return questionOptions;
+  console.log(`[createQuestionOptions] Created options for ${totalQuestions} questions with ${questionOptions.length} choices each`);
+  return options;
 };
 
-// Função auxiliar para obter o número total de questões
-const getTotalQuestions = (concurso: Concurso): number => {
+// Calculate the total number of objective questions in the exam
+export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    // Para disciplinas customizadas
-    let total = 0;
+  console.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
+  
+  // If using custom knowledge structure
+  if (concurso.has_custom_knowledge) {
+    console.log('[getTotalQuestions] Usando estrutura de conhecimento customizado');
+    let totalQuestions = 0;
     
-    // Verificar se temos estrutura hierárquica (blocos -> disciplinas)
-    const isHierarchical = concurso.disciplines.length > 0 && 
-                          'disciplines' in concurso.disciplines[0];
-    
-    if (isHierarchical) {
-      // Estrutura hierárquica
-      for (const block of concurso.disciplines) {
-        if ('disciplines' in block) {
-          for (const discipline of block.disciplines) {
-            if (discipline.isEnabled && discipline.questionCount) {
-              total += parseInt(String(discipline.questionCount));
-            }
-          }
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      concurso.disciplines.forEach(discipline => {
+        if (discipline.isEnabled && discipline.questionCount) {
+          const questionCount = typeof discipline.questionCount === 'number'
+            ? discipline.questionCount
+            : Number(String(discipline.questionCount || '0'));
+            
+          console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+          totalQuestions += questionCount;
         }
-      }
+      });
     } else {
-      // Estrutura plana
-      for (const discipline of concurso.disciplines) {
-        if ('isEnabled' in discipline && discipline.isEnabled && discipline.questionCount) {
-          total += parseInt(String(discipline.questionCount));
-        }
-      }
+      console.warn('[getTotalQuestions] Nenhum array de disciplines encontrado para conhecimento customizado');
     }
     
-    return total;
-  } else {
-    // Estrutura tradicional
-    return (
-      (concurso.has_basic_knowledge ? parseInt(String(concurso.basic_knowledge_questions)) || 0 : 0) +
-      (concurso.has_specific_knowledge_1 ? parseInt(String(concurso.specific_knowledge_1_questions)) || 0 : 0) +
-      (concurso.has_specific_knowledge_2 ? parseInt(String(concurso.specific_knowledge_2_questions)) || 0 : 0) +
-      (concurso.has_specific_knowledge_3 ? parseInt(String(concurso.specific_knowledge_3_questions)) || 0 : 0)
-    );
+    console.log(`[getTotalQuestions] Total de questões customizadas: ${totalQuestions}`);
+    return totalQuestions;
   }
+  
+  // Traditional structure
+  console.log('[getTotalQuestions] Usando estrutura tradicional');
+  let total = 0;
+  
+  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
+    const basicCount = typeof concurso.basic_knowledge_questions === 'number'
+      ? concurso.basic_knowledge_questions
+      : Number(String(concurso.basic_knowledge_questions || '0'));
+      
+    console.log(`[getTotalQuestions] Conhecimento básico: ${basicCount} questões`);
+    total += basicCount;
+  }
+  
+  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
+    const count = typeof concurso.specific_knowledge_1_questions === 'number'
+      ? concurso.specific_knowledge_1_questions
+      : Number(String(concurso.specific_knowledge_1_questions || '0'));
+      
+    console.log(`[getTotalQuestions] Conhecimento específico 1: ${count} questões`);
+    total += count;
+  }
+  
+  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
+    const count = typeof concurso.specific_knowledge_2_questions === 'number'
+      ? concurso.specific_knowledge_2_questions
+      : Number(String(concurso.specific_knowledge_2_questions || '0'));
+      
+    console.log(`[getTotalQuestions] Conhecimento específico 2: ${count} questões`);
+    total += count;
+  }
+  
+  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
+    const count = typeof concurso.specific_knowledge_3_questions === 'number'
+      ? concurso.specific_knowledge_3_questions
+      : Number(String(concurso.specific_knowledge_3_questions || '0'));
+      
+    console.log(`[getTotalQuestions] Conhecimento específico 3: ${count} questões`);
+    total += count;
+  }
+  
+  console.log(`[getTotalQuestions] Total de questões tradicionais: ${total}`);
+  return total;
 };
-
-export { getTotalQuestions };

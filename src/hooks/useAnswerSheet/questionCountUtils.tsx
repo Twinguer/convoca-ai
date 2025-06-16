@@ -1,3 +1,4 @@
+
 import { Concurso } from '@/types/concursos';
 
 // Calculate the total number of objective questions in the exam
@@ -79,58 +80,4 @@ export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): n
   const count = Object.keys(answers).length;
   console.log(`[getAnsweredQuestionsCount] Total de respostas: ${count}`);
   return count;
-};
-
-// Nova função para verificar se existem questões nulas que não estão no gabarito
-export const checkMissingOfficialAnswers = async (concursoId: string) => {
-  try {
-    const { supabase } = await import('@/integrations/supabase/client');
-    console.log(`[checkMissingOfficialAnswers] Verificando gabarito oficial para concurso: ${concursoId}`);
-    
-    // Buscar o concurso
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('*')
-      .eq('id', concursoId)
-      .single();
-      
-    if (concursoError) {
-      console.error('[checkMissingOfficialAnswers] Erro ao buscar concurso:', concursoError);
-      return { missing: true, error: concursoError.message };
-    }
-    
-    // Calcular quantas questões deveriam existir
-    const expectedQuestions = getTotalQuestions(concurso);
-    
-    // Buscar quantas questões existem no gabarito
-    const { data: officialAnswers, error: answersError } = await supabase
-      .from('official_answer_weights')
-      .select('question_number, correct_answer')
-      .eq('concurso_id', concursoId);
-      
-    if (answersError) {
-      console.error('[checkMissingOfficialAnswers] Erro ao buscar gabarito:', answersError);
-      return { missing: true, error: answersError.message };
-    }
-    
-    console.log(`[checkMissingOfficialAnswers] Questões esperadas: ${expectedQuestions}, Encontradas: ${officialAnswers?.length || 0}`);
-    
-    // Se não encontrou nenhuma questão ou encontrou menos do que o esperado
-    if (!officialAnswers || officialAnswers.length < expectedQuestions) {
-      console.warn(`[checkMissingOfficialAnswers] Faltam questões no gabarito oficial!`);
-      return { 
-        missing: true, 
-        found: officialAnswers?.length || 0, 
-        expected: expectedQuestions 
-      };
-    }
-    
-    return { missing: false };
-  } catch (error) {
-    console.error('[checkMissingOfficialAnswers] Erro ao verificar gabarito:', error);
-    return { 
-      missing: true, 
-      error: error instanceof Error ? error.message : 'Erro desconhecido' 
-    };
-  }
 };

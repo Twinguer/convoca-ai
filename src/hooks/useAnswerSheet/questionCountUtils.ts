@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getConsolidatedAnswerKey } from '@/services/answerKeyService';
+import { getTotalQuestions } from './questionCountUtils';
 
 export const checkMissingOfficialAnswers = async (concursoId: string) => {
   try {
@@ -18,31 +19,8 @@ export const checkMissingOfficialAnswers = async (concursoId: string) => {
       return { missing: true, reason: 'Concurso não encontrado' };
     }
 
-    // Calcular total de questões esperadas
-    let totalExpectedQuestions = 0;
-    
-    if (concurso.has_basic_knowledge) {
-      totalExpectedQuestions += concurso.basic_knowledge_questions || 0;
-    }
-    if (concurso.has_specific_knowledge_1) {
-      totalExpectedQuestions += concurso.specific_knowledge_1_questions || 0;
-    }
-    if (concurso.has_specific_knowledge_2) {
-      totalExpectedQuestions += concurso.specific_knowledge_2_questions || 0;
-    }
-    if (concurso.has_specific_knowledge_3) {
-      totalExpectedQuestions += concurso.specific_knowledge_3_questions || 0;
-    }
-
-    // Para disciplinas customizadas
-    if (concurso.has_custom_knowledge && concurso.disciplines) {
-      const disciplines = Array.isArray(concurso.disciplines) ? concurso.disciplines : [];
-      disciplines.forEach((discipline: any) => {
-        if (discipline.isEnabled && discipline.questionCount) {
-          totalExpectedQuestions += parseInt(discipline.questionCount) || 0;
-        }
-      });
-    }
+    // Calcular total de questões esperadas usando a função correta
+    const totalExpectedQuestions = getTotalQuestions(concurso);
 
     console.log('[checkMissingOfficialAnswers] Total esperado de questões:', totalExpectedQuestions);
 
@@ -50,7 +28,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string) => {
       return { missing: true, reason: 'Nenhuma questão configurada no concurso' };
     }
 
-    // Buscar gabarito consolidado
+    // Buscar gabarito consolidado usando a nova estrutura JSON
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData || !consolidatedData.booklets) {
