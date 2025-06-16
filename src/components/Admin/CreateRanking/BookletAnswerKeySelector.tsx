@@ -40,6 +40,8 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
   completionStatus,
   disabled = false
 }) => {
+  console.log('[BookletAnswerKeySelector] Rendering with completion status:', completionStatus);
+  
   if (!booklets || booklets.length === 0) {
     return (
       <Card className="mb-6">
@@ -95,6 +97,8 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
             <SelectContent>
               {booklets.map((booklet) => {
                 const completion = completionStatus?.details.find(d => d.bookletId === booklet.id);
+                console.log(`[BookletAnswerKeySelector] Booklet ${booklet.id} completion:`, completion);
+                
                 return (
                   <SelectItem key={booklet.id} value={booklet.id}>
                     <div className="flex items-center justify-between w-full">

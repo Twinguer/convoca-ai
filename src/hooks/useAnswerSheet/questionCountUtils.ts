@@ -86,7 +86,7 @@ export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): n
 
 export const checkMissingOfficialAnswers = async (concursoId: string) => {
   try {
-    console.log('[checkMissingOfficialAnswers] Checking for concurso:', concursoId);
+    console.log('[checkMissingOfficialAnswers] Verificando gabarito para concurso:', concursoId);
     
     // Buscar informações do concurso
     const { data: concurso, error: concursoError } = await supabase
