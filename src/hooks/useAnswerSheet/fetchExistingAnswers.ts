@@ -66,17 +66,31 @@ export const fetchExistingAnswers = async (rankingId: string) => {
     const consolidatedData = data.answers_data as ConsolidatedAnswerData;
     console.log('[fetchExistingAnswers] Retrieved consolidated data:', consolidatedData);
 
-    // Extrair respostas de todos os cadernos para compatibilidade
+    // Buscar informações do user_ranking para obter o caderno selecionado
+    const { data: rankingData, error: rankingError } = await supabase
+      .from('user_rankings')
+      .select('selected_booklet')
+      .eq('id', rankingId)
+      .single();
+
+    let selectedBookletId = consolidatedData.selected_booklet;
+    if (rankingData?.selected_booklet) {
+      selectedBookletId = rankingData.selected_booklet;
+    }
+
+    console.log('[fetchExistingAnswers] Selected booklet:', selectedBookletId);
+
+    // Extrair respostas do caderno selecionado
     const answers: { [key: number]: string } = {};
     
-    if (consolidatedData.booklets) {
-      Object.values(consolidatedData.booklets).forEach(booklet => {
-        if (booklet.answers) {
-          Object.entries(booklet.answers).forEach(([questionNum, answer]) => {
-            answers[parseInt(questionNum)] = answer;
-          });
-        }
-      });
+    if (consolidatedData.booklets && selectedBookletId) {
+      const bookletData = consolidatedData.booklets[selectedBookletId];
+      if (bookletData?.answers) {
+        Object.entries(bookletData.answers).forEach(([questionNum, answer]) => {
+          answers[parseInt(questionNum)] = answer;
+        });
+        console.log('[fetchExistingAnswers] Loaded answers for selected booklet:', answers);
+      }
     }
 
     return {
@@ -85,7 +99,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       caseStudy1Score: consolidatedData.subjective_scores?.case_study_1 || null,
       caseStudy2Score: consolidatedData.subjective_scores?.case_study_2 || null,
       caseStudy3Score: consolidatedData.subjective_scores?.case_study_3 || null,
-      selectedBooklet: consolidatedData.selected_booklet || null,
+      selectedBooklet: selectedBookletId || null,
       editCount: consolidatedData.total_edit_count || 0
     };
   } catch (error) {

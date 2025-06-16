@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Interface para trabalhar com a estrutura consolidada
@@ -135,10 +136,13 @@ export const consolidatedAnswerService = {
       console.log('[consolidatedAnswerService] Answers count:', answers.length);
       console.log('[consolidatedAnswerService] Respostas a salvar:', answers);
 
+      // Garantir que bookletId seja string
+      const bookletIdString = String(bookletId);
+
       const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
         p_ranking_id: rankingId,
         p_concurso_id: concursoId,
-        p_booklet_id: bookletId,
+        p_booklet_id: bookletIdString,
         p_answers: answers,
         p_discursive_score: discursiveScore,
         p_case_study_1_score: caseStudy1Score,
