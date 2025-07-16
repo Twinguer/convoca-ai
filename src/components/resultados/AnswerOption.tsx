@@ -34,7 +34,10 @@ export const AnswerOption: React.FC<AnswerOptionProps> = ({
         }
         ${disabled ? 'opacity-70 cursor-not-allowed' : 'transition-all duration-150 ease-in-out'}
       `}
-      onClick={disabled ? undefined : onClick}
+      onClick={disabled ? undefined : () => {
+        console.log(`[AnswerOption] Clicked option: ${option}`);
+        onClick();
+      }}
       role="button"
       aria-pressed={isSelected}
       aria-disabled={disabled}

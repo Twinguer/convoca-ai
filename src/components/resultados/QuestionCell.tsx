@@ -25,6 +25,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   onClearAnswer,
   isNullified = false
 }) => {
+  console.log(`[QuestionCell] Question ${questionNumber} - Selected answer: ${selectedAnswer}`);
   return (
     <div className={`border rounded-md p-3 ${isNullified ? 'bg-gray-50' : 'bg-white'}`}>
       <div className="flex justify-between items-center mb-2">
