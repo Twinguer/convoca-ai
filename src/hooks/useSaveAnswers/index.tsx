@@ -41,10 +41,10 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
 
       // Preparar dados das respostas
-      const answersArray = prepareAnswersData(answers, concurso, nullifiedQuestions);
+      const answersObject = prepareAnswersData(answers, concurso, nullifiedQuestions);
 
-      console.log('[useSaveAnswers] Dados formatados para RPC:', answersArray);
-      console.log('[useSaveAnswers] Total de respostas a salvar:', answersArray.length);
+      console.log('[useSaveAnswers] Dados formatados para RPC:', answersObject);
+      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(answersObject).length);
 
       // Garantir que selectedBookletId seja sempre string para a função RPC
       const bookletIdString = selectedBookletId ? String(selectedBookletId) : 'default';
@@ -54,7 +54,7 @@ export const useSaveAnswers = ({
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_booklet_id: bookletIdString,
-        p_answers: answersArray,
+        p_answers: answersObject,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
         p_case_study_2_score: caseStudy2Score || 0,
