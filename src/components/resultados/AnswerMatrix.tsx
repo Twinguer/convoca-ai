@@ -52,37 +52,35 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   return (
     <div className="p-4 bg-gray-50">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {matrix.map((row, rowIndex) => (
-          <React.Fragment key={rowIndex}>
-            {row.map((questionNumber, colIndex) => 
-              questionNumber !== null ? (
-                <div key={`${rowIndex}-${colIndex}`} 
-                  className={`${
-                    nullifiedQuestions.has(questionNumber) ? 'opacity-75' : ''
-                  }`}
-                >
-                  <QuestionCell
+        {matrix.map((row, rowIndex) => 
+          row.map((questionNumber, colIndex) => 
+            questionNumber !== null ? (
+              <div key={`${rowIndex}-${colIndex}`} 
+                className={`${
+                  nullifiedQuestions.has(questionNumber) ? 'opacity-75' : ''
+                }`}
+              >
+                <QuestionCell
+                  questionNumber={questionNumber}
+                  selectedAnswer={answers[questionNumber]}
+                  onAnswerChange={onAnswerChange}
+                  options={getOptionsForQuestion(questionNumber)}
+                  disabled={disabled || nullifiedQuestions.has(questionNumber)}
+                  examType={examType}
+                  onClearAnswer={onClearAnswer}
+                  isNullified={nullifiedQuestions.has(questionNumber)}
+                />
+                {isAdminView && onNullifyQuestion && (
+                  <NullifyQuestionButton
                     questionNumber={questionNumber}
-                    selectedAnswer={answers[questionNumber]}
-                    onAnswerChange={onAnswerChange}
-                    options={getOptionsForQuestion(questionNumber)}
-                    disabled={disabled || nullifiedQuestions.has(questionNumber)}
-                    examType={examType}
-                    onClearAnswer={onClearAnswer}
                     isNullified={nullifiedQuestions.has(questionNumber)}
+                    onNullify={onNullifyQuestion}
                   />
-                  {isAdminView && onNullifyQuestion && (
-                    <NullifyQuestionButton
-                      questionNumber={questionNumber}
-                      isNullified={nullifiedQuestions.has(questionNumber)}
-                      onNullify={onNullifyQuestion}
-                    />
-                  )}
-                </div>
-              ) : null
-            )}
-          </React.Fragment>
-        ))}
+                )}
+              </div>
+            ) : null
+          )
+        )}
       </div>
     </div>
   );
