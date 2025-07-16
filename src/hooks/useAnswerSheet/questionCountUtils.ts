@@ -15,13 +15,28 @@ export const getTotalQuestions = (concurso: Concurso): number => {
     let totalQuestions = 0;
     
     if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      concurso.disciplines.forEach(discipline => {
-        if (discipline.isEnabled && discipline.questionCount) {
-          const questionCount = typeof discipline.questionCount === 'number'
-            ? discipline.questionCount
-            : Number(String(discipline.questionCount || '0'));
+      concurso.disciplines.forEach(item => {
+        // Verificar se é estrutura hierárquica (blocos) ou flat (disciplinas diretas)
+        if ('disciplines' in item && Array.isArray(item.disciplines)) {
+          // Estrutura hierárquica - item é um bloco com disciplinas
+          console.log(`[getTotalQuestions] Processando bloco: ${item.name}`);
+          item.disciplines.forEach(discipline => {
+            if (discipline.isEnabled && discipline.questionCount) {
+              const questionCount = typeof discipline.questionCount === 'number'
+                ? discipline.questionCount
+                : Number(String(discipline.questionCount || '0'));
+                
+              console.log(`[getTotalQuestions] Disciplina ${discipline.name} (bloco ${item.name}): ${questionCount} questões`);
+              totalQuestions += questionCount;
+            }
+          });
+        } else if ('isEnabled' in item && item.isEnabled && 'questionCount' in item && item.questionCount) {
+          // Estrutura flat - item é uma disciplina direta
+          const questionCount = typeof item.questionCount === 'number'
+            ? item.questionCount
+            : Number(String(item.questionCount || '0'));
             
-          console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+          console.log(`[getTotalQuestions] Disciplina ${item.name}: ${questionCount} questões`);
           totalQuestions += questionCount;
         }
       });
