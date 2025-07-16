@@ -77,11 +77,13 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       try {
         console.log(`[recalculateAllUserScores] Processing ranking ${ranking.id} for user ${ranking.user_id}`);
 
-        // Buscar respostas do usuário
-        const { data: userAnswers, error: answersError } = await supabase
+        // Buscar respostas consolidadas do usuário
+        const { data: consolidatedData, error: answersError } = await supabase
           .from('user_answers')
-          .select('question_number, answer')
-          .eq('user_ranking_id', ranking.id);
+          .select('answers_data')
+          .eq('user_ranking_id', ranking.id)
+          .is('question_number', null)
+          .single();
 
         if (answersError) {
           console.error(`[recalculateAllUserScores] Error fetching answers for ranking ${ranking.id}:`, answersError);
@@ -94,13 +96,21 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
         const disciplineScores: Record<string, number> = {};
         const weightedDisciplineScores: Record<string, number> = {};
 
+        // Extrair respostas do primeiro caderno disponível
+        let userAnswers: Record<string, string> = {};
+        if (consolidatedData?.answers_data?.booklets) {
+          const userBooklets = consolidatedData.answers_data.booklets;
+          const userBookletIds = Object.keys(userBooklets);
+          const userBooklet = userBooklets[userBookletIds[0]];
+          userAnswers = userBooklet?.answers || {};
+        }
+
         // Calcular pontuação das respostas objetivas
-        for (const userAnswer of userAnswers || []) {
-          const questionNumberStr = userAnswer.question_number.toString();
+        for (const [questionNumberStr, userAnswer] of Object.entries(userAnswers)) {
           const officialAnswer = officialAnswers[questionNumberStr];
 
           if (officialAnswer) {
-            const isCorrect = officialAnswer.is_nullified === true || userAnswer.answer === officialAnswer.correct_answer;
+            const isCorrect = officialAnswer.is_nullified === true || userAnswer === officialAnswer.correct_answer;
             const questionWeight = officialAnswer.weight || 1;
             const sectionType = officialAnswer.section_type || 'default';
             
