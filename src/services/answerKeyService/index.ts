@@ -64,123 +64,36 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
   }
 };
 
-// Função corrigida para salvar gabarito de caderno específico
+// Função para salvar gabarito usando nova estrutura consolidada
 export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
-    console.log('[saveBookletAnswerKeyLegacy] Starting save for concurso:', concursoId, 'booklet:', bookletId);
+    console.log('[saveBookletAnswerKeyLegacy] Using consolidated structure - Saving for concurso:', concursoId, 'booklet:', bookletId);
     console.log('[saveBookletAnswerKeyLegacy] Answers to save:', answersArray.length);
 
-    // 1. Buscar dados consolidados existentes
-    const { data: existingRecord, error: fetchError } = await supabase
-      .from('official_answer_weights')
-      .select('id, consolidated_answer_data')
-      .eq('concurso_id', concursoId)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error('[saveBookletAnswerKeyLegacy] Error fetching existing data:', fetchError);
-      return { success: false, error: fetchError.message };
-    }
-
-    // 2. Inicializar ou usar dados existentes
-    let consolidatedData = existingRecord?.consolidated_answer_data || {
-      booklets: {},
-      metadata: { 
-        version: '1.0', 
-        created_at: new Date().toISOString() 
-      }
-    };
-    
-    // Garantir estrutura correta
-    if (typeof consolidatedData !== 'object' || consolidatedData === null) {
-      consolidatedData = {
-        booklets: {},
-        metadata: { version: '1.0', created_at: new Date().toISOString() }
-      };
-    }
-    if (!consolidatedData.booklets) {
-      consolidatedData.booklets = {};
-    }
-    if (!consolidatedData.metadata) {
-      consolidatedData.metadata = { version: '1.0', created_at: new Date().toISOString() };
-    }
-
-    // 3. Converter array de respostas para o formato objeto esperado
+    // Converter array para o formato Record<string, AnswerKeyData> esperado
     const formattedAnswers: Record<string, any> = {};
     answersArray.forEach((answer) => {
       const questionKey = answer.question_number.toString();
       formattedAnswers[questionKey] = {
-        correct_answer: answer.correct_answer,
+        correctAnswer: answer.correct_answer,
         weight: answer.weight || 1.0,
-        section_type: answer.section_type || 'basic',
-        is_nullified: answer.is_nullified || false,
-        answer_format: 'OBJECTIVE',
-        question_type: 'MULTIPLE_CHOICE'
+        sectionType: answer.section_type || 'basic',
+        isNullified: answer.is_nullified || false,
+        answerFormat: 'OBJECTIVE',
+        questionType: 'MULTIPLE_CHOICE'
       };
     });
 
-    console.log('[saveBookletAnswerKeyLegacy] Formatted answers for booklet:', bookletId, Object.keys(formattedAnswers).length, 'questions');
-
-    // 4. Atualizar dados do caderno específico
-    consolidatedData.booklets[bookletId] = {
-      answers: formattedAnswers,
-      metadata: {
-        total_questions: Object.keys(formattedAnswers).length,
-        last_updated: new Date().toISOString(),
-        booklet_name: bookletId
-      }
-    };
+    // Usar o novo serviço consolidado diretamente
+    const result = await saveBookletAnswerKey(concursoId, bookletId, formattedAnswers);
     
-    // 5. Atualizar metadados globais
-    consolidatedData.metadata.last_updated = new Date().toISOString();
-
-    console.log('[saveBookletAnswerKeyLegacy] Updated consolidated data structure:', {
-      booklets: Object.keys(consolidatedData.booklets),
-      totalQuestions: consolidatedData.booklets[bookletId]?.metadata?.total_questions
-    });
-
-    // 6. Salvar no banco de dados
-    if (existingRecord) {
-      // Atualizar registro existente
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .update({ 
-          consolidated_answer_data: consolidatedData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingRecord.id)
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('[saveBookletAnswerKeyLegacy] Update Error:', error);
-        return { success: false, error: error.message };
-      }
-      
-      console.log('[saveBookletAnswerKeyLegacy] Successfully updated existing record');
-      return { success: true, data };
-
-    } else {
-      // Criar novo registro
-      const { data, error } = await supabase
-        .from('official_answer_weights')
-        .insert({
-          concurso_id: concursoId,
-          consolidated_answer_data: consolidatedData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('[saveBookletAnswerKeyLegacy] Insert Error:', error);
-        return { success: false, error: error.message };
-      }
-      
-      console.log('[saveBookletAnswerKeyLegacy] Successfully created new record');
-      return { success: true, data };
+    if (!result.success) {
+      console.error('[saveBookletAnswerKeyLegacy] Error using consolidated service:', result.error);
+      return { success: false, error: result.error };
     }
+
+    console.log('[saveBookletAnswerKeyLegacy] Successfully saved using consolidated structure');
+    return { success: true, data: result.data };
 
   } catch (error: any) {
     console.error('[saveBookletAnswerKeyLegacy] Exception:', error);

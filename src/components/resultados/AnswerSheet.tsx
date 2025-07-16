@@ -196,14 +196,32 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       queryFn: async () => {
           if (!selectedBookletId) return [];
           
+          console.log('[AnswerSheet] Fetching nullified questions using consolidated structure');
+          
+          // Usar a nova estrutura JSON consolidada
           const { data, error } = await supabase
               .from('official_answer_weights')
-              .select("question_number")
+              .select('consolidated_answer_data')
               .eq('concurso_id', concurso.id)
-              .eq('booklet_id', selectedBookletId)
-              .eq('is_nullified', true);
-          if (error) throw error;
-          return data;
+              .maybeSingle();
+              
+          if (error) {
+              console.error('[AnswerSheet] Error fetching consolidated data:', error);
+              throw error;
+          }
+          
+          if (!data?.consolidated_answer_data?.booklets?.[selectedBookletId]) {
+              console.log('[AnswerSheet] No consolidated data found for booklet:', selectedBookletId);
+              return [];
+          }
+          
+          const bookletData = data.consolidated_answer_data.booklets[selectedBookletId];
+          const nullifiedQuestions = Object.entries(bookletData.answers || {})
+              .filter(([_, answerData]: [string, any]) => answerData.is_nullified)
+              .map(([questionNum, _]) => ({ question_number: parseInt(questionNum) }));
+              
+          console.log('[AnswerSheet] Found', nullifiedQuestions.length, 'nullified questions for booklet:', selectedBookletId);
+          return nullifiedQuestions;
       },
       enabled: !!selectedBookletId,
       staleTime: 30000,

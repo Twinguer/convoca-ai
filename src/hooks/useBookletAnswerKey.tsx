@@ -124,17 +124,25 @@ export const useBookletAnswerKey = (concursoId: string) => {
           (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
       }
 
-      console.log('Total de questões esperadas:', expectedQuestions);
+      console.log('[useBookletAnswerKey] Total de questões esperadas:', expectedQuestions);
+
+      // Buscar dados consolidados uma vez só
+      console.log('[useBookletAnswerKey] Fetching consolidated answer key using new JSON structure');
+      const { data: consolidatedData } = await supabase
+        .from('official_answer_weights')
+        .select('consolidated_answer_data')
+        .eq('concurso_id', concursoId)
+        .maybeSingle();
 
       for (const booklet of booklets) {
         try {
-          const { data: bookletAnswers } = await supabase
-            .from('official_answer_weights')
-            .select('id')
-            .eq('concurso_id', concursoId)
-            .eq('booklet_id', booklet.id);
+          let answerCount = 0;
+          
+          if (consolidatedData?.consolidated_answer_data?.booklets?.[booklet.id]) {
+            const bookletData = consolidatedData.consolidated_answer_data.booklets[booklet.id];
+            answerCount = Object.keys(bookletData.answers || {}).length;
+          }
 
-          const answerCount = bookletAnswers?.length || 0;
           const isComplete = expectedQuestions > 0 ? answerCount >= expectedQuestions : false;
           
           if (!isComplete) allComplete = false;
@@ -147,7 +155,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
             isComplete
           });
 
-          console.log(`Caderno ${booklet.name}: ${answerCount}/${expectedQuestions} questões (${isComplete ? 'completo' : 'incompleto'})`);
+          console.log(`[useBookletAnswerKey] Caderno ${booklet.name}: ${answerCount}/${expectedQuestions} questões (${isComplete ? 'completo' : 'incompleto'})`);
         } catch (error) {
           console.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
           allComplete = false;

@@ -84,22 +84,28 @@ const Menu = () => {
                 <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 w-[220px]">
                     <li>
-                      <Link to="/project/admin/man/dashboard" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        <div className="text-sm font-medium leading-none">Dashboard</div>
-                      </Link>
+                      <NavigationMenuLink asChild>
+                        <Link to="/project/admin/man/dashboard" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Dashboard</div>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link to="/project/admin/man/concursos" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <div className="text-sm font-medium leading-none">Concursos</div>
-                      </Link>
+                      <NavigationMenuLink asChild>
+                        <Link to="/project/admin/man/concursos" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <FileText className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Concursos</div>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                     <li>
-                      <Link to="/project/admin/man/usuarios" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                        <Users className="mr-2 h-4 w-4" />
-                        <div className="text-sm font-medium leading-none">Usuários</div>
-                      </Link>
+                      <NavigationMenuLink asChild>
+                        <Link to="/project/admin/man/usuarios" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                          <Users className="mr-2 h-4 w-4" />
+                          <div className="text-sm font-medium leading-none">Usuários</div>
+                        </Link>
+                      </NavigationMenuLink>
                     </li>
                   </ul>
                 </NavigationMenuContent>
