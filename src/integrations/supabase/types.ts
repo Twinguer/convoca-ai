@@ -460,7 +460,7 @@ export type Database = {
           {
             foreignKeyName: "official_answer_weights_concurso_id_fkey"
             columns: ["concurso_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "concursos"
             referencedColumns: ["id"]
           },
