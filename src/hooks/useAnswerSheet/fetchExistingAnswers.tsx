@@ -31,8 +31,17 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       const selectedBookletId = rankingData.selected_booklet;
       console.log('[fetchExistingAnswers] Caderno selecionado:', selectedBookletId);
       
-      if (consolidatedData.booklets?.[selectedBookletId]) {
-        const bookletAnswers = consolidatedData.booklets[selectedBookletId].answers || {};
+      // CORREÇÃO: Verificar se booklets é um objeto válido
+      let booklets = consolidatedData.booklets;
+      
+      // Se booklets é uma string vazia, converter para objeto
+      if (typeof booklets === 'string' && booklets === '{}') {
+        console.log('[fetchExistingAnswers] Convertendo booklets de string para objeto');
+        booklets = {};
+      }
+      
+      if (booklets && typeof booklets === 'object' && booklets[selectedBookletId]) {
+        const bookletAnswers = booklets[selectedBookletId].answers || {};
         console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
 
         // Converter para formato esperado
@@ -41,8 +50,9 @@ export const fetchExistingAnswers = async (rankingId: string) => {
         });
       } else {
         console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para o caderno selecionado:', selectedBookletId);
+        console.log('[fetchExistingAnswers] Booklets disponíveis:', Object.keys(booklets || {}));
       }
-    } else if (consolidatedData?.booklets) {
+    } else if (consolidatedData?.booklets && typeof consolidatedData.booklets === 'object') {
       // Fallback: se não há caderno selecionado, pegar do primeiro caderno disponível
       const firstBookletId = Object.keys(consolidatedData.booklets)[0];
       if (firstBookletId) {
@@ -53,6 +63,9 @@ export const fetchExistingAnswers = async (rankingId: string) => {
           answers[parseInt(questionNum)] = answer;
         });
       }
+    } else {
+      console.log('[fetchExistingAnswers] Nenhum dado de caderno encontrado ou formato inválido');
+      console.log('[fetchExistingAnswers] consolidatedData.booklets:', consolidatedData?.booklets);
     }
 
     console.log('[fetchExistingAnswers] Respostas finais para o caderno atual:', answers);
