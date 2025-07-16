@@ -6,15 +6,31 @@ export const prepareAnswersData = (
   concurso: Concurso,
   nullifiedQuestions?: Set<number>
 ) => {
+  console.log('[prepareAnswersData] Input answers:', answers);
+  console.log('[prepareAnswersData] Input nullifiedQuestions:', nullifiedQuestions);
+  
+  // Verificar se há respostas para processar
+  if (!answers || typeof answers !== 'object') {
+    console.log('[prepareAnswersData] No answers provided or invalid format');
+    return [];
+  }
+
   // Preparar os dados de respostas no formato correto para a função RPC
-  const answersArray = Object.entries(answers).map(([questionNumber, answer]) => {
-    const qNum = parseInt(questionNumber, 10);
-    
-    return {
-      questionNumber: qNum,
-      answer: answer.trim()
-    };
-  });
+  const answersArray = Object.entries(answers)
+    .filter(([questionNumber, answer]) => {
+      // Filtrar respostas válidas (não vazias e não undefined)
+      return answer && answer.trim() !== '';
+    })
+    .map(([questionNumber, answer]) => {
+      const qNum = parseInt(questionNumber, 10);
+      
+      return {
+        questionNumber: qNum,
+        answer: answer.trim()
+      };
+    });
+  
+  console.log('[prepareAnswersData] Processed answers before nullified:', answersArray);
   
   // Adicionar todas as questões anuladas com uma resposta padrão
   if (nullifiedQuestions && nullifiedQuestions.size > 0) {
@@ -30,5 +46,6 @@ export const prepareAnswersData = (
     });
   }
 
+  console.log('[prepareAnswersData] Final answers array:', answersArray);
   return answersArray;
 };
