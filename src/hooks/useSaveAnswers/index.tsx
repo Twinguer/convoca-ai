@@ -49,8 +49,8 @@ export const useSaveAnswers = ({
       // Garantir que selectedBookletId seja sempre string para a função RPC
       const bookletIdString = selectedBookletId ? String(selectedBookletId) : 'default';
 
-      // Chamar a função RPC consolidada
-      const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
+      // Chamar a nova função RPC consolidada por concurso
+      const { data, error } = await supabase.rpc('save_user_answers_consolidated_by_concurso', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_booklet_id: bookletIdString,

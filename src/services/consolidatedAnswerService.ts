@@ -37,16 +37,28 @@ interface BookletData {
 }
 
 export const consolidatedAnswerService = {
-  // Buscar dados consolidados de um ranking
+  // Buscar dados consolidados de um usuário específico dentro do concurso
   async getConsolidatedAnswers(rankingId: string): Promise<ConsolidatedAnswerData | null> {
     try {
       console.log('[consolidatedAnswerService] Buscando dados consolidados para ranking:', rankingId);
       
+      // Primeiro, obter o concurso_id e user_id do ranking
+      const { data: rankingData, error: rankingError } = await supabase
+        .from('user_rankings')
+        .select('concurso_id, user_id')
+        .eq('id', rankingId)
+        .single();
+
+      if (rankingError || !rankingData) {
+        console.error('[consolidatedAnswerService] Erro ao buscar ranking:', rankingError);
+        return null;
+      }
+
+      // Buscar dados consolidados do concurso
       const { data, error } = await supabase
         .from('user_answers')
         .select('answers_data')
-        .eq('user_ranking_id', rankingId)
-        .is('question_number', null)
+        .eq('user_ranking_id', rankingData.concurso_id)
         .single();
 
       if (error) {
@@ -54,7 +66,31 @@ export const consolidatedAnswerService = {
         return null;
       }
 
-      const consolidatedData = data?.answers_data as ConsolidatedAnswerData || null;
+      const concursoData = data?.answers_data;
+      if (!concursoData?.users?.[rankingData.user_id]) {
+        console.log('[consolidatedAnswerService] Usuário não encontrado no concurso');
+        return null;
+      }
+
+      const userData = concursoData.users[rankingData.user_id];
+      
+      // Adaptar para a interface esperada
+      const consolidatedData: ConsolidatedAnswerData = {
+        booklets: userData.booklets || {},
+        subjective_scores: userData.subjective_scores || {
+          discursive: 0,
+          case_study_1: 0,
+          case_study_2: 0,
+          case_study_3: 0
+        },
+        selected_booklet: userData.selected_booklet || '',
+        total_edit_count: userData.edit_count || 0,
+        metadata: {
+          last_updated: userData.last_updated || new Date().toISOString(),
+          version: '3.0'
+        }
+      };
+      
       console.log('[consolidatedAnswerService] Dados consolidados encontrados:', consolidatedData);
       
       return consolidatedData;

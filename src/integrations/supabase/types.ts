@@ -1068,6 +1068,10 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
+      restructure_user_answers_by_concurso: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       save_consolidated_answer_key: {
         Args: { p_concurso_id: string; p_booklet_id: string; p_answers: Json }
         Returns: Json
@@ -1085,6 +1089,20 @@ export type Database = {
         Args: {
           p_ranking_id: string
           p_concurso_id: string
+          p_answers: Json
+          p_discursive_score?: number
+          p_case_study_1_score?: number
+          p_case_study_2_score?: number
+          p_case_study_3_score?: number
+          p_current_edit_count?: number
+        }
+        Returns: Json
+      }
+      save_user_answers_consolidated_by_concurso: {
+        Args: {
+          p_ranking_id: string
+          p_concurso_id: string
+          p_booklet_id: string
           p_answers: Json
           p_discursive_score?: number
           p_case_study_1_score?: number
