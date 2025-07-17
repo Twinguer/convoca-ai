@@ -175,11 +175,17 @@ export const consolidatedAnswerService = {
       // Garantir que bookletId seja string
       const bookletIdString = String(bookletId);
 
-      const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
+      // Converter formato das respostas para a função consolidada
+      const answersObject: { [key: string]: string } = {};
+      answers.forEach(answer => {
+        answersObject[answer.questionNumber.toString()] = answer.answer;
+      });
+
+      const { data, error } = await supabase.rpc('save_user_answers_consolidated_by_concurso', {
         p_ranking_id: rankingId,
         p_concurso_id: concursoId,
         p_booklet_id: bookletIdString,
-        p_answers: answers,
+        p_answers: answersObject,
         p_discursive_score: discursiveScore,
         p_case_study_1_score: caseStudy1Score,
         p_case_study_2_score: caseStudy2Score,
