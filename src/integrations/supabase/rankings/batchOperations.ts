@@ -77,16 +77,16 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       try {
         console.log(`[recalculateAllUserScores] Processing ranking ${ranking.id} for user ${ranking.user_id}`);
 
-        // Buscar respostas consolidadas do usuário
-        const { data: consolidatedData, error: answersError } = await supabase
+        // Buscar dados consolidados do CONCURSO
+        const { data: concursoData, error: answersError } = await supabase
           .from('user_answers')
           .select('answers_data')
-          .eq('user_ranking_id', ranking.id)
+          .eq('user_ranking_id', concursoId)
           .is('question_number', null)
           .single();
 
         if (answersError) {
-          console.error(`[recalculateAllUserScores] Error fetching answers for ranking ${ranking.id}:`, answersError);
+          console.error(`[recalculateAllUserScores] Error fetching concurso data for ranking ${ranking.id}:`, answersError);
           failedCount++;
           failedRecalculations.push({ rankingId: ranking.id, error: answersError });
           continue;
@@ -96,13 +96,15 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
         const disciplineScores: Record<string, number> = {};
         const weightedDisciplineScores: Record<string, number> = {};
 
-        // Extrair respostas do primeiro caderno disponível
+        // Extrair respostas do usuário específico do JSON consolidado do concurso
         let userAnswers: Record<string, string> = {};
-        if (consolidatedData?.answers_data?.booklets) {
-          const userBooklets = consolidatedData.answers_data.booklets;
-          const userBookletIds = Object.keys(userBooklets);
-          const userBooklet = userBooklets[userBookletIds[0]];
-          userAnswers = userBooklet?.answers || {};
+        if (concursoData?.answers_data?.users?.[ranking.user_id]) {
+          const userData = concursoData.answers_data.users[ranking.user_id];
+          if (userData.booklets) {
+            const userBookletIds = Object.keys(userData.booklets);
+            const userBooklet = userData.booklets[userBookletIds[0]];
+            userAnswers = userBooklet?.answers || {};
+          }
         }
 
         // Calcular pontuação das respostas objetivas
