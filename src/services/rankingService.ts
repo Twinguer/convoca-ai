@@ -95,19 +95,20 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       return [];
     }
     
-    // Log data for debugging
-    if (data.length > 0) {
-      const firstRanking = data[0];
-      console.log('First ranking data:', {
-        id: firstRanking.id,
-        user_id: firstRanking.user_id,
-        score: firstRanking.score,
-        profile: firstRanking.users_profiles,
-        subject_scores: firstRanking.subject_scores,
-        customDisciplineScores: firstRanking.customDisciplineScores,
-        weightedCustomDisciplineScores: firstRanking.weightedCustomDisciplineScores
+    // Log data for debugging - log ALL rankings
+    console.log(`[fetchUserRankings] Total rankings found: ${data.length}`);
+    data.forEach((ranking, index) => {
+      const userProfile = Array.isArray(ranking.users_profiles) ? 
+                        ranking.users_profiles[0] : 
+                        ranking.users_profiles;
+      console.log(`[fetchUserRankings] Ranking ${index + 1}:`, {
+        id: ranking.id,
+        user_id: ranking.user_id,
+        score: ranking.score,
+        name: userProfile?.name || 'No name',
+        profile: ranking.users_profiles
       });
-    }
+    });
     
     // Verificar se o concurso tem mínimo habilitado
     const hasMinimumScoreEnabled = concursoData?.has_minimum_score === true;
