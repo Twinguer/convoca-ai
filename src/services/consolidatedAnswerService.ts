@@ -56,9 +56,9 @@ export const consolidatedAnswerService = {
 
       // Buscar dados consolidados do concurso
       const { data, error } = await supabase
-        .from('user_answers')
-        .select('answers_data')
-        .eq('user_ranking_id', rankingData.concurso_id)
+        .from('consolidated_answers_by_concurso')
+        .select('consolidated_data')
+        .eq('concurso_id', rankingData.concurso_id)
         .single();
 
       if (error) {
@@ -66,7 +66,7 @@ export const consolidatedAnswerService = {
         return null;
       }
 
-      const concursoData = data?.answers_data;
+      const concursoData = data?.consolidated_data;
       if (!concursoData?.users?.[rankingData.user_id]) {
         console.log('[consolidatedAnswerService] Usuário não encontrado no concurso');
         return null;
