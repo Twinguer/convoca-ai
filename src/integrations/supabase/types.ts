@@ -342,6 +342,38 @@ export type Database = {
         }
         Relationships: []
       }
+      consolidated_answers_by_concurso: {
+        Row: {
+          concurso_id: string
+          consolidated_data: Json
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          concurso_id: string
+          consolidated_data?: Json
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          concurso_id?: string
+          consolidated_data?: Json
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consolidated_answers_by_concurso_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: true
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       convocai: {
         Row: {
           created_at: string
