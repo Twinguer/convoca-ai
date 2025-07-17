@@ -228,7 +228,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       refetchOnWindowFocus: true
   });
 
-  // Import saveAnswers hook with booklet support
+  // Import saveAnswers hook with booklet support (CORRIGIDO para reagir a mudanças no selectedBookletId)
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -243,7 +243,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0,
     nullifiedQuestions,
-    selectedBookletId // Passar o caderno selecionado
+    selectedBookletId // CRÍTICO: Reage a mudanças no caderno selecionado
   });
 
   // Set initial subjective scores from user ranking data
@@ -289,6 +289,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setError("É necessário selecionar um caderno de prova antes de salvar as respostas");
       return;
     }
+
+    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Caderno selecionado no momento do salvamento:', selectedBookletId);
+    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Respostas atuais:', answers);
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();

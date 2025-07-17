@@ -39,6 +39,13 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Preparando dados para salvamento');
       console.log('[useSaveAnswers] Respostas do usuário:', answers);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+      console.log('[useSaveAnswers] Todos os parâmetros recebidos:', {
+        rankingId,
+        concursoId: concurso?.id,
+        selectedBookletId,
+        answersCount: Object.keys(answers).length,
+        editCount
+      });
 
       // Preparar dados das respostas
       const answersObject = prepareAnswersData(answers, concurso, nullifiedQuestions);

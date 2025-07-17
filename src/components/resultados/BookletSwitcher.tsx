@@ -38,6 +38,10 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
       return;
     }
 
+    console.log('[BookletSwitcher] DEBUG - Iniciando troca de caderno');
+    console.log('[BookletSwitcher] DEBUG - Caderno atual:', currentBookletId);
+    console.log('[BookletSwitcher] DEBUG - Novo caderno selecionado:', selectedBookletId);
+
     setIsSwitching(true);
     try {
       console.log('[BookletSwitcher] Switching to booklet:', selectedBookletId);
