@@ -77,13 +77,11 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       try {
         console.log(`[recalculateAllUserScores] Processing ranking ${ranking.id} for user ${ranking.user_id}`);
 
-        // Buscar dados consolidados do CONCURSO
+        // Buscar dados consolidados do CONCURSO na tabela dedicada
         const { data: concursoData, error: answersError } = await supabase
-          .from('user_answers')
-          .select('answers_data')
-          .eq('user_ranking_id', concursoId)
-          .is('question_number', null)
-          .eq('answer_format', 'CONSOLIDATED_BY_CONCURSO')
+          .from('consolidated_answers_by_concurso')
+          .select('consolidated_data')
+          .eq('concurso_id', concursoId)
           .single();
 
         if (answersError) {
@@ -99,8 +97,8 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
 
         // Extrair respostas do usuário específico do JSON consolidado do concurso
         let userAnswers: Record<string, string> = {};
-        if (concursoData?.answers_data?.users?.[ranking.user_id]) {
-          const userData = concursoData.answers_data.users[ranking.user_id];
+        if (concursoData?.consolidated_data?.users?.[ranking.user_id]) {
+          const userData = concursoData.consolidated_data.users[ranking.user_id];
           if (userData.booklets) {
             const userBookletIds = Object.keys(userData.booklets);
             const userBooklet = userData.booklets[userBookletIds[0]];
