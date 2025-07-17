@@ -44,17 +44,13 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
     const answerData = consolidatedAnswers.consolidated_answer_data;
     const booklets = answerData.booklets || {};
     
-    // Usar o primeiro caderno disponível ou 'default'
-    const bookletIds = Object.keys(booklets);
-    const primaryBooklet = booklets['default'] || booklets[bookletIds[0]];
-    
-    if (!primaryBooklet?.answers) {
-      console.log('[recalculateAllUserScores] No answers found in consolidated data');
-      return { success: false, error: 'Nenhuma resposta encontrada no gabarito consolidado' };
-    }
+    console.log(`[recalculateAllUserScores] Found ${Object.keys(booklets).length} booklets in official answers`);
 
-    const officialAnswers = primaryBooklet.answers;
-    console.log(`[recalculateAllUserScores] Found ${Object.keys(officialAnswers).length} official answers`);
+    // Verificar se existem gabaritos para os cadernos
+    if (Object.keys(booklets).length === 0) {
+      console.log('[recalculateAllUserScores] No booklets found in consolidated data');
+      return { success: false, error: 'Nenhum caderno encontrado no gabarito consolidado' };
+    }
 
     // Buscar todos os rankings para este concurso
     const { data: userRankings, error: rankingsError } = await supabase
@@ -99,13 +95,29 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
         let userAnswers: Record<string, string> = {};
         if (concursoData?.consolidated_data?.users?.[ranking.user_id]) {
           const userData = concursoData.consolidated_data.users[ranking.user_id];
-          if (userData.booklets) {
-            const userBookletIds = Object.keys(userData.booklets);
-            const userBooklet = userData.booklets[userBookletIds[0]];
-            userAnswers = userBooklet?.answers || {};
+          
+          // CORREÇÃO: Usar o caderno selecionado pelo usuário, não o primeiro
+          const selectedBooklet = userData.selected_booklet;
+          if (userData.booklets && selectedBooklet && userData.booklets[selectedBooklet]) {
+            userAnswers = userData.booklets[selectedBooklet]?.answers || {};
+            console.log(`[recalculateAllUserScores] Using selected booklet ${selectedBooklet} for user ${ranking.user_id}`);
+            
+            // CORREÇÃO: Usar o gabarito do caderno correspondente ao usuário
+            if (!booklets[selectedBooklet]?.answers) {
+              console.log(`[recalculateAllUserScores] No official answers found for booklet ${selectedBooklet}`);
+              continue; // Pular este usuário se não há gabarito para seu caderno
+            }
+          } else {
+            console.log(`[recalculateAllUserScores] No selected booklet or booklet data found for user ${ranking.user_id}`);
+            continue; // Pular usuário sem caderno selecionado
           }
         }
 
+        // Obter o gabarito oficial do caderno específico do usuário
+        const userData = concursoData?.consolidated_data?.users?.[ranking.user_id];
+        const selectedBooklet = userData?.selected_booklet;
+        const officialAnswers = booklets[selectedBooklet]?.answers || {};
+        
         // Calcular pontuação das respostas objetivas
         for (const [questionNumberStr, userAnswer] of Object.entries(userAnswers)) {
           const officialAnswer = officialAnswers[questionNumberStr];
