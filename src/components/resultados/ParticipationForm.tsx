@@ -123,7 +123,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+        const { data, error } = await supabase
         .from('user_rankings')
         .insert({
           user_id: user.id,
@@ -132,7 +132,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           edit_count: 0,
           all_questions_answered: false,
           reservation_type: selectedQuota,
-          selected_booklet: booklets.length > 0 ? selectedBooklet : null
+          selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet : null
         })
         .select('id')
         .single();
