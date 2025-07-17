@@ -132,7 +132,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           edit_count: 0,
           all_questions_answered: false,
           reservation_type: selectedQuota,
-          selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet : null
+          selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet as any : null
         })
         .select('id')
         .single();
