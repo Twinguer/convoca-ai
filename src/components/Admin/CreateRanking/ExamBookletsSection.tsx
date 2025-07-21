@@ -173,17 +173,15 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     // Log para debug
     console.log('Salvando cadernos:', { concursoId, booklets });
 
-    // Se não há concursoId ainda, apenas validar e marcar como pronto para salvar
+    // Se não há concursoId ainda, mostrar aviso ao usuário
     if (!concursoId) {
-      console.log('Sem concursoId, apenas validando');
-      setHasUnsavedChanges(false);
-      setIsBookletsSaved(true);
-      onBookletsSaved?.(true);
+      console.log('Sem concursoId - não é possível salvar ainda');
       toast({
-        title: "Cadernos validados",
-        description: "Cadernos validados com sucesso. Agora você pode salvar o ranking."
+        title: "Atenção",
+        description: "Salve primeiro as informações básicas do ranking antes de configurar os cadernos.",
+        variant: "destructive"
       });
-      return true;
+      return false;
     }
     try {
       setIsSaving(true);
