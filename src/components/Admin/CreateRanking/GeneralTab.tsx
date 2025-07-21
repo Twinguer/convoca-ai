@@ -66,15 +66,15 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     const currentValues = form.getValues();
     console.log("Validando form values:", currentValues);
 
-    // Primeiro verificar se os cadernos foram salvos
-    if (!areBookletsSaved) {
-      toast({
-        title: "Cadernos não salvos",
-        description: "Por favor, configure e salve os cadernos de prova antes de salvar o ranking.",
-        variant: "destructive"
-      });
-      return false;
-    }
+    // Remover validação de cadernos salvos para permitir salvamento inicial
+    // if (!areBookletsSaved) {
+    //   toast({
+    //     title: "Cadernos não salvos",
+    //     description: "Por favor, configure e salve os cadernos de prova antes de salvar o ranking.",
+    //     variant: "destructive"
+    //   });
+    //   return false;
+    // }
 
     if (!currentValues.predefined_job_title) {
       toast({
@@ -243,7 +243,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
       {/* Seção de cadernos sempre visível */}
       <ExamBookletsSection 
-        concursoId={createdConcursoId || form.getValues().id}
+        concursoId={createdConcursoId}
         onBookletsSaved={handleBookletsSaved}
       />
 
@@ -252,10 +252,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           type="button" 
           onClick={handleSave}
           variant="secondary"
-          disabled={isSubmitting || !areBookletsSaved}
-          className={!areBookletsSaved ? "opacity-50 cursor-not-allowed" : ""}
+          disabled={isSubmitting}
         >
-          {!areBookletsSaved ? "Salve os Cadernos Primeiro" : "Salvar Ranking"}
+          Salvar Ranking
         </Button>
         <Button 
           type="button"
