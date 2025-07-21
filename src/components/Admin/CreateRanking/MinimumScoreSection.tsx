@@ -25,9 +25,7 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
         }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mb-4">
                 <div className="space-y-0.5">
                   <FormLabel>Habilitar pontuação mínima</FormLabel>
-                  <FormDescription>
-                    Aplicar regra de pontuação mínima para classificação
-                  </FormDescription>
+                  
                 </div>
                 <FormControl>
                   <Switch checked={field.value} onCheckedChange={field.onChange} />
