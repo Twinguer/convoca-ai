@@ -1,16 +1,13 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
 interface ExamBooklet {
   id: string;
   name: string;
   display_order: number;
 }
-
 interface BookletSelectorProps {
   booklets: ExamBooklet[];
   selectedBooklet: string;
@@ -18,7 +15,6 @@ interface BookletSelectorProps {
   disabled?: boolean;
   required?: boolean;
 }
-
 export const BookletSelector: React.FC<BookletSelectorProps> = ({
   booklets,
   selectedBooklet,
@@ -40,8 +36,7 @@ export const BookletSelector: React.FC<BookletSelectorProps> = ({
 
   // Se há apenas um caderno, não mostra o seletor
   if (booklets.length === 1) {
-    return (
-      <div className="space-y-2">
+    return <div className="space-y-2">
         <Label className="flex items-center gap-2 text-sm font-medium">
           <FileText className="h-4 w-4" />
           Caderno da Prova
@@ -55,57 +50,30 @@ export const BookletSelector: React.FC<BookletSelectorProps> = ({
         <p className="text-xs text-muted-foreground">
           Caderno único configurado para este concurso.
         </p>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-2">
+  return <div className="space-y-2">
       <Label htmlFor="booklet-select" className="flex items-center gap-2 text-sm font-medium">
         <FileText className="h-4 w-4" />
         Caderno da Prova {required && <span className="text-red-500">*</span>}
       </Label>
       
-      {required && !selectedBooklet && (
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
-            <strong>Seleção obrigatória:</strong> Você deve escolher o caderno da sua prova antes de preencher as respostas.
-          </AlertDescription>
-        </Alert>
-      )}
+      {required && !selectedBooklet}
       
-      <Select 
-        value={selectedBooklet} 
-        onValueChange={onBookletChange}
-        disabled={disabled}
-        required={required}
-      >
-        <SelectTrigger 
-          id="booklet-select"
-          className={!selectedBooklet && required ? "border-red-300" : ""}
-        >
+      <Select value={selectedBooklet} onValueChange={onBookletChange} disabled={disabled} required={required}>
+        <SelectTrigger id="booklet-select" className={!selectedBooklet && required ? "border-red-300" : ""}>
           <SelectValue placeholder="Selecione o caderno da sua prova" />
         </SelectTrigger>
         <SelectContent>
-          {booklets.map((booklet) => (
-            <SelectItem key={booklet.id} value={booklet.id}>
+          {booklets.map(booklet => <SelectItem key={booklet.id} value={booklet.id}>
               <div className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />
                 <span className="font-medium">{booklet.name}</span>
               </div>
-            </SelectItem>
-          ))}
+            </SelectItem>)}
         </SelectContent>
       </Select>
       
-      <p className="text-xs text-muted-foreground">
-        {required ? (
-          <>Selecione o caderno correspondente à sua prova. Esta informação é <strong>obrigatória</strong> para comparar suas respostas com o gabarito correto.</>
-        ) : (
-          <>Selecione o caderno correspondente à sua prova. Esta informação é importante para comparar suas respostas com o gabarito correto.</>
-        )}
-      </p>
-    </div>
-  );
+      
+    </div>;
 };
