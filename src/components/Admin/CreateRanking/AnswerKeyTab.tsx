@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +8,10 @@ import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cleanupAllRankings } from '@/services/adminCleanupService';
 import { toast } from 'sonner';
-
 interface AnswerKeyTabProps {
   concursoId: string;
   onGoToResults?: () => void;
 }
-
 export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   concursoId,
   onGoToResults
@@ -26,7 +23,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
     isLoading,
     completionStatus
   } = useBookletAnswerKey(concursoId);
-
   const [showAnswerForm, setShowAnswerForm] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
 
@@ -38,12 +34,10 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setShowAnswerForm(false);
     }
   }, [selectedBookletId, booklets]);
-
   const handleCleanupAll = async () => {
     if (!confirm('⚠️ ATENÇÃO: Esta ação irá deletar TODOS os rankings do sistema! Tem certeza?')) {
       return;
     }
-
     setIsCleaningUp(true);
     try {
       await cleanupAllRankings();
@@ -57,22 +51,18 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
       setIsCleaningUp(false);
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-8">
+    return <div className="flex justify-center items-center py-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
           <p>Carregando informações dos cadernos...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
 
   // Se não há cadernos configurados, mostrar aviso
   if (!booklets || booklets.length === 0) {
-    return (
-      <Card>
+    return <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
@@ -88,52 +78,24 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
             </AlertDescription>
           </Alert>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Botão de limpeza para desenvolvimento */}
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleCleanupAll}
-          variant="destructive"
-          size="sm"
-          disabled={isCleaningUp}
-        >
-          {isCleaningUp ? 'Limpando...' : '🗑️ Limpar Todos os Rankings (DEV)'}
-        </Button>
-      </div>
+      
 
       {/* Seletor de cadernos sempre visível quando há cadernos */}
-      <BookletAnswerKeySelector
-        booklets={booklets}
-        selectedBookletId={selectedBookletId}
-        onBookletChange={setSelectedBookletId}
-        completionStatus={completionStatus}
-        disabled={false}
-      />
+      <BookletAnswerKeySelector booklets={booklets} selectedBookletId={selectedBookletId} onBookletChange={setSelectedBookletId} completionStatus={completionStatus} disabled={false} />
 
       {/* Formulário de gabarito quando um caderno está selecionado */}
-      {selectedBookletId ? (
-        showAnswerForm ? (
-          <AnswerKeyForm 
-            concursoId={concursoId}
-            bookletId={selectedBookletId}
-          />
-        ) : (
-          <Card>
+      {selectedBookletId ? showAnswerForm ? <AnswerKeyForm concursoId={concursoId} bookletId={selectedBookletId} /> : <Card>
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground">
                 <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Carregando gabarito do caderno selecionado...</p>
               </div>
             </CardContent>
-          </Card>
-        )
-      ) : (
-        <Card>
+          </Card> : <Card>
           <CardContent className="pt-6">
             <Alert className="border-blue-200 bg-blue-50">
               <AlertCircle className="h-4 w-4 text-blue-600" />
@@ -142,21 +104,14 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
               </AlertDescription>
             </Alert>
           </CardContent>
-        </Card>
-      )}
+        </Card>}
 
       {/* Botão para ir aos resultados - só aparece quando todos os gabaritos estão completos */}
-      {completionStatus?.allComplete && onGoToResults && (
-        <div className="flex justify-center pt-6">
-          <Button 
-            onClick={onGoToResults}
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
+      {completionStatus?.allComplete && onGoToResults && <div className="flex justify-center pt-6">
+          <Button onClick={onGoToResults} className="bg-emerald-600 hover:bg-emerald-700">
             <CheckCircle className="h-4 w-4 mr-2" />
             Ver Resultados do Ranking
           </Button>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
