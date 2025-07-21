@@ -41,6 +41,7 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
     console.log('[BookletSwitcher] DEBUG - Iniciando troca de caderno');
     console.log('[BookletSwitcher] DEBUG - Caderno atual:', currentBookletId);
     console.log('[BookletSwitcher] DEBUG - Novo caderno selecionado:', selectedBookletId);
+    console.log('[BookletSwitcher] DEBUG - RankingId:', rankingId);
 
     setIsSwitching(true);
     try {
@@ -48,11 +49,15 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
       
       // Usar o serviço consolidado para trocar caderno
       const result = await consolidatedAnswerService.switchBooklet(rankingId, selectedBookletId);
+      
+      console.log('[BookletSwitcher] DEBUG - Resultado do switchBooklet:', result);
 
       if (result.success) {
         // Converter as respostas do formato JSON para o formato esperado
         const answers: Record<number, string> = {};
         if (result.answers && typeof result.answers === 'object') {
+          console.log('[BookletSwitcher] DEBUG - Respostas brutas recebidas:', result.answers);
+          
           Object.entries(result.answers).forEach(([questionNum, answer]) => {
             const num = parseInt(questionNum);
             if (!isNaN(num) && answer) {
@@ -61,7 +66,7 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
           });
         }
 
-        console.log('[BookletSwitcher] Isolated answers for new booklet:', answers);
+        console.log('[BookletSwitcher] DEBUG - Respostas processadas:', answers);
 
         // Notify parent component about the change with isolated answers
         onBookletChanged(selectedBookletId, answers);
