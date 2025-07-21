@@ -225,8 +225,7 @@ const CriarRanking = () => {
         
         if (saveResult?.id) {
           setCreatedConcursoId(saveResult.id);
-          toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
-          setActiveTab('answer-key');
+          toast.success("Informações do ranking salvas. Agora configure e salve os cadernos de prova.");
           // Invalidar queries para recarregar os cadernos
           queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
         }
@@ -257,8 +256,7 @@ const CriarRanking = () => {
         
         if (saveResult?.id) {
           setCreatedConcursoId(saveResult.id);
-          toast.success("Informações do ranking salvas. Agora você pode adicionar o gabarito oficial.");
-          setActiveTab('answer-key');
+          toast.success("Informações do ranking salvas. Agora configure e salve os cadernos de prova.");
           // Invalidar queries para recarregar os cadernos
           queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
         }
