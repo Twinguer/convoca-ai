@@ -4,10 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { StateSelector } from '../FormSections/StateSelector';
-
 interface BasicInfoSectionProps {
   form: any;
-  jobTitles: Array<{id: string, title: string}>;
+  jobTitles: Array<{
+    id: string;
+    title: string;
+  }>;
   isCustomTitle: boolean;
   isCustomBanca: boolean;
   handleJobTitleChange: (value: string) => void;
@@ -17,7 +19,6 @@ interface BasicInfoSectionProps {
   selectedStates: string[];
   setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
 }
-
 export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   form,
   jobTitles,
@@ -30,118 +31,90 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   selectedStates,
   setSelectedStates
 }) => {
-  return (
-    <Card>
+  return <Card>
       <CardContent className="pt-6">
-        <h3 className="text-lg font-semibold mb-4">Informações Básicas</h3>
+        <h3 className="text-lg font-semibold mb-4">Informações Gerais</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Cargo */}
           <div>
-            <FormField
-              control={form.control}
-              name="predefined_job_title"
-              render={({ field }) => (
-                <FormItem>
+            <FormField control={form.control} name="predefined_job_title" render={({
+            field
+          }) => <FormItem>
                   <FormLabel>Cargo</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleJobTitleChange(value);
-                    }}
-                  >
+                  <Select value={field.value} onValueChange={value => {
+              field.onChange(value);
+              handleJobTitleChange(value);
+            }}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione um cargo" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {jobTitles
-                        .filter(job => job.title !== 'OUTRO')
-                        .sort((a, b) => a.title.localeCompare(b.title))
-                        .map(job => (
-                          <SelectItem key={job.id} value={job.title}>
+                      {jobTitles.filter(job => job.title !== 'OUTRO').sort((a, b) => a.title.localeCompare(b.title)).map(job => <SelectItem key={job.id} value={job.title}>
                             {job.title}
-                          </SelectItem>
-                      ))}
+                          </SelectItem>)}
                       <SelectItem value="OUTRO">OUTRO</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormItem>
-              )}
-            />
+                </FormItem>} />
             
-            {isCustomTitle && (
-              <FormField
-                control={form.control}
-                name="custom_job_title"
-                render={({ field }) => (
-                  <FormItem className="mt-2">
+            {isCustomTitle && <FormField control={form.control} name="custom_job_title" render={({
+            field
+          }) => <FormItem className="mt-2">
                     <FormLabel>Cargo personalizado</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Digite o cargo"
-                        onChange={(e) => {
-                          const up = e.target.value.toUpperCase();
-                          field.onChange(up);
-                          handleCustomTitleChange({ ...e, target: { ...e.target, value: up } });
-                        }}
-                      />
+                      <Input {...field} placeholder="Digite o cargo" onChange={e => {
+                const up = e.target.value.toUpperCase();
+                field.onChange(up);
+                handleCustomTitleChange({
+                  ...e,
+                  target: {
+                    ...e.target,
+                    value: up
+                  }
+                });
+              }} />
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
+                  </FormItem>} />}
           </div>
           
           {/* Órgão */}
-          <FormField
-            control={form.control}
-            name="orgao"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="orgao" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Órgão</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
-                    placeholder="Ex: MINISTÉRIO DA ECONOMIA"
-                    onChange={(e) => {
-                      const up = e.target.value.toUpperCase();
-                      field.onChange(up);
-                      handleOrgaoChange({ ...e, target: { ...e.target, value: up } });
-                    }}
-                  />
+                  <Input {...field} placeholder="Ex: MINISTÉRIO DA ECONOMIA" onChange={e => {
+              const up = e.target.value.toUpperCase();
+              field.onChange(up);
+              handleOrgaoChange({
+                ...e,
+                target: {
+                  ...e.target,
+                  value: up
+                }
+              });
+            }} />
                 </FormControl>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
           
           {/* Localidade */}
           <div className="col-span-2">
-            <StateSelector 
-              form={form} 
-              selectedStates={selectedStates} 
-              setSelectedStates={setSelectedStates} 
-            />
+            <StateSelector form={form} selectedStates={selectedStates} setSelectedStates={setSelectedStates} />
           </div>
           
           {/* Banca */}
           <div>
-            <FormField
-              control={form.control}
-              name="banca"
-              render={({ field }) => (
-                <FormItem>
+            <FormField control={form.control} name="banca" render={({
+            field
+          }) => <FormItem>
                   <FormLabel>Banca</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleBancaChange(value);
-                    }}
-                  >
+                  <Select value={field.value} onValueChange={value => {
+              field.onChange(value);
+              handleBancaChange(value);
+            }}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma banca" />
@@ -156,46 +129,32 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                       <SelectItem value="OUTRO">Outro (especificar)</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormItem>
-              )}
-            />
+                </FormItem>} />
             
-            {isCustomBanca && (
-              <FormField
-                control={form.control}
-                name="custom_banca"
-                render={({ field }) => (
-                  <FormItem className="mt-2">
+            {isCustomBanca && <FormField control={form.control} name="custom_banca" render={({
+            field
+          }) => <FormItem className="mt-2">
                     <FormLabel>Banca personalizada</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Digite o nome da banca" />
                     </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
+                  </FormItem>} />}
           </div>
           
           {/* Data da Prova */}
-          <FormField
-            control={form.control}
-            name="data_publicacao"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="data_publicacao" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Data da Prova</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
           
           {/* Status do Concurso */}
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="status" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Status do Concurso</FormLabel>
                 <Select defaultValue={field.value} onValueChange={field.onChange}>
                   <FormControl>
@@ -210,16 +169,12 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     <SelectItem value="Cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
           
           {/* Etapa Atual */}
-          <FormField
-            control={form.control}
-            name="etapa_atual"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="etapa_atual" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Etapa Atual</FormLabel>
                 <Select defaultValue={field.value} onValueChange={field.onChange}>
                   <FormControl>
@@ -237,63 +192,38 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     <SelectItem value="Nomeação">Nomeação</SelectItem>
                   </SelectContent>
                 </Select>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
           
           {/* Link do Edital */}
-          <FormField
-            control={form.control}
-            name="link"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="link" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Link do Edital</FormLabel>
                 <FormControl>
                   <Input {...field} placeholder="https://..." />
                 </FormControl>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
           
           {/* Vagas */}
-          <FormField
-            control={form.control}
-            name="vagas"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="vagas" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Quantidade de Vagas</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
-                    min="0"
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
+                  <Input type="number" {...field} min="0" onChange={e => field.onChange(Number(e.target.value))} />
                 </FormControl>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
           
           {/* Inscritos */}
-          <FormField
-            control={form.control}
-            name="inscritos"
-            render={({ field }) => (
-              <FormItem>
+          <FormField control={form.control} name="inscritos" render={({
+          field
+        }) => <FormItem>
                 <FormLabel>Quantidade de Inscritos</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    {...field} 
-                    min="0"
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
+                  <Input type="number" {...field} min="0" onChange={e => field.onChange(Number(e.target.value))} />
                 </FormControl>
-              </FormItem>
-            )}
-          />
+              </FormItem>} />
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
