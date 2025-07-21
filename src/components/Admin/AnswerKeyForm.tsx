@@ -10,12 +10,10 @@ import { Concurso } from '@/types/concursos';
 import { NullifyQuestionButton } from '../Admin/NullifyQuestionButton';
 import { getSectionTypeForQuestion, updateSectionDisplayNames, getNumericValue } from '@/integrations/supabase/rankings/examStructure';
 import { saveBookletAnswerKeyLegacy, getAnswerKeyForBooklet } from '@/services/answerKeyService';
-
 interface AnswerKeyFormProps {
   concursoId: string;
   bookletId: string;
 }
-
 export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   concursoId,
   bookletId
@@ -28,8 +26,9 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     [key: number]: string;
   }>({});
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
-  const { toast } = useToast();
-  
+  const {
+    toast
+  } = useToast();
   const {
     data: concurso,
     isLoading: isLoadingConcurso
@@ -44,7 +43,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return data as Concurso;
     }
   });
-  
   const {
     data: existingAnswers,
     isLoading: isLoadingAnswers,
@@ -54,54 +52,44 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     queryFn: async () => {
       console.log('Buscando gabarito para caderno:', bookletId);
       const result = await getAnswerKeyForBooklet(concursoId, bookletId);
-      
       if (!result.success) {
         console.error('Erro ao buscar gabarito:', result.error);
         throw new Error(result.error);
       }
-      
       console.log('Gabarito encontrado:', result.data);
       return result.data || [];
     },
     enabled: !!concursoId && !!bookletId
   });
-  
   useEffect(() => {
     if (existingAnswers && existingAnswers.length > 0) {
       const answersMap: {
         [key: number]: string;
       } = {};
       const nullifiedSet = new Set<number>();
-      
       existingAnswers.forEach((answer: any) => {
         answersMap[answer.question_number] = answer.correct_answer;
         if (answer.is_nullified) {
           nullifiedSet.add(answer.question_number);
         }
       });
-      
       setAnswers(answersMap);
       setNullifiedQuestions(nullifiedSet);
     }
   }, [existingAnswers]);
-  
+
   // Atualizar os nomes de exibição com conhecimentos customizados
   const sectionNames = concurso ? updateSectionDisplayNames(concurso) : {};
 
   // Função para obter todas as questões de todas as seções
   const getAllQuestionsFromAllSections = () => {
     if (!concurso) return [];
-    
     const allQuestions: number[] = [];
     let currentQuestionNumber = 1;
 
     // Verificar se estamos lidando com a estrutura hierárquica (blocos -> disciplinas)
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
+      const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Estrutura hierárquica
         for (const block of concurso.disciplines as any[]) {
@@ -150,20 +138,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         }
       }
     }
-    
     return allQuestions;
   };
 
   // Função unificada para obter o número de questões por seção
   const getQuestionsCount = (section: string): number => {
     if (!concurso) return 0;
-    
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
+      const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Estrutura hierárquica
         for (const block of concurso.disciplines as any[]) {
@@ -183,7 +165,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           }
         }
       }
-      
       return 0;
     } else {
       // Estrutura tradicional
@@ -196,18 +177,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       } else if (section === 'specific3' && concurso.has_specific_knowledge_3) {
         return concurso.specific_knowledge_3_questions || 0;
       }
-      
       return 0;
     }
   };
-  
   const handleAnswerChange = (questionNumber: number, answer: string) => {
     setAnswers(prev => ({
       ...prev,
       [questionNumber]: answer
     }));
   };
-  
   const handleNullifyQuestion = (questionNumber: number) => {
     setNullifiedQuestions(prev => {
       const newSet = new Set(prev);
@@ -219,7 +197,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       return newSet;
     });
   };
-  
   const createAnswerMatrix = () => {
     const questions = getQuestionsRange();
     if (questions.length === 0) return [];
@@ -240,7 +217,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     }
     return matrix;
   };
-  
   const handleSaveCurrentBooklet = async () => {
     try {
       setIsSaving(true);
@@ -274,27 +250,22 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           is_nullified: nullifiedQuestions.has(qNum)
         };
       });
-
       console.log('Salvando gabarito para caderno:', bookletId, 'com', answerKeyData.length, 'questões');
 
       // Usar o serviço para salvar o caderno
       const result = await saveBookletAnswerKeyLegacy(concursoId, bookletId, answerKeyData);
-
       if (!result.success) {
         throw new Error(result.error);
       }
-
       console.log('Gabarito salvo com sucesso para caderno:', bookletId);
       setSavedSuccess(true);
-      
+
       // Atualizar dados
       refetchAnswers();
-      
       toast({
         title: "Gabarito salvo com sucesso",
         description: `O gabarito oficial foi salvo para o caderno ${bookletId}.`
       });
-      
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);
@@ -310,7 +281,6 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       setIsSaving(false);
     }
   };
-  
   const getOptionsForQuestion = () => {
     if (!concurso) return ['A', 'B', 'C', 'D', 'E'];
     if (concurso.exam_type === 'Certo ou Errado') {
@@ -321,18 +291,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       length: count
     }, (_, i) => String.fromCharCode(65 + i));
   };
-  
   const getObjectiveSectionList = () => {
     if (!concurso) return [];
     const sections = [];
-    
+
     // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                           typeof concurso.disciplines[0] === 'object' && 
-                           'name' in concurso.disciplines[0] && 
-                           'disciplines' in concurso.disciplines[0];
-      
+      const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Processar a estrutura hierárquica para criar as abas
         for (const block of concurso.disciplines as any[]) {
@@ -385,23 +350,17 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         });
       }
     }
-    
     return sections;
   };
 
   // Ajustar a função getQuestionsRange para trabalhar com a estrutura hierárquica
   const getQuestionsRange = () => {
     if (!concurso) return [];
-    
+
     // Verificar se estamos usando a estrutura hierárquica
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      const isHierarchical = concurso.disciplines[0] && 
-                          typeof concurso.disciplines[0] === 'object' && 
-                          'name' in concurso.disciplines[0] && 
-                          'disciplines' in concurso.disciplines[0];
-      
-      let startQuestion = 1; 
-      
+      const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
+      let startQuestion = 1;
       if (isHierarchical) {
         // Estrutura hierárquica
         for (const block of concurso.disciplines as any[]) {
@@ -409,12 +368,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled) {
                 const questionCount = getNumericValue(discipline.questionCount);
-                
+
                 // Se encontramos a disciplina selecionada, retornar seu intervalo
                 if (discipline.type === selectedSection) {
-                  return Array.from({length: questionCount}, (_, i) => startQuestion + i);
+                  return Array.from({
+                    length: questionCount
+                  }, (_, i) => startQuestion + i);
                 }
-                
+
                 // Atualizar o contador para a próxima disciplina
                 startQuestion += questionCount;
               }
@@ -426,16 +387,15 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         for (const discipline of concurso.disciplines) {
           if (discipline.isEnabled) {
             const questionCount = getNumericValue(discipline.questionCount);
-            
             if (discipline.type === selectedSection) {
-              return Array.from({length: questionCount}, (_, i) => startQuestion + i);
+              return Array.from({
+                length: questionCount
+              }, (_, i) => startQuestion + i);
             }
-            
             startQuestion += questionCount;
           }
         }
       }
-      
       return []; // Retornar vazio se não encontrou a disciplina selecionada
     } else {
       // Para a estrutura tradicional
@@ -476,12 +436,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         return Array.from({
           length: getQuestionsCount('specific3')
         }, (_, i) => startNumber + i);
-      } 
-      
+      }
       return [];
     }
   };
-  
+
   // Inicializar a primeira seção disponível
   useEffect(() => {
     if (concurso) {
@@ -494,67 +453,52 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
   // Avaliação de carregamento
   if (isLoadingConcurso || isLoadingAnswers) {
-    return (
-      <Card>
+    return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
           <p className="text-center text-gray-600">Carregando informações do gabarito...</p>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-  
   if (!concurso) {
-    return (
-      <Card>
+    return <Card>
         <CardContent className="p-6">
           <div className="flex items-center text-destructive space-x-2">
             <AlertTriangle className="h-5 w-5" />
             <p>Não foi possível carregar as informações do concurso.</p>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
   const totalQuestions = getAllQuestionsFromAllSections().length;
   const answeredQuestions = Object.keys(answers).length;
   const percentageComplete = totalQuestions > 0 ? Math.floor(answeredQuestions / totalQuestions * 100) : 0;
   const objectiveSections = getObjectiveSectionList();
-  
-  return (
-    <Card>
+  return <Card>
       <CardContent className="space-y-6">
         {/* Error message */}
-        {error && (
-          <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
+        {error && <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4" />
             <p>{error}</p>
-          </div>
-        )}
+          </div>}
         
         {/* Success message */}
-        {savedSuccess && (
-          <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
+        {savedSuccess && <div className="bg-green-100 p-3 rounded-md flex items-center gap-2 text-green-800">
             <CheckCircle className="h-4 w-4" />
             <p>Gabarito do caderno {bookletId} salvo com sucesso!</p>
-          </div>
-        )}
+          </div>}
         
         {/* Progress indicator */}
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mx-0 my-[20px]">
           <div className="flex flex-col">
             <h4 className="font-medium text-blue-800">Progresso do preenchimento</h4>
             <p className="text-sm text-blue-700 mt-1">
               {answeredQuestions} de {totalQuestions} questões respondidas ({percentageComplete}%)
             </p>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full" 
-                style={{
-                  width: `${percentageComplete}%`
-                }}
-              ></div>
+              <div className="bg-blue-600 h-2.5 rounded-full" style={{
+              width: `${percentageComplete}%`
+            }}></div>
             </div>
             <p className="text-xs text-blue-600 mt-2">
               Todas as questões deste caderno precisam ser respondidas antes de salvar.
@@ -563,89 +507,49 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         </div>
         
         {/* Tabs for sections */}
-        {objectiveSections.length > 0 && (
-          <div className="border rounded-md overflow-hidden shadow-sm">
-            <Tabs 
-              value={selectedSection} 
-              onValueChange={value => setSelectedSection(value)} 
-              className="w-full"
-            >
-              <TabsList 
-                className="grid w-full" 
-                style={{
-                  gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))`
-                }}
-              >
-                {objectiveSections.map(section => (
-                  <TabsTrigger key={section.key} value={section.key}>
+        {objectiveSections.length > 0 && <div className="border rounded-md overflow-hidden shadow-sm">
+            <Tabs value={selectedSection} onValueChange={value => setSelectedSection(value)} className="w-full">
+              <TabsList className="grid w-full" style={{
+            gridTemplateColumns: `repeat(${objectiveSections.length}, minmax(0, 1fr))`
+          }}>
+                {objectiveSections.map(section => <TabsTrigger key={section.key} value={section.key}>
                     {section.label}
-                  </TabsTrigger>
-                ))}
+                  </TabsTrigger>)}
               </TabsList>
               
-              {objectiveSections.map(section => (
-                <TabsContent key={section.key} value={section.key}>
+              {objectiveSections.map(section => <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-gray-50">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {createAnswerMatrix().map((row, rowIndex) => (
-                        <div key={`row-${rowIndex}`}>
-                          {row.map((questionNumber, colIndex) => 
-                            questionNumber !== null ? (
-                              <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
+                      {createAnswerMatrix().map((row, rowIndex) => <div key={`row-${rowIndex}`}>
+                          {row.map((questionNumber, colIndex) => questionNumber !== null ? <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
                                 <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
-                                  {getOptionsForQuestion().map(option => (
-                                    <button 
-                                      key={option} 
-                                      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
-                                        ${answers[questionNumber] === option ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} 
-                                      onClick={() => handleAnswerChange(questionNumber, option)} 
-                                      disabled={nullifiedQuestions.has(questionNumber)} 
-                                      type="button"
-                                    >
+                                  {getOptionsForQuestion().map(option => <button key={option} className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
+                                        ${answers[questionNumber] === option ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
                                       {option}
-                                    </button>
-                                  ))}
+                                    </button>)}
                                 </div>
-                                <NullifyQuestionButton 
-                                  questionNumber={questionNumber} 
-                                  isNullified={nullifiedQuestions.has(questionNumber)} 
-                                  onNullify={handleNullifyQuestion} 
-                                />
-                              </div>
-                            ) : null
-                          )}
-                        </div>
-                      ))}
+                                <NullifyQuestionButton questionNumber={questionNumber} isNullified={nullifiedQuestions.has(questionNumber)} onNullify={handleNullifyQuestion} />
+                              </div> : null)}
+                        </div>)}
                     </div>
                   </div>
-                </TabsContent>
-              ))}
+                </TabsContent>)}
             </Tabs>
-          </div>
-        )}
+          </div>}
         
         {/* Action button - Save only current booklet */}
         <div className="flex justify-center mt-4">
-          <Button 
-            onClick={handleSaveCurrentBooklet} 
-            className="bg-emerald-600 hover:bg-emerald-700 text-white" 
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <>
+          <Button onClick={handleSaveCurrentBooklet} className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSaving}>
+            {isSaving ? <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Salvando...
-              </>
-            ) : (
-              <>
+              </> : <>
                 <Save className="mr-2 h-4 w-4" />
                 Salvar Gabarito do Caderno {bookletId}
-              </>
-            )}
+              </>}
           </Button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
