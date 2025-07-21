@@ -133,19 +133,30 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     onBookletsSaved?.(false);
   };
   const validateBooklets = () => {
+    console.log('Validando cadernos:', booklets);
+    
     if (booklets.length === 0) {
+      console.log('Validação falhou: sem cadernos');
       return "Adicione pelo menos um caderno de prova";
     }
 
     // Verificar nomes únicos e não vazios
     const names = booklets.map(b => b.name.trim()).filter(n => n);
     const uniqueNames = new Set(names);
+    
+    console.log('Names:', names, 'Unique names:', Array.from(uniqueNames));
+    console.log('Names length:', names.length, 'Booklets length:', booklets.length);
+    
     if (names.length !== booklets.length) {
+      console.log('Validação falhou: nomes vazios');
       return "Todos os cadernos devem ter um nome preenchido";
     }
     if (names.length !== uniqueNames.size) {
+      console.log('Validação falhou: nomes duplicados');
       return "Nomes dos cadernos devem ser únicos";
     }
+    
+    console.log('Validação passou');
     return null;
   };
   const saveBooklets = async () => {
@@ -159,8 +170,12 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       return false;
     }
 
+    // Log para debug
+    console.log('Salvando cadernos:', { concursoId, booklets });
+
     // Se não há concursoId ainda, apenas validar e marcar como pronto para salvar
     if (!concursoId) {
+      console.log('Sem concursoId, apenas validando');
       setHasUnsavedChanges(false);
       setIsBookletsSaved(true);
       onBookletsSaved?.(true);
