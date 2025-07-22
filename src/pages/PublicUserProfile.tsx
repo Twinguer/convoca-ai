@@ -35,8 +35,9 @@ interface UserProfile {
 interface UserRanking {
   concursoId: string;
   concursoTitle: string;
-  position: number;
+  position: number | null;
   score: number;
+  isClassified: boolean;
 }
 const PublicUserProfile: React.FC = () => {
   const {
@@ -111,12 +112,19 @@ const PublicUserProfile: React.FC = () => {
             id,
             concurso_id,
             score,
-            concursos(titulo)
+            concursos(titulo, id)
           `).eq('user_id', id).order('score', {
           ascending: false
         });
         if (error) throw error;
+        
         const rankingsWithPosition = await Promise.all(data.map(async item => {
+          // Check if user is classified using the function
+          const { data: isClassified } = await supabase.rpc('is_candidate_classified', {
+            p_ranking_id: item.id,
+            p_concurso_id: item.concurso_id
+          });
+
           const {
             data: allScores,
             error: scoresError
@@ -127,14 +135,17 @@ const PublicUserProfile: React.FC = () => {
             console.error('Error fetching scores:', scoresError);
             return null;
           }
+          
           const position = allScores.findIndex(s => s.score <= item.score) + 1;
           const concursoData = item.concursos || {};
           const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
+          
           return {
             concursoId: item.concurso_id,
             concursoTitle: titulo,
-            position,
-            score: item.score
+            position: isClassified ? position : null, // null if eliminated
+            score: item.score,
+            isClassified: Boolean(isClassified)
           };
         }));
         return rankingsWithPosition.filter(Boolean) as UserRanking[];
@@ -244,8 +255,8 @@ const PublicUserProfile: React.FC = () => {
         Voltar para Comunidade
       </Button>
       
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-3 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-3 space-y-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center space-y-4">
@@ -290,32 +301,32 @@ const PublicUserProfile: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-2 text-sm">
-                  {profile.estado && <div className="flex justify-between">
+                  {profile.estado && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                       <span className="font-medium">Estado:</span>
-                      <span className="text-gray-600 text-left">{profile.estado}</span>
+                      <span className="text-gray-600">{profile.estado}</span>
                     </div>}
                   
-                  {profile.formacao && <div className="flex justify-between">
+                  {profile.formacao && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                       <span className="font-medium">Formação:</span>
                       <span className="text-gray-600">{profile.formacao}</span>
                     </div>}
                   
-                  {profile.cargo_atual && <div className="flex justify-between">
+                  {profile.cargo_atual && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                       <span className="font-medium">Cargo atual:</span>
                       <span className="text-gray-600">{profile.cargo_atual}</span>
                     </div>}
                   
-                  {profile.area_estudos && <div className="flex justify-between">
+                  {profile.area_estudos && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                       <span className="font-medium">Área de Estudos:</span>
                       <span className="text-gray-600">{profile.area_estudos}</span>
                     </div>}
                   
-                  {profile.especialidade && <div className="flex justify-between">
+                  {profile.especialidade && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                       <span className="font-medium">Especialidade:</span>
                       <span className="text-gray-600">{profile.especialidade}</span>
                     </div>}
                   
-                  {profile.curso_preparatorio && <div className="flex justify-between">
+                  {profile.curso_preparatorio && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                       <span className="font-medium">Curso Preparatório:</span>
                       <span className="text-gray-600">{profile.curso_preparatorio}</span>
                     </div>}
@@ -324,7 +335,7 @@ const PublicUserProfile: React.FC = () => {
             </Card>}
         </div>
         
-        <div className="md:col-span-6">
+        <div className="lg:col-span-6 space-y-4">
           {profile.rotina_estudos && <Card className="mb-4">
               <CardHeader className="pb-3">
                 <h3 className="text-xl font-bold">Rotina de estudos</h3>
@@ -352,18 +363,24 @@ const PublicUserProfile: React.FC = () => {
                   </Button>
                 </div> : rankings && rankings.length > 0 ? <div className="space-y-4">
                   {rankings.map((ranking, index) => <Card key={ranking.concursoId} className="overflow-hidden">
-                      <div className="bg-gradient-to-r from-emerald-100 to-emerald-50 p-4 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-medium text-slate-700">{ranking.concursoTitle}</h3>
+                      <div className={`p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 ${
+                        ranking.isClassified 
+                          ? 'bg-gradient-to-r from-emerald-100 to-emerald-50' 
+                          : 'bg-gradient-to-r from-red-100 to-red-50'
+                      }`}>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-slate-700 text-sm sm:text-base">{ranking.concursoTitle}</h3>
                           <div className="flex items-center mt-1">
-                            <Trophy className="h-4 w-4 text-yellow-500 mr-1" />
-                            <span className="text-sm text-slate-700">
-                              {ranking.position > 0 ? `Posição: ${ranking.position}º` : 'Posição não definida'}
+                            <Trophy className="h-4 w-4 text-yellow-500 mr-1 flex-shrink-0" />
+                            <span className="text-xs sm:text-sm text-slate-700">
+                              {ranking.isClassified && ranking.position 
+                                ? `Posição: ${ranking.position}º` 
+                                : 'Eliminado'}
                             </span>
                           </div>
                         </div>
-                        <div className="bg-white rounded-full h-14 w-14 flex items-center justify-center shadow-sm">
-                          <span className="text-lg font-bold text-slate-700">{ranking.score}</span>
+                        <div className="bg-white rounded-full h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center shadow-sm flex-shrink-0">
+                          <span className="text-sm sm:text-lg font-bold text-slate-700">{ranking.score}</span>
                           <span className="text-xs ml-1 text-slate-700">pts</span>
                         </div>
                       </div>
@@ -401,7 +418,7 @@ const PublicUserProfile: React.FC = () => {
           </Card>
         </div>
         
-        <div className="md:col-span-3">
+        <div className="lg:col-span-3">
           <FollowersColumn userId={id || ''} />
         </div>
       </div>
