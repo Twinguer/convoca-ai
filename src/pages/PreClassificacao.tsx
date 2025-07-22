@@ -1,8 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { RankingList } from '@/components/rankings/RankingList';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useRankingsData } from '@/hooks/useRankingsData';
+import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PreClassificacao = () => {
@@ -27,7 +30,17 @@ const PreClassificacao = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Rankings Disponíveis</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Rankings Disponíveis</h1>
+        {user && (
+          <Link to="/criar-ranking">
+            <Button className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Ranking
+            </Button>
+          </Link>
+        )}
+      </div>
       <RankingList rankings={rankings} isLoading={isLoading} />
     </div>
   );
