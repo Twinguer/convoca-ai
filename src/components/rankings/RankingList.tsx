@@ -89,7 +89,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4 text-emerald-600" />
                 <p className="text-sm font-medium text-emerald-700">
-                  {participantCount.toLocaleString()} participantes
+                  {(participantCount || 0).toLocaleString()} participantes
                 </p>
               </div>
               
