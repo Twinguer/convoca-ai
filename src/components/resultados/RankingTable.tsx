@@ -73,28 +73,56 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
   }, [concurso, rankings]);
 
-  // Calculate quota positions for each ranking
+  // Helper function to determine if a ranking is below the required minimum
+  const isBelowMinimum = (ranking: Ranking): boolean => {
+    return !!ranking.belowMinimum || 
+           (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
+           (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
+  };
+
+  // Calculate quota positions for each ranking, separating classified from eliminated
   const rankingsWithQuotaPositions = React.useMemo(() => {
     if (!rankings) return [];
 
-    // Group rankings by reservation type
+    // Separate classified from eliminated users
+    const classifiedRankings = rankings.filter(ranking => !isBelowMinimum(ranking));
+    const eliminatedRankings = rankings.filter(ranking => isBelowMinimum(ranking));
+
+    // Sort classified rankings by score (descending)
+    classifiedRankings.sort((a, b) => b.score - a.score);
+    
+    // Sort eliminated rankings by score (descending) but they go to the end
+    eliminatedRankings.sort((a, b) => b.score - a.score);
+
+    // Group classified rankings by reservation type
     const groupedByQuota: Record<string, Ranking[]> = {};
-    rankings.forEach(ranking => {
+    classifiedRankings.forEach(ranking => {
       if (!groupedByQuota[ranking.reservationType]) {
         groupedByQuota[ranking.reservationType] = [];
       }
       groupedByQuota[ranking.reservationType].push(ranking);
     });
 
-    // Calculate position within each quota group
-    return rankings.map(ranking => {
+    // Calculate positions for classified users
+    const classifiedWithPositions = classifiedRankings.map((ranking, index) => {
       const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
       return {
         ...ranking,
+        position: index + 1, // Override position based on classification
         quotaPosition
       };
     });
+
+    // Eliminated users don't get positions, they're marked as eliminated
+    const eliminatedWithoutPositions = eliminatedRankings.map(ranking => ({
+      ...ranking,
+      position: 0, // No position for eliminated users
+      quotaPosition: 0
+    }));
+
+    // Return classified users first, then eliminated users
+    return [...classifiedWithPositions, ...eliminatedWithoutPositions];
   }, [rankings]);
 
   const getAvailableQuotas = () => {
@@ -417,14 +445,18 @@ const RankingTableContent: React.FC<{
             <TableCell className="text-center font-bold">
               {belowMinimum 
                 ? <span className="text-red-600 font-bold">E</span> 
-                : `${ranking.position}º`
+                : ranking.position > 0 
+                  ? `${ranking.position}º`
+                  : '-'
               }
             </TableCell>
             
             {!isAmpla && <TableCell className="text-center font-bold">
               {belowMinimum 
                 ? <span className="text-red-600 font-bold">E</span>
-                : `${ranking.quotaPosition}º`
+                : ranking.quotaPosition > 0
+                  ? `${ranking.quotaPosition}º`
+                  : '-'
               }
             </TableCell>}
             

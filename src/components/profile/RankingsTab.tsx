@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PencilLine, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
+import { PencilLine, Trophy, ChevronDown, ChevronUp, UserX } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 interface RankingsTabProps {
   userId: string;
   userRankings?: UserRankingDisplay[];
@@ -24,6 +36,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   } = useAuth();
   const navigate = useNavigate();
   const [showAllRankings, setShowAllRankings] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const {
     data: rankings,
     isLoading
@@ -58,16 +72,29 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             position: null
           };
         }
-
+        
         // Buscar pontuações de todos os participantes deste concurso
         const concursoId = ranking.concurso_id;
         if (!concursoId) {
           console.error('No concurso ID found for ranking:', ranking);
           return {
             ...ranking,
-            position: null
+            position: null,
+            isEliminated: false
           };
         }
+
+        // Verificar se o usuário está classificado (não eliminado)
+        const { data: isClassified, error: classifiedError } = await supabase
+          .rpc('is_candidate_classified', {
+            p_ranking_id: ranking.id,
+            p_concurso_id: concursoId
+          });
+
+        if (classifiedError) {
+          console.error('Erro ao verificar classificação:', classifiedError);
+        }
+
         const {
           data: allScores,
           error: scoresError
@@ -78,7 +105,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           console.error('Erro ao buscar pontuações:', scoresError);
           return {
             ...ranking,
-            position: null
+            position: null,
+            isEliminated: !isClassified
           };
         }
 
@@ -86,7 +114,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         const position = allScores ? allScores.findIndex(s => s.score >= ranking.score) + 1 : 0;
         return {
           ...ranking,
-          position
+          position: !isClassified ? null : position,
+          isEliminated: !isClassified
         };
       }));
       return rankingsWithPositions || [];
@@ -107,6 +136,33 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
   // Verifica se o usuário atual é o dono do perfil
   const isOwnProfile = user?.id === userId;
+
+  // Mutation para deixar de participar do ranking
+  const leaveRankingMutation = useMutation({
+    mutationFn: async (rankingId: string) => {
+      const { error } = await supabase
+        .from('user_rankings')
+        .delete()
+        .eq('id', rankingId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sucesso",
+        description: "Você deixou de participar do ranking.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['user-rankings', userId] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro",
+        description: "Erro ao deixar de participar do ranking. Tente novamente.",
+        variant: "destructive",
+      });
+      console.error('Erro ao deixar de participar:', error);
+    }
+  });
   if (showSkeleton) {
     return <div className="space-y-4">
         <Skeleton className="h-12 w-full" />
@@ -142,7 +198,16 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 
                 {/* Posição e Pontuação */}
                 <div className="mt-2 flex flex-wrap gap-2">
-                  
+                  {ranking.isEliminated ? (
+                    <Badge variant="destructive" className="flex items-center">
+                      Eliminado
+                    </Badge>
+                  ) : ranking.position ? (
+                    <Badge variant="default" className="flex items-center">
+                      <Trophy className="h-3 w-3 mr-1" />
+                      {ranking.position}º lugar
+                    </Badge>
+                  ) : null}
                   
                   <Badge variant="secondary" className="flex items-center">
                     Pontuação: {typeof ranking.score === 'number' ? ranking.score.toFixed(2) : 'Calculando...'}
@@ -156,10 +221,40 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                   <span>Ver Ranking</span>
                 </Button>
                 
-                {isOwnProfile && <Button size="sm" className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
-                    <PencilLine className="h-4 w-4" />
-                    <span>Editar Respostas</span>
-                  </Button>}
+                {isOwnProfile && (
+                  <>
+                    <Button size="sm" className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
+                      <PencilLine className="h-4 w-4" />
+                      <span>Editar Respostas</span>
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive" className="flex items-center gap-1">
+                          <UserX className="h-4 w-4" />
+                          <span>Deixar de Participar</span>
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Deixar de participar?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja deixar de participar deste ranking? Esta ação não pode ser desfeita e você perderá todas as suas respostas.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => leaveRankingMutation.mutate(ranking.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Confirmar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
               </div>
             </div>
           </Card>)}
