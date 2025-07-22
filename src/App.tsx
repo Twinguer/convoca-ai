@@ -8,8 +8,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Menu from "./components/Menu";
 import Index from "./pages/Index";
-import Editais from "./pages/Editais";
-import PreClassificacao from "./pages/PreClassificacao";
 import Resultado from "./pages/Resultado";
 import ConcursoDetails from "./pages/ConcursoDetails";
 import ResultadosPage from "./pages/ResultadosPage";
@@ -72,14 +70,6 @@ const App = () => {
                     <Route path="/comunidade" element={<>
                         <Menu />
                         <Comunidade />
-                      </>} />
-                    <Route path="/editais" element={<>
-                        <Menu />
-                        <Editais />
-                      </>} />
-                    <Route path="/pre-classificacao" element={<>
-                        <Menu />
-                        <PreClassificacao />
                       </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />
