@@ -140,7 +140,20 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   // Mutation para deixar de participar do ranking
   const leaveRankingMutation = useMutation({
     mutationFn: async (ranking: any) => {
-      console.log('Iniciando saída do ranking:', ranking);
+      console.log('DEBUG: Estrutura completa do ranking recebido:', JSON.stringify(ranking, null, 2));
+      console.log('DEBUG: ranking.id:', ranking.id);
+      console.log('DEBUG: ranking.ranking_id:', ranking.ranking_id);
+      console.log('DEBUG: ranking.user_ranking_id:', ranking.user_ranking_id);
+      console.log('DEBUG: Object.keys(ranking):', Object.keys(ranking));
+      
+      const rankingId = ranking.id || ranking.ranking_id || ranking.user_ranking_id;
+      console.log('DEBUG: ID final identificado:', rankingId);
+      
+      if (!rankingId) {
+        throw new Error('ID do ranking não encontrado. Estrutura: ' + JSON.stringify(ranking, null, 2));
+      }
+      
+      console.log('Iniciando saída do ranking:', rankingId);
       
       try {
         const concursoId = ranking.concursos?.id || ranking.concursoId;
@@ -195,7 +208,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         const { error: logsError } = await supabase
           .from('score_calculation_logs')
           .delete()
-          .eq('user_ranking_id', ranking.id);
+          .eq('user_ranking_id', rankingId);
         
         if (logsError) {
           console.error('Erro ao deletar score_calculation_logs:', logsError);
@@ -205,7 +218,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         const { error: answersError } = await supabase
           .from('user_answers')
           .delete()
-          .eq('user_ranking_id', ranking.id);
+          .eq('user_ranking_id', rankingId);
         
         if (answersError) {
           console.error('Erro ao deletar user_answers:', answersError);
@@ -215,7 +228,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         const { error: rankingError } = await supabase
           .from('user_rankings')
           .delete()
-          .eq('id', ranking.id);
+          .eq('id', rankingId);
         
         if (rankingError) {
           console.error('Erro ao deletar user_ranking:', rankingError);
