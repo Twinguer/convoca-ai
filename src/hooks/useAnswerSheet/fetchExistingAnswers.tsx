@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { consolidatedAnswerService } from '@/services/consolidatedAnswerService';
 
 export const fetchExistingAnswers = async (rankingId: string) => {
   try {
@@ -32,52 +31,49 @@ export const fetchExistingAnswers = async (rankingId: string) => {
 
     let answers: { [key: number]: string } = {};
 
-    if (consolidatedData?.consolidated_data && rankingData?.selected_booklet) {
-      // CORREÇÃO: Acessar consolidated_data corretamente
-      const consolidatedAnswers = consolidatedData.consolidated_data;
-      console.log('[fetchExistingAnswers] Estrutura de dados consolidados:', consolidatedAnswers);
+    if (consolidatedData?.consolidated_data) {
+      const data = consolidatedData.consolidated_data;
+      console.log('[fetchExistingAnswers] Estrutura de dados consolidados:', data);
       
       // Buscar dados do usuário específico
-      const userData = consolidatedAnswers.users?.[rankingData.user_id];
-      console.log('[fetchExistingAnswers] Dados do usuário:', userData);
+      const userData = data.users?.[rankingData.user_id];
+      console.log('[fetchExistingAnswers] Dados do usuário no JSON consolidado:', userData);
       
-      if (userData?.booklets) {
+      if (userData?.booklets && rankingData?.selected_booklet) {
         const selectedBookletId = rankingData.selected_booklet.toString();
         console.log('[fetchExistingAnswers] Caderno selecionado:', selectedBookletId);
         
         const bookletAnswers = userData.booklets[selectedBookletId]?.answers || {};
         console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
 
-        // Converter para formato esperado
+        // Converter para formato esperado (número da questão como chave)
         Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
           answers[parseInt(questionNum)] = answer as string;
         });
-      } else {
-        console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para o usuário ou caderno');
-        console.log('[fetchExistingAnswers] Booklets do usuário:', userData?.booklets);
-      }
-    } else if (consolidatedData?.consolidated_data) {
-      // Fallback: se não há caderno selecionado, pegar do primeiro caderno disponível
-      const consolidatedAnswers = consolidatedData.consolidated_data;
-      const userData = consolidatedAnswers.users?.[rankingData.user_id];
-      
-      if (userData?.booklets) {
-        const firstBookletId = Object.keys(userData.booklets)[0];
-        if (firstBookletId) {
+        
+        console.log('[fetchExistingAnswers] Answers convertidas:', answers);
+      } else if (userData?.booklets) {
+        // Fallback: usar primeiro caderno disponível se nenhum selecionado
+        const bookletIds = Object.keys(userData.booklets);
+        if (bookletIds.length > 0) {
+          const firstBookletId = bookletIds[0];
           console.log('[fetchExistingAnswers] Fallback: usando primeiro caderno disponível:', firstBookletId);
-          const bookletAnswers = userData.booklets[firstBookletId].answers || {};
           
+          const bookletAnswers = userData.booklets[firstBookletId]?.answers || {};
           Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
             answers[parseInt(questionNum)] = answer as string;
           });
         }
+      } else {
+        console.log('[fetchExistingAnswers] Nenhum caderno encontrado para o usuário');
+        console.log('[fetchExistingAnswers] User booklets:', userData?.booklets);
+        console.log('[fetchExistingAnswers] Selected booklet:', rankingData?.selected_booklet);
       }
     } else {
-      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado');
-      console.log('[fetchExistingAnswers] consolidatedData:', consolidatedData);
+      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado para o concurso');
     }
 
-    console.log('[fetchExistingAnswers] Respostas finais para o caderno atual:', answers);
+    console.log('[fetchExistingAnswers] Respostas finais para retorno:', answers);
 
     return {
       answers,
@@ -85,7 +81,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       caseStudy1Score: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.case_study_1 ?? rankingData?.case_study_1_score ?? null,
       caseStudy2Score: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.case_study_2 ?? rankingData?.case_study_2_score ?? null,
       caseStudy3Score: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.case_study_3 ?? rankingData?.case_study_3_score ?? null,
-      selectedBooklet: rankingData?.selected_booklet || null,
+      selectedBooklet: rankingData?.selected_booklet?.toString() || null,
       editCount: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.edit_count || 0,
       consolidatedData: consolidatedData?.consolidated_data
     };
