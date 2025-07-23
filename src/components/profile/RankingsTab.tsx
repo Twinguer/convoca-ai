@@ -140,12 +140,51 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   // Mutation para deixar de participar do ranking
   const leaveRankingMutation = useMutation({
     mutationFn: async (rankingId: string) => {
-      const { error } = await supabase
-        .from('user_rankings')
-        .delete()
-        .eq('id', rankingId);
+      console.log('Iniciando saída do ranking:', rankingId);
       
-      if (error) throw error;
+      try {
+        // 1. Primeiro deletar score_calculation_logs relacionados
+        console.log('Deletando score_calculation_logs...');
+        const { error: logsError } = await supabase
+          .from('score_calculation_logs')
+          .delete()
+          .eq('user_ranking_id', rankingId);
+        
+        if (logsError) {
+          console.error('Erro ao deletar score_calculation_logs:', logsError);
+          // Continue mesmo com erro nos logs
+        }
+
+        // 2. Deletar user_answers relacionadas
+        console.log('Deletando user_answers...');
+        const { error: answersError } = await supabase
+          .from('user_answers')
+          .delete()
+          .eq('user_ranking_id', rankingId);
+        
+        if (answersError) {
+          console.error('Erro ao deletar user_answers:', answersError);
+          // Continue mesmo com erro nas respostas
+        }
+
+        // 3. Finalmente deletar o user_ranking
+        console.log('Deletando user_ranking...');
+        const { error: rankingError } = await supabase
+          .from('user_rankings')
+          .delete()
+          .eq('id', rankingId);
+        
+        if (rankingError) {
+          console.error('Erro ao deletar user_ranking:', rankingError);
+          throw rankingError;
+        }
+
+        console.log('Usuário saiu do ranking com sucesso:', rankingId);
+        return { success: true };
+      } catch (error) {
+        console.error('Erro ao sair do ranking:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
