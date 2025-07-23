@@ -141,27 +141,32 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   const leaveRankingMutation = useMutation({
     mutationFn: async (ranking: any) => {
       console.log('DEBUG: Estrutura completa do ranking recebido:', JSON.stringify(ranking, null, 2));
-      console.log('DEBUG: ranking.id:', ranking.id);
-      console.log('DEBUG: ranking.ranking_id:', ranking.ranking_id);
-      console.log('DEBUG: ranking.user_ranking_id:', ranking.user_ranking_id);
-      console.log('DEBUG: Object.keys(ranking):', Object.keys(ranking));
-      
-      const rankingId = ranking.id || ranking.ranking_id || ranking.user_ranking_id;
-      console.log('DEBUG: ID final identificado:', rankingId);
-      
-      if (!rankingId) {
-        throw new Error('ID do ranking não encontrado. Estrutura: ' + JSON.stringify(ranking, null, 2));
-      }
-      
-      console.log('Iniciando saída do ranking:', rankingId);
       
       try {
-        const concursoId = ranking.concursos?.id || ranking.concursoId;
+        const concursoId = ranking.concurso_id || ranking.concursoId;
         const currentUserId = user?.id; // O usuário atual que está saindo
         
         if (!concursoId || !currentUserId) {
-          throw new Error('Informações do ranking incompletas');
+          throw new Error('Informações insuficientes - concursoId: ' + concursoId + ', userId: ' + currentUserId);
         }
+
+        console.log('Buscando ranking do usuário para concurso:', concursoId, 'usuário:', currentUserId);
+
+        // Primeiro buscar o ID do user_ranking
+        const { data: userRanking, error: findError } = await supabase
+          .from('user_rankings')
+          .select('id')
+          .eq('concurso_id', concursoId)
+          .eq('user_id', currentUserId)
+          .single();
+
+        if (findError || !userRanking) {
+          console.error('Erro ao buscar ranking do usuário:', findError);
+          throw new Error('Ranking do usuário não encontrado');
+        }
+
+        const rankingId = userRanking.id;
+        console.log('ID do ranking encontrado:', rankingId);
 
         // 1. Buscar dados consolidados
         console.log('Buscando dados consolidados...');
