@@ -111,9 +111,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   useEffect(() => {
     if (existingAnswersData) {
       console.log('[useAnswerSheet] Dados carregados:', existingAnswersData);
+      console.log('[useAnswerSheet] Answers recebidas:', existingAnswersData.answers);
+      console.log('[useAnswerSheet] Número de respostas:', Object.keys(existingAnswersData.answers || {}).length);
       
       if (existingAnswersData.answers) {
+        console.log('[useAnswerSheet] ANTES setAnswers - answers atuais:', answers);
         setAnswers(existingAnswersData.answers);
+        console.log('[useAnswerSheet] DEPOIS setAnswers - answers definidas:', existingAnswersData.answers);
         
         // Também definir as pontuações subjetivas
         if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
@@ -128,7 +132,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         if (existingAnswersData.caseStudy3Score !== undefined && existingAnswersData.caseStudy3Score !== null) {
           setCaseStudy3Score(existingAnswersData.caseStudy3Score);
         }
+      } else {
+        console.log('[useAnswerSheet] ATENÇÃO: Nenhuma resposta encontrada nos dados carregados');
       }
+    } else {
+      console.log('[useAnswerSheet] ATENÇÃO: existingAnswersData está vazio ou undefined');
     }
   }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 
