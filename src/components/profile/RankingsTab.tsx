@@ -139,47 +139,90 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
   // Mutation para deixar de participar do ranking
   const leaveRankingMutation = useMutation({
-    mutationFn: async (rankingId: string) => {
-      console.log('Iniciando saída do ranking:', rankingId);
+    mutationFn: async (ranking: any) => {
+      console.log('Iniciando saída do ranking:', ranking);
       
       try {
-        // 1. Primeiro deletar score_calculation_logs relacionados
-        console.log('Deletando score_calculation_logs...');
+        const concursoId = ranking.concursos?.id || ranking.concursoId;
+        const currentUserId = user?.id; // O usuário atual que está saindo
+        
+        if (!concursoId || !currentUserId) {
+          throw new Error('Informações do ranking incompletas');
+        }
+
+        // 1. Buscar dados consolidados
+        console.log('Buscando dados consolidados...');
+        const { data: consolidatedData, error: fetchError } = await supabase
+          .from('consolidated_answers_by_concurso')
+          .select('consolidated_data')
+          .eq('concurso_id', concursoId)
+          .single();
+        
+        if (fetchError) {
+          console.error('Erro ao buscar dados consolidados:', fetchError);
+          throw fetchError;
+        }
+
+        // 2. Remover usuário do JSON consolidado
+        if (consolidatedData?.consolidated_data?.users) {
+          console.log('Removendo usuário dos dados consolidados...');
+          const updatedData = { ...consolidatedData.consolidated_data };
+          delete updatedData.users[currentUserId];
+          
+          // Atualizar metadados
+          updatedData.metadata = {
+            ...updatedData.metadata,
+            total_users: Object.keys(updatedData.users).length,
+            last_updated: new Date().toISOString()
+          };
+
+          // Atualizar dados consolidados
+          const { error: updateError } = await supabase
+            .from('consolidated_answers_by_concurso')
+            .update({ consolidated_data: updatedData })
+            .eq('concurso_id', concursoId);
+          
+          if (updateError) {
+            console.error('Erro ao atualizar dados consolidados:', updateError);
+            throw updateError;
+          }
+        }
+
+        // 3. Deletar das tabelas relacionadas
+        console.log('Deletando dados relacionados...');
+        
+        // Deletar score_calculation_logs
         const { error: logsError } = await supabase
           .from('score_calculation_logs')
           .delete()
-          .eq('user_ranking_id', rankingId);
+          .eq('user_ranking_id', ranking.id);
         
         if (logsError) {
           console.error('Erro ao deletar score_calculation_logs:', logsError);
-          // Continue mesmo com erro nos logs
         }
 
-        // 2. Deletar user_answers relacionadas
-        console.log('Deletando user_answers...');
+        // Deletar user_answers
         const { error: answersError } = await supabase
           .from('user_answers')
           .delete()
-          .eq('user_ranking_id', rankingId);
+          .eq('user_ranking_id', ranking.id);
         
         if (answersError) {
           console.error('Erro ao deletar user_answers:', answersError);
-          // Continue mesmo com erro nas respostas
         }
 
-        // 3. Finalmente deletar o user_ranking
-        console.log('Deletando user_ranking...');
+        // Deletar user_ranking
         const { error: rankingError } = await supabase
           .from('user_rankings')
           .delete()
-          .eq('id', rankingId);
+          .eq('id', ranking.id);
         
         if (rankingError) {
           console.error('Erro ao deletar user_ranking:', rankingError);
           throw rankingError;
         }
 
-        console.log('Usuário saiu do ranking com sucesso:', rankingId);
+        console.log('Usuário saiu do ranking com sucesso');
         return { success: true };
       } catch (error) {
         console.error('Erro ao sair do ranking:', error);
@@ -284,7 +327,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction 
-                            onClick={() => leaveRankingMutation.mutate(ranking.id)}
+                            onClick={() => leaveRankingMutation.mutate(ranking)}
                             className="bg-red-600 hover:bg-red-700"
                           >
                             Confirmar
