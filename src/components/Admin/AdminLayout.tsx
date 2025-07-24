@@ -1,33 +1,41 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, ListChecks, LogOut, ArrowLeft, Users, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   
-  useEffect(() => {
-    // Check if the user is authenticated
-    const isAuthenticated = localStorage.getItem('adminAuth') === 'true';
-    if (!isAuthenticated) {
+  const handleLogout = async () => {
+    try {
+      // Log admin logout
+      await supabase.rpc('log_admin_operation', {
+        operation_type: 'admin_logout',
+        operation_details: {
+          logout_time: new Date().toISOString()
+        }
+      });
+
+      await supabase.auth.signOut();
+      toast.success('Logout realizado com sucesso');
       navigate('/project/admin/man/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Erro ao fazer logout');
     }
-  }, [navigate]);
-  
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth');
-    navigate('/project/admin/man/login');
   };
   
   const handleVisitSite = () => {
-    // Open the main site in a new tab with admin view flag
-    window.open('/?admin=true', '_blank');
+    // Open the main site in a new tab (remove insecure admin flag)
+    window.open('/', '_blank');
   };
   
   const handleCreateRanking = () => {
-    // Redirecionar para o formulário de criação de ranking com flag de admin
-    navigate('/criar-ranking?admin=true');
+    // Navigate to ranking creation (remove insecure admin flag)
+    navigate('/criar-ranking');
   };
   
   return <div className="min-h-screen bg-gray-100 flex flex-col">

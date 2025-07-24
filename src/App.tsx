@@ -20,7 +20,7 @@ import PublicUserProfile from "./pages/PublicUserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
 import Comunidade from "./pages/Comunidade";
-import AdminLogin from "./pages/Admin/Login";
+import { SecureAdminLogin } from "./components/Admin/SecureLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
 import ListarUsuarios from "./pages/Admin/ListarUsuarios";
@@ -40,7 +40,7 @@ const App = () => {
                 <Sonner />
                 <BrowserRouter>
                   <Routes>
-                    <Route path="/project/admin/man/login" element={<AdminLogin />} />
+                    <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />
                     <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
                     <Route path="/project/admin/man" element={<ProtectedRoute>
                         <AdminLayout />
