@@ -27,6 +27,10 @@ import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
+import EstudosDashboard from "./pages/Estudos/Dashboard";
+import Cronograma from "./pages/Estudos/Cronograma";
+import Timer from "./pages/Estudos/Timer";
+import Estatisticas from "./pages/Estudos/Estatisticas";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -75,6 +79,22 @@ const App = () => {
                     <Route path="/criar-ranking" element={<>
                         <Menu />
                         <CriarRanking />
+                      </>} />
+                    <Route path="/estudos" element={<>
+                        <Menu />
+                        <EstudosDashboard />
+                      </>} />
+                    <Route path="/estudos/cronograma" element={<>
+                        <Menu />
+                        <Cronograma />
+                      </>} />
+                    <Route path="/estudos/timer" element={<>
+                        <Menu />
+                        <Timer />
+                      </>} />
+                    <Route path="/estudos/estatisticas" element={<>
+                        <Menu />
+                        <Estatisticas />
                       </>} />
                     <Route path="/pre-classificacao" element={<>
                         <Menu />

@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
@@ -71,6 +71,15 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
+                <Link to="/estudos">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Estudar
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
                 <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
@@ -129,6 +138,10 @@ const Menu = () => {
                 <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
+                </Link>
+                <Link to="/estudos" className={cn("flex items-center text-lg font-semibold", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Estudar
                 </Link>
                 <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
