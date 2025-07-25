@@ -32,8 +32,6 @@ const Auth: React.FC = () => {
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
-  const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
 
   // Security states
   const [loginAttempts, setLoginAttempts] = useState(0);
@@ -202,39 +200,6 @@ const Auth: React.FC = () => {
     }
   };
 
-  // Admin login handler with improved security
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Sanitize inputs
-    const sanitizedUsername = sanitizeInput(adminUsername);
-    try {
-      // Using a secure comparison method that works in browser environment
-      // instead of Buffer which is not available in browser
-      setTimeout(() => {
-        // Simple string comparison for admin credentials
-        const isValidCredentials = sanitizedUsername === 'RlimaAdmin' && adminPassword === '#Tijolo14@';
-        if (isValidCredentials) {
-          // Use browser's built-in crypto for secure random token generation
-          const randomToken = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
-
-          // Store auth status in localStorage with a shorter expiration
-          localStorage.setItem('adminAuth', 'true');
-          localStorage.setItem('adminAuthExpiry', (Date.now() + 3600000).toString()); // 1 hour
-          localStorage.setItem('adminAuthToken', randomToken);
-          showSuccessToast('Login administrativo bem-sucedido', 'Bem-vindo ao painel administrativo');
-          navigate('/project/admin/man/dashboard');
-        } else {
-          showErrorToast('Falha no login administrativo', 'Usuário ou senha inválidos');
-        }
-        setIsLoading(false);
-      }, 1000);
-    } catch (error) {
-      showErrorToast('Erro no processo de login', 'Ocorreu um erro durante o processo de login. Tente novamente.');
-      setIsLoading(false);
-    }
-  };
   return <div className="container flex h-screen items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
@@ -245,10 +210,9 @@ const Auth: React.FC = () => {
         
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Cadastro</TabsTrigger>
-              <TabsTrigger value="admin">Admin</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -298,24 +262,6 @@ const Auth: React.FC = () => {
                 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? 'Criando conta...' : 'Criar conta'}
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="admin">
-              <form onSubmit={handleAdminLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="admin-username">Usuário Administrativo</Label>
-                  <Input id="admin-username" type="text" autoComplete="username" placeholder="Usuário Admin" value={adminUsername} onChange={e => setAdminUsername(e.target.value)} required disabled={isLoading} />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="admin-password">Senha Administrativa</Label>
-                  <Input id="admin-password" type="password" autoComplete="current-password" value={adminPassword} onChange={e => setAdminPassword(e.target.value)} required disabled={isLoading} />
-                </div>
-                
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Entrando...' : 'Acessar Painel Admin'}
                 </Button>
               </form>
             </TabsContent>
