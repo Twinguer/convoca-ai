@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus } from 'lucide-react';
-
 const Timer = () => {
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
@@ -24,9 +23,9 @@ const Timer = () => {
   useEffect(() => {
     if (isRunning && !isPaused) {
       intervalRef.current = setInterval(() => {
-        setSeconds((prevSeconds) => {
+        setSeconds(prevSeconds => {
           if (prevSeconds === 0) {
-            setMinutes((prevMinutes) => {
+            setMinutes(prevMinutes => {
               if (prevMinutes === 0) {
                 // Timer finished
                 setIsRunning(false);
@@ -48,36 +47,31 @@ const Timer = () => {
         intervalRef.current = null;
       }
     }
-
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
   }, [isRunning, isPaused, initialMinutes]);
-
   const handleStart = () => {
     setIsRunning(true);
     setIsPaused(false);
   };
-
   const handlePause = () => {
     setIsPaused(true);
   };
-
   const handleResume = () => {
     setIsPaused(false);
   };
-
   const handleStop = () => {
     setIsRunning(false);
     setIsPaused(false);
     setMinutes(initialMinutes);
     setSeconds(0);
   };
-
   const addTime = () => {
-    if (initialMinutes < 360) { // 6 hours limit
+    if (initialMinutes < 360) {
+      // 6 hours limit
       const newTime = initialMinutes + 5;
       setInitialMinutes(newTime);
       if (!isRunning) {
@@ -86,9 +80,9 @@ const Timer = () => {
       }
     }
   };
-
   const removeTime = () => {
-    if (initialMinutes > 5) { // Minimum 5 minutes
+    if (initialMinutes > 5) {
+      // Minimum 5 minutes
       const newTime = initialMinutes - 5;
       setInitialMinutes(newTime);
       if (!isRunning) {
@@ -97,19 +91,15 @@ const Timer = () => {
       }
     }
   };
-
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
   const getProgressPercentage = () => {
     const totalSeconds = initialMinutes * 60;
     const remainingSeconds = minutes * 60 + seconds;
-    return ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+    return (totalSeconds - remainingSeconds) / totalSeconds * 100;
   };
-
-  return (
-    <div className="container mx-auto p-6">
+  return <div className="container mx-auto p-6">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
@@ -134,24 +124,15 @@ const Timer = () => {
               </div>
 
               {/* Progress Bar */}
-              {isRunning && (
-                <div className="w-full bg-secondary rounded-full h-2 mb-6">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-1000"
-                    style={{ width: `${getProgressPercentage()}%` }}
-                  ></div>
-                </div>
-              )}
+              {isRunning && <div className="w-full bg-secondary rounded-full h-2 mb-6">
+                  <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{
+                width: `${getProgressPercentage()}%`
+              }}></div>
+                </div>}
 
               {/* Time Controls */}
-              {!isRunning && (
-                <div className="flex justify-center items-center gap-4 mb-6">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={removeTime}
-                    disabled={initialMinutes <= 5}
-                  >
+              {!isRunning && <div className="flex justify-center items-center gap-4 mb-6">
+                  <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
                     <Minus className="h-4 w-4" />
                   </Button>
                   
@@ -159,74 +140,40 @@ const Timer = () => {
                     {initialMinutes} min
                   </div>
                   
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={addTime}
-                    disabled={initialMinutes >= 360}
-                  >
+                  <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
                     <Plus className="h-4 w-4" />
                   </Button>
-                </div>
-              )}
+                </div>}
 
               {/* Control Buttons */}
               <div className="flex justify-center gap-4 mb-8">
-                {!isRunning ? (
-                  <Button size="lg" onClick={handleStart}>
+                {!isRunning ? <Button size="lg" onClick={handleStart}>
                     <Play className="h-5 w-5 mr-2" />
                     Iniciar
-                  </Button>
-                ) : (
-                  <>
-                    {!isPaused ? (
-                      <Button size="lg" variant="outline" onClick={handlePause}>
+                  </Button> : <>
+                    {!isPaused ? <Button size="lg" variant="outline" onClick={handlePause}>
                         <Pause className="h-5 w-5 mr-2" />
                         Pausar
-                      </Button>
-                    ) : (
-                      <Button size="lg" onClick={handleResume}>
+                      </Button> : <Button size="lg" onClick={handleResume}>
                         <Play className="h-5 w-5 mr-2" />
                         Continuar
-                      </Button>
-                    )}
+                      </Button>}
                     <Button size="lg" variant="outline" onClick={handleStop}>
                       <Square className="h-5 w-5 mr-2" />
                       Parar
                     </Button>
-                  </>
-                )}
+                  </>}
               </div>
 
               {/* Status */}
-              <div className="text-muted-foreground">
-                {!isRunning && !isPaused && (
-                  <p className="text-sm">
-                    Configure o tempo e clique em "Iniciar" para começar sua sessão de estudos
-                  </p>
-                )}
-                {isRunning && !isPaused && (
-                  <p className="text-sm text-primary">
-                    ⏰ Sessão de estudo em andamento - Mantenha o foco!
-                  </p>
-                )}
-                {isPaused && (
-                  <p className="text-sm text-yellow-600">
-                    ⏸️ Timer pausado - Clique em "Continuar" para retomar
-                  </p>
-                )}
-              </div>
+              
 
               {/* Time Range Info */}
-              <div className="mt-4 text-xs text-muted-foreground">
-                Tempo ajustável de 5 min até 6 horas (em intervalos de 5 min)
-              </div>
+              
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Timer;
