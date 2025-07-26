@@ -607,6 +607,39 @@ export type Database = {
         }
         Relationships: []
       }
+      study_contests: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          exam_date: string
+          id: string
+          is_active: boolean | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          exam_date: string
+          id?: string
+          is_active?: boolean | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          exam_date?: string
+          id?: string
+          is_active?: boolean | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_goals: {
         Row: {
           created_at: string | null
@@ -698,6 +731,7 @@ export type Database = {
           id: string
           notes: string | null
           progress_date: string
+          study_contest_id: string | null
           subject_id: string | null
           topics_completed: number | null
           updated_at: string | null
@@ -709,6 +743,7 @@ export type Database = {
           id?: string
           notes?: string | null
           progress_date?: string
+          study_contest_id?: string | null
           subject_id?: string | null
           topics_completed?: number | null
           updated_at?: string | null
@@ -720,12 +755,20 @@ export type Database = {
           id?: string
           notes?: string | null
           progress_date?: string
+          study_contest_id?: string | null
           subject_id?: string | null
           topics_completed?: number | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "study_progress_study_contest_id_fkey"
+            columns: ["study_contest_id"]
+            isOneToOne: false
+            referencedRelation: "study_contests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "study_progress_subject_id_fkey"
             columns: ["subject_id"]
@@ -838,6 +881,7 @@ export type Database = {
           quality_rating: number | null
           session_date: string
           start_time: string
+          study_contest_id: string | null
           study_plan_id: string | null
           study_type: string | null
           subject_id: string | null
@@ -853,6 +897,7 @@ export type Database = {
           quality_rating?: number | null
           session_date?: string
           start_time: string
+          study_contest_id?: string | null
           study_plan_id?: string | null
           study_type?: string | null
           subject_id?: string | null
@@ -868,6 +913,7 @@ export type Database = {
           quality_rating?: number | null
           session_date?: string
           start_time?: string
+          study_contest_id?: string | null
           study_plan_id?: string | null
           study_type?: string | null
           subject_id?: string | null
@@ -875,6 +921,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "study_sessions_study_contest_id_fkey"
+            columns: ["study_contest_id"]
+            isOneToOne: false
+            referencedRelation: "study_contests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "study_sessions_study_plan_id_fkey"
             columns: ["study_plan_id"]
@@ -893,39 +946,62 @@ export type Database = {
       }
       study_subjects: {
         Row: {
+          block_name: string | null
           color: string | null
+          completed_hours: number | null
           created_at: string | null
+          estimated_hours: number | null
           id: string
           is_active: boolean | null
+          is_completed: boolean | null
           name: string
           priority: number | null
+          study_contest_id: string | null
           updated_at: string | null
           user_id: string
           weekly_hours: number | null
         }
         Insert: {
+          block_name?: string | null
           color?: string | null
+          completed_hours?: number | null
           created_at?: string | null
+          estimated_hours?: number | null
           id?: string
           is_active?: boolean | null
+          is_completed?: boolean | null
           name: string
           priority?: number | null
+          study_contest_id?: string | null
           updated_at?: string | null
           user_id: string
           weekly_hours?: number | null
         }
         Update: {
+          block_name?: string | null
           color?: string | null
+          completed_hours?: number | null
           created_at?: string | null
+          estimated_hours?: number | null
           id?: string
           is_active?: boolean | null
+          is_completed?: boolean | null
           name?: string
           priority?: number | null
+          study_contest_id?: string | null
           updated_at?: string | null
           user_id?: string
           weekly_hours?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "study_subjects_study_contest_id_fkey"
+            columns: ["study_contest_id"]
+            isOneToOne: false
+            referencedRelation: "study_contests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subjects: {
         Row: {
