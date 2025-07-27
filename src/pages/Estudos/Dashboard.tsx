@@ -132,7 +132,7 @@ const EstudosDashboard = () => {
   return <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">CICLO DE ESTUDOS</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Ciclos de Estudos</h1>
           <p className="text-muted-foreground">Acompanhe seu progresso e organize seus estudos</p>
         </div>
         <div className="flex gap-2">
@@ -160,7 +160,7 @@ const EstudosDashboard = () => {
       {studyData.length === 0 ? <Card>
           <CardContent className="text-center p-8">
             <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nenhum concurso de estudo encontrado</h3>
+            <h3 className="text-lg font-semibold mb-2">Nenhum ciclo de estudo encontrado</h3>
             <p className="text-muted-foreground mb-4">
               Crie seu primeiro concurso de estudo para começar a organizar seus estudos
             </p>
