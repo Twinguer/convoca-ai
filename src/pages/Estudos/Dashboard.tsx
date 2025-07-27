@@ -179,10 +179,10 @@ const EstudosDashboard = () => {
               Timer
             </Button>
           </Link>
-          <Link to="/estudos/criar-concurso">
+          <Link to="/estudos/criar-ciclo">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Novo Concurso
+              Criar Ciclo de Estudos
             </Button>
           </Link>
         </div>

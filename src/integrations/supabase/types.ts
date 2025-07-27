@@ -640,6 +640,45 @@ export type Database = {
         }
         Relationships: []
       }
+      study_cycles: {
+        Row: {
+          blocks: Json
+          created_at: string
+          exam_date: string
+          id: string
+          is_active: boolean
+          name: string
+          organ: string
+          position: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocks?: Json
+          created_at?: string
+          exam_date: string
+          id?: string
+          is_active?: boolean
+          name: string
+          organ: string
+          position: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocks?: Json
+          created_at?: string
+          exam_date?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          organ?: string
+          position?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_goals: {
         Row: {
           created_at: string | null
