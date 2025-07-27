@@ -7,85 +7,90 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-interface StudyContest {
-  id: string;
-  title: string;
-  description: string;
-  exam_date: string;
-  is_active: boolean;
-  created_at: string;
-}
-interface StudySubject {
+interface StudyCycle {
   id: string;
   name: string;
-  block_name: string;
-  estimated_hours: number;
-  completed_hours: number;
-  is_completed: boolean;
-  study_contest_id: string;
+  organ: string;
+  position: string;
+  exam_date: string;
+  is_active: boolean;
+  blocks: any[];
+  created_at: string;
+  updated_at: string;
 }
-interface StudyProgress {
-  contest: StudyContest;
-  subjects: StudySubject[];
-  totalEstimatedHours: number;
-  totalCompletedHours: number;
-  completedSubjects: number;
+
+interface StudyCycleProgress {
+  cycle: StudyCycle;
+  totalDisciplines: number;
+  completedDisciplines: number;
+  totalStudyTime: number;
   daysUntilExam: number;
+  progressPercentage: number;
 }
 const EstudosDashboard = () => {
   const {
     user
   } = useAuth();
   const navigate = useNavigate();
-  const [studyData, setStudyData] = useState<StudyProgress[]>([]);
+  const [studyCycles, setStudyCycles] = useState<StudyCycleProgress[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (user) {
-      fetchStudyData();
+      fetchStudyCycles();
     }
   }, [user]);
-  const fetchStudyData = async () => {
+  const fetchStudyCycles = async () => {
     try {
-      // Fetch active study contests
-      const {
-        data: contests,
-        error: contestsError
-      } = await supabase.from('study_contests').select('*').eq('user_id', user?.id).eq('is_active', true).order('exam_date', {
-        ascending: true
-      });
-      if (contestsError) throw contestsError;
-      if (!contests || contests.length === 0) {
-        setStudyData([]);
+      const { data: cycles, error } = await supabase
+        .from('study_cycles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('is_active', true)
+        .order('exam_date', { ascending: true });
+
+      if (error) throw error;
+
+      if (!cycles || cycles.length === 0) {
+        setStudyCycles([]);
         setLoading(false);
         return;
       }
 
-      // Fetch subjects for each contest
-      const studyProgressData: StudyProgress[] = [];
-      for (const contest of contests) {
-        const {
-          data: subjects,
-          error: subjectsError
-        } = await supabase.from('study_subjects').select('*').eq('study_contest_id', contest.id).eq('is_active', true);
-        if (subjectsError) throw subjectsError;
-        const totalEstimatedHours = subjects?.reduce((sum, subject) => sum + (subject.estimated_hours || 0), 0) || 0;
-        const totalCompletedHours = subjects?.reduce((sum, subject) => sum + (subject.completed_hours || 0), 0) || 0;
-        const completedSubjects = subjects?.filter(subject => subject.is_completed).length || 0;
+      const cycleProgressData: StudyCycleProgress[] = cycles.map(cycle => {
         const today = new Date();
-        const examDate = new Date(contest.exam_date);
+        const examDate = new Date(cycle.exam_date);
         const daysUntilExam = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        studyProgressData.push({
-          contest,
-          subjects: subjects || [],
-          totalEstimatedHours,
-          totalCompletedHours,
-          completedSubjects,
-          daysUntilExam
+
+        // Calculate progress from blocks and disciplines
+        let totalDisciplines = 0;
+        let completedDisciplines = 0;
+        let totalStudyTime = 0;
+
+        cycle.blocks?.forEach((block: any) => {
+          block.disciplines?.forEach((discipline: any) => {
+            totalDisciplines++;
+            totalStudyTime += discipline.studyTime || 0;
+            if (discipline.isCompleted) {
+              completedDisciplines++;
+            }
+          });
         });
-      }
-      setStudyData(studyProgressData);
+
+        const progressPercentage = totalDisciplines > 0 ? (completedDisciplines / totalDisciplines) * 100 : 0;
+
+        return {
+          cycle,
+          totalDisciplines,
+          completedDisciplines,
+          totalStudyTime,
+          daysUntilExam,
+          progressPercentage
+        };
+      });
+
+      setStudyCycles(cycleProgressData);
     } catch (error) {
-      console.error('Error fetching study data:', error);
+      console.error('Error fetching study cycles:', error);
     } finally {
       setLoading(false);
     }
@@ -112,23 +117,21 @@ const EstudosDashboard = () => {
       </div>;
   }
   const calculateOverallProgress = () => {
-    if (studyData.length === 0) return {
-      hoursProgress: 0,
-      subjectsProgress: 0
+    if (studyCycles.length === 0) return {
+      disciplinesProgress: 0,
+      timeProgress: 0
     };
-    const totalEstimated = studyData.reduce((sum, data) => sum + data.totalEstimatedHours, 0);
-    const totalCompleted = studyData.reduce((sum, data) => sum + data.totalCompletedHours, 0);
-    const totalSubjects = studyData.reduce((sum, data) => sum + data.subjects.length, 0);
-    const totalCompletedSubjects = studyData.reduce((sum, data) => sum + data.completedSubjects, 0);
+    
+    const totalDisciplines = studyCycles.reduce((sum, data) => sum + data.totalDisciplines, 0);
+    const totalCompletedDisciplines = studyCycles.reduce((sum, data) => sum + data.completedDisciplines, 0);
+    
     return {
-      hoursProgress: totalEstimated > 0 ? totalCompleted / totalEstimated * 100 : 0,
-      subjectsProgress: totalSubjects > 0 ? totalCompletedSubjects / totalSubjects * 100 : 0
+      disciplinesProgress: totalDisciplines > 0 ? (totalCompletedDisciplines / totalDisciplines) * 100 : 0,
+      timeProgress: studyCycles.reduce((sum, data) => sum + data.totalStudyTime, 0)
     };
   };
-  const {
-    hoursProgress,
-    subjectsProgress
-  } = calculateOverallProgress();
+  
+  const { disciplinesProgress, timeProgress } = calculateOverallProgress();
   return <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -157,54 +160,59 @@ const EstudosDashboard = () => {
         </div>
       </div>
 
-      {studyData.length === 0 ? <Card>
+      {studyCycles.length === 0 ? (
+        <Card>
           <CardContent className="text-center p-8">
             <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum ciclo de estudo encontrado</h3>
             <p className="text-muted-foreground mb-4">
-              Crie seu primeiro concurso de estudo para começar a organizar seus estudos
+              Crie seu primeiro ciclo de estudos para começar a organizar seus estudos
             </p>
-            <Link to="/estudos/criar-concurso">
+            <Link to="/estudos/criar-ciclo">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Concurso
+                Criar Primeiro Ciclo
               </Button>
             </Link>
           </CardContent>
-        </Card> : <>
+        </Card>
+      ) : (
+        <>
           {/* Overall Progress Cards */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Progresso Geral (Horas)</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{hoursProgress.toFixed(1)}%</div>
-                <Progress value={hoursProgress} className="mt-2" />
-              </CardContent>
-            </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Disciplinas Concluídas</CardTitle>
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{subjectsProgress.toFixed(1)}%</div>
-                <Progress value={subjectsProgress} className="mt-2" />
+                <div className="text-2xl font-bold">{disciplinesProgress.toFixed(1)}%</div>
+                <Progress value={disciplinesProgress} className="mt-2" />
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Concursos Ativos</CardTitle>
+                <CardTitle className="text-sm font-medium">Tempo Total Estudado</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{timeProgress.toFixed(0)}h</div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  horas registradas
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Ciclos Ativos</CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{studyData.length}</div>
+                <div className="text-2xl font-bold">{studyCycles.length}</div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  concursos em andamento
+                  ciclos em andamento
                 </p>
               </CardContent>
             </Card>
@@ -216,7 +224,7 @@ const EstudosDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.min(...studyData.map(d => d.daysUntilExam).filter(d => d >= 0))}
+                  {studyCycles.length > 0 ? Math.min(...studyCycles.map(d => d.daysUntilExam).filter(d => d >= 0)) : 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   dias restantes
@@ -225,14 +233,21 @@ const EstudosDashboard = () => {
             </Card>
           </div>
 
-          {/* Study Contests */}
+          {/* Study Cycles */}
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">Seus Concursos</h2>
+            <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              {studyData.map(data => <StudyContestCard key={data.contest.id} studyProgress={data} onStartSession={() => navigate(`/estudos/timer?contest=${data.contest.id}`)} />)}
+              {studyCycles.map(data => (
+                <StudyCycleCard 
+                  key={data.cycle.id} 
+                  cycleProgress={data} 
+                  onStartSession={() => navigate(`/estudos/timer?cycle=${data.cycle.id}`)} 
+                />
+              ))}
             </div>
           </div>
-        </>}
+        </>
+      )}
 
       {/* Quick Actions */}
       <div className="mt-8">
@@ -277,23 +292,24 @@ const EstudosDashboard = () => {
       </div>
     </div>;
 };
-interface StudyContestCardProps {
-  studyProgress: StudyProgress;
+interface StudyCycleCardProps {
+  cycleProgress: StudyCycleProgress;
   onStartSession: () => void;
 }
-const StudyContestCard: React.FC<StudyContestCardProps> = ({
-  studyProgress,
+
+const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
+  cycleProgress,
   onStartSession
 }) => {
   const {
-    contest,
-    subjects,
-    totalEstimatedHours,
-    totalCompletedHours,
-    completedSubjects,
-    daysUntilExam
-  } = studyProgress;
-  const progressPercentage = totalEstimatedHours > 0 ? totalCompletedHours / totalEstimatedHours * 100 : 0;
+    cycle,
+    totalDisciplines,
+    completedDisciplines,
+    totalStudyTime,
+    daysUntilExam,
+    progressPercentage
+  } = cycleProgress;
+
   const getDateStatus = () => {
     if (daysUntilExam < 0) return {
       color: 'destructive',
@@ -316,22 +332,17 @@ const StudyContestCard: React.FC<StudyContestCardProps> = ({
       text: `${daysUntilExam} dias`
     };
   };
+
   const dateStatus = getDateStatus();
-  const blockGroups = subjects.reduce((groups, subject) => {
-    const blockName = subject.block_name || 'Sem bloco';
-    if (!groups[blockName]) {
-      groups[blockName] = [];
-    }
-    groups[blockName].push(subject);
-    return groups;
-  }, {} as Record<string, StudySubject[]>);
-  return <Card>
+
+  return (
+    <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{contest.title}</CardTitle>
+            <CardTitle className="text-lg">{cycle.name}</CardTitle>
             <CardDescription className="mt-1">
-              {contest.description}
+              {cycle.organ} - {cycle.position}
             </CardDescription>
           </div>
           <Badge variant={dateStatus.color as any}>
@@ -348,8 +359,8 @@ const StudyContestCard: React.FC<StudyContestCardProps> = ({
           </div>
           <Progress value={progressPercentage} />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{totalCompletedHours}h / {totalEstimatedHours}h</span>
-            <span>{completedSubjects} / {subjects.length} disciplinas</span>
+            <span>{totalStudyTime}h estudadas</span>
+            <span>{completedDisciplines} / {totalDisciplines} disciplinas</span>
           </div>
         </div>
 
@@ -357,13 +368,16 @@ const StudyContestCard: React.FC<StudyContestCardProps> = ({
         <div className="space-y-2">
           <h4 className="text-sm font-medium">Blocos de Estudo</h4>
           <div className="space-y-1">
-            {Object.entries(blockGroups).map(([blockName, blockSubjects]) => {
-            const completedInBlock = blockSubjects.filter(s => s.is_completed).length;
-            return <div key={blockName} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">{blockName}</span>
-                  <span>{completedInBlock}/{blockSubjects.length}</span>
-                </div>;
-          })}
+            {cycle.blocks?.map((block: any, index: number) => {
+              const completedInBlock = block.disciplines?.filter((d: any) => d.isCompleted).length || 0;
+              const totalInBlock = block.disciplines?.length || 0;
+              return (
+                <div key={index} className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">{block.name}</span>
+                  <span>{completedInBlock}/{totalInBlock}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -373,7 +387,7 @@ const StudyContestCard: React.FC<StudyContestCardProps> = ({
             <Play className="h-4 w-4 mr-2" />
             Iniciar Sessão
           </Button>
-          <Link to={`/estudos/concurso/${contest.id}`}>
+          <Link to={`/estudos/ciclo/${cycle.id}`}>
             <Button variant="outline">
               <BookOpen className="h-4 w-4 mr-2" />
               Ver Detalhes
@@ -381,6 +395,7 @@ const StudyContestCard: React.FC<StudyContestCardProps> = ({
           </Link>
         </div>
       </CardContent>
-    </Card>;
+    </Card>
+  );
 };
 export default EstudosDashboard;
