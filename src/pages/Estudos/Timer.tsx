@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus } from 'lucide-react';
+import FloatingTimer from '@/components/FloatingTimer';
 const Timer = () => {
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [initialMinutes, setInitialMinutes] = useState(25);
+  const [showFloatingTimer, setShowFloatingTimer] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup interval on component unmount
@@ -56,6 +58,7 @@ const Timer = () => {
   const handleStart = () => {
     setIsRunning(true);
     setIsPaused(false);
+    setShowFloatingTimer(true);
   };
   const handlePause = () => {
     setIsPaused(true);
@@ -99,14 +102,16 @@ const Timer = () => {
     const remainingSeconds = minutes * 60 + seconds;
     return (totalSeconds - remainingSeconds) / totalSeconds * 100;
   };
-  return <div className="container mx-auto p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
-          <p className="text-muted-foreground">Mantenha o foco com sessões cronometradas</p>
-        </div>
+  return (
+    <>
+      <div className="container mx-auto p-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Timer de Estudo</h1>
+            <p className="text-muted-foreground">Mantenha o foco com sessões cronometradas</p>
+          </div>
 
-        <Card>
+          <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 justify-center">
               <TimerIcon className="h-5 w-5" />
@@ -172,8 +177,16 @@ const Timer = () => {
               
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>;
+
+      <FloatingTimer
+        isOpen={showFloatingTimer}
+        onClose={() => setShowFloatingTimer(false)}
+        initialMinutes={initialMinutes}
+      />
+    </>
+  );
 };
 export default Timer;

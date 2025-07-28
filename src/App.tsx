@@ -32,6 +32,7 @@ import Cronograma from "./pages/Estudos/Cronograma";
 import Timer from "./pages/Estudos/Timer";
 import Estatisticas from "./pages/Estudos/Estatisticas";
 import CriarCiclo from "./pages/Estudos/CriarCiclo";
+import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 
 const App = () => {
   const queryClient = new QueryClient();
@@ -100,6 +101,10 @@ const App = () => {
                      <Route path="/estudos/criar-ciclo" element={<>
                         <Menu />
                         <CriarCiclo />
+                      </>} />
+                     <Route path="/estudos/ciclo/:id" element={<>
+                        <Menu />
+                        <CicloDetalhes />
                       </>} />
                     <Route path="/pre-classificacao" element={<>
                         <Menu />

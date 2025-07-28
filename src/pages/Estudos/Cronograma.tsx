@@ -1,9 +1,151 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus, Settings } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Calendar, Plus, Settings, BookOpen, Clock, X } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface StudySession {
+  id: string;
+  day: number; // 0-6 (Sunday to Saturday)
+  startTime: string;
+  endTime: string;
+  disciplineName: string;
+  blockName: string;
+  cycleId: string;
+}
+
+interface StudyCycle {
+  id: string;
+  name: string;
+  blocks: any[];
+}
 
 const Cronograma = () => {
+  const { user } = useAuth();
+  const [cycles, setCycles] = useState<StudyCycle[]>([]);
+  const [sessions, setSessions] = useState<StudySession[]>([]);
+  const [selectedCycle, setSelectedCycle] = useState<string>('');
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>('');
+  const [selectedBlock, setSelectedBlock] = useState<string>('');
+  const [selectedDay, setSelectedDay] = useState<number>(0);
+  const [startTime, setStartTime] = useState<string>('08:00');
+  const [endTime, setEndTime] = useState<string>('09:00');
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const weekDays = [
+    'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 
+    'Quinta-feira', 'Sexta-feira', 'Sábado'
+  ];
+
+  useEffect(() => {
+    if (user) {
+      fetchCycles();
+      fetchSessions();
+    }
+  }, [user]);
+
+  const fetchCycles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('study_cycles')
+        .select('id, name, blocks')
+        .eq('user_id', user?.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+      setCycles(data || []);
+    } catch (error) {
+      console.error('Error fetching cycles:', error);
+    }
+  };
+
+  const fetchSessions = async () => {
+    try {
+      // Note: You'd need to create a study_schedule table for this
+      // For now, we'll use localStorage as a temporary solution
+      const savedSessions = localStorage.getItem(`study_sessions_${user?.id}`);
+      if (savedSessions) {
+        setSessions(JSON.parse(savedSessions));
+      }
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveSessions = (newSessions: StudySession[]) => {
+    localStorage.setItem(`study_sessions_${user?.id}`, JSON.stringify(newSessions));
+    setSessions(newSessions);
+  };
+
+  const getAvailableDisciplines = () => {
+    const selectedCycleData = cycles.find(c => c.id === selectedCycle);
+    if (!selectedCycleData || !selectedBlock) return [];
+
+    const block = selectedCycleData.blocks.find((b: any) => b.name === selectedBlock);
+    return block?.disciplines || [];
+  };
+
+  const getAvailableBlocks = () => {
+    const selectedCycleData = cycles.find(c => c.id === selectedCycle);
+    return selectedCycleData?.blocks || [];
+  };
+
+  const addSession = () => {
+    if (!selectedCycle || !selectedBlock || !selectedDiscipline) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    const newSession: StudySession = {
+      id: Date.now().toString(),
+      day: selectedDay,
+      startTime,
+      endTime,
+      disciplineName: selectedDiscipline,
+      blockName: selectedBlock,
+      cycleId: selectedCycle
+    };
+
+    const updatedSessions = [...sessions, newSession];
+    saveSessions(updatedSessions);
+    setShowAddModal(false);
+    toast.success('Sessão adicionada ao cronograma!');
+  };
+
+  const removeSession = (sessionId: string) => {
+    const updatedSessions = sessions.filter(s => s.id !== sessionId);
+    saveSessions(updatedSessions);
+    toast.success('Sessão removida do cronograma!');
+  };
+
+  const getSessionsForDay = (day: number) => {
+    return sessions
+      .filter(s => s.day === day)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  };
+
+  const getCycleName = (cycleId: string) => {
+    return cycles.find(c => c.id === cycleId)?.name || 'Ciclo não encontrado';
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-64"></div>
+          <div className="h-64 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
@@ -16,37 +158,164 @@ const Cronograma = () => {
             <Settings className="h-4 w-4 mr-2" />
             Configurações
           </Button>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Sessão
-          </Button>
+          <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Sessão
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar Sessão de Estudo</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Ciclo de Estudos</label>
+                  <Select value={selectedCycle} onValueChange={setSelectedCycle}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um ciclo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cycles.map(cycle => (
+                        <SelectItem key={cycle.id} value={cycle.id}>
+                          {cycle.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Bloco</label>
+                  <Select value={selectedBlock} onValueChange={setSelectedBlock}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um bloco" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableBlocks().map((block: any) => (
+                        <SelectItem key={block.name} value={block.name}>
+                          {block.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Disciplina</label>
+                  <Select value={selectedDiscipline} onValueChange={setSelectedDiscipline}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma disciplina" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableDisciplines().map((discipline: any) => (
+                        <SelectItem key={discipline.name} value={discipline.name}>
+                          {discipline.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Dia da Semana</label>
+                  <Select value={selectedDay.toString()} onValueChange={(value) => setSelectedDay(Number(value))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um dia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {weekDays.map((day, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                          {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Horário de Início</label>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Horário de Fim</label>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={addSession} className="w-full">
+                  Adicionar Sessão
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Cronograma Semanal
-          </CardTitle>
-          <CardDescription>
-            Seu cronograma de estudos organizado por dias da semana
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center p-8">
-            <Calendar className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Cronograma em desenvolvimento</h3>
+      {cycles.length === 0 ? (
+        <Card>
+          <CardContent className="text-center p-8">
+            <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum ciclo de estudo encontrado</h3>
             <p className="text-muted-foreground mb-4">
-              Esta funcionalidade está sendo desenvolvida. Em breve você poderá criar e gerenciar seu cronograma de estudos.
+              Crie um ciclo de estudos primeiro para poder organizar seu cronograma
             </p>
-            <Button disabled>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Primeiro Cronograma
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Cronograma Semanal
+            </CardTitle>
+            <CardDescription>
+              Seu cronograma de estudos organizado por dias da semana
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+              {weekDays.map((day, index) => (
+                <div key={index} className="space-y-2">
+                  <h3 className="font-semibold text-center p-2 bg-muted rounded-md">
+                    {day}
+                  </h3>
+                  <div className="space-y-2 min-h-[200px]">
+                    {getSessionsForDay(index).map(session => (
+                      <div key={session.id} className="p-3 bg-primary/10 rounded-md border border-primary/20 relative">
+                        <button
+                          onClick={() => removeSession(session.id)}
+                          className="absolute top-1 right-1 text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        <div className="text-xs font-medium text-primary mb-1">
+                          {session.startTime} - {session.endTime}
+                        </div>
+                        <div className="text-sm font-medium">{session.disciplineName}</div>
+                        <div className="text-xs text-muted-foreground">{session.blockName}</div>
+                        <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
