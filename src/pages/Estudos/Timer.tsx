@@ -1,97 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Timer as TimerIcon, Play, Pause, Square, Plus, Minus } from 'lucide-react';
-import FloatingTimer from '@/components/FloatingTimer';
+import { useTimer } from '@/contexts/TimerContext';
 const Timer = () => {
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [initialMinutes, setInitialMinutes] = useState(25);
-  const [showFloatingTimer, setShowFloatingTimer] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const {
+    minutes,
+    seconds,
+    isRunning,
+    isPaused,
+    initialMinutes,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
+    stopTimer,
+    setInitialTime,
+  } = useTimer();
 
-  // Cleanup interval on component unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  // Timer countdown logic
-  useEffect(() => {
-    if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setSeconds(prevSeconds => {
-          if (prevSeconds === 0) {
-            setMinutes(prevMinutes => {
-              if (prevMinutes === 0) {
-                // Timer finished
-                setIsRunning(false);
-                setIsPaused(false);
-                // You could add notification sound here
-                alert('Tempo esgotado! Sessão de estudo finalizada.');
-                return initialMinutes; // Reset to initial time
-              }
-              return prevMinutes - 1;
-            });
-            return 59;
-          }
-          return prevSeconds - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, isPaused, initialMinutes]);
   const handleStart = () => {
-    setIsRunning(true);
-    setIsPaused(false);
-    setShowFloatingTimer(true);
+    startTimer(initialMinutes);
   };
-  const handlePause = () => {
-    setIsPaused(true);
-  };
-  const handleResume = () => {
-    setIsPaused(false);
-  };
-  const handleStop = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setMinutes(initialMinutes);
-    setSeconds(0);
-  };
+
   const addTime = () => {
     if (initialMinutes < 360) {
       // 6 hours limit
       const newTime = initialMinutes + 5;
-      setInitialMinutes(newTime);
-      if (!isRunning) {
-        setMinutes(newTime);
-        setSeconds(0);
-      }
+      setInitialTime(newTime);
     }
   };
+
   const removeTime = () => {
     if (initialMinutes > 5) {
       // Minimum 5 minutes
       const newTime = initialMinutes - 5;
-      setInitialMinutes(newTime);
-      if (!isRunning) {
-        setMinutes(newTime);
-        setSeconds(0);
-      }
+      setInitialTime(newTime);
     }
   };
   const formatTime = (mins: number, secs: number) => {
@@ -156,14 +98,14 @@ const Timer = () => {
                     <Play className="h-5 w-5 mr-2" />
                     Iniciar
                   </Button> : <>
-                    {!isPaused ? <Button size="lg" variant="outline" onClick={handlePause}>
+                    {!isPaused ? <Button size="lg" variant="outline" onClick={pauseTimer}>
                         <Pause className="h-5 w-5 mr-2" />
                         Pausar
-                      </Button> : <Button size="lg" onClick={handleResume}>
+                      </Button> : <Button size="lg" onClick={resumeTimer}>
                         <Play className="h-5 w-5 mr-2" />
                         Continuar
                       </Button>}
-                    <Button size="lg" variant="outline" onClick={handleStop}>
+                    <Button size="lg" variant="outline" onClick={stopTimer}>
                       <Square className="h-5 w-5 mr-2" />
                       Parar
                     </Button>
@@ -181,11 +123,6 @@ const Timer = () => {
         </div>
       </div>
 
-      <FloatingTimer
-        isOpen={showFloatingTimer}
-        onClose={() => setShowFloatingTimer(false)}
-        initialMinutes={initialMinutes}
-      />
     </>
   );
 };

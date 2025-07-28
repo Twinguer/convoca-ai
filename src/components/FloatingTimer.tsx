@@ -1,111 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Timer as TimerIcon, Play, Pause, Square, Minimize2, Maximize2 } from 'lucide-react';
+import { useTimer } from '@/contexts/TimerContext';
 
 interface FloatingTimerProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMinutes?: number;
 }
 
 const FloatingTimer: React.FC<FloatingTimerProps> = ({ 
   isOpen, 
-  onClose, 
-  initialMinutes = 25 
+  onClose
 }) => {
-  const [minutes, setMinutes] = useState(initialMinutes);
-  const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+  const {
+    minutes,
+    seconds,
+    isRunning,
+    isPaused,
+    initialMinutes,
+    pauseTimer,
+    resumeTimer,
+    stopTimer,
+  } = useTimer();
   const [isMinimized, setIsMinimized] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset timer when initial minutes change
-  useEffect(() => {
+  const handleClose = () => {
     if (!isRunning) {
-      setMinutes(initialMinutes);
-      setSeconds(0);
+      onClose();
     }
-  }, [initialMinutes, isRunning]);
-
-  // Cleanup interval on component unmount
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  // Timer countdown logic
-  useEffect(() => {
-    if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setSeconds(prevSeconds => {
-          if (prevSeconds === 0) {
-            setMinutes(prevMinutes => {
-              if (prevMinutes === 0) {
-                // Timer finished
-                setIsRunning(false);
-                setIsPaused(false);
-                // Notification
-                if (Notification.permission === 'granted') {
-                  new Notification('Timer Finalizado!', {
-                    body: 'Sua sessão de estudo foi concluída.',
-                    icon: '/favicon.ico'
-                  });
-                } else {
-                  alert('Tempo esgotado! Sessão de estudo finalizada.');
-                }
-                return initialMinutes; // Reset to initial time
-              }
-              return prevMinutes - 1;
-            });
-            return 59;
-          }
-          return prevSeconds - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, isPaused, initialMinutes]);
-
-  // Request notification permission when timer starts
-  useEffect(() => {
-    if (isRunning && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, [isRunning]);
-
-  const handleStart = () => {
-    setIsRunning(true);
-    setIsPaused(false);
-  };
-
-  const handlePause = () => {
-    setIsPaused(true);
-  };
-
-  const handleResume = () => {
-    setIsPaused(false);
-  };
-
-  const handleStop = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setMinutes(initialMinutes);
-    setSeconds(0);
   };
 
   const formatTime = (mins: number, secs: number) => {
@@ -127,7 +50,7 @@ const FloatingTimer: React.FC<FloatingTimerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className={`${isMinimized ? 'max-w-xs' : 'max-w-md'} transition-all duration-300`}>
         <DialogHeader className="flex flex-row items-center justify-between space-y-0">
           <DialogTitle className="flex items-center gap-2">
@@ -174,25 +97,20 @@ const FloatingTimer: React.FC<FloatingTimerProps> = ({
 
           {/* Control Buttons */}
           <div className={`flex justify-center gap-2 ${isMinimized ? 'flex-wrap' : ''}`}>
-            {!isRunning ? (
-              <Button onClick={handleStart} size={isMinimized ? "sm" : "default"}>
-                <Play className="h-4 w-4 mr-1" />
-                {!isMinimized && "Iniciar"}
-              </Button>
-            ) : (
+            {isRunning && (
               <>
                 {!isPaused ? (
-                  <Button variant="outline" onClick={handlePause} size={isMinimized ? "sm" : "default"}>
+                  <Button variant="outline" onClick={pauseTimer} size={isMinimized ? "sm" : "default"}>
                     <Pause className="h-4 w-4 mr-1" />
                     {!isMinimized && "Pausar"}
                   </Button>
                 ) : (
-                  <Button onClick={handleResume} size={isMinimized ? "sm" : "default"}>
+                  <Button onClick={resumeTimer} size={isMinimized ? "sm" : "default"}>
                     <Play className="h-4 w-4 mr-1" />
                     {!isMinimized && "Continuar"}
                   </Button>
                 )}
-                <Button variant="outline" onClick={handleStop} size={isMinimized ? "sm" : "default"}>
+                <Button variant="outline" onClick={stopTimer} size={isMinimized ? "sm" : "default"}>
                   <Square className="h-4 w-4 mr-1" />
                   {!isMinimized && "Parar"}
                 </Button>

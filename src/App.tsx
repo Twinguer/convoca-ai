@@ -7,6 +7,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Menu from "./components/Menu";
+import FloatingTimer from "./components/FloatingTimer";
+import { TimerProvider } from "./contexts/TimerContext";
+import { useTimer } from "./contexts/TimerContext";
 import Index from "./pages/Index";
 import PreClassificacao from "./pages/PreClassificacao";
 import Resultado from "./pages/Resultado";
@@ -34,17 +37,14 @@ import Estatisticas from "./pages/Estudos/Estatisticas";
 import CriarCiclo from "./pages/Estudos/CriarCiclo";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 
-const App = () => {
-  const queryClient = new QueryClient();
-  return <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
-          <AuthProvider>
-            <TooltipProvider>
-              <div className="min-h-screen text-foreground bg-gray-100">
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
+const AppContent = () => {
+  const { showFloatingTimer, hideTimer } = useTimer();
+  
+  return (
+    <div className="min-h-screen text-foreground bg-gray-100">
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
                   <Routes>
                     <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />
                     <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
@@ -131,9 +131,26 @@ const App = () => {
                         <NotFound />
                       </>} />
                   </Routes>
-                </BrowserRouter>
-              </div>
-            </TooltipProvider>
+        <FloatingTimer
+          isOpen={showFloatingTimer}
+          onClose={hideTimer}
+        />
+      </BrowserRouter>
+    </div>
+  );
+};
+
+const App = () => {
+  const queryClient = new QueryClient();
+  return <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
+          <AuthProvider>
+            <TimerProvider>
+              <TooltipProvider>
+                <AppContent />
+              </TooltipProvider>
+            </TimerProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

@@ -4,8 +4,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, LogOut, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { User, LogOut, Users, Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTimer } from '@/contexts/TimerContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +17,7 @@ const UserMenu: React.FC = () => {
     user,
     signOut
   } = useAuth();
+  const { isStudying } = useTimer();
   const navigate = useNavigate();
   const {
     toast
@@ -73,6 +76,12 @@ const UserMenu: React.FC = () => {
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
 
   return <div className="flex items-center gap-2">
+      {isStudying && (
+        <Badge variant="secondary" className="flex items-center gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+          <Clock className="h-3 w-3" />
+          Estudando
+        </Badge>
+      )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
