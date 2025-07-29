@@ -18,6 +18,20 @@ export function formatDate(dateString: string): string {
   }
 }
 
+// Generate unique IDs compatible with both HTTPS and HTTP
+export function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    try {
+      return crypto.randomUUID();
+    } catch (error) {
+      // Fallback if crypto.randomUUID() fails
+    }
+  }
+  
+  // Fallback for HTTP development environments
+  return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
+}
+
 // Add this utility function to bypass RLS policies for admin operations
 export async function adminOperation(supabaseClient: any, operation: string, params: any = {}) {
   // This would ideally use a server-side function with proper authentication

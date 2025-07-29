@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { generateId } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,7 +50,7 @@ const CriarConcurso = () => {
     if (!disciplineName.trim() || estimatedHours <= 0) return;
     
     const newDiscipline: Discipline = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: disciplineName,
       blockName: blocks[blockIndex].name,
       estimatedHours
