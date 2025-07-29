@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TimerContextType {
   minutes: number;
@@ -32,6 +34,7 @@ interface TimerProviderProps {
 }
 
 export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -101,6 +104,28 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       }
     };
   }, []);
+
+  // Update database when studying status changes
+  const updateStudyingStatus = async (studying: boolean) => {
+    if (!user) return;
+    
+    try {
+      await supabase
+        .from('users_profiles')
+        .update({
+          is_studying: studying,
+          study_started_at: studying ? new Date().toISOString() : null
+        })
+        .eq('id', user.id);
+    } catch (error) {
+      console.error('Error updating studying status:', error);
+    }
+  };
+
+  // Effect to update database when studying status changes
+  useEffect(() => {
+    updateStudyingStatus(isStudying);
+  }, [isStudying, user?.id]);
 
   const startTimer = (mins?: number) => {
     if (mins) {

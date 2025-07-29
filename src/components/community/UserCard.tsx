@@ -16,6 +16,7 @@ interface UserProfile {
   postCount: number;
   approvalCount: number;
   status_concurseiro?: string | null;
+  is_studying?: boolean;
 }
 
 interface UserCardProps {
@@ -65,11 +66,18 @@ export const UserCard: React.FC<UserCardProps> = ({
   return (
     <div className="border rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
       <div className="relative p-4">
-        {userProfile.status_concurseiro && (
-          <div className={`absolute top-4 right-4 text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClass(userProfile.status_concurseiro)}`}>
-            {userProfile.status_concurseiro}
-          </div>
-        )}
+        <div className="absolute top-4 right-4 flex flex-col gap-1 items-end">
+          {userProfile.is_studying && (
+            <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-500 text-white">
+              Estudando
+            </div>
+          )}
+          {userProfile.status_concurseiro && (
+            <div className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClass(userProfile.status_concurseiro)}`}>
+              {userProfile.status_concurseiro}
+            </div>
+          )}
+        </div>
         
         <div className="flex flex-col items-center mb-4">
           <Avatar className="h-20 w-20 mb-3">

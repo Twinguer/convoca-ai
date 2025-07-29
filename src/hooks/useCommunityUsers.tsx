@@ -31,7 +31,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             area_estudos,
             especialidade,
             curso_preparatorio,
-            rotina_estudos
+            rotina_estudos,
+            is_studying
           `);
           
         // Apply search filter if provided

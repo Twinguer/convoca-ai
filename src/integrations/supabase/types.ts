@@ -1393,9 +1393,11 @@ export type Database = {
           estado: string | null
           formacao: string | null
           id: string
+          is_studying: boolean | null
           name: string
           profile_text: string | null
           rotina_estudos: string | null
+          study_started_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1412,9 +1414,11 @@ export type Database = {
           estado?: string | null
           formacao?: string | null
           id: string
+          is_studying?: boolean | null
           name: string
           profile_text?: string | null
           rotina_estudos?: string | null
+          study_started_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1431,9 +1435,11 @@ export type Database = {
           estado?: string | null
           formacao?: string | null
           id?: string
+          is_studying?: boolean | null
           name?: string
           profile_text?: string | null
           rotina_estudos?: string | null
+          study_started_at?: string | null
           updated_at?: string
         }
         Relationships: []
