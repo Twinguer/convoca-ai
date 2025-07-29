@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Timer as TimerIcon, Play, Pause, Square, Minimize2, Maximize2 } from 'lucide-react';
+import { Timer as TimerIcon, Play, Pause, Square, Minimize2, Maximize2, Move } from 'lucide-react';
 import { useTimer } from '@/contexts/TimerContext';
 
 interface FloatingTimerProps {
@@ -24,12 +24,62 @@ const FloatingTimer: React.FC<FloatingTimerProps> = ({
     stopTimer,
   } = useTimer();
   const [isMinimized, setIsMinimized] = useState(false);
+  const [position, setPosition] = useState({ x: window.innerWidth - 400, y: 16 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const handleClose = () => {
     if (!isRunning) {
       onClose();
     }
   };
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget || (e.target as HTMLElement).closest('.drag-handle')) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y,
+      });
+      e.preventDefault();
+    }
+  }, [position]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    // Keep within viewport bounds
+    const maxX = window.innerWidth - (isMinimized ? 320 : 448); // Account for dialog width
+    const maxY = window.innerHeight - 400; // Account for dialog height
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY)),
+    });
+  }, [isDragging, dragStart, isMinimized]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Add mouse event listeners
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none';
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.userSelect = '';
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -52,16 +102,26 @@ const FloatingTimer: React.FC<FloatingTimerProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose} modal={false}>
       <DialogContent 
-        className={`${isMinimized ? 'max-w-xs' : 'max-w-md'} transition-all duration-300 fixed top-4 right-4 z-50`}
+        ref={dialogRef}
+        className={`${isMinimized ? 'max-w-xs' : 'max-w-md'} transition-all duration-300 fixed z-50 ${isDragging ? 'cursor-grabbing' : ''}`}
+        style={{
+          left: position.x,
+          top: position.y,
+          transform: 'none'
+        }}
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <DialogHeader className="flex flex-row items-center justify-between space-y-0">
-          <DialogTitle className="flex items-center gap-2">
+        <DialogHeader 
+          className="flex flex-row items-center justify-between space-y-0 drag-handle cursor-grab"
+          onMouseDown={handleMouseDown}
+        >
+          <DialogTitle className="flex items-center gap-2 pointer-events-none">
             <TimerIcon className="h-5 w-5" />
             Timer de Estudo
+            <Move className="h-4 w-4 text-muted-foreground" />
           </DialogTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pointer-events-auto">
             <Button
               variant="ghost"
               size="sm"
