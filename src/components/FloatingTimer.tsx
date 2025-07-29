@@ -50,8 +50,12 @@ const FloatingTimer: React.FC<FloatingTimerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={`${isMinimized ? 'max-w-xs' : 'max-w-md'} transition-all duration-300`}>
+    <Dialog open={isOpen} onOpenChange={handleClose} modal={false}>
+      <DialogContent 
+        className={`${isMinimized ? 'max-w-xs' : 'max-w-md'} transition-all duration-300 fixed top-4 right-4 z-50`}
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className="flex flex-row items-center justify-between space-y-0">
           <DialogTitle className="flex items-center gap-2">
             <TimerIcon className="h-5 w-5" />
