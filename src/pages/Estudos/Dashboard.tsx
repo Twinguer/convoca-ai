@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 interface StudyCycle {
   id: string;
   name: string;
@@ -32,6 +33,7 @@ const EstudosDashboard = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [studyCycles, setStudyCycles] = useState<StudyCycleProgress[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -93,6 +95,33 @@ const EstudosDashboard = () => {
       console.error('Error fetching study cycles:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteCycle = async (cycleId: string) => {
+    try {
+      const { error } = await supabase
+        .from('study_cycles')
+        .delete()
+        .eq('id', cycleId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Ciclo excluído',
+        description: 'O ciclo de estudos foi excluído com sucesso.'
+      });
+
+      // Atualizar a lista
+      await fetchStudyCycles();
+    } catch (error) {
+      console.error('Error deleting cycle:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o ciclo. Tente novamente.',
+        variant: 'destructive'
+      });
     }
   };
   if (!user) {
@@ -242,6 +271,7 @@ const EstudosDashboard = () => {
                   key={data.cycle.id} 
                   cycleProgress={data} 
                   onStartSession={() => navigate(`/estudos/timer?cycle=${data.cycle.id}`)} 
+                  onDelete={() => deleteCycle(data.cycle.id)}
                 />
               ))}
             </div>
@@ -295,11 +325,13 @@ const EstudosDashboard = () => {
 interface StudyCycleCardProps {
   cycleProgress: StudyCycleProgress;
   onStartSession: () => void;
+  onDelete: () => void;
 }
 
 const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
   cycleProgress,
-  onStartSession
+  onStartSession,
+  onDelete
 }) => {
   const {
     cycle,
@@ -393,6 +425,14 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
               Ver Detalhes
             </Button>
           </Link>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={onDelete}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -1397,6 +1397,7 @@ export type Database = {
           name: string
           profile_text: string | null
           rotina_estudos: string | null
+          status_concurseiro: string | null
           study_started_at: string | null
           updated_at: string
         }
@@ -1418,6 +1419,7 @@ export type Database = {
           name: string
           profile_text?: string | null
           rotina_estudos?: string | null
+          status_concurseiro?: string | null
           study_started_at?: string | null
           updated_at?: string
         }
@@ -1439,6 +1441,7 @@ export type Database = {
           name?: string
           profile_text?: string | null
           rotina_estudos?: string | null
+          status_concurseiro?: string | null
           study_started_at?: string | null
           updated_at?: string
         }
