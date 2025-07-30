@@ -6,10 +6,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Calendar, Clock, BookOpen, Target, CheckCircle2, Edit3, Save, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, BookOpen, Target, CheckCircle2, Edit3, Save, X, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface StudyCycle {
   id: string;
@@ -26,6 +27,7 @@ interface StudyCycle {
 const CicloDetalhes = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { toast: toastHook } = useToast();
   const [cycle, setCycle] = useState<StudyCycle | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingDiscipline, setEditingDiscipline] = useState<string | null>(null);
@@ -90,6 +92,50 @@ const CicloDetalhes = () => {
 
     updateCycle(updatedCycle);
     setEditingDiscipline(null);
+  };
+
+  const deleteBlock = (blockIndex: number) => {
+    if (!cycle) return;
+
+    toastHook({
+      title: 'Confirmar exclusão',
+      description: 'Tem certeza que deseja excluir este bloco e todas as suas disciplinas?',
+      action: (
+        <Button
+          onClick={() => {
+            const updatedCycle = { ...cycle };
+            updatedCycle.blocks.splice(blockIndex, 1);
+            updateCycle(updatedCycle);
+          }}
+          variant="destructive"
+          size="sm"
+        >
+          Excluir
+        </Button>
+      ),
+    });
+  };
+
+  const deleteDiscipline = (blockIndex: number, disciplineIndex: number) => {
+    if (!cycle) return;
+
+    toastHook({
+      title: 'Confirmar exclusão',
+      description: 'Tem certeza que deseja excluir esta disciplina?',
+      action: (
+        <Button
+          onClick={() => {
+            const updatedCycle = { ...cycle };
+            updatedCycle.blocks[blockIndex].disciplines.splice(disciplineIndex, 1);
+            updateCycle(updatedCycle);
+          }}
+          variant="destructive"
+          size="sm"
+        >
+          Excluir
+        </Button>
+      ),
+    });
   };
 
   const calculateProgress = () => {
@@ -238,9 +284,19 @@ const CicloDetalhes = () => {
         {cycle.blocks?.map((block, blockIndex) => (
           <Card key={blockIndex}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
-                {block.name}
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  {block.name}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => deleteBlock(blockIndex)}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </CardTitle>
               <CardDescription>
                 {block.disciplines?.length || 0} disciplinas neste bloco
@@ -263,54 +319,62 @@ const CicloDetalhes = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      {discipline.isCompleted && (
-                        <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                          Concluída
-                        </Badge>
-                      )}
-                      
-                      <div className="flex items-center gap-2">
-                        {editingDiscipline === `${blockIndex}-${disciplineIndex}` ? (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              value={tempStudyTime}
-                              onChange={(e) => setTempStudyTime(Number(e.target.value))}
-                              className="w-20"
-                              min="0"
-                            />
-                            <Button
-                              size="sm"
-                              onClick={() => updateStudyTime(blockIndex, disciplineIndex, tempStudyTime)}
-                            >
-                              <Save className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEditingDiscipline(null)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">{discipline.studyTime || 0}h</span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingDiscipline(`${blockIndex}-${disciplineIndex}`);
-                                setTempStudyTime(discipline.studyTime || 0);
-                              }}
-                            >
-                              <Edit3 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                      <div className="flex items-center gap-4">
+                        {discipline.isCompleted && (
+                          <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                            Concluída
+                          </Badge>
                         )}
+                      
+                        <div className="flex items-center gap-2">
+                          {editingDiscipline === `${blockIndex}-${disciplineIndex}` ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                value={tempStudyTime}
+                                onChange={(e) => setTempStudyTime(Number(e.target.value))}
+                                className="w-20"
+                                min="0"
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => updateStudyTime(blockIndex, disciplineIndex, tempStudyTime)}
+                              >
+                                <Save className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingDiscipline(null)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">{discipline.studyTime || 0}h</span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingDiscipline(`${blockIndex}-${disciplineIndex}`);
+                                  setTempStudyTime(discipline.studyTime || 0);
+                                }}
+                              >
+                                <Edit3 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => deleteDiscipline(blockIndex, disciplineIndex)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
                   </div>
                 ))}
               </div>
