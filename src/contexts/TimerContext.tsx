@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 
 interface TimerContextType {
   minutes: number;
@@ -35,12 +36,14 @@ interface TimerProviderProps {
 
 export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const { addStudySession } = useStudyStatistics();
   const [minutes, setMinutes] = useState(25);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [initialMinutes, setInitialMinutes] = useState(25);
   const [showFloatingTimer, setShowFloatingTimer] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const isStudying = isRunning && !isPaused;
@@ -53,10 +56,18 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           if (prevSeconds === 0) {
             setMinutes(prevMinutes => {
               if (prevMinutes === 0) {
-                // Timer finished
+                // Timer finished - registrar sessão
+                if (sessionStartTime) {
+                  const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60));
+                  if (sessionDuration >= 20) {
+                    addStudySession(sessionDuration);
+                  }
+                }
+                
                 setIsRunning(false);
                 setIsPaused(false);
                 setShowFloatingTimer(false);
+                setSessionStartTime(null);
                 
                 // Notification
                 if (Notification.permission === 'granted') {
@@ -136,6 +147,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     setIsRunning(true);
     setIsPaused(false);
     setShowFloatingTimer(true);
+    setSessionStartTime(new Date());
   };
 
   const pauseTimer = () => {
@@ -147,11 +159,20 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   };
 
   const stopTimer = () => {
+    // Calcular duração da sessão
+    if (sessionStartTime) {
+      const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60));
+      if (sessionDuration >= 20) {
+        addStudySession(sessionDuration);
+      }
+    }
+    
     setIsRunning(false);
     setIsPaused(false);
     setMinutes(initialMinutes);
     setSeconds(0);
     setShowFloatingTimer(false);
+    setSessionStartTime(null);
   };
 
   const setInitialTime = (mins: number) => {

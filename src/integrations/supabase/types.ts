@@ -983,6 +983,30 @@ export type Database = {
           },
         ]
       }
+      study_statistics: {
+        Row: {
+          created_at: string
+          id: string
+          statistics_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          statistics_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          statistics_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_subjects: {
         Row: {
           block_name: string | null

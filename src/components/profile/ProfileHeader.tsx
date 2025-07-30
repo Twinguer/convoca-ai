@@ -4,7 +4,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { User, Upload, Loader2, Pen } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { User, Upload, Loader2, Pen, Clock } from 'lucide-react';
+import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 
 interface ProfileHeaderProps {
   name: string;
@@ -25,9 +27,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   statusConcurseiro,
   profileText
 }) => {
+  const { statistics } = useStudyStatistics();
+  
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
+  const formatHours = (hours: number) => {
+    return hours.toFixed(1) + 'h';
   };
 
   return (
@@ -45,6 +53,15 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
       <div className="text-center">
         <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
         <p className="text-sm text-muted-foreground">{email}</p>
+        
+        {statistics.totalHours > 0 && (
+          <div className="mt-2">
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              <Clock className="h-3 w-3 mr-1" />
+              {formatHours(statistics.totalHours)} estudadas
+            </Badge>
+          </div>
+        )}
         
         <div className="mt-2">
           <Label htmlFor="avatar" className="cursor-pointer text-sm text-blue-600 hover:text-blue-800">
