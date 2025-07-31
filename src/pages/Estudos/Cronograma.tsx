@@ -3,10 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Plus, Settings, BookOpen, Clock, X } from 'lucide-react';
+import { Calendar, Plus, Settings, BookOpen, Clock, X, Edit } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useStudyStatistics } from '@/hooks/useStudyStatistics';
+import { useQuestionTracking } from '@/hooks/useQuestionTracking';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 interface StudySession {
   id: string;
@@ -36,6 +41,17 @@ const Cronograma = () => {
   const [endTime, setEndTime] = useState<string>('09:00');
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingSession, setEditingSession] = useState<StudySession | null>(null);
+  
+  // Estados para edição de sessão
+  const [studyDuration, setStudyDuration] = useState<number>(0);
+  const [studyNotes, setStudyNotes] = useState<string>('');
+  const [questionsTotal, setQuestionsTotal] = useState<number>(0);
+  const [questionsCorrect, setQuestionsCorrect] = useState<number>(0);
+  
+  const { addStudySession } = useStudyStatistics();
+  const { trackAnswer } = useQuestionTracking();
 
   const weekDays = [
     'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 
@@ -133,6 +149,69 @@ const Cronograma = () => {
 
   const getCycleName = (cycleId: string) => {
     return cycles.find(c => c.id === cycleId)?.name || 'Ciclo não encontrado';
+  };
+
+  const openEditModal = (session: StudySession) => {
+    setEditingSession(session);
+    setStudyDuration(0);
+    setStudyNotes('');
+    setQuestionsTotal(0);
+    setQuestionsCorrect(0);
+    setShowEditModal(true);
+  };
+
+  const saveStudySession = async () => {
+    if (!editingSession || studyDuration < 1) {
+      toast.error('Preencha pelo menos a duração do estudo');
+      return;
+    }
+
+    try {
+      // Registrar sessão de estudo se duração >= 20 minutos
+      if (studyDuration >= 20) {
+        await addStudySession(studyDuration);
+      }
+
+      // Registrar questões se houver
+      if (questionsTotal > 0) {
+        const questionsWrong = questionsTotal - questionsCorrect;
+        
+        // Registrar cada acerto
+        for (let i = 0; i < questionsCorrect; i++) {
+          await trackAnswer('A', 'A'); // Simular acerto
+        }
+        
+        // Registrar cada erro
+        for (let i = 0; i < questionsWrong; i++) {
+          await trackAnswer('A', 'B'); // Simular erro
+        }
+      }
+
+      // Salvar dados da sessão no localStorage (você pode implementar uma tabela específica depois)
+      const sessionData = {
+        sessionId: editingSession.id,
+        date: new Date().toISOString(),
+        duration: studyDuration,
+        notes: studyNotes,
+        questionsTotal,
+        questionsCorrect,
+        discipline: editingSession.disciplineName,
+        block: editingSession.blockName
+      };
+
+      const savedSessions = localStorage.getItem(`completed_sessions_${user?.id}`);
+      const completedSessions = savedSessions ? JSON.parse(savedSessions) : [];
+      completedSessions.push(sessionData);
+      localStorage.setItem(`completed_sessions_${user?.id}`, JSON.stringify(completedSessions));
+
+      setShowEditModal(false);
+      setEditingSession(null);
+      
+      toast.success('Sessão de estudo registrada com sucesso!');
+    } catch (error) {
+      console.error('Error saving study session:', error);
+      toast.error('Erro ao salvar sessão de estudo');
+    }
   };
 
   if (loading) {
@@ -264,6 +343,97 @@ const Cronograma = () => {
         </div>
       </div>
 
+      {/* Modal de Edição de Sessão */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Sessão de Estudo</DialogTitle>
+          </DialogHeader>
+          {editingSession && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-md">
+                <div className="text-sm font-medium">{editingSession.disciplineName}</div>
+                <div className="text-xs text-muted-foreground">{editingSession.blockName}</div>
+                <div className="text-xs text-muted-foreground">
+                  {editingSession.startTime} - {editingSession.endTime}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="duration">Tempo estudado (minutos) *</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  value={studyDuration}
+                  onChange={(e) => setStudyDuration(Number(e.target.value))}
+                  placeholder="Ex: 60"
+                />
+                {studyDuration >= 20 && (
+                  <p className="text-xs text-green-600 mt-1">✓ Sessão contará para as estatísticas</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="questions-total">Questões resolvidas</Label>
+                <Input
+                  id="questions-total"
+                  type="number"
+                  min="0"
+                  value={questionsTotal}
+                  onChange={(e) => setQuestionsTotal(Number(e.target.value))}
+                  placeholder="Total de questões"
+                />
+              </div>
+
+              {questionsTotal > 0 && (
+                <div>
+                  <Label htmlFor="questions-correct">Questões acertadas</Label>
+                  <Input
+                    id="questions-correct"
+                    type="number"
+                    min="0"
+                    max={questionsTotal}
+                    value={questionsCorrect}
+                    onChange={(e) => setQuestionsCorrect(Number(e.target.value))}
+                    placeholder="Questões corretas"
+                  />
+                  {questionsTotal > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Aproveitamento: {((questionsCorrect / questionsTotal) * 100).toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="notes">Anotações (opcional)</Label>
+                <Textarea
+                  id="notes"
+                  value={studyNotes}
+                  onChange={(e) => setStudyNotes(e.target.value)}
+                  placeholder="O que você estudou, dificuldades, observações..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={saveStudySession} className="flex-1">
+                  Salvar Sessão
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {cycles.length === 0 ? (
         <Card>
           <CardContent className="text-center p-8">
@@ -293,22 +463,46 @@ const Cronograma = () => {
                     {day}
                   </h3>
                   <div className="space-y-2 min-h-[200px]">
-                    {getSessionsForDay(index).map(session => (
-                      <div key={session.id} className="p-3 bg-primary/10 rounded-md border border-primary/20 relative">
-                        <button
-                          onClick={() => removeSession(session.id)}
-                          className="absolute top-1 right-1 text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                        <div className="text-xs font-medium text-primary mb-1">
-                          {session.startTime} - {session.endTime}
-                        </div>
-                        <div className="text-sm font-medium">{session.disciplineName}</div>
-                        <div className="text-xs text-muted-foreground">{session.blockName}</div>
-                        <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
-                      </div>
-                    ))}
+                     {getSessionsForDay(index).map(session => (
+                       <div 
+                         key={session.id} 
+                         className="p-3 bg-primary/10 rounded-md border border-primary/20 relative cursor-pointer hover:bg-primary/20 transition-colors"
+                         onClick={() => openEditModal(session)}
+                       >
+                         <div className="flex justify-between items-start">
+                           <div className="flex-1">
+                             <div className="text-xs font-medium text-primary mb-1">
+                               {session.startTime} - {session.endTime}
+                             </div>
+                             <div className="text-sm font-medium">{session.disciplineName}</div>
+                             <div className="text-xs text-muted-foreground">{session.blockName}</div>
+                             <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
+                           </div>
+                           <div className="flex gap-1">
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 openEditModal(session);
+                               }}
+                               className="text-muted-foreground hover:text-primary"
+                               title="Editar sessão"
+                             >
+                               <Edit className="h-3 w-3" />
+                             </button>
+                             <button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 removeSession(session.id);
+                               }}
+                               className="text-muted-foreground hover:text-destructive"
+                               title="Remover sessão"
+                             >
+                               <X className="h-3 w-3" />
+                             </button>
+                           </div>
+                         </div>
+                       </div>
+                     ))}
                   </div>
                 </div>
               ))}
