@@ -367,39 +367,60 @@ const CriarCiclo = () => {
                   step="0.5"
                   value={disciplineForm.studyTime}
                   onChange={(e) => setDisciplineForm({...disciplineForm, studyTime: Number(e.target.value)})}
+                  placeholder="Ex: 15.5"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="questionsResolved">Questões Resolvidas</Label>
+                <Label htmlFor="questionsResolved">Total de Questões</Label>
                 <Input
                   id="questionsResolved"
                   type="number"
                   min="0"
                   value={disciplineForm.questionsResolved}
                   onChange={(e) => setDisciplineForm({...disciplineForm, questionsResolved: Number(e.target.value)})}
+                  placeholder="Questões resolvidas"
                 />
               </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="correctAnswers">Acertos</Label>
+                <Label htmlFor="correctAnswers">Questões Corretas</Label>
                 <Input
                   id="correctAnswers"
                   type="number"
                   min="0"
+                  max={disciplineForm.questionsResolved || 0}
                   value={disciplineForm.correctAnswers}
                   onChange={(e) => setDisciplineForm({...disciplineForm, correctAnswers: Number(e.target.value)})}
+                  placeholder="Acertos"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="wrongAnswers">Erros</Label>
+                <Label htmlFor="wrongAnswers">Questões Erradas</Label>
                 <Input
                   id="wrongAnswers"
                   type="number"
                   min="0"
+                  max={disciplineForm.questionsResolved || 0}
                   value={disciplineForm.wrongAnswers}
                   onChange={(e) => setDisciplineForm({...disciplineForm, wrongAnswers: Number(e.target.value)})}
+                  placeholder="Erros"
                 />
               </div>
             </div>
+
+            {/* Exibir aproveitamento se houver questões */}
+            {(disciplineForm.questionsResolved || 0) > 0 && (
+              <div className="p-3 bg-muted rounded-md">
+                <div className="text-sm text-muted-foreground">
+                  Aproveitamento: {(((disciplineForm.correctAnswers || 0) / (disciplineForm.questionsResolved || 1)) * 100).toFixed(1)}%
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {disciplineForm.correctAnswers || 0} acertos de {disciplineForm.questionsResolved || 0} questões
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="courseProgress">Progresso no Curso</Label>
@@ -410,7 +431,6 @@ const CriarCiclo = () => {
                 placeholder="Ex: Capítulo 5 - Direitos Fundamentais"
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="studyType">Tipo de Estudo</Label>
               <Select 
