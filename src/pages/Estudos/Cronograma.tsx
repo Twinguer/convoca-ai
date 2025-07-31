@@ -49,6 +49,11 @@ const Cronograma = () => {
   const [studyNotes, setStudyNotes] = useState<string>('');
   const [questionsTotal, setQuestionsTotal] = useState<number>(0);
   const [questionsCorrect, setQuestionsCorrect] = useState<number>(0);
+  const [courseName, setCourseName] = useState<string>('');
+  const [courseProgress, setCourseProgress] = useState<string>('');
+  const [studyType, setStudyType] = useState<'pdf' | 'video'>('pdf');
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [currentVideo, setCurrentVideo] = useState<string>('');
   
   const { addStudySession } = useStudyStatistics();
   const { trackAnswer } = useQuestionTracking();
@@ -157,6 +162,11 @@ const Cronograma = () => {
     setStudyNotes('');
     setQuestionsTotal(0);
     setQuestionsCorrect(0);
+    setCourseName('');
+    setCourseProgress('');
+    setStudyType('pdf');
+    setCurrentPage(0);
+    setCurrentVideo('');
     setShowEditModal(true);
   };
 
@@ -196,7 +206,12 @@ const Cronograma = () => {
         questionsTotal,
         questionsCorrect,
         discipline: editingSession.disciplineName,
-        block: editingSession.blockName
+        block: editingSession.blockName,
+        courseName,
+        courseProgress,
+        studyType,
+        currentPage: studyType === 'pdf' ? currentPage : undefined,
+        currentVideo: studyType === 'video' ? currentVideo : undefined
       };
 
       const savedSessions = localStorage.getItem(`completed_sessions_${user?.id}`);
@@ -345,7 +360,7 @@ const Cronograma = () => {
 
       {/* Modal de Edição de Sessão */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Sessão de Estudo</DialogTitle>
           </DialogHeader>
@@ -360,59 +375,128 @@ const Cronograma = () => {
               </div>
 
               <div>
-                <Label htmlFor="duration">Tempo estudado (minutos) *</Label>
+                <Label htmlFor="courseName">Nome do Curso</Label>
                 <Input
-                  id="duration"
-                  type="number"
-                  min="1"
-                  value={studyDuration}
-                  onChange={(e) => setStudyDuration(Number(e.target.value))}
-                  placeholder="Ex: 60"
+                  id="courseName"
+                  value={courseName}
+                  onChange={(e) => setCourseName(e.target.value)}
+                  placeholder="Ex: Curso Completo de Direito Constitucional"
                 />
-                {studyDuration >= 20 && (
-                  <p className="text-xs text-green-600 mt-1">✓ Sessão contará para as estatísticas</p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="duration">Tempo estudado (minutos) *</Label>
+                  <Input
+                    id="duration"
+                    type="number"
+                    min="1"
+                    value={studyDuration}
+                    onChange={(e) => setStudyDuration(Number(e.target.value))}
+                    placeholder="Ex: 60"
+                  />
+                  {studyDuration >= 20 && (
+                    <p className="text-xs text-green-600 mt-1">✓ Sessão contará para as estatísticas</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="studyType">Tipo de Estudo</Label>
+                  <Select value={studyType} onValueChange={(value: 'pdf' | 'video') => setStudyType(value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                      <SelectItem value="video">Vídeo Aula</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="questions-total">Total de questões</Label>
+                  <Input
+                    id="questions-total"
+                    type="number"
+                    min="0"
+                    value={questionsTotal}
+                    onChange={(e) => setQuestionsTotal(Number(e.target.value))}
+                    placeholder="Questões resolvidas"
+                  />
+                </div>
+
+                {questionsTotal > 0 && (
+                  <div>
+                    <Label htmlFor="questions-correct">Questões corretas</Label>
+                    <Input
+                      id="questions-correct"
+                      type="number"
+                      min="0"
+                      max={questionsTotal}
+                      value={questionsCorrect}
+                      onChange={(e) => setQuestionsCorrect(Number(e.target.value))}
+                      placeholder="Acertos"
+                    />
+                  </div>
                 )}
               </div>
 
-              <div>
-                <Label htmlFor="questions-total">Questões resolvidas</Label>
-                <Input
-                  id="questions-total"
-                  type="number"
-                  min="0"
-                  value={questionsTotal}
-                  onChange={(e) => setQuestionsTotal(Number(e.target.value))}
-                  placeholder="Total de questões"
-                />
-              </div>
-
               {questionsTotal > 0 && (
-                <div>
-                  <Label htmlFor="questions-correct">Questões acertadas</Label>
-                  <Input
-                    id="questions-correct"
-                    type="number"
-                    min="0"
-                    max={questionsTotal}
-                    value={questionsCorrect}
-                    onChange={(e) => setQuestionsCorrect(Number(e.target.value))}
-                    placeholder="Questões corretas"
-                  />
-                  {questionsTotal > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Aproveitamento: {((questionsCorrect / questionsTotal) * 100).toFixed(1)}%
-                    </p>
-                  )}
+                <div className="p-3 bg-muted rounded-md">
+                  <div className="text-sm text-muted-foreground">
+                    Aproveitamento: {((questionsCorrect / questionsTotal) * 100).toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {questionsCorrect} acertos • {questionsTotal - questionsCorrect} erros • {questionsTotal} total
+                  </div>
                 </div>
               )}
 
               <div>
-                <Label htmlFor="notes">Anotações (opcional)</Label>
+                <Label htmlFor="courseProgress">Progresso no Curso</Label>
+                <Input
+                  id="courseProgress"
+                  value={courseProgress}
+                  onChange={(e) => setCourseProgress(e.target.value)}
+                  placeholder="Ex: Capítulo 5 - Direitos Fundamentais"
+                />
+              </div>
+
+              {studyType === 'pdf' && (
+                <div>
+                  <Label htmlFor="currentPage">Página atual do PDF</Label>
+                  <Input
+                    id="currentPage"
+                    type="number"
+                    min="0"
+                    value={currentPage}
+                    onChange={(e) => setCurrentPage(Number(e.target.value))}
+                    placeholder="Ex: 145"
+                  />
+                </div>
+              )}
+
+              {studyType === 'video' && (
+                <div>
+                  <Label htmlFor="currentVideo">Aula/Vídeo atual</Label>
+                  <Input
+                    id="currentVideo"
+                    value={currentVideo}
+                    onChange={(e) => setCurrentVideo(e.target.value)}
+                    placeholder="Ex: Aula 05 - Princípios Constitucionais"
+                  />
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="notes">Observações</Label>
                 <Textarea
                   id="notes"
                   value={studyNotes}
                   onChange={(e) => setStudyNotes(e.target.value)}
-                  placeholder="O que você estudou, dificuldades, observações..."
+                  placeholder="O que você estudou, dificuldades, pontos importantes..."
                   rows={3}
                 />
               </div>
