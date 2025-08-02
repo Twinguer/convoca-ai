@@ -279,6 +279,35 @@ const EstudosDashboard = () => {
         </>
       )}
 
+      {/* Study Status Sections */}
+      <div className="mt-8 space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Disciplinas Finalizadas</h2>
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground">
+                <CheckCircle className="mx-auto h-12 w-12 mb-4" />
+                <p>Suas disciplinas finalizadas aparecerão aqui</p>
+                <p className="text-sm mt-2">Complete suas sessões de estudo para ver o progresso</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Revisões</h2>
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground">
+                <BookOpen className="mx-auto h-12 w-12 mb-4" />
+                <p>Suas revisões programadas aparecerão aqui</p>
+                <p className="text-sm mt-2">Configure revisões para disciplinas concluídas</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold text-foreground mb-4">Ações Rápidas</h2>

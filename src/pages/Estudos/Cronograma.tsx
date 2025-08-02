@@ -152,21 +152,51 @@ const Cronograma = () => {
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   };
 
+  const isSessionCompleted = (sessionId: string) => {
+    const savedSessions = localStorage.getItem(`completed_sessions_${user?.id}`);
+    if (!savedSessions) return false;
+    const completedSessions = JSON.parse(savedSessions);
+    return completedSessions.some((s: any) => s.sessionId === sessionId);
+  };
+
+  const getSessionData = (sessionId: string) => {
+    const savedSessions = localStorage.getItem(`completed_sessions_${user?.id}`);
+    if (!savedSessions) return null;
+    const completedSessions = JSON.parse(savedSessions);
+    return completedSessions.find((s: any) => s.sessionId === sessionId);
+  };
+
   const getCycleName = (cycleId: string) => {
     return cycles.find(c => c.id === cycleId)?.name || 'Ciclo não encontrado';
   };
 
   const openEditModal = (session: StudySession) => {
     setEditingSession(session);
-    setStudyDuration(0);
-    setStudyNotes('');
-    setQuestionsTotal(0);
-    setQuestionsCorrect(0);
-    setCourseName('');
-    setCourseProgress('');
-    setStudyType('pdf');
-    setCurrentPage(0);
-    setCurrentVideo('');
+    
+    // Carregar dados existentes se a sessão já foi completada
+    const existingData = getSessionData(session.id);
+    if (existingData) {
+      setStudyDuration(existingData.duration || 0);
+      setStudyNotes(existingData.notes || '');
+      setQuestionsTotal(existingData.questionsTotal || 0);
+      setQuestionsCorrect(existingData.questionsCorrect || 0);
+      setCourseName(existingData.courseName || '');
+      setCourseProgress(existingData.courseProgress || '');
+      setStudyType(existingData.studyType || 'pdf');
+      setCurrentPage(existingData.currentPage || 0);
+      setCurrentVideo(existingData.currentVideo || '');
+    } else {
+      setStudyDuration(0);
+      setStudyNotes('');
+      setQuestionsTotal(0);
+      setQuestionsCorrect(0);
+      setCourseName('');
+      setCourseProgress('');
+      setStudyType('pdf');
+      setCurrentPage(0);
+      setCurrentVideo('');
+    }
+    
     setShowEditModal(true);
   };
 
@@ -550,17 +580,34 @@ const Cronograma = () => {
                      {getSessionsForDay(index).map(session => (
                        <div 
                          key={session.id} 
-                         className="p-3 bg-primary/10 rounded-md border border-primary/20 relative cursor-pointer hover:bg-primary/20 transition-colors"
+                         className={`p-3 rounded-md border relative cursor-pointer transition-colors ${
+                           isSessionCompleted(session.id) 
+                             ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' 
+                             : 'bg-primary/10 border-primary/20 hover:bg-primary/20'
+                         }`}
                          onClick={() => openEditModal(session)}
                        >
                          <div className="flex justify-between items-start">
                            <div className="flex-1">
-                             <div className="text-xs font-medium text-primary mb-1">
-                               {session.startTime} - {session.endTime}
+                             <div className="text-xs font-medium mb-1 flex items-center gap-2">
+                               <span className={isSessionCompleted(session.id) ? 'text-green-600' : 'text-primary'}>
+                                 {session.startTime} - {session.endTime}
+                               </span>
+                               {isSessionCompleted(session.id) && (
+                                 <span className="text-green-600 text-xs">✓</span>
+                               )}
                              </div>
                              <div className="text-sm font-medium">{session.disciplineName}</div>
                              <div className="text-xs text-muted-foreground">{session.blockName}</div>
                              <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
+                             {isSessionCompleted(session.id) && (
+                               <div className="text-xs text-green-600 mt-1">
+                                 {(() => {
+                                   const sessionData = getSessionData(session.id);
+                                   return sessionData ? `${sessionData.duration}min estudados` : '';
+                                 })()}
+                               </div>
+                             )}
                            </div>
                            <div className="flex gap-1">
                              <button
