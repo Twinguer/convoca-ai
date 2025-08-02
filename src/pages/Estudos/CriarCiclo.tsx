@@ -11,23 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Plus, 
-  X, 
-  Edit, 
-  Clock, 
-  BookOpen, 
-  Target,
-  CheckCircle,
-  FileText,
-  Video,
-  Calendar
-} from 'lucide-react';
+import { Plus, X, Edit, Clock, BookOpen, Target, CheckCircle, FileText, Video, Calendar } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
 interface Discipline {
   id: string;
   name: string;
@@ -43,27 +31,30 @@ interface Discipline {
   isCompleted: boolean;
   notes: string;
 }
-
 interface Block {
   id: string;
   name: string;
   disciplines: Discipline[];
 }
-
 const CriarCiclo = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  
+
   // Form data
   const [cycleName, setCycleName] = useState('');
   const [organ, setOrgan] = useState('');
   const [position, setPosition] = useState('');
   const [examDate, setExamDate] = useState('');
   const [blocks, setBlocks] = useState<Block[]>([]);
-  
+
   // Dialog states
-  const [editingDiscipline, setEditingDiscipline] = useState<{blockId: string, discipline?: Discipline} | null>(null);
+  const [editingDiscipline, setEditingDiscipline] = useState<{
+    blockId: string;
+    discipline?: Discipline;
+  } | null>(null);
   const [disciplineForm, setDisciplineForm] = useState<Partial<Discipline>>({
     name: '',
     status: 'em-andamento',
@@ -78,7 +69,6 @@ const CriarCiclo = () => {
     isCompleted: false,
     notes: ''
   });
-
   const addBlock = () => {
     const newBlock: Block = {
       id: generateId(),
@@ -87,19 +77,20 @@ const CriarCiclo = () => {
     };
     setBlocks([...blocks, newBlock]);
   };
-
   const removeBlock = (blockId: string) => {
     setBlocks(blocks.filter(block => block.id !== blockId));
   };
-
   const updateBlockName = (blockId: string, name: string) => {
-    setBlocks(blocks.map(block => 
-      block.id === blockId ? { ...block, name } : block
-    ));
+    setBlocks(blocks.map(block => block.id === blockId ? {
+      ...block,
+      name
+    } : block));
   };
-
   const openDisciplineDialog = (blockId: string, discipline?: Discipline) => {
-    setEditingDiscipline({ blockId, discipline });
+    setEditingDiscipline({
+      blockId,
+      discipline
+    });
     if (discipline) {
       setDisciplineForm(discipline);
     } else {
@@ -119,10 +110,8 @@ const CriarCiclo = () => {
       });
     }
   };
-
   const saveDiscipline = () => {
     if (!editingDiscipline || !disciplineForm.name) return;
-
     const discipline: Discipline = {
       id: editingDiscipline.discipline?.id || generateId(),
       name: disciplineForm.name!,
@@ -138,16 +127,13 @@ const CriarCiclo = () => {
       isCompleted: disciplineForm.isCompleted || false,
       notes: disciplineForm.notes || ''
     };
-
     setBlocks(blocks.map(block => {
       if (block.id === editingDiscipline.blockId) {
         if (editingDiscipline.discipline) {
           // Edit existing
           return {
             ...block,
-            disciplines: block.disciplines.map(d => 
-              d.id === discipline.id ? discipline : d
-            )
+            disciplines: block.disciplines.map(d => d.id === discipline.id ? discipline : d)
           };
         } else {
           // Add new
@@ -159,18 +145,14 @@ const CriarCiclo = () => {
       }
       return block;
     }));
-
     setEditingDiscipline(null);
   };
-
   const removeDiscipline = (blockId: string, disciplineId: string) => {
-    setBlocks(blocks.map(block => 
-      block.id === blockId 
-        ? { ...block, disciplines: block.disciplines.filter(d => d.id !== disciplineId) }
-        : block
-    ));
+    setBlocks(blocks.map(block => block.id === blockId ? {
+      ...block,
+      disciplines: block.disciplines.filter(d => d.id !== disciplineId)
+    } : block));
   };
-
   const calculateDaysUntilExam = () => {
     if (!examDate) return null;
     const today = new Date();
@@ -179,28 +161,24 @@ const CriarCiclo = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
-
   const handleSubmit = async () => {
     if (!user || !cycleName || !organ || !position || !examDate) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('study_cycles')
-        .insert({
-          user_id: user.id,
-          name: cycleName,
-          organ,
-          position,
-          exam_date: examDate,
-          blocks: blocks
-        });
-
+      const {
+        error
+      } = await supabase.from('study_cycles').insert({
+        user_id: user.id,
+        name: cycleName,
+        organ,
+        position,
+        exam_date: examDate,
+        blocks: blocks
+      });
       if (error) throw error;
-
       toast.success('Ciclo de estudos criado com sucesso!');
       navigate('/estudos');
     } catch (error) {
@@ -210,11 +188,8 @@ const CriarCiclo = () => {
       setLoading(false);
     }
   };
-
   const daysUntilExam = calculateDaysUntilExam();
-
-  return (
-    <div className="container mx-auto p-6">
+  return <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Criar Ciclo de Estudos</h1>
@@ -243,54 +218,27 @@ const CriarCiclo = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="cycleName">Nome do Ciclo *</Label>
-                <Input
-                  id="cycleName"
-                  value={cycleName}
-                  onChange={(e) => setCycleName(e.target.value)}
-                  placeholder="Ex: Concurso TJDFT 2024"
-                />
+                <Input id="cycleName" value={cycleName} onChange={e => setCycleName(e.target.value)} placeholder="Ex: Concurso TJDFT 2024" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="organ">Nome do Órgão *</Label>
-                <Input
-                  id="organ"
-                  value={organ}
-                  onChange={(e) => setOrgan(e.target.value)}
-                  placeholder="Ex: Tribunal de Justiça do DF"
-                />
+                <Input id="organ" value={organ} onChange={e => setOrgan(e.target.value)} placeholder="Ex: Tribunal de Justiça do DF" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="position">Nome do Cargo *</Label>
-                <Input
-                  id="position"
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  placeholder="Ex: Analista Judiciário"
-                />
+                <Input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="Ex: Analista Judiciário" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="examDate">Data da Prova *</Label>
-                <Input
-                  id="examDate"
-                  type="date"
-                  value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
-                />
+                <Input id="examDate" type="date" value={examDate} onChange={e => setExamDate(e.target.value)} />
               </div>
             </div>
-            {daysUntilExam !== null && (
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+            {daysUntilExam !== null && <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                 <Calendar className="h-4 w-4" />
                 <span className="text-sm">
-                  {daysUntilExam > 0 
-                    ? `${daysUntilExam} dias até a prova`
-                    : daysUntilExam === 0 
-                    ? 'Prova é hoje!'
-                    : 'Prova já passou'
-                  }
+                  {daysUntilExam > 0 ? `${daysUntilExam} dias até a prova` : daysUntilExam === 0 ? 'Prova é hoje!' : 'Prova já passou'}
                 </span>
-              </div>
-            )}
+              </div>}
           </CardContent>
         </Card>
 
@@ -299,7 +247,7 @@ const CriarCiclo = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Blocos de Estudos</CardTitle>
+                <CardTitle>Edital</CardTitle>
                 <CardDescription>
                   Organize suas disciplinas em blocos temáticos
                 </CardDescription>
@@ -311,8 +259,7 @@ const CriarCiclo = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {blocks.length === 0 ? (
-              <div className="text-center p-8 border-2 border-dashed border-muted rounded-lg">
+            {blocks.length === 0 ? <div className="text-center p-8 border-2 border-dashed border-muted rounded-lg">
                 <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Nenhum bloco criado</h3>
                 <p className="text-muted-foreground mb-4">
@@ -322,29 +269,13 @@ const CriarCiclo = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Primeiro Bloco
                 </Button>
-              </div>
-            ) : (
-              blocks.map((block) => (
-                <BlockCard
-                  key={block.id}
-                  block={block}
-                  onRemove={() => removeBlock(block.id)}
-                  onUpdateName={(name) => updateBlockName(block.id, name)}
-                  onAddDiscipline={() => openDisciplineDialog(block.id)}
-                  onEditDiscipline={(discipline) => openDisciplineDialog(block.id, discipline)}
-                  onRemoveDiscipline={(disciplineId) => removeDiscipline(block.id, disciplineId)}
-                />
-              ))
-            )}
+              </div> : blocks.map(block => <BlockCard key={block.id} block={block} onRemove={() => removeBlock(block.id)} onUpdateName={name => updateBlockName(block.id, name)} onAddDiscipline={() => openDisciplineDialog(block.id)} onEditDiscipline={discipline => openDisciplineDialog(block.id, discipline)} onRemoveDiscipline={disciplineId => removeDiscipline(block.id, disciplineId)} />)}
           </CardContent>
         </Card>
       </div>
 
       {/* Dialog para Disciplina */}
-      <Dialog 
-        open={!!editingDiscipline} 
-        onOpenChange={(open) => !open && setEditingDiscipline(null)}
-      >
+      <Dialog open={!!editingDiscipline} onOpenChange={open => !open && setEditingDiscipline(null)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
@@ -354,55 +285,50 @@ const CriarCiclo = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="disciplineName">Nome da Disciplina *</Label>
-              <Input
-                id="disciplineName"
-                value={disciplineForm.name}
-                onChange={(e) => setDisciplineForm({...disciplineForm, name: e.target.value})}
-                placeholder="Ex: Direito Constitucional"
-              />
+              <Input id="disciplineName" value={disciplineForm.name} onChange={e => setDisciplineForm({
+              ...disciplineForm,
+              name: e.target.value
+            })} placeholder="Ex: Direito Constitucional" />
             </div>
             
             <div className="space-y-3">
               <Label>Status da Disciplina</Label>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="em-andamento"
-                    checked={disciplineForm.status === 'em-andamento'}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setDisciplineForm({...disciplineForm, status: 'em-andamento'});
-                      }
-                    }}
-                  />
+                  <Checkbox id="em-andamento" checked={disciplineForm.status === 'em-andamento'} onCheckedChange={checked => {
+                  if (checked) {
+                    setDisciplineForm({
+                      ...disciplineForm,
+                      status: 'em-andamento'
+                    });
+                  }
+                }} />
                   <Label htmlFor="em-andamento" className="text-sm font-normal">
                     Em andamento
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="finalizada"
-                    checked={disciplineForm.status === 'finalizada'}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setDisciplineForm({...disciplineForm, status: 'finalizada'});
-                      }
-                    }}
-                  />
+                  <Checkbox id="finalizada" checked={disciplineForm.status === 'finalizada'} onCheckedChange={checked => {
+                  if (checked) {
+                    setDisciplineForm({
+                      ...disciplineForm,
+                      status: 'finalizada'
+                    });
+                  }
+                }} />
                   <Label htmlFor="finalizada" className="text-sm font-normal">
                     Finalizada
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="em-revisao"
-                    checked={disciplineForm.status === 'em-revisao'}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setDisciplineForm({...disciplineForm, status: 'em-revisao'});
-                      }
-                    }}
-                  />
+                  <Checkbox id="em-revisao" checked={disciplineForm.status === 'em-revisao'} onCheckedChange={checked => {
+                  if (checked) {
+                    setDisciplineForm({
+                      ...disciplineForm,
+                      status: 'em-revisao'
+                    });
+                  }
+                }} />
                   <Label htmlFor="em-revisao" className="text-sm font-normal">
                     Em revisão
                   </Label>
@@ -421,10 +347,8 @@ const CriarCiclo = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 interface BlockCardProps {
   block: Block;
   onRemove: () => void;
@@ -433,7 +357,6 @@ interface BlockCardProps {
   onEditDiscipline: (discipline: Discipline) => void;
   onRemoveDiscipline: (disciplineId: string) => void;
 }
-
 const BlockCard: React.FC<BlockCardProps> = ({
   block,
   onRemove,
@@ -444,47 +367,34 @@ const BlockCard: React.FC<BlockCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [nameValue, setNameValue] = useState(block.name);
-
   const handleSaveName = () => {
     onUpdateName(nameValue);
     setIsEditing(false);
   };
-
   const calculateBlockProgress = () => {
     if (block.disciplines.length === 0) return 0;
     const completed = block.disciplines.filter(d => d.isCompleted).length;
-    return (completed / block.disciplines.length) * 100;
+    return completed / block.disciplines.length * 100;
   };
-
   const totalStudyTime = block.disciplines.reduce((sum, d) => sum + d.studyTime, 0);
   const totalQuestions = block.disciplines.reduce((sum, d) => sum + d.questionsResolved, 0);
   const totalCorrect = block.disciplines.reduce((sum, d) => sum + d.correctAnswers, 0);
-  const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-
-  return (
-    <Card>
+  const accuracy = totalQuestions > 0 ? totalCorrect / totalQuestions * 100 : 0;
+  return <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={nameValue}
-                  onChange={(e) => setNameValue(e.target.value)}
-                  className="w-48"
-                />
+            {isEditing ? <div className="flex items-center gap-2">
+                <Input value={nameValue} onChange={e => setNameValue(e.target.value)} className="w-48" />
                 <Button size="sm" onClick={handleSaveName}>
                   <CheckCircle className="h-4 w-4" />
                 </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
+              </div> : <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">{block.name}</h3>
                 <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
                   <Edit className="h-4 w-4" />
                 </Button>
-              </div>
-            )}
+              </div>}
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
@@ -500,8 +410,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
           </div>
         </div>
         
-        {block.disciplines.length > 0 && (
-          <div className="space-y-2">
+        {block.disciplines.length > 0 && <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Progresso do Bloco</span>
               <span>{calculateBlockProgress().toFixed(1)}%</span>
@@ -521,54 +430,35 @@ const BlockCard: React.FC<BlockCardProps> = ({
                 {accuracy.toFixed(1)}% acertos
               </span>
             </div>
-          </div>
-        )}
+          </div>}
       </CardHeader>
       
-      {block.disciplines.length > 0 && (
-        <CardContent>
+      {block.disciplines.length > 0 && <CardContent>
           <div className="space-y-2">
-            {block.disciplines.map((discipline) => (
-              <DisciplineItem
-                key={discipline.id}
-                discipline={discipline}
-                onEdit={() => onEditDiscipline(discipline)}
-                onRemove={() => onRemoveDiscipline(discipline.id)}
-              />
-            ))}
+            {block.disciplines.map(discipline => <DisciplineItem key={discipline.id} discipline={discipline} onEdit={() => onEditDiscipline(discipline)} onRemove={() => onRemoveDiscipline(discipline.id)} />)}
           </div>
-        </CardContent>
-      )}
-    </Card>
-  );
+        </CardContent>}
+    </Card>;
 };
-
 interface DisciplineItemProps {
   discipline: Discipline;
   onEdit: () => void;
   onRemove: () => void;
 }
-
-const DisciplineItem: React.FC<DisciplineItemProps> = ({ discipline, onEdit, onRemove }) => {
-  const accuracy = discipline.questionsResolved > 0 
-    ? (discipline.correctAnswers / discipline.questionsResolved) * 100 
-    : 0;
-
-  return (
-    <div className="flex items-center justify-between p-3 border rounded-lg">
+const DisciplineItem: React.FC<DisciplineItemProps> = ({
+  discipline,
+  onEdit,
+  onRemove
+}) => {
+  const accuracy = discipline.questionsResolved > 0 ? discipline.correctAnswers / discipline.questionsResolved * 100 : 0;
+  return <div className="flex items-center justify-between p-3 border rounded-lg">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          {discipline.studyType === 'pdf' ? (
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <Video className="h-4 w-4 text-muted-foreground" />
-          )}
+          {discipline.studyType === 'pdf' ? <FileText className="h-4 w-4 text-muted-foreground" /> : <Video className="h-4 w-4 text-muted-foreground" />}
           <span className="font-medium">{discipline.name}</span>
-          {discipline.isCompleted && (
-            <Badge variant="secondary" className="text-xs">
+          {discipline.isCompleted && <Badge variant="secondary" className="text-xs">
               Finalizada
-            </Badge>
-          )}
+            </Badge>}
         </div>
       </div>
       
@@ -587,8 +477,6 @@ const DisciplineItem: React.FC<DisciplineItemProps> = ({ discipline, onEdit, onR
           </Button>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default CriarCiclo;
