@@ -245,10 +245,7 @@ const Cronograma = () => {
           <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Configurações
-          </Button>
+          
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
             <DialogTrigger asChild>
               <Button>
