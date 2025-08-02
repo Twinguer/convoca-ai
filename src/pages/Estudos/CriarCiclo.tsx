@@ -23,6 +23,7 @@ import {
   Video,
   Calendar
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ import { toast } from 'sonner';
 interface Discipline {
   id: string;
   name: string;
+  status: 'em-andamento' | 'finalizada' | 'em-revisao';
   studyTime: number;
   questionsResolved: number;
   correctAnswers: number;
@@ -64,6 +66,7 @@ const CriarCiclo = () => {
   const [editingDiscipline, setEditingDiscipline] = useState<{blockId: string, discipline?: Discipline} | null>(null);
   const [disciplineForm, setDisciplineForm] = useState<Partial<Discipline>>({
     name: '',
+    status: 'em-andamento',
     studyTime: 0,
     questionsResolved: 0,
     correctAnswers: 0,
@@ -102,6 +105,7 @@ const CriarCiclo = () => {
     } else {
       setDisciplineForm({
         name: '',
+        status: 'em-andamento',
         studyTime: 0,
         questionsResolved: 0,
         correctAnswers: 0,
@@ -122,6 +126,7 @@ const CriarCiclo = () => {
     const discipline: Discipline = {
       id: editingDiscipline.discipline?.id || generateId(),
       name: disciplineForm.name!,
+      status: disciplineForm.status || 'em-andamento',
       studyTime: disciplineForm.studyTime || 0,
       questionsResolved: disciplineForm.questionsResolved || 0,
       correctAnswers: disciplineForm.correctAnswers || 0,
@@ -340,7 +345,7 @@ const CriarCiclo = () => {
         open={!!editingDiscipline} 
         onOpenChange={(open) => !open && setEditingDiscipline(null)}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
               {editingDiscipline?.discipline ? 'Editar' : 'Adicionar'} Disciplina
@@ -356,140 +361,53 @@ const CriarCiclo = () => {
                 placeholder="Ex: Direito Constitucional"
               />
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
+            
+            <div className="space-y-3">
+              <Label>Status da Disciplina</Label>
               <div className="space-y-2">
-                <Label htmlFor="studyTime">Tempo Estudado (horas)</Label>
-                <Input
-                  id="studyTime"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={disciplineForm.studyTime}
-                  onChange={(e) => setDisciplineForm({...disciplineForm, studyTime: Number(e.target.value)})}
-                  placeholder="Ex: 15.5"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="questionsResolved">Total de Questões</Label>
-                <Input
-                  id="questionsResolved"
-                  type="number"
-                  min="0"
-                  value={disciplineForm.questionsResolved}
-                  onChange={(e) => setDisciplineForm({...disciplineForm, questionsResolved: Number(e.target.value)})}
-                  placeholder="Questões resolvidas"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="correctAnswers">Questões Corretas</Label>
-                <Input
-                  id="correctAnswers"
-                  type="number"
-                  min="0"
-                  max={disciplineForm.questionsResolved || 0}
-                  value={disciplineForm.correctAnswers}
-                  onChange={(e) => setDisciplineForm({...disciplineForm, correctAnswers: Number(e.target.value)})}
-                  placeholder="Acertos"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="wrongAnswers">Questões Erradas</Label>
-                <Input
-                  id="wrongAnswers"
-                  type="number"
-                  min="0"
-                  max={disciplineForm.questionsResolved || 0}
-                  value={disciplineForm.wrongAnswers}
-                  onChange={(e) => setDisciplineForm({...disciplineForm, wrongAnswers: Number(e.target.value)})}
-                  placeholder="Erros"
-                />
-              </div>
-            </div>
-
-            {/* Exibir aproveitamento se houver questões */}
-            {(disciplineForm.questionsResolved || 0) > 0 && (
-              <div className="p-3 bg-muted rounded-md">
-                <div className="text-sm text-muted-foreground">
-                  Aproveitamento: {(((disciplineForm.correctAnswers || 0) / (disciplineForm.questionsResolved || 1)) * 100).toFixed(1)}%
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="em-andamento"
+                    checked={disciplineForm.status === 'em-andamento'}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setDisciplineForm({...disciplineForm, status: 'em-andamento'});
+                      }
+                    }}
+                  />
+                  <Label htmlFor="em-andamento" className="text-sm font-normal">
+                    Em andamento
+                  </Label>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {disciplineForm.correctAnswers || 0} acertos de {disciplineForm.questionsResolved || 0} questões
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="finalizada"
+                    checked={disciplineForm.status === 'finalizada'}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setDisciplineForm({...disciplineForm, status: 'finalizada'});
+                      }
+                    }}
+                  />
+                  <Label htmlFor="finalizada" className="text-sm font-normal">
+                    Finalizada
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="em-revisao"
+                    checked={disciplineForm.status === 'em-revisao'}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setDisciplineForm({...disciplineForm, status: 'em-revisao'});
+                      }
+                    }}
+                  />
+                  <Label htmlFor="em-revisao" className="text-sm font-normal">
+                    Em revisão
+                  </Label>
                 </div>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="courseProgress">Progresso no Curso</Label>
-              <Input
-                id="courseProgress"
-                value={disciplineForm.courseProgress}
-                onChange={(e) => setDisciplineForm({...disciplineForm, courseProgress: e.target.value})}
-                placeholder="Ex: Capítulo 5 - Direitos Fundamentais"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="studyType">Tipo de Estudo</Label>
-              <Select 
-                value={disciplineForm.studyType} 
-                onValueChange={(value: 'pdf' | 'video') => setDisciplineForm({...disciplineForm, studyType: value})}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">PDF</SelectItem>
-                  <SelectItem value="video">Vídeo Aula</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {disciplineForm.studyType === 'pdf' && (
-              <div className="space-y-2">
-                <Label htmlFor="currentPage">Página Atual</Label>
-                <Input
-                  id="currentPage"
-                  type="number"
-                  min="0"
-                  value={disciplineForm.currentPage}
-                  onChange={(e) => setDisciplineForm({...disciplineForm, currentPage: Number(e.target.value)})}
-                />
-              </div>
-            )}
-
-            {disciplineForm.studyType === 'video' && (
-              <div className="space-y-2">
-                <Label htmlFor="currentVideo">Vídeo Atual</Label>
-                <Input
-                  id="currentVideo"
-                  value={disciplineForm.currentVideo}
-                  onChange={(e) => setDisciplineForm({...disciplineForm, currentVideo: e.target.value})}
-                  placeholder="Ex: Aula 05 - Princípios Constitucionais"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Observações</Label>
-              <Textarea
-                id="notes"
-                value={disciplineForm.notes}
-                onChange={(e) => setDisciplineForm({...disciplineForm, notes: e.target.value})}
-                placeholder="Observações gerais sobre o estudo desta disciplina..."
-                rows={3}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="isCompleted"
-                checked={disciplineForm.isCompleted}
-                onCheckedChange={(checked) => setDisciplineForm({...disciplineForm, isCompleted: checked})}
-              />
-              <Label htmlFor="isCompleted">Disciplina finalizada</Label>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
