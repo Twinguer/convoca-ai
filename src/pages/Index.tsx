@@ -28,7 +28,7 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
                 Somos todos concurseiros onde o que conta é o HBC. 
               </h1>
-              <p className="text-xl text-gray-700 mb-8">Compare seus resultados em rankings pós-prova com o resultado de outros concurseiros como você.</p>
+              <p className="text-xl text-gray-700 mb-8">Compare seus resultados em rankings pós-prova com o resultado de outros concurseiros como você. Crie ciclos de estudos com cronogramas e edital verticalizado. Acompanhe seu desempenho!</p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
