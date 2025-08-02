@@ -16,6 +16,7 @@ const Menu = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   
   useEffect(() => {
     // Check if admin mode is enabled via URL param
@@ -32,6 +33,10 @@ const Menu = () => {
   
   const isAdmin = () => {
     return user?.email?.includes('admin') || isAdminMode;
+  };
+
+  const handleLinkClick = () => {
+    setIsSheetOpen(false);
   };
   
   return (
@@ -122,7 +127,7 @@ const Menu = () => {
             </NavigationMenuList>
           </NavigationMenu>
 
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden">
                 <MenuIcon className="w-6 h-6" />
@@ -131,19 +136,19 @@ const Menu = () => {
             </SheetTrigger>
             <SheetContent side="right" className="pr-0 max-w-[280px]">
               <nav className="flex flex-col gap-4 px-4 pt-8">
-                <Link to="/" className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/') ? "text-primary" : "text-foreground/70")}>
                   <Home className="mr-2 h-4 w-4" />
                   Home
                 </Link>
-                <Link to="/comunidade" className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
                   <Users className="mr-2 h-4 w-4" />
                   Comunidade
                 </Link>
-                <Link to="/estudos" className={cn("flex items-center text-lg font-semibold", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/estudos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   Estudar
                 </Link>
-                <Link to="/pre-classificacao" className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
+                <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
                   Rankings
                 </Link>
@@ -151,15 +156,15 @@ const Menu = () => {
                 {isAdmin() && <>
                   <div className="h-px bg-border mt-2 mb-2"></div>
                   <div className="font-bold text-foreground/70 mb-2">Administração</div>
-                  <Link to="/project/admin/man/dashboard" className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
+                  <Link to="/project/admin/man/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/admin/dashboard') ? "text-primary" : "text-foreground/70")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
                   </Link>
-                  <Link to="/project/admin/man/concursos" className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
+                  <Link to="/project/admin/man/concursos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/admin/concursos') ? "text-primary" : "text-foreground/70")}>
                     <FileText className="mr-2 h-4 w-4" />
                     Concursos
                   </Link>
-                  <Link to="/project/admin/man/usuarios" className={cn("flex items-center text-lg font-semibold", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
+                  <Link to="/project/admin/man/usuarios" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/admin/usuarios') ? "text-primary" : "text-foreground/70")}>
                     <Users className="mr-2 h-4 w-4" />
                     Usuários
                   </Link>
