@@ -1,0 +1,604 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { generateId } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Plus, X, Edit, Clock, BookOpen, Target, CheckCircle, Calendar } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface Discipline {
+  id: string;
+  name: string;
+  status: 'em-andamento' | 'finalizada' | 'em-revisao';
+  studyTime: number;
+  questionsResolved: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  courseProgress: string;
+  studyType: 'pdf' | 'video';
+  currentPage?: number;
+  currentVideo?: string;
+  isCompleted: boolean;
+  notes: string;
+}
+
+interface Block {
+  id: string;
+  name: string;
+  disciplines: Discipline[];
+}
+
+const EditarCiclo = () => {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [loadingCycle, setLoadingCycle] = useState(true);
+
+  // Form data
+  const [cycleName, setCycleName] = useState('');
+  const [organ, setOrgan] = useState('');
+  const [position, setPosition] = useState('');
+  const [examDate, setExamDate] = useState('');
+  const [blocks, setBlocks] = useState<Block[]>([]);
+
+  // Dialog states
+  const [editingDiscipline, setEditingDiscipline] = useState<{
+    blockId: string;
+    discipline?: Discipline;
+  } | null>(null);
+  const [disciplineForm, setDisciplineForm] = useState<Partial<Discipline>>({
+    name: '',
+    status: 'em-andamento'
+  });
+
+  useEffect(() => {
+    if (id && user) {
+      fetchCycle();
+    }
+  }, [id, user]);
+
+  const fetchCycle = async () => {
+    try {
+      const { data: cycle, error } = await supabase
+        .from('study_cycles')
+        .select('*')
+        .eq('id', id)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+
+      setCycleName(cycle.name);
+      setOrgan(cycle.organ);
+      setPosition(cycle.position);
+      setExamDate(cycle.exam_date);
+      setBlocks(cycle.blocks || []);
+    } catch (error) {
+      console.error('Error fetching cycle:', error);
+      toast.error('Erro ao carregar ciclo de estudos');
+      navigate('/estudos');
+    } finally {
+      setLoadingCycle(false);
+    }
+  };
+
+  const addBlock = () => {
+    const newBlock: Block = {
+      id: generateId(),
+      name: `Bloco ${blocks.length + 1}`,
+      disciplines: []
+    };
+    setBlocks([...blocks, newBlock]);
+  };
+
+  const removeBlock = (blockId: string) => {
+    setBlocks(blocks.filter(block => block.id !== blockId));
+  };
+
+  const updateBlockName = (blockId: string, name: string) => {
+    setBlocks(blocks.map(block => 
+      block.id === blockId ? { ...block, name } : block
+    ));
+  };
+
+  const openDisciplineDialog = (blockId: string, discipline?: Discipline) => {
+    setEditingDiscipline({ blockId, discipline });
+    if (discipline) {
+      setDisciplineForm({ name: discipline.name, status: discipline.status });
+    } else {
+      setDisciplineForm({ name: '', status: 'em-andamento' });
+    }
+  };
+
+  const saveDiscipline = () => {
+    if (!editingDiscipline || !disciplineForm.name) return;
+    
+    const discipline: Discipline = {
+      id: editingDiscipline.discipline?.id || generateId(),
+      name: disciplineForm.name!,
+      status: disciplineForm.status || 'em-andamento',
+      studyTime: editingDiscipline.discipline?.studyTime || 0,
+      questionsResolved: editingDiscipline.discipline?.questionsResolved || 0,
+      correctAnswers: editingDiscipline.discipline?.correctAnswers || 0,
+      wrongAnswers: editingDiscipline.discipline?.wrongAnswers || 0,
+      courseProgress: editingDiscipline.discipline?.courseProgress || '',
+      studyType: editingDiscipline.discipline?.studyType || 'pdf',
+      currentPage: editingDiscipline.discipline?.currentPage,
+      currentVideo: editingDiscipline.discipline?.currentVideo,
+      isCompleted: editingDiscipline.discipline?.isCompleted || false,
+      notes: editingDiscipline.discipline?.notes || ''
+    };
+
+    setBlocks(blocks.map(block => {
+      if (block.id === editingDiscipline.blockId) {
+        if (editingDiscipline.discipline) {
+          return {
+            ...block,
+            disciplines: block.disciplines.map(d => 
+              d.id === discipline.id ? discipline : d
+            )
+          };
+        } else {
+          return {
+            ...block,
+            disciplines: [...block.disciplines, discipline]
+          };
+        }
+      }
+      return block;
+    }));
+    setEditingDiscipline(null);
+  };
+
+  const removeDiscipline = (blockId: string, disciplineId: string) => {
+    setBlocks(blocks.map(block => 
+      block.id === blockId 
+        ? { ...block, disciplines: block.disciplines.filter(d => d.id !== disciplineId) }
+        : block
+    ));
+  };
+
+  const calculateDaysUntilExam = () => {
+    if (!examDate) return null;
+    const today = new Date();
+    const exam = new Date(examDate);
+    const diffTime = exam.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const handleSubmit = async () => {
+    if (!user || !cycleName || !organ || !position || !examDate) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('study_cycles')
+        .update({
+          name: cycleName,
+          organ,
+          position,
+          exam_date: examDate,
+          blocks: blocks
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Ciclo de estudos atualizado com sucesso!');
+      navigate('/estudos');
+    } catch (error) {
+      console.error('Error updating study cycle:', error);
+      toast.error('Erro ao atualizar ciclo de estudos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loadingCycle) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-muted rounded w-64"></div>
+          <div className="h-48 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  const daysUntilExam = calculateDaysUntilExam();
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Editar Ciclo de Estudos</h1>
+          <p className="text-muted-foreground">Atualize suas informações de estudo</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/estudos')}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Salvando...' : 'Salvar Alterações'}
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6">
+        {/* Informações Básicas */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Básicas</CardTitle>
+            <CardDescription>
+              Dados principais do seu ciclo de estudos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="cycleName">Nome do Ciclo *</Label>
+                <Input 
+                  id="cycleName" 
+                  value={cycleName} 
+                  onChange={e => setCycleName(e.target.value)} 
+                  placeholder="Ex: Concurso TJDFT 2024" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="organ">Nome do Órgão *</Label>
+                <Input 
+                  id="organ" 
+                  value={organ} 
+                  onChange={e => setOrgan(e.target.value)} 
+                  placeholder="Ex: Tribunal de Justiça do DF" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="position">Nome do Cargo *</Label>
+                <Input 
+                  id="position" 
+                  value={position} 
+                  onChange={e => setPosition(e.target.value)} 
+                  placeholder="Ex: Analista Judiciário" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="examDate">Data da Prova *</Label>
+                <Input 
+                  id="examDate" 
+                  type="date" 
+                  value={examDate} 
+                  onChange={e => setExamDate(e.target.value)} 
+                />
+              </div>
+            </div>
+            {daysUntilExam !== null && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">
+                  {daysUntilExam > 0 
+                    ? `${daysUntilExam} dias até a prova` 
+                    : daysUntilExam === 0 
+                    ? 'Prova é hoje!' 
+                    : 'Prova já passou'
+                  }
+                </span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Blocos de Estudos */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Edital</CardTitle>
+                <CardDescription>
+                  Organize suas disciplinas em blocos temáticos
+                </CardDescription>
+              </div>
+              <Button onClick={addBlock}>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Bloco
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {blocks.length === 0 ? (
+              <div className="text-center p-8 border-2 border-dashed border-muted rounded-lg">
+                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum bloco criado</h3>
+                <p className="text-muted-foreground mb-4">
+                  Crie seu primeiro bloco para organizar suas disciplinas
+                </p>
+                <Button onClick={addBlock}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeiro Bloco
+                </Button>
+              </div>
+            ) : (
+              blocks.map(block => (
+                <BlockCard
+                  key={block.id}
+                  block={block}
+                  onRemove={() => removeBlock(block.id)}
+                  onUpdateName={name => updateBlockName(block.id, name)}
+                  onAddDiscipline={() => openDisciplineDialog(block.id)}
+                  onEditDiscipline={discipline => openDisciplineDialog(block.id, discipline)}
+                  onRemoveDiscipline={disciplineId => removeDiscipline(block.id, disciplineId)}
+                />
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Dialog para Disciplina */}
+      <Dialog open={!!editingDiscipline} onOpenChange={open => !open && setEditingDiscipline(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingDiscipline?.discipline ? 'Editar' : 'Adicionar'} Disciplina
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="disciplineName">Nome da Disciplina *</Label>
+              <Input 
+                id="disciplineName" 
+                value={disciplineForm.name} 
+                onChange={e => setDisciplineForm({
+                  ...disciplineForm,
+                  name: e.target.value
+                })} 
+                placeholder="Ex: Direito Constitucional" 
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setEditingDiscipline(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={saveDiscipline} disabled={!disciplineForm.name}>
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// Reutilizando o BlockCard do arquivo CriarCiclo.tsx
+interface BlockCardProps {
+  block: Block;
+  onRemove: () => void;
+  onUpdateName: (name: string) => void;
+  onAddDiscipline: () => void;
+  onEditDiscipline: (discipline: Discipline) => void;
+  onRemoveDiscipline: (disciplineId: string) => void;
+}
+
+const BlockCard: React.FC<BlockCardProps> = ({
+  block,
+  onRemove,
+  onUpdateName,
+  onAddDiscipline,
+  onEditDiscipline,
+  onRemoveDiscipline
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [nameValue, setNameValue] = useState(block.name);
+
+  const handleSaveName = () => {
+    onUpdateName(nameValue);
+    setIsEditing(false);
+  };
+
+  const calculateBlockProgress = () => {
+    if (block.disciplines.length === 0) return 0;
+    const completed = block.disciplines.filter(d => d.isCompleted).length;
+    return (completed / block.disciplines.length) * 100;
+  };
+
+  const totalStudyTime = block.disciplines.reduce((sum, d) => sum + d.studyTime, 0);
+  const totalQuestions = block.disciplines.reduce((sum, d) => sum + d.questionsResolved, 0);
+  const totalCorrect = block.disciplines.reduce((sum, d) => sum + d.correctAnswers, 0);
+  const accuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={nameValue}
+                  onChange={e => setNameValue(e.target.value)}
+                  className="w-48"
+                />
+                <Button size="sm" onClick={handleSaveName}>
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold">{block.name}</h3>
+                <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              {block.disciplines.length} disciplina(s)
+            </Badge>
+            <Button size="sm" variant="outline" onClick={onAddDiscipline}>
+              <Plus className="h-4 w-4 mr-1" />
+              Disciplina
+            </Button>
+            <Button size="sm" variant="destructive" onClick={onRemove}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        {block.disciplines.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>Progresso do Bloco</span>
+              <span>{calculateBlockProgress().toFixed(1)}%</span>
+            </div>
+            <Progress value={calculateBlockProgress()} />
+            <div className="flex gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {totalStudyTime}h estudadas
+              </span>
+              <span className="flex items-center gap-1">
+                <Target className="h-3 w-3" />
+                {totalQuestions} questões
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                {accuracy.toFixed(1)}% acertos
+              </span>
+            </div>
+          </div>
+        )}
+      </CardHeader>
+      
+      {block.disciplines.length > 0 && (
+        <CardContent>
+          <div className="space-y-2">
+            {block.disciplines.map(discipline => (
+              <DisciplineItem
+                key={discipline.id}
+                discipline={discipline}
+                onEdit={() => onEditDiscipline(discipline)}
+                onRemove={() => onRemoveDiscipline(discipline.id)}
+              />
+            ))}
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
+};
+
+interface DisciplineItemProps {
+  discipline: Discipline;
+  onEdit: () => void;
+  onRemove: () => void;
+}
+
+const DisciplineItem: React.FC<DisciplineItemProps> = ({
+  discipline,
+  onEdit,
+  onRemove
+}) => {
+  const [localStatus, setLocalStatus] = useState(discipline.status);
+
+  const updateStatus = (newStatus: 'em-andamento' | 'finalizada' | 'em-revisao') => {
+    setLocalStatus(newStatus);
+    discipline.status = newStatus;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'finalizada': return 'bg-green-100 text-green-800 border-green-200';
+      case 'em-revisao': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'finalizada': return 'Finalizada';
+      case 'em-revisao': return 'Em Revisão';
+      default: return 'Em Andamento';
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 border rounded-lg">
+      <div className="flex items-center gap-3 flex-1">
+        <span className="font-medium">{discipline.name}</span>
+        <Badge className={getStatusColor(localStatus)}>
+          {getStatusLabel(localStatus)}
+        </Badge>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        {/* Status Checkboxes */}
+        <div className="flex gap-3">
+          <div className="flex items-center space-x-1">
+            <Checkbox 
+              id={`${discipline.id}-em-andamento`}
+              checked={localStatus === 'em-andamento'} 
+              onCheckedChange={(checked) => {
+                if (checked) updateStatus('em-andamento');
+              }} 
+            />
+            <Label htmlFor={`${discipline.id}-em-andamento`} className="text-xs">
+              Em andamento
+            </Label>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Checkbox 
+              id={`${discipline.id}-finalizada`}
+              checked={localStatus === 'finalizada'} 
+              onCheckedChange={(checked) => {
+                if (checked) updateStatus('finalizada');
+              }} 
+            />
+            <Label htmlFor={`${discipline.id}-finalizada`} className="text-xs">
+              Finalizada
+            </Label>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Checkbox 
+              id={`${discipline.id}-em-revisao`}
+              checked={localStatus === 'em-revisao'} 
+              onCheckedChange={(checked) => {
+                if (checked) updateStatus('em-revisao');
+              }} 
+            />
+            <Label htmlFor={`${discipline.id}-em-revisao`} className="text-xs">
+              Em revisão
+            </Label>
+          </div>
+        </div>
+        
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={onEdit}>
+            <Edit className="h-3 w-3" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onRemove}>
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditarCiclo;

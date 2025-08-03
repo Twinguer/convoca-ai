@@ -35,6 +35,7 @@ import Cronograma from "./pages/Estudos/Cronograma";
 import Timer from "./pages/Estudos/Timer";
 import Estatisticas from "./pages/Estudos/Estatisticas";
 import CriarCiclo from "./pages/Estudos/CriarCiclo";
+import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 
 const AppContent = () => {
@@ -101,6 +102,10 @@ const AppContent = () => {
                      <Route path="/estudos/criar-ciclo" element={<>
                         <Menu />
                         <CriarCiclo />
+                      </>} />
+                     <Route path="/estudos/editar-ciclo/:id" element={<>
+                        <Menu />
+                        <EditarCiclo />
                       </>} />
                      <Route path="/estudos/ciclo/:id" element={<>
                         <Menu />

@@ -92,21 +92,11 @@ const CriarCiclo = () => {
       discipline
     });
     if (discipline) {
-      setDisciplineForm(discipline);
+      setDisciplineForm({ name: discipline.name, status: discipline.status });
     } else {
       setDisciplineForm({
         name: '',
-        status: 'em-andamento',
-        studyTime: 0,
-        questionsResolved: 0,
-        correctAnswers: 0,
-        wrongAnswers: 0,
-        courseProgress: '',
-        studyType: 'pdf',
-        currentPage: 0,
-        currentVideo: '',
-        isCompleted: false,
-        notes: ''
+        status: 'em-andamento'
       });
     }
   };
@@ -116,16 +106,16 @@ const CriarCiclo = () => {
       id: editingDiscipline.discipline?.id || generateId(),
       name: disciplineForm.name!,
       status: disciplineForm.status || 'em-andamento',
-      studyTime: disciplineForm.studyTime || 0,
-      questionsResolved: disciplineForm.questionsResolved || 0,
-      correctAnswers: disciplineForm.correctAnswers || 0,
-      wrongAnswers: disciplineForm.wrongAnswers || 0,
-      courseProgress: disciplineForm.courseProgress || '',
-      studyType: disciplineForm.studyType || 'pdf',
-      currentPage: disciplineForm.currentPage,
-      currentVideo: disciplineForm.currentVideo,
-      isCompleted: disciplineForm.isCompleted || false,
-      notes: disciplineForm.notes || ''
+      studyTime: 0,
+      questionsResolved: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0,
+      courseProgress: '',
+      studyType: 'pdf',
+      currentPage: 0,
+      currentVideo: '',
+      isCompleted: false,
+      notes: ''
     };
     setBlocks(blocks.map(block => {
       if (block.id === editingDiscipline.blockId) {
@@ -285,55 +275,15 @@ const CriarCiclo = () => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="disciplineName">Nome da Disciplina *</Label>
-              <Input id="disciplineName" value={disciplineForm.name} onChange={e => setDisciplineForm({
-              ...disciplineForm,
-              name: e.target.value
-            })} placeholder="Ex: Direito Constitucional" />
-            </div>
-            
-            <div className="space-y-3">
-              <Label>Status da Disciplina</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="em-andamento" checked={disciplineForm.status === 'em-andamento'} onCheckedChange={checked => {
-                  if (checked) {
-                    setDisciplineForm({
-                      ...disciplineForm,
-                      status: 'em-andamento'
-                    });
-                  }
-                }} />
-                  <Label htmlFor="em-andamento" className="text-sm font-normal">
-                    Em andamento
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="finalizada" checked={disciplineForm.status === 'finalizada'} onCheckedChange={checked => {
-                  if (checked) {
-                    setDisciplineForm({
-                      ...disciplineForm,
-                      status: 'finalizada'
-                    });
-                  }
-                }} />
-                  <Label htmlFor="finalizada" className="text-sm font-normal">
-                    Finalizada
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="em-revisao" checked={disciplineForm.status === 'em-revisao'} onCheckedChange={checked => {
-                  if (checked) {
-                    setDisciplineForm({
-                      ...disciplineForm,
-                      status: 'em-revisao'
-                    });
-                  }
-                }} />
-                  <Label htmlFor="em-revisao" className="text-sm font-normal">
-                    Em revisão
-                  </Label>
-                </div>
-              </div>
+              <Input 
+                id="disciplineName" 
+                value={disciplineForm.name} 
+                onChange={e => setDisciplineForm({
+                  ...disciplineForm,
+                  name: e.target.value
+                })} 
+                placeholder="Ex: Direito Constitucional" 
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
@@ -450,24 +400,79 @@ const DisciplineItem: React.FC<DisciplineItemProps> = ({
   onEdit,
   onRemove
 }) => {
-  const accuracy = discipline.questionsResolved > 0 ? discipline.correctAnswers / discipline.questionsResolved * 100 : 0;
-  return <div className="flex items-center justify-between p-3 border rounded-lg">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          {discipline.studyType === 'pdf' ? <FileText className="h-4 w-4 text-muted-foreground" /> : <Video className="h-4 w-4 text-muted-foreground" />}
-          <span className="font-medium">{discipline.name}</span>
-          {discipline.isCompleted && <Badge variant="secondary" className="text-xs">
-              Finalizada
-            </Badge>}
-        </div>
+  const [localStatus, setLocalStatus] = useState(discipline.status);
+
+  const updateStatus = (newStatus: 'em-andamento' | 'finalizada' | 'em-revisao') => {
+    setLocalStatus(newStatus);
+    discipline.status = newStatus;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'finalizada': return 'bg-green-100 text-green-800 border-green-200';
+      case 'em-revisao': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'finalizada': return 'Finalizada';
+      case 'em-revisao': return 'Em Revisão';
+      default: return 'Em Andamento';
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 border rounded-lg">
+      <div className="flex items-center gap-3 flex-1">
+        <span className="font-medium">{discipline.name}</span>
+        <Badge className={getStatusColor(localStatus)}>
+          {getStatusLabel(localStatus)}
+        </Badge>
       </div>
       
-      <div className="flex items-center gap-4">
-        <div className="text-xs text-muted-foreground space-x-3">
-          <span>{discipline.studyTime}h</span>
-          <span>{discipline.questionsResolved} questões</span>
-          <span>{accuracy.toFixed(1)}% acertos</span>
+      <div className="flex items-center gap-2">
+        {/* Status Checkboxes */}
+        <div className="flex gap-3">
+          <div className="flex items-center space-x-1">
+            <Checkbox 
+              id={`${discipline.id}-em-andamento`}
+              checked={localStatus === 'em-andamento'} 
+              onCheckedChange={(checked) => {
+                if (checked) updateStatus('em-andamento');
+              }} 
+            />
+            <Label htmlFor={`${discipline.id}-em-andamento`} className="text-xs">
+              Em andamento
+            </Label>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Checkbox 
+              id={`${discipline.id}-finalizada`}
+              checked={localStatus === 'finalizada'} 
+              onCheckedChange={(checked) => {
+                if (checked) updateStatus('finalizada');
+              }} 
+            />
+            <Label htmlFor={`${discipline.id}-finalizada`} className="text-xs">
+              Finalizada
+            </Label>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Checkbox 
+              id={`${discipline.id}-em-revisao`}
+              checked={localStatus === 'em-revisao'} 
+              onCheckedChange={(checked) => {
+                if (checked) updateStatus('em-revisao');
+              }} 
+            />
+            <Label htmlFor={`${discipline.id}-em-revisao`} className="text-xs">
+              Em revisão
+            </Label>
+          </div>
         </div>
+        
         <div className="flex gap-1">
           <Button size="sm" variant="ghost" onClick={onEdit}>
             <Edit className="h-3 w-3" />
@@ -477,6 +482,7 @@ const DisciplineItem: React.FC<DisciplineItemProps> = ({
           </Button>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 export default CriarCiclo;

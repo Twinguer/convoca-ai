@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -448,10 +448,10 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
             <Play className="h-4 w-4 mr-2" />
             Iniciar Sessão
           </Button>
-          <Link to={`/estudos/ciclo/${cycle.id}`}>
+          <Link to={`/estudos/editar-ciclo/${cycle.id}`}>
             <Button variant="outline">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Ver Detalhes
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
             </Button>
           </Link>
           <Button 
