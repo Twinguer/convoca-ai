@@ -36,6 +36,7 @@ import Timer from "./pages/Estudos/Timer";
 import Estatisticas from "./pages/Estudos/Estatisticas";
 import CriarCiclo from "./pages/Estudos/CriarCiclo";
 import EditarCiclo from "./pages/Estudos/EditarCiclo";
+import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 
 const AppContent = () => {
@@ -107,9 +108,13 @@ const AppContent = () => {
                         <Menu />
                         <EditarCiclo />
                       </>} />
-                     <Route path="/estudos/ciclo/:id" element={<>
+                      <Route path="/estudos/ciclo/:id" element={<>
                         <Menu />
                         <CicloDetalhes />
+                      </>} />
+                      <Route path="/estudos/sessao/:id" element={<>
+                        <Menu />
+                        <SessaoEstudos />
                       </>} />
                     <Route path="/pre-classificacao" element={<>
                         <Menu />

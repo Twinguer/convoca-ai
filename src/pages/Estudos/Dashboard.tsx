@@ -270,7 +270,7 @@ const EstudosDashboard = () => {
                 <StudyCycleCard 
                   key={data.cycle.id} 
                   cycleProgress={data} 
-                  onStartSession={() => navigate(`/estudos/timer?cycle=${data.cycle.id}`)} 
+                  onStartSession={() => navigate(`/estudos/sessao/${data.cycle.id}`)} 
                   onDelete={() => deleteCycle(data.cycle.id)}
                 />
               ))}
