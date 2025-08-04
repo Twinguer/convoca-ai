@@ -57,13 +57,7 @@ const SessaoEstudos = () => {
   // Hide floating timer when on session page
   useEffect(() => {
     hideTimer();
-    return () => {
-      // Don't show floating timer when leaving this page if timer is running
-      if (isRunning) {
-        hideTimer();
-      }
-    };
-  }, [hideTimer, isRunning]);
+  }, [hideTimer]);
 
   const fetchCycle = async () => {
     try {
@@ -174,6 +168,36 @@ const SessaoEstudos = () => {
     return Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   };
 
+  const getDisciplineStats = () => {
+    if (!cycle?.blocks) return { finished: 0, inProgress: 0, review: 0, total: 0 };
+    
+    let finished = 0;
+    let inProgress = 0;
+    let review = 0;
+    let total = 0;
+
+    cycle.blocks.forEach((block: any) => {
+      if (block.disciplines) {
+        block.disciplines.forEach((discipline: any) => {
+          total++;
+          switch (discipline.status) {
+            case 'finished':
+              finished++;
+              break;
+            case 'review':
+              review++;
+              break;
+            default:
+              inProgress++;
+              break;
+          }
+        });
+      }
+    });
+
+    return { finished, inProgress, review, total };
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-6">
@@ -213,24 +237,34 @@ const SessaoEstudos = () => {
         </div>
       </div>
 
-      {/* Compact Header with Timer and Info */}
-      <div className="grid gap-4 md:grid-cols-3 mb-6">
+      {/* Compact Header with Timer, Info and Stats */}
+      <div className="grid gap-4 lg:grid-cols-4 mb-6">
         {/* Timer Section - Compact */}
-        <Card className="md:col-span-2">
+        <Card className="lg:col-span-2">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="text-2xl font-bold">
-                  {formatTime(minutes, seconds)}
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className="text-3xl font-bold">
+                    {formatTime(minutes, seconds)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Timer de Estudo
+                  </div>
                 </div>
                 
                 {/* Progress Bar */}
                 {isRunning && (
-                  <div className="w-32 bg-secondary rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-1000" 
-                      style={{ width: `${getProgressPercentage()}%` }}
-                    ></div>
+                  <div className="flex flex-col gap-1">
+                    <div className="w-32 bg-secondary rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-1000" 
+                        style={{ width: `${getProgressPercentage()}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-xs text-muted-foreground text-center">
+                      {Math.round(getProgressPercentage())}% concluído
+                    </div>
                   </div>
                 )}
               </div>
@@ -238,7 +272,7 @@ const SessaoEstudos = () => {
               <div className="flex items-center gap-2">
                 {/* Time Controls */}
                 {!isRunning && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mr-4">
                     <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
                       <Minus className="h-4 w-4" />
                     </Button>
@@ -253,7 +287,7 @@ const SessaoEstudos = () => {
 
                 {/* Control Buttons */}
                 {!isRunning ? (
-                  <Button onClick={handleStart}>
+                  <Button onClick={handleStart} size="lg">
                     <Play className="h-4 w-4 mr-2" />
                     Iniciar
                   </Button>
@@ -283,20 +317,62 @@ const SessaoEstudos = () => {
 
         {/* Cycle Info - Compact */}
         <Card>
-          <CardContent className="p-4 space-y-2">
+          <CardContent className="p-4 space-y-3">
             <div className="text-sm">
-              <div className="font-medium">{cycle.organ}</div>
-              <div className="text-muted-foreground">{cycle.position}</div>
+              <div className="font-medium truncate">{cycle.organ}</div>
+              <div className="text-muted-foreground text-xs truncate">{cycle.position}</div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Prova:</span>
-              <span>{new Date(cycle.exam_date).toLocaleDateString('pt-BR')}</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Prova:</span>
+                <span className="text-xs">{new Date(cycle.exam_date).toLocaleDateString('pt-BR')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Restam:</span>
+                <Badge variant={getDaysUntilExam() <= 30 ? "destructive" : "default"} className="text-xs">
+                  {getDaysUntilExam()} dias
+                </Badge>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Dias restantes:</span>
-              <Badge variant={getDaysUntilExam() <= 30 ? "destructive" : "default"} className="text-xs">
-                {getDaysUntilExam()} dias
-              </Badge>
+          </CardContent>
+        </Card>
+
+        {/* Discipline Stats */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-3">
+              <div className="text-sm font-medium">Progresso</div>
+              {(() => {
+                const stats = getDisciplineStats();
+                return (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Finalizadas</span>
+                      <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
+                        {stats.finished}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Em Andamento</span>
+                      <Badge variant="outline" className="text-xs">
+                        {stats.inProgress}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Em Revisão</span>
+                      <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                        {stats.review}
+                      </Badge>
+                    </div>
+                    <div className="border-t pt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium">Total</span>
+                        <span className="text-sm font-bold">{stats.total}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -321,9 +397,20 @@ const SessaoEstudos = () => {
                   <h3 className="font-semibold text-lg border-b pb-2">{block.name}</h3>
                   <div className="space-y-3">
                      {block.disciplines?.map((discipline: any, disciplineIndex: number) => (
-                       <div key={disciplineIndex} className="flex items-center justify-between p-2 bg-muted/20 rounded border">
+                       <div 
+                         key={disciplineIndex} 
+                         className={`flex items-center justify-between p-2 rounded border transition-all ${
+                           discipline.status === 'finished' 
+                             ? 'bg-muted/50 text-muted-foreground opacity-60' 
+                             : 'bg-muted/20'
+                         }`}
+                       >
                          <div className="flex items-center gap-2">
-                           <span className="font-medium text-sm">{discipline.name}</span>
+                           <span className={`font-medium text-sm ${
+                             discipline.status === 'finished' ? 'line-through' : ''
+                           }`}>
+                             {discipline.name}
+                           </span>
                            {getStatusBadge(discipline.status || 'inProgress')}
                          </div>
                          

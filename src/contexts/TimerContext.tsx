@@ -48,6 +48,13 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
   const isStudying = isRunning && !isPaused;
 
+  // Auto-show floating timer when timer is running and not on session page
+  useEffect(() => {
+    if (isRunning && !window.location.pathname.includes('/estudos/sessao/')) {
+      setShowFloatingTimer(true);
+    }
+  }, [isRunning]);
+
   // Timer countdown logic
   useEffect(() => {
     if (isRunning && !isPaused) {
@@ -146,7 +153,8 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     }
     setIsRunning(true);
     setIsPaused(false);
-    // Don't auto-show floating timer - let pages control this
+    // Show floating timer by default, pages can control visibility
+    setShowFloatingTimer(true);
     setSessionStartTime(new Date());
   };
 
