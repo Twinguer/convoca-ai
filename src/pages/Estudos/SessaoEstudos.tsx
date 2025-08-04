@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 interface StudyCycle {
   id: string;
   name: string;
@@ -18,19 +17,22 @@ interface StudyCycle {
   exam_date: string;
   blocks: any[];
 }
-
 interface Discipline {
   name: string;
   status: 'inProgress' | 'finished' | 'review';
   studyTime: number;
 }
-
 const SessaoEstudos = () => {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const {
     minutes,
     seconds,
@@ -42,12 +44,10 @@ const SessaoEstudos = () => {
     resumeTimer,
     stopTimer,
     setInitialTime,
-    hideTimer,
+    hideTimer
   } = useTimer();
-
   const [cycle, setCycle] = useState<StudyCycle | null>(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (user && id) {
       fetchCycle();
@@ -58,16 +58,12 @@ const SessaoEstudos = () => {
   useEffect(() => {
     hideTimer();
   }, [hideTimer]);
-
   const fetchCycle = async () => {
     try {
-      const { data, error } = await supabase
-        .from('study_cycles')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user?.id)
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('study_cycles').select('*').eq('id', id).eq('user_id', user?.id).single();
       if (error) throw error;
       setCycle(data);
     } catch (error) {
@@ -81,20 +77,15 @@ const SessaoEstudos = () => {
       setLoading(false);
     }
   };
-
   const updateCycle = async (updatedCycle: StudyCycle) => {
     try {
-      const { error } = await supabase
-        .from('study_cycles')
-        .update({
-          blocks: updatedCycle.blocks,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', updatedCycle.id)
-        .eq('user_id', user?.id);
-
+      const {
+        error
+      } = await supabase.from('study_cycles').update({
+        blocks: updatedCycle.blocks,
+        updated_at: new Date().toISOString()
+      }).eq('id', updatedCycle.id).eq('user_id', user?.id);
       if (error) throw error;
-      
       setCycle(updatedCycle);
       toast({
         title: 'Progresso atualizado',
@@ -109,47 +100,40 @@ const SessaoEstudos = () => {
       });
     }
   };
-
   const handleDisciplineStatusChange = (blockIndex: number, disciplineIndex: number, status: 'inProgress' | 'finished' | 'review') => {
     if (!cycle) return;
-
-    const updatedCycle = { ...cycle };
+    const updatedCycle = {
+      ...cycle
+    };
     updatedCycle.blocks[blockIndex].disciplines[disciplineIndex].status = status;
-    
+
     // Update completion status based on new status
     updatedCycle.blocks[blockIndex].disciplines[disciplineIndex].isCompleted = status === 'finished';
-    
     updateCycle(updatedCycle);
   };
-
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
   const getProgressPercentage = () => {
     const totalSeconds = initialMinutes * 60;
     const remainingSeconds = minutes * 60 + seconds;
     return (totalSeconds - remainingSeconds) / totalSeconds * 100;
   };
-
   const handleStart = () => {
     startTimer(initialMinutes);
   };
-
   const addTime = () => {
     if (initialMinutes < 360) {
       const newTime = initialMinutes + 5;
       setInitialTime(newTime);
     }
   };
-
   const removeTime = () => {
     if (initialMinutes > 5) {
       const newTime = initialMinutes - 5;
       setInitialTime(newTime);
     }
   };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'finished':
@@ -160,22 +144,23 @@ const SessaoEstudos = () => {
         return <Badge variant="outline">Em Andamento</Badge>;
     }
   };
-
   const getDaysUntilExam = () => {
     if (!cycle) return 0;
     const today = new Date();
     const examDate = new Date(cycle.exam_date);
     return Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   };
-
   const getDisciplineStats = () => {
-    if (!cycle?.blocks) return { finished: 0, inProgress: 0, review: 0, total: 0 };
-    
+    if (!cycle?.blocks) return {
+      finished: 0,
+      inProgress: 0,
+      review: 0,
+      total: 0
+    };
     let finished = 0;
     let inProgress = 0;
     let review = 0;
     let total = 0;
-
     cycle.blocks.forEach((block: any) => {
       if (block.disciplines) {
         block.disciplines.forEach((discipline: any) => {
@@ -194,13 +179,15 @@ const SessaoEstudos = () => {
         });
       }
     });
-
-    return { finished, inProgress, review, total };
+    return {
+      finished,
+      inProgress,
+      review,
+      total
+    };
   };
-
   if (loading) {
-    return (
-      <div className="container mx-auto p-6">
+    return <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
           <div className="grid gap-6 md:grid-cols-2">
@@ -208,24 +195,18 @@ const SessaoEstudos = () => {
             <div className="h-48 bg-muted rounded"></div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!cycle) {
-    return (
-      <div className="container mx-auto p-6 text-center">
+    return <div className="container mx-auto p-6 text-center">
         <h1 className="text-2xl font-bold mb-4">Ciclo não encontrado</h1>
         <Button onClick={() => navigate('/estudos')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar ao Dashboard
         </Button>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="container mx-auto p-6">
+  return <div className="container mx-auto p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button variant="outline" size="icon" onClick={() => navigate('/estudos')}>
@@ -254,25 +235,21 @@ const SessaoEstudos = () => {
                 </div>
                 
                 {/* Progress Bar */}
-                {isRunning && (
-                  <div className="flex flex-col gap-1">
+                {isRunning && <div className="flex flex-col gap-1">
                     <div className="w-32 bg-secondary rounded-full h-2">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all duration-1000" 
-                        style={{ width: `${getProgressPercentage()}%` }}
-                      ></div>
+                      <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{
+                    width: `${getProgressPercentage()}%`
+                  }}></div>
                     </div>
                     <div className="text-xs text-muted-foreground text-center">
                       {Math.round(getProgressPercentage())}% concluído
                     </div>
-                  </div>
-                )}
+                  </div>}
               </div>
 
               <div className="flex items-center gap-2">
                 {/* Time Controls */}
-                {!isRunning && (
-                  <div className="flex items-center gap-2 mr-4">
+                {!isRunning && <div className="flex items-center gap-2 mr-4">
                     <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
                       <Minus className="h-4 w-4" />
                     </Button>
@@ -282,34 +259,25 @@ const SessaoEstudos = () => {
                     <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
                       <Plus className="h-4 w-4" />
                     </Button>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Control Buttons */}
-                {!isRunning ? (
-                  <Button onClick={handleStart} size="lg">
+                {!isRunning ? <Button onClick={handleStart} size="lg">
                     <Play className="h-4 w-4 mr-2" />
                     Iniciar
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    {!isPaused ? (
-                      <Button variant="outline" onClick={pauseTimer}>
+                  </Button> : <div className="flex gap-2">
+                    {!isPaused ? <Button variant="outline" onClick={pauseTimer}>
                         <Pause className="h-4 w-4 mr-2" />
                         Pausar
-                      </Button>
-                    ) : (
-                      <Button onClick={resumeTimer}>
+                      </Button> : <Button onClick={resumeTimer}>
                         <Play className="h-4 w-4 mr-2" />
                         Continuar
-                      </Button>
-                    )}
+                      </Button>}
                     <Button variant="outline" onClick={stopTimer}>
                       <Square className="h-4 w-4 mr-2" />
                       Parar
                     </Button>
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
           </CardContent>
@@ -343,9 +311,8 @@ const SessaoEstudos = () => {
             <div className="space-y-3">
               <div className="text-sm font-medium">Progresso</div>
               {(() => {
-                const stats = getDisciplineStats();
-                return (
-                  <div className="space-y-2">
+              const stats = getDisciplineStats();
+              return <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-xs text-muted-foreground">Finalizadas</span>
                       <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
@@ -364,15 +331,9 @@ const SessaoEstudos = () => {
                         {stats.review}
                       </Badge>
                     </div>
-                    <div className="border-t pt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium">Total</span>
-                        <span className="text-sm font-bold">{stats.total}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+                    
+                  </div>;
+            })()}
             </div>
           </CardContent>
         </Card>
@@ -392,23 +353,12 @@ const SessaoEstudos = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {cycle.blocks?.map((block: any, blockIndex: number) => (
-                <div key={blockIndex} className="space-y-3">
+              {cycle.blocks?.map((block: any, blockIndex: number) => <div key={blockIndex} className="space-y-3">
                   <h3 className="font-semibold text-lg border-b pb-2">{block.name}</h3>
                   <div className="space-y-3">
-                     {block.disciplines?.map((discipline: any, disciplineIndex: number) => (
-                       <div 
-                         key={disciplineIndex} 
-                         className={`flex items-center justify-between p-2 rounded border transition-all ${
-                           discipline.status === 'finished' 
-                             ? 'bg-muted/50 text-muted-foreground opacity-60' 
-                             : 'bg-muted/20'
-                         }`}
-                       >
+                     {block.disciplines?.map((discipline: any, disciplineIndex: number) => <div key={disciplineIndex} className={`flex items-center justify-between p-2 rounded border transition-all ${discipline.status === 'finished' ? 'bg-muted/50 text-muted-foreground opacity-60' : 'bg-muted/20'}`}>
                          <div className="flex items-center gap-2">
-                           <span className={`font-medium text-sm ${
-                             discipline.status === 'finished' ? 'line-through' : ''
-                           }`}>
+                           <span className={`font-medium text-sm ${discipline.status === 'finished' ? 'line-through' : ''}`}>
                              {discipline.name}
                            </span>
                            {getStatusBadge(discipline.status || 'inProgress')}
@@ -416,45 +366,29 @@ const SessaoEstudos = () => {
                          
                          <div className="flex items-center gap-3">
                            <label className="flex items-center gap-1 cursor-pointer text-xs">
-                             <Checkbox 
-                               checked={discipline.status === 'inProgress'}
-                               onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'inProgress')}
-                               className="h-3 w-3"
-                             />
+                             <Checkbox checked={discipline.status === 'inProgress'} onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'inProgress')} className="h-3 w-3" />
                              <span>Andamento</span>
                            </label>
                            
                            <label className="flex items-center gap-1 cursor-pointer text-xs">
-                             <Checkbox 
-                               checked={discipline.status === 'finished'}
-                               onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'finished')}
-                               className="h-3 w-3"
-                             />
+                             <Checkbox checked={discipline.status === 'finished'} onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'finished')} className="h-3 w-3" />
                              <CheckCircle className="h-3 w-3 text-green-600" />
                              <span>Finalizada</span>
                            </label>
                            
                            <label className="flex items-center gap-1 cursor-pointer text-xs">
-                             <Checkbox 
-                               checked={discipline.status === 'review'}
-                               onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'review')}
-                               className="h-3 w-3"
-                             />
+                             <Checkbox checked={discipline.status === 'review'} onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'review')} className="h-3 w-3" />
                              <RotateCcw className="h-3 w-3 text-yellow-600" />
                              <span>Revisão</span>
                            </label>
                          </div>
-                       </div>
-                     ))}
+                       </div>)}
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default SessaoEstudos;
