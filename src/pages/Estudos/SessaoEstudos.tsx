@@ -42,6 +42,7 @@ const SessaoEstudos = () => {
     resumeTimer,
     stopTimer,
     setInitialTime,
+    hideTimer,
   } = useTimer();
 
   const [cycle, setCycle] = useState<StudyCycle | null>(null);
@@ -52,6 +53,17 @@ const SessaoEstudos = () => {
       fetchCycle();
     }
   }, [user, id]);
+
+  // Hide floating timer when on session page
+  useEffect(() => {
+    hideTimer();
+    return () => {
+      // Don't show floating timer when leaving this page if timer is running
+      if (isRunning) {
+        hideTimer();
+      }
+    };
+  }, [hideTimer, isRunning]);
 
   const fetchCycle = async () => {
     try {
@@ -201,104 +213,88 @@ const SessaoEstudos = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Timer Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TimerIcon className="h-5 w-5" />
-              Timer de Estudo
-            </CardTitle>
-            <CardDescription>
-              Cronometr e sua sessão de estudos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center p-6">
-              {/* Time Display */}
-              <div className="text-5xl font-bold mb-4">
-                {formatTime(minutes, seconds)}
+      {/* Compact Header with Timer and Info */}
+      <div className="grid gap-4 md:grid-cols-3 mb-6">
+        {/* Timer Section - Compact */}
+        <Card className="md:col-span-2">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-2xl font-bold">
+                  {formatTime(minutes, seconds)}
+                </div>
+                
+                {/* Progress Bar */}
+                {isRunning && (
+                  <div className="w-32 bg-secondary rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-1000" 
+                      style={{ width: `${getProgressPercentage()}%` }}
+                    ></div>
+                  </div>
+                )}
               </div>
 
-              {/* Progress Bar */}
-              {isRunning && (
-                <div className="w-full bg-secondary rounded-full h-2 mb-6">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-1000" 
-                    style={{ width: `${getProgressPercentage()}%` }}
-                  ></div>
-                </div>
-              )}
-
-              {/* Time Controls */}
-              {!isRunning && (
-                <div className="flex justify-center items-center gap-4 mb-6">
-                  <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  
-                  <div className="text-sm text-muted-foreground min-w-[80px]">
-                    {initialMinutes} min
+              <div className="flex items-center gap-2">
+                {/* Time Controls */}
+                {!isRunning && (
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+                      {initialMinutes}m
+                    </span>
+                    <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
                   </div>
-                  
-                  <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+                )}
 
-              {/* Control Buttons */}
-              <div className="flex justify-center gap-4">
+                {/* Control Buttons */}
                 {!isRunning ? (
-                  <Button size="lg" onClick={handleStart}>
-                    <Play className="h-5 w-5 mr-2" />
+                  <Button onClick={handleStart}>
+                    <Play className="h-4 w-4 mr-2" />
                     Iniciar
                   </Button>
                 ) : (
-                  <>
+                  <div className="flex gap-2">
                     {!isPaused ? (
-                      <Button size="lg" variant="outline" onClick={pauseTimer}>
-                        <Pause className="h-5 w-5 mr-2" />
+                      <Button variant="outline" onClick={pauseTimer}>
+                        <Pause className="h-4 w-4 mr-2" />
                         Pausar
                       </Button>
                     ) : (
-                      <Button size="lg" onClick={resumeTimer}>
-                        <Play className="h-5 w-5 mr-2" />
+                      <Button onClick={resumeTimer}>
+                        <Play className="h-4 w-4 mr-2" />
                         Continuar
                       </Button>
                     )}
-                    <Button size="lg" variant="outline" onClick={stopTimer}>
-                      <Square className="h-5 w-5 mr-2" />
+                    <Button variant="outline" onClick={stopTimer}>
+                      <Square className="h-4 w-4 mr-2" />
                       Parar
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Cycle Info */}
+        {/* Cycle Info - Compact */}
         <Card>
-          <CardHeader>
-            <CardTitle>Informações do Concurso</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Órgão:</span>
-              <span className="font-medium">{cycle.organ}</span>
+          <CardContent className="p-4 space-y-2">
+            <div className="text-sm">
+              <div className="font-medium">{cycle.organ}</div>
+              <div className="text-muted-foreground">{cycle.position}</div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Cargo:</span>
-              <span className="font-medium">{cycle.position}</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Prova:</span>
+              <span>{new Date(cycle.exam_date).toLocaleDateString('pt-BR')}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Data da Prova:</span>
-              <span className="font-medium">{new Date(cycle.exam_date).toLocaleDateString('pt-BR')}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Dias restantes:</span>
-              <Badge variant={getDaysUntilExam() <= 30 ? "destructive" : "default"}>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Dias restantes:</span>
+              <Badge variant={getDaysUntilExam() <= 30 ? "destructive" : "default"} className="text-xs">
                 {getDaysUntilExam()} dias
               </Badge>
             </div>
@@ -324,44 +320,45 @@ const SessaoEstudos = () => {
                 <div key={blockIndex} className="space-y-3">
                   <h3 className="font-semibold text-lg border-b pb-2">{block.name}</h3>
                   <div className="space-y-3">
-                    {block.disciplines?.map((discipline: any, disciplineIndex: number) => (
-                      <div key={disciplineIndex} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <span className="font-medium">{discipline.name}</span>
-                          {getStatusBadge(discipline.status || 'inProgress')}
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-4 text-sm">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox 
-                                checked={discipline.status === 'inProgress'}
-                                onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'inProgress')}
-                              />
-                              <span>Em Andamento</span>
-                            </label>
-                            
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox 
-                                checked={discipline.status === 'finished'}
-                                onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'finished')}
-                              />
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                              <span>Finalizada</span>
-                            </label>
-                            
-                            <label className="flex items-center gap-2 cursor-pointer">
-                              <Checkbox 
-                                checked={discipline.status === 'review'}
-                                onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'review')}
-                              />
-                              <RotateCcw className="h-4 w-4 text-yellow-600" />
-                              <span>Em Revisão</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                     {block.disciplines?.map((discipline: any, disciplineIndex: number) => (
+                       <div key={disciplineIndex} className="flex items-center justify-between p-2 bg-muted/20 rounded border">
+                         <div className="flex items-center gap-2">
+                           <span className="font-medium text-sm">{discipline.name}</span>
+                           {getStatusBadge(discipline.status || 'inProgress')}
+                         </div>
+                         
+                         <div className="flex items-center gap-3">
+                           <label className="flex items-center gap-1 cursor-pointer text-xs">
+                             <Checkbox 
+                               checked={discipline.status === 'inProgress'}
+                               onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'inProgress')}
+                               className="h-3 w-3"
+                             />
+                             <span>Andamento</span>
+                           </label>
+                           
+                           <label className="flex items-center gap-1 cursor-pointer text-xs">
+                             <Checkbox 
+                               checked={discipline.status === 'finished'}
+                               onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'finished')}
+                               className="h-3 w-3"
+                             />
+                             <CheckCircle className="h-3 w-3 text-green-600" />
+                             <span>Finalizada</span>
+                           </label>
+                           
+                           <label className="flex items-center gap-1 cursor-pointer text-xs">
+                             <Checkbox 
+                               checked={discipline.status === 'review'}
+                               onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'review')}
+                               className="h-3 w-3"
+                             />
+                             <RotateCcw className="h-3 w-3 text-yellow-600" />
+                             <span>Revisão</span>
+                           </label>
+                         </div>
+                       </div>
+                     ))}
                   </div>
                 </div>
               ))}

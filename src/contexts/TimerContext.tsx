@@ -146,7 +146,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     }
     setIsRunning(true);
     setIsPaused(false);
-    setShowFloatingTimer(true);
+    // Don't auto-show floating timer - let pages control this
     setSessionStartTime(new Date());
   };
 
