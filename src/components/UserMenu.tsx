@@ -17,7 +17,7 @@ const UserMenu: React.FC = () => {
     user,
     signOut
   } = useAuth();
-  const { isStudying } = useTimer();
+  const { isStudying, minutes, seconds, isRunning } = useTimer();
   const navigate = useNavigate();
   const {
     toast
@@ -65,6 +65,10 @@ const UserMenu: React.FC = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
+  const formatTime = (mins: number, secs: number) => {
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   if (!user) {
     return <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
@@ -76,10 +80,11 @@ const UserMenu: React.FC = () => {
   const userName = profile?.name || user.user_metadata?.name || user.email || 'Usuário';
 
   return <div className="flex items-center gap-2">
-      {isStudying && (
+      {isStudying && isRunning && (
         <Badge variant="secondary" className="flex items-center gap-1 bg-green-500/10 text-green-600 border-green-500/20">
           <Clock className="h-3 w-3" />
-          Estudando
+          <span className="font-mono text-xs">{formatTime(minutes, seconds)}</span>
+          <span className="text-xs">• Estudando</span>
         </Badge>
       )}
       <DropdownMenu>
