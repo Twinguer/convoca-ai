@@ -19,9 +19,6 @@ interface StudyCycle {
   blocks: any[];
   created_at: string;
   updated_at: string;
-  inscricao_paga?: boolean;
-  passagens_pagas?: boolean;
-  hospedagem_paga?: boolean;
 }
 
 interface StudyCycleProgress {
@@ -375,6 +372,13 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
     progressPercentage
   } = cycleProgress;
 
+  // Estado local para os checkboxes informativos
+  const [paymentStatus, setPaymentStatus] = useState({
+    inscricao_paga: false,
+    passagens_pagas: false,
+    hospedagem_paga: false
+  });
+
   const getDateStatus = () => {
     if (daysUntilExam < 0) return {
       color: 'destructive',
@@ -452,15 +456,33 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Inscrição Paga</span>
-              <Checkbox checked={cycle.inscricao_paga || false} disabled />
+              <Checkbox 
+                checked={paymentStatus.inscricao_paga} 
+                onCheckedChange={(checked) => setPaymentStatus(prev => ({ 
+                  ...prev, 
+                  inscricao_paga: checked as boolean 
+                }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Passagens Pagas</span>
-              <Checkbox checked={cycle.passagens_pagas || false} disabled />
+              <Checkbox 
+                checked={paymentStatus.passagens_pagas} 
+                onCheckedChange={(checked) => setPaymentStatus(prev => ({ 
+                  ...prev, 
+                  passagens_pagas: checked as boolean 
+                }))}
+              />
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Hospedagem Paga</span>
-              <Checkbox checked={cycle.hospedagem_paga || false} disabled />
+              <Checkbox 
+                checked={paymentStatus.hospedagem_paga} 
+                onCheckedChange={(checked) => setPaymentStatus(prev => ({ 
+                  ...prev, 
+                  hospedagem_paga: checked as boolean 
+                }))}
+              />
             </div>
           </div>
         </div>
