@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,9 @@ interface StudyCycle {
   blocks: any[];
   created_at: string;
   updated_at: string;
+  inscricao_paga?: boolean;
+  passagens_pagas?: boolean;
+  hospedagem_paga?: boolean;
 }
 
 interface StudyCycleProgress {
@@ -235,13 +239,13 @@ const EstudosDashboard = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ciclos Ativos</CardTitle>
+                <CardTitle className="text-sm font-medium">Concursos</CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{studyCycles.length}</div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  ciclos em andamento
+                  concursos em andamento
                 </p>
               </CardContent>
             </Card>
@@ -439,6 +443,25 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Payment Status */}
+        <div className="space-y-3 border-t pt-4">
+          <h4 className="text-sm font-medium">Status do Concurso</h4>
+          <div className="grid gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Inscrição Paga</span>
+              <Checkbox checked={cycle.inscricao_paga || false} disabled />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Passagens Pagas</span>
+              <Checkbox checked={cycle.passagens_pagas || false} disabled />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Hospedagem Paga</span>
+              <Checkbox checked={cycle.hospedagem_paga || false} disabled />
+            </div>
           </div>
         </div>
 

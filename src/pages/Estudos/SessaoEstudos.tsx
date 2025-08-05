@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -140,8 +140,10 @@ const SessaoEstudos = () => {
         return <Badge variant="default" className="bg-green-100 text-green-800">Finalizada</Badge>;
       case 'review':
         return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Em Revisão</Badge>;
-      default:
+      case 'inProgress':
         return <Badge variant="outline">Em Andamento</Badge>;
+      default:
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Não Iniciado</Badge>;
     }
   };
   const getDaysUntilExam = () => {
@@ -338,6 +340,32 @@ const SessaoEstudos = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Links Card */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">Links Úteis</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-3">
+            <Button variant="outline" asChild>
+              <Link to="#" target="_blank" rel="noopener noreferrer">
+                📋 Edital
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="#" target="_blank" rel="noopener noreferrer">
+                🎓 Curso
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="#" target="_blank" rel="noopener noreferrer">
+                📹 Vídeo
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Study Syllabus */}
       <div className="mt-6">
