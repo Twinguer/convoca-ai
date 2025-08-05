@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +17,9 @@ interface StudyCycle {
   position: string;
   exam_date: string;
   blocks: any[];
+  edital_link?: string;
+  curso_link?: string;
+  video_link?: string;
 }
 interface Discipline {
   name: string;
@@ -48,6 +52,11 @@ const SessaoEstudos = () => {
   } = useTimer();
   const [cycle, setCycle] = useState<StudyCycle | null>(null);
   const [loading, setLoading] = useState(true);
+  const [links, setLinks] = useState({
+    edital_link: '',
+    curso_link: '',
+    video_link: ''
+  });
   useEffect(() => {
     if (user && id) {
       fetchCycle();
@@ -66,6 +75,11 @@ const SessaoEstudos = () => {
       } = await supabase.from('study_cycles').select('*').eq('id', id).eq('user_id', user?.id).single();
       if (error) throw error;
       setCycle(data);
+      setLinks({
+        edital_link: data.edital_link || '',
+        curso_link: data.curso_link || '',
+        video_link: data.video_link || ''
+      });
     } catch (error) {
       console.error('Error fetching cycle:', error);
       toast({
@@ -96,6 +110,36 @@ const SessaoEstudos = () => {
       toast({
         title: 'Erro',
         description: 'Não foi possível atualizar o progresso.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateLinks = async (updatedLinks: typeof links) => {
+    try {
+      const { error } = await supabase
+        .from('study_cycles')
+        .update({
+          edital_link: updatedLinks.edital_link,
+          curso_link: updatedLinks.curso_link,
+          video_link: updatedLinks.video_link,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      
+      setLinks(updatedLinks);
+      toast({
+        title: 'Links atualizados',
+        description: 'Links úteis foram salvos com sucesso.'
+      });
+    } catch (error) {
+      console.error('Error updating links:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar os links.',
         variant: 'destructive'
       });
     }
@@ -345,24 +389,74 @@ const SessaoEstudos = () => {
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="text-lg">Links Úteis</CardTitle>
+          <CardDescription>
+            Adicione links importantes para seus estudos
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <Button variant="outline" asChild>
-              <Link to="#" target="_blank" rel="noopener noreferrer">
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1">
                 📋 Edital
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="#" target="_blank" rel="noopener noreferrer">
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://..."
+                  value={links.edital_link}
+                  onChange={(e) => setLinks(prev => ({ ...prev, edital_link: e.target.value }))}
+                  onBlur={() => updateLinks(links)}
+                />
+                {links.edital_link && (
+                  <Button variant="outline" size="icon" asChild>
+                    <a href={links.edital_link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1">
                 🎓 Curso
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="#" target="_blank" rel="noopener noreferrer">
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://..."
+                  value={links.curso_link}
+                  onChange={(e) => setLinks(prev => ({ ...prev, curso_link: e.target.value }))}
+                  onBlur={() => updateLinks(links)}
+                />
+                {links.curso_link && (
+                  <Button variant="outline" size="icon" asChild>
+                    <a href={links.curso_link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1">
                 📹 Vídeo
-              </Link>
-            </Button>
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://..."
+                  value={links.video_link}
+                  onChange={(e) => setLinks(prev => ({ ...prev, video_link: e.target.value }))}
+                  onBlur={() => updateLinks(links)}
+                />
+                {links.video_link && (
+                  <Button variant="outline" size="icon" asChild>
+                    <a href={links.video_link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -389,7 +483,7 @@ const SessaoEstudos = () => {
                            <span className={`font-medium text-sm ${discipline.status === 'finished' ? 'line-through' : ''}`}>
                              {discipline.name}
                            </span>
-                           {getStatusBadge(discipline.status || 'inProgress')}
+                            {getStatusBadge(discipline.status || '')}
                          </div>
                          
                          <div className="flex items-center gap-3">
