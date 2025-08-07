@@ -97,6 +97,9 @@ const SessaoEstudos = () => {
         error
       } = await supabase.from('study_cycles').update({
         blocks: updatedCycle.blocks,
+        edital_link: links.edital_link,
+        curso_link: links.curso_link,
+        video_link: links.video_link,
         updated_at: new Date().toISOString()
       }).eq('id', updatedCycle.id).eq('user_id', user?.id);
       if (error) throw error;
@@ -110,6 +113,36 @@ const SessaoEstudos = () => {
       toast({
         title: 'Erro',
         description: 'Não foi possível atualizar o progresso.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updateLinks = async (newLinks: typeof links) => {
+    try {
+      const { error } = await supabase
+        .from('study_cycles')
+        .update({
+          edital_link: newLinks.edital_link,
+          curso_link: newLinks.curso_link,
+          video_link: newLinks.video_link,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      
+      setLinks(newLinks);
+      toast({
+        title: 'Link salvo',
+        description: 'Link foi salvo com sucesso.'
+      });
+    } catch (error) {
+      console.error('Error updating links:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar o link.',
         variant: 'destructive'
       });
     }
@@ -262,13 +295,13 @@ const SessaoEstudos = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'finished':
-        return <Badge variant="default" className="bg-green-100 text-green-800">Finalizada</Badge>;
+        return <Badge className="bg-green-500 text-white hover:bg-green-600">Finalizada</Badge>;
       case 'review':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Em Revisão</Badge>;
+        return <Badge className="bg-yellow-500 text-white hover:bg-yellow-600">Em Revisão</Badge>;
       case 'inProgress':
-        return <Badge variant="outline">Em Andamento</Badge>;
+        return <Badge className="bg-blue-500 text-white hover:bg-blue-600">Em Andamento</Badge>;
       default:
-        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Não Iniciado</Badge>;
+        return <Badge className="bg-red-500 text-white hover:bg-red-600">Não Iniciado</Badge>;
     }
   };
   const getDaysUntilExam = () => {
@@ -480,19 +513,19 @@ const SessaoEstudos = () => {
               icon="📋"
               label="Edital"
               link={links.edital_link}
-              onLinkChange={(link) => setLinks(prev => ({ ...prev, edital_link: link }))}
+              onLinkChange={(link) => updateLinks({ ...links, edital_link: link })}
             />
             <LinkButton
               icon="🎓"
               label="Curso"
               link={links.curso_link}
-              onLinkChange={(link) => setLinks(prev => ({ ...prev, curso_link: link }))}
+              onLinkChange={(link) => updateLinks({ ...links, curso_link: link })}
             />
             <LinkButton
               icon="📹"
               label="Vídeo"
               link={links.video_link}
-              onLinkChange={(link) => setLinks(prev => ({ ...prev, video_link: link }))}
+              onLinkChange={(link) => updateLinks({ ...links, video_link: link })}
             />
           </div>
         </CardContent>
