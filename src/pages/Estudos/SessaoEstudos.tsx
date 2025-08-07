@@ -115,34 +115,115 @@ const SessaoEstudos = () => {
     }
   };
 
-  const updateLinks = async (updatedLinks: typeof links) => {
-    try {
-      const { error } = await supabase
-        .from('study_cycles')
-        .update({
-          edital_link: updatedLinks.edital_link,
-          curso_link: updatedLinks.curso_link,
-          video_link: updatedLinks.video_link,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .eq('user_id', user?.id);
-      
-      if (error) throw error;
-      
-      setLinks(updatedLinks);
-      toast({
-        title: 'Links atualizados',
-        description: 'Links úteis foram salvos com sucesso.'
-      });
-    } catch (error) {
-      console.error('Error updating links:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível salvar os links.',
-        variant: 'destructive'
-      });
+  // Component for link buttons
+  const LinkButton = ({ icon, label, link, onLinkChange }: { 
+    icon: string; 
+    label: string; 
+    link: string; 
+    onLinkChange: (link: string) => void 
+  }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [tempLink, setTempLink] = useState('');
+
+    const handleAddClick = () => {
+      setTempLink('');
+      setIsEditing(true);
+    };
+
+    const handleSave = () => {
+      if (tempLink.trim()) {
+        onLinkChange(tempLink.trim());
+        setIsEditing(false);
+      }
+    };
+
+    const handleCancel = () => {
+      setTempLink('');
+      setIsEditing(false);
+    };
+
+    if (link && !isEditing) {
+      return (
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-1">
+            {icon} {label}
+          </label>
+          <Button 
+            variant="outline" 
+            className="w-full justify-start" 
+            asChild
+          >
+            <a href={link} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Acessar {label}
+            </a>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full text-xs"
+            onClick={() => {
+              setTempLink(link);
+              setIsEditing(true);
+            }}
+          >
+            Editar link
+          </Button>
+        </div>
+      );
     }
+
+    if (isEditing) {
+      return (
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-1">
+            {icon} {label}
+          </label>
+          <Input
+            placeholder="https://..."
+            value={tempLink}
+            onChange={(e) => setTempLink(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') handleCancel();
+            }}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              onClick={handleSave}
+              disabled={!tempLink.trim()}
+            >
+              Salvar
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleCancel}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium flex items-center gap-1">
+          {icon} {label}
+        </label>
+        <Button 
+          variant="outline" 
+          className="w-full justify-center"
+          onClick={handleAddClick}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar {label}
+        </Button>
+      </div>
+    );
   };
   const handleDisciplineStatusChange = (blockIndex: number, disciplineIndex: number, status: 'inProgress' | 'finished' | 'review') => {
     if (!cycle) return;
@@ -390,73 +471,29 @@ const SessaoEstudos = () => {
         <CardHeader>
           <CardTitle className="text-lg">Links Úteis</CardTitle>
           <CardDescription>
-            Adicione links importantes para seus estudos
+            Clique para adicionar links importantes para seus estudos
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1">
-                📋 Edital
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://..."
-                  value={links.edital_link}
-                  onChange={(e) => setLinks(prev => ({ ...prev, edital_link: e.target.value }))}
-                  onBlur={() => updateLinks(links)}
-                />
-                {links.edital_link && (
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={links.edital_link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1">
-                🎓 Curso
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://..."
-                  value={links.curso_link}
-                  onChange={(e) => setLinks(prev => ({ ...prev, curso_link: e.target.value }))}
-                  onBlur={() => updateLinks(links)}
-                />
-                {links.curso_link && (
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={links.curso_link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1">
-                📹 Vídeo
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="https://..."
-                  value={links.video_link}
-                  onChange={(e) => setLinks(prev => ({ ...prev, video_link: e.target.value }))}
-                  onBlur={() => updateLinks(links)}
-                />
-                {links.video_link && (
-                  <Button variant="outline" size="icon" asChild>
-                    <a href={links.video_link} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </div>
+            <LinkButton
+              icon="📋"
+              label="Edital"
+              link={links.edital_link}
+              onLinkChange={(link) => setLinks(prev => ({ ...prev, edital_link: link }))}
+            />
+            <LinkButton
+              icon="🎓"
+              label="Curso"
+              link={links.curso_link}
+              onLinkChange={(link) => setLinks(prev => ({ ...prev, curso_link: link }))}
+            />
+            <LinkButton
+              icon="📹"
+              label="Vídeo"
+              link={links.video_link}
+              onLinkChange={(link) => setLinks(prev => ({ ...prev, video_link: link }))}
+            />
           </div>
         </CardContent>
       </Card>

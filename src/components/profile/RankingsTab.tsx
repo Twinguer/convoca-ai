@@ -52,6 +52,9 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           score,
           basic_knowledge_score,
           specific_knowledge_score,
+          specific_knowledge_1_score,
+          specific_knowledge_2_score,
+          specific_knowledge_3_score,
           discursive_score,
           created_at,
           position,
@@ -84,15 +87,34 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           };
         }
 
-        // Verificar se o usuário está classificado (não eliminado)
-        const { data: isClassified, error: classifiedError } = await supabase
-          .rpc('is_candidate_classified', {
-            p_ranking_id: ranking.id,
-            p_concurso_id: concursoId
-          });
+        // Verificar se o usuário está classificado usando a mesma lógica do sistema de rankings
+        const { data: concursoData, error: concursoError } = await supabase
+          .from('concursos')
+          .select('has_minimum_score, total_minimum_score, basic_knowledge_minimum_score, specific_knowledge_1_minimum_score, specific_knowledge_2_minimum_score, specific_knowledge_3_minimum_score, minimum_score_type')
+          .eq('id', concursoId)
+          .single();
 
-        if (classifiedError) {
-          console.error('Erro ao verificar classificação:', classifiedError);
+        let isClassified = true;
+        
+        if (!concursoError && concursoData?.has_minimum_score) {
+          // Verificar se atende à pontuação mínima
+          if (concursoData.minimum_score_type === 'total' && concursoData.total_minimum_score) {
+            isClassified = ranking.score >= concursoData.total_minimum_score;
+          } else {
+            // Verificar pontuações mínimas por seção
+            if (concursoData.basic_knowledge_minimum_score && ranking.basic_knowledge_score < concursoData.basic_knowledge_minimum_score) {
+              isClassified = false;
+            }
+            if (concursoData.specific_knowledge_1_minimum_score && ranking.specific_knowledge_1_score < concursoData.specific_knowledge_1_minimum_score) {
+              isClassified = false;
+            }
+            if (concursoData.specific_knowledge_2_minimum_score && ranking.specific_knowledge_2_score < concursoData.specific_knowledge_2_minimum_score) {
+              isClassified = false;
+            }
+            if (concursoData.specific_knowledge_3_minimum_score && ranking.specific_knowledge_3_score < concursoData.specific_knowledge_3_minimum_score) {
+              isClassified = false;
+            }
+          }
         }
 
         const {

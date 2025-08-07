@@ -80,21 +80,56 @@ const Cronograma = () => {
   };
   const fetchSessions = async () => {
     try {
-      // Note: You'd need to create a study_schedule table for this
-      // For now, we'll use localStorage as a temporary solution
-      const savedSessions = localStorage.getItem(`study_sessions_${user?.id}`);
-      if (savedSessions) {
-        setSessions(JSON.parse(savedSessions));
-      }
+      const { data, error } = await supabase
+        .from('study_schedule')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      
+      // Transform database format to our StudySession format
+      const transformedSessions = (data || []).map(item => ({
+        id: item.id,
+        day: item.day_of_week,
+        startTime: item.start_time,
+        endTime: item.end_time,
+        disciplineName: 'Disciplina', // You might want to join with subjects table
+        blockName: 'Bloco',
+        cycleId: item.study_plan_id || ''
+      }));
+      
+      setSessions(transformedSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
     }
   };
-  const saveSessions = (newSessions: StudySession[]) => {
-    localStorage.setItem(`study_sessions_${user?.id}`, JSON.stringify(newSessions));
-    setSessions(newSessions);
+  const saveSessions = async (newSessions: StudySession[]) => {
+    try {
+      // Save to database instead of localStorage
+      for (const session of newSessions) {
+        if (!sessions.find(s => s.id === session.id)) {
+          // This is a new session, insert it
+          await supabase
+            .from('study_schedule')
+            .insert({
+              user_id: user?.id,
+              day_of_week: session.day,
+              start_time: session.startTime,
+              end_time: session.endTime,
+              subject_id: null, // You might want to link this properly
+              study_plan_id: null,
+              is_active: true
+            });
+        }
+      }
+      setSessions(newSessions);
+    } catch (error) {
+      console.error('Error saving sessions:', error);
+      toast.error('Erro ao salvar cronograma');
+    }
   };
   const getAvailableDisciplines = () => {
     const selectedCycleData = cycles.find(c => c.id === selectedCycle);
@@ -125,10 +160,21 @@ const Cronograma = () => {
     setShowAddModal(false);
     toast.success('Sessão adicionada ao cronograma!');
   };
-  const removeSession = (sessionId: string) => {
-    const updatedSessions = sessions.filter(s => s.id !== sessionId);
-    saveSessions(updatedSessions);
-    toast.success('Sessão removida do cronograma!');
+  const removeSession = async (sessionId: string) => {
+    try {
+      await supabase
+        .from('study_schedule')
+        .delete()
+        .eq('id', sessionId)
+        .eq('user_id', user?.id);
+      
+      const updatedSessions = sessions.filter(s => s.id !== sessionId);
+      setSessions(updatedSessions);
+      toast.success('Sessão removida do cronograma!');
+    } catch (error) {
+      console.error('Error removing session:', error);
+      toast.error('Erro ao remover sessão');
+    }
   };
   const getSessionsForDay = (day: number) => {
     return sessions.filter(s => s.day === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
