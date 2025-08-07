@@ -20,7 +20,6 @@ interface StudyCycle {
   created_at: string;
   updated_at: string;
 }
-
 interface StudyCycleProgress {
   cycle: StudyCycle;
   totalDisciplines: number;
@@ -34,7 +33,9 @@ const EstudosDashboard = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [studyCycles, setStudyCycles] = useState<StudyCycleProgress[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -44,21 +45,18 @@ const EstudosDashboard = () => {
   }, [user]);
   const fetchStudyCycles = async () => {
     try {
-      const { data: cycles, error } = await supabase
-        .from('study_cycles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('is_active', true)
-        .order('exam_date', { ascending: true });
-
+      const {
+        data: cycles,
+        error
+      } = await supabase.from('study_cycles').select('*').eq('user_id', user?.id).eq('is_active', true).order('exam_date', {
+        ascending: true
+      });
       if (error) throw error;
-
       if (!cycles || cycles.length === 0) {
         setStudyCycles([]);
         setLoading(false);
         return;
       }
-
       const cycleProgressData: StudyCycleProgress[] = cycles.map(cycle => {
         const today = new Date();
         const examDate = new Date(cycle.exam_date);
@@ -68,7 +66,6 @@ const EstudosDashboard = () => {
         let totalDisciplines = 0;
         let completedDisciplines = 0;
         let totalStudyTime = 0;
-
         cycle.blocks?.forEach((block: any) => {
           block.disciplines?.forEach((discipline: any) => {
             totalDisciplines++;
@@ -78,9 +75,7 @@ const EstudosDashboard = () => {
             }
           });
         });
-
-        const progressPercentage = totalDisciplines > 0 ? (completedDisciplines / totalDisciplines) * 100 : 0;
-
+        const progressPercentage = totalDisciplines > 0 ? completedDisciplines / totalDisciplines * 100 : 0;
         return {
           cycle,
           totalDisciplines,
@@ -90,7 +85,6 @@ const EstudosDashboard = () => {
           progressPercentage
         };
       });
-
       setStudyCycles(cycleProgressData);
     } catch (error) {
       console.error('Error fetching study cycles:', error);
@@ -98,17 +92,12 @@ const EstudosDashboard = () => {
       setLoading(false);
     }
   };
-
   const deleteCycle = async (cycleId: string) => {
     try {
-      const { error } = await supabase
-        .from('study_cycles')
-        .delete()
-        .eq('id', cycleId)
-        .eq('user_id', user?.id);
-
+      const {
+        error
+      } = await supabase.from('study_cycles').delete().eq('id', cycleId).eq('user_id', user?.id);
       if (error) throw error;
-
       toast({
         title: 'Ciclo excluído',
         description: 'O ciclo de estudos foi excluído com sucesso.'
@@ -151,17 +140,17 @@ const EstudosDashboard = () => {
       disciplinesProgress: 0,
       timeProgress: 0
     };
-    
     const totalDisciplines = studyCycles.reduce((sum, data) => sum + data.totalDisciplines, 0);
     const totalCompletedDisciplines = studyCycles.reduce((sum, data) => sum + data.completedDisciplines, 0);
-    
     return {
-      disciplinesProgress: totalDisciplines > 0 ? (totalCompletedDisciplines / totalDisciplines) * 100 : 0,
+      disciplinesProgress: totalDisciplines > 0 ? totalCompletedDisciplines / totalDisciplines * 100 : 0,
       timeProgress: studyCycles.reduce((sum, data) => sum + data.totalStudyTime, 0)
     };
   };
-  
-  const { disciplinesProgress, timeProgress } = calculateOverallProgress();
+  const {
+    disciplinesProgress,
+    timeProgress
+  } = calculateOverallProgress();
   return <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -190,8 +179,7 @@ const EstudosDashboard = () => {
         </div>
       </div>
 
-      {studyCycles.length === 0 ? (
-        <Card>
+      {studyCycles.length === 0 ? <Card>
           <CardContent className="text-center p-8">
             <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum ciclo de estudo encontrado</h3>
@@ -205,9 +193,7 @@ const EstudosDashboard = () => {
               </Button>
             </Link>
           </CardContent>
-        </Card>
-      ) : (
-        <>
+        </Card> : <>
           {/* Overall Progress Cards */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Card>
@@ -277,45 +263,18 @@ const EstudosDashboard = () => {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              {studyCycles.map(data => (
-                <StudyCycleCard 
-                  key={data.cycle.id} 
-                  cycleProgress={data} 
-                  onStartSession={() => navigate(`/estudos/sessao/${data.cycle.id}`)} 
-                  onDelete={() => deleteCycle(data.cycle.id)}
-                />
-              ))}
+              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/sessao/${data.cycle.id}`)} onDelete={() => deleteCycle(data.cycle.id)} />)}
             </div>
           </div>
-        </>
-      )}
+        </>}
 
       {/* Study Status Sections */}
       <div className="mt-8 space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground mb-4">Disciplinas Finalizadas</h2>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center text-muted-foreground">
-                <CheckCircle className="mx-auto h-12 w-12 mb-4" />
-                <p>Suas disciplinas finalizadas aparecerão aqui</p>
-                <p className="text-sm mt-2">Complete suas sessões de estudo para ver o progresso</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        
 
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-4">Revisões</h2>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center text-muted-foreground">
-                <BookOpen className="mx-auto h-12 w-12 mb-4" />
-                <p>Suas revisões programadas aparecerão aqui</p>
-                <p className="text-sm mt-2">Configure revisões para disciplinas concluídas</p>
-              </div>
-            </CardContent>
-          </Card>
+          
+          
         </div>
       </div>
 
@@ -367,7 +326,6 @@ interface StudyCycleCardProps {
   onStartSession: () => void;
   onDelete: () => void;
 }
-
 const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
   cycleProgress,
   onStartSession,
@@ -381,8 +339,6 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
     daysUntilExam,
     progressPercentage
   } = cycleProgress;
-
-
   const getDateStatus = () => {
     if (daysUntilExam < 0) return {
       color: 'destructive',
@@ -405,11 +361,8 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
       text: `${daysUntilExam} dias`
     };
   };
-
   const dateStatus = getDateStatus();
-
-  return (
-    <Card>
+  return <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -442,15 +395,13 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
           <h4 className="text-sm font-medium">Blocos de Estudo</h4>
           <div className="space-y-1">
             {cycle.blocks?.map((block: any, index: number) => {
-              const completedInBlock = block.disciplines?.filter((d: any) => d.isCompleted).length || 0;
-              const totalInBlock = block.disciplines?.length || 0;
-              return (
-                <div key={index} className="flex justify-between text-xs">
+            const completedInBlock = block.disciplines?.filter((d: any) => d.isCompleted).length || 0;
+            const totalInBlock = block.disciplines?.length || 0;
+            return <div key={index} className="flex justify-between text-xs">
                   <span className="text-muted-foreground">{block.name}</span>
                   <span>{completedInBlock}/{totalInBlock}</span>
-                </div>
-              );
-            })}
+                </div>;
+          })}
           </div>
         </div>
 
@@ -467,17 +418,11 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
               Editar
             </Button>
           </Link>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={onDelete}
-            className="text-destructive hover:text-destructive"
-          >
+          <Button variant="outline" size="icon" onClick={onDelete} className="text-destructive hover:text-destructive">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
 export default EstudosDashboard;
