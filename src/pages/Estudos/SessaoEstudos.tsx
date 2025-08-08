@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen, ExternalLink, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -440,6 +440,22 @@ const SessaoEstudos = () => {
                   </div>}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Acesso rápido ao Cronograma */}
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium">Cronograma</div>
+              <div className="text-xs text-muted-foreground">Veja e edite seu cronograma semanal</div>
+            </div>
+            <Button asChild>
+              <Link to="/estudos/cronograma" aria-label="Abrir cronograma de estudos">
+                <Calendar className="h-4 w-4 mr-2" />
+                Abrir
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
