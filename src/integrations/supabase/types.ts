@@ -539,6 +539,45 @@ export type Database = {
           },
         ]
       }
+      schedule_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          organization: string
+          schedule_data: Json
+          template_type: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          organization: string
+          schedule_data?: Json
+          template_type: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          organization?: string
+          schedule_data?: Json
+          template_type?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       score_calculation_logs: {
         Row: {
           calculation_details: Json | null
@@ -607,6 +646,45 @@ export type Database = {
         }
         Relationships: []
       }
+      spaced_repetition_queue: {
+        Row: {
+          block_name: string | null
+          created_at: string | null
+          difficulty_level: number | null
+          id: string
+          last_reviewed_at: string | null
+          next_review_date: string
+          review_count: number | null
+          subject_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          block_name?: string | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          id?: string
+          last_reviewed_at?: string | null
+          next_review_date: string
+          review_count?: number | null
+          subject_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          block_name?: string | null
+          created_at?: string | null
+          difficulty_level?: number | null
+          id?: string
+          last_reviewed_at?: string | null
+          next_review_date?: string
+          review_count?: number | null
+          subject_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       study_contests: {
         Row: {
           created_at: string | null
@@ -644,6 +722,8 @@ export type Database = {
         Row: {
           blocks: Json
           created_at: string
+          curso_link: string | null
+          edital_link: string | null
           exam_date: string
           id: string
           is_active: boolean
@@ -652,10 +732,13 @@ export type Database = {
           position: string
           updated_at: string
           user_id: string
+          video_link: string | null
         }
         Insert: {
           blocks?: Json
           created_at?: string
+          curso_link?: string | null
+          edital_link?: string | null
           exam_date: string
           id?: string
           is_active?: boolean
@@ -664,10 +747,13 @@ export type Database = {
           position: string
           updated_at?: string
           user_id: string
+          video_link?: string | null
         }
         Update: {
           blocks?: Json
           created_at?: string
+          curso_link?: string | null
+          edital_link?: string | null
           exam_date?: string
           id?: string
           is_active?: boolean
@@ -676,6 +762,7 @@ export type Database = {
           position?: string
           updated_at?: string
           user_id?: string
+          video_link?: string | null
         }
         Relationships: []
       }
@@ -716,6 +803,45 @@ export type Database = {
           target_date?: string | null
           target_value?: number
           unit_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_goals_tracking: {
+        Row: {
+          created_at: string | null
+          current_streak: number | null
+          goal_type: string
+          id: string
+          is_active: boolean | null
+          last_activity_date: string | null
+          longest_streak: number | null
+          target_hours: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_streak?: number | null
+          goal_type: string
+          id?: string
+          is_active?: boolean | null
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          target_hours?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_streak?: number | null
+          goal_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          target_hours?: number
           updated_at?: string | null
           user_id?: string
         }

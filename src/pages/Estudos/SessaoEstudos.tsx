@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen, ExternalLink, Calendar } from 'lucide-react';
+import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen, ExternalLink, Calendar, Target } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -379,7 +379,7 @@ const SessaoEstudos = () => {
       </div>
 
       {/* Compact Header with Timer, Info and Stats */}
-      <div className="grid gap-4 lg:grid-cols-4 mb-6">
+      <div className="grid gap-4 lg:grid-cols-6 mb-6">
         {/* Timer Section - Compact */}
         <Card className="lg:col-span-2">
           <CardContent className="p-4">
@@ -448,11 +448,11 @@ const SessaoEstudos = () => {
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <div className="text-sm font-medium">Cronograma</div>
-              <div className="text-xs text-muted-foreground">Veja e edite seu cronograma semanal</div>
+              <div className="text-xs text-muted-foreground">Cronograma semanal</div>
             </div>
-            <Button asChild>
+            <Button asChild size="sm">
               <Link to="/estudos/cronograma" aria-label="Abrir cronograma de estudos">
-                <Calendar className="h-4 w-4 mr-2" />
+                <Calendar className="h-4 w-4 mr-1" />
                 Abrir
               </Link>
             </Button>
@@ -511,6 +511,22 @@ const SessaoEstudos = () => {
                   </div>;
             })()}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Acesso rápido às Metas */}
+        <Card>
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium">Metas & Revisões</div>
+              <div className="text-xs text-muted-foreground">Streaks e repetição espaçada</div>
+            </div>
+            <Button asChild size="sm">
+              <Link to="/estudos/metas" aria-label="Abrir metas e revisões">
+                <Target className="h-4 w-4 mr-1" />
+                Ver
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
