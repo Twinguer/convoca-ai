@@ -379,7 +379,7 @@ const SessaoEstudos = () => {
       </div>
 
       {/* Compact Header with Timer, Info and Stats */}
-      <div className="grid gap-4 lg:grid-cols-6 mb-6">
+      <div className="grid gap-4 lg:grid-cols-5 mb-6">
         {/* Timer Section - Compact */}
         <Card className="lg:col-span-2">
           <CardContent className="p-4">
@@ -422,19 +422,19 @@ const SessaoEstudos = () => {
                   </div>}
 
                 {/* Control Buttons */}
-                {!isRunning ? <Button onClick={handleStart} size="lg">
-                    <Play className="h-4 w-4 mr-2" />
+                {!isRunning ? <Button onClick={handleStart} size="sm">
+                    <Play className="h-4 w-4 mr-1" />
                     Iniciar
-                  </Button> : <div className="flex gap-2">
-                    {!isPaused ? <Button variant="outline" onClick={pauseTimer}>
-                        <Pause className="h-4 w-4 mr-2" />
+                  </Button> : <div className="flex flex-col gap-1">
+                    {!isPaused ? <Button variant="outline" onClick={pauseTimer} size="sm">
+                        <Pause className="h-4 w-4 mr-1" />
                         Pausar
-                      </Button> : <Button onClick={resumeTimer}>
-                        <Play className="h-4 w-4 mr-2" />
+                      </Button> : <Button onClick={resumeTimer} size="sm">
+                        <Play className="h-4 w-4 mr-1" />
                         Continuar
                       </Button>}
-                    <Button variant="outline" onClick={stopTimer}>
-                      <Square className="h-4 w-4 mr-2" />
+                    <Button variant="outline" onClick={stopTimer} size="sm">
+                      <Square className="h-4 w-4 mr-1" />
                       Parar
                     </Button>
                   </div>}
@@ -444,7 +444,7 @@ const SessaoEstudos = () => {
         </Card>
 
         {/* Acesso rápido ao Cronograma */}
-        <Card>
+        <Card className="lg:col-span-2">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <div className="text-sm font-medium">Cronograma</div>

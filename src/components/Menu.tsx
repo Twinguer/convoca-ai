@@ -9,6 +9,7 @@ import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, Messa
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const Menu = () => {
   const location = useLocation();
@@ -55,6 +56,7 @@ const Menu = () => {
         
         {/* Navigation - Now on the right */}
         <div className="flex items-center space-x-2 sm:space-x-4">
+          <ThemeToggle />
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="space-x-1">
               <NavigationMenuItem>

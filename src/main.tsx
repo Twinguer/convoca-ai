@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { scheduleScraper } from './services/scraperService.ts'
+import { ThemeProvider } from '@/components/theme-provider'
 
 // Initialize data fetching for concursos
 const initializeConcursos = async () => {
@@ -19,5 +20,12 @@ const initializeConcursos = async () => {
 initializeConcursos();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <App />
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="system"
+    enableSystem
+    disableTransitionOnChange
+  >
+    <App />
+  </ThemeProvider>
 )

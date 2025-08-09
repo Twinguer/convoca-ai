@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Plus, Settings, BookOpen, Clock, X, Edit } from 'lucide-react';
+import { Calendar, Plus, Settings, BookOpen, Clock, X, Edit, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -285,11 +285,16 @@ const Cronograma = () => {
       </div>;
   }
   return <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex items-center gap-4 mb-6">
+        <Button variant="outline" size="icon" onClick={() => window.history.back()}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Cronograma</h1>
           <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
         </div>
+      </div>
+      <div className="flex justify-end items-center mb-8">
         <div className="flex gap-2">
           
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>

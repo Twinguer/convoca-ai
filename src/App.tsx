@@ -38,7 +38,7 @@ import CriarCiclo from "./pages/Estudos/CriarCiclo";
 import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
-import Metas from "./pages/Estudos/Metas";
+
 
 const AppContent = () => {
   const { showFloatingTimer, hideTimer } = useTimer();
@@ -116,10 +116,6 @@ const AppContent = () => {
                        <Route path="/estudos/sessao/:id" element={<>
                          <Menu />
                          <SessaoEstudos />
-                       </>} />
-                       <Route path="/estudos/metas" element={<>
-                         <Menu />
-                         <Metas />
                        </>} />
                     <Route path="/pre-classificacao" element={<>
                         <Menu />
