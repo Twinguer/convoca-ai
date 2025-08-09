@@ -44,7 +44,7 @@ const AppContent = () => {
   const { showFloatingTimer, hideTimer } = useTimer();
   
   return (
-    <div className="min-h-screen text-foreground bg-gray-100">
+    <div className="min-h-screen text-foreground bg-background">
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -155,7 +155,7 @@ const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="convoca-ui-theme">
+        <ThemeProvider defaultTheme="system" storageKey="convoca-ui-theme" attribute="class" enableSystem>
           <AuthProvider>
             <TimerProvider>
               <TooltipProvider>
