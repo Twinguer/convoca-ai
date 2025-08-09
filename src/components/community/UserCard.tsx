@@ -64,7 +64,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
+    <div className="border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow">
       <div className="relative p-4">
         <div className="absolute top-4 right-4 flex flex-col gap-1 items-end">
           {userProfile.is_studying && (
@@ -87,11 +87,11 @@ export const UserCard: React.FC<UserCardProps> = ({
           
           <h3 className="font-medium text-center">{userProfile.name || 'Usuário'}</h3>
           {userProfile.email && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               @{userProfile.username || userProfile.email.split('@')[0]}
             </p>
           )}
-          <p className="text-xs text-gray-500 mb-2 text-center break-words mx-2">
+          <p className="text-xs text-muted-foreground mb-2 text-center break-words mx-2">
             {userProfile.bio || ''}
           </p>
         </div>
@@ -99,15 +99,15 @@ export const UserCard: React.FC<UserCardProps> = ({
         <div className="grid grid-cols-3 text-center border-t border-b py-2 mb-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{userProfile.postCount}</span>
-            <span className="text-xs text-gray-500">Rankings</span>
+            <span className="text-xs text-muted-foreground">Rankings</span>
           </div>
           <div className="flex flex-col border-x">
             <span className="text-sm font-semibold">{userProfile.followerCount}</span>
-            <span className="text-xs text-gray-500">Seguidores</span>
+            <span className="text-xs text-muted-foreground">Seguidores</span>
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{userProfile.approvalCount || 0}</span>
-            <span className="text-xs text-gray-500">Aprovações</span>
+            <span className="text-xs text-muted-foreground">Aprovações</span>
           </div>
         </div>
         

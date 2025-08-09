@@ -126,8 +126,8 @@ const ResultadosPage = () => {
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
       <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />
       
-      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
-          <p className="text-center text-gray-600 dark:text-gray-300">
+      {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">
+          <p className="text-center text-muted-foreground">
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>
         </div>}

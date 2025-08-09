@@ -46,7 +46,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   
   return (
     <Link to={`/concurso/${id}/resultados`}>
-      <Card className="hover:shadow-lg transition-all duration-300 bg-white hover:translate-y-[-4px]">
+      <Card className="hover:shadow-lg transition-all duration-300 bg-card hover:translate-y-[-4px]">
         <CardContent className="p-6">
           <div className="space-y-3">
             <div className="flex justify-between items-start">
@@ -61,7 +61,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
                   {status || 'Em andamento'}
                 </Badge>
                 {examDate && (
-                  <div className="flex items-center text-xs text-gray-500">
+                  <div className="flex items-center text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3 mr-1" />
                     {formatDate(examDate)}
                   </div>
@@ -70,7 +70,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
             </div>
             
             <div>
-              <h3 className="text-base font-bold leading-tight text-slate-800 mb-1">
+              <h3 className="text-base font-bold leading-tight text-foreground mb-1">
                 {concursoTitle}
               </h3>
               <p className="text-sm text-emerald-700 font-semibold mb-2 break-words">
@@ -78,14 +78,14 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               </p>
               
               {localidade && (
-                <div className="flex items-center text-xs text-gray-600 mb-2">
+                <div className="flex items-center text-xs text-muted-foreground mb-2">
                   <MapPin className="h-3 w-3 mr-1" />
                   {localidade}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+            <div className="flex items-center justify-between pt-2 border-t border-border">
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4 text-emerald-600" />
                 <p className="text-sm font-medium text-emerald-700">
@@ -94,7 +94,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               </div>
               
               {(creatorName || isAdminCreated) && (
-                <div className="flex items-center text-xs text-gray-500">
+                <div className="flex items-center text-xs text-muted-foreground">
                   <span className="text-right text-xs">
                     Criado por: {isAdminCreated ? 'Admin' : creatorName}
                   </span>
@@ -118,10 +118,10 @@ export const RankingList: React.FC<RankingListProps> = ({
         {[1, 2, 3, 4, 5, 6].map(i => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-5 bg-gray-200 rounded w-1/2 mb-2"></div>
-              <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/4 mt-3"></div>
+              <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
+              <div className="h-5 bg-muted rounded w-1/2 mb-2"></div>
+              <div className="h-6 bg-muted rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-muted rounded w-1/4 mt-3"></div>
             </CardContent>
           </Card>
         ))}
@@ -133,9 +133,9 @@ export const RankingList: React.FC<RankingListProps> = ({
     return (
       <Card className="border-dashed border-2">
         <CardContent className="p-8 text-center">
-          <Trophy className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-lg font-medium text-gray-600">Nenhum ranking disponível no momento.</p>
-          <p className="text-sm text-gray-500 mt-1">Novos rankings serão adicionados em breve.</p>
+          <Trophy className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+          <p className="text-lg font-medium text-muted-foreground">Nenhum ranking disponível no momento.</p>
+          <p className="text-sm text-muted-foreground mt-1">Novos rankings serão adicionados em breve.</p>
         </CardContent>
       </Card>
     );

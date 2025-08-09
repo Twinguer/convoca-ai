@@ -8,7 +8,7 @@ const Index = () => {
   const {
     user
   } = useAuth();
-  return <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50">
+  return <div className="min-h-screen bg-gradient-to-b from-background to-secondary">
       {/* Hero Section with Image */}
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-100/50 to-emerald-50/50 z-0"></div>
@@ -28,7 +28,7 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-emerald-600 to-emerald-800 text-transparent bg-clip-text">
                 Somos todos concurseiros onde o que conta é o HBC. 
               </h1>
-              <p className="text-xl text-gray-700 mb-8">Compare seus resultados em rankings pós-prova com o resultado de outros concurseiros como você. Crie ciclos de estudos com cronogramas e edital verticalizado. Acompanhe seu desempenho!</p>
+              <p className="text-xl text-muted-foreground mb-8">Compare seus resultados em rankings pós-prova com o resultado de outros concurseiros como você. Crie ciclos de estudos com cronogramas e edital verticalizado. Acompanhe seu desempenho!</p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-12">
                 <Link to="/editais">
@@ -57,10 +57,10 @@ const Index = () => {
       </section>
       
       {/* Features Section with Carousel */}
-      <section className="py-20 px-4 bg-gray-50">
+      <section className="py-20 px-4 bg-secondary/50">
         <div className="container mx-auto">
           <h2 className="text-3xl font-bold text-center mb-4">Siga pessoas com o mesmo propósito que o seu.</h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">Uma plataforma para acompanhar seus resultados. Uma comunidade para quem é concurseiro. Sabemos das dificuldades que enfrentamos para conseguir a nomeação.</p>
+          <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-12">Uma plataforma para acompanhar seus resultados. Uma comunidade para quem é concurseiro. Sabemos das dificuldades que enfrentamos para conseguir a nomeação.</p>
           
           <Carousel className="w-full max-w-5xl mx-auto">
             <CarouselContent>
@@ -74,8 +74,8 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <FileText className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Mantenha o foco.</h3>
-                    <p className="text-gray-600">É importante que tenhamos tudo por perto, inclusive como estão os meus resultados e o dos outros candidatos.</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Mantenha o foco.</h3>
+                    <p className="text-muted-foreground">É importante que tenhamos tudo por perto, inclusive como estão os meus resultados e o dos outros candidatos.</p>
                   </div>
                 </div>
               </CarouselItem>
@@ -90,8 +90,8 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Trophy className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Cabeça fria.</h3>
-                    <p className="text-gray-600">Com o Convoca Aí vamos para a prova sabendo quem são os nossos concorrentes que em que nível eles estão. </p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Cabeça fria.</h3>
+                    <p className="text-muted-foreground">Com o Convoca Aí vamos para a prova sabendo quem são os nossos concorrentes que em que nível eles estão. </p>
                   </div>
                 </div>
               </CarouselItem>
@@ -106,8 +106,8 @@ const Index = () => {
                     <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Briefcase className="h-8 w-8 text-emerald-600" />
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Nomeações e Convocações</h3>
-                    <p className="text-gray-600">Como estamos todos aqui, acompanhe as nomeações e convocações. Veja se quem está melhor colocado assumiu o cargo.</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">Nomeações e Convocações</h3>
+                    <p className="text-muted-foreground">Como estamos todos aqui, acompanhe as nomeações e convocações. Veja se quem está melhor colocado assumiu o cargo.</p>
                   </div>
                 </div>
               </CarouselItem>
