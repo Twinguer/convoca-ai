@@ -117,22 +117,17 @@ const SessaoEstudos = () => {
       });
     }
   };
-
   const updateLinks = async (newLinks: typeof links) => {
     try {
-      const { error } = await supabase
-        .from('study_cycles')
-        .update({
-          edital_link: newLinks.edital_link,
-          curso_link: newLinks.curso_link,
-          video_link: newLinks.video_link,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .eq('user_id', user?.id);
-      
+      const {
+        error
+      } = await supabase.from('study_cycles').update({
+        edital_link: newLinks.edital_link,
+        curso_link: newLinks.curso_link,
+        video_link: newLinks.video_link,
+        updated_at: new Date().toISOString()
+      }).eq('id', id).eq('user_id', user?.id);
       if (error) throw error;
-      
       setLinks(newLinks);
       toast({
         title: 'Link salvo',
@@ -149,114 +144,80 @@ const SessaoEstudos = () => {
   };
 
   // Component for link buttons
-  const LinkButton = ({ icon, label, link, onLinkChange }: { 
-    icon: string; 
-    label: string; 
-    link: string; 
-    onLinkChange: (link: string) => void 
+  const LinkButton = ({
+    icon,
+    label,
+    link,
+    onLinkChange
+  }: {
+    icon: string;
+    label: string;
+    link: string;
+    onLinkChange: (link: string) => void;
   }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempLink, setTempLink] = useState('');
-
     const handleAddClick = () => {
       setTempLink('');
       setIsEditing(true);
     };
-
     const handleSave = () => {
       if (tempLink.trim()) {
         onLinkChange(tempLink.trim());
         setIsEditing(false);
       }
     };
-
     const handleCancel = () => {
       setTempLink('');
       setIsEditing(false);
     };
-
     if (link && !isEditing) {
-      return (
-        <div className="space-y-2">
+      return <div className="space-y-2">
           <label className="text-sm font-medium flex items-center gap-1">
             {icon} {label}
           </label>
-          <Button 
-            variant="outline" 
-            className="w-full justify-start" 
-            asChild
-          >
+          <Button variant="outline" className="w-full justify-start" asChild>
             <a href={link} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" />
               Acessar {label}
             </a>
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="w-full text-xs"
-            onClick={() => {
-              setTempLink(link);
-              setIsEditing(true);
-            }}
-          >
+          <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
+          setTempLink(link);
+          setIsEditing(true);
+        }}>
             Editar link
           </Button>
-        </div>
-      );
+        </div>;
     }
-
     if (isEditing) {
-      return (
-        <div className="space-y-2">
+      return <div className="space-y-2">
           <label className="text-sm font-medium flex items-center gap-1">
             {icon} {label}
           </label>
-          <Input
-            placeholder="https://..."
-            value={tempLink}
-            onChange={(e) => setTempLink(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSave();
-              if (e.key === 'Escape') handleCancel();
-            }}
-            autoFocus
-          />
+          <Input placeholder="https://..." value={tempLink} onChange={e => setTempLink(e.target.value)} onKeyDown={e => {
+          if (e.key === 'Enter') handleSave();
+          if (e.key === 'Escape') handleCancel();
+        }} autoFocus />
           <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              onClick={handleSave}
-              disabled={!tempLink.trim()}
-            >
+            <Button size="sm" onClick={handleSave} disabled={!tempLink.trim()}>
               Salvar
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleCancel}
-            >
+            <Button size="sm" variant="outline" onClick={handleCancel}>
               Cancelar
             </Button>
           </div>
-        </div>
-      );
+        </div>;
     }
-
-    return (
-      <div className="space-y-2">
+    return <div className="space-y-2">
         <label className="text-sm font-medium flex items-center gap-1">
           {icon} {label}
         </label>
-        <Button 
-          variant="outline" 
-          className="w-full justify-center"
-          onClick={handleAddClick}
-        >
+        <Button variant="outline" className="w-full justify-center" onClick={handleAddClick}>
           <Plus className="h-4 w-4 mr-2" />
           Adicionar {label}
         </Button>
-      </div>
-    );
+      </div>;
   };
   const handleDisciplineStatusChange = (blockIndex: number, disciplineIndex: number, status: 'inProgress' | 'finished' | 'review') => {
     if (!cycle) return;
@@ -515,20 +476,7 @@ const SessaoEstudos = () => {
         </Card>
 
         {/* Acesso rápido às Metas */}
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium">Metas & Revisões</div>
-              <div className="text-xs text-muted-foreground">Streaks e repetição espaçada</div>
-            </div>
-            <Button asChild size="sm">
-              <Link to="/estudos/metas" aria-label="Abrir metas e revisões">
-                <Target className="h-4 w-4 mr-1" />
-                Ver
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        
       </div>
 
       {/* Links Card */}
@@ -541,24 +489,18 @@ const SessaoEstudos = () => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <LinkButton
-              icon="📋"
-              label="Edital"
-              link={links.edital_link}
-              onLinkChange={(link) => updateLinks({ ...links, edital_link: link })}
-            />
-            <LinkButton
-              icon="🎓"
-              label="Curso"
-              link={links.curso_link}
-              onLinkChange={(link) => updateLinks({ ...links, curso_link: link })}
-            />
-            <LinkButton
-              icon="📹"
-              label="Vídeo"
-              link={links.video_link}
-              onLinkChange={(link) => updateLinks({ ...links, video_link: link })}
-            />
+            <LinkButton icon="📋" label="Edital" link={links.edital_link} onLinkChange={link => updateLinks({
+            ...links,
+            edital_link: link
+          })} />
+            <LinkButton icon="🎓" label="Curso" link={links.curso_link} onLinkChange={link => updateLinks({
+            ...links,
+            curso_link: link
+          })} />
+            <LinkButton icon="📹" label="Vídeo" link={links.video_link} onLinkChange={link => updateLinks({
+            ...links,
+            video_link: link
+          })} />
           </div>
         </CardContent>
       </Card>
