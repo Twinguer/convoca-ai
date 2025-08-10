@@ -2,7 +2,6 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trophy, Users } from 'lucide-react';
-
 interface RankingCardProps {
   participantCount?: number;
   userRanking?: {
@@ -11,7 +10,6 @@ interface RankingCardProps {
   } | null;
   inscritos?: number;
 }
-
 export const RankingCard: React.FC<RankingCardProps> = ({
   participantCount = 0,
   userRanking,
@@ -36,7 +34,7 @@ export const RankingCard: React.FC<RankingCardProps> = ({
           <div className="flex items-center bg-muted p-2 rounded-md">
             <Users className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
             <div className="font-medium flex items-center">
-              Inscritos: <Badge className="ml-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700" variant="outline">{inscritos}</Badge>
+              Inscritos: <Badge variant="outline" className="ml-2 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700 bg-green-200">{inscritos}</Badge>
             </div>
           </div>
           
