@@ -340,12 +340,12 @@ const SessaoEstudos = () => {
       </div>
 
       {/* Compact Header with Timer, Info and Stats */}
-      <div className="grid gap-4 lg:grid-cols-5 mb-6">
+      <div className="grid gap-4 lg:grid-cols-4 mb-6">
         {/* Timer Section - Compact */}
-        <Card className="lg:col-span-2">
+        <Card className="dark:border-primary/20">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold">
                     {formatTime(minutes, seconds)}
@@ -368,9 +368,9 @@ const SessaoEstudos = () => {
                   </div>}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2">
                 {/* Time Controls */}
-                {!isRunning && <div className="flex items-center gap-2 mr-4">
+                {!isRunning && <div className="flex items-center justify-center gap-2">
                     <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
                       <Minus className="h-4 w-4" />
                     </Button>
@@ -383,30 +383,32 @@ const SessaoEstudos = () => {
                   </div>}
 
                 {/* Control Buttons */}
-                {!isRunning ? <Button onClick={handleStart} size="sm">
-                    <Play className="h-4 w-4 mr-1" />
-                    Iniciar
-                  </Button> : <div className="flex flex-col gap-1">
-                    {!isPaused ? <Button variant="outline" onClick={pauseTimer} size="sm">
-                        <Pause className="h-4 w-4 mr-1" />
-                        Pausar
-                      </Button> : <Button onClick={resumeTimer} size="sm">
-                        <Play className="h-4 w-4 mr-1" />
-                        Continuar
-                      </Button>}
-                    <Button variant="outline" onClick={stopTimer} size="sm">
-                      <Square className="h-4 w-4 mr-1" />
-                      Parar
-                    </Button>
-                  </div>}
+                <div className="flex justify-center">
+                  {!isRunning ? <Button onClick={handleStart} size="sm">
+                      <Play className="h-4 w-4 mr-1" />
+                      Iniciar
+                    </Button> : <div className="flex gap-2">
+                      {!isPaused ? <Button variant="outline" onClick={pauseTimer} size="sm">
+                          <Pause className="h-4 w-4 mr-1" />
+                          Pausar
+                        </Button> : <Button onClick={resumeTimer} size="sm">
+                          <Play className="h-4 w-4 mr-1" />
+                          Continuar
+                        </Button>}
+                      <Button variant="outline" onClick={stopTimer} size="sm">
+                        <Square className="h-4 w-4 mr-1" />
+                        Parar
+                      </Button>
+                    </div>}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Acesso rápido ao Cronograma */}
-        <Card className="lg:col-span-2">
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="dark:border-primary/20">
+          <CardContent className="p-4 flex items-center justify-between h-full">
             <div>
               <div className="text-sm font-medium">Cronograma</div>
               <div className="text-xs text-muted-foreground">Cronograma semanal</div>
@@ -421,8 +423,8 @@ const SessaoEstudos = () => {
         </Card>
 
         {/* Cycle Info - Compact */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
+        <Card className="dark:border-primary/20">
+          <CardContent className="p-4 space-y-3 h-full">
             <div className="text-sm">
               <div className="font-medium truncate">{cycle.organ}</div>
               <div className="text-muted-foreground text-xs truncate">{cycle.position}</div>
@@ -443,8 +445,8 @@ const SessaoEstudos = () => {
         </Card>
 
         {/* Discipline Stats */}
-        <Card>
-          <CardContent className="p-4">
+        <Card className="dark:border-primary/20">
+          <CardContent className="p-4 h-full">
             <div className="space-y-3">
               <div className="text-sm font-medium">Progresso</div>
               {(() => {
@@ -474,9 +476,6 @@ const SessaoEstudos = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Acesso rápido às Metas */}
-        
       </div>
 
       {/* Links Card */}

@@ -18,9 +18,9 @@ export const RankingCard: React.FC<RankingCardProps> = ({
   userRanking,
   inscritos = 0
 }) => {
-  return <Card className="my-[30px] bg-white border-slate-200 overflow-hidden">
-      <CardHeader className="pb-2 bg-gradient-to-r from-emerald-50 to-emerald-100 border-b">
-        <CardTitle className="text-xl flex items-center text-slate-800">
+  return <Card className="my-[30px] dark:border-primary/20 overflow-hidden">
+      <CardHeader className="pb-2 bg-gradient-to-r from-primary/10 to-primary/20 border-b">
+        <CardTitle className="text-xl flex items-center">
           <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
           Ranking
         </CardTitle>

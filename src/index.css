@@ -100,7 +100,7 @@
 
 @layer components {
   .concurso-card {
-    @apply bg-card dark:bg-card rounded-lg shadow-md p-4 sm:p-6 transition-all duration-300 hover:animate-card-hover hover:shadow-lg border border-border dark:border-border mb-1 mx-0;
+    @apply bg-card dark:bg-card rounded-lg shadow-md p-4 sm:p-6 transition-all duration-300 hover:animate-card-hover hover:shadow-lg border border-border dark:border-primary/20 mb-1 mx-0;
   }
   
   .nav-link {
@@ -124,7 +124,7 @@
   }
 
   .feature-card {
-    @apply bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-border mb-1 mx-0;
+    @apply bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-border dark:border-primary/20 mb-1 mx-0;
   }
   
   .feature-card-image {
@@ -132,7 +132,7 @@
   }
   
   .glass-card {
-    @apply backdrop-blur-md bg-card/90 border border-border/20 shadow-xl mb-1 mx-0;
+    @apply backdrop-blur-md bg-card/90 border border-border/20 dark:border-primary/20 shadow-xl mb-1 mx-0;
   }
 
   footer {
