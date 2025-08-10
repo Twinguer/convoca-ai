@@ -71,8 +71,18 @@ export const useStudyStatistics = () => {
         return;
       }
 
-      if (data) {
-        setStatistics(data.statistics_data as StudyStatistics);
+      if (data?.statistics_data) {
+        const stats = data.statistics_data as StudyStatistics;
+        // Garantir que todos os campos obrigatórios existem
+        const validStats = {
+          ...defaultStats,
+          ...stats,
+          averages: {
+            ...defaultStats.averages,
+            ...stats.averages
+          }
+        };
+        setStatistics(validStats);
       } else {
         // Criar registro inicial
         await createInitialStatistics();
@@ -237,18 +247,22 @@ export const useStudyStatistics = () => {
         break;
     }
 
-    const filteredSessions = statistics.sessionHistory.filter(session => 
-      new Date(session.date) >= startDate
+    // Garantir que sessionHistory existe e é um array
+    const sessionHistory = statistics.sessionHistory || [];
+    const filteredSessions = sessionHistory.filter(session => 
+      session && session.date && new Date(session.date) >= startDate
     );
 
     const totalHours = filteredSessions.reduce((sum, session) => 
-      sum + (session.duration / 60), 0
+      sum + ((session.duration || 0) / 60), 0
     );
+
+    const divisor = filter === 'day' ? 1 : filter === 'week' ? 7 : 30;
 
     return {
       hours: totalHours,
       sessions: filteredSessions.length,
-      average: totalHours / (filter === 'day' ? 1 : filter === 'week' ? 7 : 30)
+      average: totalHours / divisor
     };
   };
 

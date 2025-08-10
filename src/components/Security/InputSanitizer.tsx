@@ -8,7 +8,7 @@ export class InputSanitizer {
     // Configure DOMPurify for enhanced security
     DOMPurify.addHook('beforeSanitizeElements', (node, data) => {
       // Remove any script tags
-      if (data.tagName === 'script') {
+      if ((data as any)?.tagName === 'script') {
         node.parentNode?.removeChild(node);
       }
     });
