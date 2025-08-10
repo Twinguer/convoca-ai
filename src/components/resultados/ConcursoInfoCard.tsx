@@ -27,7 +27,7 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
     }
     return concurso.localidades.join(', ');
   };
-  return <Card className="mb-6 my-[30px]">
+  return <Card className="mb-6 my-[30px] dark:border-primary/20">
       <CardContent className="pt-6 py-[15px]">
         <div className="grid gap-4">
           <div>
