@@ -1054,14 +1054,21 @@ export type Database = {
           duration_minutes: number | null
           end_time: string | null
           id: string
+          last_session_date: string | null
           notes: string | null
           quality_rating: number | null
+          schedule_session_id: string | null
+          session_count: number | null
           session_date: string
+          session_link: string | null
           start_time: string
           study_contest_id: string | null
           study_plan_id: string | null
           study_type: string | null
           subject_id: string | null
+          total_correct_answers: number | null
+          total_duration_minutes: number | null
+          total_questions: number | null
           updated_at: string | null
           user_id: string
         }
@@ -1070,14 +1077,21 @@ export type Database = {
           duration_minutes?: number | null
           end_time?: string | null
           id?: string
+          last_session_date?: string | null
           notes?: string | null
           quality_rating?: number | null
+          schedule_session_id?: string | null
+          session_count?: number | null
           session_date?: string
+          session_link?: string | null
           start_time: string
           study_contest_id?: string | null
           study_plan_id?: string | null
           study_type?: string | null
           subject_id?: string | null
+          total_correct_answers?: number | null
+          total_duration_minutes?: number | null
+          total_questions?: number | null
           updated_at?: string | null
           user_id: string
         }
@@ -1086,18 +1100,32 @@ export type Database = {
           duration_minutes?: number | null
           end_time?: string | null
           id?: string
+          last_session_date?: string | null
           notes?: string | null
           quality_rating?: number | null
+          schedule_session_id?: string | null
+          session_count?: number | null
           session_date?: string
+          session_link?: string | null
           start_time?: string
           study_contest_id?: string | null
           study_plan_id?: string | null
           study_type?: string | null
           subject_id?: string | null
+          total_correct_answers?: number | null
+          total_duration_minutes?: number | null
+          total_questions?: number | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "study_sessions_schedule_session_id_fkey"
+            columns: ["schedule_session_id"]
+            isOneToOne: false
+            referencedRelation: "study_schedule"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "study_sessions_study_contest_id_fkey"
             columns: ["study_contest_id"]

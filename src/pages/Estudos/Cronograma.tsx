@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useQuestionTracking } from '@/hooks/useQuestionTracking';
+import { useStudySessions } from '@/hooks/useStudySessions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,6 +62,11 @@ const Cronograma = () => {
   const {
     trackAnswer
   } = useQuestionTracking();
+  const {
+    getSessionByScheduleId,
+    createOrUpdateSession,
+    updateSessionLink
+  } = useStudySessions();
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   useEffect(() => {
     if (user) {
@@ -211,29 +217,25 @@ const Cronograma = () => {
   const openEditModal = (session: StudySession) => {
     setEditingSession(session);
 
-    // Carregar dados existentes se a sessão já foi completada
-    const existingData = getSessionData(session.id);
-    if (existingData) {
-      setStudyDuration(existingData.duration || 0);
-      setStudyNotes(existingData.notes || '');
-      setQuestionsTotal(existingData.questionsTotal || 0);
-      setQuestionsCorrect(existingData.questionsCorrect || 0);
-      setCourseName(existingData.courseName || '');
-      setCourseProgress(existingData.courseProgress || '');
-      setStudyType(existingData.studyType || 'pdf');
-      setCurrentPage(existingData.currentPage || 0);
-      setCurrentVideo(existingData.currentVideo || '');
+    // Carregar dados existentes de sessões acumulativas
+    const existingSession = getSessionByScheduleId(session.id);
+    if (existingSession) {
+      setSessionLink(existingSession.session_link || '');
     } else {
-      setStudyDuration(0);
-      setStudyNotes('');
-      setQuestionsTotal(0);
-      setQuestionsCorrect(0);
-      setCourseName('');
-      setCourseProgress('');
-      setStudyType('pdf');
-      setCurrentPage(0);
-      setCurrentVideo('');
+      setSessionLink(session.sessionLink || '');
     }
+
+    // Limpar campos do modal para nova entrada
+    setStudyDuration(0);
+    setStudyNotes('');
+    setQuestionsTotal(0);
+    setQuestionsCorrect(0);
+    setCourseName('');
+    setCourseProgress('');
+    setStudyType('pdf');
+    setCurrentPage(0);
+    setCurrentVideo('');
+    
     setShowEditModal(true);
   };
   const saveStudySession = async () => {
@@ -242,12 +244,24 @@ const Cronograma = () => {
       return;
     }
     try {
-      // Registrar sessão de estudo se duração >= 20 minutos
+      // Usar o novo sistema acumulativo de sessões
+      await createOrUpdateSession(
+        editingSession.id,
+        {
+          duration: studyDuration,
+          questions: questionsTotal,
+          correctAnswers: questionsCorrect,
+          notes: studyNotes
+        },
+        sessionLink
+      );
+
+      // Registrar no sistema de estatísticas globais se >= 20 minutos
       if (studyDuration >= 20) {
         await addStudySession(studyDuration);
       }
 
-      // Registrar questões se houver
+      // Registrar questões no sistema de tracking se houver
       if (questionsTotal > 0) {
         const questionsWrong = questionsTotal - questionsCorrect;
 
@@ -262,29 +276,18 @@ const Cronograma = () => {
         }
       }
 
-      // Salvar dados da sessão no localStorage (você pode implementar uma tabela específica depois)
-      const sessionData = {
-        sessionId: editingSession.id,
-        date: new Date().toISOString(),
-        duration: studyDuration,
-        notes: studyNotes,
-        questionsTotal,
-        questionsCorrect,
-        discipline: editingSession.disciplineName,
-        block: editingSession.blockName,
-        courseName,
-        courseProgress,
-        studyType,
-        currentPage: studyType === 'pdf' ? currentPage : undefined,
-        currentVideo: studyType === 'video' ? currentVideo : undefined
-      };
-      const savedSessions = localStorage.getItem(`completed_sessions_${user?.id}`);
-      const completedSessions = savedSessions ? JSON.parse(savedSessions) : [];
-      completedSessions.push(sessionData);
-      localStorage.setItem(`completed_sessions_${user?.id}`, JSON.stringify(completedSessions));
       setShowEditModal(false);
       setEditingSession(null);
-      toast.success('Sessão de estudo registrada com sucesso!');
+      
+      // Limpar campos
+      setStudyDuration(0);
+      setStudyNotes('');
+      setQuestionsTotal(0);
+      setQuestionsCorrect(0);
+      setCourseName('');
+      setCourseProgress('');
+      setSessionLink('');
+      
     } catch (error) {
       console.error('Error saving study session:', error);
       toast.error('Erro ao salvar sessão de estudo');
@@ -426,6 +429,17 @@ const Cronograma = () => {
               </div>
 
               <div>
+                <Label htmlFor="sessionLink">Link da Sessão (Aula/Vídeo/Sistema)</Label>
+                <Input 
+                  id="sessionLink" 
+                  type="url"
+                  value={sessionLink} 
+                  onChange={e => setSessionLink(e.target.value)} 
+                  placeholder="https://exemplo.com/aula ou sistema de questões" 
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="courseName">Nome do Curso</Label>
                 <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" />
               </div>
@@ -529,53 +543,63 @@ const Cronograma = () => {
                     {day}
                   </h3>
                   <div className="space-y-2 min-h-[200px]">
-                     {getSessionsForDay(index).map(session => <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${isSessionCompleted(session.id) ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
-                         <div className="flex justify-between items-start">
-                           <div className="flex-1">
-                             <div className="text-xs font-medium mb-1 flex items-center gap-2">
-                               <span className={isSessionCompleted(session.id) ? 'text-green-600' : 'text-primary'}>
-                                 {session.startTime} - {session.endTime}
-                               </span>
-                               {isSessionCompleted(session.id) && <span className="text-green-600 text-xs">✓</span>}
-                             </div>
-                             <div className="text-sm font-medium">{session.disciplineName}</div>
-                             <div className="text-xs text-muted-foreground">{session.blockName}</div>
-                             <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
-                             {isSessionCompleted(session.id) && <div className="text-xs text-green-600 mt-1">
-                                 {(() => {
-                        const sessionData = getSessionData(session.id);
-                        return sessionData ? `${sessionData.duration}min estudados` : '';
-                      })()}
-                               </div>}
-                           </div>
-                            <div className="flex gap-1">
-                              {session.sessionLink && (
-                                <button 
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    window.open(session.sessionLink, '_blank');
-                                  }} 
-                                  className="text-muted-foreground hover:text-primary" 
-                                  title="Abrir link da aula"
-                                >
-                                  <BookOpen className="h-3 w-3" />
+                      {getSessionsForDay(index).map(session => {
+                        const cumulativeSession = getSessionByScheduleId(session.id);
+                        const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
+                        
+                         return (
+                          <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="text-xs font-medium mb-1 flex items-center gap-2">
+                                  <span className={hasData ? 'text-green-600' : 'text-primary'}>
+                                    {session.startTime} - {session.endTime}
+                                  </span>
+                                  {hasData && <span className="text-green-600 text-xs">✓</span>}
+                                </div>
+                                <div className="text-sm font-medium">{session.disciplineName}</div>
+                                <div className="text-xs text-muted-foreground">{session.blockName}</div>
+                                <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
+                                {hasData && (
+                                  <div className="text-xs text-green-600 mt-1 space-y-0.5">
+                                    <div>{cumulativeSession.total_duration_minutes}min total • {cumulativeSession.session_count} sessões</div>
+                                    {cumulativeSession.total_questions > 0 && (
+                                      <div>{cumulativeSession.total_questions} questões • {Math.round((cumulativeSession.total_correct_answers / cumulativeSession.total_questions) * 100)}% acertos</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex gap-1">
+                                {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
+                                  <button 
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
+                                      window.open(linkToOpen, '_blank');
+                                    }} 
+                                    className="text-muted-foreground hover:text-primary" 
+                                    title="Abrir link da aula"
+                                  >
+                                    <BookOpen className="h-3 w-3" />
+                                  </button>
+                                )}
+                                <button onClick={e => {
+                         e.stopPropagation();
+                         openEditModal(session);
+                       }} className="text-muted-foreground hover:text-primary" title="Editar sessão">
+                                  <Edit className="h-3 w-3" />
                                 </button>
-                              )}
-                              <button onClick={e => {
-                       e.stopPropagation();
-                       openEditModal(session);
-                     }} className="text-muted-foreground hover:text-primary" title="Editar sessão">
-                                <Edit className="h-3 w-3" />
-                              </button>
-                              <button onClick={e => {
-                       e.stopPropagation();
-                       removeSession(session.id);
-                     }} className="text-muted-foreground hover:text-destructive" title="Remover sessão">
-                                <X className="h-3 w-3" />
-                              </button>
+                                <button onClick={e => {
+                         e.stopPropagation();
+                         removeSession(session.id);
+                       }} className="text-muted-foreground hover:text-destructive" title="Remover sessão">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
                             </div>
-                         </div>
-                       </div>)}
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>)}
             </div>
