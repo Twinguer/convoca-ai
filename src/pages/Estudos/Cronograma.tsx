@@ -20,6 +20,7 @@ interface StudySession {
   disciplineName: string;
   blockName: string;
   cycleId: string;
+  sessionLink?: string;
 }
 interface StudyCycle {
   id: string;
@@ -42,6 +43,7 @@ const Cronograma = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingSession, setEditingSession] = useState<StudySession | null>(null);
+  const [sessionLink, setSessionLink] = useState<string>('');
 
   // Estados para edição de sessão
   const [studyDuration, setStudyDuration] = useState<number>(0);
@@ -94,9 +96,10 @@ const Cronograma = () => {
         day: item.day_of_week,
         startTime: item.start_time,
         endTime: item.end_time,
-        disciplineName: 'Disciplina', // You might want to join with subjects table
-        blockName: 'Bloco',
-        cycleId: item.study_plan_id || ''
+        disciplineName: item.discipline_name || 'Disciplina',
+        blockName: item.block_name || 'Bloco',
+        cycleId: item.cycle_id || '',
+        sessionLink: item.session_link || ''
       }));
       
       setSessions(transformedSessions);
@@ -119,7 +122,11 @@ const Cronograma = () => {
               day_of_week: session.day,
               start_time: session.startTime,
               end_time: session.endTime,
-              subject_id: null, // You might want to link this properly
+              discipline_name: session.disciplineName,
+              block_name: session.blockName,
+              cycle_id: session.cycleId,
+              session_link: session.sessionLink,
+              subject_id: null,
               study_plan_id: null,
               is_active: true
             });
@@ -153,10 +160,17 @@ const Cronograma = () => {
       endTime,
       disciplineName: selectedDiscipline,
       blockName: selectedBlock,
-      cycleId: selectedCycle
+      cycleId: selectedCycle,
+      sessionLink: sessionLink
     };
     const updatedSessions = [...sessions, newSession];
     saveSessions(updatedSessions);
+    
+    // Limpar campos
+    setSelectedCycle('');
+    setSelectedBlock('');
+    setSelectedDiscipline('');
+    setSessionLink('');
     setShowAddModal(false);
     toast.success('Sessão adicionada ao cronograma!');
   };
@@ -376,6 +390,17 @@ const Cronograma = () => {
                   </div>
                 </div>
 
+                <div>
+                  <label className="text-sm font-medium">Link da Aula/Vídeo (Opcional)</label>
+                  <Input 
+                    type="url"
+                    value={sessionLink} 
+                    onChange={e => setSessionLink(e.target.value)} 
+                    placeholder="https://exemplo.com/aula" 
+                    className="w-full"
+                  />
+                </div>
+
                 <Button onClick={addSession} className="w-full">
                   Adicionar Sessão
                 </Button>
@@ -523,20 +548,32 @@ const Cronograma = () => {
                       })()}
                                </div>}
                            </div>
-                           <div className="flex gap-1">
-                             <button onClick={e => {
-                      e.stopPropagation();
-                      openEditModal(session);
-                    }} className="text-muted-foreground hover:text-primary" title="Editar sessão">
-                               <Edit className="h-3 w-3" />
-                             </button>
-                             <button onClick={e => {
-                      e.stopPropagation();
-                      removeSession(session.id);
-                    }} className="text-muted-foreground hover:text-destructive" title="Remover sessão">
-                               <X className="h-3 w-3" />
-                             </button>
-                           </div>
+                            <div className="flex gap-1">
+                              {session.sessionLink && (
+                                <button 
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    window.open(session.sessionLink, '_blank');
+                                  }} 
+                                  className="text-muted-foreground hover:text-primary" 
+                                  title="Abrir link da aula"
+                                >
+                                  <BookOpen className="h-3 w-3" />
+                                </button>
+                              )}
+                              <button onClick={e => {
+                       e.stopPropagation();
+                       openEditModal(session);
+                     }} className="text-muted-foreground hover:text-primary" title="Editar sessão">
+                                <Edit className="h-3 w-3" />
+                              </button>
+                              <button onClick={e => {
+                       e.stopPropagation();
+                       removeSession(session.id);
+                     }} className="text-muted-foreground hover:text-destructive" title="Remover sessão">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
                          </div>
                        </div>)}
                   </div>

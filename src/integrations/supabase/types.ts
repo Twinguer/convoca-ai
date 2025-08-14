@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -984,11 +984,15 @@ export type Database = {
       }
       study_schedule: {
         Row: {
+          block_name: string | null
           created_at: string | null
+          cycle_id: string | null
           day_of_week: number
+          discipline_name: string | null
           end_time: string
           id: string
           is_active: boolean | null
+          session_link: string | null
           start_time: string
           study_plan_id: string | null
           subject_id: string | null
@@ -996,11 +1000,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          block_name?: string | null
           created_at?: string | null
+          cycle_id?: string | null
           day_of_week: number
+          discipline_name?: string | null
           end_time: string
           id?: string
           is_active?: boolean | null
+          session_link?: string | null
           start_time: string
           study_plan_id?: string | null
           subject_id?: string | null
@@ -1008,11 +1016,15 @@ export type Database = {
           user_id: string
         }
         Update: {
+          block_name?: string | null
           created_at?: string | null
+          cycle_id?: string | null
           day_of_week?: number
+          discipline_name?: string | null
           end_time?: string
           id?: string
           is_active?: boolean | null
+          session_link?: string | null
           start_time?: string
           study_plan_id?: string | null
           subject_id?: string | null
@@ -1616,9 +1628,9 @@ export type Database = {
       }
       calculate_user_score_by_booklet: {
         Args: {
-          p_ranking_id: string
-          p_concurso_id: string
           p_booklet_id: string
+          p_concurso_id: string
+          p_ranking_id: string
         }
         Returns: Json
       }
@@ -1647,18 +1659,18 @@ export type Database = {
         Returns: boolean
       }
       get_booklet_answers: {
-        Args: { p_ranking_id: string; p_booklet_id: string }
+        Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
       get_candidate_subject_scores: {
         Args: { p_ranking_id: string }
         Returns: {
-          subject_name: string
-          score: number
-          question_count: number
-          minimum_required: number
           is_passing: boolean
           knowledge_section: string
+          minimum_required: number
+          question_count: number
+          score: number
+          subject_name: string
         }[]
       }
       get_consolidated_answer_key: {
@@ -1676,32 +1688,32 @@ export type Database = {
       get_realtime_rankings: {
         Args: { p_concurso_id: string; p_reservation_type?: string }
         Returns: {
-          ranking_id: string
-          user_id: string
-          user_name: string
           avatar_url: string
           basic_knowledge_score: number
-          specific_knowledge_score: number
-          specific_knowledge_1_score: number
-          specific_knowledge_2_score: number
-          specific_knowledge_3_score: number
-          discursive_score: number
           case_study_1_score: number
           case_study_2_score: number
           case_study_3_score: number
+          customDisciplineScores: Json
+          discursive_score: number
+          is_classified: boolean
+          ranking_id: string
+          reservation_type: string
+          score: number
+          specific_knowledge_1_score: number
+          specific_knowledge_2_score: number
+          specific_knowledge_3_score: number
+          specific_knowledge_score: number
+          user_id: string
+          user_name: string
           weighted_basic_score: number
-          weighted_specific_1_score: number
-          weighted_specific_2_score: number
-          weighted_specific_3_score: number
-          weighted_discursive_score: number
           weighted_case_study_1_score: number
           weighted_case_study_2_score: number
           weighted_case_study_3_score: number
-          customDisciplineScores: Json
+          weighted_discursive_score: number
+          weighted_specific_1_score: number
+          weighted_specific_2_score: number
+          weighted_specific_3_score: number
           weightedCustomDisciplineScores: Json
-          reservation_type: string
-          is_classified: boolean
-          score: number
         }[]
       }
       get_user_answers_consolidated: {
@@ -1709,7 +1721,7 @@ export type Database = {
         Returns: Json
       }
       get_user_answers_jsonb: {
-        Args: { p_ranking_id: string; p_booklet_id?: string }
+        Args: { p_booklet_id?: string; p_ranking_id: string }
         Returns: Json
       }
       get_user_booklets_with_answers: {
@@ -1718,25 +1730,25 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
       is_candidate_classified: {
-        Args: { p_ranking_id: string; p_concurso_id: string }
+        Args: { p_concurso_id: string; p_ranking_id: string }
         Returns: boolean
       }
       log_admin_operation: {
-        Args: { operation_type: string; operation_details?: Json }
+        Args: { operation_details?: Json; operation_type: string }
         Returns: undefined
       }
       manage_exam_booklets: {
-        Args: { p_operation: string; p_concurso_id: string; p_booklets?: Json }
+        Args: { p_booklets?: Json; p_concurso_id: string; p_operation: string }
         Returns: Json
       }
       manage_question_blocks: {
-        Args: { p_operation: string; p_concurso_id: string; p_blocks?: Json }
+        Args: { p_blocks?: Json; p_concurso_id: string; p_operation: string }
         Returns: Json
       }
       migrate_existing_answers_to_jsonb: {
@@ -1768,88 +1780,88 @@ export type Database = {
         Returns: undefined
       }
       save_consolidated_answer_key: {
-        Args: { p_concurso_id: string; p_booklet_id: string; p_answers: Json }
+        Args: { p_answers: Json; p_booklet_id: string; p_concurso_id: string }
         Returns: Json
       }
       save_scores_transaction: {
         Args: {
           p_ranking_id: string
           p_raw_scores: Json
-          p_weighted_scores: Json
           p_subjective_scores: Json
+          p_weighted_scores: Json
         }
         Returns: Json
       }
       save_user_answers_and_calculate_scores: {
         Args: {
-          p_ranking_id: string
-          p_concurso_id: string
           p_answers: Json
-          p_discursive_score?: number
           p_case_study_1_score?: number
           p_case_study_2_score?: number
           p_case_study_3_score?: number
+          p_concurso_id: string
           p_current_edit_count?: number
+          p_discursive_score?: number
+          p_ranking_id: string
         }
         Returns: Json
       }
       save_user_answers_consolidated_by_concurso: {
         Args: {
-          p_ranking_id: string
-          p_concurso_id: string
-          p_booklet_id: string
           p_answers: Json
-          p_discursive_score?: number
+          p_booklet_id: string
           p_case_study_1_score?: number
           p_case_study_2_score?: number
           p_case_study_3_score?: number
+          p_concurso_id: string
           p_current_edit_count?: number
+          p_discursive_score?: number
+          p_ranking_id: string
         }
         Returns: Json
       }
       save_user_answers_with_booklet: {
         Args: {
-          p_ranking_id: string
-          p_concurso_id: string
-          p_booklet_id: string
           p_answers: Json
-          p_discursive_score?: number
+          p_booklet_id: string
           p_case_study_1_score?: number
           p_case_study_2_score?: number
           p_case_study_3_score?: number
+          p_concurso_id: string
           p_current_edit_count?: number
+          p_discursive_score?: number
+          p_ranking_id: string
         }
         Returns: Json
       }
       switch_user_booklet: {
         Args:
-          | { p_ranking_id: string; p_booklet_id: string }
-          | { p_ranking_id: string; p_booklet_id: string }
+          | { p_booklet_id: string; p_ranking_id: string }
+          | { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
       update_answer_with_weight: {
         Args:
           | {
-              p_concurso_id: string
-              p_question_number: number
-              p_correct_answer: string
-              p_weight: number
-              p_is_nullified?: boolean
-              p_section_type?: string
               p_booklet_id?: string
+              p_concurso_id: string
+              p_correct_answer: string
+              p_is_nullified?: boolean
+              p_question_number: number
+              p_section_type?: string
+              p_weight: number
             }
           | {
               p_concurso_id: string
-              p_question_number: number
               p_correct_answer: string
-              p_weight?: number
               p_is_nullified?: boolean
+              p_question_number: number
               p_section_type?: string
+              p_weight?: number
             }
         Returns: Json
       }
       update_official_answers_and_recalculate: {
-        Args: { p_concurso_id: string; p_answers_data: Json }
+        Args: { p_answers_data: Json; p_concurso_id: string }
         Returns: Json
       }
     }
