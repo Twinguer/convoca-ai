@@ -561,20 +561,17 @@ const Cronograma = () => {
                               </div>
                               <div className="flex gap-1">
                                 {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
-                                  <Button 
-                                    size="sm"
-                                    variant="outline"
+                                  <button 
                                     onClick={e => {
                                       e.stopPropagation();
                                       const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
                                       window.open(linkToOpen, '_blank');
                                     }} 
-                                    className="h-6 px-2 text-xs"
+                                    className="text-primary text-xs hover:underline"
                                     title="Abrir link da aula"
                                   >
-                                    <BookOpen className="h-3 w-3 mr-1" />
-                                    Acessar
-                                  </Button>
+                                    Aula
+                                  </button>
                                 )}
                                 <button onClick={e => {
                          e.stopPropagation();
