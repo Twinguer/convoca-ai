@@ -393,16 +393,6 @@ const Cronograma = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">Link da Aula/Vídeo (Opcional)</label>
-                  <Input 
-                    type="url"
-                    value={sessionLink} 
-                    onChange={e => setSessionLink(e.target.value)} 
-                    placeholder="https://exemplo.com/aula" 
-                    className="w-full"
-                  />
-                </div>
 
                 <Button onClick={addSession} className="w-full">
                   Adicionar Sessão
@@ -571,17 +561,20 @@ const Cronograma = () => {
                               </div>
                               <div className="flex gap-1">
                                 {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
-                                  <button 
+                                  <Button 
+                                    size="sm"
+                                    variant="outline"
                                     onClick={e => {
                                       e.stopPropagation();
                                       const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
                                       window.open(linkToOpen, '_blank');
                                     }} 
-                                    className="text-muted-foreground hover:text-primary" 
+                                    className="h-6 px-2 text-xs"
                                     title="Abrir link da aula"
                                   >
-                                    <BookOpen className="h-3 w-3" />
-                                  </button>
+                                    <BookOpen className="h-3 w-3 mr-1" />
+                                    Acessar
+                                  </Button>
                                 )}
                                 <button onClick={e => {
                          e.stopPropagation();
