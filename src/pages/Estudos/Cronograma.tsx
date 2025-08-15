@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Plus, Settings, BookOpen, Clock, X, Edit, ArrowLeft } from 'lucide-react';
+import { Calendar, Plus, Settings, BookOpen, Clock, X, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -13,6 +13,7 @@ import { useStudySessions } from '@/hooks/useStudySessions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { v4 as uuidv4 } from 'uuid';
 interface StudySession {
   id: string;
   day: number; // 0-6 (Sunday to Saturday)
@@ -124,6 +125,7 @@ const Cronograma = () => {
           await supabase
             .from('study_schedule')
             .insert({
+              id: session.id,
               user_id: user?.id,
               day_of_week: session.day,
               start_time: session.startTime,
@@ -160,7 +162,7 @@ const Cronograma = () => {
       return;
     }
     const newSession: StudySession = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       day: selectedDay,
       startTime,
       endTime,
@@ -393,6 +395,17 @@ const Cronograma = () => {
                   </div>
                 </div>
 
+
+                <div>
+                  <label className="text-sm font-medium">Link da Aula/Vídeo (Opcional)</label>
+                  <Input 
+                    type="url"
+                    value={sessionLink} 
+                    onChange={e => setSessionLink(e.target.value)} 
+                    placeholder="https://exemplo.com/aula" 
+                    className="w-full"
+                  />
+                </div>
 
                 <Button onClick={addSession} className="w-full">
                   Adicionar Sessão
