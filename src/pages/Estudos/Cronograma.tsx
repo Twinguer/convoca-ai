@@ -545,7 +545,7 @@ const Cronograma = () => {
                                   <span className={hasData ? 'text-green-600' : 'text-primary'}>
                                     {session.startTime} - {session.endTime}
                                   </span>
-                                  {hasData && <span className="text-green-600 text-xs">✓</span>}
+                                  
                                 </div>
                                 <div className="text-sm font-medium">{session.disciplineName}</div>
                                 <div className="text-xs text-muted-foreground">{session.blockName}</div>
@@ -561,24 +561,20 @@ const Cronograma = () => {
                               </div>
                               <div className="flex gap-1">
                                 {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
-                                  <button 
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
                                     onClick={e => {
                                       e.stopPropagation();
                                       const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
                                       window.open(linkToOpen, '_blank');
-                                    }} 
-                                    className="text-primary text-xs hover:underline"
+                                    }}
+                                    className="h-6 px-2 text-xs text-primary"
                                     title="Abrir link da aula"
                                   >
                                     Aula
-                                  </button>
+                                  </Button>
                                 )}
-                                <button onClick={e => {
-                         e.stopPropagation();
-                         openEditModal(session);
-                       }} className="text-muted-foreground hover:text-primary" title="Editar sessão">
-                                  <Edit className="h-3 w-3" />
-                                </button>
                                 <button onClick={e => {
                          e.stopPropagation();
                          removeSession(session.id);
