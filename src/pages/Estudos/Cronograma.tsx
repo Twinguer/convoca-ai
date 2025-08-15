@@ -551,52 +551,62 @@ const Cronograma = () => {
                         const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
                         
                          return (
-                          <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="text-xs font-medium mb-1 flex items-center gap-2">
-                                  <span className={hasData ? 'text-green-600' : 'text-primary'}>
-                                    {session.startTime} - {session.endTime}
-                                  </span>
-                                  
-                                </div>
-                                <div className="text-sm font-medium">{session.disciplineName}</div>
-                                <div className="text-xs text-muted-foreground">{session.blockName}</div>
-                                <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
-                                {hasData && (
-                                  <div className="text-xs text-green-600 mt-1 space-y-0.5">
-                                    <div>{cumulativeSession.total_duration_minutes}min total • {cumulativeSession.session_count} sessões</div>
-                                    {cumulativeSession.total_questions > 0 && (
-                                      <div>{cumulativeSession.total_questions} questões • {Math.round((cumulativeSession.total_correct_answers / cumulativeSession.total_questions) * 100)}% acertos</div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="flex gap-1">
-                                {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
-                                      window.open(linkToOpen, '_blank');
-                                    }}
-                                    className="h-6 px-2 text-xs text-primary"
-                                    title="Abrir link da aula"
-                                  >
-                                    Aula
-                                  </Button>
-                                )}
-                                <button onClick={e => {
-                         e.stopPropagation();
-                         removeSession(session.id);
-                       }} className="text-muted-foreground hover:text-destructive" title="Remover sessão">
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
+                           <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
+                             <div className="flex flex-col gap-2">
+                               <div className="flex justify-between items-start">
+                                 <div className="flex-1">
+                                   <div className="text-xs font-medium mb-1 flex items-center gap-2">
+                                     <span className={hasData ? 'text-green-600' : 'text-primary'}>
+                                       {session.startTime} - {session.endTime}
+                                     </span>
+                                   </div>
+                                   <div className="text-sm font-medium">{session.disciplineName}</div>
+                                   <div className="text-xs text-muted-foreground">{session.blockName}</div>
+                                   <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
+                                   {hasData && (
+                                     <div className="text-xs text-green-600 mt-1 space-y-0.5">
+                                       <div>{cumulativeSession.total_duration_minutes}min total • {cumulativeSession.session_count} sessões</div>
+                                       {cumulativeSession.total_questions > 0 && (
+                                         <div>{cumulativeSession.total_questions} questões • {Math.round((cumulativeSession.total_correct_answers / cumulativeSession.total_questions) * 100)}% acertos</div>
+                                       )}
+                                     </div>
+                                   )}
+                                 </div>
+                                 <div className="flex gap-1">
+                                   {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
+                                     <Button
+                                       variant="outline"
+                                       size="sm"
+                                       onClick={e => {
+                                         e.stopPropagation();
+                                         const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
+                                         window.open(linkToOpen, '_blank');
+                                       }}
+                                       className="h-6 px-2 text-xs text-primary"
+                                       title="Abrir link da aula"
+                                     >
+                                       Aula
+                                     </Button>
+                                   )}
+                                 </div>
+                               </div>
+                               
+                               <div className="flex justify-end pt-1 border-t border-border/50">
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={e => {
+                                     e.stopPropagation();
+                                     removeSession(session.id);
+                                   }}
+                                   className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                   title="Remover sessão"
+                                 >
+                                   Excluir
+                                 </Button>
+                               </div>
+                             </div>
+                           </div>
                         );
                       })}
                   </div>
