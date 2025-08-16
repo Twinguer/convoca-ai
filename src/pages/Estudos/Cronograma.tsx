@@ -89,14 +89,12 @@ const Cronograma = () => {
   };
   const fetchSessions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('study_schedule')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('is_active', true);
-      
+      const {
+        data,
+        error
+      } = await supabase.from('study_schedule').select('*').eq('user_id', user?.id).eq('is_active', true);
       if (error) throw error;
-      
+
       // Transform database format to our StudySession format
       const transformedSessions = (data || []).map(item => ({
         id: item.id,
@@ -108,7 +106,6 @@ const Cronograma = () => {
         cycleId: item.cycle_id || '',
         sessionLink: item.session_link || ''
       }));
-      
       setSessions(transformedSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -122,22 +119,20 @@ const Cronograma = () => {
       for (const session of newSessions) {
         if (!sessions.find(s => s.id === session.id)) {
           // This is a new session, insert it
-          await supabase
-            .from('study_schedule')
-            .insert({
-              id: session.id,
-              user_id: user?.id,
-              day_of_week: session.day,
-              start_time: session.startTime,
-              end_time: session.endTime,
-              discipline_name: session.disciplineName,
-              block_name: session.blockName,
-              cycle_id: session.cycleId,
-              session_link: session.sessionLink,
-              subject_id: null,
-              study_plan_id: null,
-              is_active: true
-            });
+          await supabase.from('study_schedule').insert({
+            id: session.id,
+            user_id: user?.id,
+            day_of_week: session.day,
+            start_time: session.startTime,
+            end_time: session.endTime,
+            discipline_name: session.disciplineName,
+            block_name: session.blockName,
+            cycle_id: session.cycleId,
+            session_link: session.sessionLink,
+            subject_id: null,
+            study_plan_id: null,
+            is_active: true
+          });
         }
       }
       setSessions(newSessions);
@@ -173,7 +168,7 @@ const Cronograma = () => {
     };
     const updatedSessions = [...sessions, newSession];
     saveSessions(updatedSessions);
-    
+
     // Limpar campos
     setSelectedCycle('');
     setSelectedBlock('');
@@ -184,12 +179,7 @@ const Cronograma = () => {
   };
   const removeSession = async (sessionId: string) => {
     try {
-      await supabase
-        .from('study_schedule')
-        .delete()
-        .eq('id', sessionId)
-        .eq('user_id', user?.id);
-      
+      await supabase.from('study_schedule').delete().eq('id', sessionId).eq('user_id', user?.id);
       const updatedSessions = sessions.filter(s => s.id !== sessionId);
       setSessions(updatedSessions);
       toast.success('Sessão removida do cronograma!');
@@ -237,7 +227,6 @@ const Cronograma = () => {
     setStudyType('pdf');
     setCurrentPage(0);
     setCurrentVideo('');
-    
     setShowEditModal(true);
   };
   const saveStudySession = async () => {
@@ -247,16 +236,12 @@ const Cronograma = () => {
     }
     try {
       // Usar o novo sistema acumulativo de sessões
-      await createOrUpdateSession(
-        editingSession.id,
-        {
-          duration: studyDuration,
-          questions: questionsTotal,
-          correctAnswers: questionsCorrect,
-          notes: studyNotes
-        },
-        sessionLink
-      );
+      await createOrUpdateSession(editingSession.id, {
+        duration: studyDuration,
+        questions: questionsTotal,
+        correctAnswers: questionsCorrect,
+        notes: studyNotes
+      }, sessionLink);
 
       // Registrar no sistema de estatísticas globais se >= 20 minutos
       if (studyDuration >= 20) {
@@ -277,10 +262,9 @@ const Cronograma = () => {
           await trackAnswer('A', 'B'); // Simular erro
         }
       }
-
       setShowEditModal(false);
       setEditingSession(null);
-      
+
       // Limpar campos
       setStudyDuration(0);
       setStudyNotes('');
@@ -289,7 +273,6 @@ const Cronograma = () => {
       setCourseName('');
       setCourseProgress('');
       setSessionLink('');
-      
     } catch (error) {
       console.error('Error saving study session:', error);
       toast.error('Erro ao salvar sessão de estudo');
@@ -398,13 +381,7 @@ const Cronograma = () => {
 
                 <div>
                   <label className="text-sm font-medium">Link da Aula/Vídeo (Opcional)</label>
-                  <Input 
-                    type="url"
-                    value={sessionLink} 
-                    onChange={e => setSessionLink(e.target.value)} 
-                    placeholder="https://exemplo.com/aula" 
-                    className="w-full"
-                  />
+                  <Input type="url" value={sessionLink} onChange={e => setSessionLink(e.target.value)} placeholder="https://exemplo.com/aula" className="w-full" />
                 </div>
 
                 <Button onClick={addSession} className="w-full">
@@ -433,13 +410,7 @@ const Cronograma = () => {
 
               <div>
                 <Label htmlFor="sessionLink">Link da Sessão (Aula/Vídeo/Sistema)</Label>
-                <Input 
-                  id="sessionLink" 
-                  type="url"
-                  value={sessionLink} 
-                  onChange={e => setSessionLink(e.target.value)} 
-                  placeholder="https://exemplo.com/aula ou sistema de questões" 
-                />
+                <Input id="sessionLink" type="url" value={sessionLink} onChange={e => setSessionLink(e.target.value)} placeholder="https://exemplo.com/aula ou sistema de questões" />
               </div>
 
               <div>
@@ -547,11 +518,9 @@ const Cronograma = () => {
                   </h3>
                   <div className="space-y-2 min-h-[200px]">
                       {getSessionsForDay(index).map(session => {
-                        const cumulativeSession = getSessionByScheduleId(session.id);
-                        const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
-                        
-                         return (
-                           <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
+                const cumulativeSession = getSessionByScheduleId(session.id);
+                const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
+                return <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
                              <div className="flex flex-col gap-2">
                                <div className="flex justify-between items-start">
                                  <div className="flex-1">
@@ -563,52 +532,33 @@ const Cronograma = () => {
                                    <div className="text-sm font-medium">{session.disciplineName}</div>
                                    <div className="text-xs text-muted-foreground">{session.blockName}</div>
                                    <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
-                                   {hasData && (
-                                     <div className="text-xs text-green-600 mt-1 space-y-0.5">
+                                   {hasData && <div className="text-xs text-green-600 mt-1 space-y-0.5">
                                        <div>{cumulativeSession.total_duration_minutes}min total • {cumulativeSession.session_count} sessões</div>
-                                       {cumulativeSession.total_questions > 0 && (
-                                         <div>{cumulativeSession.total_questions} questões • {Math.round((cumulativeSession.total_correct_answers / cumulativeSession.total_questions) * 100)}% acertos</div>
-                                       )}
-                                     </div>
-                                   )}
+                                       {cumulativeSession.total_questions > 0 && <div>{cumulativeSession.total_questions} questões • {Math.round(cumulativeSession.total_correct_answers / cumulativeSession.total_questions * 100)}% acertos</div>}
+                                     </div>}
                                  </div>
                                  <div className="flex gap-1">
-                                   {(session.sessionLink || (cumulativeSession && cumulativeSession.session_link)) && (
-                                     <Button
-                                       variant="outline"
-                                       size="sm"
-                                       onClick={e => {
-                                         e.stopPropagation();
-                                         const linkToOpen = (cumulativeSession && cumulativeSession.session_link) || session.sessionLink;
-                                         window.open(linkToOpen, '_blank');
-                                       }}
-                                       className="h-6 px-2 text-xs text-primary"
-                                       title="Abrir link da aula"
-                                     >
+                                   {(session.sessionLink || cumulativeSession && cumulativeSession.session_link) && <Button variant="outline" size="sm" onClick={e => {
+                          e.stopPropagation();
+                          const linkToOpen = cumulativeSession && cumulativeSession.session_link || session.sessionLink;
+                          window.open(linkToOpen, '_blank');
+                        }} title="Abrir link da aula" className="h-6 text-xs text-primary mx-0 my-0 px-[2px]">
                                        Aula
-                                     </Button>
-                                   )}
+                                     </Button>}
                                  </div>
                                </div>
                                
                                <div className="flex justify-end pt-1 border-t border-border/50">
-                                 <Button
-                                   variant="outline"
-                                   size="sm"
-                                   onClick={e => {
-                                     e.stopPropagation();
-                                     removeSession(session.id);
-                                   }}
-                                   className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                   title="Remover sessão"
-                                 >
+                                 <Button variant="outline" size="sm" onClick={e => {
+                        e.stopPropagation();
+                        removeSession(session.id);
+                      }} className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground" title="Remover sessão">
                                    Excluir
                                  </Button>
                                </div>
                              </div>
-                           </div>
-                        );
-                      })}
+                           </div>;
+              })}
                   </div>
                 </div>)}
             </div>
