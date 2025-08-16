@@ -542,7 +542,7 @@ const Cronograma = () => {
                           e.stopPropagation();
                           const linkToOpen = cumulativeSession && cumulativeSession.session_link || session.sessionLink;
                           window.open(linkToOpen, '_blank');
-                        }} title="Abrir link da aula" className="h-6 text-xs text-primary mx-0 my-0 px-[6px] rounded-none">
+                        }} title="Abrir link da aula" className="h-6 text-xs text-primary mx-0 my-0 px-[6px] rounded">
                                        Aula
                                      </Button>}
                                  </div>
