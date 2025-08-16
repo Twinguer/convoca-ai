@@ -13,19 +13,53 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Verify user is authenticated
+    const authHeader = req.headers.get('authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // SECURITY: Verify the token and get user info
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+
+    if (authError || !user) {
+      console.error('Authentication error:', authError)
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
     const { record } = await req.json()
     
-    if (!record?.id || !record?.email) {
+    // SECURITY: Verify user can only create profile for themselves
+    if (!record?.id || record.id !== user.id) {
+      console.error('User ID mismatch:', { requestId: record?.id, userId: user.id })
       return new Response(
-        JSON.stringify({ error: 'Invalid user data' }),
+        JSON.stringify({ error: 'Cannot create profile for another user' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      )
+    }
+
+    if (!record?.email) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid user data - missing email' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
+
+    // Log the profile creation attempt for security monitoring
+    console.log('Creating profile for user:', { userId: user.id, email: record.email })
 
     // Create a profile for the new user
     const { error } = await supabaseClient
