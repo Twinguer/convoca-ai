@@ -28,7 +28,7 @@ export function useResultadosData() {
       if (!concurso?.created_by_user_id) return null;
       
       const { data, error } = await supabase
-        .from('users_profiles')
+        .from('public_profiles')
         .select('name')
         .eq('id', concurso.created_by_user_id)
         .single();

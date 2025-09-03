@@ -61,10 +61,12 @@ const PublicUserProfile: React.FC = () => {
     queryFn: async () => {
       if (!id) return null;
       try {
-        const {
-          data: profileData,
-          error: profileError
-        } = await supabase.from('users_profiles').select('*').eq('id', id).single();
+        // Fetch basic profile info from public view, will fail for private profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('public_profiles')
+          .select('id, name, avatar_url')
+          .eq('id', id)
+          .single();
         if (profileError) throw profileError;
         const {
           count: followerCount,
@@ -84,7 +86,21 @@ const PublicUserProfile: React.FC = () => {
         return {
           ...profileData,
           followerCount: followerCount || 0,
-          postCount: postCount || 0
+          postCount: postCount || 0,
+          // Set default values for missing private fields
+          bio: 'Informações privadas',
+          email: '',
+          concursos_aprovados: null,
+          concursos_participando: null,
+          status_concurseiro: 'Privado',
+          profile_text: null,
+          estado: null,
+          formacao: null,
+          cargo_atual: null,
+          area_estudos: null,
+          especialidade: null,
+          curso_preparatorio: null,
+          rotina_estudos: null
         } as UserProfile;
       } catch (error) {
         console.error('Error fetching profile:', error);

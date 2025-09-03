@@ -48,8 +48,8 @@ const UserFollowers = () => {
       // Get the profiles of the followers
       const followerIds = followerData.map(f => f.follower_id);
       const { data: profiles, error: profilesError } = await supabase
-        .from('users_profiles')
-        .select('id, name, avatar_url, bio, email')
+        .from('public_profiles')
+        .select('id, name, avatar_url')
         .in('id', followerIds);
         
       if (profilesError) {
@@ -76,7 +76,9 @@ const UserFollowers = () => {
       
       return profiles.map(profile => ({
         ...profile,
-        isFollowing: followingMap[profile.id] || false
+        isFollowing: followingMap[profile.id] || false,
+        bio: null, // No access to private data
+        email: '' // No access to private data
       }));
     },
     enabled: !!user
@@ -104,8 +106,8 @@ const UserFollowers = () => {
       // Get the profiles of the people being followed
       const followingIds = followingData.map(f => f.followed_id);
       const { data: profiles, error: profilesError } = await supabase
-        .from('users_profiles')
-        .select('id, name, avatar_url, bio, email')
+        .from('public_profiles')
+        .select('id, name, avatar_url')
         .in('id', followingIds);
         
       if (profilesError) {
@@ -122,7 +124,9 @@ const UserFollowers = () => {
       
       return profiles.map(profile => ({
         ...profile,
-        isFollowing: true
+        isFollowing: true,
+        bio: null, // No access to private data
+        email: '' // No access to private data
       }));
     },
     enabled: !!user

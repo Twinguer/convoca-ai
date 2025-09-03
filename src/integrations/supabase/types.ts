@@ -1481,13 +1481,6 @@ export type Database = {
             foreignKeyName: "fk_user_rankings_profiles"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_rankings_profiles"
-            columns: ["user_id"]
-            isOneToOne: false
             referencedRelation: "users_profiles"
             referencedColumns: ["id"]
           },
@@ -1652,16 +1645,6 @@ export type Database = {
           id: string | null
           name: string | null
         }
-        Insert: {
-          avatar_url?: string | null
-          id?: string | null
-          name?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          id?: string | null
-          name?: string | null
-        }
         Relationships: []
       }
     }
@@ -1736,6 +1719,14 @@ export type Database = {
       get_official_answer_weights: {
         Args: { p_concurso_id: string }
         Returns: Json
+      }
+      get_public_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string
+          id: string
+          name: string
+        }[]
       }
       get_realtime_rankings: {
         Args: { p_concurso_id: string; p_reservation_type?: string }

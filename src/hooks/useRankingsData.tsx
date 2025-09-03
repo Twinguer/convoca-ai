@@ -34,11 +34,11 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           return null;
         }
 
-        // If there's a creator user ID, fetch their name
+        // If there's a creator user ID, fetch their name (using public view)
         let creatorName = null;
         if (concurso.created_by_user_id && !concurso.is_admin_created) {
           const { data: userData, error: userError } = await supabase
-            .from('users_profiles')
+            .from('public_profiles')
             .select('name')
             .eq('id', concurso.created_by_user_id)
             .maybeSingle();

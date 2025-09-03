@@ -26,9 +26,9 @@ export const getFollowers = async (userId: string): Promise<Follower[]> => {
     // Get the follower IDs
     const followerIds = followerData.map(item => item.follower_id);
 
-    // Get the user profile information for each follower
+    // Get the user profile information for each follower (using public view)
     const { data: followers, error: profileError } = await supabase
-      .from('users_profiles')
+      .from('public_profiles')
       .select('id, name, avatar_url')
       .in('id', followerIds);
 
@@ -51,7 +51,7 @@ export const getFollowers = async (userId: string): Promise<Follower[]> => {
 export const getRandomUsers = async (count: number = 10, excludeUserId?: string): Promise<Follower[]> => {
   try {
     let query = supabase
-      .from('users_profiles')
+      .from('public_profiles')
       .select('id, name, avatar_url')
       .limit(count);
 
@@ -92,9 +92,9 @@ export const getFollowing = async (userId: string): Promise<Follower[]> => {
     // Get the following IDs
     const followingIds = followingData.map(item => item.followed_id);
 
-    // Get the user profile information for each following
+    // Get the user profile information for each following (using public view)
     const { data: following, error: profileError } = await supabase
-      .from('users_profiles')
+      .from('public_profiles')
       .select('id, name, avatar_url')
       .in('id', followingIds);
 

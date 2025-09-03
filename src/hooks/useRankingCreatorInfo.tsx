@@ -22,9 +22,9 @@ export function useRankingCreatorInfo(concurso: Concurso): CreatorInfoResult {
       return { name: 'Desconhecido', isAdmin: false };
     }
     
-    // Fetch the user profile
+    // Fetch the user profile (using public view)
     const { data, error } = await supabase
-      .from('users_profiles')
+      .from('public_profiles')
       .select('name')
       .eq('id', concurso.created_by_user_id)
       .single();

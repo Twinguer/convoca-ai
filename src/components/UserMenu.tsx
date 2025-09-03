@@ -33,7 +33,7 @@ const UserMenu: React.FC = () => {
       const {
         data,
         error
-      } = await supabase.from('users_profiles').select('name, avatar_url').eq('id', user.id).single();
+      } = await supabase.from('public_profiles').select('name, avatar_url').eq('id', user.id).single();
       if (error) return null;
       return data;
     },

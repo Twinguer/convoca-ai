@@ -14,30 +14,18 @@ export const useCommunityUsers = (searchQuery: string = '') => {
       try {
         console.log('Fetching community users with query:', debouncedSearchQuery);
         
-        // Fetching users with additional metadata
+        // Fetching users with only public metadata (secure approach)
         let query = supabase
-          .from('users_profiles')
+          .from('public_profiles')
           .select(`
             id,
             name,
-            email,
-            bio,
-            avatar_url,
-            concursos_aprovados,
-            concursos_participando,
-            estado,
-            formacao,
-            cargo_atual,
-            area_estudos,
-            especialidade,
-            curso_preparatorio,
-            rotina_estudos,
-            is_studying
+            avatar_url
           `);
           
-        // Apply search filter if provided
+        // Apply search filter if provided (only on name now)
         if (debouncedSearchQuery) {
-          query = query.or(`name.ilike.%${debouncedSearchQuery}%,email.ilike.%${debouncedSearchQuery}%`);
+          query = query.ilike('name', `%${debouncedSearchQuery}%`);
         }
         
         // Execute the query with pagination
@@ -67,26 +55,35 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
             if (postError) console.error('Error counting posts:', postError);
 
-            // Determine the number of concursos aprovados
-            const approvalCount = profile.concursos_aprovados 
-              ? profile.concursos_aprovados.split('\n').filter(Boolean).length 
-              : 0;
-              
-            // Gerar um email de usuário com base no email
-            const emailParts = profile.email.split('@');
-            const usernameFromEmail = emailParts[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+            // Generate basic info from available data
+            const usernameFromName = profile.name 
+              ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '')
+              : `user_${profile.id.slice(0, 8)}`;
 
-            // Generate a status based on approvals or default to "Na Ativa"
-            const statusConcurseiro = approvalCount > 0 ? "Aprovado" : "Na Ativa";
+            // Default status (no private data access)
+            const statusConcurseiro = "Na Ativa";
 
             // Store the counts directly in the object to ensure persistence
             return {
               ...profile,
-              username: usernameFromEmail, // Criar username como fallback
+              username: usernameFromName,
               followerCount: followerCount || 0,
               postCount: postCount || 0,
-              approvalCount,
-              status_concurseiro: statusConcurseiro // Fornecer valor dinamicamente, não depender do banco
+              approvalCount: 0, // No access to private approval data
+              status_concurseiro: statusConcurseiro,
+              // Default values for missing private fields
+              email: '',
+              bio: '',
+              concursos_aprovados: null,
+              concursos_participando: null,
+              estado: '',
+              formacao: '',
+              cargo_atual: '',
+              area_estudos: '',
+              especialidade: '',
+              curso_preparatorio: '',
+              rotina_estudos: '',
+              is_studying: false
             };
           })
         );
