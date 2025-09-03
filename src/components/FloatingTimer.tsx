@@ -82,7 +82,8 @@ const FloatingTimer: React.FC<FloatingTimerProps> = ({
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const formatTime = (mins: number, secs: number) => {
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    // Exibir apenas minutos durante o timer
+    return `${mins.toString().padStart(2, '0')} min`;
   };
 
   const getProgressPercentage = () => {

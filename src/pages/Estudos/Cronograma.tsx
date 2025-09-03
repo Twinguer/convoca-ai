@@ -179,7 +179,13 @@ const Cronograma = () => {
   };
   const removeSession = async (sessionId: string) => {
     try {
-      await supabase.from('study_schedule').delete().eq('id', sessionId).eq('user_id', user?.id);
+      // Soft delete para evitar possíveis conflitos/relacionamentos
+      await supabase
+        .from('study_schedule')
+        .update({ is_active: false })
+        .eq('id', sessionId)
+        .eq('user_id', user?.id);
+
       const updatedSessions = sessions.filter(s => s.id !== sessionId);
       setSessions(updatedSessions);
       toast.success('Sessão removida do cronograma!');

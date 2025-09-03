@@ -45,6 +45,8 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const [showFloatingTimer, setShowFloatingTimer] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const endTimeRef = useRef<number | null>(null);
+  const remainingSecondsRef = useRef<number>(initialMinutes * 60);
 
   const isStudying = isRunning && !isPaused;
 
@@ -55,54 +57,73 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     }
   }, [isRunning]);
 
-  // Timer countdown logic
+  // Timer countdown logic using absolute end time (robust across tab switches)
   useEffect(() => {
     if (isRunning && !isPaused) {
-      intervalRef.current = setInterval(() => {
-        setSeconds(prevSeconds => {
-          if (prevSeconds === 0) {
-            setMinutes(prevMinutes => {
-              if (prevMinutes === 0) {
-                // Timer finished - registrar sessão
-                if (sessionStartTime) {
-                  const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60));
-                  if (sessionDuration >= 20) {
-                    addStudySession(sessionDuration);
-                  }
-                }
-                
-                setIsRunning(false);
-                setIsPaused(false);
-                setShowFloatingTimer(false);
-                setSessionStartTime(null);
-                
-                // Notification
-                if (Notification.permission === 'granted') {
-                  new Notification('Timer Finalizado!', {
-                    body: 'Sua sessão de estudo foi concluída.',
-                    icon: '/favicon.ico'
-                  });
-                } else {
-                  alert('Tempo esgotado! Sessão de estudo finalizada.');
-                }
-                return initialMinutes; // Reset to initial time
-              }
-              return prevMinutes - 1;
-            });
-            return 59;
+      // Initialize end time if not set (e.g., after resume or refresh)
+      if (!endTimeRef.current) {
+        endTimeRef.current = Date.now() + (minutes * 60 + seconds) * 1000;
+      }
+
+      const tick = () => {
+        if (!endTimeRef.current) return;
+        const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+        const nextMinutes = Math.floor(remaining / 60);
+        const nextSeconds = remaining % 60;
+        setMinutes(nextMinutes);
+        setSeconds(nextSeconds);
+
+        if (remaining <= 0) {
+          // Stop ticking
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
           }
-          return prevSeconds - 1;
-        });
-      }, 1000);
+
+          // Register study session
+          if (sessionStartTime) {
+            const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / (1000 * 60));
+            if (sessionDuration >= 20) {
+              addStudySession(sessionDuration);
+            }
+          }
+
+          // Reset state
+          setIsRunning(false);
+          setIsPaused(false);
+          setShowFloatingTimer(false);
+          setSessionStartTime(null);
+          endTimeRef.current = null;
+
+          // Notification
+          if (Notification.permission === 'granted') {
+            new Notification('Timer Finalizado!', {
+              body: 'Sua sessão de estudo foi concluída.',
+              icon: '/favicon.ico'
+            });
+          } else {
+            alert('Tempo esgotado! Sessão de estudo finalizada.');
+          }
+
+          setMinutes(initialMinutes);
+          setSeconds(0);
+        }
+      };
+
+      // Run an initial tick immediately
+      tick();
+      intervalRef.current = setInterval(tick, 1000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
     }
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [isRunning, isPaused, initialMinutes]);
@@ -146,11 +167,18 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   }, [isStudying, user?.id]);
 
   const startTimer = (mins?: number) => {
+    const startMins = mins ?? initialMinutes;
     if (mins) {
       setInitialMinutes(mins);
-      setMinutes(mins);
-      setSeconds(0);
     }
+    // Reset time state
+    setMinutes(startMins);
+    setSeconds(0);
+
+    // Configure end time based on absolute clock
+    endTimeRef.current = Date.now() + startMins * 60 * 1000;
+    remainingSecondsRef.current = startMins * 60;
+
     setIsRunning(true);
     setIsPaused(false);
     // Show floating timer by default, pages can control visibility
@@ -159,22 +187,35 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   };
 
   const pauseTimer = () => {
+    // Capture remaining time when pausing
+    remainingSecondsRef.current = minutes * 60 + seconds;
+    endTimeRef.current = null;
     setIsPaused(true);
   };
 
   const resumeTimer = () => {
+    // Restore end time from remaining seconds
+    const remaining = remainingSecondsRef.current ?? minutes * 60 + seconds;
+    endTimeRef.current = Date.now() + remaining * 1000;
     setIsPaused(false);
   };
 
   const stopTimer = () => {
     // Calcular duração da sessão
     if (sessionStartTime) {
-      const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / (1000 * 60));
+      const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / (1000 * 60));
       if (sessionDuration >= 20) {
         addStudySession(sessionDuration);
       }
     }
-    
+
+    // Clear ticking
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    endTimeRef.current = null;
+
     setIsRunning(false);
     setIsPaused(false);
     setMinutes(initialMinutes);
