@@ -526,15 +526,15 @@ const Cronograma = () => {
                       {getSessionsForDay(index).map(session => {
                 const cumulativeSession = getSessionByScheduleId(session.id);
                 const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
-                return <div key={session.id} className={`p-3 rounded-md border relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 border-green-200 dark:border-green-800 hover:bg-muted/80' : 'bg-primary/10 border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
+                return <div key={session.id} className={`p-3 rounded-md relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 hover:bg-muted/80' : 'bg-primary/10 border border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
                              <div className="flex flex-col gap-2">
                                <div className="flex justify-between items-start">
                                  <div className="flex-1">
-                                   <div className="text-xs font-medium mb-1 flex items-center gap-2">
-                                     <span className={hasData ? 'text-green-600' : 'text-primary'}>
-                                       {session.startTime} - {session.endTime}
-                                     </span>
-                                   </div>
+                                    <div className="text-xs font-medium mb-1 flex items-center gap-2">
+                                      <span className={hasData ? 'text-green-600' : 'text-primary'}>
+                                        {session.startTime.substring(0, 5)} - {session.endTime.substring(0, 5)}
+                                      </span>
+                                    </div>
                                    <div className="text-sm font-medium">{session.disciplineName}</div>
                                    <div className="text-xs text-muted-foreground">{session.blockName}</div>
                                    <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
