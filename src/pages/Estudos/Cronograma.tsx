@@ -9,7 +9,6 @@ import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer } fr
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import FloatingTimer from '@/components/FloatingTimer';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,13 +37,67 @@ interface StudyCycle {
 }
 const Cronograma = () => {
   const { user } = useAuth();
-  const { showTimer, showFloatingTimer } = useTimer();
+  const { showTimer, startTimer } = useTimer();
   
   // Clock state
   const [currentTime, setCurrentTime] = useState(new Date());
   
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [studiedDays, setStudiedDays] = useState<Date[]>([]);
+
+  // Load studied days from database
+  useEffect(() => {
+    if (user) {
+      loadStudiedDays();
+    }
+  }, [user]);
+
+  const loadStudiedDays = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_study_days')
+        .select('study_date')
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      
+      const dates = (data || []).map(item => new Date(item.study_date));
+      setStudiedDays(dates);
+    } catch (error) {
+      console.error('Error loading studied days:', error);
+    }
+  };
+
+  const handleStudiedDaysChange = async (dates: Date[] | undefined) => {
+    if (!dates) return;
+    
+    const newDates = dates || [];
+    setStudiedDays(newDates);
+    
+    try {
+      // Clear existing entries for this user
+      await supabase
+        .from('user_study_days')
+        .delete()
+        .eq('user_id', user?.id);
+      
+      // Insert new entries
+      if (newDates.length > 0) {
+        const insertData = newDates.map(date => ({
+          user_id: user?.id,
+          study_date: date.toISOString().split('T')[0]
+        }));
+        
+        await supabase
+          .from('user_study_days')
+          .insert(insertData);
+      }
+    } catch (error) {
+      console.error('Error saving studied days:', error);
+      toast.error('Erro ao salvar dias estudados');
+    }
+  };
   const [cycles, setCycles] = useState<StudyCycle[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
@@ -334,15 +387,15 @@ const Cronograma = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center space-y-3">
-              <div className="text-2xl font-mono">
-                {format(currentTime, 'HH:mm:ss')}
+              <div className="text-center space-y-3">
+                <div className="text-2xl font-mono">
+                  60:00
+                </div>
+                <Button onClick={() => startTimer(60)} className="w-full">
+                  <Timer className="h-4 w-4 mr-2" />
+                  Iniciar Timer (60min)
+                </Button>
               </div>
-              <Button onClick={showTimer} className="w-full">
-                <Timer className="h-4 w-4 mr-2" />
-                Iniciar Timer
-              </Button>
-            </div>
           </CardContent>
         </Card>
 
@@ -385,16 +438,26 @@ const Cronograma = () => {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar data"}
+                  {studiedDays.length > 0 ? `${studiedDays.length} dias estudados` : "Marcar dias estudados"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
+                  mode="multiple"
+                  selected={studiedDays}
+                  onSelect={handleStudiedDaysChange}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
+                  modifiers={{
+                    studied: studiedDays
+                  }}
+                  modifiersStyles={{
+                    studied: {
+                      backgroundColor: 'hsl(var(--primary))',
+                      color: 'hsl(var(--primary-foreground))',
+                      fontWeight: 'bold'
+                    }
+                  }}
                 />
               </PopoverContent>
             </Popover>
@@ -607,14 +670,111 @@ const Cronograma = () => {
             </p>
           </CardContent>
         </Card> : <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              Cronograma Semanal
-            </CardTitle>
-            <CardDescription>
-              Seu cronograma de estudos organizado por dias da semana
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5" />
+                Cronograma Semanal
+              </CardTitle>
+              <CardDescription>
+                Seu cronograma de estudos organizado por dias da semana
+              </CardDescription>
+            </div>
+            <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Sessão
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Adicionar Sessão de Estudo</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Ciclo de Estudos</label>
+                    <Select value={selectedCycle} onValueChange={setSelectedCycle}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um ciclo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cycles.map(cycle => <SelectItem key={cycle.id} value={cycle.id}>
+                            {cycle.name}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Bloco</label>
+                    <Select value={selectedBlock} onValueChange={setSelectedBlock}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um bloco" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableBlocks().map((block: any) => <SelectItem key={block.name} value={block.name}>
+                            {block.name}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Disciplina</label>
+                    <Select value={selectedDiscipline} onValueChange={setSelectedDiscipline}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma disciplina" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAvailableDisciplines().map((discipline: any) => <SelectItem key={discipline.name} value={discipline.name}>
+                            {discipline.name}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Dia da Semana</label>
+                    <Select value={selectedDay.toString()} onValueChange={value => setSelectedDay(Number(value))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um dia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {weekDays.map((day, index) => <SelectItem key={index} value={index.toString()}>
+                            {day}
+                          </SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Horário de Início</label>
+                      <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Horário de Fim</label>
+                      <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Link da Sessão (opcional)</label>
+                    <Input type="url" value={sessionLink} onChange={e => setSessionLink(e.target.value)} placeholder="https://..." />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setShowAddModal(false)} className="flex-1">
+                      Cancelar
+                    </Button>
+                    <Button onClick={addSession} className="flex-1">
+                      Adicionar
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
@@ -670,12 +830,6 @@ const Cronograma = () => {
             </div>
           </CardContent>
         </Card>}
-
-      {/* Floating Timer */}
-      <FloatingTimer 
-        isOpen={showFloatingTimer} 
-        onClose={() => {}} 
-      />
     </div>;
 };
 export default Cronograma;

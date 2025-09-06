@@ -37,11 +37,11 @@ interface TimerProviderProps {
 export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { addStudySession } = useStudyStatistics();
-  const [minutes, setMinutes] = useState(25);
+  const [minutes, setMinutes] = useState(60);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [initialMinutes, setInitialMinutes] = useState(25);
+  const [initialMinutes, setInitialMinutes] = useState(60);
   const [showFloatingTimer, setShowFloatingTimer] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -50,10 +50,10 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
   const isStudying = isRunning && !isPaused;
 
-  // Auto-show floating timer when timer is running and not on session page
+  // Only show floating timer if explicitly requested
   useEffect(() => {
-    if (isRunning && !window.location.pathname.includes('/estudos/sessao/')) {
-      setShowFloatingTimer(true);
+    if (!isRunning) {
+      setShowFloatingTimer(false);
     }
   }, [isRunning]);
 
@@ -181,8 +181,8 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
     setIsRunning(true);
     setIsPaused(false);
-    // Show floating timer by default, pages can control visibility
-    setShowFloatingTimer(true);
+    // Don't automatically show floating timer
+    setShowFloatingTimer(false);
     setSessionStartTime(new Date());
   };
 
