@@ -3,7 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Plus, Settings, BookOpen, Clock, X, ArrowLeft } from 'lucide-react';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import FloatingTimer from '@/components/FloatingTimer';
+import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -30,9 +37,14 @@ interface StudyCycle {
   blocks: any[];
 }
 const Cronograma = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const { showTimer, showFloatingTimer } = useTimer();
+  
+  // Clock state
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Calendar state
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [cycles, setCycles] = useState<StudyCycle[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
@@ -75,6 +87,15 @@ const Cronograma = () => {
       fetchSessions();
     }
   }, [user]);
+
+  // Update clock every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
   const fetchCycles = async () => {
     try {
       const {
@@ -302,6 +323,85 @@ const Cronograma = () => {
           <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
         </div>
       </div>
+      {/* Timer, Clock, and Calendar Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Timer Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Timer className="h-5 w-5" />
+              Timer de Estudo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-3">
+              <div className="text-2xl font-mono">
+                {format(currentTime, 'HH:mm:ss')}
+              </div>
+              <Button onClick={showTimer} className="w-full">
+                <Timer className="h-4 w-4 mr-2" />
+                Iniciar Timer
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Clock Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Relógio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-2">
+              <div className="text-3xl font-bold">
+                {format(currentTime, 'HH:mm')}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {format(currentTime, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Calendar Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Calendário
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex justify-end items-center mb-8">
         <div className="flex gap-2">
           
@@ -509,7 +609,7 @@ const Cronograma = () => {
         </Card> : <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+              <CalendarIcon className="h-5 w-5" />
               Cronograma Semanal
             </CardTitle>
             <CardDescription>
@@ -570,6 +670,12 @@ const Cronograma = () => {
             </div>
           </CardContent>
         </Card>}
+
+      {/* Floating Timer */}
+      <FloatingTimer 
+        isOpen={showFloatingTimer} 
+        onClose={() => {}} 
+      />
     </div>;
 };
 export default Cronograma;
