@@ -36,12 +36,17 @@ interface StudyCycle {
   blocks: any[];
 }
 const Cronograma = () => {
-  const { user } = useAuth();
-  const { showTimer, startTimer } = useTimer();
-  
+  const {
+    user
+  } = useAuth();
+  const {
+    showTimer,
+    startTimer
+  } = useTimer();
+
   // Clock state
   const [currentTime, setCurrentTime] = useState(new Date());
-  
+
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [studiedDays, setStudiedDays] = useState<Date[]>([]);
@@ -52,46 +57,34 @@ const Cronograma = () => {
       loadStudiedDays();
     }
   }, [user]);
-
   const loadStudiedDays = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_study_days')
-        .select('study_date')
-        .eq('user_id', user?.id);
-      
+      const {
+        data,
+        error
+      } = await supabase.from('user_study_days').select('study_date').eq('user_id', user?.id);
       if (error) throw error;
-      
       const dates = (data || []).map(item => new Date(item.study_date));
       setStudiedDays(dates);
     } catch (error) {
       console.error('Error loading studied days:', error);
     }
   };
-
   const handleStudiedDaysChange = async (dates: Date[] | undefined) => {
     if (!dates) return;
-    
     const newDates = dates || [];
     setStudiedDays(newDates);
-    
     try {
       // Clear existing entries for this user
-      await supabase
-        .from('user_study_days')
-        .delete()
-        .eq('user_id', user?.id);
-      
+      await supabase.from('user_study_days').delete().eq('user_id', user?.id);
+
       // Insert new entries
       if (newDates.length > 0) {
         const insertData = newDates.map(date => ({
           user_id: user?.id,
           study_date: date.toISOString().split('T')[0]
         }));
-        
-        await supabase
-          .from('user_study_days')
-          .insert(insertData);
+        await supabase.from('user_study_days').insert(insertData);
       }
     } catch (error) {
       console.error('Error saving studied days:', error);
@@ -146,7 +139,6 @@ const Cronograma = () => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
   const fetchCycles = async () => {
@@ -254,12 +246,9 @@ const Cronograma = () => {
   const removeSession = async (sessionId: string) => {
     try {
       // Soft delete para evitar possíveis conflitos/relacionamentos
-      await supabase
-        .from('study_schedule')
-        .update({ is_active: false })
-        .eq('id', sessionId)
-        .eq('user_id', user?.id);
-
+      await supabase.from('study_schedule').update({
+        is_active: false
+      }).eq('id', sessionId).eq('user_id', user?.id);
       const updatedSessions = sessions.filter(s => s.id !== sessionId);
       setSessions(updatedSessions);
       toast.success('Sessão removida do cronograma!');
@@ -413,7 +402,9 @@ const Cronograma = () => {
                 {format(currentTime, 'HH:mm')}
               </div>
               <div className="text-sm text-muted-foreground">
-                {format(currentTime, 'EEEE, dd/MM/yyyy', { locale: ptBR })}
+                {format(currentTime, 'EEEE, dd/MM/yyyy', {
+                locale: ptBR
+              })}
               </div>
             </div>
           </CardContent>
@@ -430,35 +421,21 @@ const Cronograma = () => {
           <CardContent>
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !selectedDate && "text-muted-foreground"
-                  )}
-                >
+                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {studiedDays.length > 0 ? `${studiedDays.length} dias estudados` : "Marcar dias estudados"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="multiple"
-                  selected={studiedDays}
-                  onSelect={handleStudiedDaysChange}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                  modifiers={{
-                    studied: studiedDays
-                  }}
-                  modifiersStyles={{
-                    studied: {
-                      backgroundColor: 'hsl(var(--primary))',
-                      color: 'hsl(var(--primary-foreground))',
-                      fontWeight: 'bold'
-                    }
-                  }}
-                />
+                <CalendarComponent mode="multiple" selected={studiedDays} onSelect={handleStudiedDaysChange} initialFocus className={cn("p-3 pointer-events-auto")} modifiers={{
+                studied: studiedDays
+              }} modifiersStyles={{
+                studied: {
+                  backgroundColor: 'hsl(var(--primary))',
+                  color: 'hsl(var(--primary-foreground))',
+                  fontWeight: 'bold'
+                }
+              }} />
               </PopoverContent>
             </Popover>
           </CardContent>
@@ -470,10 +447,7 @@ const Cronograma = () => {
           
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
             <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Sessão
-              </Button>
+              
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
