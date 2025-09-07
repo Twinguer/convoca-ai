@@ -158,4 +158,60 @@
       @apply px-2 py-1;
     }
   }
+
+  /* Custom styles for studied days in calendar */
+  .studied-day {
+    position: relative;
+  }
+
+  .studied-day::after {
+    content: "✓";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    color: hsl(var(--primary-foreground));
+    font-weight: bold;
+  }
+}
+
+/* Enhanced calendar styling for studied days */
+.rdp-day_selected.studied-day {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: bold !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3) !important;
+}
+
+.rdp-day_selected.studied-day:hover {
+  background-color: hsl(var(--primary) / 0.9) !important;
+  cursor: pointer;
+}
+
+/* Styling for studied days that are not selected */
+.rdp-day.studied-day:not(.rdp-day_selected) {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  font-weight: bold !important;
+  border: 2px solid hsl(var(--primary)) !important;
+}
+
+.rdp-day.studied-day:not(.rdp-day_selected):hover {
+  background-color: hsl(var(--secondary) / 0.8) !important;
+  cursor: pointer;
+}
+
+/* Animation for studied days */
+.studied-day {
+  animation: pulse-studied 3s infinite;
+}
+
+@keyframes pulse-studied {
+  0%, 100% {
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.1);
+  }
 }

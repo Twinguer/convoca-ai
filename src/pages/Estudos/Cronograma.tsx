@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
@@ -547,7 +547,7 @@ const Cronograma = () => {
                   onSelect={handleStudiedDaysChange}
                   onDayClick={handleCalendarDateClick}
                   initialFocus 
-                  className={cn("p-3 pointer-events-auto")} 
+                  className={cn("p-3")} 
                   modifiers={{
                     studied: studiedDays
                   }} 
@@ -555,9 +555,14 @@ const Cronograma = () => {
                     studied: {
                       backgroundColor: 'hsl(var(--primary))',
                       color: 'hsl(var(--primary-foreground))',
-                      fontWeight: 'bold'
+                      fontWeight: 'bold',
+                      border: '2px solid hsl(var(--primary))',
+                      borderRadius: '6px'
                     }
-                  }} 
+                  }}
+                  modifiersClassNames={{
+                    studied: 'studied-day'
+                  }}
                 />
               </PopoverContent>
             </Popover>
@@ -574,6 +579,9 @@ const Cronograma = () => {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Adicionar Sessão de Estudo</DialogTitle>
+                <DialogDescription>
+                  Adicione uma nova sessão de estudo ao seu cronograma semanal
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -665,6 +673,9 @@ const Cronograma = () => {
             <DialogTitle>
               Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', { locale: ptBR })}
             </DialogTitle>
+            <DialogDescription>
+              Visualize as sessões de estudo realizadas neste dia
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {studyDayDetails.length > 0 ? (
@@ -731,6 +742,9 @@ const Cronograma = () => {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Registrar Sessão de Estudo</DialogTitle>
+            <DialogDescription>
+              Registre os detalhes da sua sessão de estudo realizada
+            </DialogDescription>
           </DialogHeader>
           {editingSession && <div className="space-y-4">
               <div className="p-3 bg-muted rounded-md">
@@ -850,6 +864,9 @@ const Cronograma = () => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Adicionar Sessão de Estudo</DialogTitle>
+                  <DialogDescription>
+                    Adicione uma nova sessão de estudo ao seu cronograma semanal
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
