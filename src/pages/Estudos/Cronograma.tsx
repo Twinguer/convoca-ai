@@ -5,7 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -16,9 +20,6 @@ import { toast } from 'sonner';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useQuestionTracking } from '@/hooks/useQuestionTracking';
 import { useStudySessions } from '@/hooks/useStudySessions';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { v4 as uuidv4 } from 'uuid';
 interface StudySession {
   id: string;
@@ -36,12 +37,18 @@ interface StudyCycle {
   blocks: any[];
 }
 const Cronograma = () => {
+  const { user } = useAuth();
   const {
-    user
-  } = useAuth();
-  const {
-    showTimer,
-    startTimer
+    minutes,
+    seconds,
+    isRunning,
+    isPaused,
+    initialMinutes,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
+    stopTimer,
+    setInitialTime,
   } = useTimer();
 
   // Clock state
@@ -50,6 +57,9 @@ const Cronograma = () => {
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [studiedDays, setStudiedDays] = useState<Date[]>([]);
+  const [selectedStudyDay, setSelectedStudyDay] = useState<Date | null>(null);
+  const [studyDayDetails, setStudyDayDetails] = useState<any[]>([]);
+  const [showStudyDetailsModal, setShowStudyDetailsModal] = useState(false);
 
   // Load studied days from database
   useEffect(() => {
@@ -70,6 +80,34 @@ const Cronograma = () => {
       console.error('Error loading studied days:', error);
     }
   };
+  // Handle clicking on calendar days to show study details
+  const handleCalendarDateClick = async (date: Date) => {
+    if (studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString())) {
+      setSelectedStudyDay(date);
+      await loadStudyDayDetails(date);
+      setShowStudyDetailsModal(true);
+    }
+  };
+  
+  // Load study session details for a specific day
+  const loadStudyDayDetails = async (date: Date) => {
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('study_sessions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('session_date', dateStr)
+        .order('start_time');
+        
+      if (error) throw error;
+      setStudyDayDetails(data || []);
+    } catch (error) {
+      console.error('Error loading study day details:', error);
+      setStudyDayDetails([]);
+    }
+  };
+
   const handleStudiedDaysChange = async (dates: Date[] | undefined) => {
     if (!dates) return;
     const newDates = dates || [];
@@ -118,14 +156,38 @@ const Cronograma = () => {
   const {
     addStudySession
   } = useStudyStatistics();
-  const {
-    trackAnswer
-  } = useQuestionTracking();
-  const {
-    getSessionByScheduleId,
-    createOrUpdateSession,
-    updateSessionLink
-  } = useStudySessions();
+  const { trackAnswer } = useQuestionTracking();
+  const { getSessionByScheduleId, createOrUpdateSession, updateSessionLink } = useStudySessions();
+  
+  // Timer helper functions
+  const formatTime = (mins: number, secs: number) => {
+    return `${mins.toString().padStart(2, '0')} min`;
+  };
+  
+  const getProgressPercentage = () => {
+    const totalSeconds = initialMinutes * 60;
+    const remainingSeconds = minutes * 60 + seconds;
+    return (totalSeconds - remainingSeconds) / totalSeconds * 100;
+  };
+  
+  const handleStart = () => {
+    startTimer(initialMinutes);
+  };
+  
+  const addTime = () => {
+    if (initialMinutes < 360) {
+      const newTime = initialMinutes + 5;
+      setInitialTime(newTime);
+    }
+  };
+  
+  const removeTime = () => {
+    if (initialMinutes > 5) {
+      const newTime = initialMinutes - 5;
+      setInitialTime(newTime);
+    }
+  };
+  
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   useEffect(() => {
     if (user) {
@@ -376,15 +438,67 @@ const Cronograma = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-              <div className="text-center space-y-3">
-                <div className="text-2xl font-mono">
-                  60:00
-                </div>
-                <Button onClick={() => startTimer(60)} className="w-full">
-                  <Timer className="h-4 w-4 mr-2" />
-                  Iniciar Timer (60min)
-                </Button>
+            <div className="text-center space-y-4">
+              {/* Time Display */}
+              <div className="text-4xl font-bold">
+                {formatTime(minutes, seconds)}
               </div>
+
+              {/* Progress Bar */}
+              {isRunning && (
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-1000" 
+                    style={{ width: `${getProgressPercentage()}%` }}
+                  />
+                </div>
+              )}
+
+              {/* Time Controls */}
+              {!isRunning && (
+                <div className="flex justify-center items-center gap-2 mb-4">
+                  <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  
+                  <div className="text-sm text-muted-foreground min-w-[60px]">
+                    {initialMinutes} min
+                  </div>
+                  
+                  <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Control Buttons */}
+              <div className="flex justify-center gap-2">
+                {!isRunning ? (
+                  <Button onClick={handleStart} className="w-full">
+                    <Play className="h-4 w-4 mr-2" />
+                    Iniciar
+                  </Button>
+                ) : (
+                  <>
+                    {!isPaused ? (
+                      <Button variant="outline" onClick={pauseTimer} className="flex-1">
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pausar
+                      </Button>
+                    ) : (
+                      <Button onClick={resumeTimer} className="flex-1">
+                        <Play className="h-4 w-4 mr-2" />
+                        Continuar
+                      </Button>
+                    )}
+                    <Button variant="outline" onClick={stopTimer} className="flex-1">
+                      <Square className="h-4 w-4 mr-2" />
+                      Parar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -427,15 +541,24 @@ const Cronograma = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent mode="multiple" selected={studiedDays} onSelect={handleStudiedDaysChange} initialFocus className={cn("p-3 pointer-events-auto")} modifiers={{
-                studied: studiedDays
-              }} modifiersStyles={{
-                studied: {
-                  backgroundColor: 'hsl(var(--primary))',
-                  color: 'hsl(var(--primary-foreground))',
-                  fontWeight: 'bold'
-                }
-              }} />
+                <CalendarComponent 
+                  mode="multiple" 
+                  selected={studiedDays} 
+                  onSelect={handleStudiedDaysChange}
+                  onDayClick={handleCalendarDateClick}
+                  initialFocus 
+                  className={cn("p-3 pointer-events-auto")} 
+                  modifiers={{
+                    studied: studiedDays
+                  }} 
+                  modifiersStyles={{
+                    studied: {
+                      backgroundColor: 'hsl(var(--primary))',
+                      color: 'hsl(var(--primary-foreground))',
+                      fontWeight: 'bold'
+                    }
+                  }} 
+                />
               </PopoverContent>
             </Popover>
           </CardContent>
@@ -444,7 +567,6 @@ const Cronograma = () => {
 
       <div className="flex justify-end items-center mb-8">
         <div className="flex gap-2">
-          
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
             <DialogTrigger asChild>
               
@@ -535,6 +657,74 @@ const Cronograma = () => {
           </Dialog>
         </div>
       </div>
+
+      {/* Modal de Detalhes do Dia Estudado */}
+      <Dialog open={showStudyDetailsModal} onOpenChange={setShowStudyDetailsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', { locale: ptBR })}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {studyDayDetails.length > 0 ? (
+              studyDayDetails.map((session, index) => (
+                <Card key={session.id} className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">{session.discipline_name || 'Estudo'}</h4>
+                        <p className="text-sm text-muted-foreground">{session.block_name}</p>
+                      </div>
+                      <Badge variant="secondary">
+                        {session.duration_minutes} min
+                      </Badge>
+                    </div>
+                    
+                    {session.session_link && (
+                      <div className="flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4" />
+                        <a 
+                          href={session.session_link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline"
+                        >
+                          {session.course_name || 'Link da sessão'}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {session.total_questions > 0 && (
+                      <div className="text-sm">
+                        <span className="font-medium">Questões:</span> {session.total_correct_answers}/{session.total_questions} 
+                        ({((session.total_correct_answers / session.total_questions) * 100).toFixed(1)}%)
+                      </div>
+                    )}
+                    
+                    {session.notes && (
+                      <div className="text-sm">
+                        <span className="font-medium">Notas:</span> {session.notes}
+                      </div>
+                    )}
+                    
+                    {session.course_progress && (
+                      <div className="text-sm">
+                        <span className="font-medium">Progresso:</span> {session.course_progress}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <BookOpen className="h-12 w-12 mx-auto mb-4" />
+                <p>Nenhuma sessão de estudo registrada para este dia</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal de Edição de Sessão */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
@@ -655,12 +845,8 @@ const Cronograma = () => {
               </CardDescription>
             </div>
             <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nova Sessão
-                </Button>
-              </DialogTrigger>
+            <DialogTrigger asChild>
+            </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Adicionar Sessão de Estudo</DialogTitle>
