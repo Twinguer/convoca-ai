@@ -1568,6 +1568,27 @@ export type Database = {
           },
         ]
       }
+      user_study_days: {
+        Row: {
+          created_at: string
+          id: string
+          study_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          study_date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          study_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       users_profiles: {
         Row: {
           area_estudos: string | null
