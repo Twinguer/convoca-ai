@@ -90,21 +90,25 @@ const Cronograma = () => {
       console.error('Error loading studied days:', error);
     }
   };
-  // Handle clicking on calendar days to show study details or confirm unmark
+  // Handle clicking on calendar days to show study details
   const handleCalendarDateClick = async (date: Date) => {
     const isStudiedDay = studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString());
     
     if (isStudiedDay) {
-      // Show confirmation dialog for unmarking
-      if (window.confirm(`Desmarcar o dia ${format(date, 'dd/MM/yyyy', { locale: ptBR })} como estudado?`)) {
-        const newStudiedDays = studiedDays.filter(studyDay => studyDay.toDateString() !== date.toDateString());
-        setStudiedDays(newStudiedDays);
-      } else {
-        // Show study details
-        setSelectedStudyDay(date);
-        await loadStudyDayDetails(date);
-        setShowStudyDetailsModal(true);
-      }
+      // Show study details
+      setSelectedStudyDay(date);
+      await loadStudyDayDetails(date);
+      setShowStudyDetailsModal(true);
+    }
+  };
+
+  // Handle unmarking a studied day
+  const handleUnmarkStudyDay = () => {
+    if (selectedStudyDay) {
+      const newStudiedDays = studiedDays.filter(studyDay => studyDay.toDateString() !== selectedStudyDay.toDateString());
+      setStudiedDays(newStudiedDays);
+      setShowStudyDetailsModal(false);
+      toast.success('Dia desmarcado como estudado');
     }
   };
   
@@ -689,8 +693,19 @@ const Cronograma = () => {
       <Dialog open={showStudyDetailsModal} onOpenChange={setShowStudyDetailsModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', { locale: ptBR })}
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', { locale: ptBR })}
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleUnmarkStudyDay}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Desmarcar dia
+              </Button>
             </DialogTitle>
             <DialogDescription>
               Visualize as sessões de estudo realizadas neste dia
