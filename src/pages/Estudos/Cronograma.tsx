@@ -461,8 +461,8 @@ const Cronograma = () => {
           </CardHeader>
           <CardContent>
             <div className="text-center space-y-2">
-              <div className="text-3xl font-bold">
-                {format(currentTime, 'HH:mm')}
+              <div className="text-6xl font-bold">
+                {format(currentTime, 'HH:mm:ss')}
               </div>
               <div className="text-sm text-muted-foreground">
                 {format(currentTime, 'EEEE, dd/MM/yyyy', {
