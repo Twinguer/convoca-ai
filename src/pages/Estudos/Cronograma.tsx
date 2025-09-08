@@ -67,32 +67,56 @@ const Cronograma = () => {
       loadStudiedDays();
     }
   }, [user]);
+
   const loadStudiedDays = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('user_study_days').select('study_date').eq('user_id', user?.id);
+      const { data, error } = await supabase
+        .from('study_sessions')
+        .select('session_date')
+        .eq('user_id', user?.id)
+        .order('session_date');
+      
       if (error) throw error;
-      const dates = (data || []).map(item => new Date(item.study_date));
+      
+      // Convert dates properly avoiding timezone issues
+      const uniqueDates = [...new Set((data || []).map(item => item.session_date))];
+      const dates = uniqueDates.map(dateStr => {
+        const [year, month, day] = dateStr.split('-');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      });
+      
       setStudiedDays(dates);
     } catch (error) {
       console.error('Error loading studied days:', error);
     }
   };
-  // Handle clicking on calendar days to show study details
+  // Handle clicking on calendar days to show study details or confirm unmark
   const handleCalendarDateClick = async (date: Date) => {
-    if (studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString())) {
-      setSelectedStudyDay(date);
-      await loadStudyDayDetails(date);
-      setShowStudyDetailsModal(true);
+    const isStudiedDay = studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString());
+    
+    if (isStudiedDay) {
+      // Show confirmation dialog for unmarking
+      if (window.confirm(`Desmarcar o dia ${format(date, 'dd/MM/yyyy', { locale: ptBR })} como estudado?`)) {
+        const newStudiedDays = studiedDays.filter(studyDay => studyDay.toDateString() !== date.toDateString());
+        setStudiedDays(newStudiedDays);
+      } else {
+        // Show study details
+        setSelectedStudyDay(date);
+        await loadStudyDayDetails(date);
+        setShowStudyDetailsModal(true);
+      }
     }
   };
   
   // Load study session details for a specific day
   const loadStudyDayDetails = async (date: Date) => {
     try {
-      const dateStr = date.toISOString().split('T')[0];
+      // Format date properly to avoid timezone issues
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      
       const { data, error } = await supabase
         .from('study_sessions')
         .select('*')
@@ -108,25 +132,19 @@ const Cronograma = () => {
     }
   };
 
+  // Handle marking new study days (only for adding, not removing)
   const handleStudiedDaysChange = async (dates: Date[] | undefined) => {
     if (!dates) return;
-    const newDates = dates || [];
-    setStudiedDays(newDates);
-    try {
-      // Clear existing entries for this user
-      await supabase.from('user_study_days').delete().eq('user_id', user?.id);
-
-      // Insert new entries
-      if (newDates.length > 0) {
-        const insertData = newDates.map(date => ({
-          user_id: user?.id,
-          study_date: date.toISOString().split('T')[0]
-        }));
-        await supabase.from('user_study_days').insert(insertData);
-      }
-    } catch (error) {
-      console.error('Error saving studied days:', error);
-      toast.error('Erro ao salvar dias estudados');
+    
+    // Only add new dates, don't handle removal here
+    const newDates = dates.filter(date => 
+      !studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString())
+    );
+    
+    if (newDates.length > 0) {
+      const updatedDates = [...studiedDays, ...newDates];
+      setStudiedDays(updatedDates);
+      toast.success(`${newDates.length} dia(s) marcado(s) como estudado(s)`);
     }
   };
   const [cycles, setCycles] = useState<StudyCycle[]>([]);
@@ -427,8 +445,30 @@ const Cronograma = () => {
           <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
         </div>
       </div>
-      {/* Timer, Clock, and Calendar Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Clock, Timer, and Calendar Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Clock Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Relógio
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center space-y-2">
+              <div className="text-3xl font-bold">
+                {format(currentTime, 'HH:mm')}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {format(currentTime, 'EEEE, dd/MM/yyyy', {
+                locale: ptBR
+              })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Timer Card */}
         <Card>
           <CardHeader className="pb-3">
@@ -502,28 +542,6 @@ const Cronograma = () => {
           </CardContent>
         </Card>
 
-        {/* Clock Card */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Relógio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center space-y-2">
-              <div className="text-3xl font-bold">
-                {format(currentTime, 'HH:mm')}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {format(currentTime, 'EEEE, dd/MM/yyyy', {
-                locale: ptBR
-              })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Calendar Card */}
         <Card>
           <CardHeader className="pb-3">
@@ -557,7 +575,8 @@ const Cronograma = () => {
                       color: 'hsl(var(--primary-foreground))',
                       fontWeight: 'bold',
                       border: '2px solid hsl(var(--primary))',
-                      borderRadius: '6px'
+                      borderRadius: '6px',
+                      position: 'relative'
                     }
                   }}
                   modifiersClassNames={{
@@ -570,7 +589,7 @@ const Cronograma = () => {
         </Card>
       </div>
 
-      <div className="flex justify-end items-center mb-8">
+      <div className="flex justify-end items-center mb-4">
         <div className="flex gap-2">
           <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
             <DialogTrigger asChild>
