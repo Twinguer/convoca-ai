@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +10,14 @@ import { useToast } from '@/hooks/use-toast';
 import { QuestionTracker } from '@/components/StudyStats/QuestionTracker';
 
 const Estatisticas = () => {
-  const { statistics, isLoading, resetStatistics, getFilteredStats } = useStudyStatistics();
+  const { statistics, isLoading, resetStatistics, getFilteredStats, refreshStatistics } = useStudyStatistics();
   const { toast } = useToast();
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('week');
+
+  // Recarregar estatísticas quando a página carregar para consolidar dados do cronograma
+  useEffect(() => {
+    refreshStatistics();
+  }, []);
 
   const handleResetStats = async () => {
     await resetStatistics();

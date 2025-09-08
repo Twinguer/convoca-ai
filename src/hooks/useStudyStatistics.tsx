@@ -60,21 +60,30 @@ export const useStudyStatistics = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // Buscar estatísticas existentes
+      const { data: statsData, error: statsError } = await supabase
         .from('study_statistics')
         .select('statistics_data')
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading statistics:', error);
+      // Buscar sessões de estudo do cronograma
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('study_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (statsError && statsError.code !== 'PGRST116') {
+        console.error('Error loading statistics:', statsError);
         return;
       }
 
-      if (data?.statistics_data) {
-        const stats = data.statistics_data as StudyStatistics;
-        // Garantir que todos os campos obrigatórios existem
-        const validStats = {
+      let baseStats = defaultStats;
+      
+      if (statsData?.statistics_data) {
+        const stats = statsData.statistics_data as StudyStatistics;
+        baseStats = {
           ...defaultStats,
           ...stats,
           averages: {
@@ -82,10 +91,100 @@ export const useStudyStatistics = () => {
             ...stats.averages
           }
         };
-        setStatistics(validStats);
+      }
+
+      // Consolidar com dados das sessões do cronograma
+      if (sessionsData && sessionsData.length > 0) {
+        let consolidatedStats = { ...baseStats };
+        
+        // Somar horas das sessões
+        const totalSessionHours = sessionsData.reduce((sum, session) => 
+          sum + (session.total_duration_minutes / 60), 0
+        );
+        
+        // Somar questões das sessões
+        const totalSessionQuestions = sessionsData.reduce((sum, session) => 
+          sum + (session.total_questions || 0), 0
+        );
+        
+        const totalCorrectAnswers = sessionsData.reduce((sum, session) => 
+          sum + (session.total_correct_answers || 0), 0
+        );
+
+        // Contar sessões totais
+        const totalSessionsFromSchedule = sessionsData.reduce((sum, session) => 
+          sum + (session.session_count || 0), 0
+        );
+
+        // Construir histórico de sessões
+        const sessionHistory = sessionsData.map(session => ({
+          date: session.last_session_date || session.created_at,
+          duration: session.total_duration_minutes,
+          type: 'timer' as const
+        }));
+
+        // Calcular streak baseado nas datas das sessões
+        const sortedSessions = sessionsData
+          .filter(s => s.last_session_date)
+          .sort((a, b) => new Date(b.last_session_date).getTime() - new Date(a.last_session_date).getTime());
+        
+        let currentStreak = 0;
+        let longestStreak = 0;
+        if (sortedSessions.length > 0) {
+          const today = new Date();
+          const lastSessionDate = new Date(sortedSessions[0].last_session_date);
+          const daysDiff = Math.floor((today.getTime() - lastSessionDate.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff <= 1) { // Se foi hoje ou ontem
+            currentStreak = 1;
+            // Calcular streak completo
+            for (let i = 1; i < sortedSessions.length; i++) {
+              const currentDate = new Date(sortedSessions[i-1].last_session_date);
+              const prevDate = new Date(sortedSessions[i].last_session_date);
+              const diff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+              
+              if (diff <= 1) {
+                currentStreak++;
+              } else {
+                break;
+              }
+            }
+          }
+          longestStreak = Math.max(currentStreak, consolidatedStats.longestStreak);
+        }
+
+        // Atualizar estatísticas consolidadas
+        consolidatedStats = {
+          ...consolidatedStats,
+          totalHours: Math.max(consolidatedStats.totalHours, totalSessionHours),
+          totalSessions: Math.max(consolidatedStats.totalSessions, totalSessionsFromSchedule),
+          questionsAnswered: consolidatedStats.questionsAnswered + totalSessionQuestions,
+          correctAnswers: consolidatedStats.correctAnswers + totalCorrectAnswers,
+          wrongAnswers: consolidatedStats.wrongAnswers + (totalSessionQuestions - totalCorrectAnswers),
+          currentStreak: Math.max(consolidatedStats.currentStreak, currentStreak),
+          longestStreak: Math.max(consolidatedStats.longestStreak, longestStreak),
+          lastStudyDate: sortedSessions.length > 0 ? sortedSessions[0].last_session_date : consolidatedStats.lastStudyDate,
+          sessionHistory: [...consolidatedStats.sessionHistory, ...sessionHistory].slice(-100),
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Recalcular médias
+        const totalDays = Object.keys(consolidatedStats.dailyStats).length || 1;
+        consolidatedStats.averages = {
+          dailyHours: consolidatedStats.totalHours / totalDays,
+          weeklyHours: consolidatedStats.totalHours / Math.max(1, totalDays / 7),
+          monthlyHours: consolidatedStats.totalHours / Math.max(1, totalDays / 30)
+        };
+
+        setStatistics(consolidatedStats);
+        
+        // Salvar estatísticas consolidadas
+        await updateStatistics(consolidatedStats);
       } else {
-        // Criar registro inicial
-        await createInitialStatistics();
+        setStatistics(baseStats);
+        if (!statsData?.statistics_data) {
+          await createInitialStatistics();
+        }
       }
     } catch (error) {
       console.error('Error loading statistics:', error);
@@ -139,7 +238,8 @@ export const useStudyStatistics = () => {
     if (!user || durationMinutes < 20) return; // Só conta sessões > 20min
 
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
+    // Usar data local ao invés de UTC para evitar problemas de fuso horário
+    const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     const hours = durationMinutes / 60;
 
     // Calcular streak
@@ -178,7 +278,7 @@ export const useStudyStatistics = () => {
       totalSessions: statistics.totalSessions + 1,
       currentStreak: newCurrentStreak,
       longestStreak: Math.max(statistics.longestStreak, newCurrentStreak),
-      lastStudyDate: today,
+        lastStudyDate: today,
       dailyStats: newDailyStats,
       averages: {
         ...statistics.averages,

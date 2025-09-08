@@ -73,7 +73,7 @@ const CriarRanking = () => {
       orgao: '',
       banca: '',
       custom_banca: '',
-      data_publicacao: new Date().toISOString().split('T')[0],
+      data_publicacao: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
       etapa_atual: 'Prova Objetiva',
       status: 'Em andamento',
       link: '',
@@ -148,7 +148,9 @@ const CriarRanking = () => {
               custom_job_title: isOtherTitle ? data.titulo : '',
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
-              data_publicacao: data.data_publicacao ? new Date(data.data_publicacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              data_publicacao: data.data_publicacao ? 
+                new Date(new Date(data.data_publicacao).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] : 
+                new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
             });
           }
         } catch (error) {

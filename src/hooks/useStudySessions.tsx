@@ -68,7 +68,9 @@ export const useStudySessions = () => {
 
     try {
       const existingSession = getSessionByScheduleId(scheduleSessionId);
-      const today = new Date().toISOString().split('T')[0];
+      // Usar data local ao invés de UTC para evitar problemas de fuso horário
+      const today = new Date();
+      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
 
       if (existingSession) {
         // Atualizar sessão existente (acumular dados)
@@ -77,7 +79,7 @@ export const useStudySessions = () => {
           total_questions: existingSession.total_questions + progress.questions,
           total_correct_answers: existingSession.total_correct_answers + progress.correctAnswers,
           session_count: existingSession.session_count + 1,
-          last_session_date: today,
+          last_session_date: localDate,
           updated_at: new Date().toISOString(),
           ...(sessionLink && { session_link: sessionLink })
         };
@@ -113,8 +115,8 @@ export const useStudySessions = () => {
           total_questions: progress.questions,
           total_correct_answers: progress.correctAnswers,
           session_count: 1,
-          last_session_date: today,
-          session_date: today,
+          last_session_date: localDate,
+          session_date: localDate,
           start_time: new Date().toISOString(),
           duration_minutes: progress.duration,
           notes: progress.notes,
