@@ -85,17 +85,10 @@ export const UserCard: React.FC<UserCardProps> = ({
         </div>
         
         <div className="flex flex-col items-center mb-4">
-          <div className="relative">
-            <Avatar className="h-20 w-20 mb-3">
-              <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
-              <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
-            </Avatar>
-            {isCurrentUser && (
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 border-2 border-white rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-white rounded-full"></div>
-              </div>
-            )}
-          </div>
+          <Avatar className={`h-20 w-20 mb-3 ${isCurrentUser ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}>
+            <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
+            <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
+          </Avatar>
           
           <h3 className="font-medium text-center">{userProfile.name || 'Usuário'}</h3>
           {userProfile.email && (
