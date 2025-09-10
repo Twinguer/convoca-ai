@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle, Calendar, Award } from 'lucide-react';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useToast } from '@/hooks/use-toast';
-import { QuestionTracker } from '@/components/StudyStats/QuestionTracker';
+import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 
 const Estatisticas = () => {
   const { statistics, isLoading, resetStatistics, getFilteredStats, refreshStatistics } = useStudyStatistics();
@@ -150,7 +150,11 @@ const Estatisticas = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <QuestionTracker />
+        <PerformanceChart 
+          statistics={statistics}
+          timeFilter={timeFilter}
+          onTimeFilterChange={setTimeFilter}
+        />
         
         <Card>
           <CardHeader>
