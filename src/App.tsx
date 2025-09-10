@@ -38,6 +38,7 @@ import CriarCiclo from "./pages/Estudos/CriarCiclo";
 import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
+import Planos from "./pages/Planos";
 
 
 const AppContent = () => {
@@ -120,6 +121,10 @@ const AppContent = () => {
                     <Route path="/pre-classificacao" element={<>
                         <Menu />
                         <PreClassificacao />
+                      </>} />
+                    <Route path="/planos" element={<>
+                        <Menu />
+                        <Planos />
                       </>} />
                     <Route path="/resultado" element={<>
                         <Menu />
