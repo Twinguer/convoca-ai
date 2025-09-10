@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle, Calendar, Award } from 'lucide-react';
+import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
@@ -198,46 +198,6 @@ const Estatisticas = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-yellow-500" />
-              Conquistas
-            </CardTitle>
-            <CardDescription>
-              Marcos e objetivos alcançados
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${statistics.totalHours >= 10 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className="text-sm">10 horas de estudo</span>
-                {statistics.totalHours >= 10 && <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />}
-              </div>
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${statistics.totalHours >= 50 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className="text-sm">50 horas de estudo</span>
-                {statistics.totalHours >= 50 && <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />}
-              </div>
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${statistics.currentStreak >= 7 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className="text-sm">7 dias consecutivos</span>
-                {statistics.currentStreak >= 7 && <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />}
-              </div>
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${statistics.questionsAnswered >= 100 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className="text-sm">100 questões respondidas</span>
-                {statistics.questionsAnswered >= 100 && <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />}
-              </div>
-              <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${statistics.totalSessions >= 50 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                <span className="text-sm">50 sessões de estudo</span>
-                {statistics.totalSessions >= 50 && <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Card>
