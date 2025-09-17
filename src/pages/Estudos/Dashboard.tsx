@@ -410,11 +410,11 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
 
         {/* Actions */}
         <div className="flex gap-2">
-          <Button onClick={onStartSession} className="flex-1">
-            <Calendar className="h-4 w-4 mr-2" />
-            Cronograma
+          <Button onClick={onStartSession} size="sm">
+            <Play className="h-4 w-4 mr-2" />
+            Iniciar Sessão
           </Button>
-          <Button onClick={onViewEdital} variant="outline">
+          <Button onClick={onViewEdital} variant="default" className="bg-success hover:bg-success/90 text-success-foreground">
             <FileText className="h-4 w-4 mr-2" />
             Edital
           </Button>
