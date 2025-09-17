@@ -222,6 +222,11 @@ const Estatisticas = () => {
                     <span className="text-xs text-muted-foreground ml-2">
                       {new Date(session.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
+                    {session.subject && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        📚 {session.subject}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">

@@ -23,6 +23,14 @@ interface StudyStatistics {
     date: string;
     duration: number;
     type: 'timer' | 'manual';
+    subject?: string;
+  }>;
+  subjectStats: Record<string, {
+    totalHours: number;
+    totalSessions: number;
+    questionsAnswered: number;
+    correctAnswers: number;
+    wrongAnswers: number;
   }>;
   lastUpdated: string | null;
 }
@@ -45,6 +53,7 @@ const defaultStats: StudyStatistics = {
     monthlyHours: 0
   },
   sessionHistory: [],
+  subjectStats: {},
   lastUpdated: null
 };
 
@@ -120,7 +129,8 @@ export const useStudyStatistics = () => {
         const sessionHistory = sessionsData.map(session => ({
           date: session.last_session_date || session.created_at,
           duration: session.total_duration_minutes,
-          type: 'timer' as const
+          type: 'timer' as const,
+          subject: session.subject_name || undefined
         }));
 
         // Calcular streak baseado nas datas das sessões
@@ -234,7 +244,7 @@ export const useStudyStatistics = () => {
     }
   };
 
-  const addStudySession = async (durationMinutes: number) => {
+  const addStudySession = async (durationMinutes: number, type: 'timer' | 'manual' = 'timer', subject?: string) => {
     if (!user || durationMinutes < 20) return; // Só conta sessões > 20min
 
     const now = new Date();
@@ -268,6 +278,22 @@ export const useStudyStatistics = () => {
     newDailyStats[today].hours += hours;
     newDailyStats[today].sessions += 1;
 
+    // Atualizar estatísticas por disciplina
+    const newSubjectStats = { ...statistics.subjectStats };
+    if (subject) {
+      if (!newSubjectStats[subject]) {
+        newSubjectStats[subject] = {
+          totalHours: 0,
+          totalSessions: 0,
+          questionsAnswered: 0,
+          correctAnswers: 0,
+          wrongAnswers: 0
+        };
+      }
+      newSubjectStats[subject].totalHours += hours;
+      newSubjectStats[subject].totalSessions += 1;
+    }
+
     // Calcular médias
     const totalDays = Object.keys(newDailyStats).length;
     const totalHours = statistics.totalHours + hours;
@@ -280,6 +306,7 @@ export const useStudyStatistics = () => {
       longestStreak: Math.max(statistics.longestStreak, newCurrentStreak),
         lastStudyDate: today,
       dailyStats: newDailyStats,
+      subjectStats: newSubjectStats,
       averages: {
         ...statistics.averages,
         dailyHours: dailyAverage
@@ -289,7 +316,8 @@ export const useStudyStatistics = () => {
         {
           date: now.toISOString(),
           duration: durationMinutes,
-          type: 'timer' as const
+          type,
+          subject
         }
       ].slice(-100) // Manter apenas últimas 100 sessões
     };

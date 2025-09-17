@@ -15,6 +15,14 @@ interface PerformanceChartProps {
       date: string;
       duration: number;
       type: 'timer' | 'manual';
+      subject?: string;
+    }>;
+    subjectStats: Record<string, {
+      totalHours: number;
+      totalSessions: number;
+      questionsAnswered: number;
+      correctAnswers: number;
+      wrongAnswers: number;
     }>;
   };
   timeFilter: 'day' | 'week' | 'month';
@@ -26,7 +34,7 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
   timeFilter,
   onTimeFilterChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'questions' | 'time'>('questions');
+  const [activeTab, setActiveTab] = useState<'questions' | 'time' | 'subjects'>('questions');
 
   const getChartData = () => {
     const now = new Date();
@@ -97,6 +105,18 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
     return [value, name];
   };
 
+  const getSubjectChartData = () => {
+    return Object.entries(statistics.subjectStats).map(([subject, stats]) => ({
+      subject: subject || 'Sem disciplina',
+      hours: stats.totalHours,
+      sessions: stats.totalSessions,
+      questions: stats.questionsAnswered,
+      accuracy: stats.questionsAnswered > 0 ? (stats.correctAnswers / stats.questionsAnswered) * 100 : 0
+    }));
+  };
+
+  const subjectData = getSubjectChartData();
+
   return (
     <Card className="col-span-2">
       <CardHeader className="pb-4">
@@ -123,8 +143,8 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(value: 'questions' | 'time') => setActiveTab(value)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={(value: 'questions' | 'time' | 'subjects') => setActiveTab(value)} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="questions" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Questões
@@ -132,6 +152,10 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
             <TabsTrigger value="time" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Tempo
+            </TabsTrigger>
+            <TabsTrigger value="subjects" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Disciplinas
             </TabsTrigger>
           </TabsList>
           
@@ -198,6 +222,50 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
                 />
               </LineChart>
             </ResponsiveContainer>
+          </TabsContent>
+          
+          <TabsContent value="subjects" className="mt-6">
+            {subjectData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={subjectData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="subject" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                      color: 'hsl(var(--foreground))'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="hours" 
+                    fill="hsl(var(--primary))" 
+                    radius={[4, 4, 0, 0]}
+                    name="Horas"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                <div className="text-center">
+                  <BarChart3 className="mx-auto h-12 w-12 mb-4" />
+                  <p>Nenhuma disciplina registrada ainda</p>
+                  <p className="text-sm">Use o timer e registre suas disciplinas de estudo</p>
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

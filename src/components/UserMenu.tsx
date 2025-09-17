@@ -1,16 +1,17 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, Users, Clock } from 'lucide-react';
+import { User, LogOut, Users, Clock, Palette } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const UserMenu: React.FC = () => {
   const {
@@ -18,6 +19,7 @@ const UserMenu: React.FC = () => {
     signOut
   } = useAuth();
   const { isStudying, minutes, seconds, isRunning } = useTimer();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const {
     toast
@@ -69,6 +71,14 @@ const UserMenu: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const themeOptions = [
+    { value: 'emerald', label: 'Verde Esmeralda', color: 'bg-emerald-500' },
+    { value: 'rose', label: 'Rosa', color: 'bg-rose-500' },
+    { value: 'blue', label: 'Azul', color: 'bg-blue-500' },
+    { value: 'slate', label: 'Preto', color: 'bg-slate-700' },
+    { value: 'purple', label: 'Lilás', color: 'bg-purple-500' },
+  ];
+
   if (!user) {
     return <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
@@ -119,6 +129,27 @@ const UserMenu: React.FC = () => {
               <span>Meu Perfil</span>
             </Link>
           </DropdownMenuItem>
+          
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="flex w-full cursor-pointer items-center">
+              <Palette className="mr-2 h-4 w-4" />
+              <span>Alterar Tema</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {themeOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => setTheme(option.value as any)}
+                  className="flex w-full cursor-pointer items-center gap-2"
+                >
+                  <div className={`w-4 h-4 rounded-full ${option.color}`} />
+                  <span>{option.label}</span>
+                  {theme === option.value && <span className="ml-auto text-xs">✓</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />

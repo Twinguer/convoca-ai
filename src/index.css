@@ -47,6 +47,58 @@
     --sidebar-ring: 158 64% 39%;
   }
 
+  /* Tema Rosa */
+  .theme-rose {
+    --primary: 330 81% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 330 40% 95%;
+    --secondary-foreground: 330 81% 20%;
+    --accent: 330 40% 90%;
+    --accent-foreground: 330 81% 20%;
+    --ring: 330 81% 60%;
+    --sidebar-primary: 330 81% 60%;
+    --sidebar-ring: 330 81% 60%;
+  }
+
+  /* Tema Azul */
+  .theme-blue {
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 221 40% 95%;
+    --secondary-foreground: 221 83% 20%;
+    --accent: 221 40% 90%;
+    --accent-foreground: 221 83% 20%;
+    --ring: 221 83% 53%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-ring: 221 83% 53%;
+  }
+
+  /* Tema Preto/Cinza */
+  .theme-slate {
+    --primary: 215 28% 17%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 215 20% 90%;
+    --secondary-foreground: 215 28% 17%;
+    --accent: 215 20% 85%;
+    --accent-foreground: 215 28% 17%;
+    --ring: 215 28% 17%;
+    --sidebar-primary: 215 28% 17%;
+    --sidebar-ring: 215 28% 17%;
+  }
+
+  /* Tema Lilás */
+  .theme-purple {
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 262 40% 95%;
+    --secondary-foreground: 262 83% 20%;
+    --accent: 262 40% 90%;
+    --accent-foreground: 262 83% 20%;
+    --ring: 262 83% 58%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-ring: 262 83% 58%;
+  }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
