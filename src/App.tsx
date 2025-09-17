@@ -98,7 +98,7 @@ const AppContent = () => {
                         <Menu />
                         <Timer />
                       </>} />
-                     <Route path="/estudos/estatisticas" element={<>
+                     <Route path="/estatisticas" element={<>
                         <Menu />
                         <Estatisticas />
                       </>} />

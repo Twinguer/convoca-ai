@@ -278,47 +278,6 @@ const EstudosDashboard = () => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-foreground mb-4">Ações Rápidas</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Link to="/estudos/cronograma">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardContent className="p-6 text-center">
-                <Calendar className="mx-auto h-12 w-12 text-primary mb-4" />
-                <h3 className="font-semibold mb-2">Cronograma</h3>
-                <p className="text-sm text-muted-foreground">
-                  Organize sua rotina de estudos
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to="/estudos/timer">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardContent className="p-6 text-center">
-                <Clock className="mx-auto h-12 w-12 text-primary mb-4" />
-                <h3 className="font-semibold mb-2">Timer de Estudo</h3>
-                <p className="text-sm text-muted-foreground">
-                  Cronometr e registre suas sessões
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link to="/estudos/estatisticas">
-            <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
-              <CardContent className="p-6 text-center">
-                <TrendingUp className="mx-auto h-12 w-12 text-primary mb-4" />
-                <h3 className="font-semibold mb-2">Estatísticas</h3>
-                <p className="text-sm text-muted-foreground">
-                  Analise seu desempenho
-                </p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-      </div>
     </div>;
 };
 interface StudyCycleCardProps {

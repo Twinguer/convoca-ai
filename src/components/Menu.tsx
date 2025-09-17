@@ -5,7 +5,7 @@ import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard } from 'lucide-react';
+import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
@@ -87,6 +87,15 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
+                <Link to="/estatisticas">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Estatísticas
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              
+              <NavigationMenuItem>
                 <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
@@ -158,6 +167,10 @@ const Menu = () => {
                 <Link to="/estudos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
                   <BookOpen className="mr-2 h-4 w-4" />
                   Estudar
+                </Link>
+                <Link to="/estatisticas" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estatisticas') ? "text-primary" : "text-foreground/70")}>
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Estatísticas
                 </Link>
                 <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
                   <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
