@@ -204,9 +204,7 @@ const Index = () => {
             <div>
               <h3 className="text-xl font-bold text-white mb-4">Links Rápidos</h3>
               <ul className="space-y-2">
-                <li>
-                  <Link to="/editais" className="hover:text-white transition-colors">Editais</Link>
-                </li>
+                
                 <li>
                   <Link to="/pre-classificacao" className="hover:text-white transition-colors">Pré-classificação</Link>
                 </li>
