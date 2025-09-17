@@ -277,7 +277,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Cadernos de Prova
-          {isBookletsSaved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+          {isBookletsSaved && <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">
               Salvos
             </span>}
           {hasUnsavedChanges && !isBookletsSaved && <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
@@ -301,7 +301,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
                   </Label>
                   <Input id={`booklet-${index}`} value={booklet.name} onChange={e => updateBookletName(index, e.target.value)} placeholder="Nome do caderno (ex: BRANCO, AZUL, A, B...)" className="mt-1" maxLength={20} />
                 </div>
-                {booklets.length > 1 && <Button type="button" variant="outline" size="sm" onClick={() => removeBooklet(index)} className="text-red-600 hover:text-red-700">
+                {booklets.length > 1 && <Button type="button" variant="outline" size="sm" onClick={() => removeBooklet(index)} className="text-destructive hover:text-destructive/80">
                     <X className="h-4 w-4" />
                   </Button>}
               </div>)}
@@ -314,7 +314,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
           </Button>
           
           <div className="flex items-center gap-2">
-            <Button type="button" onClick={saveBooklets} disabled={isLoading || isSaving || isBookletsSaved} className={isBookletsSaved ? "bg-green-600 hover:bg-green-700" : "bg-emerald-600 hover:bg-emerald-700"}>
+            <Button type="button" onClick={saveBooklets} disabled={isLoading || isSaving || isBookletsSaved} className={isBookletsSaved ? "bg-success hover:bg-success/90" : "bg-primary hover:bg-primary/90"}>
               {isSaving ? 'Salvando...' : isBookletsSaved ? 'Cadernos Salvos' : 'Salvar Cadernos'}
             </Button>
           </div>

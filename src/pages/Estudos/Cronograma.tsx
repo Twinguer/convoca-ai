@@ -398,7 +398,7 @@ const Cronograma = () => {
 
       // Registrar no sistema de estatísticas globais se >= 20 minutos
       if (studyDuration >= 20) {
-        await addStudySession(studyDuration);
+        await addStudySession(studyDuration, 'manual', editingSession.disciplineName);
       }
 
       // Registrar questões no sistema de tracking se houver

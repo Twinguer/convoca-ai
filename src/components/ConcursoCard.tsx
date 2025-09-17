@@ -29,30 +29,30 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
   return (
     <div className="concurso-card">
       <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{titulo}</h3>
+        <h3 className="text-lg font-semibold text-foreground">{titulo}</h3>
         <span className={`text-xs px-2 py-1 rounded-full ${
           status === "Em andamento" 
-            ? "bg-green-100 text-green-800" 
+            ? "bg-success/10 text-success" 
             : status === "Finalizado" 
-              ? "bg-blue-100 text-blue-800" 
-              : "bg-yellow-100 text-yellow-800"
+              ? "bg-primary/10 text-primary" 
+              : "bg-warning/10 text-warning"
         }`}>
           {status}
         </span>
       </div>
       
       <div className="space-y-2 mb-4">
-        <div className="flex items-center text-gray-600">
+        <div className="flex items-center text-muted-foreground">
           <Building className="h-4 w-4 mr-2" />
           <span className="text-sm">{orgao}</span>
         </div>
         
-        <div className="flex items-center text-gray-600">
+        <div className="flex items-center text-muted-foreground">
           <Calendar className="h-4 w-4 mr-2" />
           <span className="text-sm">{data}</span>
         </div>
         
-        <div className="flex items-center text-gray-600">
+        <div className="flex items-center text-muted-foreground">
           <User className="h-4 w-4 mr-2" />
           <span className="text-sm">{vagas} vagas</span>
         </div>
@@ -61,7 +61,7 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
       <div className="flex space-x-4">
         <Link 
           to={detailsPath}
-          className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
+          className="flex items-center text-primary hover:text-primary/80 text-sm font-medium"
         >
           Ver detalhes
           <ChevronRight className="h-4 w-4 ml-1" />
@@ -69,7 +69,7 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
         
         <Link 
           to={resultsPath}
-          className="flex items-center text-convoca-600 hover:text-convoca-700 text-sm font-medium"
+          className="flex items-center text-primary hover:text-primary/80 text-sm font-medium"
         >
           Resultados
           <ChevronRight className="h-4 w-4 ml-1" />

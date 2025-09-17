@@ -82,7 +82,7 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         <span className="font-medium">{booklet.name}</span>
-                        {completion?.isComplete && <CheckCircle className="h-3 w-3 text-green-600" />}
+                        {completion?.isComplete && <CheckCircle className="h-3 w-3 text-success" />}
                       </div>
                       {completion && <Badge variant={completion.isComplete ? "default" : "secondary"} className="ml-2">
                           {completion.completed}/{completion.total}
@@ -102,21 +102,21 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
         {completionStatus && completionStatus.details.length > 0 && <div className="space-y-2">
             <Label className="text-sm font-medium">Status dos Gabaritos por Caderno</Label>
             <div className="grid gap-2">
-              {completionStatus.details.map(detail => <div key={detail.bookletId} className={`flex items-center justify-between p-3 rounded border transition-colors ${detail.bookletId === selectedBookletId ? 'bg-blue-50 border-blue-200' : ''} ${detail.isComplete ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
-                  <div className="flex items-center gap-2">
-                    {detail.isComplete ? <CheckCircle className="h-4 w-4 text-green-600" /> : <AlertCircle className="h-4 w-4 text-yellow-600" />}
-                    <span className="text-sm font-medium">
-                      {detail.bookletName}
-                      {detail.bookletId === selectedBookletId && <span className="text-blue-600 ml-1">(Selecionado)</span>}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={detail.isComplete ? "default" : "secondary"}>
-                      {detail.completed}/{detail.total} questões
-                    </Badge>
-                    {detail.isComplete && <CheckCircle className="h-4 w-4 text-green-600" />}
-                  </div>
-                </div>)}
+              {completionStatus.details.map(detail => <div key={detail.bookletId} className={`flex items-center justify-between p-3 rounded border transition-colors ${detail.bookletId === selectedBookletId ? 'bg-primary/5 border-primary/20' : ''} ${detail.isComplete ? 'bg-success/5 border-success/20' : 'bg-warning/5 border-warning/20'}`}>
+                <div className="flex items-center gap-2">
+                  {detail.isComplete ? <CheckCircle className="h-4 w-4 text-success" /> : <AlertCircle className="h-4 w-4 text-warning" />}
+                  <span className="text-sm font-medium">
+                    {detail.bookletName}
+                    {detail.bookletId === selectedBookletId && <span className="text-primary ml-1">(Selecionado)</span>}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={detail.isComplete ? "default" : "secondary"}>
+                    {detail.completed}/{detail.total} questões
+                  </Badge>
+                  {detail.isComplete && <CheckCircle className="h-4 w-4 text-success" />}
+                </div>
+              </div>)}
             </div>
           </div>}
 
@@ -124,12 +124,12 @@ export const BookletAnswerKeySelector: React.FC<BookletAnswerKeySelectorProps> =
         {completionStatus && !completionStatus.allComplete}
 
         {/* Mensagem de sucesso quando todos estão completos */}
-        {completionStatus && completionStatus.allComplete && <div className="p-4 rounded bg-green-50 border border-green-200">
+        {completionStatus && completionStatus.allComplete && <div className="p-4 rounded bg-success/5 border border-success/20">
             <div className="flex items-start gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5" />
+              <CheckCircle className="h-4 w-4 text-success mt-0.5" />
               <div className="text-sm">
-                <p className="font-medium text-green-800">✅ Todos os Gabaritos Completos!</p>
-                <p className="text-green-700 mt-1">
+                <p className="font-medium text-success">✅ Todos os Gabaritos Completos!</p>
+                <p className="text-success/80 mt-1">
                   Parabéns! Você preencheu o gabarito oficial de todos os {completionStatus.details.length} cadernos.
                   Agora você pode salvar o ranking e ativá-lo para os participantes.
                 </p>

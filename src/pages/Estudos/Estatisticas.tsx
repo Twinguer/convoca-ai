@@ -159,7 +159,7 @@ const Estatisticas = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-success" />
               Desempenho em Questões
             </CardTitle>
             <CardDescription>
@@ -173,9 +173,9 @@ const Estatisticas = () => {
                 <Badge variant="secondary">{statistics.questionsAnswered}</Badge>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-green-600">Acertos</span>
+                <span className="text-sm font-medium text-success">Acertos</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Badge variant="secondary" className="bg-success/10 text-success">
                     {statistics.correctAnswers}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
@@ -184,9 +184,9 @@ const Estatisticas = () => {
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-red-600">Erros</span>
+                <span className="text-sm font-medium text-destructive">Erros</span>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-red-100 text-red-800">
+                  <Badge variant="secondary" className="bg-destructive/10 text-destructive">
                     {statistics.wrongAnswers}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
@@ -214,7 +214,7 @@ const Estatisticas = () => {
           {statistics.sessionHistory.length > 0 ? (
             <div className="space-y-3">
               {statistics.sessionHistory.slice(-10).reverse().map((session, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-0">
                   <div>
                     <span className="text-sm font-medium">
                       {new Date(session.date).toLocaleDateString('pt-BR')}

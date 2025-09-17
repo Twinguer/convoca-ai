@@ -45,6 +45,13 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 158 64% 39%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --error: 0 84% 60%;
+    --error-foreground: 210 40% 98%;
   }
 
   /* Tema Rosa */
@@ -58,6 +65,13 @@
     --ring: 330 81% 60%;
     --sidebar-primary: 330 81% 60%;
     --sidebar-ring: 330 81% 60%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --error: 0 84% 60%;
+    --error-foreground: 210 40% 98%;
   }
 
   /* Tema Azul */
@@ -71,6 +85,13 @@
     --ring: 221 83% 53%;
     --sidebar-primary: 221 83% 53%;
     --sidebar-ring: 221 83% 53%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --error: 0 84% 60%;
+    --error-foreground: 210 40% 98%;
   }
 
   /* Tema Preto/Cinza */
@@ -84,6 +105,13 @@
     --ring: 215 28% 17%;
     --sidebar-primary: 215 28% 17%;
     --sidebar-ring: 215 28% 17%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --error: 0 84% 60%;
+    --error-foreground: 210 40% 98%;
   }
 
   /* Tema Lilás */
@@ -97,6 +125,13 @@
     --ring: 262 83% 58%;
     --sidebar-primary: 262 83% 58%;
     --sidebar-ring: 262 83% 58%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --error: 0 84% 60%;
+    --error-foreground: 210 40% 98%;
   }
 
   .dark {
