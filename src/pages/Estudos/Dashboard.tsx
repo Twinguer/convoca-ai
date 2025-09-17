@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit } from 'lucide-react';
+import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit, FileText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -263,7 +263,7 @@ const EstudosDashboard = () => {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
             <div className="grid gap-6 md:grid-cols-2">
-              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/sessao/${data.cycle.id}`)} onDelete={() => deleteCycle(data.cycle.id)} />)}
+              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={() => navigate(`/estudos/sessao/${data.cycle.id}`)} onDelete={() => deleteCycle(data.cycle.id)} />)}
             </div>
           </div>
         </>}
@@ -324,11 +324,13 @@ const EstudosDashboard = () => {
 interface StudyCycleCardProps {
   cycleProgress: StudyCycleProgress;
   onStartSession: () => void;
+  onViewEdital: () => void;
   onDelete: () => void;
 }
 const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
   cycleProgress,
   onStartSession,
+  onViewEdital,
   onDelete
 }) => {
   const {
@@ -409,13 +411,16 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
         {/* Actions */}
         <div className="flex gap-2">
           <Button onClick={onStartSession} className="flex-1">
-            <Play className="h-4 w-4 mr-2" />
-            Iniciar Sessão
+            <Calendar className="h-4 w-4 mr-2" />
+            Cronograma
+          </Button>
+          <Button onClick={onViewEdital} variant="outline">
+            <FileText className="h-4 w-4 mr-2" />
+            Edital
           </Button>
           <Link to={`/estudos/editar-ciclo/${cycle.id}`}>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
+            <Button variant="outline" size="icon">
+              <Edit className="h-4 w-4" />
             </Button>
           </Link>
           <Button variant="outline" size="icon" onClick={onDelete} className="text-destructive hover:text-destructive">
