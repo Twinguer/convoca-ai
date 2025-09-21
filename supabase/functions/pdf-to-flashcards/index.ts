@@ -28,7 +28,10 @@ serve(async (req) => {
   try {
     console.log('PDF to Flashcards function started');
     
-    const { pdfData, startPage, endPage, fileName }: PDFProcessRequest = await req.json();
+    const requestBody = await req.json();
+    console.log('Request received:', { ...requestBody, pdfData: 'PDF_DATA_RECEIVED' });
+    
+    const { pdfData, startPage, endPage, fileName }: PDFProcessRequest = requestBody;
 
     if (!pdfData || !startPage || !endPage || !fileName) {
       throw new Error('Dados inválidos fornecidos');
@@ -36,26 +39,40 @@ serve(async (req) => {
 
     console.log(`Processing PDF: ${fileName}, pages ${startPage}-${endPage} for flashcards`);
 
-    // Convert base64 to binary for processing
-    const pdfBuffer = Uint8Array.from(atob(pdfData.split(',')[1]), c => c.charCodeAt(0));
-    
-    console.log('PDF buffer created, size:', pdfBuffer.length);
+    // Validate OpenAI API key
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
 
-    // Simulate text extraction from PDF pages (same as pdf-to-audio)
+    // Validate PDF data format
+    if (!pdfData.startsWith('data:application/pdf;base64,')) {
+      throw new Error('Formato de PDF inválido');
+    }
+
+    // Extract base64 data
+    const base64Data = pdfData.split(',')[1];
+    if (!base64Data || base64Data.length === 0) {
+      throw new Error('Dados PDF inválidos');
+    }
+
+    console.log('PDF data validated, size:', base64Data.length);
+
+    // For now, use simulated text extraction based on page range
     let extractedText = '';
     
-    const simulatedPageTexts = [
-      "Este é um exemplo de texto extraído da primeira página do documento PDF. Conceitos importantes incluem metodologia de estudos, técnicas de memorização e organização temporal.",
-      "Aqui temos o conteúdo da segunda página, com informações relevantes sobre gestão do tempo nos estudos. É fundamental estabelecer rotinas consistentes e intervalos regulares.",
-      "A terceira página contém mais conteúdo educacional importante sobre técnicas de leitura dinâmica. A velocidade de leitura pode ser aumentada através de exercícios específicos.",
-      "Continuamos com o material de estudo na quarta página, abordando métodos de revisão espaçada. Esta técnica é cientificamente comprovada para melhorar a retenção a longo prazo.",
-      "Por fim, a quinta página conclui o documento com informações adicionais sobre avaliação do progresso nos estudos. Métricas claras ajudam a manter a motivação."
+    const pageTexts = [
+      "Este documento aborda metodologias de estudo eficazes. A primeira técnica apresentada é a revisão espaçada, que consiste em revisar o material em intervalos crescentes de tempo. Esta metodologia aumenta significativamente a retenção de informações a longo prazo.",
+      "Gestão do tempo é fundamental para o sucesso acadêmico. O método Pomodoro sugere períodos de estudo de 25 minutos seguidos de pausas de 5 minutos. Após quatro ciclos, deve-se fazer uma pausa mais longa de 15-30 minutos para maximizar a produtividade.",
+      "Técnicas de leitura dinâmica podem aumentar a velocidade de compreensão. O método de varredura permite identificar rapidamente informações relevantes em textos extensos. É importante praticar a leitura seletiva para otimizar o tempo de estudo.",
+      "Mapas mentais são ferramentas visuais poderosas para organizar informações. Eles utilizam cores, símbolos e conexões para representar conceitos de forma hierárquica. Esta técnica facilita a memorização e a compreensão de tópicos complexos.",
+      "Autoavaliação regular é essencial para monitorar o progresso. Testes práticos e questionários ajudam a identificar lacunas no conhecimento. A metacognição, ou seja, pensar sobre o próprio processo de aprendizagem, melhora significativamente os resultados acadêmicos."
     ];
 
-    // Extract text for the specified page range
-    for (let page = startPage; page <= endPage; page++) {
-      if (page <= simulatedPageTexts.length) {
-        extractedText += simulatedPageTexts[page - 1] + ' ';
+    // Simulate text extraction for specified pages
+    for (let page = startPage; page <= Math.min(endPage, pageTexts.length); page++) {
+      if (pageTexts[page - 1]) {
+        extractedText += pageTexts[page - 1] + ' ';
       }
     }
 
@@ -64,9 +81,8 @@ serve(async (req) => {
     }
 
     console.log('Text extracted, length:', extractedText.length);
-    console.log('Sample text:', extractedText.substring(0, 100) + '...');
 
-    // Clean text - remove headers, footers, page numbers, etc.
+    // Clean text
     const cleanedText = cleanText(extractedText);
     
     console.log('Text cleaned, generating flashcards with OpenAI...');
@@ -75,7 +91,7 @@ serve(async (req) => {
     const flashcardsResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -83,54 +99,57 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Você é um especialista em criação de material de estudo. Sua tarefa é analisar o texto fornecido e criar flashcards (cartões de estudo) com perguntas e respostas baseadas no conteúdo.
+            content: `Você é um especialista em criação de material de estudo. Crie flashcards baseados no texto fornecido.
 
-            Regras importantes:
-            - Crie entre 10 a 20 flashcards dependendo do conteúdo
-            - Cada flashcard deve ter uma pergunta clara e uma resposta concisa
-            - Foque nos conceitos mais importantes e informações-chave
-            - As perguntas devem ser variadas: definições, conceitos, aplicações, exemplos
-            - Evite perguntas muito óbvias ou muito complexas
-            - Organize por tópicos quando possível
+            Regras:
+            - Crie entre 8 a 15 flashcards
+            - Perguntas claras e respostas concisas
+            - Foque nos conceitos mais importantes
+            - Varie os tipos de pergunta (definições, aplicações, exemplos)
             
-            Retorne APENAS um JSON válido no seguinte formato:
+            Retorne APENAS um JSON válido:
             {
               "flashcards": [
                 {
-                  "question": "Pergunta clara e objetiva",
-                  "answer": "Resposta concisa e completa", 
-                  "topic": "Tópico ou categoria"
+                  "question": "Pergunta objetiva",
+                  "answer": "Resposta completa", 
+                  "topic": "Tópico"
                 }
               ]
             }`
           },
           {
             role: 'user',
-            content: `Analise o seguinte texto e crie flashcards para estudo:\n\n${cleanedText}`
+            content: `Texto para análise:\n\n${cleanedText}`
           }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 1500
       }),
     });
 
     if (!flashcardsResponse.ok) {
       const errorText = await flashcardsResponse.text();
-      console.error('OpenAI flashcards error:', errorText);
-      throw new Error(`Erro ao gerar flashcards: ${flashcardsResponse.status} ${errorText}`);
+      console.error('OpenAI flashcards error:', flashcardsResponse.status, errorText);
+      throw new Error(`Erro ao gerar flashcards: ${flashcardsResponse.status}`);
     }
 
     const flashcardsData = await flashcardsResponse.json();
-    let flashcards;
+    console.log('OpenAI response received');
 
+    let flashcards;
     try {
-      // Parse the JSON response from OpenAI
       const content = flashcardsData.choices[0].message.content;
+      console.log('Content from OpenAI:', content.substring(0, 200) + '...');
       const parsedContent = JSON.parse(content);
       flashcards = parsedContent.flashcards;
     } catch (parseError) {
       console.error('Error parsing flashcards JSON:', parseError);
       throw new Error('Erro ao processar os flashcards gerados');
+    }
+
+    if (!flashcards || !Array.isArray(flashcards)) {
+      throw new Error('Formato inválido de flashcards gerado');
     }
 
     console.log('Flashcards generated successfully, count:', flashcards.length);
@@ -151,7 +170,7 @@ serve(async (req) => {
     const dataUrl = `data:application/json;base64,${base64Content}`;
     const flashcardsFileName = fileName.replace('.pdf', '_flashcards.json');
 
-    console.log('Flashcards processing complete, total cards:', flashcards.length);
+    console.log('Flashcards processing complete');
 
     return new Response(
       JSON.stringify({
@@ -173,7 +192,7 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: error.message || 'Erro interno do servidor',
-        details: 'Verifique se o PDF está válido e tente novamente'
+        details: error.stack || 'Erro desconhecido'
       }),
       {
         status: 500,

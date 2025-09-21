@@ -23,7 +23,10 @@ serve(async (req) => {
   try {
     console.log('PDF to Audio function started');
     
-    const { pdfData, startPage, endPage, voice, fileName }: PDFProcessRequest = await req.json();
+    const requestBody = await req.json();
+    console.log('Request received:', { ...requestBody, pdfData: 'PDF_DATA_RECEIVED' });
+    
+    const { pdfData, startPage, endPage, voice, fileName }: PDFProcessRequest = requestBody;
 
     if (!pdfData || !startPage || !endPage || !voice || !fileName) {
       throw new Error('Dados inválidos fornecidos');
@@ -31,36 +34,41 @@ serve(async (req) => {
 
     console.log(`Processing PDF: ${fileName}, pages ${startPage}-${endPage}, voice: ${voice}`);
 
-    // Convert base64 to binary for processing
-    const pdfBuffer = Uint8Array.from(atob(pdfData.split(',')[1]), c => c.charCodeAt(0));
-    
-    console.log('PDF buffer created, size:', pdfBuffer.length);
+    // Validate OpenAI API key
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
 
-    // Create FormData for document parsing
-    const formData = new FormData();
-    const pdfBlob = new Blob([pdfBuffer], { type: 'application/pdf' });
-    formData.append('file', pdfBlob, fileName);
+    // Validate PDF data format
+    if (!pdfData.startsWith('data:application/pdf;base64,')) {
+      throw new Error('Formato de PDF inválido');
+    }
 
-    console.log('Parsing PDF document...');
+    // Extract base64 data
+    const base64Data = pdfData.split(',')[1];
+    if (!base64Data || base64Data.length === 0) {
+      throw new Error('Dados PDF inválidos');
+    }
 
-    // Parse PDF using a document parsing API (simulated - in real implementation would use actual API)
-    // For now, we'll simulate text extraction
+    console.log('PDF data validated, size:', base64Data.length);
+
+    // For now, use simulated text extraction based on page range
+    // This would be replaced with actual PDF parsing in a real implementation
     let extractedText = '';
     
-    // Simulate text extraction from PDF pages
-    // In a real implementation, you would use a proper PDF parsing library
-    const simulatedPageTexts = [
-      "Este é um exemplo de texto extraído da primeira página do documento PDF.",
-      "Aqui temos o conteúdo da segunda página, com informações relevantes para o estudo.",
-      "A terceira página contém mais conteúdo educacional importante.",
-      "Continuamos com o material de estudo na quarta página.",
-      "Por fim, a quinta página conclui o documento com informações adicionais."
+    const pageTexts = [
+      "Este é o conteúdo da primeira página do documento. Contém informações importantes sobre metodologias de estudo e técnicas de aprendizagem que são fundamentais para o desenvolvimento acadêmico.",
+      "A segunda página apresenta conceitos avançados sobre gestão do tempo e organização de estudos. É essencial compreender como estruturar sessões de estudo eficazes.",
+      "Na terceira página encontramos estratégias de memorização e revisão espaçada. Estas técnicas são comprovadamente eficazes para retenção de informações a longo prazo.",
+      "A quarta página aborda métodos de avaliação e autoavaliação. Monitorar o progresso é crucial para identificar áreas que necessitam de maior atenção.",
+      "A quinta página conclui com técnicas avançadas de concentração e foco. Manter a atenção durante períodos prolongados de estudo é uma habilidade que pode ser desenvolvida."
     ];
 
-    // Extract text for the specified page range
-    for (let page = startPage; page <= endPage; page++) {
-      if (page <= simulatedPageTexts.length) {
-        extractedText += simulatedPageTexts[page - 1] + ' ';
+    // Simulate text extraction for specified pages
+    for (let page = startPage; page <= Math.min(endPage, pageTexts.length); page++) {
+      if (pageTexts[page - 1]) {
+        extractedText += pageTexts[page - 1] + ' ';
       }
     }
 
@@ -69,24 +77,27 @@ serve(async (req) => {
     }
 
     console.log('Text extracted, length:', extractedText.length);
-    console.log('Sample text:', extractedText.substring(0, 100) + '...');
 
-    // Clean text - remove headers, footers, page numbers, etc.
+    // Clean and prepare text for TTS
     const cleanedText = cleanText(extractedText);
     
+    if (cleanedText.length > 4000) {
+      throw new Error('Texto muito longo para conversão. Limite máximo: 4000 caracteres');
+    }
+
     console.log('Text cleaned, generating audio...');
 
     // Generate audio using OpenAI TTS
     const audioResponse = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openaiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'tts-1-hd', // High quality model for better voice
+        model: 'tts-1',
         input: cleanedText,
-        voice: voice, // 'alloy' (female) or 'echo' (male)
+        voice: voice,
         response_format: 'mp3',
         speed: 1.0
       }),
@@ -94,14 +105,16 @@ serve(async (req) => {
 
     if (!audioResponse.ok) {
       const errorText = await audioResponse.text();
-      console.error('OpenAI TTS error:', errorText);
-      throw new Error(`Erro ao gerar áudio: ${audioResponse.status} ${errorText}`);
+      console.error('OpenAI TTS error:', audioResponse.status, errorText);
+      throw new Error(`Erro ao gerar áudio: ${audioResponse.status}`);
     }
 
     console.log('Audio generated successfully');
 
     // Convert audio to base64 for download
     const audioArrayBuffer = await audioResponse.arrayBuffer();
+    console.log('Audio buffer size:', audioArrayBuffer.byteLength);
+    
     const audioBase64 = btoa(
       String.fromCharCode(...new Uint8Array(audioArrayBuffer))
     );
@@ -110,7 +123,7 @@ serve(async (req) => {
     const audioDataUrl = `data:audio/mpeg;base64,${audioBase64}`;
     const audioFileName = fileName.replace('.pdf', '_audio.mp3');
 
-    console.log('Audio processing complete, size:', audioArrayBuffer.byteLength);
+    console.log('Audio processing complete');
 
     return new Response(
       JSON.stringify({
@@ -132,7 +145,7 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: error.message || 'Erro interno do servidor',
-        details: 'Verifique se o PDF está válido e tente novamente'
+        details: error.stack || 'Erro desconhecido'
       }),
       {
         status: 500,
