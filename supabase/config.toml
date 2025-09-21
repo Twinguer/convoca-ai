@@ -33,3 +33,6 @@ file_size_limit = "50MiB"
 
 [vector]
 port = 54327
+
+[functions.pdf-to-audio]
+verify_jwt = false
