@@ -39,6 +39,7 @@ import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
+import Materiais from "./pages/Materiais";
 
 
 const AppContent = () => {
@@ -86,14 +87,18 @@ const AppContent = () => {
                         <Menu />
                         <CriarRanking />
                       </>} />
-                    <Route path="/estudos" element={<>
-                        <Menu />
-                        <EstudosDashboard />
-                      </>} />
-                    <Route path="/estudos/cronograma" element={<>
-                        <Menu />
-                        <Cronograma />
-                      </>} />
+                     <Route path="/estudos" element={<>
+                         <Menu />
+                         <EstudosDashboard />
+                       </>} />
+                     <Route path="/materiais" element={<>
+                         <Menu />
+                         <Materiais />
+                       </>} />
+                     <Route path="/estudos/cronograma" element={<>
+                         <Menu />
+                         <Cronograma />
+                       </>} />
                     <Route path="/estudos/timer" element={<>
                         <Menu />
                         <Timer />
