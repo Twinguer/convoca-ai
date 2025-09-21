@@ -35,6 +35,7 @@ file_size_limit = "50MiB"
 port = 54327
 
 [functions.pdf-to-audio]
+verify_jwt = false
 
 [functions.pdf-to-flashcards]
 verify_jwt = false
