@@ -715,47 +715,73 @@ const Cronograma = () => {
             {studyDayDetails.length > 0 ? (
               studyDayDetails.map((session, index) => (
                 <Card key={session.id} className="p-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold">{session.discipline_name || 'Estudo'}</h4>
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-lg">{session.discipline_name || 'Estudo'}</h4>
                         <p className="text-sm text-muted-foreground">{session.block_name}</p>
+                        {session.course_name && (
+                          <p className="text-sm">
+                            <span className="font-medium">Assunto:</span> {session.course_name}
+                          </p>
+                        )}
                       </div>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="text-sm">
                         {session.duration_minutes} min
                       </Badge>
                     </div>
                     
                     {session.session_link && (
-                      <div className="flex items-center gap-2">
-                        <ExternalLink className="h-4 w-4" />
+                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                        <ExternalLink className="h-4 w-4 text-primary" />
                         <a 
                           href={session.session_link} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
+                          className="text-sm text-primary hover:underline font-medium"
                         >
-                          {session.course_name || 'Link da sessão'}
+                          Ir para a aula
                         </a>
+                      </div>
+                    )}
+
+                    {session.study_type && (
+                      <div className="text-sm">
+                        <span className="font-medium">Tipo de estudo:</span> {session.study_type === 'pdf' ? 'PDF' : 'Vídeo Aula'}
+                      </div>
+                    )}
+
+                    {/* Página ou vídeo estudado */}
+                    {session.study_type === 'pdf' && session.current_page && (
+                      <div className="text-sm">
+                        <span className="font-medium">Página ou vídeo estudado:</span> Página {session.current_page}
+                      </div>
+                    )}
+                    {session.study_type === 'video' && session.current_video && (
+                      <div className="text-sm">
+                        <span className="font-medium">Página ou vídeo estudado:</span> {session.current_video}
                       </div>
                     )}
                     
                     {session.total_questions > 0 && (
-                      <div className="text-sm">
-                        <span className="font-medium">Questões:</span> {session.total_correct_answers}/{session.total_questions} 
-                        ({((session.total_correct_answers / session.total_questions) * 100).toFixed(1)}%)
-                      </div>
-                    )}
-                    
-                    {session.notes && (
-                      <div className="text-sm">
-                        <span className="font-medium">Notas:</span> {session.notes}
+                      <div className="text-sm p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
+                        <span className="font-medium">Total de questões:</span> {session.total_correct_answers}/{session.total_questions} 
+                        <span className="ml-2 text-green-600 dark:text-green-400 font-medium">
+                          ({((session.total_correct_answers / session.total_questions) * 100).toFixed(1)}% de acertos)
+                        </span>
                       </div>
                     )}
                     
                     {session.course_progress && (
                       <div className="text-sm">
                         <span className="font-medium">Progresso:</span> {session.course_progress}
+                      </div>
+                    )}
+
+                    {session.notes && (
+                      <div className="text-sm border-t pt-2">
+                        <span className="font-medium">Observações:</span>
+                        <p className="mt-1 text-muted-foreground">{session.notes}</p>
                       </div>
                     )}
                   </div>
