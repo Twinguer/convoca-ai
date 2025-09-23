@@ -718,7 +718,7 @@ const Cronograma = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
-                        <h4 className="font-semibold text-lg">{session.discipline_name || 'Estudo'}</h4>
+                        <h4 className="font-semibold text-lg">{session.course_name || session.discipline_name || 'Estudo'}</h4>
                         <p className="text-sm text-muted-foreground">{session.block_name}</p>
                         {session.course_name && (
                           <p className="text-sm">
@@ -821,7 +821,7 @@ const Cronograma = () => {
               </div>
 
               <div>
-                <Label htmlFor="courseName">Nome do Curso</Label>
+                <Label htmlFor="courseName">Assunto</Label>
                 <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" />
               </div>
 
