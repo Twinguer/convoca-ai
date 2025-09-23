@@ -129,7 +129,22 @@ const Cronograma = () => {
         .order('start_time');
         
       if (error) throw error;
-      setStudyDayDetails(data || []);
+      
+      // Enriquecer os dados com informações do cronograma
+      const enrichedData = (data || []).map(session => {
+        // Buscar a sessão correspondente no cronograma
+        const scheduleSession = sessions.find(s => s.id === session.schedule_session_id);
+        
+        return {
+          ...session,
+          course_name: scheduleSession?.disciplineName || 'Assunto não informado',
+          study_type: session.study_type || 'mixed',
+          block_name: scheduleSession?.blockName || '',
+          discipline_name: scheduleSession?.disciplineName || ''
+        };
+      });
+      
+      setStudyDayDetails(enrichedData);
     } catch (error) {
       console.error('Error loading study day details:', error);
       setStudyDayDetails([]);
