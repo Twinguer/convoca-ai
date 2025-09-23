@@ -418,6 +418,9 @@ const Cronograma = () => {
       setShowEditModal(false);
       setEditingSession(null);
 
+      // Recarregar os dias estudados para atualizar o calendário
+      await loadStudiedDays();
+
       // Limpar campos
       setStudyDuration(0);
       setStudyNotes('');
@@ -426,6 +429,8 @@ const Cronograma = () => {
       setCourseName('');
       setCourseProgress('');
       setSessionLink('');
+      
+      toast.success('Sessão de estudo salva com sucesso!');
     } catch (error) {
       console.error('Error saving study session:', error);
       toast.error('Erro ao salvar sessão de estudo');
