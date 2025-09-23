@@ -37,7 +37,9 @@ interface StudyCycle {
   blocks: any[];
 }
 const Cronograma = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const {
     minutes,
     seconds,
@@ -48,7 +50,7 @@ const Cronograma = () => {
     pauseTimer,
     resumeTimer,
     stopTimer,
-    setInitialTime,
+    setInitialTime
   } = useTimer();
 
   // Clock state
@@ -67,24 +69,20 @@ const Cronograma = () => {
       loadStudiedDays();
     }
   }, [user]);
-
   const loadStudiedDays = async () => {
     try {
-      const { data, error } = await supabase
-        .from('study_sessions')
-        .select('session_date')
-        .eq('user_id', user?.id)
-        .order('session_date');
-      
+      const {
+        data,
+        error
+      } = await supabase.from('study_sessions').select('session_date').eq('user_id', user?.id).order('session_date');
       if (error) throw error;
-      
+
       // Convert dates properly avoiding timezone issues
       const uniqueDates = [...new Set((data || []).map(item => item.session_date))];
       const dates = uniqueDates.map(dateStr => {
         const [year, month, day] = dateStr.split('-');
         return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       });
-      
       setStudiedDays(dates);
     } catch (error) {
       console.error('Error loading studied days:', error);
@@ -93,7 +91,6 @@ const Cronograma = () => {
   // Handle clicking on calendar days to show study details
   const handleCalendarDateClick = async (date: Date) => {
     const isStudiedDay = studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString());
-    
     if (isStudiedDay) {
       // Show study details
       setSelectedStudyDay(date);
@@ -111,7 +108,7 @@ const Cronograma = () => {
       toast.success('Dia desmarcado como estudado');
     }
   };
-  
+
   // Load study session details for a specific day
   const loadStudyDayDetails = async (date: Date) => {
     try {
@@ -120,21 +117,16 @@ const Cronograma = () => {
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const day = date.getDate().toString().padStart(2, '0');
       const dateStr = `${year}-${month}-${day}`;
-      
-      const { data, error } = await supabase
-        .from('study_sessions')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('session_date', dateStr)
-        .order('start_time');
-        
+      const {
+        data,
+        error
+      } = await supabase.from('study_sessions').select('*').eq('user_id', user?.id).eq('session_date', dateStr).order('start_time');
       if (error) throw error;
-      
+
       // Enriquecer os dados com informações do cronograma
       const enrichedData = (data || []).map(session => {
         // Buscar a sessão correspondente no cronograma
         const scheduleSession = sessions.find(s => s.id === session.schedule_session_id);
-        
         return {
           ...session,
           course_name: scheduleSession?.disciplineName || 'Assunto não informado',
@@ -143,7 +135,6 @@ const Cronograma = () => {
           discipline_name: scheduleSession?.disciplineName || ''
         };
       });
-      
       setStudyDayDetails(enrichedData);
     } catch (error) {
       console.error('Error loading study day details:', error);
@@ -154,12 +145,9 @@ const Cronograma = () => {
   // Handle marking new study days (only for adding, not removing)
   const handleStudiedDaysChange = async (dates: Date[] | undefined) => {
     if (!dates) return;
-    
+
     // Only add new dates, don't handle removal here
-    const newDates = dates.filter(date => 
-      !studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString())
-    );
-    
+    const newDates = dates.filter(date => !studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString()));
     if (newDates.length > 0) {
       const updatedDates = [...studiedDays, ...newDates];
       setStudiedDays(updatedDates);
@@ -193,38 +181,39 @@ const Cronograma = () => {
   const {
     addStudySession
   } = useStudyStatistics();
-  const { trackAnswer } = useQuestionTracking();
-  const { getSessionByScheduleId, createOrUpdateSession, updateSessionLink } = useStudySessions();
-  
+  const {
+    trackAnswer
+  } = useQuestionTracking();
+  const {
+    getSessionByScheduleId,
+    createOrUpdateSession,
+    updateSessionLink
+  } = useStudySessions();
+
   // Timer helper functions
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')} min`;
   };
-  
   const getProgressPercentage = () => {
     const totalSeconds = initialMinutes * 60;
     const remainingSeconds = minutes * 60 + seconds;
     return (totalSeconds - remainingSeconds) / totalSeconds * 100;
   };
-  
   const handleStart = () => {
     startTimer(initialMinutes);
   };
-  
   const addTime = () => {
     if (initialMinutes < 360) {
       const newTime = initialMinutes + 5;
       setInitialTime(newTime);
     }
   };
-  
   const removeTime = () => {
     if (initialMinutes > 5) {
       const newTime = initialMinutes - 5;
       setInitialTime(newTime);
     }
   };
-  
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
   useEffect(() => {
     if (user) {
@@ -446,7 +435,6 @@ const Cronograma = () => {
       setCourseName('');
       setCourseProgress('');
       setSessionLink('');
-      
       toast.success('Sessão de estudo salva com sucesso!');
     } catch (error) {
       console.error('Error saving study session:', error);
@@ -511,18 +499,14 @@ const Cronograma = () => {
               </div>
 
               {/* Progress Bar */}
-              {isRunning && (
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-1000" 
-                    style={{ width: `${getProgressPercentage()}%` }}
-                  />
-                </div>
-              )}
+              {isRunning && <div className="w-full bg-secondary rounded-full h-2">
+                  <div className="bg-primary h-2 rounded-full transition-all duration-1000" style={{
+                width: `${getProgressPercentage()}%`
+              }} />
+                </div>}
 
               {/* Time Controls */}
-              {!isRunning && (
-                <div className="flex justify-center items-center gap-2 mb-4">
+              {!isRunning && <div className="flex justify-center items-center gap-2 mb-4">
                   <Button variant="outline" size="sm" onClick={removeTime} disabled={initialMinutes <= 5}>
                     <Minus className="h-4 w-4" />
                   </Button>
@@ -534,35 +518,26 @@ const Cronograma = () => {
                   <Button variant="outline" size="sm" onClick={addTime} disabled={initialMinutes >= 360}>
                     <Plus className="h-4 w-4" />
                   </Button>
-                </div>
-              )}
+                </div>}
 
               {/* Control Buttons */}
               <div className="flex justify-center gap-2">
-                {!isRunning ? (
-                  <Button onClick={handleStart} className="w-full">
+                {!isRunning ? <Button onClick={handleStart} className="w-full">
                     <Play className="h-4 w-4 mr-2" />
                     Iniciar
-                  </Button>
-                ) : (
-                  <>
-                    {!isPaused ? (
-                      <Button variant="outline" onClick={pauseTimer} className="flex-1">
+                  </Button> : <>
+                    {!isPaused ? <Button variant="outline" onClick={pauseTimer} className="flex-1">
                         <Pause className="h-4 w-4 mr-2" />
                         Pausar
-                      </Button>
-                    ) : (
-                      <Button onClick={resumeTimer} className="flex-1">
+                      </Button> : <Button onClick={resumeTimer} className="flex-1">
                         <Play className="h-4 w-4 mr-2" />
                         Continuar
-                      </Button>
-                    )}
+                      </Button>}
                     <Button variant="outline" onClick={stopTimer} className="flex-1">
                       <Square className="h-4 w-4 mr-2" />
                       Parar
                     </Button>
-                  </>
-                )}
+                  </>}
               </div>
             </div>
           </CardContent>
@@ -585,30 +560,20 @@ const Cronograma = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent 
-                  mode="multiple" 
-                  selected={studiedDays} 
-                  onSelect={handleStudiedDaysChange}
-                  onDayClick={handleCalendarDateClick}
-                  initialFocus 
-                  className={cn("p-3")} 
-                  modifiers={{
-                    studied: studiedDays
-                  }} 
-                  modifiersStyles={{
-                    studied: {
-                      backgroundColor: 'hsl(var(--primary))',
-                      color: 'hsl(var(--primary-foreground))',
-                      fontWeight: 'bold',
-                      border: '2px solid hsl(var(--primary))',
-                      borderRadius: '6px',
-                      position: 'relative'
-                    }
-                  }}
-                  modifiersClassNames={{
-                    studied: 'studied-day'
-                  }}
-                />
+                <CalendarComponent mode="multiple" selected={studiedDays} onSelect={handleStudiedDaysChange} onDayClick={handleCalendarDateClick} initialFocus className={cn("p-3")} modifiers={{
+                studied: studiedDays
+              }} modifiersStyles={{
+                studied: {
+                  backgroundColor: 'hsl(var(--primary))',
+                  color: 'hsl(var(--primary-foreground))',
+                  fontWeight: 'bold',
+                  border: '2px solid hsl(var(--primary))',
+                  borderRadius: '6px',
+                  position: 'relative'
+                }
+              }} modifiersClassNames={{
+                studied: 'studied-day'
+              }} />
               </PopoverContent>
             </Popover>
           </CardContent>
@@ -717,14 +682,11 @@ const Cronograma = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>
-                Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', { locale: ptBR })}
+                Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', {
+                locale: ptBR
+              })}
               </span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleUnmarkStudyDay}
-                className="text-destructive hover:text-destructive"
-              >
+              <Button variant="outline" size="sm" onClick={handleUnmarkStudyDay} className="text-destructive hover:text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Desmarcar dia
               </Button>
@@ -734,9 +696,7 @@ const Cronograma = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {studyDayDetails.length > 0 ? (
-              studyDayDetails.map((session, index) => (
-                <Card key={session.id} className="p-4">
+            {studyDayDetails.length > 0 ? studyDayDetails.map((session, index) => <Card key={session.id} className="p-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
                         <div className="space-y-1">
@@ -748,68 +708,45 @@ const Cronograma = () => {
                         </Badge>
                       </div>
                     
-                    {session.session_link && (
-                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
+                    {session.session_link && <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
                         <ExternalLink className="h-4 w-4 text-primary" />
-                        <a 
-                          href={session.session_link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline font-medium"
-                        >
+                        <a href={session.session_link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline font-medium">
                           Ir para a aula
                         </a>
-                      </div>
-                    )}
+                      </div>}
 
-                    {session.study_type && (
-                      <div className="text-sm">
+                    {session.study_type && <div className="text-sm">
                         <span className="font-medium">Tipo de estudo:</span> {session.study_type === 'pdf' ? 'PDF' : session.study_type === 'video' ? 'Vídeo Aula' : session.study_type}
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Página ou vídeo estudado */}
-                    {session.study_type === 'pdf' && session.current_page && (
-                      <div className="text-sm">
+                    {session.study_type === 'pdf' && session.current_page && <div className="text-sm">
                         <span className="font-medium">Página ou vídeo estudado:</span> Página {session.current_page}
-                      </div>
-                    )}
-                    {session.study_type === 'video' && session.current_video && (
-                      <div className="text-sm">
+                      </div>}
+                    {session.study_type === 'video' && session.current_video && <div className="text-sm">
                         <span className="font-medium">Página ou vídeo estudado:</span> {session.current_video}
-                      </div>
-                    )}
+                      </div>}
                     
-                    {session.total_questions > 0 && (
-                      <div className="text-sm p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
+                    {session.total_questions > 0 && <div className="text-sm p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
                         <span className="font-medium">Total de questões:</span> {session.total_correct_answers}/{session.total_questions} 
                         <span className="ml-2 text-green-600 dark:text-green-400 font-medium">
-                          ({((session.total_correct_answers / session.total_questions) * 100).toFixed(1)}% de acertos)
+                          ({(session.total_correct_answers / session.total_questions * 100).toFixed(1)}% de acertos)
                         </span>
-                      </div>
-                    )}
+                      </div>}
                     
-                    {session.course_progress && (
-                      <div className="text-sm">
+                    {session.course_progress && <div className="text-sm">
                         <span className="font-medium">Progresso:</span> {session.course_progress}
-                      </div>
-                    )}
+                      </div>}
 
-                    {session.notes && (
-                      <div className="text-sm border-t pt-2">
+                    {session.notes && <div className="text-sm border-t pt-2">
                         <span className="font-medium">Observações:</span>
                         <p className="mt-1 text-muted-foreground">{session.notes}</p>
-                      </div>
-                    )}
+                      </div>}
                   </div>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
+                </Card>) : <div className="text-center py-8 text-muted-foreground">
                 <BookOpen className="h-12 w-12 mx-auto mb-4" />
                 <p>Nenhuma sessão de estudo registrada para este dia</p>
-              </div>
-            )}
+              </div>}
           </div>
         </DialogContent>
       </Dialog>
@@ -884,15 +821,9 @@ const Cronograma = () => {
                   </div>
                 </div>}
 
-              <div>
-                <Label htmlFor="courseProgress">Progresso no Curso</Label>
-                <Input id="courseProgress" value={courseProgress} onChange={e => setCourseProgress(e.target.value)} placeholder="Ex: Capítulo 5 - Direitos Fundamentais" />
-              </div>
+              
 
-              {studyType === 'pdf' && <div>
-                  <Label htmlFor="currentPage">Página atual do PDF</Label>
-                  <Input id="currentPage" type="number" min="0" value={currentPage} onChange={e => setCurrentPage(Number(e.target.value))} placeholder="Ex: 145" />
-                </div>}
+              {studyType === 'pdf'}
 
               {studyType === 'video' && <div>
                   <Label htmlFor="currentVideo">Aula/Vídeo atual</Label>
