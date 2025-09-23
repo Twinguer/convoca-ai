@@ -924,8 +924,12 @@ const Cronograma = () => {
               </CardDescription>
             </div>
             <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-            <DialogTrigger asChild>
-            </DialogTrigger>
+              <DialogTrigger asChild>
+                <Button variant="default" size="sm" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Sessão
+                </Button>
+              </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Adicionar Sessão de Estudo</DialogTitle>
