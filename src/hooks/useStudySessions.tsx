@@ -21,6 +21,8 @@ interface SessionProgress {
   questions: number;
   correctAnswers: number;
   notes?: string;
+  courseName?: string;
+  studyType?: 'pdf' | 'video';
 }
 
 export const useStudySessions = () => {
@@ -81,7 +83,9 @@ export const useStudySessions = () => {
           session_count: existingSession.session_count + 1,
           last_session_date: localDate,
           updated_at: new Date().toISOString(),
-          ...(sessionLink && { session_link: sessionLink })
+          ...(sessionLink && { session_link: sessionLink }),
+          ...(progress.courseName && { course_name: progress.courseName }),
+          ...(progress.studyType && { study_type: progress.studyType })
         };
 
         const { error } = await supabase
@@ -120,7 +124,8 @@ export const useStudySessions = () => {
           start_time: new Date().toISOString(),
           duration_minutes: progress.duration,
           notes: progress.notes,
-          study_type: 'mixed'
+          course_name: progress.courseName,
+          study_type: progress.studyType || 'mixed'
         };
 
         const { data, error } = await supabase

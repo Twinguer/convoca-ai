@@ -393,7 +393,9 @@ const Cronograma = () => {
         duration: studyDuration,
         questions: questionsTotal,
         correctAnswers: questionsCorrect,
-        notes: studyNotes
+        notes: studyNotes,
+        courseName: courseName,
+        studyType: studyType
       }, sessionLink);
 
       // Registrar no sistema de estatísticas globais se >= 20 minutos
