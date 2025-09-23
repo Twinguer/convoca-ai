@@ -720,21 +720,16 @@ const Cronograma = () => {
             {studyDayDetails.length > 0 ? (
               studyDayDetails.map((session, index) => (
                 <Card key={session.id} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-1">
-                        <h4 className="font-semibold text-lg">{session.course_name || session.discipline_name || 'Estudo'}</h4>
-                        <p className="text-sm text-muted-foreground">{session.block_name}</p>
-                        {session.course_name && (
-                          <p className="text-sm">
-                            <span className="font-medium">Assunto:</span> {session.course_name}
-                          </p>
-                        )}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-lg">{session.course_name || 'Assunto não informado'}</h4>
+                          <p className="text-sm text-muted-foreground">{session.block_name}</p>
+                        </div>
+                        <Badge variant="secondary" className="text-sm">
+                          {session.duration_minutes} min
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" className="text-sm">
-                        {session.duration_minutes} min
-                      </Badge>
-                    </div>
                     
                     {session.session_link && (
                       <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
@@ -752,7 +747,7 @@ const Cronograma = () => {
 
                     {session.study_type && (
                       <div className="text-sm">
-                        <span className="font-medium">Tipo de estudo:</span> {session.study_type === 'pdf' ? 'PDF' : 'Vídeo Aula'}
+                        <span className="font-medium">Tipo de estudo:</span> {session.study_type === 'pdf' ? 'PDF' : session.study_type === 'video' ? 'Vídeo Aula' : session.study_type}
                       </div>
                     )}
 
