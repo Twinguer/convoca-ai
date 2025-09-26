@@ -20,9 +20,10 @@ interface UserGridProps {
   children?: ReactNode;
   users?: User[];
   className?: string;
+  onClick?: (userId: string) => void;
 }
 
-export const UserGrid: React.FC<UserGridProps> = ({ children, users, className = '' }) => {
+export const UserGrid: React.FC<UserGridProps> = ({ children, users, className = '', onClick }) => {
   return (
     <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 ${className}`}>
       {users && users.map((user, index) => {
@@ -45,6 +46,7 @@ export const UserGrid: React.FC<UserGridProps> = ({ children, users, className =
           <UserCard 
             key={user.id || user.email || index} 
             userProfile={userProfile}
+            onClick={onClick}
           />
         );
       })}

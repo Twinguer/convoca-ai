@@ -103,7 +103,7 @@ const CommunityPage = () => {
             description="Os membros com melhor desempenho nos concursos"
             icon={<Trophy className="h-5 w-5" />}
           />
-          <UserGrid users={topPerformers} />
+          <UserGrid users={topPerformers} onClick={handleUserClick} />
         </div>
       )}
 
@@ -117,7 +117,7 @@ const CommunityPage = () => {
             description="Membros que mais participam dos rankings"
             icon={<TrendingUp className="h-5 w-5" />}
           />
-          <UserGrid users={mostActive} />
+          <UserGrid users={mostActive} onClick={handleUserClick} />
         </div>
       )}
 
@@ -131,7 +131,7 @@ const CommunityPage = () => {
           icon={<UserPlus className="h-5 w-5" />}
         />
         {recentUsers.length > 0 ? (
-          <UserGrid users={recentUsers} />
+          <UserGrid users={recentUsers} onClick={handleUserClick} />
         ) : (
           <CommunityEmptyState />
         )}
