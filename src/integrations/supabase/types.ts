@@ -611,6 +611,13 @@ export type Database = {
             foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
             columns: ["user_ranking_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
+            columns: ["user_ranking_id"]
+            isOneToOne: false
             referencedRelation: "public_rankings"
             referencedColumns: ["id"]
           },
@@ -1321,6 +1328,13 @@ export type Database = {
             foreignKeyName: "user_answers_user_ranking_id_fkey"
             columns: ["user_ranking_id"]
             isOneToOne: false
+            referencedRelation: "leaderboard_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_answers_user_ranking_id_fkey"
+            columns: ["user_ranking_id"]
+            isOneToOne: false
             referencedRelation: "public_rankings"
             referencedColumns: ["id"]
           },
@@ -1495,6 +1509,13 @@ export type Database = {
             foreignKeyName: "fk_user_rankings_profiles"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_rankings_profiles"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users_profiles"
             referencedColumns: ["id"]
           },
@@ -1573,6 +1594,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_scores_ranking_id_fkey"
+            columns: ["ranking_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard_rankings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_scores_ranking_id_fkey"
             columns: ["ranking_id"]
@@ -1681,6 +1709,33 @@ export type Database = {
       }
     }
     Views: {
+      leaderboard_rankings: {
+        Row: {
+          avatar_url: string | null
+          banca: string | null
+          basic_knowledge_score: string | null
+          concurso_id: string | null
+          concurso_title: string | null
+          customdisciplinescores: string | null
+          discursive_score: string | null
+          id: string | null
+          orgao: string | null
+          reservation_type: string | null
+          score: number | null
+          specific_knowledge_score: string | null
+          user_name: string | null
+          weightedcustomdisciplinescores: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rankings_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -1713,6 +1768,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      public_user_profiles: {
+        Row: {
+          avatar_url: string | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {
