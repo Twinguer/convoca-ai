@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Users, Trophy, Star, TrendingUp, UserPlus, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { useCommunityUsers } from '@/hooks/useCommunityUsers';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
@@ -14,7 +15,12 @@ import { CommunitySectionHeader } from '@/components/community/CommunitySectionH
 
 const CommunityPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { users, isLoading, isError, refetch } = useCommunityUsers();
+
+  const handleUserClick = (userId: string) => {
+    navigate(`/usuario/${userId}`);
+  };
 
   if (isLoading) return <CommunityLoadingState />;
   if (isError) return <CommunityErrorState />;

@@ -107,6 +107,12 @@ const ResultadosPage = () => {
               Participar
             </Button>}
           
+          {/* Mostrar o botão "Deixar Ranking" se o usuário estiver participando */}
+          {concurso && isParticipating && user && <Button onClick={() => navigate(`/usuario/${user.id}`)} variant="outline" className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
+              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+              Deixar Ranking
+            </Button>}
+          
           {concurso && !user && <Button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
               <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
               Login
@@ -116,7 +122,7 @@ const ResultadosPage = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] mb-1 sm:mb-2">
         <RankingCard participantCount={participantCount} userRanking={userRanking} inscritos={concurso?.inscritos} />
-        {concurso && <ConcursoInfoCard concurso={concurso} />}
+        {concurso && <ConcursoInfoCard concurso={concurso} creatorName={creatorName} />}
       </div>
       
       {isRefetching && <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-md mb-2 text-center text-sm">

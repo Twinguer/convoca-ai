@@ -611,6 +611,13 @@ export type Database = {
             foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
             columns: ["user_ranking_id"]
             isOneToOne: false
+            referencedRelation: "public_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
+            columns: ["user_ranking_id"]
+            isOneToOne: false
             referencedRelation: "user_rankings"
             referencedColumns: ["id"]
           },
@@ -1314,6 +1321,13 @@ export type Database = {
             foreignKeyName: "user_answers_user_ranking_id_fkey"
             columns: ["user_ranking_id"]
             isOneToOne: false
+            referencedRelation: "public_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_answers_user_ranking_id_fkey"
+            columns: ["user_ranking_id"]
+            isOneToOne: false
             referencedRelation: "user_rankings"
             referencedColumns: ["id"]
           },
@@ -1563,6 +1577,13 @@ export type Database = {
             foreignKeyName: "user_scores_ranking_id_fkey"
             columns: ["ranking_id"]
             isOneToOne: false
+            referencedRelation: "public_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scores_ranking_id_fkey"
+            columns: ["ranking_id"]
+            isOneToOne: false
             referencedRelation: "user_rankings"
             referencedColumns: ["id"]
           },
@@ -1667,6 +1688,31 @@ export type Database = {
           name: string | null
         }
         Relationships: []
+      }
+      public_rankings: {
+        Row: {
+          avatar_url: string | null
+          banca: string | null
+          basic_knowledge_score: number | null
+          concurso_id: string | null
+          concurso_title: string | null
+          discursive_score: number | null
+          id: string | null
+          orgao: string | null
+          reservation_type: string | null
+          score: number | null
+          specific_knowledge_score: number | null
+          user_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_rankings_concurso_id_fkey"
+            columns: ["concurso_id"]
+            isOneToOne: false
+            referencedRelation: "concursos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {

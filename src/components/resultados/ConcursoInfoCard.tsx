@@ -6,9 +6,11 @@ import { Concurso } from '@/types/concursos';
 import { Building2, Calendar, MapPin, Users } from 'lucide-react';
 interface ConcursoInfoCardProps {
   concurso: Concurso;
+  creatorName?: string;
 }
 const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
-  concurso
+  concurso,
+  creatorName
 }) => {
   const formattedDate = concurso.data_publicacao ? format(new Date(concurso.data_publicacao), "dd 'de' MMMM 'de' yyyy", {
     locale: ptBR
@@ -54,6 +56,13 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
             <div className="flex items-center">
               <Users className="h-4 w-4 mr-2 text-muted-foreground" />
               <span className="text-sm">Vagas: {concurso.vagas || 'Não informado'}</span>
+            </div>
+          </div>
+
+          {/* Creator information */}
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center text-xs text-muted-foreground">
+              <span>Criado por: {creatorName || (concurso.is_admin_created ? 'Administrador' : 'Usuário')}</span>
             </div>
           </div>
         </div>
