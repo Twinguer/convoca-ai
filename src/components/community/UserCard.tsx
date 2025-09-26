@@ -32,6 +32,11 @@ export const UserCard: React.FC<UserCardProps> = ({
   const [avatarError, setAvatarError] = useState(false);
   const { user } = useAuth();
   
+  // Early return if userProfile is not provided
+  if (!userProfile) {
+    return null;
+  }
+  
   // Check if this user is the currently logged in user
   const isCurrentUser = user?.id === userProfile.id;
 
