@@ -340,21 +340,21 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               <div className="flex items-center gap-2 self-end">
                 <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}>
                   <Trophy className="h-4 w-4" />
-                  <span>Ver Ranking</span>
+                  <span>Ranking</span>
                 </Button>
                 
                 {isOwnProfile && (
                   <>
                     <Button size="sm" className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
                       <PencilLine className="h-4 w-4" />
-                      <span>Editar Respostas</span>
+                      <span>Editar</span>
                     </Button>
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button size="sm" variant="destructive" className="flex items-center gap-1">
                           <UserX className="h-4 w-4" />
-                          <span>Deixar de Participar</span>
+                          <span>Deixar</span>
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
