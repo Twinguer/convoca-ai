@@ -30,15 +30,17 @@ import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import AdminLayout from "./components/Admin/AdminLayout";
 import ProtectedRoute from "./components/Admin/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
-import EstudosDashboard from "./pages/Estudos/Dashboard";
+import EstudosDashboard from "./modules/study/pages/StudyDashboard";
 import Cronograma from "./pages/Estudos/Cronograma";
 import Timer from "./pages/Estudos/Timer";
-import Estatisticas from "./pages/Estudos/Estatisticas";
+import StatisticsPage from "./modules/statistics/pages/StatisticsPage";
 import CriarCiclo from "./pages/Estudos/CriarCiclo";
 import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
-import Planos from "./pages/Planos";
+import PlansPage from "./modules/plans/pages/PlansPage";
+import Comunidade from "./pages/Comunidade";
+import RankingsPage from "./modules/rankings/pages/RankingsPage";
 
 
 const AppContent = () => {
@@ -78,10 +80,10 @@ const AppContent = () => {
                         <Menu />
                         <Index />
                       </>} />
-                    <Route path="/comunidade" element={<>
-                        <Menu />
-                        <Comunidade />
-                      </>} />
+                     <Route path="/comunidade" element={<>
+                         <Menu />
+                         <Comunidade />
+                       </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />
                         <CriarRanking />
@@ -99,9 +101,9 @@ const AppContent = () => {
                         <Timer />
                       </>} />
                      <Route path="/estatisticas" element={<>
-                        <Menu />
-                        <Estatisticas />
-                      </>} />
+                         <Menu />
+                         <StatisticsPage />
+                       </>} />
                      <Route path="/estudos/criar-ciclo" element={<>
                         <Menu />
                         <CriarCiclo />
@@ -118,14 +120,14 @@ const AppContent = () => {
                          <Menu />
                          <SessaoEstudos />
                        </>} />
-                    <Route path="/pre-classificacao" element={<>
-                        <Menu />
-                        <PreClassificacao />
-                      </>} />
-                    <Route path="/planos" element={<>
-                        <Menu />
-                        <Planos />
-                      </>} />
+                     <Route path="/pre-classificacao" element={<>
+                         <Menu />
+                         <RankingsPage />
+                       </>} />
+                     <Route path="/planos" element={<>
+                         <Menu />
+                         <PlansPage />
+                       </>} />
                     <Route path="/resultado" element={<>
                         <Menu />
                         <Resultado />
