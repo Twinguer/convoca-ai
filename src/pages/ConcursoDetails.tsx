@@ -145,20 +145,12 @@ const ConcursoDetails = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <div className="flex space-x-4">
-              <Button asChild>
-                <Link to={`/concurso/${id}/participar`} className="flex items-center">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Participar
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to={`/concurso/${id}/resultados`} className="flex items-center">
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                  Ver Ranking
-                </Link>
-              </Button>
-            </div>
+            <Button variant="outline" asChild>
+              <Link to={`/concurso/${id}/resultados`} className="flex items-center">
+                <ArrowRight className="mr-2 h-4 w-4" />
+                Ver Ranking
+              </Link>
+            </Button>
           </CardFooter>
         </Card>
         

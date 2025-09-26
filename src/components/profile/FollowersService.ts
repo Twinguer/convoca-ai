@@ -9,39 +9,14 @@ export interface Follower {
 
 export const getFollowers = async (userId: string): Promise<Follower[]> => {
   try {
-    // Get the IDs of users following the specified user
-    const { data: followerData, error: followerError } = await supabase
-      .from('user_followers')
-      .select('follower_id')
-      .eq('followed_id', userId);
+    const { data, error } = await supabase
+      .rpc('get_followers_list', { target_user_id: userId });
 
-    if (followerError) {
-      throw followerError;
+    if (error) {
+      throw error;
     }
 
-    if (!followerData || followerData.length === 0) {
-      return [];
-    }
-
-    // Get the follower IDs
-    const followerIds = followerData.map(item => item.follower_id);
-
-    // Get the user profile information for each follower (using public view)
-    const { data: followers, error: profileError } = await supabase
-      .from('public_profiles')
-      .select('id, name, avatar_url')
-      .in('id', followerIds);
-
-    if (profileError) {
-      throw profileError;
-    }
-
-    // Map the data to our Follower interface
-    return followers.map(follower => ({
-      id: follower.id,
-      name: follower.name,
-      avatar_url: follower.avatar_url
-    }));
+    return data || [];
   } catch (error) {
     console.error('Error fetching followers:', error);
     return [];
@@ -75,39 +50,14 @@ export const getRandomUsers = async (count: number = 10, excludeUserId?: string)
 
 export const getFollowing = async (userId: string): Promise<Follower[]> => {
   try {
-    // Get the IDs of users that the specified user is following
-    const { data: followingData, error: followingError } = await supabase
-      .from('user_followers')
-      .select('followed_id')
-      .eq('follower_id', userId);
+    const { data, error } = await supabase
+      .rpc('get_following_list', { target_user_id: userId });
 
-    if (followingError) {
-      throw followingError;
+    if (error) {
+      throw error;
     }
 
-    if (!followingData || followingData.length === 0) {
-      return [];
-    }
-
-    // Get the following IDs
-    const followingIds = followingData.map(item => item.followed_id);
-
-    // Get the user profile information for each following (using public view)
-    const { data: following, error: profileError } = await supabase
-      .from('public_profiles')
-      .select('id, name, avatar_url')
-      .in('id', followingIds);
-
-    if (profileError) {
-      throw profileError;
-    }
-
-    // Map the data to our Follower interface
-    return following.map(user => ({
-      id: user.id,
-      name: user.name,
-      avatar_url: user.avatar_url
-    }));
+    return data || [];
   } catch (error) {
     console.error('Error fetching following:', error);
     return [];

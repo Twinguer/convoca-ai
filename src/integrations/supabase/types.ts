@@ -1856,6 +1856,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_followers_list: {
+        Args: { target_user_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          name: string
+        }[]
+      }
+      get_following_list: {
+        Args: { target_user_id: string }
+        Returns: {
+          avatar_url: string
+          id: string
+          name: string
+        }[]
+      }
       get_official_answer_weights: {
         Args: { p_concurso_id: string }
         Returns: Json
