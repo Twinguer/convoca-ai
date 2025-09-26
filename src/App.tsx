@@ -22,7 +22,6 @@ import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
-import Comunidade from "./pages/Comunidade";
 import { SecureAdminLogin } from "./components/Admin/SecureLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
@@ -39,7 +38,7 @@ import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import PlansPage from "./modules/plans/pages/PlansPage";
-import Comunidade from "./pages/Comunidade";
+import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
 
 
@@ -81,9 +80,9 @@ const AppContent = () => {
                         <Index />
                       </>} />
                      <Route path="/comunidade" element={<>
-                         <Menu />
-                         <Comunidade />
-                       </>} />
+                          <Menu />
+                          <CommunityPage />
+                        </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />
                         <CriarRanking />
