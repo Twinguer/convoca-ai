@@ -96,7 +96,7 @@ const Estatisticas = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Horas</CardTitle>
@@ -119,19 +119,6 @@ const Estatisticas = () => {
             <div className="text-2xl font-bold">{formatHours(filteredStats.average)}</div>
             <p className="text-xs text-muted-foreground">
               Baseado nos últimos {timeFilter === 'week' ? '7 dias' : timeFilter === 'month' ? '30 dias' : 'dia'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sequência Atual</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{statistics.currentStreak}</div>
-            <p className="text-xs text-muted-foreground">
-              dias consecutivos (recorde: {statistics.longestStreak})
             </p>
           </CardContent>
         </Card>
@@ -319,56 +306,6 @@ const Estatisticas = () => {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Histórico Recente
-          </CardTitle>
-          <CardDescription>
-            Últimas sessões de estudo registradas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {statistics.sessionHistory.length > 0 ? (
-            <div className="space-y-3">
-              {statistics.sessionHistory.slice(-10).reverse().map((session, index) => (
-                <div key={index} className="flex justify-between items-center py-2 border-b border-border last:border-0">
-                  <div>
-                    <span className="text-sm font-medium">
-                      {new Date(session.date).toLocaleDateString('pt-BR')}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {new Date(session.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                    {session.subject && (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        📚 {session.subject}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      {session.duration} min
-                    </Badge>
-                    <Badge variant={session.type === 'timer' ? 'default' : 'secondary'}>
-                      {session.type === 'timer' ? 'Timer' : 'Manual'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-8">
-              <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
-                Nenhuma sessão de estudo registrada ainda. 
-                Comece usando o timer para registrar suas sessões!
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };
