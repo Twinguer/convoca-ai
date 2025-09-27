@@ -40,16 +40,17 @@ import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import PlansPage from "./modules/plans/pages/PlansPage";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
-import { PresenceTracker } from "./components/profile/PresenceTracker";
+import { PresenceProvider } from "./contexts/PresenceContext";
 
 const AppContent = () => {
   const { showFloatingTimer, hideTimer } = useTimer();
   
   return (
-    <div className="min-h-screen text-foreground bg-background">
+    <PresenceProvider>
+      <div className="min-h-screen text-foreground bg-background">
       <Toaster />
       <Sonner />
-      <PresenceTracker />
+      
       <BrowserRouter>
                   <Routes>
                     <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />
@@ -162,7 +163,8 @@ const AppContent = () => {
           onClose={hideTimer}
         />
       </BrowserRouter>
-    </div>
+      </div>
+    </PresenceProvider>
   );
 };
 
