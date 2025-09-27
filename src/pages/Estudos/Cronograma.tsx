@@ -684,7 +684,7 @@ const Cronograma = () => {
                 locale: ptBR
               })}
               </span>
-              <Button variant="outline" size="sm" onClick={handleUnmarkStudyDay} className="text-destructive hover:text-destructive">
+              <Button variant="outline" size="sm" onClick={handleUnmarkStudyDay} className="text-destructive hover:text-destructive mx-[30px]">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Desmarcar dia
               </Button>
