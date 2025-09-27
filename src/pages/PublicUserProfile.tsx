@@ -13,6 +13,7 @@ import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
 import { Link } from 'react-router-dom';
+import { fetchUserRankings } from '@/services/rankingService';
 interface UserProfile {
   id: string;
   name: string;
@@ -146,29 +147,30 @@ const PublicUserProfile: React.FC = () => {
         const userRankingIdByConcurso = new Map<string, string>();
         data.forEach((r: any) => userRankingIdByConcurso.set(r.concurso_id, r.id));
 
-        // Buscar listas em Ampla Concorrência e calcular posição e classificação
+        // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
         const results = await Promise.all(
           concursoIds.map(async (cid) => {
-            const { data: realtime, error: realtimeError } = await supabase.rpc('get_realtime_rankings', {
-              p_concurso_id: cid,
-              p_reservation_type: 'Ampla Concorrência',
-            });
-            if (realtimeError || !realtime) {
-              console.error('Erro ao buscar ranking em tempo real:', realtimeError);
-              return { cid, list: [] as any[] };
-            }
-            return { cid, list: realtime as any[] };
+            const list = await fetchUserRankings(cid);
+
+            // Mesma regra de eliminação usada na tabela de rankings
+            const isBelowMinimum = (ranking: any) => {
+              return !!ranking.belowMinimum ||
+                     (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) ||
+                     (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
+            };
+
+            const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
+
+            const rid = userRankingIdByConcurso.get(cid);
+            const idx = classified.findIndex((r: any) => r.id === rid);
+            const isClassified = idx >= 0;
+            const position = isClassified ? idx + 1 : null; // Ampla Concorrência exibe apenas classificados com posição
+            return { cid, position, isClassified };
           })
         );
 
         const byConcurso = new Map<string, { position: number | null; isClassified: boolean }>();
-        results.forEach((res) => {
-          const rid = userRankingIdByConcurso.get(res.cid);
-          const idx = res.list.findIndex((row: any) => row.ranking_id === rid);
-          const isClassified = idx >= 0 ? Boolean(res.list[idx]?.is_classified) : false;
-          const position = isClassified && idx >= 0 ? idx + 1 : null;
-          byConcurso.set(res.cid, { position, isClassified });
-        });
+        results.forEach((res) => byConcurso.set(res.cid, { position: res.position, isClassified: res.isClassified }));
 
         return data.map((item: any) => {
           const concursoData = item.concursos || {};
