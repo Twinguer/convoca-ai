@@ -213,6 +213,14 @@ const StudyDashboard = () => {
                       <Button size="sm" variant="outline" onClick={() => navigate(`/estudos/ciclo/${cycle.id}`)}>
                         Disciplinas
                       </Button>
+                      <Button 
+                        size="sm" 
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => navigate('/estudos/cronograma')}
+                      >
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Iniciar Sessão
+                      </Button>
                     </div>
                   </div>
                 ))}
