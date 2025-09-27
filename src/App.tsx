@@ -27,7 +27,8 @@ import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
 import ListarUsuarios from "./pages/Admin/ListarUsuarios";
 import AdminLayout from "./components/Admin/AdminLayout";
-import ProtectedRoute from "./components/Admin/ProtectedRoute";
+import AdminProtectedRoute from "./components/Admin/ProtectedRoute";
+import { ProtectedRoute } from "./components/Security/ProtectedRoute";
 import CriarRanking from "./pages/CriarRanking";
 import EstudosDashboard from "./modules/study/pages/StudyDashboard";
 import Cronograma from "./pages/Estudos/Cronograma";
@@ -55,9 +56,9 @@ const AppContent = () => {
                   <Routes>
                     <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />
                     <Route path="/project/admin/man" element={<Navigate to="/project/admin/man/dashboard" replace />} />
-                    <Route path="/project/admin/man" element={<ProtectedRoute>
+                    <Route path="/project/admin/man" element={<AdminProtectedRoute>
                         <AdminLayout />
-                      </ProtectedRoute>}>
+                      </AdminProtectedRoute>}>
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="concursos" element={<ListarConcursos />} />
                       <Route path="usuarios" element={<ListarUsuarios />} />
@@ -91,7 +92,9 @@ const AppContent = () => {
                       </>} />
                      <Route path="/comunidade" element={<>
                           <Menu />
-                          <CommunityPage />
+                          <ProtectedRoute>
+                            <CommunityPage />
+                          </ProtectedRoute>
                         </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />
@@ -99,39 +102,57 @@ const AppContent = () => {
                       </>} />
                      <Route path="/estudos" element={<>
                          <Menu />
-                         <EstudosDashboard />
+                         <ProtectedRoute>
+                           <EstudosDashboard />
+                         </ProtectedRoute>
                        </>} />
                      <Route path="/estudos/cronograma" element={<>
                          <Menu />
-                         <Cronograma />
+                         <ProtectedRoute>
+                           <Cronograma />
+                         </ProtectedRoute>
                        </>} />
                     <Route path="/estudos/timer" element={<>
                         <Menu />
-                        <Timer />
+                        <ProtectedRoute>
+                          <Timer />
+                        </ProtectedRoute>
                       </>} />
                      <Route path="/estatisticas" element={<>
                          <Menu />
-                         <StatisticsPage />
+                         <ProtectedRoute>
+                           <StatisticsPage />
+                         </ProtectedRoute>
                        </>} />
                      <Route path="/estudos/criar-ciclo" element={<>
                         <Menu />
-                        <CriarCiclo />
+                        <ProtectedRoute>
+                          <CriarCiclo />
+                        </ProtectedRoute>
                       </>} />
                      <Route path="/estudos/editar-ciclo/:id" element={<>
                         <Menu />
-                        <EditarCiclo />
+                        <ProtectedRoute>
+                          <EditarCiclo />
+                        </ProtectedRoute>
                       </>} />
                       <Route path="/estudos/ciclo/:id" element={<>
                         <Menu />
-                        <CicloDetalhes />
+                        <ProtectedRoute>
+                          <CicloDetalhes />
+                        </ProtectedRoute>
                       </>} />
                        <Route path="/estudos/sessao/:id" element={<>
                          <Menu />
-                         <SessaoEstudos />
+                         <ProtectedRoute>
+                           <SessaoEstudos />
+                         </ProtectedRoute>
                        </>} />
                      <Route path="/pre-classificacao" element={<>
                          <Menu />
-                         <RankingsPage />
+                         <ProtectedRoute>
+                           <RankingsPage />
+                         </ProtectedRoute>
                        </>} />
                      <Route path="/planos" element={<>
                          <Menu />
