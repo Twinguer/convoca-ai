@@ -49,6 +49,7 @@ const AppContent = () => {
     <div className="min-h-screen text-foreground bg-background">
       <Toaster />
       <Sonner />
+      <PresenceTracker />
       <BrowserRouter>
                   <Routes>
                     <Route path="/project/admin/man/login" element={<SecureAdminLogin />} />

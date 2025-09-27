@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 interface OnlineIndicatorProps {
   userId: string;
   className?: string;
+  variant?: 'dot' | 'ring';
 }
 
 export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ 
   userId, 
-  className = "absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white"
+  className = "",
+  variant = 'dot'
 }) => {
   const [isOnline, setIsOnline] = useState(false);
 
@@ -59,9 +61,18 @@ export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({
 
   if (!isOnline) return null;
 
+  if (variant === 'ring') {
+    return (
+      <div
+        className={className || 'absolute inset-0 rounded-full ring-2 ring-success pointer-events-none'}
+        title="Online"
+      />
+    );
+  }
+
   return (
-    <div 
-      className={`${className} bg-green-500`}
+    <div
+      className={className || 'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card bg-success'}
       title="Online"
     />
   );
