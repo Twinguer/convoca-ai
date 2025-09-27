@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -139,14 +138,37 @@ export const useSecureAuth = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Tratar erro específico de usuário já existente
+        if (error.message?.includes('User already registered') || error.message?.includes('already registered')) {
+          showErrorToast('Email já cadastrado', 'Este email já está registrado. Verifique sua caixa de entrada ou tente fazer login.');
+          return;
+        }
+        throw error;
+      }
 
       if (data.user) {
-        showSuccessToast('Cadastro realizado com sucesso!', 'Sua conta foi criada. Verifique seu email para confirmar o cadastro.');
+        if (data.user.email_confirmed_at) {
+          showSuccessToast('Cadastro realizado com sucesso!', 'Sua conta foi criada e confirmada automaticamente.');
+        } else {
+          showSuccessToast('Cadastro realizado com sucesso!', 'Verifique seu email para confirmar o cadastro. Caso não receba o email, verifique a caixa de spam.');
+        }
       }
     } catch (error: any) {
       console.error('Signup error:', error);
-      showErrorToast('Erro ao criar conta', error.message || 'Não foi possível criar sua conta. Tente novamente.');
+      
+      // Mensagem específica baseada no tipo de erro
+      let errorMessage = 'Não foi possível criar sua conta. Tente novamente.';
+      
+      if (error.message?.includes('Invalid email')) {
+        errorMessage = 'Email inválido. Verifique o formato do email.';
+      } else if (error.message?.includes('Password')) {
+        errorMessage = 'A senha não atende aos critérios de segurança.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      }
+      
+      showErrorToast('Erro ao criar conta', errorMessage);
     } finally {
       setIsLoading(false);
     }
