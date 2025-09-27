@@ -132,59 +132,60 @@ const PublicUserProfile: React.FC = () => {
     queryFn: async () => {
       if (!id) return [];
       try {
-        const { data, error } = await supabase
-          .from('user_rankings')
-          .select(`
+        const {
+          data,
+          error
+        } = await supabase.from('user_rankings').select(`
             id,
             concurso_id,
             score,
             concursos(titulo, id)
-          `)
-          .eq('user_id', id);
+          `).eq('user_id', id);
         if (error || !data) throw error || new Error('Sem rankings');
-
         const concursoIds: string[] = Array.from(new Set(data.map((r: any) => r.concurso_id)));
         const userRankingIdByConcurso = new Map<string, string>();
         data.forEach((r: any) => userRankingIdByConcurso.set(r.concurso_id, r.id));
 
         // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
-        const results = await Promise.all(
-          concursoIds.map(async (cid) => {
-            const list = await fetchUserRankings(cid);
+        const results = await Promise.all(concursoIds.map(async cid => {
+          const list = await fetchUserRankings(cid);
 
-            // Mesma regra de eliminação usada na tabela de rankings
-            const isBelowMinimum = (ranking: any) => {
-              return !!ranking.belowMinimum ||
-                     (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) ||
-                     (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
-            };
-
-            const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
-
-            const rid = userRankingIdByConcurso.get(cid);
-            const idx = classified.findIndex((r: any) => r.id === rid);
-            const isClassified = idx >= 0;
-            const position = isClassified ? idx + 1 : null; // Ampla Concorrência exibe apenas classificados com posição
-            return { cid, position, isClassified };
-          })
-        );
-
-        const byConcurso = new Map<string, { position: number | null; isClassified: boolean }>();
-        results.forEach((res) => byConcurso.set(res.cid, { position: res.position, isClassified: res.isClassified }));
-
+          // Mesma regra de eliminação usada na tabela de rankings
+          const isBelowMinimum = (ranking: any) => {
+            return !!ranking.belowMinimum || ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0 || ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0;
+          };
+          const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
+          const rid = userRankingIdByConcurso.get(cid);
+          const idx = classified.findIndex((r: any) => r.id === rid);
+          const isClassified = idx >= 0;
+          const position = isClassified ? idx + 1 : null; // Ampla Concorrência exibe apenas classificados com posição
+          return {
+            cid,
+            position,
+            isClassified
+          };
+        }));
+        const byConcurso = new Map<string, {
+          position: number | null;
+          isClassified: boolean;
+        }>();
+        results.forEach(res => byConcurso.set(res.cid, {
+          position: res.position,
+          isClassified: res.isClassified
+        }));
         return data.map((item: any) => {
           const concursoData = item.concursos || {};
-          const titulo =
-            typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData
-              ? String((concursoData as any).titulo)
-              : 'Concurso sem título';
-          const info = byConcurso.get(item.concurso_id) || { position: null, isClassified: false };
+          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String((concursoData as any).titulo) : 'Concurso sem título';
+          const info = byConcurso.get(item.concurso_id) || {
+            position: null,
+            isClassified: false
+          };
           return {
             concursoId: item.concurso_id,
             concursoTitle: titulo,
             position: info.position,
             score: item.score,
-            isClassified: info.isClassified,
+            isClassified: info.isClassified
           } as UserRanking;
         });
       } catch (error) {
@@ -307,10 +308,7 @@ const PublicUserProfile: React.FC = () => {
   // Verificar se há informações de "Sobre mim"
   const hasAboutInfo = profile.estado || profile.formacao || profile.cargo_atual || profile.area_estudos || profile.especialidade || profile.curso_preparatorio;
   return <div className="container mx-auto p-6 max-w-7xl">
-      <Button variant="ghost" onClick={() => navigate('/comunidade')} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar para Comunidade
-      </Button>
+      
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Coluna Esquerda - Perfil do Usuário */}
