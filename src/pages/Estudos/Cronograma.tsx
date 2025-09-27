@@ -1002,12 +1002,16 @@ const Cronograma = () => {
                                </div>
                                
                                 <div className="flex justify-end pt-1 border-t border-border/50">
-                                  <Button variant="outline" size="sm" onClick={e => {
-                        e.stopPropagation();
-                        removeSession(session.id);
-                      }} title="Remover sessão" className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground rounded-sm">
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+                                  <div 
+                                    className="cursor-pointer transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      removeSession(session.id);
+                                    }} 
+                                    title="Remover sessão"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-400 hover:text-red-600 transition-colors" />
+                                  </div>
                                 </div>
                              </div>
                            </div>;
