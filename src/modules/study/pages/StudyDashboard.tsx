@@ -178,9 +178,9 @@ const StudyDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
         {/* Active Cycles */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
@@ -249,45 +249,6 @@ const StudyDashboard = () => {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PlayCircle className="h-5 w-5" />
-              Ações Rápidas
-            </CardTitle>
-            <CardDescription>
-              Acesse rapidamente suas ferramentas de estudo
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={() => navigate('/estudos/timer')}
-            >
-              <Timer className="mr-2 h-4 w-4" />
-              Iniciar Timer
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={() => navigate('/estudos/cronograma')}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              Ver Cronograma
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full justify-start"
-              onClick={() => navigate('/estatisticas')}
-            >
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Estatísticas
-            </Button>
           </CardContent>
         </Card>
       </div>
