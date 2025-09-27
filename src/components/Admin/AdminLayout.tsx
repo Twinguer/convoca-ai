@@ -65,7 +65,7 @@ const AdminLayout: React.FC = () => {
       {/* Main content */}
       <div className="flex flex-1">
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-emerald-400 hidden md:block dark:border-emerald-400/60">
+        <aside className="w-64 bg-white border-r hidden md:block">
           <nav className="p-4 space-y-2">
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link to="/project/admin/man/dashboard" className="flex items-center gap-2">

@@ -112,12 +112,12 @@ export const UserCard: React.FC<UserCardProps> = ({
           </p>
         </div>
         
-        <div className="grid grid-cols-3 text-center border-t border-emerald-400 border-b border-emerald-400 py-2 mb-3 dark:border-emerald-400/60">
+        <div className="grid grid-cols-3 text-center border-t border-b py-2 mb-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{userProfile.postCount}</span>
             <span className="text-xs text-muted-foreground">Rankings</span>
           </div>
-          <div className="flex flex-col border-x border-emerald-400 dark:border-emerald-400/60">
+          <div className="flex flex-col border-x">
             <span className="text-sm font-semibold">{userProfile.followerCount}</span>
             <span className="text-xs text-muted-foreground">Seguidores</span>
           </div>

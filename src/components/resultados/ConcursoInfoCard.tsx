@@ -60,7 +60,7 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
           </div>
 
           {/* Creator information */}
-          <div className="pt-2 border-t border-emerald-400 dark:border-emerald-400/60">
+          <div className="pt-2 border-t border-border">
             <div className="flex items-center text-xs text-muted-foreground">
               <span>Criado por: {creatorName || (concurso.is_admin_created ? 'Administrador' : 'Usuário')}</span>
             </div>
