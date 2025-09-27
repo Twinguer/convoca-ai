@@ -150,10 +150,10 @@ const RankingsPage = () => {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 h-auto">
-          <TabsTrigger value="all" className="w-full">Todos os Concursos</TabsTrigger>
-          <TabsTrigger value="popular" className="w-full">Populares</TabsTrigger>
-          <TabsTrigger value="recent" className="w-full">Recentes</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="all" className="text-slate-800">Todos os Concursos</TabsTrigger>
+          <TabsTrigger value="popular" className="text-slate-800">Populares</TabsTrigger>
+          <TabsTrigger value="recent" className="text-slate-800">Recentes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
