@@ -94,7 +94,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   console.log('SectionToggle - selected section:', selectedSection);
 
   return (
-    <div className="bg-gray-100 border-b overflow-x-auto">
+    <div className="bg-gray-100 border-b border-emerald-400 overflow-x-auto dark:border-emerald-400/60">
       <div className="flex flex-nowrap min-w-full">
         {enabledDisciplines.map((discipline) => (
           <button
@@ -102,7 +102,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange(discipline.type)}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === discipline.type 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
+                ? 'bg-white border-t-2 border-emerald-400 text-emerald-700 dark:border-emerald-400/60' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
             {discipline.name} {discipline.weight && discipline.weight > 1 ? 
@@ -115,7 +115,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('discursive')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'discursive' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
+                ? 'bg-white border-t-2 border-emerald-400 text-emerald-700 dark:border-emerald-400/60' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
             Discursiva
@@ -127,7 +127,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('case_study1')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study1' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
+                ? 'bg-white border-t-2 border-emerald-400 text-emerald-700 dark:border-emerald-400/60' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
             Estudo de Caso 1
@@ -139,7 +139,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('case_study2')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study2' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
+                ? 'bg-white border-t-2 border-emerald-400 text-emerald-700 dark:border-emerald-400/60' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
             Estudo de Caso 2
@@ -151,7 +151,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('case_study3')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study3' 
-                ? 'bg-white border-t-2 border-emerald-600 text-emerald-700' 
+                ? 'bg-white border-t-2 border-emerald-400 text-emerald-700 dark:border-emerald-400/60' 
                 : 'text-gray-600 hover:bg-gray-200'}`}
           >
             Estudo de Caso 3

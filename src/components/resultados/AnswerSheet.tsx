@@ -478,7 +478,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   return (
     <Card className="shadow-lg">
-      <CardHeader className="bg-emerald-50 border-b">
+      <CardHeader className="bg-emerald-50 border-b border-emerald-400 dark:border-emerald-400/60">
         <CardTitle className="text-xl md:text-2xl">
           Cartão de Respostas - {concurso.titulo}
         </CardTitle>
@@ -628,7 +628,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         )}
       </CardContent>
 
-      <CardFooter className="p-4 bg-gray-50 border-t">
+      <CardFooter className="p-4 bg-gray-50 border-t border-emerald-400 dark:border-emerald-400/60">
         <Button
           onClick={handleSaveAnswers}
           className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white"
