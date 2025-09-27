@@ -1655,6 +1655,8 @@ export type Database = {
           id: string
           is_studying: boolean | null
           name: string
+          nickname: string | null
+          privacy_settings: Json | null
           profile_text: string | null
           rotina_estudos: string | null
           status_concurseiro: string | null
@@ -1677,6 +1679,8 @@ export type Database = {
           id: string
           is_studying?: boolean | null
           name: string
+          nickname?: string | null
+          privacy_settings?: Json | null
           profile_text?: string | null
           rotina_estudos?: string | null
           status_concurseiro?: string | null
@@ -1699,6 +1703,8 @@ export type Database = {
           id?: string
           is_studying?: boolean | null
           name?: string
+          nickname?: string | null
+          privacy_settings?: Json | null
           profile_text?: string | null
           rotina_estudos?: string | null
           status_concurseiro?: string | null
@@ -1926,6 +1932,10 @@ export type Database = {
       get_user_booklets_with_answers: {
         Args: { p_ranking_id: string }
         Returns: Json
+      }
+      get_user_display_name: {
+        Args: { user_name: string; user_nickname: string }
+        Returns: string
       }
       has_role: {
         Args: {
