@@ -456,7 +456,7 @@ const Cronograma = () => {
         </Button>
         <div>
           
-          <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
+          
         </div>
       </div>
       {/* Clock, Timer, and Calendar Section */}
