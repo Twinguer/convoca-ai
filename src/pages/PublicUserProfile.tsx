@@ -275,19 +275,20 @@ const PublicUserProfile: React.FC = () => {
         <div className="lg:col-span-3 space-y-4">
           <Card>
             <CardContent className="pt-6">
-               <div className="flex flex-col items-center space-y-4">
+                 <div className="flex flex-col items-center space-y-4">
                  <div className="relative">
                    <Avatar className="h-32 w-32">
                      {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.name} /> : <AvatarFallback className="text-3xl">
                          {getInitials(profile?.name || '')}
                        </AvatarFallback>}
                    </Avatar>
-                   {/* Online indicator */}
-                   <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-white" />
+                   <OnlineIndicator 
+                     userId={profile?.id as string}
+                     className="absolute inset-0 rounded-full ring-2 ring-success pointer-events-none" 
+                   />
                  </div>
-                   <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-white" />
                  </div>
-                
+
                 <div className="text-center">
                   <h2 className="text-xl font-bold">
                     {profile?.name ? 

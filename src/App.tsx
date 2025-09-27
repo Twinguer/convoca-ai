@@ -40,7 +40,7 @@ import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import PlansPage from "./modules/plans/pages/PlansPage";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
-
+import { PresenceTracker } from "./components/profile/PresenceTracker";
 
 const AppContent = () => {
   const { showFloatingTimer, hideTimer } = useTimer();
