@@ -15,6 +15,8 @@ export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({
   const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
+    if (!userId) return;
+
     // Create a channel for presence tracking
     const channel = supabase.channel('online_users', {
       config: {
@@ -77,3 +79,5 @@ export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({
     />
   );
 };
+
+export default OnlineIndicator;

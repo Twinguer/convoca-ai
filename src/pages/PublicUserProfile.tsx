@@ -283,10 +283,11 @@ const PublicUserProfile: React.FC = () => {
                          {getInitials(profile?.name || '')}
                        </AvatarFallback>}
                    </Avatar>
-                   <OnlineIndicator 
-                     userId={profile?.id as string}
-                     className="absolute inset-0 rounded-full ring-2 ring-success pointer-events-none" 
-                   />
+                    <OnlineIndicator 
+                      userId={profile?.id as string}
+                      variant="ring"
+                      className="absolute inset-0 rounded-full ring-2 ring-success pointer-events-none" 
+                    />
                  </div>
                  </div>
 
