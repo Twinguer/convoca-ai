@@ -59,14 +59,15 @@ serve(async (req) => {
             currency: "brl",
             product_data: { 
               name: selectedPlan.name,
-              description: `Acesso premium por ${selectedPlan.interval_count || 1} ${
-                selectedPlan.interval === 'month' ? 'mês(es)' : 'ano'
-              }`
+              description: `Acesso premium por ${'interval_count' in selectedPlan ? selectedPlan.interval_count : 1} ${
+                selectedPlan.interval === 'month' ? 'mês' : 
+                selectedPlan.interval === 'year' ? 'ano' : selectedPlan.interval
+              }${'interval_count' in selectedPlan && selectedPlan.interval_count > 1 ? 'es' : ''}`
             },
             unit_amount: selectedPlan.price,
             recurring: {
               interval: selectedPlan.interval as "month" | "year",
-              interval_count: selectedPlan.interval_count || 1,
+              interval_count: 'interval_count' in selectedPlan ? selectedPlan.interval_count : 1,
             },
           },
           quantity: 1,
@@ -86,7 +87,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error creating checkout session:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

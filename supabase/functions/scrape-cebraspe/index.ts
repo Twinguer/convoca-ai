@@ -112,7 +112,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error("Server error:", error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }),
+      JSON.stringify({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
@@ -134,7 +134,7 @@ async function fetchCebraspeAPI() {
     console.log(`Fetched ${data.length} events from Cebraspe API`);
     
     // Sort by number of vagas (if available) and take the top 20
-    const sortedData = data.sort((a, b) => {
+    const sortedData = data.sort((a: any, b: any) => {
       // Convert vagas to numbers for comparison
       const vagasA = parseInt(a.vagas) || 0;
       const vagasB = parseInt(b.vagas) || 0;
@@ -142,7 +142,7 @@ async function fetchCebraspeAPI() {
     }).slice(0, 20); // Take top 20
     
     // Transform API data to match our database schema
-    const transformedData = sortedData.map(item => ({
+    const transformedData = sortedData.map((item: any) => ({
       titulo: item.titulo || item.nome,
       orgao: item.instituicao || 'Não informado',
       banca: 'Cebraspe',
@@ -163,13 +163,13 @@ async function fetchCebraspeAPI() {
 }
 
 // Helper function to determine current stage based on API data
-function getEtapaAtual(item) {
+function getEtapaAtual(item: any): string {
   if (item.situacao === 'Inscrições abertas') {
     return 'Inscrições Abertas';
   }
   
   if (item.fases && item.fases.length > 0) {
-    const currentPhase = item.fases.find(fase => 
+    const currentPhase = item.fases.find((fase: any) => 
       fase.situacao === 'Em andamento' || fase.situacao === 'Próxima'
     );
     
@@ -182,7 +182,7 @@ function getEtapaAtual(item) {
 }
 
 // Helper function to determine status based on API data
-function getStatus(fases, situacao) {
+function getStatus(fases: any[], situacao: string): string {
   if (situacao === 'Encerrado' || situacao === 'Concluído') {
     return 'Finalizado';
   }

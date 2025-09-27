@@ -26,10 +26,9 @@ export const useSecureAuth = () => {
     return emailRegex.test(email) && email.length <= 254;
   }, []);
 
-  // Enhanced password validation
+  // Modern password validation - more flexible
   const isPasswordValid = useCallback((password: string): boolean => {
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])?[A-Za-z\d@$!%*?&]{8,}$/;
-    return passwordRegex.test(password) && password.length <= 72; // bcrypt limit
+    return password.length >= 8 && password.length <= 72; // bcrypt limit
   }, []);
 
   // Check for rate limiting
@@ -122,7 +121,7 @@ export const useSecureAuth = () => {
     }
 
     if (!isPasswordValid(password)) {
-      showErrorToast('Senha inválida', 'A senha deve ter pelo menos 8 caracteres, incluindo uma letra maiúscula, uma minúscula e um número.');
+      showErrorToast('Senha inválida', 'A senha deve ter entre 8 e 72 caracteres.');
       return;
     }
 
