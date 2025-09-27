@@ -10,6 +10,7 @@ import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { fetchUserRankings } from '@/services/rankingService';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -65,7 +66,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       });
       if (error) throw error;
 
-      // Para cada ranking, calcular a posição real
+      // Para cada ranking, calcular a posição real usando a mesma lógica da comunidade
       const rankingsWithPositions = await Promise.all((data || []).map(async ranking => {
         // Verificar se concursos existe e é um objeto válido
         if (!ranking.concursos || typeof ranking.concursos !== 'object') {
@@ -76,7 +77,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           };
         }
         
-        // Buscar pontuações de todos os participantes deste concurso
         const concursoId = ranking.concurso_id;
         if (!concursoId) {
           console.error('No concurso ID found for ranking:', ranking);
@@ -87,58 +87,38 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           };
         }
 
-        // Verificar se o usuário está classificado usando a mesma lógica do sistema de rankings
-        const { data: concursoData, error: concursoError } = await supabase
-          .from('concursos')
-          .select('has_minimum_score, total_minimum_score, basic_knowledge_minimum_score, specific_knowledge_1_minimum_score, specific_knowledge_2_minimum_score, specific_knowledge_3_minimum_score, minimum_score_type')
-          .eq('id', concursoId)
-          .single();
+        try {
+          // Usar a mesma função que é usada na página de comunidade
+          const list = await fetchUserRankings(concursoId);
 
-        let isClassified = true;
-        
-        if (!concursoError && concursoData?.has_minimum_score) {
-          // Verificar se atende à pontuação mínima
-          if (concursoData.minimum_score_type === 'total' && concursoData.total_minimum_score) {
-            isClassified = ranking.score >= concursoData.total_minimum_score;
-          } else {
-            // Verificar pontuações mínimas por seção
-            if (concursoData.basic_knowledge_minimum_score && ranking.basic_knowledge_score < concursoData.basic_knowledge_minimum_score) {
-              isClassified = false;
-            }
-            if (concursoData.specific_knowledge_1_minimum_score && ranking.specific_knowledge_1_score < concursoData.specific_knowledge_1_minimum_score) {
-              isClassified = false;
-            }
-            if (concursoData.specific_knowledge_2_minimum_score && ranking.specific_knowledge_2_score < concursoData.specific_knowledge_2_minimum_score) {
-              isClassified = false;
-            }
-            if (concursoData.specific_knowledge_3_minimum_score && ranking.specific_knowledge_3_score < concursoData.specific_knowledge_3_minimum_score) {
-              isClassified = false;
-            }
-          }
-        }
+          // Mesma regra de eliminação usada na tabela de rankings
+          const isBelowMinimum = (rankingData: any) => {
+            return !!rankingData.belowMinimum || 
+                   (rankingData.belowBlockMinimums && rankingData.belowBlockMinimums.length > 0) || 
+                   (rankingData.belowDisciplineMinimums && rankingData.belowDisciplineMinimums.length > 0);
+          };
 
-        const {
-          data: allScores,
-          error: scoresError
-        } = await supabase.from('user_rankings').select('score').eq('concurso_id', concursoId).order('score', {
-          ascending: false
-        });
-        if (scoresError) {
-          console.error('Erro ao buscar pontuações:', scoresError);
+          // Filtrar classificados e ordenar por pontuação
+          const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
+          
+          // Encontrar a posição do usuário
+          const idx = classified.findIndex((r: any) => r.id === ranking.id);
+          const isClassified = idx >= 0;
+          const position = isClassified ? idx + 1 : null;
+
+          return {
+            ...ranking,
+            position,
+            isEliminated: !isClassified
+          };
+        } catch (error) {
+          console.error('Erro ao calcular posição:', error);
           return {
             ...ranking,
             position: null,
-            isEliminated: !isClassified
+            isEliminated: false
           };
         }
-
-        // Encontrar a posição do usuário
-        const position = allScores ? allScores.findIndex(s => s.score >= ranking.score) + 1 : 0;
-        return {
-          ...ranking,
-          position: !isClassified ? null : position,
-          isEliminated: !isClassified
-        };
       }));
       return rankingsWithPositions || [];
     },
