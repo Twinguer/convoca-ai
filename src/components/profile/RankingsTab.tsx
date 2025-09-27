@@ -320,20 +320,19 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 </p>
               </div>
               
-              <div className="flex items-center">
-                {ranking.isEliminated ? (
-                  <Badge variant="destructive" className="text-lg font-bold px-3 py-1">
-                    E
-                  </Badge>
-                ) : ranking.position ? (
-                  <Badge variant="outline" className="text-lg font-bold px-3 py-1 border-gray-300">
-                    {ranking.position}º
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-lg font-bold px-3 py-1 border-gray-300">
-                    -
-                  </Badge>
-                )}
+              <div className="flex flex-col items-end text-right">
+                <div className="text-2xl font-bold text-gray-900 mb-1">
+                  {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} <span className="text-sm font-normal text-gray-500">pts</span>
+                </div>
+                <div className="text-sm text-gray-600">
+                  {ranking.isEliminated ? (
+                    <span className="text-red-600 font-medium">Eliminado</span>
+                  ) : ranking.position ? (
+                    <span className="font-medium">{ranking.position}º lugar</span>
+                  ) : (
+                    <span className="text-gray-400">Posição não calculada</span>
+                  )}
+                </div>
               </div>
             </div>
             
