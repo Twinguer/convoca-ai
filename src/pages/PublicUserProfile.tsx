@@ -9,11 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Users, BookOpen, Pen, ArrowLeft, UserPlus, Clock } from 'lucide-react';
+import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
-import { UserStatus } from '@/components/profile/UserStatus';
-import { RankingPosition } from '@/components/rankings/RankingPosition';
+
+
 import { Link } from 'react-router-dom';
 
 interface UserProfile {
@@ -125,7 +125,6 @@ const PublicUserProfile: React.FC = () => {
     queryKey: ['public-user-rankings', id],
     queryFn: async () => {
       if (!id) return [];
-      
       try {
         const { data, error } = await supabase
           .from('user_rankings')
@@ -135,46 +134,54 @@ const PublicUserProfile: React.FC = () => {
             score,
             concursos(titulo, id)
           `)
-          .eq('user_id', id)
-          .order('score', { ascending: false });
+          .eq('user_id', id);
 
-        if (error) throw error;
-        
-        const rankingsWithPosition = await Promise.all(data.map(async item => {
-          // Check if user is classified using the function
-          const { data: isClassified } = await supabase
-            .rpc('is_candidate_classified', {
-              p_ranking_id: item.id,
-              p_concurso_id: item.concurso_id
+        if (error || !data) throw error || new Error('Sem rankings');
+
+        const concursoIds = Array.from(new Set(data.map((r: any) => r.concurso_id)));
+
+        // Buscar listas de cada concurso em paralelo e montar posições por ranking_id
+        const results = await Promise.all(
+          concursoIds.map(async (cid) => {
+            const { data: list, error: listError } = await supabase
+              .from('user_rankings')
+              .select('id, score')
+              .eq('concurso_id', cid)
+              .order('score', { ascending: false });
+
+            if (listError || !list) {
+              console.error('Erro ao buscar lista do concurso:', listError);
+              return { cid, positions: new Map<string, number>() };
+            }
+
+            const positions = new Map<string, number>();
+            list.forEach((row: any, idx: number) => {
+              positions.set(row.id, idx + 1);
             });
+            return { cid, positions };
+          })
+        );
 
-          const { data: allScores, error: scoresError } = await supabase
-            .from('user_rankings')
-            .select('score')
-            .eq('concurso_id', item.concurso_id)
-            .order('score', { ascending: false });
+        const positionsMapByConcurso = new Map<string, Map<string, number>>();
+        results.forEach((r) => positionsMapByConcurso.set(r.cid, r.positions));
 
-          if (scoresError) {
-            console.error('Error fetching scores:', scoresError);
-            return null;
-          }
-          
-          const position = allScores.findIndex(s => s.score <= item.score) + 1;
+        return data.map((item: any) => {
+          const positions = positionsMapByConcurso.get(item.concurso_id) || new Map();
+          const position = positions.get(item.id) ?? null;
           const concursoData = item.concursos || {};
-          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData 
-            ? String(concursoData.titulo) 
-            : 'Concurso sem título';
-          
+          const titulo =
+            typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData
+              ? String((concursoData as any).titulo)
+              : 'Concurso sem título';
+
           return {
             concursoId: item.concurso_id,
             concursoTitle: titulo,
-            position: isClassified ? position : null,
+            position,
             score: item.score,
-            isClassified: Boolean(isClassified)
-          };
-        }));
-        
-        return rankingsWithPosition.filter(Boolean) as UserRanking[];
+            isClassified: true,
+          } as UserRanking;
+        });
       } catch (error) {
         console.error('Error fetching rankings:', error);
         return [];
