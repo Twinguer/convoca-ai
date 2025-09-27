@@ -1,17 +1,22 @@
 
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { OnlineIndicator } from './OnlineIndicator';
 
 interface UserAvatarProps {
   name: string;
   avatarUrl?: string | null;
   size?: 'sm' | 'md' | 'lg';
+  userId?: string;
+  showOnlineStatus?: boolean;
 }
 
 export const UserAvatar: React.FC<UserAvatarProps> = ({ 
   name, 
   avatarUrl, 
-  size = 'md' 
+  size = 'md',
+  userId,
+  showOnlineStatus = false
 }) => {
   const getInitials = (name: string) => {
     if (!name) return 'U';
@@ -24,13 +29,24 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     lg: 'h-14 w-14 sm:h-16 sm:w-16'
   }[size];
 
+  // Truncate name to 15 characters and capitalize properly
+  const displayName = name ? 
+    name.split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ').substring(0, 15) : 'Usuário';
+
   return (
-    <Avatar className={sizeClass}>
-      {avatarUrl ? (
-        <AvatarImage src={avatarUrl} alt={name} />
-      ) : (
-        <AvatarFallback>{getInitials(name)}</AvatarFallback>
+    <div className="relative inline-block">
+      <Avatar className={sizeClass}>
+        {avatarUrl ? (
+          <AvatarImage src={avatarUrl} alt={displayName} />
+        ) : (
+          <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+        )}
+      </Avatar>
+      {showOnlineStatus && userId && (
+        <OnlineIndicator userId={userId} />
       )}
-    </Avatar>
+    </div>
   );
 };

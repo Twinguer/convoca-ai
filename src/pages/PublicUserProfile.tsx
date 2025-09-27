@@ -275,17 +275,34 @@ const PublicUserProfile: React.FC = () => {
         <div className="lg:col-span-3 space-y-4">
           <Card>
             <CardContent className="pt-6">
-              <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-32 w-32">
-                  {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.name} /> : <AvatarFallback className="text-3xl">
-                      {getInitials(profile?.name || '')}
-                    </AvatarFallback>}
-                </Avatar>
+               <div className="flex flex-col items-center space-y-4">
+                 <div className="relative">
+                   <Avatar className="h-32 w-32">
+                     {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.name} /> : <AvatarFallback className="text-3xl">
+                         {getInitials(profile?.name || '')}
+                       </AvatarFallback>}
+                   </Avatar>
+                   {/* Online indicator */}
+                   <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-white" />
+                 </div>
+                   <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-white" />
+                 </div>
                 
                 <div className="text-center">
-                  <h2 className="text-xl font-bold">{profile?.name}</h2>
+                  <h2 className="text-xl font-bold">
+                    {profile?.name ? 
+                      profile.name.split(' ').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                      ).join(' ').substring(0, 15) 
+                      : 'Usuário'
+                    }
+                  </h2>
                   
-                  {profile?.bio && <p className="text-sm text-muted-foreground mt-2">{profile.bio}</p>}
+                  {profile?.bio && (
+                    <p className="text-sm text-muted-foreground mt-2 break-words overflow-hidden line-clamp-3">
+                      {profile.bio}
+                    </p>
+                  )}
                   
                   {user && user.id !== id && <Button onClick={handleFollowToggle} variant={isFollowing ? "outline" : "default"} className="mt-4">
                       {isFollowing ? "Deixar de seguir" : "Seguir"}
@@ -296,12 +313,6 @@ const PublicUserProfile: React.FC = () => {
                 
                 <div className="w-full space-y-2">
                   <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Pen className="h-4 w-4 mr-2 text-purple-500" />
-                      <span className="text-sm">Status</span>
-                    </div>
-                    <span className="text-sm font-semibold">{profile?.status_concurseiro || 'Na Ativa'}</span>
-                  </div>
                   
                   {profile?.profile_text && <div className="mt-3 text-sm text-center py-2 px-3 bg-gray-50 rounded-md italic">
                       "{profile.profile_text}"
@@ -317,35 +328,35 @@ const PublicUserProfile: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-2 text-sm">
-                  {profile.estado && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span className="font-medium">Estado:</span>
-                      <span className="text-gray-600">{profile.estado}</span>
-                    </div>}
-                  
-                  {profile.formacao && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span className="font-medium">Formação:</span>
-                      <span className="text-gray-600">{profile.formacao}</span>
-                    </div>}
-                  
-                  {profile.cargo_atual && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span className="font-medium">Cargo atual:</span>
-                      <span className="text-gray-600">{profile.cargo_atual}</span>
-                    </div>}
-                  
-                  {profile.area_estudos && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span className="font-medium">Área de Estudos:</span>
-                      <span className="text-gray-600">{profile.area_estudos}</span>
-                    </div>}
-                  
-                  {profile.especialidade && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span className="font-medium">Especialidade:</span>
-                      <span className="text-gray-600">{profile.especialidade}</span>
-                    </div>}
-                  
-                  {profile.curso_preparatorio && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                      <span className="font-medium">Curso Preparatório:</span>
-                      <span className="text-gray-600">{profile.curso_preparatorio}</span>
-                    </div>}
+                   {profile.estado && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                       <span className="font-medium">Estado:</span>
+                       <span className="text-gray-600 break-words">{profile.estado}</span>
+                     </div>}
+                   
+                   {profile.formacao && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                       <span className="font-medium">Formação:</span>
+                       <span className="text-gray-600 break-words">{profile.formacao}</span>
+                     </div>}
+                   
+                   {profile.cargo_atual && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                       <span className="font-medium">Cargo atual:</span>
+                       <span className="text-gray-600 break-words">{profile.cargo_atual}</span>
+                     </div>}
+                   
+                   {profile.area_estudos && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                       <span className="font-medium">Área de Estudos:</span>
+                       <span className="text-gray-600 break-words">{profile.area_estudos}</span>
+                     </div>}
+                   
+                   {profile.especialidade && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                       <span className="font-medium">Especialidade:</span>
+                       <span className="text-gray-600 break-words">{profile.especialidade}</span>
+                     </div>}
+                   
+                   {profile.curso_preparatorio && <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                       <span className="font-medium">Curso Preparatório:</span>
+                       <span className="text-gray-600 break-words">{profile.curso_preparatorio}</span>
+                     </div>}
                 </div>
               </CardContent>
             </Card>}
@@ -356,9 +367,9 @@ const PublicUserProfile: React.FC = () => {
               <CardHeader className="pb-3">
                 <h3 className="text-xl font-bold">Rotina de estudos</h3>
               </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-line">{profile.rotina_estudos}</p>
-              </CardContent>
+               <CardContent>
+                 <p className="whitespace-pre-line break-words overflow-hidden">{profile.rotina_estudos}</p>
+               </CardContent>
             </Card>}
           
           <Card className="mb-4">
@@ -384,14 +395,16 @@ const PublicUserProfile: React.FC = () => {
                           ? 'bg-gradient-to-r from-emerald-100 to-emerald-50' 
                           : 'bg-gradient-to-r from-red-100 to-red-50'
                       }`}>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-slate-700 text-sm sm:text-base">{ranking.concursoTitle}</h3>
+                         <div className="flex-1">
+                           <h3 className="font-medium text-slate-700 text-sm sm:text-base break-words overflow-hidden line-clamp-2">
+                             {ranking.concursoTitle}
+                           </h3>
                           <div className="flex items-center mt-1">
                             <Trophy className="h-4 w-4 text-yellow-500 mr-1 flex-shrink-0" />
-                            <span className="text-xs sm:text-sm text-slate-700">
-                              {ranking.isClassified && ranking.position 
+                           <span className="text-xs sm:text-sm text-slate-700">
+                              {ranking.position 
                                 ? `Posição: ${ranking.position}º` 
-                                : 'Eliminado'}
+                                : `Participando - ${ranking.score} pts`}
                             </span>
                           </div>
                         </div>
@@ -421,7 +434,7 @@ const PublicUserProfile: React.FC = () => {
                         <div className="bg-emerald-200 p-2 rounded-full mr-3">
                           <Trophy className="h-4 w-4 text-emerald-600" />
                         </div>
-                        <p className="text-slate-700 break-words">{concurso}</p>
+                        <p className="text-slate-700 break-words overflow-hidden line-clamp-2">{concurso}</p>
                       </div>
                     </div>)}
                 </div> : <div className="text-center py-6">

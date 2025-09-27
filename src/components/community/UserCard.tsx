@@ -82,26 +82,32 @@ export const UserCard: React.FC<UserCardProps> = ({
               Estudando
             </div>
           )}
-          {userProfile.status_concurseiro && (
-            <div className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStatusBadgeClass(userProfile.status_concurseiro)}`}>
-              {userProfile.status_concurseiro}
-            </div>
-          )}
         </div>
         
         <div className="flex flex-col items-center mb-4">
-          <Avatar className={`h-20 w-20 mb-3 ${isCurrentUser ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}>
-            <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
-            <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className={`h-20 w-20 mb-3 ${isCurrentUser ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}>
+              <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
+              <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
+            </Avatar>
+            {/* Online indicator for all users */}
+            <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white" />
+          </div>
           
-          <h3 className="font-medium text-center">{userProfile.name || 'Usuário'}</h3>
+          <h3 className="font-medium text-center truncate max-w-full px-2">
+            {userProfile.name ? 
+              userProfile.name.split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+              ).join(' ').substring(0, 15) 
+              : 'Usuário'
+            }
+          </h3>
           {userProfile.email && (
             <p className="text-xs text-muted-foreground">
               @{userProfile.username || userProfile.email.split('@')[0]}
             </p>
           )}
-          <p className="text-xs text-muted-foreground mb-2 text-center break-words mx-2">
+          <p className="text-xs text-muted-foreground mb-2 text-center break-words mx-2 line-clamp-2 overflow-hidden">
             {userProfile.bio || ''}
           </p>
         </div>

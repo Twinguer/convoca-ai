@@ -67,11 +67,19 @@ const AppContent = () => {
                         <Menu />
                         <UserProfile />
                       </>} />
-                    <Route path="/usuario/:id" element={<>
+                     <Route path="/usuario/:id" element={<>
                         <Menu />
                         <PublicUserProfile />
                       </>} />
-                    <Route path="/seguidores" element={<>
+                     <Route path="/usuario/:id/seguidores" element={<>
+                        <Menu />
+                        <UserFollowers />
+                      </>} />
+                     <Route path="/usuario/:id/seguindo" element={<>
+                        <Menu />
+                        <UserFollowers />
+                      </>} />
+                     <Route path="/seguidores" element={<>
                         <Menu />
                         <UserFollowers />
                       </>} />
