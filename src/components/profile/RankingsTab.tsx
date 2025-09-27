@@ -308,78 +308,78 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       <h3 className="text-lg font-medium">Rankings ({allRankings.length})</h3>
       
       <div className="grid gap-1">
-        {displayRankings.map((ranking: any) => <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
-              <div>
-                <h4 className="font-bold text-gray-500 text-sm truncate max-w-[200px]">
+        {displayRankings.map((ranking: any) => 
+          <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
+            <div className="bg-gradient-to-r from-red-50/30 to-white p-4 flex justify-between items-center border-b">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 text-base mb-1">
                   {ranking.concursos?.titulo || ranking.concursoTitle}
                 </h4>
-                <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                  {ranking.concursos?.orgao} {ranking.concursos?.banca ? `• ${ranking.concursos.banca}` : ''}
+                <p className="text-sm text-gray-600 flex items-center">
+                  🏆 Participando - {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} pts
                 </p>
-                
-                {/* Posição e Pontuação */}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {ranking.isEliminated ? (
-                    <Badge variant="destructive" className="flex items-center">
-                      Eliminado
-                    </Badge>
-                  ) : ranking.position ? (
-                    <Badge variant="default" className="flex items-center">
-                      <Trophy className="h-3 w-3 mr-1" />
-                      {ranking.position}º lugar
-                    </Badge>
-                  ) : null}
-                  
-                  <Badge variant="secondary" className="flex items-center">
-                    Pontuação: {typeof ranking.score === 'number' ? ranking.score.toFixed(2) : 'Calculando...'}
-                  </Badge>
-                </div>
               </div>
               
-              <div className="flex items-center gap-2 self-end">
-                <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}>
-                  <Trophy className="h-4 w-4" />
-                  <span>Ranking</span>
-                </Button>
-                
-                {isOwnProfile && (
-                  <>
-                    <Button size="sm" className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
-                      <PencilLine className="h-4 w-4" />
-                      <span>Editar</span>
-                    </Button>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="destructive" className="flex items-center gap-1">
-                          <UserX className="h-4 w-4" />
-                          <span>Deixar</span>
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Deixar de participar?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja deixar de participar deste ranking? Esta ação não pode ser desfeita e você perderá todas as suas respostas.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => leaveRankingMutation.mutate(ranking)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Confirmar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </>
+              <div className="flex items-center">
+                {ranking.isEliminated ? (
+                  <Badge variant="destructive" className="text-lg font-bold px-3 py-1">
+                    E
+                  </Badge>
+                ) : ranking.position ? (
+                  <Badge variant="outline" className="text-lg font-bold px-3 py-1 border-gray-300">
+                    {ranking.position}º
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-lg font-bold px-3 py-1 border-gray-300">
+                    -
+                  </Badge>
                 )}
               </div>
             </div>
-          </Card>)}
+            
+            <div className="p-4 bg-white flex justify-end gap-2">
+              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}>
+                <Trophy className="h-4 w-4" />
+                <span>Ranking</span>
+              </Button>
+              
+              {isOwnProfile && (
+                <>
+                  <Button size="sm" className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
+                    <PencilLine className="h-4 w-4" />
+                    <span>Editar</span>
+                  </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive" className="flex items-center gap-1">
+                        <UserX className="h-4 w-4" />
+                        <span>Deixar</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Deixar de participar?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja deixar de participar deste ranking? Esta ação não pode ser desfeita e você perderá todas as suas respostas.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => leaveRankingMutation.mutate(ranking)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Confirmar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </div>
+          </Card>
+        )}
         
         {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
             {showAllRankings ? <>
