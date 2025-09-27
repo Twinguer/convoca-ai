@@ -1001,14 +1001,14 @@ const Cronograma = () => {
                                  </div>
                                </div>
                                
-                               <div className="flex justify-end pt-1 border-t border-border/50">
-                                 <Button variant="outline" size="sm" onClick={e => {
+                                <div className="flex justify-end pt-1 border-t border-border/50">
+                                  <Button variant="outline" size="sm" onClick={e => {
                         e.stopPropagation();
                         removeSession(session.id);
                       }} title="Remover sessão" className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground rounded-sm">
-                                   Excluir
-                                 </Button>
-                               </div>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
                              </div>
                            </div>;
               })}
