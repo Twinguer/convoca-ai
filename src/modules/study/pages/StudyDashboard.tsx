@@ -211,7 +211,7 @@ const StudyDashboard = () => {
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => navigate(`/estudos/ciclo/${cycle.id}`)}>
-                        Ver Detalhes
+                        Disciplinas
                       </Button>
                     </div>
                   </div>
