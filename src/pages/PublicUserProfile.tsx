@@ -392,7 +392,7 @@ const PublicUserProfile: React.FC = () => {
                   <CardTitle>Rotina de estudos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-line text-sm text-muted-foreground">
+                  <p className="whitespace-pre-line text-sm text-muted-foreground break-words">
                     {profile.rotina_estudos}
                   </p>
                 </CardContent>
