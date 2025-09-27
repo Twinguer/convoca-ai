@@ -1005,7 +1005,7 @@ const Cronograma = () => {
                                  <Button variant="outline" size="sm" onClick={e => {
                         e.stopPropagation();
                         removeSession(session.id);
-                      }} title="Remover sessão" className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground rounded">
+                      }} title="Remover sessão" className="h-6 px-2 text-xs text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground rounded-sm">
                                    Excluir
                                  </Button>
                                </div>
