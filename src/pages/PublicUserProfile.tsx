@@ -351,11 +351,6 @@ const PublicUserProfile: React.FC = () => {
                     {profile?.name || 'Usuário'}
                   </h2>
                   
-                  {/* Badge com horas estudadas */}
-                  <Badge variant="secondary" className="mb-3">
-                    <Clock className="h-3 w-3 mr-1" />
-                    24-2h estudadas
-                  </Badge>
                 </div>
                 
                 <Separator />
@@ -476,11 +471,15 @@ const PublicUserProfile: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">Classificação:</span>
-                            <RankingPosition 
-                              position={ranking.position || 0}
-                              belowMinimum={!ranking.isClassified}
-                              isEliminated={!ranking.isClassified}
-                            />
+                            {ranking.position ? (
+                              <span className="font-bold text-primary">
+                                {ranking.position}º
+                              </span>
+                            ) : (
+                              <Badge variant="destructive" className="font-bold">
+                                E
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </Card>
