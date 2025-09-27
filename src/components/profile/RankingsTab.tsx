@@ -125,8 +125,41 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
     enabled: !userRankings && !!userId // Only fetch if userRankings is not provided and userId exists
   });
 
-  // Use provided userRankings if available, otherwise use fetched rankings
-  const allRankings = userRankings || rankings;
+  // Calcula posições também quando userRankings é passado via props (Meu Perfil > Rankings)
+  const { data: propRankingsWithPositions } = useQuery({
+    queryKey: ['user-rankings-positions', userId, userRankings],
+    queryFn: async () => {
+      const list = await Promise.all((userRankings || []).map(async (ranking: any) => {
+        const concursoId = ranking.concurso_id || ranking.concursoId;
+        if (!concursoId) {
+          return { ...ranking, position: null, isEliminated: false };
+        }
+        try {
+          const communityList = await fetchUserRankings(concursoId);
+          const isBelowMinimum = (r: any) =>
+            !!r.belowMinimum ||
+            (r.belowBlockMinimums && r.belowBlockMinimums.length > 0) ||
+            (r.belowDisciplineMinimums && r.belowDisciplineMinimums.length > 0);
+          const classified = communityList
+            .filter((r: any) => !isBelowMinimum(r))
+            .sort((a: any, b: any) => b.score - a.score);
+          // Encontrar posição pelo userId do perfil
+          const idx = classified.findIndex((r: any) => r.userId === userId);
+          const isClassified = idx >= 0;
+          const position = isClassified ? idx + 1 : null;
+          return { ...ranking, position, isEliminated: !isClassified };
+        } catch (e) {
+          console.error('Erro ao calcular posição (props):', e);
+          return { ...ranking, position: null, isEliminated: false };
+        }
+      }));
+      return list;
+    },
+    enabled: !!userRankings && !!userId,
+  });
+
+  // Lista final considerada: se veio via props, usa a versão enriquecida; caso contrário, os dados buscados
+  const allRankings = userRankings ? (propRankingsWithPositions || userRankings) : rankings;
   const showSkeleton = isLoading && !userRankings;
 
   // Sort rankings by score (highest first)
@@ -305,12 +338,13 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                   {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} <span className="text-sm font-normal text-gray-500">pts</span>
                 </div>
                 <div className="text-sm text-gray-600">
+                  <span className="text-gray-500 mr-1">Classificação:</span>
                   {ranking.isEliminated ? (
-                    <span className="text-red-600 font-medium">Eliminado</span>
+                    <span className="text-red-600 font-bold">E</span>
                   ) : ranking.position ? (
-                    <span className="font-medium">{ranking.position}º lugar</span>
+                    <span className="font-medium">{ranking.position}º</span>
                   ) : (
-                    <span className="text-gray-400">Posição não calculada</span>
+                    <span className="text-gray-400">—</span>
                   )}
                 </div>
               </div>
