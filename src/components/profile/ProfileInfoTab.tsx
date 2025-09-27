@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
 import StatusSelect from './StatusSelect';
-
 interface ProfileInfoTabProps {
   name: string;
   setName: (name: string) => void;
@@ -36,7 +34,6 @@ interface ProfileInfoTabProps {
   rotinaEstudos: string;
   setRotinaEstudos: (value: string) => void;
 }
-
 const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
   name,
   setName,
@@ -100,12 +97,10 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
     const novaLista = listaAprovacoes.filter((_, i) => i !== index);
     setConcursosAprovados(novaLista.join('\n'));
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome completo</Label>
+          <Label htmlFor="name">Nome de usuário</Label>
           <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" />
         </div>
         
@@ -118,13 +113,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="rotinaEstudos">Rotina de estudos</Label>
-          <Textarea 
-            id="rotinaEstudos" 
-            value={rotinaEstudos} 
-            onChange={handleRotinaEstudosChange} 
-            placeholder="Rotina de estudos, próximo concursos, dicas... algo que ajude e incentive quem também está na jornada!" 
-            className="min-h-[150px]"
-          />
+          <Textarea id="rotinaEstudos" value={rotinaEstudos} onChange={handleRotinaEstudosChange} placeholder="Rotina de estudos, próximo concursos, dicas... algo que ajude e incentive quem também está na jornada!" className="min-h-[150px]" />
           <p className="text-xs text-gray-500 text-right">{rotinaEstudos.length}/1500 caracteres</p>
         </div>
         
@@ -134,68 +123,32 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           <div className="space-y-2 border p-4 rounded-md bg-gray-50">
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>
-              <Input 
-                id="estado" 
-                value={estado} 
-                onChange={e => setEstado(e.target.value)} 
-                placeholder="Seu estado" 
-                maxLength={50}
-              />
+              <Input id="estado" value={estado} onChange={e => setEstado(e.target.value)} placeholder="Seu estado" maxLength={50} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="formacao">Formação</Label>
-              <Input 
-                id="formacao" 
-                value={formacao} 
-                onChange={e => setFormacao(e.target.value)} 
-                placeholder="Sua formação acadêmica" 
-                maxLength={50}
-              />
+              <Input id="formacao" value={formacao} onChange={e => setFormacao(e.target.value)} placeholder="Sua formação acadêmica" maxLength={50} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="cargoAtual">Cargo atual</Label>
-              <Input 
-                id="cargoAtual" 
-                value={cargoAtual} 
-                onChange={e => setCargoAtual(e.target.value)} 
-                placeholder="Analista Judiciário, Autônomo, Estudante etc." 
-                maxLength={50}
-              />
+              <Input id="cargoAtual" value={cargoAtual} onChange={e => setCargoAtual(e.target.value)} placeholder="Analista Judiciário, Autônomo, Estudante etc." maxLength={50} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="areaEstudos">Área de Estudos</Label>
-              <Input 
-                id="areaEstudos" 
-                value={areaEstudos} 
-                onChange={e => setAreaEstudos(e.target.value)} 
-                placeholder="Sefaz, Tribunais etc." 
-                maxLength={50}
-              />
+              <Input id="areaEstudos" value={areaEstudos} onChange={e => setAreaEstudos(e.target.value)} placeholder="Sefaz, Tribunais etc." maxLength={50} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="especialidade">Especialidade</Label>
-              <Input 
-                id="especialidade" 
-                value={especialidade} 
-                onChange={e => setEspecialidade(e.target.value)} 
-                placeholder="Área Judiciária, Tecnologia da Informação etc." 
-                maxLength={50}
-              />
+              <Input id="especialidade" value={especialidade} onChange={e => setEspecialidade(e.target.value)} placeholder="Área Judiciária, Tecnologia da Informação etc." maxLength={50} />
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="cursoPreparatorio">Curso Preparatório</Label>
-              <Input 
-                id="cursoPreparatorio" 
-                value={cursoPreparatorio} 
-                onChange={e => setCursoPreparatorio(e.target.value)} 
-                placeholder="Pode ser mais de um" 
-                maxLength={50}
-              />
+              <Input id="cursoPreparatorio" value={cursoPreparatorio} onChange={e => setCursoPreparatorio(e.target.value)} placeholder="Pode ser mais de um" maxLength={50} />
             </div>
           </div>
         </div>
@@ -211,21 +164,15 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           </div>
           
           <div className="space-y-2 mt-3">
-            {listaAprovacoes.length > 0 ? listaAprovacoes.map((aprovacao, index) => (
-                <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+            {listaAprovacoes.length > 0 ? listaAprovacoes.map((aprovacao, index) => <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
                   <span className="text-sm break-words flex-grow">{aprovacao}</span>
                   <Button variant="ghost" size="sm" onClick={() => removerAprovacao(index)} className="h-8 w-8 p-0">
                     <X className="h-4 w-4 text-gray-500" />
                   </Button>
-                </div>
-              )) : (
-                <p className="text-sm text-gray-500 italic">Nenhuma aprovação adicionada ainda</p>
-              )}
+                </div>) : <p className="text-sm text-gray-500 italic">Nenhuma aprovação adicionada ainda</p>}
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default ProfileInfoTab;
