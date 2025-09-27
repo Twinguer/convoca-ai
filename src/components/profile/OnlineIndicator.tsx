@@ -59,7 +59,7 @@ export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({
     };
   }, [userId]);
 
-  const ringClasses = `absolute inset-0 rounded-full ring-2 ${isOnline ? 'ring-success' : 'ring-muted'} pointer-events-none ${className}`;
+  const ringClasses = `absolute inset-0 rounded-full ring-2 ring-offset-2 ring-offset-background ${isOnline ? 'ring-success' : 'ring-muted'} pointer-events-none ${className}`;
 
   return (
     <div
