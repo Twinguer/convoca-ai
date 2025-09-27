@@ -75,7 +75,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow">
+    <div className="border border-emerald-400 rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow dark:border-emerald-400/60">
       <div className="relative p-4">
         <div className="absolute top-4 right-4 flex flex-col gap-1 items-end">
           {userProfile.is_studying && (
