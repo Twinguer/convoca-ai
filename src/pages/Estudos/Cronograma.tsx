@@ -455,7 +455,7 @@ const Cronograma = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Cronograma</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Sessão</h1>
           <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
         </div>
       </div>
