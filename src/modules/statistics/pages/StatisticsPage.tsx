@@ -9,51 +9,49 @@ import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle }
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
-
 const StatisticsPage = () => {
-  const { statistics, isLoading, resetStatistics, getFilteredStats, refreshStatistics } = useStudyStatistics();
-  const { toast } = useToast();
+  const {
+    statistics,
+    isLoading,
+    resetStatistics,
+    getFilteredStats,
+    refreshStatistics
+  } = useStudyStatistics();
+  const {
+    toast
+  } = useToast();
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('week');
 
   // Recarregar estatísticas quando a página carregar para consolidar dados do cronograma
   useEffect(() => {
     refreshStatistics();
   }, []);
-
   const handleResetStats = async () => {
     await resetStatistics();
     toast({
       title: "Estatísticas zeradas",
-      description: "Todas as suas estatísticas foram resetadas com sucesso.",
+      description: "Todas as suas estatísticas foram resetadas com sucesso."
     });
   };
-
   const formatHours = (hours: number) => {
     return hours.toFixed(1) + 'h';
   };
-
   const formatPercentage = (value: number, total: number) => {
     if (total === 0) return '0%';
-    return ((value / total) * 100).toFixed(1) + '%';
+    return (value / total * 100).toFixed(1) + '%';
   };
-
   const filteredStats = getFilteredStats(timeFilter);
-
   if (isLoading) {
-    return (
-      <div className="container mx-auto p-6">
+    return <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-pulse" />
             <p className="text-muted-foreground">Carregando estatísticas...</p>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="container mx-auto p-6">
+  return <div className="container mx-auto p-6">
       <div className="mb-8 flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Estatísticas de Estudo</h1>
@@ -138,11 +136,7 @@ const StatisticsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <PerformanceChart 
-          statistics={statistics}
-          timeFilter={timeFilter}
-          onTimeFilterChange={setTimeFilter}
-        />
+        <PerformanceChart statistics={statistics} timeFilter={timeFilter} onTimeFilterChange={setTimeFilter} />
         
         <Card>
           <CardHeader>
@@ -157,8 +151,8 @@ const StatisticsPage = () => {
           <CardContent>
             <Tabs defaultValue="geral" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="geral">Geral</TabsTrigger>
-                <TabsTrigger value="disciplinas">Por Disciplina</TabsTrigger>
+                <TabsTrigger value="geral" className="text-slate-800">Geral</TabsTrigger>
+                <TabsTrigger value="disciplinas" className="text-slate-800">Por Disciplina</TabsTrigger>
               </TabsList>
               
               <TabsContent value="geral" className="mt-4">
@@ -193,10 +187,8 @@ const StatisticsPage = () => {
               </TabsContent>
               
               <TabsContent value="disciplinas" className="mt-4">
-                {Object.keys(statistics.subjectStats).length > 0 ? (
-                  <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                    {Object.entries(statistics.subjectStats).map(([subject, stats]) => (
-                      <div key={subject} className="p-3 border rounded-lg">
+                {Object.keys(statistics.subjectStats).length > 0 ? <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                    {Object.entries(statistics.subjectStats).map(([subject, stats]) => <div key={subject} className="p-3 border rounded-lg">
                         <h4 className="font-medium text-sm mb-2">{subject}</h4>
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           <div className="text-center">
@@ -212,24 +204,18 @@ const StatisticsPage = () => {
                             <div className="text-muted-foreground">Erros</div>
                           </div>
                         </div>
-                        {stats.questionsAnswered > 0 && (
-                          <div className="mt-2">
+                        {stats.questionsAnswered > 0 && <div className="mt-2">
                             <div className="w-full bg-secondary rounded-full h-1.5">
-                              <div 
-                                className="bg-success h-1.5 rounded-full transition-all duration-300" 
-                                style={{ width: `${(stats.correctAnswers / stats.questionsAnswered) * 100}%` }}
-                              />
+                              <div className="bg-success h-1.5 rounded-full transition-all duration-300" style={{
+                        width: `${stats.correctAnswers / stats.questionsAnswered * 100}%`
+                      }} />
                             </div>
                             <div className="text-xs text-muted-foreground mt-1 text-center">
                               {formatPercentage(stats.correctAnswers, stats.questionsAnswered)} de acerto
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
+                          </div>}
+                      </div>)}
+                  </div> : <div className="text-center py-8">
                     <CheckCircle className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
                       Nenhuma questão por disciplina registrada ainda
@@ -237,8 +223,7 @@ const StatisticsPage = () => {
                     <p className="text-xs text-muted-foreground mt-1">
                       Use o rastreamento de questões para ver estatísticas por disciplina
                     </p>
-                  </div>
-                )}
+                  </div>}
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -247,8 +232,7 @@ const StatisticsPage = () => {
       </div>
 
       {/* Desempenho por Disciplina */}
-      {Object.keys(statistics.subjectStats).length > 0 && (
-        <Card className="mb-8">
+      {Object.keys(statistics.subjectStats).length > 0 && <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
@@ -260,8 +244,7 @@ const StatisticsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(statistics.subjectStats).map(([subject, stats]) => (
-                <div key={subject} className="border rounded-lg p-4">
+              {Object.entries(statistics.subjectStats).map(([subject, stats]) => <div key={subject} className="border rounded-lg p-4">
                   <h4 className="font-semibold text-foreground mb-3">{subject}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center">
@@ -285,28 +268,21 @@ const StatisticsPage = () => {
                       </div>
                     </div>
                   </div>
-                  {stats.questionsAnswered > 0 && (
-                    <div className="mt-3">
+                  {stats.questionsAnswered > 0 && <div className="mt-3">
                       <div className="flex justify-between text-xs text-muted-foreground mb-1">
                         <span>Taxa de Acerto</span>
                         <span>{formatPercentage(stats.correctAnswers, stats.questionsAnswered)}</span>
                       </div>
                       <div className="w-full bg-secondary rounded-full h-2">
-                        <div 
-                          className="bg-success h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${(stats.correctAnswers / stats.questionsAnswered) * 100}%` }}
-                        />
+                        <div className="bg-success h-2 rounded-full transition-all duration-300" style={{
+                  width: `${stats.correctAnswers / stats.questionsAnswered * 100}%`
+                }} />
                       </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    </div>}
+                </div>)}
             </div>
           </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+        </Card>}
+    </div>;
 };
-
 export default StatisticsPage;
