@@ -131,55 +131,58 @@ const PublicUserProfile: React.FC = () => {
     queryFn: async () => {
       if (!id) return [];
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('user_rankings').select(`
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select(`
             id,
             concurso_id,
             score,
             concursos(titulo, id)
-          `).eq('user_id', id);
+          `)
+          .eq('user_id', id);
         if (error || !data) throw error || new Error('Sem rankings');
-        const concursoIds = Array.from(new Set(data.map((r: any) => r.concurso_id)));
 
-        // Buscar listas de cada concurso em paralelo e montar posições por ranking_id
-        const results = await Promise.all(concursoIds.map(async cid => {
-          const {
-            data: list,
-            error: listError
-          } = await supabase.from('user_rankings').select('id, score').eq('concurso_id', cid).order('score', {
-            ascending: false
-          });
-          if (listError || !list) {
-            console.error('Erro ao buscar lista do concurso:', listError);
-            return {
-              cid,
-              positions: new Map<string, number>()
-            };
-          }
-          const positions = new Map<string, number>();
-          list.forEach((row: any, idx: number) => {
-            positions.set(row.id, idx + 1);
-          });
-          return {
-            cid,
-            positions
-          };
-        }));
-        const positionsMapByConcurso = new Map<string, Map<string, number>>();
-        results.forEach(r => positionsMapByConcurso.set(r.cid, r.positions));
+        const concursoIds: string[] = Array.from(new Set(data.map((r: any) => r.concurso_id)));
+        const userRankingIdByConcurso = new Map<string, string>();
+        data.forEach((r: any) => userRankingIdByConcurso.set(r.concurso_id, r.id));
+
+        // Buscar listas em Ampla Concorrência e calcular posição e classificação
+        const results = await Promise.all(
+          concursoIds.map(async (cid) => {
+            const { data: realtime, error: realtimeError } = await supabase.rpc('get_realtime_rankings', {
+              p_concurso_id: cid,
+              p_reservation_type: 'Ampla Concorrência',
+            });
+            if (realtimeError || !realtime) {
+              console.error('Erro ao buscar ranking em tempo real:', realtimeError);
+              return { cid, list: [] as any[] };
+            }
+            return { cid, list: realtime as any[] };
+          })
+        );
+
+        const byConcurso = new Map<string, { position: number | null; isClassified: boolean }>();
+        results.forEach((res) => {
+          const rid = userRankingIdByConcurso.get(res.cid);
+          const idx = res.list.findIndex((row: any) => row.ranking_id === rid);
+          const isClassified = idx >= 0 ? Boolean(res.list[idx]?.is_classified) : false;
+          const position = isClassified && idx >= 0 ? idx + 1 : null;
+          byConcurso.set(res.cid, { position, isClassified });
+        });
+
         return data.map((item: any) => {
-          const positions = positionsMapByConcurso.get(item.concurso_id) || new Map();
-          const position = positions.get(item.id) ?? null;
           const concursoData = item.concursos || {};
-          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String((concursoData as any).titulo) : 'Concurso sem título';
+          const titulo =
+            typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData
+              ? String((concursoData as any).titulo)
+              : 'Concurso sem título';
+          const info = byConcurso.get(item.concurso_id) || { position: null, isClassified: false };
           return {
             concursoId: item.concurso_id,
             concursoTitle: titulo,
-            position,
+            position: info.position,
             score: item.score,
-            isClassified: true
+            isClassified: info.isClassified,
           } as UserRanking;
         });
       } catch (error) {
