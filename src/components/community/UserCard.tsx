@@ -86,15 +86,12 @@ export const UserCard: React.FC<UserCardProps> = ({
         </div>
         
         <div className="flex flex-col items-center mb-4">
-          <div className="relative">
-            <Avatar className="h-20 w-20 mb-3">
+          <div className="relative inline-block mb-3">
+            <Avatar className="h-20 w-20">
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
               <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
             </Avatar>
-            <OnlineIndicator 
-              userId={userProfile.id}
-              className="absolute inset-0 rounded-full pointer-events-none"
-            />
+            <OnlineIndicator userId={userProfile.id} />
           </div>
           
           <h3 className="font-medium text-center truncate max-w-full px-2">
