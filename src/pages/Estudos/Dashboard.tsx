@@ -157,21 +157,21 @@ const EstudosDashboard = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">Ciclos de Estudos</h1>
           <p className="text-muted-foreground">Acompanhe seu progresso e organize seus estudos</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Link to="/estudos/cronograma">
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Calendar className="h-4 w-4 mr-2" />
               Cronograma
             </Button>
           </Link>
           <Link to="/estudos/timer">
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Clock className="h-4 w-4 mr-2" />
               Timer
             </Button>
           </Link>
           <Link to="/estudos/criar-ciclo">
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Criar Ciclo de Estudos
             </Button>
@@ -368,23 +368,25 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
 
 
         {/* Actions */}
-        <div className="flex gap-2">
-          <Button onClick={onStartSession} size="sm">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={onStartSession} size="sm" className="w-full sm:w-auto">
             <Play className="h-4 w-4 mr-2" />
             Iniciar Sessão
           </Button>
-          <Button onClick={onViewEdital} variant="default" className="bg-success hover:bg-success/90 text-success-foreground">
+          <Button onClick={onViewEdital} variant="default" className="bg-success hover:bg-success/90 text-success-foreground w-full sm:w-auto">
             <FileText className="h-4 w-4 mr-2" />
             Edital
           </Button>
-          <Link to={`/estudos/editar-ciclo/${cycle.id}`}>
-            <Button variant="outline" size="icon">
-              <Edit className="h-4 w-4" />
+          <div className="flex gap-2">
+            <Link to={`/estudos/editar-ciclo/${cycle.id}`} className="flex-1 sm:flex-none">
+              <Button variant="outline" size="icon" className="w-full">
+                <Edit className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Button variant="outline" size="icon" onClick={onDelete} className="text-destructive hover:text-destructive flex-1 sm:flex-none">
+              <Trash2 className="h-4 w-4" />
             </Button>
-          </Link>
-          <Button variant="outline" size="icon" onClick={onDelete} className="text-destructive hover:text-destructive">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          </div>
         </div>
       </CardContent>
     </Card>;

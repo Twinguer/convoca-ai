@@ -198,31 +198,31 @@ const StudyDashboard = () => {
             ) : cycles.length > 0 ? (
               <div className="space-y-4">
                 {cycles.slice(0, 3).map((cycle) => (
-                  <div key={cycle.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-foreground">{cycle.name}</h4>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-sm text-muted-foreground">{cycle.organ}</span>
-                        <Badge variant="outline">{cycle.position}</Badge>
-                        <span className="text-sm text-muted-foreground">
-                          Prova: {new Date(cycle.exam_date).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => navigate(`/estudos/ciclo/${cycle.id}`)}>
-                        Disciplinas
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={() => navigate('/estudos/cronograma')}
-                      >
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Iniciar Sessão
-                      </Button>
+                <div key={cycle.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-foreground">{cycle.name}</h4>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
+                      <span className="text-sm text-muted-foreground">{cycle.organ}</span>
+                      <Badge variant="outline" className="w-fit">{cycle.position}</Badge>
+                      <span className="text-sm text-muted-foreground">
+                        Prova: {new Date(cycle.exam_date).toLocaleDateString('pt-BR')}
+                      </span>
                     </div>
                   </div>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/estudos/ciclo/${cycle.id}`)} className="w-full sm:w-auto">
+                      Disciplinas
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+                      onClick={() => navigate('/estudos/cronograma')}
+                    >
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Iniciar Sessão
+                    </Button>
+                  </div>
+                </div>
                 ))}
                 {cycles.length === 0 && (
                   <div className="text-center p-8">
