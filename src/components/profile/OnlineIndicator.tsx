@@ -10,7 +10,7 @@ interface OnlineIndicatorProps {
 export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({ 
   userId, 
   className = "",
-  variant = 'dot'
+  variant = 'ring'
 }) => {
   const [isOnline, setIsOnline] = useState(false);
 
@@ -61,23 +61,25 @@ export const OnlineIndicator: React.FC<OnlineIndicatorProps> = ({
     };
   }, [userId]);
 
-  if (!isOnline) return null;
+  const ringClasses = `absolute inset-0 rounded-full ring-2 ${isOnline ? 'ring-success' : 'ring-muted'} pointer-events-none ${className}`;
+  const dotClasses = `absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card ${isOnline ? 'bg-success' : 'bg-muted'} ${className}`;
 
   if (variant === 'ring') {
     return (
       <div
-        className={className || 'absolute inset-0 rounded-full ring-2 ring-success pointer-events-none'}
-        title="Online"
+        className={ringClasses}
+        title={isOnline ? 'Online' : 'Offline'}
       />
     );
   }
 
   return (
     <div
-      className={className || 'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card bg-success'}
-      title="Online"
+      className={dotClasses}
+      title={isOnline ? 'Online' : 'Offline'}
     />
   );
+
 };
 
 export default OnlineIndicator;

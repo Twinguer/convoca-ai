@@ -286,7 +286,7 @@ const PublicUserProfile: React.FC = () => {
                     <OnlineIndicator 
                       userId={profile?.id as string}
                       variant="ring"
-                      className="absolute inset-0 rounded-full ring-2 ring-success pointer-events-none" 
+                      className="absolute inset-0 rounded-full pointer-events-none" 
                     />
                  </div>
                  </div>
