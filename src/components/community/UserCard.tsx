@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -86,12 +87,14 @@ export const UserCard: React.FC<UserCardProps> = ({
         
         <div className="flex flex-col items-center mb-4">
           <div className="relative">
-            <Avatar className={`h-20 w-20 mb-3 ${isCurrentUser ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}>
+            <Avatar className="h-20 w-20 mb-3">
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
               <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
             </Avatar>
-            {/* Online indicator for all users */}
-            <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 rounded-full border-2 border-white" />
+            <OnlineIndicator 
+              userId={userProfile.id}
+              className="absolute inset-0 rounded-full pointer-events-none"
+            />
           </div>
           
           <h3 className="font-medium text-center truncate max-w-full px-2">
