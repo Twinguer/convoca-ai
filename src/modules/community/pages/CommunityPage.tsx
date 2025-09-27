@@ -25,10 +25,6 @@ const CommunityPage = () => {
   if (isLoading) return <CommunityLoadingState />;
   if (isError) return <CommunityErrorState />;
 
-  const topPerformers = users.slice(0, 10);
-  const mostActive = users.slice(0, 10);
-  const recentUsers = users.slice(0, 12);
-
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
@@ -59,7 +55,7 @@ const CommunityPage = () => {
             <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{topPerformers.length}</div>
+            <div className="text-2xl font-bold">{users.filter(u => u.postCount > 0).length}</div>
             <p className="text-xs text-muted-foreground">
               Com pontuação registrada
             </p>
@@ -88,7 +84,7 @@ const CommunityPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {recentUsers.filter(u => {
+              {users.filter(u => {
                 const weekAgo = new Date();
                 weekAgo.setDate(weekAgo.getDate() - 7);
                 return true; // Simplified for now
@@ -101,43 +97,15 @@ const CommunityPage = () => {
         </Card>
       </div>
 
-      {/* Top Performers Section */}
-      {topPerformers.length > 0 && (
-        <div className="mb-8">
-          <CommunitySectionHeader
-            title="🏆 Top Performers"
-            description="Os membros com melhor desempenho nos concursos"
-            icon={<Trophy className="h-5 w-5" />}
-          />
-          <UserGrid users={topPerformers} onClick={handleUserClick} />
-        </div>
-      )}
-
-      <Separator className="my-8" />
-
-      {/* Most Active Section */}
-      {mostActive.length > 0 && (
-        <div className="mb-8">
-          <CommunitySectionHeader
-            title="🔥 Mais Ativos"
-            description="Membros que mais participam dos rankings"
-            icon={<TrendingUp className="h-5 w-5" />}
-          />
-          <UserGrid users={mostActive} onClick={handleUserClick} />
-        </div>
-      )}
-
-      <Separator className="my-8" />
-
-      {/* Recent Members Section */}
+      {/* Members Section */}
       <div className="mb-8">
         <CommunitySectionHeader
-          title="👋 Novos Membros"
-          description="Bem-vindos à comunidade ConvocAI!"
-          icon={<UserPlus className="h-5 w-5" />}
+          title="👥 Membros da Comunidade"
+          description="Usuários online aparecem no topo"
+          icon={<Users className="h-5 w-5" />}
         />
-        {recentUsers.length > 0 ? (
-          <UserGrid users={recentUsers} onClick={handleUserClick} />
+        {users.length > 0 ? (
+          <UserGrid users={users} onClick={handleUserClick} />
         ) : (
           <CommunityEmptyState />
         )}
