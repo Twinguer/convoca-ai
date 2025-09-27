@@ -285,7 +285,6 @@ const PublicUserProfile: React.FC = () => {
                    </Avatar>
                     <OnlineIndicator 
                       userId={profile?.id as string}
-                      variant="ring"
                       className="absolute inset-0 rounded-full pointer-events-none" 
                     />
                  </div>

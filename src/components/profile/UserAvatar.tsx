@@ -45,7 +45,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         )}
       </Avatar>
       {showOnlineStatus && userId && (
-        <OnlineIndicator userId={userId} variant="ring" />
+        <OnlineIndicator userId={userId} />
       )}
     </div>
   );
