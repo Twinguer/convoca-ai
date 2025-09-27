@@ -450,15 +450,7 @@ const Cronograma = () => {
       </div>;
   }
   return <div className="container mx-auto p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" size="icon" onClick={() => window.history.back()}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Sessão</h1>
-          <p className="text-muted-foreground">Organize seu tempo e maximize seus resultados</p>
-        </div>
-      </div>
+      
       {/* Clock, Timer, and Calendar Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Clock Card */}
