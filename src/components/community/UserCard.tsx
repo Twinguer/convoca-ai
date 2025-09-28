@@ -75,8 +75,8 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div className="border border-primary/40 rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow dark:border-primary/60">
-      <div className="relative p-4">
+    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+      <div className="relative p-3 md:p-4">
         <div className="absolute top-4 right-4 flex flex-col gap-1 items-end">
           {userProfile.is_studying && (
             <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-500 text-white">
@@ -85,16 +85,16 @@ export const UserCard: React.FC<UserCardProps> = ({
           )}
         </div>
         
-        <div className="flex flex-col items-center mb-4">
+        <div className="flex flex-col items-center mb-2 md:mb-4">
           <div className="relative inline-block mb-3">
-            <Avatar className="h-20 w-20">
+            <Avatar className="h-16 w-16 md:h-20 md:w-20">
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
               <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
             </Avatar>
             <OnlineIndicator userId={userProfile.id} />
           </div>
           
-          <h3 className="font-medium text-center truncate max-w-full px-2">
+          <h3 className="hidden md:block font-medium text-center truncate max-w-full px-2">
             {userProfile.name ? 
               userProfile.name.split(' ').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
@@ -103,16 +103,16 @@ export const UserCard: React.FC<UserCardProps> = ({
             }
           </h3>
           {userProfile.email && (
-            <p className="text-xs text-muted-foreground">
+            <p className="hidden md:block text-xs text-muted-foreground">
               @{userProfile.username || userProfile.email.split('@')[0]}
             </p>
           )}
-          <p className="text-xs text-muted-foreground mb-2 text-center break-words mx-2 line-clamp-2 overflow-hidden">
+          <p className="hidden md:block text-xs text-muted-foreground mb-2 text-center break-words mx-2 line-clamp-2 overflow-hidden">
             {userProfile.bio || ''}
           </p>
         </div>
         
-        <div className="grid grid-cols-3 text-center border-t border-b py-2 mb-3">
+        <div className="hidden md:grid grid-cols-3 text-center border-t border-b py-2 mb-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{userProfile.postCount}</span>
             <span className="text-xs text-muted-foreground">Rankings</span>
