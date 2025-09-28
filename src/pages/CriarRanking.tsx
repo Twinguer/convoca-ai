@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,33 +13,29 @@ import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
-
-const fetchRankingData = async (rankingId) => {
+const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
-  
   try {
-    const { data, error } = await supabase
-      .from('concursos')
-      .select('*')
-      .eq('id', rankingId)
-      .single();
-      
+    const {
+      data,
+      error
+    } = await supabase.from('concursos').select('*').eq('id', rankingId).single();
     if (error) {
       console.error('Error fetching ranking data:', error);
       throw error;
     }
-    
     return data;
   } catch (error) {
     console.error('Error in fetchRankingData:', error);
     return null;
   }
 };
-
 const CriarRanking = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('general-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,23 +43,37 @@ const CriarRanking = () => {
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  
   const searchParams = new URLSearchParams(location.search);
   const editId = searchParams.get('edit');
   const isAdmin = searchParams.get('admin') === 'true';
-  
-  const [jobTitles] = useState([
-    { id: '1', title: 'AUDITOR' },
-    { id: '2', title: 'AUDITOR FISCAL' },
-    { id: '3', title: 'POLICIAL CIVIL' },
-    { id: '4', title: 'POLÍCIA MILITAR' },
-    { id: '5', title: 'AGENTE ADMINISTRATIVO' },
-    { id: '6', title: 'AUDITOR DE CONTROLE EXTERNO' },
-    { id: '7', title: 'ANALISTA ADMINISTRATIVO' },
-    { id: '8', title: 'TÉCNICO ADMINISTRATIVO' },
-    { id: '9', title: 'OUTRO' }
-  ]);
-  
+  const [jobTitles] = useState([{
+    id: '1',
+    title: 'AUDITOR'
+  }, {
+    id: '2',
+    title: 'AUDITOR FISCAL'
+  }, {
+    id: '3',
+    title: 'POLICIAL CIVIL'
+  }, {
+    id: '4',
+    title: 'POLÍCIA MILITAR'
+  }, {
+    id: '5',
+    title: 'AGENTE ADMINISTRATIVO'
+  }, {
+    id: '6',
+    title: 'AUDITOR DE CONTROLE EXTERNO'
+  }, {
+    id: '7',
+    title: 'ANALISTA ADMINISTRATIVO'
+  }, {
+    id: '8',
+    title: 'TÉCNICO ADMINISTRATIVO'
+  }, {
+    id: '9',
+    title: 'OUTRO'
+  }]);
   const form = useForm({
     defaultValues: {
       predefined_job_title: '',
@@ -73,45 +82,35 @@ const CriarRanking = () => {
       orgao: '',
       banca: '',
       custom_banca: '',
-      data_publicacao: new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
+      data_publicacao: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
       etapa_atual: 'Prova Objetiva',
       status: 'Em andamento',
       link: '',
       vagas: 0,
       inscritos: 0,
-      
       exam_type: 'Alternativas',
       alternatives_count: 5,
       wrong_answer_penalty: 0,
-      
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
-      
       has_specific_knowledge_1: false,
       specific_knowledge_1_questions: 0,
       specific_knowledge_1_weight: 1,
-      
       has_specific_knowledge_2: false,
       specific_knowledge_2_questions: 0,
       specific_knowledge_2_weight: 1,
-      
       has_specific_knowledge_3: false,
       specific_knowledge_3_questions: 0,
       specific_knowledge_3_weight: 1,
-      
       has_discursive: false,
       discursive_weight: 1,
-      
       has_case_study_1: false,
       case_study_1_weight: 1,
-      
       has_case_study_2: false,
       case_study_2_weight: 1,
-      
       has_case_study_3: false,
       case_study_3_weight: 1,
-      
       has_ampla_concorrencia: true,
       has_ppp: false,
       has_pcd: false,
@@ -121,7 +120,6 @@ const CriarRanking = () => {
       localidades: []
     }
   });
-  
   useEffect(() => {
     const loadExistingData = async () => {
       if (editId) {
@@ -129,18 +127,15 @@ const CriarRanking = () => {
           const data = await fetchRankingData(editId);
           if (data) {
             setCreatedConcursoId(data.id);
-            
             const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
             setIsCustomTitle(isOtherTitle);
-            
             const isOtherBanca = data.banca === 'OUTRO' || !['Cebraspe', 'FGV', 'VUNESP', 'FCC', 'FUNDATEC'].includes(data.banca);
             setIsCustomBanca(isOtherBanca);
-            
+
             // Configurar as localidades
             if (data.localidades && Array.isArray(data.localidades)) {
               setSelectedStates(data.localidades);
             }
-            
             form.reset({
               ...data,
               localidades: data.localidades || [],
@@ -148,9 +143,7 @@ const CriarRanking = () => {
               custom_job_title: isOtherTitle ? data.titulo : '',
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
-              data_publicacao: data.data_publicacao ? 
-                new Date(new Date(data.data_publicacao).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0] : 
-                new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0],
+              data_publicacao: data.data_publicacao ? new Date(new Date(data.data_publicacao).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]
             });
           }
         } catch (error) {
@@ -159,10 +152,8 @@ const CriarRanking = () => {
         }
       }
     };
-    
     loadExistingData();
   }, [editId, form, jobTitles]);
-  
   useEffect(() => {
     // Se não for admin, verifica login
     if (!isAdmin && !user) {
@@ -170,38 +161,36 @@ const CriarRanking = () => {
       navigate("/auth");
     }
   }, [user, navigate, isAdmin]);
-  
   const handleJobTitleChange = (value: string) => {
     setIsCustomTitle(value === 'OUTRO');
     if (value !== 'OUTRO') {
       form.setValue('titulo', value.toUpperCase());
     }
   };
-  
   const handleCustomTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('titulo', e.target.value.toUpperCase());
   };
-  
   const handleBancaChange = (value: string) => {
     setIsCustomBanca(value === 'OUTRO');
     if (value !== 'OUTRO') {
       form.setValue('banca', value);
     }
   };
-  
   const handleOrgaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('orgao', e.target.value.toUpperCase());
   };
-  
-  const { saveRanking } = useSaveRanking();
-
+  const {
+    saveRanking
+  } = useSaveRanking();
   const handleSaveRanking = async () => {
     const formValues = form.getValues();
-    
+
     // Sincronizar os estados selecionados com o formulário
-    form.setValue('localidades', selectedStates, { shouldDirty: true });
+    form.setValue('localidades', selectedStates, {
+      shouldDirty: true
+    });
     formValues.localidades = selectedStates;
-    
+
     // Adicionar flags de admin se necessário
     if (isAdmin) {
       const formValuesWithAdminFlags = {
@@ -209,30 +198,29 @@ const CriarRanking = () => {
         is_admin_created: true,
         is_admin_update: true
       };
-      
       setIsSubmitting(true);
-
       try {
         const saveResult = await saveRanking({
           formValues: formValuesWithAdminFlags,
           userId: user?.id,
           editId,
-          jobTitles,
+          jobTitles
         });
-        
         if (saveResult?.duplicated) {
           setIsSubmitting(false);
           return;
         }
-        
         if (saveResult?.id) {
           setCreatedConcursoId(saveResult.id);
           toast.success("Informações do ranking salvas. Agora configure e salve os cadernos de prova.");
           // Invalidar queries para recarregar os cadernos
-          queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
+          queryClient.invalidateQueries({
+            queryKey: ['exam-booklets']
+          });
         }
-        
-        queryClient.invalidateQueries({ queryKey: ['rankings'] });
+        queryClient.invalidateQueries({
+          queryKey: ['rankings']
+        });
       } catch (error) {
         console.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
@@ -242,28 +230,28 @@ const CriarRanking = () => {
     } else {
       // Para usuários não-admin, manter o fluxo original
       setIsSubmitting(true);
-
       try {
         const saveResult = await saveRanking({
           formValues,
           userId: user?.id,
           editId,
-          jobTitles,
+          jobTitles
         });
-        
         if (saveResult?.duplicated) {
           setIsSubmitting(false);
           return;
         }
-        
         if (saveResult?.id) {
           setCreatedConcursoId(saveResult.id);
           toast.success("Informações do ranking salvas. Agora configure e salve os cadernos de prova.");
           // Invalidar queries para recarregar os cadernos
-          queryClient.invalidateQueries({ queryKey: ['exam-booklets'] });
+          queryClient.invalidateQueries({
+            queryKey: ['exam-booklets']
+          });
         }
-        
-        queryClient.invalidateQueries({ queryKey: ['rankings'] });
+        queryClient.invalidateQueries({
+          queryKey: ['rankings']
+        });
       } catch (error) {
         console.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
@@ -279,13 +267,11 @@ const CriarRanking = () => {
       await handleSaveRanking();
     }
   };
-
   const handleGoToResults = () => {
     if (createdConcursoId) {
       navigate(`/concurso/${createdConcursoId}/resultados`);
     }
   };
-
   const handleBack = () => {
     if (isAdmin) {
       navigate('/project/admin/man/concursos');
@@ -293,14 +279,8 @@ const CriarRanking = () => {
       navigate('/pre-classificacao');
     }
   };
-
-  return (
-    <div className="container mx-auto p-4">
-      <Button 
-        variant="ghost" 
-        className="mb-4 flex items-center gap-2" 
-        onClick={handleBack}
-      >
+  return <div className="container mx-auto p-4">
+      <Button variant="ghost" className="mb-4 flex items-center gap-2" onClick={handleBack}>
         <ArrowLeft className="h-4 w-4" />
         {isAdmin ? 'Voltar para Dashboard' : 'Voltar para Rankings'}
       </Button>
@@ -313,63 +293,34 @@ const CriarRanking = () => {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form onSubmit={e => e.preventDefault()}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editId}>
+                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editId} className="text-slate-800">
                     Gabarito Oficial
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="general-info">
-                  <GeneralTab
-                    form={form}
-                    jobTitles={jobTitles}
-                    isCustomTitle={isCustomTitle}
-                    isCustomBanca={isCustomBanca}
-                    handleJobTitleChange={handleJobTitleChange}
-                    handleCustomTitleChange={handleCustomTitleChange}
-                    handleBancaChange={handleBancaChange}
-                    handleOrgaoChange={handleOrgaoChange}
-                    handleNextTab={handleNextTab}
-                    onSaveRanking={handleSaveRanking}
-                    isSubmitting={isSubmitting}
-                    selectedStates={selectedStates}
-                    setSelectedStates={setSelectedStates}
-                    createdConcursoId={createdConcursoId}
-                  />
+                  <GeneralTab form={form} jobTitles={jobTitles} isCustomTitle={isCustomTitle} isCustomBanca={isCustomBanca} handleJobTitleChange={handleJobTitleChange} handleCustomTitleChange={handleCustomTitleChange} handleBancaChange={handleBancaChange} handleOrgaoChange={handleOrgaoChange} handleNextTab={handleNextTab} onSaveRanking={handleSaveRanking} isSubmitting={isSubmitting} selectedStates={selectedStates} setSelectedStates={setSelectedStates} createdConcursoId={createdConcursoId} />
                 </TabsContent>
                 <TabsContent value="answer-key">
                   <div className="mb-4 flex justify-between items-center">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setActiveTab('general-info')}
-                    >
+                    <Button type="button" variant="outline" onClick={() => setActiveTab('general-info')}>
                       Voltar às Informações Gerais
                     </Button>
-                    <Button 
-                      type="button" 
-                      onClick={handleGoToResults}
-                    >
+                    <Button type="button" onClick={handleGoToResults}>
                       Ir para Resultados
                     </Button>
                   </div>
                   
-                  {(createdConcursoId || editId) && (
-                    <AnswerKeyTab 
-                      concursoId={createdConcursoId || editId || ''} 
-                      onGoToResults={handleGoToResults}
-                    />
-                  )}
+                  {(createdConcursoId || editId) && <AnswerKeyTab concursoId={createdConcursoId || editId || ''} onGoToResults={handleGoToResults} />}
                 </TabsContent>
               </Tabs>
             </form>
           </Form>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default CriarRanking;
