@@ -152,7 +152,7 @@ const Comunidade: React.FC = () => {
       </div>
       
       {displayUsers.length > 0 ? <>
-          <UserGrid>
+          <UserGrid className="grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {displayUsers.map(user => <UserCard key={user.id} userProfile={user} onClick={handleUserClick} />)}
           </UserGrid>
           
