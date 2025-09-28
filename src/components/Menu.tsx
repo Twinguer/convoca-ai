@@ -9,7 +9,7 @@ import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, Messa
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 const Menu = () => {
   const location = useLocation();
@@ -47,7 +47,7 @@ const Menu = () => {
         <div className="flex items-center">
           <UserMenu />
           {isAdminMode && (
-            <div className="ml-4 bg-amber-100 text-amber-800 px-2 py-1 rounded-md flex items-center">
+            <div className="ml-4 bg-accent text-accent-foreground px-2 py-1 rounded-md flex items-center">
               <ShieldAlert className="h-4 w-4 mr-1" />
               <span className="text-xs font-medium">Modo Administrador</span>
             </div>
@@ -56,7 +56,7 @@ const Menu = () => {
         
         {/* Navigation - Now on the right */}
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <ThemeToggle />
+          <ThemeSelector />
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="space-x-1">
               <NavigationMenuItem>
@@ -98,7 +98,7 @@ const Menu = () => {
               <NavigationMenuItem>
                 <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
+                     <Trophy className="mr-2 h-4 w-4 text-primary" />
                     Rankings
                   </NavigationMenuLink>
                 </Link>
@@ -173,7 +173,7 @@ const Menu = () => {
                   Estatísticas
                 </Link>
                 <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
-                  <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
+                  <Trophy className="mr-2 h-4 w-4 text-primary" />
                   Rankings
                 </Link>
                 <Link to="/planos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/planos') ? "text-primary" : "text-foreground/70")}>

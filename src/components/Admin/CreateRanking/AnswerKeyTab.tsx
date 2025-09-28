@@ -34,7 +34,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
   if (isLoading) {
     return <div className="flex justify-center items-center py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
           <p>Carregando informações dos cadernos...</p>
         </div>
       </div>;
@@ -88,7 +88,7 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
 
       {/* Botão para ir aos resultados - só aparece quando todos os gabaritos estão completos */}
       {completionStatus?.allComplete && onGoToResults && <div className="flex justify-center pt-6">
-          <Button onClick={onGoToResults} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={onGoToResults} className="bg-primary hover:bg-primary/90">
             <CheckCircle className="h-4 w-4 mr-2" />
             Ver Resultados do Ranking
           </Button>

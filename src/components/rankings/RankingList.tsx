@@ -39,7 +39,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
 }) => {
   const getStatusColor = (status?: string) => {
     if (!status || status === 'Em andamento') {
-      return 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-emerald-200';
+      return 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20';
     }
     return '';
   };
@@ -73,7 +73,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
               <h3 className="text-base font-bold leading-tight text-foreground mb-1">
                 {concursoTitle}
               </h3>
-              <p className="text-sm text-emerald-700 font-semibold mb-2 break-words">
+              <p className="text-sm text-primary font-semibold mb-2 break-words">
                 {cargoTitle}
               </p>
               
@@ -87,8 +87,8 @@ export const RankingItem: React.FC<RankingItemProps> = ({
 
             <div className="flex items-center justify-between pt-2 border-t border-border">
               <div className="flex items-center gap-1">
-                <Users className="h-4 w-4 text-emerald-600" />
-                <p className="text-sm font-medium text-emerald-700">
+                <Users className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium text-primary">
                   {(participantCount || 0).toLocaleString()} participantes
                 </p>
               </div>

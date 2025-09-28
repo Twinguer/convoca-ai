@@ -22,7 +22,7 @@ export const CommunityEmptyState: React.FC<CommunityEmptyStateProps> = ({ onRefr
       <div className="flex flex-col sm:flex-row gap-4 mt-2">
         <Button 
           onClick={() => navigate('/auth')}
-          className="flex items-center bg-emerald-600 hover:bg-emerald-700"
+          className="flex items-center bg-primary hover:bg-primary/90"
         >
           <UserPlus className="h-4 w-4 mr-2" />
           Criar perfil

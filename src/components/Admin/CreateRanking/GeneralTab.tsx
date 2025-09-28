@@ -260,7 +260,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           type="button"
           onClick={handleNext}
           disabled={!isFirstSaveDone}
-          className={isFirstSaveDone ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-gray-400 hover:bg-gray-500 text-white cursor-not-allowed"}
+          className={isFirstSaveDone ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-muted hover:bg-muted/80 text-muted-foreground cursor-not-allowed"}
         >
           {isFirstSaveDone ? "Editar Gabarito" : "Preencher Gabarito"}
         </Button>

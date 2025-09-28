@@ -358,7 +358,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               
               {isOwnProfile && (
                 <>
-                  <Button size="sm" className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
+                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>
                   </Button>
@@ -394,7 +394,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           </Card>
         )}
         
-        {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50">
+        {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-primary hover:text-primary/80 hover:bg-primary/10">
             {showAllRankings ? <>
                 <ChevronUp className="h-4 w-4 mr-2" />
                 Mostrar menos

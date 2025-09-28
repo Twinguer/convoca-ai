@@ -27,10 +27,10 @@ export const AnswerOption: React.FC<AnswerOptionProps> = ({
         }
         flex items-center justify-center rounded-full cursor-pointer shadow-sm
         ${isSelected 
-          ? 'bg-emerald-600 text-white font-bold ring-2 ring-emerald-300 ring-offset-2' 
+          ? 'bg-primary text-primary-foreground font-bold ring-2 ring-primary/30 ring-offset-2' 
           : disabled 
             ? 'bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed'
-            : 'bg-white hover:bg-emerald-50 text-gray-800 border border-gray-300 hover:border-emerald-300'
+            : 'bg-background hover:bg-primary/10 text-foreground border border-border hover:border-primary/30'
         }
         ${disabled ? 'opacity-70 cursor-not-allowed' : 'transition-all duration-150 ease-in-out'}
       `}

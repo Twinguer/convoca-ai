@@ -44,7 +44,7 @@ export const UsersList: React.FC<UsersListProps> = ({
       
       {isLoading ? (
         <div className="flex justify-center py-4">
-          <div className="animate-spin h-5 w-5 border-2 border-emerald-600 rounded-full border-t-transparent"></div>
+          <div className="animate-spin h-5 w-5 border-2 border-primary rounded-full border-t-transparent"></div>
         </div>
       ) : users.length > 0 ? (
         <div className="grid grid-cols-3 gap-1">

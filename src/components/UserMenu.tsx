@@ -72,7 +72,7 @@ const UserMenu: React.FC = () => {
   };
 
   const themeOptions = [
-    { value: 'emerald', label: 'Verde Esmeralda', color: 'bg-emerald-500' },
+    { value: 'emerald', label: 'Verde Esmeralda', color: 'bg-primary-500' },
     { value: 'rose', label: 'Rosa', color: 'bg-rose-500' },
     { value: 'blue', label: 'Azul', color: 'bg-blue-500' },
     { value: 'slate', label: 'Preto', color: 'bg-slate-700' },
@@ -91,7 +91,7 @@ const UserMenu: React.FC = () => {
 
   return <div className="flex items-center gap-2">
       {isStudying && isRunning && (
-        <Badge variant="secondary" className="flex items-center gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+        <Badge variant="secondary" className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20">
           <Clock className="h-3 w-3" />
           <span className="font-mono text-xs">{formatTime(minutes, seconds)}</span>
           <span className="text-xs">• Estudando</span>
@@ -151,7 +151,7 @@ const UserMenu: React.FC = () => {
           </DropdownMenuSub>
           
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut} className="text-red-600 cursor-pointer">
+          <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
             <LogOut className="mr-2 h-4 w-4" />
             <span>Sair</span>
           </DropdownMenuItem>

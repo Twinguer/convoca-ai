@@ -455,7 +455,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   if (isLoadingConcurso || isLoadingAnswers) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-center text-gray-600">Carregando informações do gabarito...</p>
         </CardContent>
       </Card>;
@@ -525,7 +525,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
                                 <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
                                   {getOptionsForQuestion().map(option => <button key={option} className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
-                                        ${answers[questionNumber] === option ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
+                                        ${answers[questionNumber] === option ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
                                       {option}
                                     </button>)}
                                 </div>
@@ -540,7 +540,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         
         {/* Action button - Save only current booklet */}
         <div className="flex justify-center mt-4">
-          <Button onClick={handleSaveCurrentBooklet} className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSaving}>
+          <Button onClick={handleSaveCurrentBooklet} className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isSaving}>
             {isSaving ? <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Salvando...

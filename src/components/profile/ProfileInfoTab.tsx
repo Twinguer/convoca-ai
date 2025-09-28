@@ -158,7 +158,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           
           <div className="flex gap-2">
             <Input placeholder="Adicionar aprovação (ex: Analista Administrativo - TCU)" value={novaAprovacao} onChange={e => setNovaAprovacao(e.target.value)} maxLength={50} className="flex-grow" />
-            <Button onClick={adicionarAprovacao} type="button" className="bg-emerald-600 hover:bg-emerald-700 flex items-center">
+            <Button onClick={adicionarAprovacao} type="button" className="bg-primary hover:bg-primary/90 flex items-center">
               <Plus className="h-4 w-4 mr-1" /> Adicionar
             </Button>
           </div>

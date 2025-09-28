@@ -35,7 +35,7 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
         <div>
           <Label className="text-sm font-medium">Questão {questionNumber}</Label>
           {weight !== 1 && (
-            <span className="ml-2 text-xs text-emerald-600 flex items-center">
+            <span className="ml-2 text-xs text-primary flex items-center">
               <Scale className="h-3 w-3 mr-1" />
               Peso {weight}
             </span>

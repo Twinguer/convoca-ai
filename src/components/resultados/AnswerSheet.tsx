@@ -380,7 +380,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   if (isLoadingRanking || isLoadingBooklets || (checkingOfficialAnswers && !missingOfficialAnswers)) {
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-center text-gray-600">Carregando cartão de respostas...</p>
         </CardContent>
       </Card>;

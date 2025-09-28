@@ -62,7 +62,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   const getStatusBadgeClass = (status?: string | null) => {
     switch (status) {
       case 'Aprovado':
-        return 'bg-emerald-100 text-emerald-800';
+        return 'bg-primary/10 text-primary';
       case 'Estudante':
         return 'bg-blue-100 text-blue-800';
       case 'Nomeado':
@@ -75,7 +75,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div className="border border-emerald-400 rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow dark:border-emerald-400/60">
+    <div className="border border-primary/40 rounded-lg overflow-hidden bg-card hover:shadow-md transition-shadow dark:border-primary/60">
       <div className="relative p-4">
         <div className="absolute top-4 right-4 flex flex-col gap-1 items-end">
           {userProfile.is_studying && (
