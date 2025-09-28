@@ -973,7 +973,7 @@ const Cronograma = () => {
                       {getSessionsForDay(index).map(session => {
                 const cumulativeSession = getSessionByScheduleId(session.id);
                 const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
-                return <div key={session.id} className={`p-3 rounded-md relative cursor-pointer transition-colors ${hasData ? 'bg-muted/70 hover:bg-muted/80' : 'bg-primary/10 border border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
+                return <div key={session.id} className={`p-3 rounded-md relative cursor-pointer transition-all duration-300 shadow-md hover:shadow-lg ${hasData ? 'bg-muted/70 hover:bg-muted/80' : 'bg-primary/10 border border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
                              <div className="flex flex-col gap-2">
                                <div className="flex justify-between items-start">
                                  <div className="flex-1">
