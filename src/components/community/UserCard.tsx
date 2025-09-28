@@ -94,7 +94,7 @@ export const UserCard: React.FC<UserCardProps> = ({
             <OnlineIndicator userId={userProfile.id} />
           </div>
           
-          <h3 className="hidden md:block font-medium text-center truncate max-w-full px-2">
+          <h3 className="font-medium text-center truncate max-w-full px-2">
             {userProfile.name ? 
               userProfile.name.split(' ').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
