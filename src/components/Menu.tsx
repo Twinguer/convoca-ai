@@ -56,7 +56,6 @@ const Menu = () => {
         
         {/* Navigation - Now on the right */}
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <ThemeSelector />
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="space-x-1">
               <NavigationMenuItem>
