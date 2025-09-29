@@ -76,10 +76,16 @@ export const useStudyStatistics = () => {
         .eq('user_id', user.id)
         .single();
 
-      // Buscar sessões de estudo do cronograma
+      // Buscar sessões de estudo do cronograma com informações da disciplina
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('study_sessions')
-        .select('*')
+        .select(`
+          *,
+          study_schedule (
+            discipline_name,
+            block_name
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: true });
 
@@ -125,12 +131,48 @@ export const useStudyStatistics = () => {
           sum + (session.session_count || 0), 0
         );
 
+        // Processar estatísticas por disciplina
+        const subjectStats: Record<string, {
+          totalHours: number;
+          totalSessions: number;
+          questionsAnswered: number;
+          correctAnswers: number;
+          wrongAnswers: number;
+        }> = {};
+
+        sessionsData.forEach(session => {
+          const disciplineName = session.study_schedule?.discipline_name || session.study_schedule?.block_name;
+          
+          if (disciplineName) {
+            if (!subjectStats[disciplineName]) {
+              subjectStats[disciplineName] = {
+                totalHours: 0,
+                totalSessions: 0,
+                questionsAnswered: 0,
+                correctAnswers: 0,
+                wrongAnswers: 0
+              };
+            }
+            
+            const hours = session.total_duration_minutes / 60;
+            const questions = session.total_questions || 0;
+            const correct = session.total_correct_answers || 0;
+            const wrong = questions - correct;
+            
+            subjectStats[disciplineName].totalHours += hours;
+            subjectStats[disciplineName].totalSessions += session.session_count || 0;
+            subjectStats[disciplineName].questionsAnswered += questions;
+            subjectStats[disciplineName].correctAnswers += correct;
+            subjectStats[disciplineName].wrongAnswers += wrong;
+          }
+        });
+
         // Construir histórico de sessões
         const sessionHistory = sessionsData.map(session => ({
           date: session.last_session_date || session.created_at,
           duration: session.total_duration_minutes,
           type: 'timer' as const,
-          subject: session.subject_name || undefined
+          subject: session.study_schedule?.discipline_name || session.study_schedule?.block_name
         }));
 
         // Calcular streak baseado nas datas das sessões
@@ -175,6 +217,7 @@ export const useStudyStatistics = () => {
           longestStreak: Math.max(consolidatedStats.longestStreak, longestStreak),
           lastStudyDate: sortedSessions.length > 0 ? sortedSessions[0].last_session_date : consolidatedStats.lastStudyDate,
           sessionHistory: [...consolidatedStats.sessionHistory, ...sessionHistory].slice(-100),
+          subjectStats: subjectStats,
           lastUpdated: new Date().toISOString()
         };
 

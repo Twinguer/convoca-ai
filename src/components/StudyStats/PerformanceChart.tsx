@@ -98,13 +98,16 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
     return [value, name];
   };
   const getSubjectChartData = () => {
-    return Object.entries(statistics.subjectStats).map(([subject, stats]) => ({
-      subject: subject || 'Sem disciplina',
-      hours: stats.totalHours,
-      sessions: stats.totalSessions,
-      questions: stats.questionsAnswered,
-      accuracy: stats.questionsAnswered > 0 ? stats.correctAnswers / stats.questionsAnswered * 100 : 0
-    }));
+    return Object.entries(statistics.subjectStats)
+      .filter(([_, stats]) => stats.totalHours > 0)
+      .sort((a, b) => b[1].totalHours - a[1].totalHours)
+      .map(([subject, stats]) => ({
+        subject: subject || 'Sem disciplina',
+        hours: Number(stats.totalHours.toFixed(1)),
+        sessions: stats.totalSessions,
+        questions: stats.questionsAnswered,
+        accuracy: stats.questionsAnswered > 0 ? Number((stats.correctAnswers / stats.questionsAnswered * 100).toFixed(1)) : 0
+      }));
   };
   const subjectData = getSubjectChartData();
   return <Card className="col-span-2">
