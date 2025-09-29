@@ -411,10 +411,13 @@ export const useStudyStatistics = () => {
         break;
       case 'week':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
+        startDate.setDate(now.getDate() - 6); // Incluir hoje = 7 dias
+        startDate.setHours(0, 0, 0, 0);
         break;
       case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 29); // Incluir hoje = 30 dias
+        startDate.setHours(0, 0, 0, 0);
         break;
     }
 

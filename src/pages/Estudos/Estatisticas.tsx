@@ -32,12 +32,12 @@ const Estatisticas = () => {
         break;
       case 'week':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 6);
+        startDate.setDate(now.getDate() - 6); // Incluir hoje
         startDate.setHours(0, 0, 0, 0);
         break;
       case 'month':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 29);
+        startDate.setDate(now.getDate() - 29); // Incluir hoje
         startDate.setHours(0, 0, 0, 0);
         break;
     }
@@ -82,6 +82,42 @@ const Estatisticas = () => {
     });
 
     return filteredStats;
+  };
+
+  // Função para obter estatísticas gerais filtradas
+  const getFilteredQuestionStats = () => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeFilter) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 6); // Incluir hoje
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 29); // Incluir hoje
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
+
+    // Filtrar questões pelo período (usar dados consolidados das disciplinas)
+    const filteredSubjects = getFilteredSubjectStats();
+    
+    const totalQuestions = Object.values(filteredSubjects).reduce((sum, stats) => sum + stats.questionsAnswered, 0);
+    const totalCorrect = Object.values(filteredSubjects).reduce((sum, stats) => sum + stats.correctAnswers, 0);
+    const totalWrong = Object.values(filteredSubjects).reduce((sum, stats) => sum + stats.wrongAnswers, 0);
+
+    return {
+      questionsAnswered: totalQuestions,
+      correctAnswers: totalCorrect,
+      wrongAnswers: totalWrong
+    };
   };
 
   const handleResetStats = async () => {
@@ -229,16 +265,16 @@ const Estatisticas = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Total Respondidas</span>
-                    <Badge variant="secondary">{statistics.questionsAnswered}</Badge>
+                    <Badge variant="secondary">{getFilteredQuestionStats().questionsAnswered}</Badge>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-success">Acertos</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="bg-success/10 text-success">
-                        {statistics.correctAnswers}
+                        {getFilteredQuestionStats().correctAnswers}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        ({formatPercentage(statistics.correctAnswers, statistics.questionsAnswered)})
+                        ({formatPercentage(getFilteredQuestionStats().correctAnswers, getFilteredQuestionStats().questionsAnswered)})
                       </span>
                     </div>
                   </div>
@@ -246,10 +282,10 @@ const Estatisticas = () => {
                     <span className="text-sm font-medium text-destructive">Erros</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="bg-destructive/10 text-destructive">
-                        {statistics.wrongAnswers}
+                        {getFilteredQuestionStats().wrongAnswers}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        ({formatPercentage(statistics.wrongAnswers, statistics.questionsAnswered)})
+                        ({formatPercentage(getFilteredQuestionStats().wrongAnswers, getFilteredQuestionStats().questionsAnswered)})
                       </span>
                     </div>
                   </div>

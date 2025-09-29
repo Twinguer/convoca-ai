@@ -45,13 +45,13 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         break;
       case 'week':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 6);
+        startDate.setDate(now.getDate() - 6); // Incluir hoje = 7 dias
         startDate.setHours(0, 0, 0, 0);
         days = 7;
         break;
       case 'month':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 29);
+        startDate.setDate(now.getDate() - 29); // Incluir hoje = 30 dias
         startDate.setHours(0, 0, 0, 0);
         days = 30;
         break;
@@ -108,12 +108,12 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
         break;
       case 'week':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 6);
+        startDate.setDate(now.getDate() - 6); // Incluir hoje = 7 dias
         startDate.setHours(0, 0, 0, 0);
         break;
       case 'month':
         startDate = new Date(now);
-        startDate.setDate(now.getDate() - 29);
+        startDate.setDate(now.getDate() - 29); // Incluir hoje = 30 dias
         startDate.setHours(0, 0, 0, 0);
         break;
     }
