@@ -5,15 +5,21 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle, Calendar } from 'lucide-react';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const Estatisticas = () => {
   const { statistics, isLoading, resetStatistics, getFilteredStats, refreshStatistics } = useStudyStatistics();
   const { toast } = useToast();
-  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month'>('week');
+  const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'custom'>('week');
+  const [customStartDate, setCustomStartDate] = useState<Date>();
+  const [customEndDate, setCustomEndDate] = useState<Date>();
 
   // Recarregar estatísticas quando a página carregar para consolidar dados do cronograma
   useEffect(() => {
@@ -24,28 +30,38 @@ const Estatisticas = () => {
   const getFilteredSubjectStats = () => {
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = new Date(now);
+    endDate.setHours(23, 59, 59, 999);
 
-    switch (timeFilter) {
-      case 'day':
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 6); // Incluir hoje
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 29); // Incluir hoje
-        startDate.setHours(0, 0, 0, 0);
-        break;
+    if (timeFilter === 'custom') {
+      if (!customStartDate || !customEndDate) return {};
+      startDate = new Date(customStartDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(customEndDate);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      switch (timeFilter) {
+        case 'day':
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'week':
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 6); // Incluir hoje
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'month':
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - 29); // Incluir hoje
+          startDate.setHours(0, 0, 0, 0);
+          break;
+      }
     }
 
     // Filtrar sessões pelo período selecionado
     const filteredSessions = (statistics.sessionHistory || []).filter(session => {
       const sessionDate = new Date(session.date);
-      return sessionDate >= startDate;
+      return sessionDate >= startDate && sessionDate <= endDate;
     });
 
     // Recalcular estatísticas por disciplina para o período filtrado
@@ -86,29 +102,9 @@ const Estatisticas = () => {
 
   // Função para obter estatísticas gerais filtradas
   const getFilteredQuestionStats = () => {
-    const now = new Date();
-    let startDate: Date;
-
-    switch (timeFilter) {
-      case 'day':
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 6); // Incluir hoje
-        startDate.setHours(0, 0, 0, 0);
-        break;
-      case 'month':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 29); // Incluir hoje
-        startDate.setHours(0, 0, 0, 0);
-        break;
-    }
-
-    // Filtrar questões pelo período (usar dados consolidados das disciplinas)
+    // Usar dados consolidados das disciplinas já filtradas
     const filteredSubjects = getFilteredSubjectStats();
-    
+
     const totalQuestions = Object.values(filteredSubjects).reduce((sum, stats) => sum + stats.questionsAnswered, 0);
     const totalCorrect = Object.values(filteredSubjects).reduce((sum, stats) => sum + stats.correctAnswers, 0);
     const totalWrong = Object.values(filteredSubjects).reduce((sum, stats) => sum + stats.wrongAnswers, 0);
@@ -137,7 +133,7 @@ const Estatisticas = () => {
     return ((value / total) * 100).toFixed(1) + '%';
   };
 
-  const filteredStats = getFilteredStats(timeFilter);
+  const filteredStats = getFilteredStats(timeFilter === 'custom' ? 'week' : timeFilter);
 
   if (isLoading) {
     return (
@@ -159,8 +155,8 @@ const Estatisticas = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">Estatísticas de Estudo</h1>
           <p className="text-muted-foreground">Acompanhe seu desempenho e evolução nos estudos</p>
         </div>
-        <div className="flex gap-3">
-          <Select value={timeFilter} onValueChange={(value: 'day' | 'week' | 'month') => setTimeFilter(value)}>
+        <div className="flex gap-3 items-center">
+          <Select value={timeFilter} onValueChange={(value: 'day' | 'week' | 'month' | 'custom') => setTimeFilter(value)}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -168,8 +164,65 @@ const Estatisticas = () => {
               <SelectItem value="day">Hoje</SelectItem>
               <SelectItem value="week">7 dias</SelectItem>
               <SelectItem value="month">30 dias</SelectItem>
+              <SelectItem value="custom">Personalizado</SelectItem>
             </SelectContent>
           </Select>
+          
+          {timeFilter === 'custom' && (
+            <div className="flex gap-2 items-center">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !customStartDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {customStartDate ? format(customStartDate, "dd/MM/yyyy") : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={customStartDate}
+                    onSelect={setCustomStartDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <span className="text-muted-foreground">até</span>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !customEndDate && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {customEndDate ? format(customEndDate, "dd/MM/yyyy") : "Data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={customEndDate}
+                    onSelect={setCustomEndDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm">
@@ -240,7 +293,7 @@ const Estatisticas = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <PerformanceChart 
           statistics={statistics}
-          timeFilter={timeFilter}
+          timeFilter={timeFilter === 'custom' ? 'week' : timeFilter}
           onTimeFilterChange={setTimeFilter}
         />
         
