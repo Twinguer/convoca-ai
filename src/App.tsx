@@ -47,7 +47,7 @@ const AppContent = () => {
     hideTimer
   } = useTimer();
   return <PresenceProvider>
-      <div className="min-h-screen text-foreground bg-emerald-100">
+      <div className="min-h-screen text-foreground bg-page-background">
       <Toaster />
       <Sonner />
       
