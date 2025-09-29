@@ -449,7 +449,7 @@ const Cronograma = () => {
         </div>
       </div>;
   }
-  return <div className="container mx-auto p-6">
+  return <div className="container mx-auto p-6 bg-green-100">
       <div className="flex items-center gap-4 mb-6">
         
         <div>
@@ -1002,14 +1002,10 @@ const Cronograma = () => {
                                </div>
                                
                                 <div className="flex justify-end pt-1 border-t border-border/50">
-                                  <div 
-                                    className="cursor-pointer transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/20"
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      removeSession(session.id);
-                                    }} 
-                                    title="Remover sessão"
-                                  >
+                                  <div className="cursor-pointer transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/20" onClick={e => {
+                        e.stopPropagation();
+                        removeSession(session.id);
+                      }} title="Remover sessão">
                                     <Trash2 className="h-4 w-4 text-red-400 hover:text-red-600 transition-colors" />
                                   </div>
                                 </div>
