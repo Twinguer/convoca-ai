@@ -486,7 +486,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium">Caderno selecionado:</span>
-              <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-md font-medium">
+              <span className="px-2 py-1 bg-primary-50 text-primary-800 rounded-md font-medium">
                 {getBookletName(selectedBookletId)}
               </span>
             </div>

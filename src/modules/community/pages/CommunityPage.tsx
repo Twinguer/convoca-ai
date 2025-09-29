@@ -48,7 +48,7 @@ const CommunityPage = () => {
   };
   if (isLoading) return <CommunityLoadingState />;
   if (isError) return <CommunityErrorState />;
-  return <div className="container mx-auto p-6 bg-emerald-100">
+  return <div className="container mx-auto p-6 bg-page-background">
       
 
       {/* Community Stats */}

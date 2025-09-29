@@ -454,7 +454,7 @@ const PublicUserProfile: React.FC = () => {
               </CardHeader>
               <CardContent>
                 {aprovacoesList.length > 0 ? <div className="space-y-2">
-                    {aprovacoesList.map((concurso, index) => <div key={index} className="p-3 rounded-md bg-emerald-100 border-emerald-200">
+                    {aprovacoesList.map((concurso, index) => <div key={index} className="p-3 rounded-md bg-primary-50 border-primary-200">
                         <div className="flex items-center">
                           <div className="bg-emerald-200 p-2 rounded-full mr-3">
                             <Trophy className="h-4 w-4 text-emerald-700" />

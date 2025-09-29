@@ -71,7 +71,7 @@ const Index = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                   <div className="p-6">
-                    <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                    <div className="bg-primary-50 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <FileText className="h-8 w-8 text-emerald-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">Mantenha o foco.</h3>
@@ -87,7 +87,7 @@ const Index = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                   <div className="p-6">
-                    <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                    <div className="bg-primary-50 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Trophy className="h-8 w-8 text-emerald-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">Cabeça fria.</h3>
@@ -103,7 +103,7 @@ const Index = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                   <div className="p-6">
-                    <div className="bg-emerald-100 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                    <div className="bg-primary-50 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                       <Briefcase className="h-8 w-8 text-emerald-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">Nomeações e Convocações</h3>

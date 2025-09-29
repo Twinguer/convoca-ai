@@ -120,7 +120,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
         <div className="space-y-2">
           <h3 className="text-lg font-medium">Sobre mim</h3>
           
-          <div className="space-y-2 border p-4 rounded-md bg-gray-50">
+          <div className="space-y-2 border p-4 rounded-md bg-secondary">
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>
               <Input id="estado" value={estado} onChange={e => setEstado(e.target.value)} placeholder="Seu estado" maxLength={50} />
@@ -153,7 +153,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           </div>
         </div>
 
-        <div className="space-y-3 border p-4 rounded-md bg-gray-50">
+        <div className="space-y-3 border p-4 rounded-md bg-secondary">
           <Label className="text-lg font-medium">Concursos em que foi aprovado</Label>
           
           <div className="flex gap-2">
