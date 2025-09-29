@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '../lib/utils';
@@ -10,48 +9,41 @@ import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
 import { ThemeSelector } from '@/components/ThemeSelector';
-
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  
   useEffect(() => {
     // Check if admin mode is enabled via URL param
     const urlParams = new URLSearchParams(window.location.search);
     const adminParam = urlParams.get('admin');
     setIsAdminMode(adminParam === 'true');
   }, [location]);
-  
   const isActive = (path: string) => {
     if (path === '/' && pathname === '/') return true;
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
   };
-  
   const isAdmin = () => {
     return user?.email?.includes('admin') || isAdminMode;
   };
-
   const handleLinkClick = () => {
     setIsSheetOpen(false);
   };
-  
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
+  return <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 max-w-screen-2xl items-center justify-between bg-white/[0.31]">
         {/* User login button - Now on the left */}
         <div className="flex items-center">
           <UserMenu />
-          {isAdminMode && (
-            <div className="ml-4 bg-accent text-accent-foreground px-2 py-1 rounded-md flex items-center">
+          {isAdminMode && <div className="ml-4 bg-accent text-accent-foreground px-2 py-1 rounded-md flex items-center">
               <ShieldAlert className="h-4 w-4 mr-1" />
               <span className="text-xs font-medium">Modo Administrador</span>
-            </div>
-          )}
+            </div>}
         </div>
         
         {/* Navigation - Now on the right */}
@@ -201,8 +193,6 @@ const Menu = () => {
           </Sheet>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Menu;
