@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -42,13 +41,13 @@ import PlansPage from "./modules/plans/pages/PlansPage";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
 import { PresenceProvider } from "./contexts/PresenceContext";
-
 const AppContent = () => {
-  const { showFloatingTimer, hideTimer } = useTimer();
-  
-  return (
-    <PresenceProvider>
-      <div className="min-h-screen text-foreground bg-background">
+  const {
+    showFloatingTimer,
+    hideTimer
+  } = useTimer();
+  return <PresenceProvider>
+      <div className="min-h-screen text-foreground bg-emerald-100">
       <Toaster />
       <Sonner />
       
@@ -179,16 +178,11 @@ const AppContent = () => {
                         <NotFound />
                       </>} />
                   </Routes>
-        <FloatingTimer
-          isOpen={showFloatingTimer}
-          onClose={hideTimer}
-        />
+        <FloatingTimer isOpen={showFloatingTimer} onClose={hideTimer} />
       </BrowserRouter>
       </div>
-    </PresenceProvider>
-  );
+    </PresenceProvider>;
 };
-
 const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
@@ -205,5 +199,4 @@ const App = () => {
       </QueryClientProvider>
     </React.StrictMode>;
 };
-
 export default App;
