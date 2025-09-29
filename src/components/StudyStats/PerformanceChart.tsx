@@ -98,11 +98,63 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
     return [value, name];
   };
   const getSubjectChartData = () => {
-    return Object.entries(statistics.subjectStats)
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeFilter) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 6);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 29);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
+
+    // Filtrar sessões pelo período selecionado
+    const filteredSessions = statistics.sessionHistory.filter(session => {
+      const sessionDate = new Date(session.date);
+      return sessionDate >= startDate;
+    });
+
+    // Recalcular estatísticas por disciplina para o período filtrado
+    const filteredSubjectStats: Record<string, {
+      totalHours: number;
+      totalSessions: number;
+      questionsAnswered: number;
+      correctAnswers: number;
+      wrongAnswers: number;
+    }> = {};
+
+    filteredSessions.forEach(session => {
+      const subject = session.subject || 'Sem disciplina';
+      
+      if (!filteredSubjectStats[subject]) {
+        filteredSubjectStats[subject] = {
+          totalHours: 0,
+          totalSessions: 0,
+          questionsAnswered: 0,
+          correctAnswers: 0,
+          wrongAnswers: 0
+        };
+      }
+      
+      filteredSubjectStats[subject].totalHours += session.duration / 60;
+      filteredSubjectStats[subject].totalSessions += 1;
+    });
+
+    return Object.entries(filteredSubjectStats)
       .filter(([_, stats]) => stats.totalHours > 0)
       .sort((a, b) => b[1].totalHours - a[1].totalHours)
       .map(([subject, stats]) => ({
-        subject: subject || 'Sem disciplina',
+        subject: subject,
         hours: Number(stats.totalHours.toFixed(1)),
         sessions: stats.totalSessions,
         questions: stats.questionsAnswered,

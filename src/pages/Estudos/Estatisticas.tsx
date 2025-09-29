@@ -20,6 +20,70 @@ const Estatisticas = () => {
     refreshStatistics();
   }, []);
 
+  // Função para obter estatísticas filtradas por disciplina
+  const getFilteredSubjectStats = () => {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (timeFilter) {
+      case 'day':
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'week':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 6);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case 'month':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 29);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+    }
+
+    // Filtrar sessões pelo período selecionado
+    const filteredSessions = (statistics.sessionHistory || []).filter(session => {
+      const sessionDate = new Date(session.date);
+      return sessionDate >= startDate;
+    });
+
+    // Recalcular estatísticas por disciplina para o período filtrado
+    const filteredStats: Record<string, {
+      totalHours: number;
+      questionsAnswered: number;
+      correctAnswers: number;
+      wrongAnswers: number;
+    }> = {};
+
+    filteredSessions.forEach(session => {
+      const subject = session.subject;
+      if (subject) {
+        if (!filteredStats[subject]) {
+          filteredStats[subject] = {
+            totalHours: 0,
+            questionsAnswered: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0
+          };
+        }
+        
+        filteredStats[subject].totalHours += session.duration / 60;
+      }
+    });
+
+    // Adicionar dados de questões do statistics.subjectStats original para as disciplinas
+    Object.entries(statistics.subjectStats || {}).forEach(([subject, stats]) => {
+      if (filteredStats[subject]) {
+        filteredStats[subject].questionsAnswered = stats.questionsAnswered;
+        filteredStats[subject].correctAnswers = stats.correctAnswers;
+        filteredStats[subject].wrongAnswers = stats.wrongAnswers;
+      }
+    });
+
+    return filteredStats;
+  };
+
   const handleResetStats = async () => {
     await resetStatistics();
     toast({
@@ -193,9 +257,9 @@ const Estatisticas = () => {
               </TabsContent>
               
               <TabsContent value="disciplinas" className="mt-4">
-                {Object.keys(statistics.subjectStats).length > 0 ? (
+                {Object.keys(getFilteredSubjectStats()).length > 0 ? (
                   <div className="space-y-3 max-h-[300px] overflow-y-auto">
-                    {Object.entries(statistics.subjectStats).map(([subject, stats]) => (
+                    {Object.entries(getFilteredSubjectStats()).map(([subject, stats]) => (
                       <div key={subject} className="p-3 border rounded-lg">
                         <h4 className="font-medium text-sm mb-2">{subject}</h4>
                         <div className="grid grid-cols-3 gap-2 text-xs">
@@ -247,7 +311,7 @@ const Estatisticas = () => {
       </div>
 
       {/* Desempenho por Disciplina */}
-      {Object.keys(statistics.subjectStats).length > 0 && (
+      {Object.keys(getFilteredSubjectStats()).length > 0 && (
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -255,12 +319,12 @@ const Estatisticas = () => {
               Desempenho por Disciplina
             </CardTitle>
             <CardDescription>
-              Estatísticas detalhadas de questões por matéria estudada
+              Estatísticas detalhadas por matéria no período selecionado ({timeFilter === 'day' ? 'Hoje' : timeFilter === 'week' ? 'Últimos 7 dias' : 'Últimos 30 dias'})
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Object.entries(statistics.subjectStats).map(([subject, stats]) => (
+              {Object.entries(getFilteredSubjectStats()).map(([subject, stats]) => (
                 <div key={subject} className="border rounded-lg p-4">
                   <h4 className="font-semibold text-foreground mb-3">{subject}</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
