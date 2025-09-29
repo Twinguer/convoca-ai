@@ -449,7 +449,7 @@ const Cronograma = () => {
         </div>
       </div>;
   }
-  return <div className="container mx-auto p-6 bg-emerald-100 dark:bg-background">
+  return <div className="container mx-auto p-6 bg-emerald-100">
       <div className="flex items-center gap-4 mb-6">
         
         <div>
