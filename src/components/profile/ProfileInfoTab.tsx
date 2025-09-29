@@ -164,7 +164,7 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
           </div>
           
           <div className="space-y-2 mt-3">
-            {listaAprovacoes.length > 0 ? listaAprovacoes.map((aprovacao, index) => <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+            {listaAprovacoes.length > 0 ? listaAprovacoes.map((aprovacao, index) => <div key={index} className="flex items-center justify-between bg-card p-2 rounded border">
                   <span className="text-sm break-words flex-grow">{aprovacao}</span>
                   <Button variant="ghost" size="sm" onClick={() => removerAprovacao(index)} className="h-8 w-8 p-0">
                     <X className="h-4 w-4 text-gray-500" />
