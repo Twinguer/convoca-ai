@@ -466,6 +466,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       official_answer_weights: {
         Row: {
           concurso_id: string
@@ -1803,6 +1839,15 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      admin_send_notification: {
+        Args: {
+          p_message: string
+          p_target_id: string
+          p_target_type: string
+          p_title: string
+        }
+        Returns: boolean
+      }
       calculate_score_with_blocks: {
         Args: { p_user_ranking_id: string }
         Returns: number
@@ -1825,6 +1870,10 @@ export type Database = {
       }
       count_concurso_participants: {
         Args: { concurso_id: string }
+        Returns: number
+      }
+      count_unread_notifications: {
+        Args: { p_user_id: string }
         Returns: number
       }
       count_user_followers: {

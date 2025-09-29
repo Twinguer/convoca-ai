@@ -19,6 +19,7 @@ import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
 import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
+import Notifications from "./pages/Notifications";
 import { AuthProvider } from "./hooks/useAuth";
 import UserFollowers from "./pages/UserFollowers";
 import { SecureAdminLogin } from "./components/Admin/SecureLogin";
@@ -82,9 +83,15 @@ const AppContent = () => {
                         <UserFollowers />
                       </>} />
                      <Route path="/seguidores" element={<>
-                        <Menu />
-                        <UserFollowers />
-                      </>} />
+                         <Menu />
+                         <UserFollowers />
+                       </>} />
+                     <Route path="/notificacoes" element={<>
+                         <Menu />
+                         <ProtectedRoute>
+                           <Notifications />
+                         </ProtectedRoute>
+                       </>} />
                     <Route path="/" element={<>
                         <Menu />
                         <Index />

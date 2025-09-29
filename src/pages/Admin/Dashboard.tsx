@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Calendar, User, FileText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { NotificationManager } from '@/components/Admin/NotificationManager';
 
 const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
@@ -75,10 +75,6 @@ const AdminDashboard: React.FC = () => {
     }
   }, [statsData]);
   
-  const handleVisitSite = () => {
-    window.open('/?admin=true', '_blank');
-  };
-  
   const dashboardCards = [{
     title: 'Total de Rankings',
     value: isLoading ? '...' : statsData?.concursosCount.toString(),
@@ -118,6 +114,11 @@ const AdminDashboard: React.FC = () => {
               <CardDescription>{card.description}</CardDescription>
             </CardContent>
           </Card>)}
+      </div>
+
+      {/* Gerenciador de Notificações */}
+      <div className="mb-8">
+        <NotificationManager />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

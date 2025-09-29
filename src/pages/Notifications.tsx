@@ -1,0 +1,168 @@
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Bell, Check, CheckCheck, User, Users, Trophy } from 'lucide-react';
+import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const NotificationIcon = ({ type }: { type: string }) => {
+  switch (type) {
+    case 'new_participant':
+      return <User className="h-5 w-5 text-blue-600" />;
+    case 'admin_broadcast':
+      return <Users className="h-5 w-5 text-purple-600" />;
+    case 'admin_ranking':
+      return <Trophy className="h-5 w-5 text-green-600" />;
+    case 'admin_direct':
+      return <Bell className="h-5 w-5 text-orange-600" />;
+    default:
+      return <Bell className="h-5 w-5 text-gray-600" />;
+  }
+};
+
+const NotificationCard = ({ 
+  notification, 
+  onMarkAsRead 
+}: { 
+  notification: Notification;
+  onMarkAsRead: (id: string) => void;
+}) => {
+  const timeAgo = formatDistanceToNow(new Date(notification.created_at), {
+    addSuffix: true,
+    locale: ptBR,
+  });
+
+  return (
+    <Card className={`transition-all duration-200 ${
+      notification.is_read 
+        ? 'bg-background border-border' 
+        : 'bg-primary-50 border-primary-200 shadow-sm'
+    }`}>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-1">
+            <NotificationIcon type={notification.type} />
+          </div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-medium text-foreground truncate">
+                {notification.title}
+              </h3>
+              {!notification.is_read && (
+                <Badge variant="secondary" className="ml-2 bg-primary text-primary-foreground">
+                  Nova
+                </Badge>
+              )}
+            </div>
+            
+            <p className="text-sm text-muted-foreground mb-2">
+              {notification.message}
+            </p>
+            
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {timeAgo}
+              </span>
+              
+              {!notification.is_read && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onMarkAsRead(notification.id)}
+                  className="h-7 px-2 text-xs"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Marcar como lida
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default function NotificationsPage() {
+  const { 
+    notifications, 
+    unreadCount, 
+    isLoading, 
+    markAsRead, 
+    markAllAsRead 
+  } = useNotifications();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-page-background">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Carregando notificações...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-page-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Notificações</h1>
+              {unreadCount > 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {unreadCount} notificação{unreadCount !== 1 ? 's' : ''} não lida{unreadCount !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+            
+            {unreadCount > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => markAllAsRead()}
+                className="text-sm"
+              >
+                <CheckCheck className="h-4 w-4 mr-2" />
+                Marcar todas como lidas
+              </Button>
+            )}
+          </div>
+
+          {notifications.length === 0 ? (
+            <Card>
+              <CardContent className="p-8">
+                <div className="text-center">
+                  <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Nenhuma notificação
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Você não possui notificações no momento.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {notifications.map((notification) => (
+                <NotificationCard
+                  key={notification.id}
+                  notification={notification}
+                  onMarkAsRead={markAsRead}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

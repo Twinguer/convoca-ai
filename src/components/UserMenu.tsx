@@ -4,7 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, Users, Clock, Palette, Moon, Sun } from 'lucide-react';
+import { User, LogOut, Users, Clock, Palette, Moon, Sun, Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useTheme as useColorTheme, Theme as ColorTheme } from '@/contexts/ThemeContext';
 import { useTheme as useDarkTheme } from 'next-themes';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -21,6 +22,7 @@ const UserMenu: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { unreadCount } = useNotifications();
 
   const toggleDarkMode = () => {
     setDarkTheme(darkTheme === "dark" ? "light" : "dark");
@@ -107,6 +109,13 @@ const UserMenu: React.FC = () => {
                 <AvatarFallback>{getInitials(userName)}</AvatarFallback>
               )}
             </Avatar>
+            {unreadCount > 0 && (
+              <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
+                <span className="text-xs text-white font-medium">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              </div>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -115,6 +124,20 @@ const UserMenu: React.FC = () => {
             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>
           <DropdownMenuSeparator />
+          
+          <DropdownMenuItem asChild>
+            <Link to="/notificacoes" className="flex w-full cursor-pointer items-center">
+              <div className="flex items-center w-full">
+                <Bell className="mr-2 h-4 w-4" />
+                <span className="flex-1">Notificações</span>
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="text-xs h-5 px-1.5">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </Badge>
+                )}
+              </div>
+            </Link>
+          </DropdownMenuItem>
           
           <DropdownMenuItem asChild>
             <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
