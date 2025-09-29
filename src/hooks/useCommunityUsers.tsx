@@ -14,13 +14,18 @@ export const useCommunityUsers = (searchQuery: string = '') => {
       try {
         console.log('Fetching community users with query:', debouncedSearchQuery);
         
-        // Fetching users with only public metadata (secure approach)
+        // Fetching users with profile data including approvals
         let query = supabase
-          .from('public_profiles')
+          .from('users_profiles')
           .select(`
             id,
             name,
-            avatar_url
+            avatar_url,
+            email,
+            bio,
+            concursos_aprovados,
+            status_concurseiro,
+            is_studying
           `);
           
         // Apply search filter if provided (only on name now)
@@ -60,8 +65,10 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               ? profile.name.toLowerCase().replace(/[^a-z0-9]/g, '')
               : `user_${profile.id.slice(0, 8)}`;
 
-            // Default status (no private data access)
-            const statusConcurseiro = "Na Ativa";
+            // Calculate approval count from concursos_aprovados field
+            const approvalCount = profile.concursos_aprovados 
+              ? profile.concursos_aprovados.split('\n').filter(line => line.trim().length > 0).length 
+              : 0;
 
             // Store the counts directly in the object to ensure persistence
             return {
@@ -69,12 +76,11 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               username: usernameFromName,
               followerCount: followerCount || 0,
               postCount: postCount || 0,
-              approvalCount: 0, // No access to private approval data
-              status_concurseiro: statusConcurseiro,
-              // Default values for missing private fields
-              email: '',
-              bio: '',
-              concursos_aprovados: null,
+              approvalCount,
+              status_concurseiro: profile.status_concurseiro || "Na Ativa",
+              email: profile.email || '',
+              bio: profile.bio || '',
+              concursos_aprovados: profile.concursos_aprovados,
               concursos_participando: null,
               estado: '',
               formacao: '',
@@ -83,7 +89,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               especialidade: '',
               curso_preparatorio: '',
               rotina_estudos: '',
-              is_studying: false
+              is_studying: profile.is_studying || false
             };
           })
         );
