@@ -26,6 +26,7 @@ import { SecureAdminLogin } from "./components/Admin/SecureLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
 import ListarUsuarios from "./pages/Admin/ListarUsuarios";
+import VouchersManager from "./pages/Admin/VouchersManager";
 import AdminLayout from "./components/Admin/AdminLayout";
 import AdminProtectedRoute from "./components/Admin/ProtectedRoute";
 import { ProtectedRoute } from "./components/Security/ProtectedRoute";
@@ -38,7 +39,7 @@ import CriarCiclo from "./pages/Estudos/CriarCiclo";
 import EditarCiclo from "./pages/Estudos/EditarCiclo";
 import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
-import PlansPage from "./modules/plans/pages/PlansPage";
+import Planos from "./pages/Planos";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
 import { PresenceProvider } from "./contexts/PresenceContext";
@@ -62,6 +63,7 @@ const AppContent = () => {
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="concursos" element={<ListarConcursos />} />
                       <Route path="usuarios" element={<ListarUsuarios />} />
+                      <Route path="vouchers" element={<VouchersManager />} />
                     </Route>
                     <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
@@ -162,7 +164,9 @@ const AppContent = () => {
                        </>} />
                      <Route path="/planos" element={<>
                          <Menu />
-                         <PlansPage />
+                         <ProtectedRoute>
+                           <Planos />
+                         </ProtectedRoute>
                        </>} />
                     <Route path="/resultado" element={<>
                         <Menu />

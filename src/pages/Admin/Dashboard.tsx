@@ -131,6 +131,7 @@ const AdminDashboard: React.FC = () => {
             <a href="/criar-ranking" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
             <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Rankings</a>
             <a href="/project/admin/man/usuarios" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Usuários</a>
+            <a href="/project/admin/man/vouchers" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Vouchers</a>
             <a href="/?admin=true" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site (Admin)</a>
           </CardContent>
         </Card>

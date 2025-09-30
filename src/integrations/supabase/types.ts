@@ -1674,6 +1674,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          started_at: string
+          updated_at: string
+          user_id: string
+          voucher_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          updated_at?: string
+          user_id: string
+          voucher_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+          voucher_code?: string | null
+        }
+        Relationships: []
+      }
       users_profiles: {
         Row: {
           area_estudos: string | null
@@ -1745,6 +1781,51 @@ export type Database = {
           rotina_estudos?: string | null
           status_concurseiro?: string | null
           study_started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          description: string | null
+          duration_months: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          description?: string | null
+          duration_months?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          description?: string | null
+          duration_months?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number
+          plan?: Database["public"]["Enums"]["subscription_plan"]
           updated_at?: string
         }
         Relationships: []
@@ -1847,6 +1928,10 @@ export type Database = {
           p_title: string
         }
         Returns: boolean
+      }
+      apply_voucher: {
+        Args: { voucher_code_param: string }
+        Returns: Json
       }
       calculate_score_with_blocks: {
         Args: { p_user_ranking_id: string }
@@ -2125,6 +2210,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      subscription_plan: "free" | "pro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2253,6 +2339,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      subscription_plan: ["free", "pro"],
     },
   },
 } as const
