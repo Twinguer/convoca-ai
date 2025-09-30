@@ -304,7 +304,7 @@ const Estatisticas = () => {
               Desempenho em Questões
             </CardTitle>
             <CardDescription>
-              Estatísticas de acertos e erros
+              Estatísticas de acertos e erros - {timeFilter === 'day' ? 'Hoje' : timeFilter === 'week' ? 'Últimos 7 dias' : timeFilter === 'month' ? 'Últimos 30 dias' : customStartDate && customEndDate ? `${format(customStartDate, 'dd/MM/yyyy')} até ${format(customEndDate, 'dd/MM/yyyy')}` : 'Período personalizado'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -398,66 +398,6 @@ const Estatisticas = () => {
         </Card>
 
       </div>
-
-      {/* Desempenho por Disciplina */}
-      {Object.keys(getFilteredSubjectStats()).length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              Desempenho por Disciplina
-            </CardTitle>
-            <CardDescription>
-              Estatísticas detalhadas por matéria no período selecionado ({timeFilter === 'day' ? 'Hoje' : timeFilter === 'week' ? 'Últimos 7 dias' : 'Últimos 30 dias'})
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {Object.entries(getFilteredSubjectStats()).map(([subject, stats]) => (
-                <div key={subject} className="border rounded-lg p-4">
-                  <h4 className="font-semibold text-foreground mb-3">{subject}</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{formatHours(stats.totalHours)}</div>
-                      <div className="text-xs text-muted-foreground">Horas Estudadas</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-foreground">{stats.questionsAnswered}</div>
-                      <div className="text-xs text-muted-foreground">Questões Respondidas</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-success">{stats.correctAnswers}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Acertos ({formatPercentage(stats.correctAnswers, stats.questionsAnswered)})
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-destructive">{stats.wrongAnswers}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Erros ({formatPercentage(stats.wrongAnswers, stats.questionsAnswered)})
-                      </div>
-                    </div>
-                  </div>
-                  {stats.questionsAnswered > 0 && (
-                    <div className="mt-3">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                        <span>Taxa de Acerto</span>
-                        <span>{formatPercentage(stats.correctAnswers, stats.questionsAnswered)}</span>
-                      </div>
-                      <div className="w-full bg-secondary rounded-full h-2">
-                        <div 
-                          className="bg-success h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${(stats.correctAnswers / stats.questionsAnswered) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
     </div>
   );
