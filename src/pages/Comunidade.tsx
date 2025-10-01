@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useCommunityUsers } from '@/hooks/useCommunityUsers';
+import { usePresence } from '@/contexts/PresenceContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -35,6 +36,8 @@ const Comunidade: React.FC = () => {
     refetch
   } = useCommunityUsers(searchQuery);
 
+  const { isOnline } = usePresence();
+
   // Handle user card click - navigate to user profile
   const handleUserClick = useCallback((userId: string) => {
     navigate(`/usuario/${userId}`);
@@ -63,7 +66,7 @@ const Comunidade: React.FC = () => {
   };
 
   // Filter users based on selected filters
-  const filteredUsers = React.useMemo(() => {
+  const filteredUsers = useMemo(() => {
     let filtered = users || [];
 
     // Filter by status if not "todos"
@@ -80,10 +83,21 @@ const Comunidade: React.FC = () => {
       });
     }
 
-    // Sort users by follower count (descending order)
-    filtered = [...filtered].sort((a, b) => (b.followerCount || 0) - (a.followerCount || 0));
+    // Sort users: online users first, then by follower count
+    filtered = [...filtered].sort((a, b) => {
+      const aOnline = isOnline(a.id);
+      const bOnline = isOnline(b.id);
+
+      // Online users first
+      if (aOnline && !bOnline) return -1;
+      if (!aOnline && bOnline) return 1;
+
+      // If both have same online status, sort by follower count
+      return (b.followerCount || 0) - (a.followerCount || 0);
+    });
+    
     return filtered;
-  }, [users, statusFilter, rankingFilter]);
+  }, [users, statusFilter, rankingFilter, isOnline]);
 
   // Get users to display - either all or just the first 6
   const displayUsers = showAllUsers ? filteredUsers : filteredUsers.slice(0, 6);
@@ -102,8 +116,8 @@ const Comunidade: React.FC = () => {
   // Main component render
   return <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        
-        
+        <h1 className="text-3xl font-bold mb-2">👥 Membros da Comunidade</h1>
+        <p className="text-muted-foreground">Usuários online aparecem no topo</p>
       </div>
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">

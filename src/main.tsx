@@ -6,6 +6,7 @@ import './index.css'
 import { scheduleScraper } from './services/scraperService.ts'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ThemeProvider as ColorThemeProvider } from '@/contexts/ThemeContext'
+import { PresenceProvider } from '@/contexts/PresenceContext'
 
 // Initialize data fetching for concursos
 const initializeConcursos = async () => {
@@ -28,7 +29,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       enableSystem
       disableTransitionOnChange
     >
-      <App />
+      <PresenceProvider>
+        <App />
+      </PresenceProvider>
     </ThemeProvider>
   </ColorThemeProvider>
 )
