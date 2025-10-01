@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { User, LogOut, Users, Clock, Palette, Moon, Sun, Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTheme as useColorTheme, Theme as ColorTheme } from '@/contexts/ThemeContext';
 import { useTheme as useDarkTheme } from 'next-themes';
 import { useNotifications } from '@/hooks/useNotifications';
+import { UserAvatar } from '@/components/profile/UserAvatar';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -61,10 +61,6 @@ const UserMenu: React.FC = () => {
     }
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
 
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -101,16 +97,16 @@ const UserMenu: React.FC = () => {
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <Avatar className="h-8 w-8">
-              {profile?.avatar_url ? (
-                <AvatarImage src={profile?.avatar_url} alt={userName} />
-              ) : (
-                <AvatarFallback>{getInitials(userName)}</AvatarFallback>
-              )}
-            </Avatar>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
+            <UserAvatar 
+              name={userName}
+              avatarUrl={profile?.avatar_url}
+              size="sm"
+              userId={user?.id}
+              showOnlineStatus={true}
+            />
             {unreadCount > 0 && (
-              <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center z-20">
                 <span className="text-xs text-white font-medium">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
