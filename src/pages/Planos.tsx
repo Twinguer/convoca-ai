@@ -57,7 +57,7 @@ const Planos = () => {
     {
       id: 'pro',
       nome: 'Pro',
-      preco: 29.90,
+      preco: 19.90,
       descricao: 'Acesso completo',
       periodo: 'mês',
       popular: true,
