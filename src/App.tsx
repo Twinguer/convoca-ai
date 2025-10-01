@@ -42,15 +42,12 @@ import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
-import { PresenceTracker } from "./components/profile/PresenceTracker";
-
 const AppContent = () => {
   const {
     showFloatingTimer,
     hideTimer
   } = useTimer();
   return <>
-      <PresenceTracker />
       <div className="min-h-screen text-foreground bg-page-background">
       <Toaster />
       <Sonner />

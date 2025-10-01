@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Star, Loader2, Crown, Sparkles } from 'lucide-react';
+import { Check, Star, Loader2, Crown, Sparkles, Target, TrendingUp, Calendar, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -160,45 +160,67 @@ const Planos = () => {
           )}
         </div>
 
-        {/* Voucher Section */}
-        <Card className="max-w-md mx-auto mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              Tem um voucher?
-            </CardTitle>
-            <CardDescription>
-              Insira seu código de voucher para ativar benefícios
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="voucher">Código do Voucher</Label>
-              <Input
-                id="voucher"
-                placeholder="XXXX-XXXX-XXXX"
-                value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-              />
-            </div>
-            <Button 
-              onClick={handleApplyVoucher} 
-              disabled={applyingVoucher}
-              className="w-full"
-            >
-              {applyingVoucher ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Aplicando...
-                </>
-              ) : (
-                'Aplicar Voucher'
-              )}
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Features Section */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 max-w-6xl mx-auto">
+          <Card className="text-center">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <Target className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Rankings Personalizados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Crie simulações de classificações para seus concursos e compare seu desempenho
+              </p>
+            </CardContent>
+          </Card>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <Card className="text-center">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Estatísticas Detalhadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Acompanhe seu progresso com gráficos e métricas de desempenho em tempo real
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <Calendar className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Cronograma Inteligente</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Organize seus estudos com ciclos e blocos de disciplinas personalizados
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle className="text-lg">Comunidade Ativa</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Conecte-se com outros concurseiros e compartilhe experiências
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Plans Section */}
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
           {planos.map((plano) => (
             <Card 
               key={plano.id} 
@@ -258,6 +280,44 @@ const Planos = () => {
             </Card>
           ))}
         </div>
+
+        {/* Voucher Section */}
+        <Card className="max-w-md mx-auto mt-12">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5" />
+              Tem um voucher?
+            </CardTitle>
+            <CardDescription>
+              Insira seu código de voucher para ativar benefícios especiais
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="voucher">Código do Voucher</Label>
+              <Input
+                id="voucher"
+                placeholder="XXXX-XXXX-XXXX"
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+              />
+            </div>
+            <Button 
+              onClick={handleApplyVoucher} 
+              disabled={applyingVoucher}
+              className="w-full"
+            >
+              {applyingVoucher ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Aplicando...
+                </>
+              ) : (
+                'Aplicar Voucher'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         <div className="text-center mt-12">
           <p className="text-sm text-muted-foreground">
