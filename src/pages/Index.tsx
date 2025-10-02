@@ -123,7 +123,7 @@ const Index = () => {
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Pronto para conquistar sua aprovação?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Junte-se a nós e vamos juntos iniciar uma comunidade onde temos o mesmo propósito: A tão sonhada convocação no cargo dos sonhos!
+            Junte-se a nós e vamos juntos iniciar uma comunidade onde temos o mesmo propósito: A tão sonhada convocação para o cargo dos sonhos!
           </p>
         </div>
       </section>
