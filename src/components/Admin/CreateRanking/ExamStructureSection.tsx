@@ -131,10 +131,11 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Atualizar nome de um bloco
   const handleBlockNameChange = (blockId: string, name: string) => {
+    const truncatedName = name.slice(0, 15);
     const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => block.id === blockId ? {
       ...block,
-      name
+      name: truncatedName
     } : block);
     form.setValue('disciplines', updatedBlocks);
   };
@@ -189,6 +190,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Atualizar campo de disciplina
   const handleDisciplineChange = (blockId: string, disciplineId: string, field: string, value: any) => {
+    const processedValue = field === 'name' ? value.slice(0, 5) : value;
     const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => {
       if (block.id === blockId) {
@@ -198,7 +200,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
             if (discipline.id === disciplineId) {
               return {
                 ...discipline,
-                [field]: value
+                [field]: processedValue
               };
             }
             return discipline;
@@ -308,7 +310,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           {form.watch('disciplines')?.map((block, blockIndex) => <div key={block.id} className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex-grow">
-                  <input className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={block.name} onChange={e => handleBlockNameChange(block.id, e.target.value.slice(0, 15))} placeholder="Nome do Bloco" maxLength={15} />
+                  <input className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={block.name?.slice(0, 15) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Nome do Bloco" maxLength={15} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
@@ -328,7 +330,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <div className="space-y-4 pl-4 border-l-2 border-gray-200">
                 {block.disciplines?.map((discipline, disciplineIndex) => <div key={discipline.id} className="border p-4 rounded-md">
                     <div className="flex justify-between items-center mb-4">
-                      <input className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={discipline.name} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value.slice(0, 5))} placeholder="Nome da Disciplina" maxLength={5} />
+                      <input className="font-medium bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={discipline.name?.slice(0, 5) || ''} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value)} placeholder="Nome da Disciplina" maxLength={5} />
                       <Button variant="ghost" size="sm" onClick={() => handleRemoveDiscipline(block.id, discipline.id)} className="text-red-500 hover:text-red-700">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remover
