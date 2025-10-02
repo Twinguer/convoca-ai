@@ -42,36 +42,45 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       console.log('[fetchExistingAnswers] Dados do usuário no JSON consolidado:', userData);
 
       if (userData?.booklets) {
-        // PRIORIDADE: selected_booklet do JSON consolidado (última edição salva)
+        // Preferir o caderno selecionado no JSON consolidado (última edição)
         const consolidatedSelectedBooklet = userData.selected_booklet?.toString();
-        
-        // Fallback: selected_booklet do ranking
         const rankingSelectedBooklet = rankingData?.selected_booklet?.toString();
         
-        // Determinar qual caderno usar: preferir o consolidado (última edição)
+        console.log('[fetchExistingAnswers] Caderno consolidado:', consolidatedSelectedBooklet);
+        console.log('[fetchExistingAnswers] Caderno do ranking:', rankingSelectedBooklet);
+
+        // Prioridade: caderno selecionado no consolidado > caderno do ranking > primeiro disponível
         let bookletIdToUse = null;
         
         if (consolidatedSelectedBooklet && userData.booklets[consolidatedSelectedBooklet]) {
           bookletIdToUse = consolidatedSelectedBooklet;
-          console.log('[fetchExistingAnswers] Usando caderno do JSON consolidado:', bookletIdToUse);
+          console.log('[fetchExistingAnswers] Usando caderno consolidado:', bookletIdToUse);
         } else if (rankingSelectedBooklet && userData.booklets[rankingSelectedBooklet]) {
           bookletIdToUse = rankingSelectedBooklet;
           console.log('[fetchExistingAnswers] Usando caderno do ranking:', bookletIdToUse);
         } else {
-          // Último fallback: primeiro caderno disponível
-          bookletIdToUse = Object.keys(userData.booklets)[0];
-          console.log('[fetchExistingAnswers] Usando primeiro caderno disponível:', bookletIdToUse);
+          // Fallback: pegar o caderno mais recente por completed_at
+          const bookletKeys = Object.keys(userData.booklets);
+          if (bookletKeys.length > 0) {
+            bookletKeys.sort((a, b) => {
+              const timeA = userData.booklets[a]?.metadata?.completed_at || '';
+              const timeB = userData.booklets[b]?.metadata?.completed_at || '';
+              return timeB.localeCompare(timeA); // mais recente primeiro
+            });
+            bookletIdToUse = bookletKeys[0];
+            console.log('[fetchExistingAnswers] Usando caderno mais recente:', bookletIdToUse);
+          }
         }
 
         if (bookletIdToUse) {
           const bookletAnswers = userData.booklets[bookletIdToUse]?.answers || {};
+          console.log('[fetchExistingAnswers] Respostas do caderno', bookletIdToUse, ':', bookletAnswers);
           Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
             const num = parseInt(questionNum);
             if (!isNaN(num) && typeof answer === 'string') {
               answers[num] = answer;
             }
           });
-          console.log('[fetchExistingAnswers] Total de respostas carregadas:', Object.keys(answers).length);
         }
       }
     } else {
