@@ -42,12 +42,26 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       console.log('[fetchExistingAnswers] Dados do usuário no JSON consolidado:', userData);
 
       if (userData?.booklets) {
-        // Preferir o caderno selecionado no ranking quando existir
-        const selectedBookletId = rankingData?.selected_booklet?.toString();
-
-        const bookletIdToUse = selectedBookletId && userData.booklets[selectedBookletId]
-          ? selectedBookletId
-          : Object.keys(userData.booklets)[0];
+        // PRIORIDADE: selected_booklet do JSON consolidado (última edição salva)
+        const consolidatedSelectedBooklet = userData.selected_booklet?.toString();
+        
+        // Fallback: selected_booklet do ranking
+        const rankingSelectedBooklet = rankingData?.selected_booklet?.toString();
+        
+        // Determinar qual caderno usar: preferir o consolidado (última edição)
+        let bookletIdToUse = null;
+        
+        if (consolidatedSelectedBooklet && userData.booklets[consolidatedSelectedBooklet]) {
+          bookletIdToUse = consolidatedSelectedBooklet;
+          console.log('[fetchExistingAnswers] Usando caderno do JSON consolidado:', bookletIdToUse);
+        } else if (rankingSelectedBooklet && userData.booklets[rankingSelectedBooklet]) {
+          bookletIdToUse = rankingSelectedBooklet;
+          console.log('[fetchExistingAnswers] Usando caderno do ranking:', bookletIdToUse);
+        } else {
+          // Último fallback: primeiro caderno disponível
+          bookletIdToUse = Object.keys(userData.booklets)[0];
+          console.log('[fetchExistingAnswers] Usando primeiro caderno disponível:', bookletIdToUse);
+        }
 
         if (bookletIdToUse) {
           const bookletAnswers = userData.booklets[bookletIdToUse]?.answers || {};
@@ -57,6 +71,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
               answers[num] = answer;
             }
           });
+          console.log('[fetchExistingAnswers] Total de respostas carregadas:', Object.keys(answers).length);
         }
       }
     } else {
