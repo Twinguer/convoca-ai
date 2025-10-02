@@ -1,117 +1,82 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-interface ConsolidatedAnswerData {
-  booklets: {
-    [bookletId: string]: {
-      answers: { [questionNumber: string]: string };
-      metadata: {
-        completed_at: string;
-        answer_count: number;
-      };
-    };
-  };
-  subjective_scores: {
-    discursive: number;
-    case_study_1: number;
-    case_study_2: number;
-    case_study_3: number;
-  };
-  selected_booklet: string;
-  total_edit_count: number;
-  metadata: {
-    last_updated: string;
-    version: string;
-  };
-}
-
+// Busca respostas existentes usando a NOVA estrutura consolidada por concurso
+// Retorna também as notas subjetivas e o caderno selecionado
 export const fetchExistingAnswers = async (rankingId: string) => {
   try {
-    console.log('[fetchExistingAnswers] Fetching consolidated answers for ranking ID:', rankingId);
+    console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
 
-    // Buscar dados consolidados usando nova estrutura
-    const { data, error } = await supabase
-      .from('user_answers')
-      .select('answers_data')
-      .eq('user_ranking_id', rankingId)
-      .is('question_number', null)
-      .single();
-      
-    if (error && error.code !== 'PGRST116') {
-      console.error('[fetchExistingAnswers] Error:', error);
-      return {
-        answers: {},
-        editCount: 0,
-        discursiveScore: null,
-        caseStudy1Score: null,
-        caseStudy2Score: null,
-        caseStudy3Score: null,
-        selectedBooklet: null
-      };
-    }
-
-    if (!data?.answers_data) {
-      console.log('[fetchExistingAnswers] No consolidated data found');
-      return {
-        answers: {},
-        editCount: 0,
-        discursiveScore: null,
-        caseStudy1Score: null,
-        caseStudy2Score: null,
-        caseStudy3Score: null,
-        selectedBooklet: null
-      };
-    }
-
-    const consolidatedData = data.answers_data as ConsolidatedAnswerData;
-    console.log('[fetchExistingAnswers] Retrieved consolidated data:', consolidatedData);
-
-    // Buscar informações do user_ranking para obter o caderno selecionado
+    // 1) Buscar dados do ranking para obter user_id e selected_booklet
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
-      .select('selected_booklet')
+      .select('selected_booklet, discursive_score, case_study_1_score, case_study_2_score, case_study_3_score, concurso_id, user_id')
       .eq('id', rankingId)
-      .single();
+      .maybeSingle();
 
-    let selectedBookletId = consolidatedData.selected_booklet;
-    if (rankingData?.selected_booklet) {
-      selectedBookletId = rankingData.selected_booklet;
+    if (rankingError || !rankingData) {
+      console.error('[fetchExistingAnswers] Erro ao buscar dados do ranking:', rankingError);
+      return {};
     }
 
-    console.log('[fetchExistingAnswers] Selected booklet:', selectedBookletId);
+    console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
 
-    // Extrair respostas do caderno selecionado
-    const answers: { [key: number]: string } = {};
-    
-    if (consolidatedData.booklets && selectedBookletId) {
-      const bookletData = consolidatedData.booklets[selectedBookletId];
-      if (bookletData?.answers) {
-        Object.entries(bookletData.answers).forEach(([questionNum, answer]) => {
-          answers[parseInt(questionNum)] = answer;
-        });
-        console.log('[fetchExistingAnswers] Loaded answers for selected booklet:', answers);
+    // 2) Buscar dados consolidados por concurso
+    const { data: consolidatedData, error: consolidatedError } = await supabase
+      .from('consolidated_answers_by_concurso')
+      .select('consolidated_data')
+      .eq('concurso_id', rankingData.concurso_id)
+      .maybeSingle();
+
+    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
+    console.log('[fetchExistingAnswers] Erro na busca consolidada:', consolidatedError);
+
+    let answers: { [key: number]: string } = {};
+
+    if (consolidatedData?.consolidated_data) {
+      const data = consolidatedData.consolidated_data as any;
+      console.log('[fetchExistingAnswers] Estrutura de dados consolidados:', data);
+
+      // Buscar dados do usuário específico dentro do JSON consolidado
+      const userData = data.users?.[rankingData.user_id];
+      console.log('[fetchExistingAnswers] Dados do usuário no JSON consolidado:', userData);
+
+      if (userData?.booklets) {
+        // Preferir o caderno selecionado no ranking quando existir
+        const selectedBookletId = rankingData?.selected_booklet?.toString();
+
+        const bookletIdToUse = selectedBookletId && userData.booklets[selectedBookletId]
+          ? selectedBookletId
+          : Object.keys(userData.booklets)[0];
+
+        if (bookletIdToUse) {
+          const bookletAnswers = userData.booklets[bookletIdToUse]?.answers || {};
+          Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
+            const num = parseInt(questionNum);
+            if (!isNaN(num) && typeof answer === 'string') {
+              answers[num] = answer;
+            }
+          });
+        }
       }
+    } else {
+      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado para o concurso');
     }
+
+    console.log('[fetchExistingAnswers] Respostas finais para retorno:', answers);
 
     return {
       answers,
-      discursiveScore: consolidatedData.subjective_scores?.discursive || null,
-      caseStudy1Score: consolidatedData.subjective_scores?.case_study_1 || null,
-      caseStudy2Score: consolidatedData.subjective_scores?.case_study_2 || null,
-      caseStudy3Score: consolidatedData.subjective_scores?.case_study_3 || null,
-      selectedBooklet: selectedBookletId || null,
-      editCount: consolidatedData.total_edit_count || 0
-    };
+      discursiveScore: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.discursive ?? rankingData?.discursive_score ?? null,
+      caseStudy1Score: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.case_study_1 ?? rankingData?.case_study_1_score ?? null,
+      caseStudy2Score: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.case_study_2 ?? rankingData?.case_study_2_score ?? null,
+      caseStudy3Score: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.subjective_scores?.case_study_3 ?? rankingData?.case_study_3_score ?? null,
+      selectedBooklet: rankingData?.selected_booklet?.toString() || null,
+      editCount: consolidatedData?.consolidated_data?.users?.[rankingData.user_id]?.edit_count || 0,
+      consolidatedData: consolidatedData?.consolidated_data,
+    } as any;
   } catch (error) {
     console.error('[fetchExistingAnswers] Erro ao buscar respostas consolidadas:', error);
-    return {
-      answers: {},
-      editCount: 0,
-      discursiveScore: null,
-      caseStudy1Score: null,
-      caseStudy2Score: null,
-      caseStudy3Score: null,
-      selectedBooklet: null
-    };
+    return {};
   }
 };
