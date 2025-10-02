@@ -300,8 +300,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const effectivelyAnsweredQuestions = answeredQuestions +
       Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
-    if (effectivelyAnsweredQuestions < totalQuestions) {
-      // Identify unanswered questions (excluding nullified ones)
+    // Para provas "Certo ou Errado", permitir questões em branco
+    // Para provas de múltipla escolha, exigir todas as respostas
+    const isCertoErrado = concurso.exam_type === 'Certo ou Errado';
+    
+    if (!isCertoErrado && effectivelyAnsweredQuestions < totalQuestions) {
+      // Identify unanswered questions (excluding nullified ones) - APENAS para múltipla escolha
       const unansweredQuestions = [];
       const allQuestions = getAllQuestionsFromAllSections();
 
