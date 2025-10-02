@@ -10,9 +10,9 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       .from('user_rankings')
       .select('selected_booklet, discursive_score, case_study_1_score, case_study_2_score, case_study_3_score, concurso_id, user_id')
       .eq('id', rankingId)
-      .single();
+      .maybeSingle();
 
-    if (rankingError) {
+    if (rankingError || !rankingData) {
       console.error('[fetchExistingAnswers] Erro ao buscar dados do ranking:', rankingError);
       return {};
     }
@@ -24,7 +24,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       .from('consolidated_answers_by_concurso')
       .select('consolidated_data')
       .eq('concurso_id', rankingData.concurso_id)
-      .single();
+      .maybeSingle();
 
     console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
     console.log('[fetchExistingAnswers] Erro na busca consolidada:', consolidatedError);
