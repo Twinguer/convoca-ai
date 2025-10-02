@@ -1,17 +1,29 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
 import ConcursoInfoCard from '@/components/resultados/ConcursoInfoCard';
 import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
+import { useLeaveRanking } from '@/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, UserPlus, LogIn } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { RefreshCw, UserPlus, LogIn, UserMinus } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const ResultadosPage = () => {
   const navigate = useNavigate();
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const {
     concurso,
     rankings,
@@ -23,11 +35,10 @@ const ResultadosPage = () => {
     refreshData,
     creatorName,
     inscritos,
-    isParticipating // Usando a nova propriedade para verificar participação
+    isParticipating
   } = useResultadosData();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const { leave, isLeaving } = useLeaveRanking();
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -87,6 +98,16 @@ const ResultadosPage = () => {
     }
   };
 
+  const handleLeaveRanking = () => {
+    if (!concurso) return;
+    leave(concurso.id, {
+      onSuccess: () => {
+        setShowLeaveDialog(false);
+        refreshData();
+      }
+    });
+  };
+
   if (isLoading) {
     return <LoadingState />;
   }
@@ -101,15 +122,13 @@ const ResultadosPage = () => {
             {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
           </Button>
           
-          {/* Mostrar o botão "Participar" apenas se o usuário estiver logado e não estiver participando */}
           {concurso && !isParticipating && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}
           
-          {/* Mostrar o botão "Deixar Ranking" se o usuário estiver participando */}
-          {concurso && isParticipating && user && <Button onClick={() => navigate(`/usuario/${user.id}`)} variant="outline" className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
-              <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
+          {concurso && isParticipating && user && <Button onClick={() => setShowLeaveDialog(true)} variant="destructive" className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isLeaving}>
+              <UserMinus className="h-3 w-3 sm:h-4 sm:w-4" />
               Deixar Ranking
             </Button>}
           
@@ -137,6 +156,23 @@ const ResultadosPage = () => {
             Para participar deste ranking e comparar seu desempenho, faça login ou crie uma conta.
           </p>
         </div>}
+      
+      <AlertDialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair do Ranking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que deseja sair deste ranking? Todas as suas respostas e pontuações serão permanentemente removidas. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLeaveRanking} className="bg-destructive hover:bg-destructive/90">
+              {isLeaving ? 'Saindo...' : 'Sair do Ranking'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>;
 };
 

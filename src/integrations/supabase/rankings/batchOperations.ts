@@ -123,9 +123,12 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
           const officialAnswer = officialAnswers[questionNumberStr];
 
           if (officialAnswer) {
-            const isCorrect = officialAnswer.is_nullified === true || userAnswer === officialAnswer.correct_answer;
+            const isNullified = officialAnswer.is_nullified === true;
+            const isCorrect = userAnswer === officialAnswer.correct_answer;
+            const isBlank = !userAnswer || userAnswer.trim() === '';
             const questionWeight = officialAnswer.weight || 1;
             const sectionType = officialAnswer.section_type || 'default';
+            const isCertoOuErrado = concurso.exam_type === 'Certo ou Errado';
             
             // Inicializar pontuação da disciplina se ainda não existir
             if (!disciplineScores[sectionType]) {
@@ -133,39 +136,54 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
               weightedDisciplineScores[sectionType] = 0;
             }
             
-            if (isCorrect) {
-              let disciplineWeight = 1;
+            let disciplineWeight = 1;
+            
+            // Obter peso da disciplina se usar conhecimentos customizados
+            if (concurso.has_custom_knowledge && concurso.disciplines) {
+              const isHierarchical = concurso.disciplines.some((item: any) => 'disciplines' in item);
               
-              // Obter peso da disciplina se usar conhecimentos customizados
-              if (concurso.has_custom_knowledge && concurso.disciplines) {
-                // Verificar estrutura hierárquica ou plana
-                const isHierarchical = concurso.disciplines.some((item: any) => 'disciplines' in item);
-                
-                if (isHierarchical) {
-                  for (const block of concurso.disciplines) {
-                    if ('disciplines' in block && Array.isArray(block.disciplines)) {
-                      for (const discipline of block.disciplines) {
-                        if (discipline.type === sectionType) {
-                          disciplineWeight = discipline.weight || 1;
-                          break;
-                        }
+              if (isHierarchical) {
+                for (const block of concurso.disciplines) {
+                  if ('disciplines' in block && Array.isArray(block.disciplines)) {
+                    for (const discipline of block.disciplines) {
+                      if (discipline.type === sectionType) {
+                        disciplineWeight = discipline.weight || 1;
+                        break;
                       }
                     }
                   }
-                } else {
-                  for (const discipline of concurso.disciplines) {
-                    if ('type' in discipline && discipline.type === sectionType) {
-                      disciplineWeight = discipline.weight || 1;
-                      break;
-                    }
+                }
+              } else {
+                for (const discipline of concurso.disciplines) {
+                  if ('type' in discipline && discipline.type === sectionType) {
+                    disciplineWeight = discipline.weight || 1;
+                    break;
                   }
                 }
               }
-              
+            }
+            
+            // Aplicar pontuação
+            if (isNullified) {
+              // Questão anulada: sempre soma o peso
               totalScore += questionWeight;
               disciplineScores[sectionType] += 1;
               weightedDisciplineScores[sectionType] += questionWeight * disciplineWeight;
+            } else if (isBlank) {
+              // Resposta em branco: não altera pontuação
+              continue;
+            } else if (isCorrect) {
+              // Resposta correta: soma o peso
+              totalScore += questionWeight;
+              disciplineScores[sectionType] += 1;
+              weightedDisciplineScores[sectionType] += questionWeight * disciplineWeight;
+            } else if (isCertoOuErrado) {
+              // Resposta errada em C/E: subtrai o peso
+              totalScore -= questionWeight;
+              disciplineScores[sectionType] -= 1;
+              weightedDisciplineScores[sectionType] -= questionWeight * disciplineWeight;
             }
+            // Resposta errada em outros tipos de prova: não altera (já faz continue implícito)
           }
         }
 
