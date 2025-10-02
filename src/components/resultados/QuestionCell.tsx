@@ -25,6 +25,19 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   onClearAnswer,
   isNullified = false
 }) => {
+  const isCertoErrado = examType === 'Certo ou Errado';
+  
+  const handleOptionClick = (option: string) => {
+    // Se clicar na opção já selecionada em prova C/E, deseleciona (deixa em branco)
+    if (isCertoErrado && selectedAnswer === option) {
+      if (onClearAnswer) {
+        onClearAnswer(questionNumber);
+      }
+    } else {
+      onAnswerChange(questionNumber, option);
+    }
+  };
+  
   console.log(`[QuestionCell] Question ${questionNumber} - Selected answer: ${selectedAnswer}`);
   return (
     <div className={`border rounded-md p-3 ${isNullified ? 'bg-gray-50' : 'bg-white'}`}>
@@ -45,6 +58,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             className="h-6 w-6 p-0" 
             onClick={() => onClearAnswer(questionNumber)}
             disabled={disabled}
+            title="Limpar resposta"
           >
             <X className="h-3 w-3" />
             <span className="sr-only">Limpar resposta</span>
@@ -58,7 +72,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
             key={option}
             option={option}
             isSelected={selectedAnswer === option}
-            onClick={() => onAnswerChange(questionNumber, option)}
+            onClick={() => handleOptionClick(option)}
             disabled={disabled || isNullified}
             examType={examType}
           />
