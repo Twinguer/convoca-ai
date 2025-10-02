@@ -131,7 +131,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Atualizar nome de um bloco
   const handleBlockNameChange = (blockId: string, name: string) => {
-    const truncatedName = name.slice(0, 15);
+    const truncatedName = name.slice(0, 10);
     const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => block.id === blockId ? {
       ...block,
@@ -310,7 +310,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           {form.watch('disciplines')?.map((block, blockIndex) => <div key={block.id} className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex-grow">
-                  <input className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={block.name?.slice(0, 15) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Nome do Bloco" maxLength={15} />
+                  <input className="font-medium text-lg bg-transparent border-b border-gray-300 focus:border-gray-600 outline-none w-[70%]" value={block.name?.slice(0, 10) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Nome do Bloco" maxLength={10} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
