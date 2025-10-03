@@ -134,7 +134,7 @@ const PlansPage = () => {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mb-16">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 mb-16">
         {plans.map((plan) => (
           <Card 
             key={plan.id} 
@@ -207,7 +207,7 @@ const PlansPage = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1.5">
           {features.map((feature, index) => (
             <div key={index} className="text-center">
               <div className="flex justify-center mb-4 text-primary">
@@ -233,7 +233,7 @@ const PlansPage = () => {
         </div>
         
         <div className="max-w-3xl mx-auto">
-          <div className="grid gap-1">
+          <div className="grid gap-1.5">
             {faqs.map((faq, index) => (
               <Card key={index}>
                 <CardHeader>

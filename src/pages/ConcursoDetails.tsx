@@ -41,7 +41,7 @@ const ConcursoDetails = () => {
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1 mb-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 mb-1">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-xl">Informações Gerais</CardTitle>
@@ -133,7 +133,7 @@ const ConcursoDetails = () => {
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">

@@ -147,7 +147,7 @@ const CebraspeConcursos: React.FC = () => {
   function renderContent() {
     if (isLoading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1.5 animate-pulse">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="bg-gray-100 rounded-lg shadow p-6 h-48"></div>
           ))}
@@ -179,7 +179,7 @@ const CebraspeConcursos: React.FC = () => {
     
     if (viewType === 'cards') {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1.5">
           {sortedConcursos.map((concurso) => (
             <div key={concurso.id} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow duration-300">
               <div className="p-6">

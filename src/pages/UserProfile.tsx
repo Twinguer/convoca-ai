@@ -343,7 +343,7 @@ const UserProfile = () => {
 
   return (
     <div className="container mx-auto p-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5">
         <div className="md:col-span-3 space-y-4">
           <Card>
             <CardContent className="pt-6">

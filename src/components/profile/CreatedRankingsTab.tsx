@@ -119,7 +119,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
   return <div className="space-y-4">
       <h3 className="text-lg font-medium">Rankings Criados ({rankings.length})</h3>
       
-      <div className="grid gap-4">
+      <div className="grid gap-5">
         {displayRankings?.map((ranking: any) => <Card key={ranking.id} className="overflow-hidden">
             <div className="bg-gradient-to-r from-blue-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
               <div>

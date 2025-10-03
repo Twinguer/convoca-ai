@@ -129,7 +129,7 @@ const EstudosDashboard = () => {
     return <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
-          <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map(i => <div key={i} className="h-48 bg-muted rounded"></div>)}
           </div>
         </div>
@@ -195,7 +195,7 @@ const EstudosDashboard = () => {
           </CardContent>
         </Card> : <>
           {/* Overall Progress Cards */}
-          <div className="grid gap-1 md:grid-cols-2 lg:grid-cols-4 mb-[5px]">
+          <div className="grid gap-1.5 md:grid-cols-2 lg:grid-cols-4 mb-[5px]">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Disciplinas Concluídas</CardTitle>
@@ -262,7 +262,7 @@ const EstudosDashboard = () => {
           {/* Study Cycles */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
-            <div className="grid gap-1 md:grid-cols-2">
+            <div className="grid gap-1.5 md:grid-cols-2">
               {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={() => navigate(`/estudos/sessao/${data.cycle.id}`)} onDelete={() => deleteCycle(data.cycle.id)} />)}
             </div>
           </div>

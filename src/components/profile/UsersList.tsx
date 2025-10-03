@@ -47,7 +47,7 @@ export const UsersList: React.FC<UsersListProps> = ({
           <div className="animate-spin h-5 w-5 border-2 border-primary rounded-full border-t-transparent"></div>
         </div>
       ) : users.length > 0 ? (
-        <div className="grid grid-cols-3 gap-1">
+        <div className="grid grid-cols-3 gap-1.5">
           {users.map((user) => (
             <div key={user.id} className="relative">
               <UserCard
