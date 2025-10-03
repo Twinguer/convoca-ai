@@ -39,3 +39,6 @@ verify_jwt = false
 
 [functions.pdf-to-flashcards]
 verify_jwt = false
+
+[functions.send-confirmation-email]
+verify_jwt = false
