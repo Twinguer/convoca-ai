@@ -53,14 +53,14 @@ const StatisticsPage = () => {
       </div>;
   }
   return <div className="container mx-auto p-6">
-      <div className="mb-8 flex justify-between items-start">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Estatísticas de Estudo</h1>
           <p className="text-muted-foreground">Acompanhe seu desempenho e evolução nos estudos</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Select value={timeFilter} onValueChange={(value: 'day' | 'week' | 'month') => setTimeFilter(value)}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full sm:w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -71,7 +71,7 @@ const StatisticsPage = () => {
           </Select>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Zerar Estatísticas
               </Button>
