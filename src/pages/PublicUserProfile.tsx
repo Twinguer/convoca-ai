@@ -398,6 +398,27 @@ const PublicUserProfile: React.FC = () => {
                 </CardContent>
               </Card>}
             
+            {/* Aprovações */}
+            <Card className="mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle>Aprovações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {aprovacoesList.length > 0 ? <div className="space-y-2">
+                    {aprovacoesList.map((concurso, index) => <div key={index} className="p-3 rounded-md bg-muted border">
+                        <div className="flex items-center">
+                          <div className="bg-primary/10 p-2 rounded-full mr-3">
+                            <Trophy className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="text-sm font-medium">
+                            {concurso.trim()}
+                          </span>
+                        </div>
+                      </div>)}
+                  </div> : <p className="text-sm text-muted-foreground">Nenhuma aprovação registrada ainda.</p>}
+              </CardContent>
+            </Card>
+            
             {/* Rankings */}
             <Card className="mb-6">
               <CardHeader className="pb-3">
@@ -444,27 +465,6 @@ const PublicUserProfile: React.FC = () => {
                       Nenhum ranking encontrado para este usuário.
                     </p>
                   </div>}
-              </CardContent>
-            </Card>
-            
-            {/* Aprovações */}
-            <Card className="bg-emerald-50 border-emerald-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-emerald-800">Aprovações</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {aprovacoesList.length > 0 ? <div className="space-y-2">
-                    {aprovacoesList.map((concurso, index) => <div key={index} className="p-3 rounded-md bg-primary-50 border-primary-200">
-                        <div className="flex items-center">
-                          <div className="bg-emerald-200 p-2 rounded-full mr-3">
-                            <Trophy className="h-4 w-4 text-emerald-700" />
-                          </div>
-                          <span className="text-sm font-medium text-emerald-800">
-                            {concurso.trim()}
-                          </span>
-                        </div>
-                      </div>)}
-                  </div> : <p className="text-sm text-emerald-700">Nenhuma aprovação registrada ainda.</p>}
               </CardContent>
             </Card>
           </div>
