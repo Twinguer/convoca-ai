@@ -41,7 +41,7 @@ const ConcursosPage: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
         {bancas.map((banca) => (
           <Link to={banca.path} key={banca.id}>
             <Card className="h-full hover:shadow-md transition-all">

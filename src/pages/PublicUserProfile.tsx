@@ -310,7 +310,7 @@ const PublicUserProfile: React.FC = () => {
   return <div className="container mx-auto p-6 max-w-7xl">
       
       
-      <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-2">
         {/* Coluna Esquerda - Perfil do Usuário */}
         <div className="lg:col-span-3 space-y-4">
           <Card>
@@ -482,7 +482,7 @@ const PublicUserProfile: React.FC = () => {
             </CardHeader>
             <CardContent>
               {followers.length > 0 ? <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-3 gap-2">
                     {followers.slice(0, 6).map(follower => <div key={follower.id} className="text-center">
                         <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" onClick={() => handleViewProfile(follower.id)}>
                           <AvatarImage src={follower.avatar_url || ''} alt={follower.name} />
@@ -514,7 +514,7 @@ const PublicUserProfile: React.FC = () => {
             </CardHeader>
             <CardContent>
               {following.length > 0 ? <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-3 gap-2">
                     {following.slice(0, 6).map(followedUser => <div key={followedUser.id} className="text-center">
                         <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" onClick={() => handleViewProfile(followedUser.id)}>
                           <AvatarImage src={followedUser.avatar_url || ''} alt={followedUser.name} />

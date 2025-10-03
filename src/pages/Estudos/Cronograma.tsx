@@ -458,7 +458,7 @@ const Cronograma = () => {
         </div>
       </div>
       {/* Clock, Timer, and Calendar Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-1.5 mb-[5px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-[5px]">
         {/* Clock Card */}
         <Card>
           <CardHeader className="pb-3">

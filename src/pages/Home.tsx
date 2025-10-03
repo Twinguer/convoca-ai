@@ -165,7 +165,7 @@ const Home: React.FC = () => {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1.5 animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 animate-pulse">
           {[...Array(6)].map((_, index) => (
             <div key={index} className="bg-gray-100 rounded-lg shadow p-6 h-48"></div>
           ))}
@@ -185,7 +185,7 @@ const Home: React.FC = () => {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {filteredConcursos.map((concurso) => (
             <ConcursoCard
               key={concurso.id}

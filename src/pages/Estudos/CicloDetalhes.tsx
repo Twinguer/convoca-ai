@@ -220,7 +220,7 @@ const CicloDetalhes = () => {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid gap-1.5 md:grid-cols-4 mb-8">
+      <div className="grid gap-2 md:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Progresso Geral</CardTitle>

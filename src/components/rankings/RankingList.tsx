@@ -39,7 +39,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
 }) => {
   const getStatusColor = (status?: string) => {
     if (!status || status === 'Em andamento') {
-      return 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20';
+      return 'bg-primary/10 hover:bg-primary/20 text-primary';
     }
     return '';
   };
@@ -51,13 +51,13 @@ export const RankingItem: React.FC<RankingItemProps> = ({
           <div className="space-y-3">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-1">
-                <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 font-medium text-xs px-2 py-0.5">
+                <Badge variant="outline" className="bg-blue-50 text-blue-600 border-0 font-medium text-xs px-2 py-0.5">
                   {banca}
                 </Badge>
               </div>
               
               <div className="flex flex-col gap-1 items-end">
-                <Badge variant="outline" className={`text-xs font-medium ${getStatusColor(status)}`}>
+                <Badge variant="outline" className={`text-xs font-medium border-0 ${getStatusColor(status)}`}>
                   {status || 'Em andamento'}
                 </Badge>
                 {examDate && (
@@ -114,7 +114,7 @@ export const RankingList: React.FC<RankingListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
@@ -142,7 +142,7 @@ export const RankingList: React.FC<RankingListProps> = ({
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>
   );

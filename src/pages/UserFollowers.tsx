@@ -186,7 +186,7 @@ const UserFollowers = () => {
     }
     
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {users.map(userProfile => (
           <Card key={userProfile.id} className="overflow-hidden">
             <div className="p-4 flex space-x-4">
