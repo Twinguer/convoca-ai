@@ -76,10 +76,10 @@ export const UserCard: React.FC<UserCardProps> = ({
 
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-      <div className="relative p-3 md:p-4">
-        <div className="flex flex-col items-center mb-3">
+      <div className="relative p-2.5 md:p-3.5">
+        <div className="flex flex-col items-center mb-2.5">
           <div className="relative inline-block mb-3">
-            <Avatar className="h-16 w-16 md:h-20 md:w-20">
+            <Avatar className="h-14 w-14 md:h-[72px] md:w-[72px]">
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
               <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
             </Avatar>
@@ -101,22 +101,22 @@ export const UserCard: React.FC<UserCardProps> = ({
           )}
         </div>
         
-        <div className="hidden sm:grid grid-cols-3 gap-x-2 text-center border-t border-b py-2 mb-3">
-          <div className="flex flex-col px-1">
+        <div className="hidden sm:grid grid-cols-3 gap-x-4 text-center border-t border-b divide-x divide-border py-2 mb-2.5">
+          <div className="flex flex-col items-center px-2">
             <span className="text-sm font-semibold">{userProfile.postCount}</span>
-            <span className="text-[11px] text-muted-foreground leading-tight">Rankings</span>
+            <span className="text-[11px] text-muted-foreground leading-[1.1] whitespace-nowrap">Rankings</span>
           </div>
-          <div className="flex flex-col border-x px-1">
+          <div className="flex flex-col items-center px-2">
             <span className="text-sm font-semibold">{userProfile.followerCount}</span>
-            <span className="text-[11px] text-muted-foreground leading-tight">Seguidores</span>
+            <span className="text-[11px] text-muted-foreground leading-[1.1] whitespace-nowrap">Seguidores</span>
           </div>
-          <div className="flex flex-col px-1">
+          <div className="flex flex-col items-center px-2">
             <span className="text-sm font-semibold">{userProfile.approvalCount || 0}</span>
-            <span className="text-[11px] text-muted-foreground leading-tight">Aprovações</span>
+            <span className="text-[11px] text-muted-foreground leading-[1.1] whitespace-nowrap">Aprovações</span>
           </div>
         </div>
         
-        <Button onClick={handleCardClick} variant="ghost" className="w-full">
+        <Button onClick={handleCardClick} variant="ghost" size="sm" className="w-full">
           <User className="h-4 w-4 mr-2" />
           Ver Perfil
         </Button>
