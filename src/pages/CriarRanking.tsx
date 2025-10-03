@@ -179,10 +179,10 @@ const CriarRanking = () => {
   const handleOrgaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('orgao', e.target.value.toUpperCase());
   };
-  const {
+  const { 
     saveRanking
   } = useSaveRanking();
-  const handleSaveRanking = async () => {
+  const handleSaveRanking = async (): Promise<string | null> => {
     const formValues = form.getValues();
 
     // Sincronizar os estados selecionados com o formulário
@@ -208,7 +208,7 @@ const CriarRanking = () => {
         });
         if (saveResult?.duplicated) {
           setIsSubmitting(false);
-          return;
+          return null;
         }
         if (saveResult?.id) {
           setCreatedConcursoId(saveResult.id);
@@ -217,13 +217,16 @@ const CriarRanking = () => {
           queryClient.invalidateQueries({
             queryKey: ['exam-booklets']
           });
+          return saveResult.id;
         }
         queryClient.invalidateQueries({
           queryKey: ['rankings']
         });
+        return editId; // quando editando, retorna o id já existente
       } catch (error) {
         console.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
+        return null;
       } finally {
         setIsSubmitting(false);
       }
@@ -239,7 +242,7 @@ const CriarRanking = () => {
         });
         if (saveResult?.duplicated) {
           setIsSubmitting(false);
-          return;
+          return null;
         }
         if (saveResult?.id) {
           setCreatedConcursoId(saveResult.id);
@@ -248,13 +251,16 @@ const CriarRanking = () => {
           queryClient.invalidateQueries({
             queryKey: ['exam-booklets']
           });
+          return saveResult.id;
         }
         queryClient.invalidateQueries({
           queryKey: ['rankings']
         });
+        return editId; // quando editando sem novo id
       } catch (error) {
         console.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
+        return null;
       } finally {
         setIsSubmitting(false);
       }
@@ -263,9 +269,7 @@ const CriarRanking = () => {
 
   // Atualizado para permitir edição antes de salvar o gabarito
   const handleNextTab = async () => {
-    if (activeTab === 'general-info') {
-      await handleSaveRanking();
-    }
+    setActiveTab('answer-key');
   };
   const handleGoToResults = () => {
     if (createdConcursoId) {

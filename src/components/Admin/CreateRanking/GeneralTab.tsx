@@ -8,6 +8,7 @@ import { MinimumScoreSection } from './MinimumScoreSection';
 import { ExamBookletsSection } from './ExamBookletsSection';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface GeneralTabProps {
   form: any;
@@ -19,7 +20,7 @@ interface GeneralTabProps {
   handleBancaChange: (value: string) => void;
   handleOrgaoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleNextTab: () => void;
-  onSaveRanking?: () => Promise<void>;
+  onSaveRanking?: () => Promise<string | null>;
   isSubmitting?: boolean;
   selectedStates: string[];
   setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
@@ -296,7 +297,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     setIsSavingAll(true);
     
     try {
-      // Step 1: Save ranking
+      // Step 1: Save ranking and obtain concursoId diretamente
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       form.setValue('has_custom_knowledge', true);
       form.setValue('has_basic_knowledge', false);
@@ -304,12 +305,14 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       form.setValue('has_specific_knowledge_2', false);
       form.setValue('has_specific_knowledge_3', false);
       
+      let concursoIdToUse: string | null = createdConcursoId || null;
       if (onSaveRanking) {
-        await onSaveRanking();
+        const id = await onSaveRanking();
+        concursoIdToUse = id || concursoIdToUse;
       }
 
-      // Wait for concursoId to be available
-      if (!createdConcursoId) {
+      // Garantir que temos um ID de concurso
+      if (!concursoIdToUse) {
         toast({
           title: "Erro",
           description: "Não foi possível obter o ID do ranking",
@@ -318,8 +321,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         return;
       }
 
-      // Step 2: Save booklets
-      const bookletsSaved = await saveBooklets(createdConcursoId);
+      // Step 2: Save booklets usando o ID retornado
+      const bookletsSaved = await saveBooklets(concursoIdToUse);
       if (!bookletsSaved) return;
 
       toast({
@@ -327,7 +330,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         description: "Ranking e cadernos salvos. Preencha agora o gabarito oficial."
       });
 
-      // Step 3: Navigate to answer key tab
+      // Step 3: Mudar para a aba de gabarito sem salvar novamente
       handleNextTab();
     } catch (error) {
       console.error("Erro ao salvar:", error);
