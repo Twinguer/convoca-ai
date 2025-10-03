@@ -52,7 +52,7 @@ const StatisticsPage = () => {
         </div>
       </div>;
   }
-  return <div className="container mx-auto p-6">
+  return <div className="min-h-screen p-6">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Estatísticas de Estudo</h1>

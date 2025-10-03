@@ -106,7 +106,7 @@ const StudyDashboard = () => {
   const daysUntilExam = nextExam ? Math.ceil((new Date(nextExam.exam_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : null;
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen p-6">
       <div className="mb-8 flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard de Estudos</h1>

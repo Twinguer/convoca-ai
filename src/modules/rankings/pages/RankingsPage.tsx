@@ -103,7 +103,7 @@ const RankingsPage = () => {
         </div>
       </div>;
   }
-  return <div className="container mx-auto p-6">
+  return <div className="min-h-screen p-6">
       <div className="mb-8 flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Rankings</h1>
