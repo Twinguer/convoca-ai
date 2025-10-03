@@ -52,16 +52,16 @@ const Footer = () => {
             <h3 className="text-xl font-bold text-foreground mb-4">Suporte</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">FAQ</a>
+                <a href="/faq" className="hover:text-foreground transition-colors">FAQ</a>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">Contato</a>
+                <a href="mailto:contato@convocai.com.br" className="hover:text-foreground transition-colors">Contato</a>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">Termos de Uso</a>
+                <a href="/termos-de-uso" className="hover:text-foreground transition-colors">Termos de Uso</a>
               </li>
               <li>
-                <a href="#" className="hover:text-foreground transition-colors">Política de Privacidade</a>
+                <a href="/politica-de-privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</a>
               </li>
             </ul>
           </div>

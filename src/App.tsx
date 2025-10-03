@@ -42,6 +42,9 @@ import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
+import FAQ from "./pages/FAQ";
+import TermosDeUso from "./pages/TermosDeUso";
+import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 const AppContent = () => {
   const {
     showFloatingTimer,
@@ -97,12 +100,24 @@ const AppContent = () => {
                         <Menu />
                         <Index />
                       </>} />
-                     <Route path="/comunidade" element={<>
+                    <Route path="/comunidade" element={<>
                           <Menu />
                           <ProtectedRoute>
                             <CommunityPage />
                           </ProtectedRoute>
                         </>} />
+                    <Route path="/faq" element={<>
+                        <Menu />
+                        <FAQ />
+                      </>} />
+                    <Route path="/termos-de-uso" element={<>
+                        <Menu />
+                        <TermosDeUso />
+                      </>} />
+                    <Route path="/politica-de-privacidade" element={<>
+                        <Menu />
+                        <PoliticaDePrivacidade />
+                      </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />
                         <CriarRanking />
