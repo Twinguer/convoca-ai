@@ -93,14 +93,19 @@ export const RankingItem: React.FC<RankingItemProps> = ({
                 </p>
               </div>
               
-              {(creatorName || isAdminCreated) && (
-                <div className="flex items-center text-xs text-muted-foreground">
-                  <span className="text-right text-xs">
-                    Criado por: {isAdminCreated ? 'Admin' : creatorName}
-                  </span>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                <Trophy className="h-4 w-4" />
+                Ver Ranking
+              </div>
             </div>
+            
+            {(creatorName || isAdminCreated) && (
+              <div className="flex items-center text-xs text-muted-foreground pt-1">
+                <span className="text-right text-xs">
+                  Criado por: {isAdminCreated ? 'Admin' : creatorName}
+                </span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
