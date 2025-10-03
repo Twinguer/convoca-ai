@@ -101,7 +101,7 @@ const AdminDashboard: React.FC = () => {
     <div>
       <h1 className="text-2xl font-bold mb-6">Painel Administrativo</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 mb-8">
         {dashboardCards.map((card, index) => <Card key={index}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
@@ -121,7 +121,7 @@ const AdminDashboard: React.FC = () => {
         <NotificationManager />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
         <Card>
           <CardHeader>
             <CardTitle>Ações Rápidas</CardTitle>
