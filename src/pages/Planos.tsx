@@ -200,9 +200,7 @@ const Planos = () => {
         </Card>
 
         <div className="text-center mt-12">
-          <p className="text-sm text-muted-foreground">
-            Todos os planos podem ser alterados a qualquer momento. Use vouchers para benefícios especiais.
-          </p>
+          
         </div>
       </div>
     </div>;
