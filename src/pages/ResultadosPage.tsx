@@ -139,7 +139,7 @@ const ResultadosPage = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-[1px] mb-1 sm:mb-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1 mb-2">
         <RankingCard participantCount={participantCount} userRanking={userRanking} inscritos={concurso?.inscritos} />
         {concurso && <ConcursoInfoCard concurso={concurso} creatorName={creatorName} />}
       </div>
