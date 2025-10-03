@@ -2177,9 +2177,7 @@ export type Database = {
         Returns: Json
       }
       switch_user_booklet: {
-        Args:
-          | { p_booklet_id: string; p_ranking_id: string }
-          | { p_booklet_id: string; p_ranking_id: string }
+        Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
       update_answer_with_weight: {
