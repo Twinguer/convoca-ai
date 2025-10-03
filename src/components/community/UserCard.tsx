@@ -94,11 +94,6 @@ export const UserCard: React.FC<UserCardProps> = ({
               : 'Usuário'
             }
           </h3>
-          {userProfile.email && (
-            <p className="text-xs text-muted-foreground">
-              @{userProfile.username || userProfile.email.split('@')[0]}
-            </p>
-          )}
         </div>
         
         <div className="hidden sm:grid grid-cols-3 gap-x-4 text-center border-t border-b divide-x divide-border py-2 mb-2.5">

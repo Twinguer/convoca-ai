@@ -25,7 +25,7 @@ interface UserGridProps {
 
 export const UserGrid: React.FC<UserGridProps> = ({ children, users, className = '', onClick }) => {
   return (
-    <div className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-1 ${className}`}>
+    <div className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-1 ${className}`}>
       {users && users.map((user, index) => {
         // Map the user data to match UserCard's expected interface
         const userProfile = {
