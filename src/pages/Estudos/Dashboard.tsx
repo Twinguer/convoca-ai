@@ -152,7 +152,7 @@ const EstudosDashboard = () => {
     timeProgress
   } = calculateOverallProgress();
   return <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Ciclos de Estudos</h1>
           <p className="text-muted-foreground">Acompanhe seu progresso e organize seus estudos</p>
@@ -260,7 +260,7 @@ const EstudosDashboard = () => {
           </div>
 
           {/* Study Cycles */}
-          <div className="space-y-6">
+          <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
             <div className="grid gap-2 md:grid-cols-2">
               {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={() => navigate(`/estudos/sessao/${data.cycle.id}`)} onDelete={() => deleteCycle(data.cycle.id)} />)}
@@ -269,7 +269,7 @@ const EstudosDashboard = () => {
         </>}
 
       {/* Study Status Sections */}
-      <div className="mt-8 space-y-6">
+      <div className="mt-4 space-y-3">
         
 
         <div>
