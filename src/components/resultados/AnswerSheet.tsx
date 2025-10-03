@@ -224,8 +224,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           return nullifiedQuestions;
       },
       enabled: !!selectedBookletId,
-      staleTime: 30000,
-      refetchOnWindowFocus: true
+      staleTime: 0, // Always fetch fresh data to detect changes in nullified questions
+      refetchOnWindowFocus: true,
+      refetchInterval: 5000 // Check for updates every 5 seconds
   });
 
   // Import saveAnswers hook with booklet support (CORRIGIDO para reagir a mudanças no selectedBookletId)
