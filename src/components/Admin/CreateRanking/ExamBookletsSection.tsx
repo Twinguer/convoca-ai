@@ -17,6 +17,80 @@ interface ExamBookletsSectionProps {
   onBookletsChange?: (booklets: ExamBooklet[]) => void;
   onBookletsSaved?: (saved: boolean) => void;
 }
+// Export saveBooklets functionality
+export const useBookletsSave = (
+  concursoId: string | undefined,
+  booklets: ExamBooklet[],
+  validateBooklets: () => string | null,
+  onSuccess: (savedBooklets: ExamBooklet[]) => void,
+  onError: (error: string) => void
+) => {
+  const saveBooklets = async () => {
+    const validationError = validateBooklets();
+    if (validationError) {
+      onError(validationError);
+      return false;
+    }
+
+    if (!concursoId) {
+      onError("Salve primeiro as informações básicas do ranking antes de configurar os cadernos.");
+      return false;
+    }
+
+    try {
+      const { data: existingBooklets } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', concursoId);
+
+      const currentIds = booklets.filter(b => b.id).map(b => b.id);
+      const toDelete = (existingBooklets || []).filter(b => !currentIds.includes(b.id));
+
+      for (const booklet of toDelete) {
+        const { error } = await supabase
+          .from('exam_booklets')
+          .delete()
+          .eq('id', booklet.id);
+        if (error) throw error;
+      }
+
+      const savedBooklets = [];
+      for (const booklet of booklets) {
+        if (booklet.id) {
+          const { data, error } = await supabase
+            .from('exam_booklets')
+            .update({ name: booklet.name, display_order: booklet.display_order })
+            .eq('id', booklet.id)
+            .select()
+            .single();
+          if (error) throw error;
+          savedBooklets.push(data);
+        } else {
+          const { data, error } = await supabase
+            .from('exam_booklets')
+            .insert({
+              concurso_id: concursoId,
+              name: booklet.name,
+              display_order: booklet.display_order
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          savedBooklets.push(data);
+        }
+      }
+
+      onSuccess(savedBooklets);
+      return true;
+    } catch (error: any) {
+      onError(error.message || "Não foi possível salvar os cadernos");
+      return false;
+    }
+  };
+
+  return { saveBooklets };
+};
+
 export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
   concursoId,
   onBookletsChange,
@@ -159,6 +233,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     console.log('Validação passou');
     return null;
   };
+  // Export this function to be callable from parent components
   const saveBooklets = async () => {
     const validationError = validateBooklets();
     if (validationError) {
@@ -307,17 +382,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
               </div>)}
           </div>}
 
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-start items-center pt-4 border-t">
           <Button type="button" variant="outline" onClick={addBooklet} disabled={booklets.length >= 10 || isSaving} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Adicionar Caderno
           </Button>
-          
-          <div className="flex items-center gap-2">
-            <Button type="button" onClick={saveBooklets} disabled={isLoading || isSaving || isBookletsSaved} className={isBookletsSaved ? "bg-success hover:bg-success/90" : "bg-primary hover:bg-primary/90"}>
-              {isSaving ? 'Salvando...' : isBookletsSaved ? 'Cadernos Salvos' : 'Salvar Cadernos'}
-            </Button>
-          </div>
         </div>
 
         {booklets.length > 0 && <div className="text-xs text-muted-foreground mt-2">

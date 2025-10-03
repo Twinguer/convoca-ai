@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { BasicInfoSection } from './BasicInfoSection';
 import { ExamStructureSection } from './ExamStructureSection';
@@ -7,6 +7,7 @@ import { ReservationQuotasSection } from './ReservationQuotasSection';
 import { MinimumScoreSection } from './MinimumScoreSection';
 import { ExamBookletsSection } from './ExamBookletsSection';
 import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GeneralTabProps {
   form: any;
@@ -41,19 +42,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   setSelectedStates,
   createdConcursoId
 }) => {
-  const [isFirstSaveDone, setIsFirstSaveDone] = useState(false);
-  const [areBookletsSaved, setAreBookletsSaved] = useState(false);
+  const [booklets, setBooklets] = useState<Array<{id?: string, name: string, display_order: number}>>([]);
+  const [isSavingAll, setIsSavingAll] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Verificar se já existe um ID de concurso salvo
-    const formValues = form.getValues();
-    if (formValues.id || createdConcursoId) {
-      setIsFirstSaveDone(true);
-    } else {
-      setIsFirstSaveDone(false);
-    }
-  }, [form, createdConcursoId]);
+  const bookletsRef = useRef<Array<{id?: string, name: string, display_order: number}>>([]);
 
   useEffect(() => {
     const formValues = form.getValues();
@@ -61,6 +53,11 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       setSelectedStates(formValues.localidades);
     }
   }, [form, setSelectedStates]);
+
+  // Keep booklets in ref for access during save
+  useEffect(() => {
+    bookletsRef.current = booklets;
+  }, [booklets]);
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
@@ -181,43 +178,155 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     return true;
   };
 
-  const handleSave = async () => {
-    if (validateBeforeSave() && onSaveRanking) {
+  const validateBooklets = () => {
+    const currentBooklets = bookletsRef.current;
+    if (currentBooklets.length === 0) {
+      return "Adicione pelo menos um caderno de prova";
+    }
+
+    const names = currentBooklets.map(b => b.name.trim()).filter(n => n);
+    const uniqueNames = new Set(names);
+    
+    if (names.length !== currentBooklets.length) {
+      return "Todos os cadernos devem ter um nome preenchido";
+    }
+    if (names.length !== uniqueNames.size) {
+      return "Nomes dos cadernos devem ser únicos";
+    }
+    
+    return null;
+  };
+
+  const saveBooklets = async (concursoId: string) => {
+    const validationError = validateBooklets();
+    if (validationError) {
+      toast({
+        title: "Erro nos cadernos",
+        description: validationError,
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    if (!concursoId) {
+      toast({
+        title: "Erro",
+        description: "ID do concurso não encontrado",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      const currentBooklets = bookletsRef.current;
+      
+      const { data: existingBooklets } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', concursoId);
+
+      const currentIds = currentBooklets.filter(b => b.id).map(b => b.id);
+      const toDelete = (existingBooklets || []).filter(b => !currentIds.includes(b.id));
+
+      for (const booklet of toDelete) {
+        const { error } = await supabase
+          .from('exam_booklets')
+          .delete()
+          .eq('id', booklet.id);
+        if (error) throw error;
+      }
+
+      const savedBooklets = [];
+      for (const booklet of currentBooklets) {
+        if (booklet.id) {
+          const { data, error } = await supabase
+            .from('exam_booklets')
+            .update({ name: booklet.name, display_order: booklet.display_order })
+            .eq('id', booklet.id)
+            .select()
+            .single();
+          if (error) throw error;
+          savedBooklets.push(data);
+        } else {
+          const { data, error } = await supabase
+            .from('exam_booklets')
+            .insert({
+              concurso_id: concursoId,
+              name: booklet.name,
+              display_order: booklet.display_order
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          savedBooklets.push(data);
+        }
+      }
+
+      setBooklets(savedBooklets);
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao salvar cadernos",
+        description: error.message || "Não foi possível salvar os cadernos",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
+  const handleFillAnswerKey = async () => {
+    if (!validateBeforeSave()) return;
+
+    setIsSavingAll(true);
+    
+    try {
+      // Step 1: Save ranking
       form.setValue('localidades', selectedStates, { shouldDirty: true });
-      
-      // Garantir que has_custom_knowledge seja sempre true (padrão agora é disciplinas)
       form.setValue('has_custom_knowledge', true);
-      
-      // Desabilitar conhecimentos básicos/específicos padrão
       form.setValue('has_basic_knowledge', false);
       form.setValue('has_specific_knowledge_1', false);
       form.setValue('has_specific_knowledge_2', false);
       form.setValue('has_specific_knowledge_3', false);
       
-      await onSaveRanking();
-      setIsFirstSaveDone(true);
-    }
-  };
+      if (onSaveRanking) {
+        await onSaveRanking();
+      }
 
-  const validateBeforeNext = () => {
-    if (!isFirstSaveDone) {
+      // Wait for concursoId to be available
+      if (!createdConcursoId) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível obter o ID do ranking",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Step 2: Save booklets
+      const bookletsSaved = await saveBooklets(createdConcursoId);
+      if (!bookletsSaved) return;
+
       toast({
-        title: "Salvar necessário",
-        description: "Salve o ranking antes de preencher o gabarito.",
+        title: "Sucesso!",
+        description: "Ranking e cadernos salvos. Preencha agora o gabarito oficial."
+      });
+
+      // Step 3: Navigate to answer key tab
+      handleNextTab();
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar. Tente novamente.",
         variant: "destructive"
       });
-      return false;
+    } finally {
+      setIsSavingAll(false);
     }
-    return true;
   };
 
-  const handleNext = () => {
-    if (!validateBeforeNext()) return;
-    handleNextTab();
-  };
-
-  const handleBookletsSaved = (saved: boolean) => {
-    setAreBookletsSaved(saved);
+  const handleBookletsChange = (newBooklets: Array<{id?: string, name: string, display_order: number}>) => {
+    setBooklets(newBooklets);
   };
 
   return (
@@ -244,25 +353,18 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       {/* Seção de cadernos sempre visível */}
       <ExamBookletsSection 
         concursoId={createdConcursoId}
-        onBookletsSaved={handleBookletsSaved}
+        onBookletsChange={handleBookletsChange}
+        onBookletsSaved={() => {}}
       />
 
-      <div className="flex flex-col items-end gap-2 md:flex-row md:justify-end">
-        <Button 
-          type="button" 
-          onClick={handleSave}
-          variant="secondary"
-          disabled={isSubmitting}
-        >
-          Salvar Ranking
-        </Button>
+      <div className="flex justify-end">
         <Button 
           type="button"
-          onClick={handleNext}
-          disabled={!isFirstSaveDone}
-          className={isFirstSaveDone ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "bg-muted hover:bg-muted/80 text-muted-foreground cursor-not-allowed"}
+          onClick={handleFillAnswerKey}
+          disabled={isSubmitting || isSavingAll}
+          size="lg"
         >
-          {isFirstSaveDone ? "Editar Gabarito" : "Preencher Gabarito"}
+          {isSavingAll ? "Salvando..." : "Preencher Gabarito"}
         </Button>
       </div>
     </div>
