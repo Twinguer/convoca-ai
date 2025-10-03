@@ -183,9 +183,7 @@ const Planos = () => {
               <Sparkles className="w-5 h-5" />
               Tem um voucher?
             </CardTitle>
-            <CardDescription>
-              Insira seu código de voucher para ativar benefícios especiais
-            </CardDescription>
+            
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
