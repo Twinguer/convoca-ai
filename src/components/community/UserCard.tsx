@@ -77,15 +77,7 @@ export const UserCard: React.FC<UserCardProps> = ({
   return (
     <div className="rounded-xl border border-border bg-card text-card-foreground shadow-md hover:shadow-lg transition-shadow overflow-hidden">
       <div className="relative p-3 md:p-4">
-        <div className="absolute top-4 right-4 flex flex-col gap-1 items-end">
-          {userProfile.is_studying && (
-            <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-500 text-white">
-              Estudando
-            </div>
-          )}
-        </div>
-        
-        <div className="flex flex-col items-center mb-2 md:mb-4">
+        <div className="flex flex-col items-center mb-3">
           <div className="relative inline-block mb-3">
             <Avatar className="h-16 w-16 md:h-20 md:w-20">
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
@@ -103,16 +95,13 @@ export const UserCard: React.FC<UserCardProps> = ({
             }
           </h3>
           {userProfile.email && (
-            <p className="hidden md:block text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               @{userProfile.username || userProfile.email.split('@')[0]}
             </p>
           )}
-          <p className="hidden md:block text-xs text-muted-foreground mb-2 text-center break-words mx-2 line-clamp-2 overflow-hidden">
-            {userProfile.bio || ''}
-          </p>
         </div>
         
-        <div className="hidden md:grid grid-cols-3 text-center border-t border-b py-2 mb-3">
+        <div className="grid grid-cols-3 text-center border-t border-b py-2 mb-3">
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{userProfile.postCount}</span>
             <span className="text-xs text-muted-foreground">Rankings</span>
@@ -127,7 +116,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           </div>
         </div>
         
-        <Button onClick={handleCardClick} variant="outline" className="w-full">
+        <Button onClick={handleCardClick} variant="ghost" className="w-full">
           <User className="h-4 w-4 mr-2" />
           Ver Perfil
         </Button>
