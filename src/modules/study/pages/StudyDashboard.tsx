@@ -166,7 +166,7 @@ const StudyDashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-1 gap-1 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-1 mb-8">
         {/* Active Cycles */}
         <Card>
           <CardHeader>

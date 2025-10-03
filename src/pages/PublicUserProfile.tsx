@@ -310,7 +310,7 @@ const PublicUserProfile: React.FC = () => {
   return <div className="container mx-auto p-6 max-w-7xl">
       
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-6">
         {/* Coluna Esquerda - Perfil do Usuário */}
         <div className="lg:col-span-3 space-y-4">
           <Card>
