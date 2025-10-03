@@ -101,18 +101,18 @@ export const UserCard: React.FC<UserCardProps> = ({
           )}
         </div>
         
-        <div className="grid grid-cols-3 text-center border-t border-b py-2 mb-3">
-          <div className="flex flex-col">
+        <div className="hidden sm:grid grid-cols-3 gap-x-2 text-center border-t border-b py-2 mb-3">
+          <div className="flex flex-col px-1">
             <span className="text-sm font-semibold">{userProfile.postCount}</span>
-            <span className="text-xs text-muted-foreground">Rankings</span>
+            <span className="text-[11px] text-muted-foreground leading-tight">Rankings</span>
           </div>
-          <div className="flex flex-col border-x">
+          <div className="flex flex-col border-x px-1">
             <span className="text-sm font-semibold">{userProfile.followerCount}</span>
-            <span className="text-xs text-muted-foreground">Seguidores</span>
+            <span className="text-[11px] text-muted-foreground leading-tight">Seguidores</span>
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col px-1">
             <span className="text-sm font-semibold">{userProfile.approvalCount || 0}</span>
-            <span className="text-xs text-muted-foreground">Aprovações</span>
+            <span className="text-[11px] text-muted-foreground leading-tight">Aprovações</span>
           </div>
         </div>
         
