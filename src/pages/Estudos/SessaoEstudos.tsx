@@ -311,7 +311,7 @@ const SessaoEstudos = () => {
     return <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
-          <div className="grid gap-0.5 md:grid-cols-2">
+          <div className="grid gap-1 md:grid-cols-2">
             <div className="h-48 bg-muted rounded"></div>
             <div className="h-48 bg-muted rounded"></div>
           </div>
@@ -340,7 +340,7 @@ const SessaoEstudos = () => {
       </div>
 
       {/* Compact Header with Timer, Info and Stats */}
-      <div className="grid gap-0.5 lg:grid-cols-4 mb-6">
+      <div className="grid gap-1 lg:grid-cols-4 mb-6">
         {/* Timer Section - Compact */}
         <Card className="dark:border-primary/20">
           <CardContent className="p-4">
@@ -487,7 +487,7 @@ const SessaoEstudos = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-0.5 md:grid-cols-3">
+          <div className="grid gap-1 md:grid-cols-3">
             <LinkButton icon="📋" label="Edital" link={links.edital_link} onLinkChange={link => updateLinks({
             ...links,
             edital_link: link

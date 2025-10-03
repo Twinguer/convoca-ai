@@ -114,7 +114,7 @@ export const RankingList: React.FC<RankingListProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
         {[1, 2, 3, 4, 5, 6].map(i => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
@@ -142,7 +142,7 @@ export const RankingList: React.FC<RankingListProps> = ({
   }
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
       {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
     </div>
   );
