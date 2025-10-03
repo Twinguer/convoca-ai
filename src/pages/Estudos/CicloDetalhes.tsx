@@ -177,7 +177,7 @@ const CicloDetalhes = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="min-h-screen p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
           <div className="h-64 bg-muted rounded"></div>
@@ -188,7 +188,7 @@ const CicloDetalhes = () => {
 
   if (!cycle) {
     return (
-      <div className="container mx-auto p-6 text-center">
+      <div className="min-h-screen p-6 text-center">
         <h1 className="text-3xl font-bold text-foreground mb-4">Ciclo não encontrado</h1>
         <Link to="/estudos">
           <Button>
@@ -205,7 +205,7 @@ const CicloDetalhes = () => {
   const daysUntilExam = getDaysUntilExam();
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen p-6">
       <div className="flex items-center gap-4 mb-6">
         <Link to="/estudos">
           <Button variant="outline" size="sm">

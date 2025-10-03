@@ -442,14 +442,14 @@ const Cronograma = () => {
     }
   };
   if (loading) {
-    return <div className="container mx-auto p-6">
+    return <div className="min-h-screen p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-muted rounded w-64"></div>
           <div className="h-64 bg-muted rounded"></div>
         </div>
       </div>;
   }
-  return <div className="container mx-auto p-6 bg-page-background">
+  return <div className="min-h-screen p-6 bg-page-background">
       <div className="flex items-center gap-4 mb-6">
         
         <div>
