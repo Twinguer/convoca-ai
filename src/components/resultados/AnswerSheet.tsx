@@ -48,6 +48,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setSavedSuccess,
     handleAnswerChange,
     handleClearAnswer,
+    clearAllAnswers,
     getTotalQuestions,
     getOptionsForQuestion,
     createAnswerMatrix,
@@ -110,33 +111,31 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData, selectedBookletId]);
 
-  // Handle booklet change from BookletSwitcher (CORRIGIDO)
+  // Handle booklet change from BookletSwitcher (CORRIGIDO - Limpa totalmente o estado)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
     console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
     console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
+    console.log('[AnswerSheet] Respostas atuais antes de limpar:', answers);
     
+    // CRÍTICO: Limpar COMPLETAMENTE o estado de respostas ANTES de atualizar
+    clearAllAnswers();
+    
+    // Atualizar o ID do caderno selecionado
     setSelectedBookletId(newBookletId);
     
-    // IMPORTANTE: Limpar o estado atual de respostas antes de carregar as novas
-    // para evitar contaminação entre cadernos
-    
-    // Primeiro, limpar todas as respostas atuais
-    Object.keys(answers).forEach(questionNumber => {
-      handleClearAnswer(parseInt(questionNumber));
+    // Carregar as novas respostas do caderno selecionado
+    // Usar setAnswers diretamente para garantir substituição completa
+    const numberedAnswers: { [key: number]: string } = {};
+    Object.entries(newAnswers).forEach(([questionNum, answer]) => {
+      numberedAnswers[parseInt(questionNum)] = answer;
     });
     
-    // Aguardar um pequeno delay para garantir que o estado foi limpo
-    setTimeout(() => {
-      // Carregar as respostas do novo caderno
-      Object.entries(newAnswers).forEach(([questionNum, answer]) => {
-        handleAnswerChange(parseInt(questionNum), answer);
-      });
-      
-      // Refetch para garantir sincronização
-      refetchAnswers();
-      
-      toast.success(`Caderno alterado para ${getBookletName(newBookletId)}. Respostas carregadas.`);
-    }, 100);
+    console.log('[AnswerSheet] Carregando novas respostas (formato numérico):', numberedAnswers);
+    
+    // Forçar re-fetch das respostas do backend para garantir dados corretos
+    await refetchAnswers();
+    
+    toast.success(`Caderno alterado para ${getBookletName(newBookletId)}. Respostas carregadas.`);
   };
 
   // Verify if the official answer key exists

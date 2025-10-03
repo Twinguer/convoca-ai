@@ -13,6 +13,7 @@ import { GeneralTab } from '@/components/Admin/CreateRanking/GeneralTab';
 import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
+import { getTotalQuestions } from '@/hooks/useAnswerSheet/questionCountUtils';
 const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
   try {
@@ -269,7 +270,80 @@ const CriarRanking = () => {
 
   // Atualizado para permitir edição antes de salvar o gabarito
   const handleNextTab = async () => {
+    // Verificar se todos os gabaritos oficiais foram preenchidos antes de ir para resultados
+    if (activeTab === 'answer-key') {
+      // Aqui validamos se todos os cadernos têm gabarito completo
+      const isComplete = await checkAnswerKeyCompleteness();
+      if (!isComplete) {
+        toast.error('Por favor, preencha o gabarito oficial de todos os cadernos antes de prosseguir.');
+        return;
+      }
+    }
     setActiveTab('answer-key');
+  };
+
+  const checkAnswerKeyCompleteness = async (): Promise<boolean> => {
+    if (!createdConcursoId) return false;
+    
+    try {
+      // Buscar dados completos do concurso
+      const { data: concursoData, error: concursoError } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('id', createdConcursoId)
+        .single();
+      
+      if (concursoError || !concursoData) {
+        toast.error('Erro ao buscar dados do concurso');
+        return false;
+      }
+      
+      // Buscar cadernos
+      const { data: booklets } = await supabase
+        .from('exam_booklets')
+        .select('*')
+        .eq('concurso_id', createdConcursoId);
+      
+      if (!booklets || booklets.length === 0) {
+        toast.error('Nenhum caderno configurado');
+        return false;
+      }
+      
+      // Buscar gabarito oficial
+      const { data: answerKey } = await supabase
+        .from('official_answer_weights')
+        .select('consolidated_answer_data')
+        .eq('concurso_id', createdConcursoId)
+        .maybeSingle();
+      
+      if (!answerKey?.consolidated_answer_data?.booklets) {
+        toast.error('Gabarito oficial não encontrado');
+        return false;
+      }
+      
+      const totalQuestions = getTotalQuestions(concursoData);
+      
+      // Verificar se todos os cadernos têm gabarito completo
+      for (const booklet of booklets) {
+        const bookletAnswers = answerKey.consolidated_answer_data.booklets[booklet.id];
+        if (!bookletAnswers?.answers) {
+          toast.error(`Caderno "${booklet.name}" não possui gabarito oficial`);
+          return false;
+        }
+        
+        const answerCount = Object.keys(bookletAnswers.answers).length;
+        if (answerCount < totalQuestions) {
+          toast.error(`Caderno "${booklet.name}" possui apenas ${answerCount} de ${totalQuestions} questões`);
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao verificar gabaritos:', error);
+      toast.error('Erro ao verificar gabaritos oficiais');
+      return false;
+    }
   };
   const handleGoToResults = () => {
     if (createdConcursoId) {

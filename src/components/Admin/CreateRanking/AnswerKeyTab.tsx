@@ -93,5 +93,13 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
             Ver Resultados do Ranking
           </Button>
         </div>}
+      
+      {/* Alerta quando não estiver completo */}
+      {!completionStatus?.allComplete && onGoToResults && <Alert className="border-amber-200 bg-amber-50 mt-6">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <strong>Atenção:</strong> Você precisa preencher o gabarito oficial de TODOS os cadernos antes de visualizar os resultados do ranking.
+          </AlertDescription>
+        </Alert>}
     </div>;
 };

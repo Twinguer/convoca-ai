@@ -46,7 +46,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     answers,
     handleAnswerChange,
     handleClearAnswer,
-    setAnswers
+    setAnswers,
+    clearAllAnswers
   } = useAnswerManagement();
 
   // Detect if we're using hierarchical structure
@@ -201,6 +202,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setSavedSuccess,
     handleAnswerChange,
     handleClearAnswer,
+    clearAllAnswers,
     getTotalQuestions: getTotalQuestionsFunc,
     getOptionsForQuestion,
     createAnswerMatrix,

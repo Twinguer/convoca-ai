@@ -6,6 +6,7 @@ interface UseAnswerManagementResult {
   setAnswers: React.Dispatch<React.SetStateAction<{ [key: number]: string }>>;
   handleAnswerChange: (questionNumber: number, answer: string) => void;
   handleClearAnswer: (questionNumber: number) => void;
+  clearAllAnswers: () => void;
 }
 
 export const useAnswerManagement = (): UseAnswerManagementResult => {
@@ -33,10 +34,16 @@ export const useAnswerManagement = (): UseAnswerManagementResult => {
     });
   };
 
+  const clearAllAnswers = () => {
+    console.log(`[useAnswerManagement] Clearing all answers`);
+    setAnswers({});
+  };
+
   return {
     answers,
     setAnswers,
     handleAnswerChange,
-    handleClearAnswer
+    handleClearAnswer,
+    clearAllAnswers
   };
 };
