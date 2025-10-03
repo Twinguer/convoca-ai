@@ -29,62 +29,72 @@ export const ConfirmationEmail = ({
 }: ConfirmationEmailProps) => (
   <Html>
     <Head />
-    <Preview>Confirme seu cadastro no Convoca Aí</Preview>
+    <Preview>Confirme seu cadastro no Convoca Aí - Rankings de Concursos</Preview>
     <Body style={main}>
       <Container style={container}>
+        {/* Header com gradiente verde */}
         <Section style={header}>
-          <Heading style={h1}>Convoca Aí</Heading>
-          <Text style={tagline}>Sua classificação em rankings de concursos</Text>
+          <Heading style={h1}>
+            <span style={logoIcon}>✓</span> Convoca Aí
+          </Heading>
+          <Text style={tagline}>Rankings de Concursos Públicos</Text>
         </Section>
         
-        <Hr style={hr} />
-        
-        <Section style={content}>
-          <Heading style={h2}>Bem-vindo ao Convoca Aí! 🎉</Heading>
+        {/* Card de conteúdo principal */}
+        <Section style={contentCard}>
+          <Heading style={h2}>Bem-vindo! 🎉</Heading>
           
           <Text style={text}>
-            Estamos muito felizes por você ter se cadastrado na nossa plataforma!
+            Estamos muito felizes em ter você conosco! O <strong>Convoca Aí</strong> é a plataforma perfeita para acompanhar sua classificação em rankings de concursos.
           </Text>
+          
+          <Section style={featureBox}>
+            <Text style={featureText}>
+              ✓ Crie e participe de rankings<br />
+              ✓ Compare seu desempenho<br />
+              ✓ Acompanhe sua evolução
+            </Text>
+          </Section>
           
           <Text style={text}>
-            Para começar a usar o Convoca Aí e participar de rankings de concursos, 
-            você precisa confirmar seu e-mail clicando no botão abaixo:
+            Para ativar sua conta e começar a usar todas as funcionalidades, confirme seu e-mail:
           </Text>
           
+          {/* Botão de confirmação */}
           <Section style={buttonContainer}>
             <Link
               href={`${supabase_url}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`}
               target="_blank"
               style={button}
             >
-              Confirmar meu e-mail
+              Confirmar meu e-mail ✓
             </Link>
           </Section>
+          
+          <Hr style={divider} />
           
           <Text style={textMuted}>
             Ou copie e cole este código de confirmação:
           </Text>
           <code style={code}>{token}</code>
           
-          <Text style={textMuted}>
-            Se você não solicitou este cadastro, pode ignorar este e-mail com segurança.
+          <Text style={disclaimerText}>
+            Se você não criou uma conta no Convoca Aí, ignore este e-mail.
           </Text>
         </Section>
         
-        <Hr style={hr} />
-        
+        {/* Footer */}
         <Section style={footer}>
           <Text style={footerText}>
-            <Link
-              href="https://www.convocai.com.br"
-              target="_blank"
-              style={footerLink}
-            >
+            <Link href="https://www.convocai.com.br" target="_blank" style={footerLink}>
               www.convocai.com.br
             </Link>
           </Text>
-          <Text style={footerText}>
-            Convoca Aí - Rankings de concursos públicos
+          <Text style={footerTextSmall}>
+            Convoca Aí - Sua classificação em rankings de concursos
+          </Text>
+          <Text style={footerTextSmall}>
+            © 2025 Convoca Aí. Todos os direitos reservados.
           </Text>
         </Section>
       </Container>
@@ -95,9 +105,9 @@ export const ConfirmationEmail = ({
 export default ConfirmationEmail
 
 const main = {
-  backgroundColor: '#f6f9fc',
+  backgroundColor: 'hsl(152, 81%, 96%)',
   fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-  padding: '20px 0',
+  padding: '40px 20px',
 }
 
 const container = {
@@ -105,103 +115,159 @@ const container = {
   margin: '0 auto',
   padding: '0',
   maxWidth: '600px',
-  borderRadius: '8px',
+  borderRadius: '12px',
   overflow: 'hidden',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  boxShadow: '0 10px 30px rgba(15, 118, 110, 0.15)',
 }
 
 const header = {
-  backgroundColor: 'hsl(160, 84%, 39%)',
-  padding: '40px 40px 30px',
+  background: 'linear-gradient(135deg, hsl(160, 84%, 39%) 0%, hsl(161, 94%, 30%) 100%)',
+  padding: '48px 40px 40px',
   textAlign: 'center' as const,
+  position: 'relative' as const,
+}
+
+const logoIcon = {
+  display: 'inline-block',
+  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  borderRadius: '50%',
+  width: '40px',
+  height: '40px',
+  lineHeight: '40px',
+  marginRight: '12px',
+  fontSize: '24px',
+  verticalAlign: 'middle',
 }
 
 const h1 = {
   color: '#ffffff',
-  fontSize: '32px',
+  fontSize: '36px',
   fontWeight: '700',
   margin: '0 0 8px',
   lineHeight: '1.2',
+  textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
 }
 
 const tagline = {
-  color: 'rgba(255, 255, 255, 0.9)',
+  color: 'rgba(255, 255, 255, 0.95)',
   fontSize: '16px',
   margin: '0',
-  fontWeight: '400',
+  fontWeight: '500',
+  letterSpacing: '0.5px',
 }
 
-const content = {
-  padding: '40px',
+const contentCard = {
+  padding: '48px 40px',
+  backgroundColor: '#ffffff',
 }
 
 const h2 = {
   color: 'hsl(160, 84%, 39%)',
-  fontSize: '24px',
-  fontWeight: '600',
+  fontSize: '28px',
+  fontWeight: '700',
   margin: '0 0 24px',
+  textAlign: 'center' as const,
 }
 
 const text = {
-  color: '#333333',
+  color: 'hsl(222.2, 84%, 4.9%)',
   fontSize: '16px',
-  lineHeight: '1.6',
-  margin: '0 0 16px',
+  lineHeight: '1.8',
+  margin: '0 0 20px',
+}
+
+const featureBox = {
+  backgroundColor: 'hsl(152, 81%, 96%)',
+  borderLeft: '4px solid hsl(160, 84%, 39%)',
+  padding: '24px 28px',
+  margin: '24px 0',
+  borderRadius: '8px',
+}
+
+const featureText = {
+  color: 'hsl(166, 84%, 21%)',
+  fontSize: '15px',
+  lineHeight: '2',
+  margin: '0',
+  fontWeight: '500',
 }
 
 const textMuted = {
-  color: '#666666',
+  color: 'hsl(215.4, 16.3%, 46.9%)',
   fontSize: '14px',
   lineHeight: '1.6',
   margin: '24px 0 12px',
+  textAlign: 'center' as const,
 }
 
 const buttonContainer = {
   textAlign: 'center' as const,
-  margin: '32px 0',
+  margin: '36px 0',
 }
 
 const button = {
-  backgroundColor: 'hsl(160, 84%, 39%)',
+  background: 'linear-gradient(135deg, hsl(160, 84%, 39%) 0%, hsl(161, 94%, 30%) 100%)',
   color: '#ffffff',
-  fontSize: '16px',
+  fontSize: '18px',
   fontWeight: '600',
   textDecoration: 'none',
   textAlign: 'center' as const,
   display: 'inline-block',
-  padding: '14px 32px',
-  borderRadius: '6px',
+  padding: '16px 48px',
+  borderRadius: '8px',
+  boxShadow: '0 4px 12px rgba(15, 118, 110, 0.3)',
+  transition: 'transform 0.2s ease',
 }
 
 const code = {
   display: 'inline-block',
-  padding: '16px 24px',
+  padding: '20px 24px',
   width: 'calc(100% - 48px)',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '6px',
-  border: '1px solid #e0e0e0',
-  color: '#333',
-  fontSize: '18px',
-  fontFamily: 'monospace',
+  backgroundColor: 'hsl(210, 40%, 98%)',
+  borderRadius: '8px',
+  border: '2px dashed hsl(160, 84%, 39%)',
+  color: 'hsl(160, 84%, 39%)',
+  fontSize: '20px',
+  fontFamily: 'Monaco, Consolas, monospace',
   textAlign: 'center' as const,
-  letterSpacing: '2px',
+  letterSpacing: '3px',
+  fontWeight: '700',
+  margin: '0 auto',
 }
 
-const hr = {
+const divider = {
   border: 'none',
-  borderTop: '1px solid #e0e0e0',
-  margin: '0',
+  borderTop: '1px solid hsl(214.3, 31.8%, 91.4%)',
+  margin: '32px 0',
+}
+
+const disclaimerText = {
+  color: 'hsl(215.4, 16.3%, 46.9%)',
+  fontSize: '13px',
+  lineHeight: '1.5',
+  margin: '32px 0 0',
+  textAlign: 'center' as const,
+  fontStyle: 'italic',
 }
 
 const footer = {
-  backgroundColor: '#f6f9fc',
-  padding: '24px 40px',
+  backgroundColor: 'hsl(152, 81%, 96%)',
+  padding: '32px 40px',
   textAlign: 'center' as const,
+  borderTop: '1px solid hsl(214.3, 31.8%, 91.4%)',
 }
 
 const footerText = {
-  color: '#666666',
-  fontSize: '14px',
+  color: 'hsl(166, 84%, 21%)',
+  fontSize: '15px',
+  lineHeight: '1.8',
+  margin: '8px 0',
+  fontWeight: '600',
+}
+
+const footerTextSmall = {
+  color: 'hsl(215.4, 16.3%, 46.9%)',
+  fontSize: '13px',
   lineHeight: '1.6',
   margin: '4px 0',
 }
@@ -209,5 +275,7 @@ const footerText = {
 const footerLink = {
   color: 'hsl(160, 84%, 39%)',
   textDecoration: 'none',
-  fontWeight: '500',
+  fontWeight: '600',
+  borderBottom: '2px solid hsl(160, 84%, 39%)',
+  paddingBottom: '2px',
 }
