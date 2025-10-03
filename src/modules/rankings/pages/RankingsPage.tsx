@@ -158,48 +158,47 @@ const RankingsPage = () => {
         
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filteredConcursos.map(concurso => <Card key={concurso.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg line-clamp-2 mb-2">
-                        {concurso.titulo}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary">{concurso.orgao}</Badge>
-                        <Badge variant="outline">{concurso.banca}</Badge>
+            {filteredConcursos.map((concurso) => (
+              <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+                <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg line-clamp-2 mb-2">
+                          {concurso.titulo}
+                        </CardTitle>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary">{concurso.orgao}</Badge>
+                          <Badge variant="outline">{concurso.banca}</Badge>
+                        </div>
+                      </div>
+                      <Badge variant={concurso.status === 'Em andamento' ? 'default' : 'secondary'}>
+                        {concurso.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Vagas:</span>
+                        <span className="font-medium">{concurso.vagas || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Participantes:</span>
+                        <span className="font-medium flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {concurso.participant_count || 0}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 pt-2 text-sm font-medium text-primary">
+                        <Trophy className="h-4 w-4" />
+                        Ver Ranking
                       </div>
                     </div>
-                    <Badge variant={concurso.status === 'Em andamento' ? 'default' : 'secondary'}>
-                      {concurso.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Vagas:</span>
-                      <span className="font-medium">{concurso.vagas || 'N/A'}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Participantes:</span>
-                      <span className="font-medium flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {concurso.participant_count || 0}
-                      </span>
-                    </div>
-                    
-                     <div className="flex gap-2 pt-3">
-                      <Button size="sm" variant="outline" className="flex-1 border-0" asChild>
-                        <Link to={`/concurso/${concurso.id}/resultados`}>
-                          <Trophy className="h-4 w-4 mr-1" />
-                          Ver Ranking
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>)}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
           
           {filteredConcursos.length === 0 && <div className="text-center py-12">
@@ -216,61 +215,70 @@ const RankingsPage = () => {
 
         <TabsContent value="popular" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {topConcursos.map((concurso, index) => <Card key={concurso.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {index === 0 && <Medal className="h-5 w-5 text-yellow-500" />}
-                      {index === 1 && <Medal className="h-5 w-5 text-gray-400" />}
-                      {index === 2 && <Medal className="h-5 w-5 text-orange-500" />}
-                      <span className="font-semibold">#{index + 1}</span>
-                    </div>
-                    <Badge variant="default">{concurso.participant_count} participantes</Badge>
-                  </div>
-                  <CardTitle className="text-lg line-clamp-2">{concurso.titulo}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{concurso.orgao}</Badge>
-                    <Badge variant="outline">{concurso.banca}</Badge>
-                  </div>
-                </CardHeader>
-                 <CardContent>
-                   <div className="flex gap-2">
-                     <Button size="sm" variant="outline" className="flex-1 border-0" asChild>
-                       <Link to={`/concurso/${concurso.id}/resultados`}>Ver Ranking</Link>
-                     </Button>
-                   </div>
-                 </CardContent>
-              </Card>)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="recent" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <Card key={concurso.id} className="hover:shadow-lg transition-shadow">
+            {topConcursos.map((concurso, index) => (
+              <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+                <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg line-clamp-2 flex-1">{concurso.titulo}</CardTitle>
-                      <Badge variant="secondary" className="ml-2">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        Novo
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {index === 0 && <Medal className="h-5 w-5 text-yellow-500" />}
+                        {index === 1 && <Medal className="h-5 w-5 text-gray-400" />}
+                        {index === 2 && <Medal className="h-5 w-5 text-orange-500" />}
+                        <span className="font-semibold">#{index + 1}</span>
+                      </div>
+                      <Badge variant="default">{concurso.participant_count} participantes</Badge>
                     </div>
+                    <CardTitle className="text-lg line-clamp-2">{concurso.titulo}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{concurso.orgao}</Badge>
                       <Badge variant="outline">{concurso.banca}</Badge>
                     </div>
                   </CardHeader>
-                   <CardContent>
-                     <p className="text-sm text-muted-foreground mb-4">
-                       Publicado em {concurso.data_publicacao ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR') : 'Data não informada'}
-                     </p>
-                     <div className="flex gap-2">
-                       <Button size="sm" variant="outline" className="flex-1 border-0" asChild>
-                         <Link to={`/concurso/${concurso.id}/resultados`}>Ver Ranking</Link>
-                       </Button>
-                     </div>
-                   </CardContent>
-                </Card>)}
+                  <CardContent>
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                      <Trophy className="h-4 w-4" />
+                      Ver Ranking
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="recent" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {concursos
+              .sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime())
+              .slice(0, 6)
+              .map((concurso) => (
+                <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+                  <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg line-clamp-2 flex-1">{concurso.titulo}</CardTitle>
+                        <Badge variant="secondary" className="ml-2">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          Novo
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{concurso.orgao}</Badge>
+                        <Badge variant="outline">{concurso.banca}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Publicado em {concurso.data_publicacao ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR') : 'Data não informada'}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <Trophy className="h-4 w-4" />
+                        Ver Ranking
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
           </div>
         </TabsContent>
       </Tabs>
