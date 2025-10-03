@@ -170,9 +170,7 @@ const RankingsPage = () => {
                         <Badge variant="outline">{concurso.banca}</Badge>
                       </div>
                     </div>
-                    <Badge variant={concurso.status === 'Em andamento' ? 'default' : 'secondary'}>
-                      {concurso.status}
-                    </Badge>
+                    
                   </div>
                 </CardHeader>
                 <CardContent>
