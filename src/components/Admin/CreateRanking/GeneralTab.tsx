@@ -178,33 +178,46 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     return true;
   };
 
-  const validateBooklets = () => {
+  const validateBooklets = (): boolean => {
     const currentBooklets = bookletsRef.current;
+    
+    // Validar se há pelo menos 1 caderno
     if (currentBooklets.length === 0) {
-      return "Adicione pelo menos um caderno de prova";
+      toast({
+        title: "Cadernos obrigatórios",
+        description: "É necessário criar ao menos 1 caderno de prova antes de preencher o gabarito",
+        variant: "destructive"
+      });
+      return false;
     }
 
     const names = currentBooklets.map(b => b.name.trim()).filter(n => n);
     const uniqueNames = new Set(names);
     
     if (names.length !== currentBooklets.length) {
-      return "Todos os cadernos devem ter um nome preenchido";
-    }
-    if (names.length !== uniqueNames.size) {
-      return "Nomes dos cadernos devem ser únicos";
+      toast({
+        title: "Erro nos cadernos",
+        description: "Todos os cadernos devem ter um nome preenchido",
+        variant: "destructive"
+      });
+      return false;
     }
     
-    return null;
+    if (names.length !== uniqueNames.size) {
+      toast({
+        title: "Erro nos cadernos",
+        description: "Nomes dos cadernos devem ser únicos",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
   };
 
   const saveBooklets = async (concursoId: string) => {
-    const validationError = validateBooklets();
-    if (validationError) {
-      toast({
-        title: "Erro nos cadernos",
-        description: validationError,
-        variant: "destructive"
-      });
+    // validateBooklets já mostra o toast internamente
+    if (!validateBooklets()) {
       return false;
     }
 
@@ -276,6 +289,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const handleFillAnswerKey = async () => {
     if (!validateBeforeSave()) return;
+    
+    // Validar se há cadernos antes de prosseguir
+    if (!validateBooklets()) return;
 
     setIsSavingAll(true);
     

@@ -15,45 +15,42 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
   return <Card className="mb-6">
       <CardContent className="pt-6">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold">Pontuação Mínima da Prova</h3>
-          
-          
-          
+          <h3 className="text-lg font-semibold mb-4">Pontuação Mínima da Prova</h3>
           
           <FormField control={form.control} name="has_minimum_score" render={({
           field
         }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mb-4">
                 <div className="space-y-0.5">
                   <FormLabel>Habilitar pontuação mínima</FormLabel>
-                  
+                  <FormDescription className="text-xs">
+                    Ative para definir uma pontuação mínima necessária na prova
+                  </FormDescription>
                 </div>
                 <FormControl>
                   <Switch checked={field.value} onCheckedChange={field.onChange} />
                 </FormControl>
               </FormItem>} />
           
-          <FormField control={form.control} name="total_minimum_score" render={({
-          field
-        }) => <FormItem>
-                <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" min="0" {...field} value={field.value || 0} onChange={e => {
-              const value = parseFloat(e.target.value) || 0;
-              field.onChange(value);
-              // Automaticamente habilitar minimum_score se o valor for maior que 0
-              if (value > 0 && !form.getValues().has_minimum_score) {
-                form.setValue('has_minimum_score', true);
-              } else if (value === 0 && form.getValues().has_minimum_score) {
-                form.setValue('has_minimum_score', false);
-              }
-            }} className="w-full md:w-1/3" disabled={!form.getValues().has_minimum_score} />
-                </FormControl>
-                
-              </FormItem>} />
-          
-          <Separator className="my-4" />
-          
-          
+          {form.watch('has_minimum_score') && (
+            <>
+              <FormField control={form.control} name="total_minimum_score" render={({
+              field
+            }) => <FormItem>
+                    <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.01" min="0" {...field} value={field.value || 0} onChange={e => {
+                  const value = parseFloat(e.target.value) || 0;
+                  field.onChange(value);
+                }} className="w-full md:w-1/3" />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Insira o valor mínimo de pontos que o candidato precisa obter
+                    </FormDescription>
+                  </FormItem>} />
+              
+              <Separator className="my-4" />
+            </>
+          )}
         </div>
       </CardContent>
     </Card>;
