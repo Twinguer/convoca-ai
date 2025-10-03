@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 
-const ConfirmacaoSucesso: React.FC = () => {
+export const ConfirmacaoSucesso: React.FC = () => {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(10);
 
