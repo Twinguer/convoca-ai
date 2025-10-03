@@ -60,10 +60,10 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/comunidade">
+                <Link to="/pre-classificacao">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Comunidade
+                     <Trophy className="mr-2 h-4 w-4 text-primary" />
+                    Ranking
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -81,16 +81,16 @@ const Menu = () => {
                 <Link to="/estatisticas">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     <TrendingUp className="mr-2 h-4 w-4" />
-                    Estatísticas
+                    Estatistica
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/pre-classificacao">
+                <Link to="/comunidade">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                     <Trophy className="mr-2 h-4 w-4 text-primary" />
-                    Rankings
+                    <Users className="mr-2 h-4 w-4" />
+                    Comunidade
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -151,9 +151,9 @@ const Menu = () => {
                   <Home className="mr-2 h-4 w-4" />
                   Home
                 </Link>
-                <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
-                  <Users className="mr-2 h-4 w-4" />
-                  Comunidade
+                <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
+                  <Trophy className="mr-2 h-4 w-4 text-primary" />
+                  Ranking
                 </Link>
                 <Link to="/estudos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estudos') ? "text-primary" : "text-foreground/70")}>
                   <BookOpen className="mr-2 h-4 w-4" />
@@ -161,11 +161,11 @@ const Menu = () => {
                 </Link>
                 <Link to="/estatisticas" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/estatisticas') ? "text-primary" : "text-foreground/70")}>
                   <TrendingUp className="mr-2 h-4 w-4" />
-                  Estatísticas
+                  Estatistica
                 </Link>
-                <Link to="/pre-classificacao" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/pre-classificacao') ? "text-primary" : "text-foreground/70")}>
-                  <Trophy className="mr-2 h-4 w-4 text-primary" />
-                  Rankings
+                <Link to="/comunidade" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/comunidade') ? "text-primary" : "text-foreground/70")}>
+                  <Users className="mr-2 h-4 w-4" />
+                  Comunidade
                 </Link>
                 <Link to="/planos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/planos') ? "text-primary" : "text-foreground/70")}>
                   <CreditCard className="mr-2 h-4 w-4" />
