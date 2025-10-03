@@ -13,7 +13,7 @@ export const ConfirmacaoSucesso: React.FC = () => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigate('/');
+          navigate('/auth');
           return 0;
         }
         return prev - 1;
@@ -22,6 +22,10 @@ export const ConfirmacaoSucesso: React.FC = () => {
 
     return () => clearInterval(timer);
   }, [navigate]);
+
+  const handleGoToLogin = () => {
+    navigate('/auth');
+  };
 
   const handleGoToSite = () => {
     navigate('/');
@@ -48,37 +52,60 @@ export const ConfirmacaoSucesso: React.FC = () => {
         </CardHeader>
         
         <CardContent className="space-y-6 text-center">
-          <div className="space-y-3">
-            <p className="text-foreground">
-              Bem-vindo ao <span className="font-bold text-primary">Convoca Aí</span>!
+          <div className="space-y-4">
+            <p className="text-foreground text-lg">
+              Bem-vindo ao <span className="font-bold text-primary">Convoca Aí</span>! 🎉
             </p>
-            <p className="text-sm text-muted-foreground">
-              Agora você já pode participar de rankings de concursos, 
-              comparar suas notas com outros candidatos e acompanhar 
-              sua classificação em tempo real.
-            </p>
+            
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 border-l-4 border-primary">
+              <h3 className="font-semibold text-base mb-3 text-primary">
+                Agora você pode:
+              </h3>
+              <div className="space-y-2 text-sm text-left">
+                <p className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>Criar e participar de rankings</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>Comparar seu desempenho</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span>Acompanhar sua evolução</span>
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
             <p className="text-sm text-muted-foreground">
-              Redirecionando automaticamente em{' '}
-              <span className="font-bold text-primary text-lg">{countdown}</span>{' '}
-              segundos...
+              Redirecionando para o login em{' '}
+              <span className="font-bold text-primary text-2xl">{countdown}</span>{' '}
+              segundos
             </p>
           </div>
         </CardContent>
         
         <CardFooter className="flex flex-col gap-3 pt-6">
           <Button 
-            onClick={handleGoToSite}
+            onClick={handleGoToLogin}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 text-lg group"
           >
-            Ir para o site
+            Fazer Login Agora
             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
           
+          <Button
+            onClick={handleGoToSite}
+            variant="outline"
+            className="w-full py-6"
+          >
+            Voltar para a Home
+          </Button>
+          
           <p className="text-xs text-center text-muted-foreground">
-            Já pode fazer login e começar a usar todas as funcionalidades!
+            Sua conta está ativa e pronta para uso!
           </p>
         </CardFooter>
       </Card>
