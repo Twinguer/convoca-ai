@@ -136,12 +136,12 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
               </div>
               
               <div className="flex items-center gap-2 self-end">
-                <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.id}/resultados`)}>
+                <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={() => navigate(`/concurso/${ranking.id}/resultados`)}>
                   <Trophy className="h-4 w-4" />
                   <span>Ver Ranking</span>
                 </Button>
                 
-                <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/criar-ranking?edit=${ranking.id}`)}>
+                <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={() => navigate(`/criar-ranking?edit=${ranking.id}`)}>
                   <PencilLine className="h-4 w-4" />
                   <span>Editar</span>
                 </Button>

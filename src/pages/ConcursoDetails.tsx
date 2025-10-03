@@ -145,7 +145,7 @@ const ConcursoDetails = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="outline" asChild>
+            <Button variant="outline" className="border-0" asChild>
               <Link to={`/concurso/${id}/resultados`} className="flex items-center">
                 <ArrowRight className="mr-2 h-4 w-4" />
                 Ver Ranking

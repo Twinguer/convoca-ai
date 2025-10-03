@@ -190,7 +190,7 @@ const RankingsPage = () => {
                     </div>
                     
                      <div className="flex gap-2 pt-3">
-                      <Button size="sm" variant="outline" className="flex-1" asChild>
+                      <Button size="sm" variant="outline" className="flex-1 border-0" asChild>
                         <Link to={`/concurso/${concurso.id}/resultados`}>
                           <Trophy className="h-4 w-4 mr-1" />
                           Ver Ranking
@@ -235,7 +235,7 @@ const RankingsPage = () => {
                 </CardHeader>
                  <CardContent>
                    <div className="flex gap-2">
-                     <Button size="sm" variant="outline" className="flex-1" asChild>
+                     <Button size="sm" variant="outline" className="flex-1 border-0" asChild>
                        <Link to={`/concurso/${concurso.id}/resultados`}>Ver Ranking</Link>
                      </Button>
                    </div>
@@ -265,7 +265,7 @@ const RankingsPage = () => {
                        Publicado em {concurso.data_publicacao ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR') : 'Data não informada'}
                      </p>
                      <div className="flex gap-2">
-                       <Button size="sm" variant="outline" className="flex-1" asChild>
+                       <Button size="sm" variant="outline" className="flex-1 border-0" asChild>
                          <Link to={`/concurso/${concurso.id}/resultados`}>Ver Ranking</Link>
                        </Button>
                      </div>
