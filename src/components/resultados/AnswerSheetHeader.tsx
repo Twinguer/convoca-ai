@@ -28,7 +28,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
         
         
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           {concurso.has_basic_knowledge && <div className="flex items-start">
               <div>
                 <p className="font-medium flex items-center">
