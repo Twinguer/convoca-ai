@@ -188,12 +188,7 @@ const RankingsPage = () => {
                         {concurso.participant_count || 0}
                       </span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Publicado:</span>
-                      <span className="font-medium">
-                        {concurso.data_publicacao ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR') : 'N/A'}
-                      </span>
-                    </div>
+                    
                      <div className="flex gap-2 pt-3">
                       <Button size="sm" variant="outline" className="flex-1" asChild>
                         <Link to={`/concurso/${concurso.id}/resultados`}>
