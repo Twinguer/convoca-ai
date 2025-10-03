@@ -9,6 +9,7 @@ import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle }
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
+import Footer from '@/components/Footer';
 const StatisticsPage = () => {
   const {
     statistics,
@@ -233,6 +234,7 @@ const StatisticsPage = () => {
 
       {/* Desempenho por Disciplina */}
       {Object.keys(statistics.subjectStats).length > 0}
+      <Footer />
     </div>;
 };
 export default StatisticsPage;

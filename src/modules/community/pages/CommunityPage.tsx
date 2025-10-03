@@ -13,6 +13,7 @@ import { CommunityErrorState } from '@/components/community/CommunityErrorState'
 import { CommunityEmptyState } from '@/components/community/CommunityEmptyState';
 import { UserGrid } from '@/components/community/UserGrid';
 import { CommunitySectionHeader } from '@/components/community/CommunitySectionHeader';
+import Footer from '@/components/Footer';
 const CommunityPage = () => {
   const {
     user
@@ -59,6 +60,7 @@ const CommunityPage = () => {
         <CommunitySectionHeader title="👥 Membros da Comunidade" description="Usuários online aparecem no topo" icon={<Users className="h-5 w-5" />} />
         {sortedUsers.length > 0 ? <UserGrid users={sortedUsers} onClick={handleUserClick} /> : <CommunityEmptyState />}
       </div>
+      <Footer />
     </div>;
 };
 export default CommunityPage;

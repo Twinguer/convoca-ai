@@ -11,6 +11,7 @@ import { Label } from '../components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
 import { Badge } from '../components/ui/badge';
 import { useToast } from '../hooks/use-toast';
+import Footer from '../components/Footer';
 
 const Home: React.FC = () => {
   const { toast } = useToast();
@@ -198,6 +199,7 @@ const Home: React.FC = () => {
           ))}
         </div>
       )}
+      <Footer />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { supabase } from '@/integrations/supabase/client';
+import Footer from '@/components/Footer';
 
 interface StudyCycle {
   id: string;
@@ -273,6 +274,7 @@ const StudyDashboard = () => {
           </CardContent>
         </Card>
       )}
+      <Footer />
     </div>
   );
 };

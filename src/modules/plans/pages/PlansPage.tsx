@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Crown, Star, Zap, Users, BookOpen, BarChart3, Trophy, CreditCard } from 'lucide-react';
+import Footer from '@/components/Footer';
 
 const PlansPage = () => {
   const plans = [
@@ -282,6 +283,7 @@ const PlansPage = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
