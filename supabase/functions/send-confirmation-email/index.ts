@@ -33,7 +33,9 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirect_to}`
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://convocaai.lovable.app'
+    const redirectUrl = redirect_to || siteUrl
+    const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirectUrl}`
 
     const html = await renderAsync(
       React.createElement(ConfirmationEmail, {
