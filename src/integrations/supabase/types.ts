@@ -14,115 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      answer_key: {
-        Row: {
-          concurso_id: string | null
-          correct_answer: string | null
-          id: number
-          question_number: string | null
-        }
-        Insert: {
-          concurso_id?: string | null
-          correct_answer?: string | null
-          id?: number
-          question_number?: string | null
-        }
-        Update: {
-          concurso_id?: string | null
-          correct_answer?: string | null
-          id?: number
-          question_number?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answer_key_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      answer_key_access_log: {
-        Row: {
-          access_timestamp: string | null
-          concurso_id: string | null
-          id: number
-          user_id: string | null
-        }
-        Insert: {
-          access_timestamp?: string | null
-          concurso_id?: string | null
-          id?: number
-          user_id?: string | null
-        }
-        Update: {
-          access_timestamp?: string | null
-          concurso_id?: string | null
-          id?: number
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "answer_key_access_log_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      concurso_subjects: {
-        Row: {
-          concurso_id: string
-          created_at: string | null
-          id: string
-          knowledge_section: string
-          minimum_score: number | null
-          minimum_score_unit_type: string | null
-          question_count: number
-          subject_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          concurso_id: string
-          created_at?: string | null
-          id?: string
-          knowledge_section: string
-          minimum_score?: number | null
-          minimum_score_unit_type?: string | null
-          question_count?: number
-          subject_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          concurso_id?: string
-          created_at?: string | null
-          id?: string
-          knowledge_section?: string
-          minimum_score?: number | null
-          minimum_score_unit_type?: string | null
-          question_count?: number
-          subject_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "concurso_subjects_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "concurso_subjects_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       concursos: {
         Row: {
           alternatives_count: number | null
@@ -374,21 +265,6 @@ export type Database = {
           },
         ]
       }
-      convocai: {
-        Row: {
-          created_at: string
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          id?: number
-        }
-        Relationships: []
-      }
       exam_booklets: {
         Row: {
           concurso_id: string
@@ -423,27 +299,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      job_titles: {
-        Row: {
-          created_at: string | null
-          id: string
-          title: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          title: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          title?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       migration_logs: {
         Row: {
@@ -529,47 +384,6 @@ export type Database = {
             foreignKeyName: "official_answer_weights_concurso_id_fkey"
             columns: ["concurso_id"]
             isOneToOne: true
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      question_blocks: {
-        Row: {
-          concurso_id: string
-          created_at: string
-          end_index: number
-          id: string
-          name: string
-          start_index: number
-          updated_at: string
-          weight: number
-        }
-        Insert: {
-          concurso_id: string
-          created_at?: string
-          end_index: number
-          id?: string
-          name: string
-          start_index: number
-          updated_at?: string
-          weight?: number
-        }
-        Update: {
-          concurso_id?: string
-          created_at?: string
-          end_index?: number
-          id?: string
-          name?: string
-          start_index?: number
-          updated_at?: string
-          weight?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "question_blocks_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
             referencedRelation: "concursos"
             referencedColumns: ["id"]
           },
@@ -1383,39 +1197,6 @@ export type Database = {
           },
         ]
       }
-      user_answers_backup: {
-        Row: {
-          answer: string | null
-          id: number | null
-          is_basic_knowledge: boolean | null
-          is_specific_1: boolean | null
-          is_specific_2: boolean | null
-          is_specific_3: boolean | null
-          question_number: string | null
-          user_ranking_id: string | null
-        }
-        Insert: {
-          answer?: string | null
-          id?: number | null
-          is_basic_knowledge?: boolean | null
-          is_specific_1?: boolean | null
-          is_specific_2?: boolean | null
-          is_specific_3?: boolean | null
-          question_number?: string | null
-          user_ranking_id?: string | null
-        }
-        Update: {
-          answer?: string | null
-          id?: number | null
-          is_basic_knowledge?: boolean | null
-          is_specific_1?: boolean | null
-          is_specific_2?: boolean | null
-          is_specific_3?: boolean | null
-          question_number?: string | null
-          user_ranking_id?: string | null
-        }
-        Relationships: []
-      }
       user_followers: {
         Row: {
           created_at: string
@@ -1933,10 +1714,6 @@ export type Database = {
         Args: { voucher_code_param: string }
         Returns: Json
       }
-      calculate_score_with_blocks: {
-        Args: { p_user_ranking_id: string }
-        Returns: number
-      }
       calculate_user_score_by_booklet: {
         Args: {
           p_booklet_id: string
@@ -2088,10 +1865,6 @@ export type Database = {
       }
       manage_exam_booklets: {
         Args: { p_booklets?: Json; p_concurso_id: string; p_operation: string }
-        Returns: Json
-      }
-      manage_question_blocks: {
-        Args: { p_blocks?: Json; p_concurso_id: string; p_operation: string }
         Returns: Json
       }
       migrate_existing_answers_to_jsonb: {
