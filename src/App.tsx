@@ -17,6 +17,7 @@ import ResultadosPage from "./pages/ResultadosPage";
 import NotFound from "./pages/NotFound";
 import ConcursoParticipation from "./pages/ConcursoParticipation";
 import Auth from "./pages/Auth/Auth";
+import ConfirmacaoSucesso from "./pages/Auth/ConfirmacaoSucesso";
 import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import Notifications from "./pages/Notifications";
@@ -70,6 +71,7 @@ const AppContent = () => {
                     <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/confirmacao-sucesso" element={<ConfirmacaoSucesso />} />
                     <Route path="/perfil" element={<>
                         <Menu />
                         <UserProfile />
