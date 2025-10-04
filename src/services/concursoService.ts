@@ -144,16 +144,4 @@ export const fetchUserRankings = async (userId: string) => {
   return fetchUserConcursoRankings(userId);
 };
 
-// Modified scheduleScraper to work without the edge function
-export const scheduleScraper = async () => {
-  try {
-    console.log('Scraper functionality has been deprecated');
-    // Return mock success response since the function has been removed
-    return { success: true, message: 'Scraper functionality deprecated but system continues to work' };
-  } catch (error) {
-    console.error('Error in scraper service:', error);
-    return { success: false, message: 'Error in scraper service' };
-  }
-};
-
 // More functions can be added here as needed...
