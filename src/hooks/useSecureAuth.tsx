@@ -134,7 +134,7 @@ export const useSecureAuth = () => {
           data: {
             name: sanitizedName
           },
-          emailRedirectTo: `${window.location.origin}/auth/confirmacao-sucesso`
+          emailRedirectTo: `${window.location.origin}/auth/confirmacao-sucesso#`
         }
       });
 
