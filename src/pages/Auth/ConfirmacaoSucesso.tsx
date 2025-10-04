@@ -12,8 +12,8 @@ const ConfirmacaoSucesso: React.FC = () => {
   useEffect(() => {
     if (user) {
       const timer = setTimeout(() => {
-        navigate('/');
-      }, 5000);
+        navigate('/auth');
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [user, navigate]);
@@ -68,29 +68,27 @@ const ConfirmacaoSucesso: React.FC = () => {
           <div className="space-y-4">
             <p className="text-center text-muted-foreground">
               {user 
-                ? 'Você será redirecionado automaticamente para a plataforma...'
-                : 'Pronto para começar sua jornada de estudos?'}
+                ? 'Você será redirecionado para a tela de login em instantes...'
+                : 'Faça login para começar a usar a plataforma!'}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
-                onClick={() => navigate(user ? '/' : '/auth')} 
+                onClick={() => navigate('/auth')} 
                 size="lg"
                 className="min-w-[200px]"
               >
-                {user ? 'Acessar Plataforma' : 'Fazer Login'}
+                Fazer Login
               </Button>
               
-              {!user && (
-                <Button 
-                  onClick={() => navigate('/')} 
-                  variant="outline"
-                  size="lg"
-                  className="min-w-[200px]"
-                >
-                  Conhecer Mais
-                </Button>
-              )}
+              <Button 
+                onClick={() => navigate('/')} 
+                variant="outline"
+                size="lg"
+                className="min-w-[200px]"
+              >
+                Voltar ao Início
+              </Button>
             </div>
           </div>
         </CardContent>
