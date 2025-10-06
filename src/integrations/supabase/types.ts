@@ -630,6 +630,54 @@ export type Database = {
         }
         Relationships: []
       }
+      study_cycles_v2: {
+        Row: {
+          created_at: string
+          curso_link: string | null
+          cycle_name: string
+          edital_link: string | null
+          exam_date: string
+          id: string
+          is_active: boolean
+          organ: string | null
+          position: string | null
+          schedule_data: Json
+          updated_at: string
+          user_id: string
+          video_link: string | null
+        }
+        Insert: {
+          created_at?: string
+          curso_link?: string | null
+          cycle_name: string
+          edital_link?: string | null
+          exam_date: string
+          id?: string
+          is_active?: boolean
+          organ?: string | null
+          position?: string | null
+          schedule_data?: Json
+          updated_at?: string
+          user_id: string
+          video_link?: string | null
+        }
+        Update: {
+          created_at?: string
+          curso_link?: string | null
+          cycle_name?: string
+          edital_link?: string | null
+          exam_date?: string
+          id?: string
+          is_active?: boolean
+          organ?: string | null
+          position?: string | null
+          schedule_data?: Json
+          updated_at?: string
+          user_id?: string
+          video_link?: string | null
+        }
+        Relationships: []
+      }
       study_goals: {
         Row: {
           created_at: string | null
@@ -1693,6 +1741,14 @@ export type Database = {
       }
     }
     Functions: {
+      add_schedule_session: {
+        Args: {
+          p_cycle_id: string
+          p_day_of_week: number
+          p_session_data: Json
+        }
+        Returns: Json
+      }
       admin_delete_user_from_ranking: {
         Args: { ranking_id_param: string }
         Returns: boolean
@@ -1889,6 +1945,15 @@ export type Database = {
       }
       recalculate_all_users_scores_realtime: {
         Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      record_completed_session: {
+        Args: {
+          p_cycle_id: string
+          p_day_of_week: number
+          p_session_details: Json
+          p_session_id: string
+        }
         Returns: Json
       }
       restructure_user_answers_by_concurso: {
