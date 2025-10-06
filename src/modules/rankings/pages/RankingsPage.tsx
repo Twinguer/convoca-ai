@@ -151,15 +151,14 @@ const RankingsPage = () => {
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all" className="text-slate-800">Concursos</TabsTrigger>
+          <TabsTrigger value="all" className="text-slate-50">Concursos</TabsTrigger>
           <TabsTrigger value="popular" className="text-slate-800">Populares</TabsTrigger>
           <TabsTrigger value="recent" className="text-slate-800">Recentes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filteredConcursos.map((concurso) => (
-              <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -197,8 +196,7 @@ const RankingsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
+              </Link>)}
           </div>
           
           {filteredConcursos.length === 0 && <div className="text-center py-12">
@@ -215,8 +213,7 @@ const RankingsPage = () => {
 
         <TabsContent value="popular" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {topConcursos.map((concurso, index) => (
-              <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+            {topConcursos.map((concurso, index) => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -241,18 +238,13 @@ const RankingsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
+              </Link>)}
           </div>
         </TabsContent>
 
         <TabsContent value="recent" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {concursos
-              .sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime())
-              .slice(0, 6)
-              .map((concurso) => (
-                <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
                   <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -277,8 +269,7 @@ const RankingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </Link>
-              ))}
+                </Link>)}
           </div>
         </TabsContent>
       </Tabs>
