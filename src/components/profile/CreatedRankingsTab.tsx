@@ -121,15 +121,15 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
       
       <div className="grid gap-2">
         {displayRankings?.map((ranking: any) => <Card key={ranking.id} className="overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-50 to-white p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b">
+            <div className="bg-card/80 p-4 flex flex-col sm:flex-row justify-between gap-4 items-start sm:items-center border-b border-border">
               <div>
-                <h4 className="font-bold">{ranking.titulo}</h4>
-                <p className="text-gray-500 text-sm font-bold">
+                <h4 className="font-bold text-card-foreground">{ranking.titulo}</h4>
+                <p className="text-muted-foreground text-sm font-bold">
                   {ranking.orgao} • {ranking.banca}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <Users className="h-3 w-3 text-gray-500" />
-                  <span className="text-xs text-gray-500">
+                  <Users className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
                     {participantCounts[ranking.id] || 0} participante(s)
                   </span>
                 </div>
@@ -172,7 +172,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
             </div>
           </Card>)}
         
-        {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+        {hasMoreRankings && <Button variant="ghost" onClick={() => setShowAllRankings(!showAllRankings)} className="mt-2 text-primary hover:text-primary/80 hover:bg-primary/10">
             {showAllRankings ? <>
                 <ChevronUp className="h-4 w-4 mr-2" />
                 Mostrar menos

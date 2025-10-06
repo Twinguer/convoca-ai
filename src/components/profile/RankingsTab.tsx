@@ -323,34 +323,34 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       <div className="grid gap-2">
         {displayRankings.map((ranking: any) => 
           <Card key={ranking.id || ranking.concursoId} className="overflow-hidden">
-            <div className="bg-gradient-to-r from-red-50/30 to-white p-4 flex justify-between items-center border-b">
+            <div className="bg-card/80 p-4 flex justify-between items-center border-b border-border">
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 text-base mb-1">
+                <h4 className="font-semibold text-card-foreground text-base mb-1">
                   {ranking.concursos?.titulo || ranking.concursoTitle}
                 </h4>
-                <p className="text-sm text-gray-600 flex items-center">
+                <p className="text-sm text-muted-foreground flex items-center">
                   🏆 Participando - {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} pts
                 </p>
               </div>
               
               <div className="flex flex-col items-end text-right">
-                <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} <span className="text-sm font-normal text-gray-500">pts</span>
+                <div className="text-2xl font-bold text-card-foreground mb-1">
+                  {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} <span className="text-sm font-normal text-muted-foreground">pts</span>
                 </div>
-                <div className="text-sm text-gray-600">
-                  <span className="text-gray-500 mr-1">Classificação:</span>
+                <div className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground mr-1">Classificação:</span>
                   {ranking.isEliminated ? (
-                    <span className="text-red-600 font-bold">E</span>
+                    <span className="text-destructive font-bold">E</span>
                   ) : ranking.position ? (
                     <span className="font-medium">{ranking.position}º</span>
                   ) : (
-                    <span className="text-gray-400">—</span>
+                    <span className="text-muted-foreground/50">—</span>
                   )}
                 </div>
               </div>
             </div>
             
-            <div className="p-4 bg-white flex justify-end gap-2">
+            <div className="p-4 bg-card flex justify-end gap-2">
               <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>
