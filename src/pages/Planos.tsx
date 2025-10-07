@@ -48,7 +48,7 @@ const Planos = () => {
         "Apenas 1 ciclo de estudos",
         "Máximo 1 bloco por ciclo",
         "Máximo 5 disciplinas por bloco",
-        "Apenas 1 sessão por dia da semana",
+        "Apenas 2 sessão por dia da semana",
       ],
     },
     {
