@@ -102,11 +102,9 @@ const AppContent = () => {
                         <Menu />
                         <Index />
                       </>} />
-                    <Route path="/comunidade" element={<>
+                     <Route path="/comunidade" element={<>
                           <Menu />
-                          <ProtectedRoute>
-                            <CommunityPage />
-                          </ProtectedRoute>
+                          <CommunityPage />
                         </>} />
                     <Route path="/faq" element={<>
                         <Menu />
@@ -173,17 +171,13 @@ const AppContent = () => {
                          </ProtectedRoute>
                        </>} />
                      <Route path="/pre-classificacao" element={<>
-                         <Menu />
-                         <ProtectedRoute>
-                           <RankingsPage />
-                         </ProtectedRoute>
-                       </>} />
+                          <Menu />
+                          <RankingsPage />
+                        </>} />
                      <Route path="/planos" element={<>
-                         <Menu />
-                         <ProtectedRoute>
-                           <Planos />
-                         </ProtectedRoute>
-                       </>} />
+                          <Menu />
+                          <Planos />
+                        </>} />
                     <Route path="/resultado" element={<>
                         <Menu />
                         <Resultado />

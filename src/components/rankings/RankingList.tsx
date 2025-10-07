@@ -23,9 +23,10 @@ export interface RankingItemProps {
 export interface RankingListProps {
   rankings: RankingItemProps[];
   isLoading: boolean;
+  onRankingClick?: (e: React.MouseEvent, rankingId: string) => void;
 }
 
-export const RankingItem: React.FC<RankingItemProps> = ({
+export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: React.MouseEvent, rankingId: string) => void }> = ({
   id,
   examDate,
   banca,
@@ -35,7 +36,8 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   creatorName,
   isAdminCreated,
   status,
-  localidade
+  localidade,
+  onRankingClick
 }) => {
   const getStatusColor = (status?: string) => {
     if (!status || status === 'Em andamento') {
@@ -45,7 +47,7 @@ export const RankingItem: React.FC<RankingItemProps> = ({
   };
   
   return (
-    <Link to={`/concurso/${id}/resultados`} className="block h-full">
+    <Link to={`/concurso/${id}/resultados`} className="block h-full" onClick={(e) => onRankingClick?.(e, id)}>
       <Card className="hover:shadow-lg transition-all duration-300 bg-card hover:translate-y-[-4px] h-full cursor-pointer">
         <CardContent className="p-6 h-full flex flex-col">
           <div className="space-y-3 flex-1 flex flex-col">
@@ -115,7 +117,8 @@ export const RankingItem: React.FC<RankingItemProps> = ({
 
 export const RankingList: React.FC<RankingListProps> = ({
   rankings,
-  isLoading
+  isLoading,
+  onRankingClick
 }) => {
   if (isLoading) {
     return (
@@ -148,7 +151,7 @@ export const RankingList: React.FC<RankingListProps> = ({
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
-      {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} />)}
+      {rankings.map(ranking => <RankingItem key={ranking.id} {...ranking} onRankingClick={onRankingClick} />)}
     </div>
   );
 };

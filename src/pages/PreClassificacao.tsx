@@ -14,12 +14,12 @@ const PreClassificacao = () => {
   const navigate = useNavigate();
   const { rankings, isLoading } = useRankingsData();
 
-  React.useEffect(() => {
+  const handleRankingClick = (e: React.MouseEvent, rankingId: string) => {
     if (!user) {
-      toast.error('Você precisa estar logado para ver os rankings');
-      navigate('/auth');
+      e.preventDefault();
+      navigate('/auth', { state: { from: `/concurso/${rankingId}/resultados` } });
     }
-  }, [user, navigate]);
+  };
 
   if (isLoading) {
     return (
@@ -42,7 +42,7 @@ const PreClassificacao = () => {
           </Link>
         )}
       </div>
-      <RankingList rankings={rankings} isLoading={isLoading} />
+      <RankingList rankings={rankings} isLoading={isLoading} onRankingClick={handleRankingClick} />
       <Footer />
     </div>
   );

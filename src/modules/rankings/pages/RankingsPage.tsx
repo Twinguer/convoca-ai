@@ -30,6 +30,13 @@ const RankingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('participants');
+
+  const handleRankingClick = (e: React.MouseEvent, concursoId: string) => {
+    if (!user) {
+      e.preventDefault();
+      navigate('/auth', { state: { from: `/concurso/${concursoId}/resultados` } });
+    }
+  };
   useEffect(() => {
     loadConcursos();
   }, []);
@@ -109,7 +116,7 @@ const RankingsPage = () => {
           <h1 className="text-3xl font-bold text-foreground mb-2">Rankings</h1>
           
         </div>
-        <Button onClick={() => navigate('/criar-ranking')} className="flex items-center gap-2">
+        <Button onClick={() => user ? navigate('/criar-ranking') : navigate('/auth', { state: { from: '/criar-ranking' } })} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Criar Ranking
         </Button>
@@ -158,7 +165,7 @@ const RankingsPage = () => {
         
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -205,7 +212,7 @@ const RankingsPage = () => {
               <p className="text-muted-foreground mb-4">
                 Tente ajustar os filtros ou criar um novo ranking
               </p>
-              <Button onClick={() => navigate('/criar-ranking')}>
+              <Button onClick={() => user ? navigate('/criar-ranking') : navigate('/auth', { state: { from: '/criar-ranking' } })}>
                 Criar Novo Ranking
               </Button>
             </div>}
@@ -213,7 +220,7 @@ const RankingsPage = () => {
 
         <TabsContent value="popular" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {topConcursos.map((concurso, index) => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+            {topConcursos.map((concurso, index) => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -244,7 +251,7 @@ const RankingsPage = () => {
 
         <TabsContent value="recent" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group">
+            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
                   <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                     <CardHeader>
                       <div className="flex items-start justify-between">

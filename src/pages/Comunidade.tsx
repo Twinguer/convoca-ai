@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useCommunityUsers } from '@/hooks/useCommunityUsers';
 import { usePresence } from '@/contexts/PresenceContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +20,7 @@ import { UserGrid } from '@/components/community/UserGrid';
  */
 const Comunidade: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     toast
   } = useToast();
@@ -40,8 +42,12 @@ const Comunidade: React.FC = () => {
 
   // Handle user card click - navigate to user profile
   const handleUserClick = useCallback((userId: string) => {
+    if (!user) {
+      navigate('/auth', { state: { from: `/usuario/${userId}` } });
+      return;
+    }
     navigate(`/usuario/${userId}`);
-  }, [navigate]);
+  }, [navigate, user]);
 
   // Handle refresh button click
   const handleRefresh = useCallback(async () => {
