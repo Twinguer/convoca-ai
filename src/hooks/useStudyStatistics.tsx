@@ -252,9 +252,11 @@ export const useStudyStatistics = () => {
     try {
       const { error } = await supabase
         .from('study_statistics')
-        .insert({
+        .upsert({
           user_id: user.id,
           statistics_data: defaultStats
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) {
