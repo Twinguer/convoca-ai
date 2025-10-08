@@ -8,6 +8,7 @@ import { featureFlags, logFeatureUsage, getUserFeatureFlags } from '@/config/fea
 import { scoreObjectiveAnswer, type ScoringInput, type ScoringOutput } from './scoring';
 import { supabase } from '@/integrations/supabase/client';
 import { securityMonitor } from './securityMonitor';
+import { migrationManager } from './migrationManager';
 
 export interface SecureScoringInput extends ScoringInput {
   userId?: string;
@@ -21,16 +22,26 @@ export interface SecureScoringOutput extends ScoringOutput {
 }
 
 /**
- * Calcula pontuação usando backend ou frontend baseado nas feature flags
+ * Calcula pontuação usando backend ou frontend baseado nas feature flags e migração
  */
 export const calculateSecureScore = async (
   input: SecureScoringInput
 ): Promise<SecureScoringOutput> => {
   const { userId, context, ...scoringInput } = input;
   
-  // Verificar feature flags do usuário
-  const userFlags = getUserFeatureFlags(userId);
-  const useBackend = userFlags.useBackendScoring ?? featureFlags.useBackendScoring;
+  // Verificar se usuário deve usar backend baseado na migração
+  let useBackend = false;
+  
+  if (userId) {
+    // Verificar migration manager primeiro
+    useBackend = migrationManager.shouldUseBackend(userId);
+  }
+  
+  // Fallback para feature flags se migration manager não decidir
+  if (!useBackend) {
+    const userFlags = getUserFeatureFlags(userId);
+    useBackend = userFlags.useBackendScoring ?? featureFlags.useBackendScoring;
+  }
   
   if (useBackend) {
     return await calculateBackendScore(scoringInput, userId, context);
