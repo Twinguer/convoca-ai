@@ -7,6 +7,7 @@
 import { featureFlags, logFeatureUsage, getUserFeatureFlags } from '@/config/featureFlags';
 import { scoreObjectiveAnswer, type ScoringInput, type ScoringOutput } from './scoring';
 import { supabase } from '@/integrations/supabase/client';
+import { securityMonitor } from './securityMonitor';
 
 export interface SecureScoringInput extends ScoringInput {
   userId?: string;
@@ -45,15 +46,24 @@ const calculateFrontendScore = (
   input: ScoringInput,
   context?: string
 ): SecureScoringOutput => {
+  const startTime = Date.now();
   logFeatureUsage('useBackendScoring', `frontend-${context || 'unknown'}`);
   
-  const result = scoreObjectiveAnswer(input);
-  
-  return {
-    ...result,
-    source: 'frontend',
-    timestamp: Date.now(),
-  };
+  try {
+    const result = scoreObjectiveAnswer(input);
+    
+    const duration = Date.now() - startTime;
+    securityMonitor.logPerformance('frontend_calculation', duration, 'frontend', context);
+    
+    return {
+      ...result,
+      source: 'frontend',
+      timestamp: Date.now(),
+    };
+  } catch (error) {
+    securityMonitor.logError(error as Error, `frontend-${context || 'unknown'}`);
+    throw error;
+  }
 };
 
 /**
@@ -64,35 +74,78 @@ const calculateBackendScore = async (
   userId?: string,
   context?: string
 ): Promise<SecureScoringOutput> => {
+  const startTime = Date.now();
   logFeatureUsage('useBackendScoring', `backend-${context || 'unknown'}`);
   
   try {
-    // Chamar função PostgreSQL para cálculo seguro
-    const { data, error } = await supabase.rpc('calculate_secure_score', {
-      p_question_weight: input.questionWeight,
-      p_discipline_weight: input.disciplineWeight,
-      p_is_correct: input.isCorrect,
-      p_is_nullified: input.isNullified,
-      p_is_blank: input.isBlank,
-      p_exam_type: input.examType,
-      p_wrong_answer_penalty: input.wrongAnswerPenalty,
-    });
+    // Se temos userId e concursoId, usar validação completa
+    if (userId && input.concursoId) {
+      const { data, error } = await supabase.rpc('calculate_secure_score_with_validation', {
+        p_user_id: userId,
+        p_concurso_id: input.concursoId,
+        p_question_weight: input.questionWeight,
+        p_discipline_weight: input.disciplineWeight,
+        p_is_correct: input.isCorrect,
+        p_is_nullified: input.isNullified,
+        p_is_blank: input.isBlank,
+        p_exam_type: input.examType,
+        p_wrong_answer_penalty: input.wrongAnswerPenalty,
+      });
 
-    if (error) {
-      console.error('[calculateBackendScore] Backend error:', error);
-      // Fallback para frontend em caso de erro
-      return calculateFrontendScore(input, `fallback-${context || 'unknown'}`);
+      if (error) {
+        console.error('[calculateBackendScore] Backend error:', error);
+        return calculateFrontendScore(input, `fallback-${context || 'unknown'}`);
+      }
+
+      if (!data.success) {
+        console.error('[calculateBackendScore] Validation failed:', data.error);
+        securityMonitor.logValidationFailed(input, data.validation_errors || [], context);
+        return calculateFrontendScore(input, `validation-fallback-${context || 'unknown'}`);
+      }
+
+      const scoringResult = data.scoring_result;
+      const duration = Date.now() - startTime;
+      securityMonitor.logPerformance('backend_calculation_secure', duration, 'backend', context);
+      
+      return {
+        totalDelta: scoringResult.total_delta || 0,
+        disciplineDelta: scoringResult.discipline_delta || 0,
+        weightedDisciplineDelta: scoringResult.weighted_discipline_delta || 0,
+        source: 'backend',
+        timestamp: Date.now(),
+      };
+    } else {
+      // Fallback para função básica se não temos validação completa
+      const { data, error } = await supabase.rpc('calculate_secure_score', {
+        p_question_weight: input.questionWeight,
+        p_discipline_weight: input.disciplineWeight,
+        p_is_correct: input.isCorrect,
+        p_is_nullified: input.isNullified,
+        p_is_blank: input.isBlank,
+        p_exam_type: input.examType,
+        p_wrong_answer_penalty: input.wrongAnswerPenalty,
+      });
+
+      if (error) {
+        console.error('[calculateBackendScore] Backend error:', error);
+        securityMonitor.logError(error as Error, `backend-${context || 'unknown'}`);
+        return calculateFrontendScore(input, `fallback-${context || 'unknown'}`);
+      }
+
+      const duration = Date.now() - startTime;
+      securityMonitor.logPerformance('backend_calculation_basic', duration, 'backend', context);
+
+      return {
+        totalDelta: data.total_delta || 0,
+        disciplineDelta: data.discipline_delta || 0,
+        weightedDisciplineDelta: data.weighted_discipline_delta || 0,
+        source: 'backend',
+        timestamp: Date.now(),
+      };
     }
-
-    return {
-      totalDelta: data.total_delta || 0,
-      disciplineDelta: data.discipline_delta || 0,
-      weightedDisciplineDelta: data.weighted_discipline_delta || 0,
-      source: 'backend',
-      timestamp: Date.now(),
-    };
   } catch (error) {
     console.error('[calculateBackendScore] Unexpected error:', error);
+    securityMonitor.logError(error as Error, `backend-${context || 'unknown'}`);
     // Fallback para frontend em caso de erro
     return calculateFrontendScore(input, `error-fallback-${context || 'unknown'}`);
   }
@@ -147,7 +200,8 @@ export const validateScoring = async (
   
   const comparison = compareScoringResults(frontend, backend);
   
-  if (!comparison.match && featureFlags.enableSecurityLogging) {
+  if (!comparison.match) {
+    securityMonitor.logDiscrepancy(frontend, backend, input, 'validation');
     console.warn('[validateScoring] Score mismatch detected:', {
       input,
       frontend,

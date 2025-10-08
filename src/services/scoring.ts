@@ -8,6 +8,7 @@ export interface ScoringInput {
   isCorrect: boolean;
   isNullified?: boolean;
   isBlank?: boolean;
+  concursoId?: string; // para validação de segurança
 }
 
 export interface ScoringOutput {
