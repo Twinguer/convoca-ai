@@ -727,7 +727,7 @@ const Cronograma = () => {
                     
                     {session.total_questions > 0 && <div className="text-sm p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
                         <span className="font-medium">Total de questões:</span> {session.total_correct_answers}/{session.total_questions} 
-                        <span className="ml-2 font-medium text-slate-800">
+                        <span className="ml-2 font-medium text-green-600">
                           ({(session.total_correct_answers / session.total_questions * 100).toFixed(1)}% de acertos)
                         </span>
                       </div>}
