@@ -16,6 +16,10 @@ export interface ScoringOutput {
   weightedDisciplineDelta: number; // delta para weightedDisciplineScores
 }
 
+/**
+ * @deprecated Use calculateSecureScore from secureScoring.ts instead
+ * Esta função será removida na próxima versão
+ */
 export function scoreObjectiveAnswer(input: ScoringInput): ScoringOutput {
   const questionWeight = input.questionWeight ?? 1;
   const disciplineWeight = input.disciplineWeight ?? 1;
