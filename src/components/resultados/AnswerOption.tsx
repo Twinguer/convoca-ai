@@ -29,8 +29,8 @@ export const AnswerOption: React.FC<AnswerOptionProps> = ({
         ${isSelected 
           ? 'bg-primary text-primary-foreground font-bold ring-2 ring-primary/30 ring-offset-2' 
           : disabled 
-            ? 'bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed'
-            : 'bg-background hover:bg-primary/10 text-foreground border border-border hover:border-primary/30'
+            ? 'bg-muted text-muted-foreground border border-border cursor-not-allowed'
+            : 'bg-card hover:bg-primary/10 text-foreground border border-border hover:border-primary/30'
         }
         ${disabled ? 'opacity-70 cursor-not-allowed' : 'transition-all duration-150 ease-in-out'}
       `}

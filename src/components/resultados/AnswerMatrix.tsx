@@ -32,7 +32,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   
   if (!matrix || matrix.length === 0) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-muted-foreground">
         Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.
       </div>
     );
@@ -43,14 +43,14 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   
   if (!hasQuestions) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-muted-foreground">
         Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.
       </div>
     );
   }
 
   return (
-    <div className="p-4 bg-gray-50">
+    <div className="p-4 bg-muted/30">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {matrix.map((row, rowIndex) => 
           row.map((questionNumber, colIndex) => 

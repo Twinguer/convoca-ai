@@ -40,12 +40,12 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
   
   console.log(`[QuestionCell] Question ${questionNumber} - Selected answer: ${selectedAnswer}`);
   return (
-    <div className={`border rounded-md p-3 ${isNullified ? 'bg-gray-50' : 'bg-white'}`}>
+    <div className={`border border-border rounded-md p-3 ${isNullified ? 'bg-muted/50' : 'bg-card'}`}>
       <div className="flex justify-between items-center mb-2">
-        <div className="font-medium">
+        <div className="font-medium text-foreground">
           Questão {questionNumber}
           {isNullified && (
-            <span className="ml-2 text-xs text-amber-600 font-normal bg-amber-50 px-1.5 py-0.5 rounded-full">
+            <span className="ml-2 text-xs text-amber-600 dark:text-amber-400 font-normal bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-full">
               Anulada
             </span>
           )}
@@ -80,7 +80,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
       </div>
       
       {isNullified && (
-        <div className="mt-2 text-xs text-amber-700 italic">
+        <div className="mt-2 text-xs text-amber-700 dark:text-amber-400 italic">
           Esta questão foi anulada. Você receberá a pontuação automaticamente.
         </div>
       )}
