@@ -176,7 +176,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           if ('disciplines' in block && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled && discipline.type) {
-                disciplineWeights[discipline.type] = discipline.weight || 1;
+                disciplineWeights[discipline.type] = discipline.weight ?? 1;
                 disciplineNames[discipline.type] = discipline.name || discipline.type;
                 
                 // Inicializar pontuações como zero
@@ -190,7 +190,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         // Estrutura plana (disciplinas diretamente)
         for (const discipline of concurso.disciplines) {
           if ('isEnabled' in discipline && discipline.isEnabled && discipline.type) {
-            disciplineWeights[discipline.type] = discipline.weight || 1;
+            disciplineWeights[discipline.type] = discipline.weight ?? 1;
             disciplineNames[discipline.type] = discipline.name || discipline.type;
             
             // Inicializar pontuações como zero
@@ -210,7 +210,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
       if (officialAnswer) {
         const isCorrect = officialAnswer.is_nullified === true || userAnswer.answer === officialAnswer.correct_answer;
-        const questionWeight = officialAnswer.weight || 1;
+        const questionWeight = officialAnswer.weight ?? 1;
         const sectionType = officialAnswer.section_type || 'default';
         
         // Inicializar pontuação da disciplina se ainda não existir
@@ -232,7 +232,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
                 if ('disciplines' in block && Array.isArray(block.disciplines)) {
                   for (const discipline of block.disciplines) {
                     if (discipline.type === sectionType) {
-                      disciplineWeight = discipline.weight || 1;
+                      disciplineWeight = discipline.weight ?? 1;
                       break;
                     }
                   }
@@ -242,7 +242,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
               // Procurar em estrutura plana
               for (const discipline of concurso.disciplines) {
                 if ('type' in discipline && discipline.type === sectionType) {
-                  disciplineWeight = discipline.weight || 1;
+                  disciplineWeight = discipline.weight ?? 1;
                   break;
                 }
               }
@@ -257,6 +257,40 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           weightedDisciplineScores[sectionType] += questionWeight * disciplineWeight;
           
           console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight} * weight ${disciplineWeight}`);
+        } else if (concurso.exam_type === 'Certo ou Errado') {
+          const penalty = (concurso?.wrong_answer_penalty ?? 0);
+          if (penalty > 0) {
+            let disciplineWeight = 1;
+            if (concurso.has_custom_knowledge && concurso.disciplines) {
+              const hierarchical = isHierarchicalStructure(concurso);
+              if (hierarchical) {
+                for (const block of concurso.disciplines) {
+                  if ('disciplines' in block && Array.isArray(block.disciplines)) {
+                    for (const discipline of block.disciplines) {
+                      if (discipline.type === sectionType) {
+                        disciplineWeight = discipline.weight ?? 1;
+                        break;
+                      }
+                    }
+                  }
+                }
+              } else {
+                for (const discipline of concurso.disciplines) {
+                  if ('type' in discipline && discipline.type === sectionType) {
+                    disciplineWeight = discipline.weight ?? 1;
+                    break;
+                  }
+                }
+              }
+            }
+            // Aplicar penalidade POR QUESTÃO (não por disciplina)
+            totalScore -= penalty; // Penalidade é valor absoluto, não multiplicado pelo peso da questão
+            // Mantemos disciplineScores como contagem de acertos (não decrementar em erro)
+            weightedDisciplineScores[sectionType] -= penalty * disciplineWeight; // Penalidade multiplicada apenas pelo peso da disciplina
+            
+            console.log(`[recalculateUserScore] Question ${userAnswer.question_number} wrong (${sectionType}): -${penalty} penalty`);
+          }
+          // Se penalty = 0, não faz nada (resposta errada não impacta)
         }
         
         totalWeight += questionWeight;

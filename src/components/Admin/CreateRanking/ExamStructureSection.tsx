@@ -20,6 +20,31 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Determine if we should show penalty options
   const showPenaltyOptions = form.watch('exam_type') === 'Certo ou Errado';
+  
+  // Forçar peso = 1 para todas as disciplinas quando tipo for "Certo ou Errado"
+  useEffect(() => {
+    if (form.watch('exam_type') === 'Certo ou Errado') {
+      const disciplines = form.watch('disciplines') || [];
+      const updatedDisciplines = disciplines.map((block: any) => {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          return {
+            ...block,
+            disciplines: block.disciplines.map((discipline: any) => ({
+              ...discipline,
+              weight: 1
+            }))
+          };
+        } else {
+          return {
+            ...block,
+            weight: 1
+          };
+        }
+      });
+      form.setValue('disciplines', updatedDisciplines);
+    }
+  }, [form.watch('exam_type')]);
+
   useEffect(() => {
     // Set default values if they don't exist
     // Always use custom knowledge
@@ -242,7 +267,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
             field
           }) => <FormItem>
                   <FormLabel>Tipo de Prova</FormLabel>
-                  <Select defaultValue={field.value || 'Alternativas'} onValueChange={field.onChange}>
+                  <Select value={field.value || 'Alternativas'} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o tipo" />
@@ -344,16 +369,30 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       </div>
                       <div>
                         <FormLabel>Peso</FormLabel>
-                        <Select value={String(discipline.weight || 1)} onValueChange={value => handleDisciplineChange(block.id, discipline.id, 'weight', Number(value))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o peso" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="1">1</SelectItem>
-                            <SelectItem value="2">2</SelectItem>
-                            <SelectItem value="3">3</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        {form.watch('exam_type') === 'Certo ou Errado' ? (
+                          <div className="flex items-center space-x-2">
+                            <Input 
+                              type="number" 
+                              value="1" 
+                              disabled 
+                              className="w-24 text-sm bg-muted"
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              Fixo em 1 para Certo/Errado
+                            </span>
+                          </div>
+                        ) : (
+                          <Select value={String(discipline.weight || 1)} onValueChange={value => handleDisciplineChange(block.id, discipline.id, 'weight', Number(value))}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o peso" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1</SelectItem>
+                              <SelectItem value="2">2</SelectItem>
+                              <SelectItem value="3">3</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                       <div>
                         <FormLabel>Nota mínima (valor absoluto)</FormLabel>

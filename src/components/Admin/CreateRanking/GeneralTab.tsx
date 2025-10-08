@@ -383,7 +383,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
           disabled={isSubmitting || isSavingAll}
           size="lg"
         >
-          {isSavingAll ? "Salvando..." : "Preencher Gabarito"}
+          {isSavingAll ? "Salvando..." : "Salvar"}
         </Button>
       </div>
     </div>

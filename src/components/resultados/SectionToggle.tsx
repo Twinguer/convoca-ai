@@ -94,7 +94,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   console.log('SectionToggle - selected section:', selectedSection);
 
   return (
-    <div className="bg-emerald-light/10 border-b overflow-x-auto">
+    <div className="bg-muted/30 border-b border-border overflow-x-auto">
       <div className="flex flex-nowrap min-w-full">
         {enabledDisciplines.map((discipline) => (
           <button
@@ -102,8 +102,8 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange(discipline.type)}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === discipline.type 
-                ? 'bg-white border-t-2 border-emerald-500 text-emerald-700' 
-                : 'text-emerald-600 hover:bg-emerald-light/20'}`}
+                ? 'bg-card border-t-2 border-primary text-primary' 
+                : 'text-muted-foreground hover:bg-muted/20'}`}
           >
             {discipline.name} {discipline.weight && discipline.weight > 1 ? 
               `(Peso ${discipline.weight})` : ''}
@@ -115,8 +115,8 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('discursive')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'discursive' 
-                ? 'bg-white border-t-2 border-emerald-500 text-emerald-700' 
-                : 'text-emerald-600 hover:bg-emerald-light/20'}`}
+                ? 'bg-card border-t-2 border-primary text-primary' 
+                : 'text-muted-foreground hover:bg-muted/20'}`}
           >
             Discursiva
           </button>
@@ -127,8 +127,8 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('case_study1')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study1' 
-                ? 'bg-white border-t-2 border-emerald-500 text-emerald-700' 
-                : 'text-emerald-600 hover:bg-emerald-light/20'}`}
+                ? 'bg-card border-t-2 border-primary text-primary' 
+                : 'text-muted-foreground hover:bg-muted/20'}`}
           >
             Estudo de Caso 1
           </button>
@@ -139,8 +139,8 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('case_study2')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study2' 
-                ? 'bg-white border-t-2 border-emerald-500 text-emerald-700' 
-                : 'text-emerald-600 hover:bg-emerald-light/20'}`}
+                ? 'bg-card border-t-2 border-primary text-primary' 
+                : 'text-muted-foreground hover:bg-muted/20'}`}
           >
             Estudo de Caso 2
           </button>
@@ -151,8 +151,8 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
             onClick={() => onSectionChange('case_study3')}
             className={`py-3 px-4 font-medium text-sm transition-colors whitespace-nowrap
               ${selectedSection === 'case_study3' 
-                ? 'bg-white border-t-2 border-emerald-500 text-emerald-700' 
-                : 'text-emerald-600 hover:bg-emerald-light/20'}`}
+                ? 'bg-card border-t-2 border-primary text-primary' 
+                : 'text-muted-foreground hover:bg-muted/20'}`}
           >
             Estudo de Caso 3
           </button>

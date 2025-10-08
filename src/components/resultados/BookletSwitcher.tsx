@@ -7,6 +7,7 @@ import { FileText, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { consolidatedAnswerService } from '@/services/consolidatedAnswerService';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ExamBooklet {
   id: string;
@@ -31,24 +32,39 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
 }) => {
   const [selectedBookletId, setSelectedBookletId] = useState(currentBookletId);
   const [isSwitching, setIsSwitching] = useState(false);
+  const queryClient = useQueryClient();
 
-  const handleSwitchBooklet = async () => {
-    if (!selectedBookletId || selectedBookletId === currentBookletId) {
+  // Sincronizar selectedBookletId com currentBookletId quando mudar
+  React.useEffect(() => {
+    setSelectedBookletId(currentBookletId);
+  }, [currentBookletId]);
+
+  console.log('[BookletSwitcher] Estado inicial do selectedBookletId:', selectedBookletId);
+
+  const handleSwitchBooklet = async (newBookletId: string) => {
+    if (!newBookletId) {
+      toast.warning('Selecione um caderno válido');
+      return;
+    }
+    
+    if (newBookletId === currentBookletId) {
       toast.warning('Selecione um caderno diferente do atual');
       return;
     }
 
     console.log('[BookletSwitcher] DEBUG - Iniciando troca de caderno');
     console.log('[BookletSwitcher] DEBUG - Caderno atual:', currentBookletId);
-    console.log('[BookletSwitcher] DEBUG - Novo caderno selecionado:', selectedBookletId);
+    console.log('[BookletSwitcher] DEBUG - Novo caderno selecionado:', newBookletId);
     console.log('[BookletSwitcher] DEBUG - RankingId:', rankingId);
 
     setIsSwitching(true);
     try {
-      console.log('[BookletSwitcher] Switching to booklet:', selectedBookletId);
+      console.log('[BookletSwitcher] Switching to booklet:', newBookletId);
+      console.log('[BookletSwitcher] Current booklet ID:', currentBookletId);
+      console.log('[BookletSwitcher] Ranking ID:', rankingId);
       
       // Usar o serviço consolidado para trocar caderno
-      const result = await consolidatedAnswerService.switchBooklet(rankingId, selectedBookletId);
+      const result = await consolidatedAnswerService.switchBooklet(rankingId, newBookletId);
       
       console.log('[BookletSwitcher] DEBUG - Resultado do switchBooklet:', result);
 
@@ -69,9 +85,10 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
         console.log('[BookletSwitcher] DEBUG - Respostas processadas:', answers);
 
         // Notify parent component about the change with isolated answers
-        onBookletChanged(selectedBookletId, answers);
+        onBookletChanged(newBookletId, answers);
         
-        toast.success(`Caderno alterado para ${getBookletName(selectedBookletId)} com sucesso`);
+        toast.success(`Caderno alterado para ${getBookletName(newBookletId)} com sucesso`);
+        await queryClient.invalidateQueries(['user-ranking', rankingId]);
       } else {
         console.error('[BookletSwitcher] Error switching booklet:', result.error);
         toast.error(result.error || 'Falha ao trocar caderno');
@@ -86,8 +103,12 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
 
   const getBookletName = (bookletId: string) => {
     const booklet = booklets.find(b => b.id === bookletId);
-    return booklet?.name || 'Desconhecido';
+    const name = booklet?.name || 'Desconhecido';
+    return name.length > 30 ? name.substring(0, 30) + '...' : name;
   };
+
+  // Após a troca de caderno, logar o novo estado
+  console.log('[BookletSwitcher] Novo estado do selectedBookletId após troca:', selectedBookletId);
 
   // Se há apenas um caderno, não mostra o switcher
   if (booklets.length <= 1) {
@@ -98,16 +119,16 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
   const selectedBooklet = booklets.find(b => b.id === selectedBookletId);
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <FileText className="h-5 w-5 text-blue-600" />
-        <h3 className="font-medium text-blue-800">Trocar Caderno de Prova</h3>
+        <FileText className="h-5 w-5 text-primary" />
+        <h3 className="font-medium text-primary">Trocar Caderno de Prova</h3>
       </div>
       
-      <Alert className="border-blue-200 bg-blue-50">
-        <AlertTriangle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
-          <strong>Caderno atual:</strong> {currentBooklet?.name || 'Não informado'}
+      <Alert className="border-primary/20 bg-primary/10">
+        <AlertTriangle className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-foreground">
+          <strong>Caderno atual:</strong> <span className="break-words">{currentBooklet?.name || 'Não informado'}</span>
         </AlertDescription>
       </Alert>
 
@@ -117,26 +138,19 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
         </Label>
         <Select 
           value={selectedBookletId} 
-          onValueChange={setSelectedBookletId}
+          onValueChange={(value) => {
+            setSelectedBookletId(value);
+            handleSwitchBooklet(value);
+          }}
           disabled={disabled || isSwitching}
         >
           <SelectTrigger id="booklet-switcher">
             <SelectValue placeholder="Escolha um caderno" />
           </SelectTrigger>
           <SelectContent>
-            {booklets.map((booklet) => (
-              <SelectItem 
-                key={booklet.id} 
-                value={booklet.id}
-                disabled={booklet.id === currentBookletId}
-              >
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  <span>{booklet.name}</span>
-                  {booklet.id === currentBookletId && (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  )}
-                </div>
+            {booklets.map(booklet => (
+              <SelectItem key={booklet.id} value={booklet.id}>
+                {booklet.name.length > 30 ? booklet.name.substring(0, 30) + '...' : booklet.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -144,33 +158,14 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
       </div>
 
       {selectedBookletId && selectedBookletId !== currentBookletId && (
-        <Alert className="border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800">
+        <Alert className="border-warning/20 bg-warning/10">
+          <AlertTriangle className="h-4 w-4 text-warning" />
+          <AlertDescription className="text-foreground">
             <strong>Atenção:</strong> Ao trocar para <strong>{selectedBooklet?.name}</strong>, 
             suas respostas atuais serão salvas e as respostas do novo caderno serão carregadas.
           </AlertDescription>
         </Alert>
       )}
-
-      <Button
-        onClick={handleSwitchBooklet}
-        disabled={disabled || isSwitching || !selectedBookletId || selectedBookletId === currentBookletId}
-        className="w-full"
-        variant="outline"
-      >
-        {isSwitching ? (
-          <>
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            Trocando caderno...
-          </>
-        ) : (
-          <>
-            <FileText className="mr-2 h-4 w-4" />
-            Trocar para {selectedBooklet?.name}
-          </>
-        )}
-      </Button>
     </div>
   );
 };

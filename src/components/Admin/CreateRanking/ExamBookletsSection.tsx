@@ -374,7 +374,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
                   <Label htmlFor={`booklet-${index}`} className="text-sm">
                     Caderno {index + 1}
                   </Label>
-                  <Input id={`booklet-${index}`} value={booklet.name} onChange={e => updateBookletName(index, e.target.value)} placeholder="Nome do caderno (ex: BRANCO, AZUL, A, B...)" className="mt-1" maxLength={20} />
+                  <Input id={`booklet-${index}`} value={booklet.name} onChange={e => updateBookletName(index, e.target.value)} placeholder="Nome do caderno (ex: BRANCO, AZUL, A, B...)" className="mt-1" maxLength={100} />
                 </div>
                 {booklets.length > 1 && <Button type="button" variant="outline" size="sm" onClick={() => removeBooklet(index)} className="text-destructive hover:text-destructive/80">
                     <X className="h-4 w-4" />

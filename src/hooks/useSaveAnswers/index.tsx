@@ -54,7 +54,15 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(answersObject).length);
 
       // Garantir que selectedBookletId seja sempre string para a função RPC
-      const bookletIdString = selectedBookletId ? String(selectedBookletId) : 'default';
+      const { data: currentRanking } = await supabase
+        .from('user_rankings')
+        .select('selected_booklet')
+        .eq('id', rankingId)
+        .single();
+
+      const bookletIdString = currentRanking?.selected_booklet 
+        ? String(currentRanking.selected_booklet) 
+        : (selectedBookletId ? String(selectedBookletId) : 'default');
 
       // Chamar a nova função RPC consolidada por concurso
       const { data, error } = await supabase.rpc('save_user_answers_consolidated_by_concurso', {
@@ -91,6 +99,19 @@ export const useSaveAnswers = ({
       });
 
       onSuccess();
+
+      // Após salvar, buscar o selected_booklet atualizado do banco
+      const { data: updatedRanking } = await supabase
+        .from('user_rankings')
+        .select('selected_booklet')
+        .eq('id', rankingId)
+        .single();
+
+      if (updatedRanking?.selected_booklet) {
+        console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+        // Nota: setSelectedBookletId será chamado pelo componente pai se necessário
+      }
+
     } catch (error: any) {
       console.error('[useSaveAnswers] Erro ao salvar respostas:', error);
       setError(error.message || "Erro ao salvar respostas");

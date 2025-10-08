@@ -44,7 +44,7 @@ export const BookletSelector: React.FC<BookletSelectorProps> = ({
         <div className="px-3 py-2 border rounded-md bg-muted">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            <span className="font-medium">{booklets[0].name}</span>
+            <span className="font-medium break-words">{booklets[0].name}</span>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">

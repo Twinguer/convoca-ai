@@ -52,7 +52,7 @@ const AppContent = () => {
     hideTimer
   } = useTimer();
   return <>
-      <div className="min-h-screen text-foreground bg-page-background">
+      <div className="min-h-screen h-full w-full text-foreground bg-page-background">
       <Toaster />
       <Sonner />
       

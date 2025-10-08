@@ -168,17 +168,21 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
   // Show the answer sheet if selected and we have a ranking ID
   if ((showAnswerSheet || isAlreadyParticipating) && userRankingId) {
-    return <AnswerSheet concurso={concurso} rankingId={userRankingId} onSuccess={() => {
-      setShowAnswerSheet(false);
-      queryClient.invalidateQueries({
-        queryKey: ['rankings', concurso.id]
-      });
-      navigate(`/concurso/${concurso.id}/resultados`);
-      toast({
-        title: "Cartão de Respostas Processado",
-        description: "Suas respostas foram processadas e seu ranking foi atualizado."
-      });
-    }} />;
+    return (
+      <div className="w-full h-full">
+        <AnswerSheet concurso={concurso} rankingId={userRankingId} onSuccess={() => {
+          setShowAnswerSheet(false);
+          queryClient.invalidateQueries({
+            queryKey: ['rankings', concurso.id]
+          });
+          navigate(`/concurso/${concurso.id}/resultados`);
+          toast({
+            title: "Cartão de Respostas Processado",
+            description: "Suas respostas foram processadas e seu ranking foi atualizado."
+          });
+        }} />
+      </div>
+    );
   }
 
   // Default view for non-participating users

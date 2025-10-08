@@ -489,18 +489,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           </div>}
         
         {/* Progress indicator */}
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mx-0 my-[20px]">
+        <div className="bg-primary/10 border border-primary/20 rounded-md p-4 mx-0 my-[20px]">
           <div className="flex flex-col">
-            <h4 className="font-medium text-blue-800">Progresso do preenchimento</h4>
-            <p className="text-sm text-blue-700 mt-1">
+            <h4 className="font-medium text-primary">Progresso do preenchimento</h4>
+            <p className="text-sm text-primary mt-1">
               {answeredQuestions} de {totalQuestions} questões respondidas ({percentageComplete}%)
             </p>
             <div className="w-full bg-muted rounded-full h-2.5 mt-2">
-              <div className="bg-blue-600 h-2.5 rounded-full" style={{
+              <div className="bg-primary h-2.5 rounded-full" style={{
               width: `${percentageComplete}%`
             }}></div>
             </div>
-            <p className="text-xs text-blue-600 mt-2">
+            <p className="text-xs text-primary mt-2">
               Todas as questões deste caderno precisam ser respondidas antes de salvar.
             </p>
           </div>

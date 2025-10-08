@@ -176,6 +176,9 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     let structureChanged = false;
     if (oldData) {
       const structureFields = [
+        'exam_type',
+        'wrong_answer_penalty',
+        'alternatives_count',
         'basic_knowledge_questions',
         'specific_knowledge_1_questions',
         'specific_knowledge_2_questions',

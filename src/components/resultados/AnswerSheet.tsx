@@ -34,6 +34,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
   const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
+  // Definir o estado do selectedBookletId corretamente
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
 
   const {
@@ -72,7 +73,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   // Fetch user ranking data
   const {
     data: userRankingData,
-    isLoading: isLoadingRanking
+    isLoading: isLoadingRanking,
+    refetch: refetchRanking
   } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
@@ -113,9 +115,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Handle booklet change from BookletSwitcher (CORRIGIDO - Limpa totalmente o estado)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
+    console.log('[AnswerSheet] ===== INÍCIO DA TROCA DE CADERNO =====');
     console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
     console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
     console.log('[AnswerSheet] Respostas atuais antes de limpar:', answers);
+    console.log('[AnswerSheet] selectedBookletId atual:', selectedBookletId);
     
     // CRÍTICO: Limpar COMPLETAMENTE o estado de respostas ANTES de atualizar
     clearAllAnswers();
@@ -278,6 +282,28 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
     }
   }, [nullifiedData, lastCheckedNullifiedCount]);
+
+  // Certifique-se de que setSelectedBookletId é usado corretamente após salvar as respostas
+  useEffect(() => {
+    if (savedSuccess) {
+      console.log('[AnswerSheet] Respostas salvas com sucesso. Atualizando estado do caderno.');
+      refetchRanking();
+      // Atualizar o estado do caderno após refetch
+      const updateBookletId = async () => {
+        const { data: updatedRanking } = await supabase
+          .from('user_rankings')
+          .select('selected_booklet')
+          .eq('id', rankingId)
+          .single();
+
+        if (updatedRanking?.selected_booklet) {
+          setSelectedBookletId(updatedRanking.selected_booklet);
+          console.log('[AnswerSheet] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+        }
+      };
+      updateBookletId();
+    }
+  }, [savedSuccess]);
 
   const handleSaveAnswers = async () => {
     if (!concurso?.id) {
@@ -481,21 +507,21 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   console.log('[AnswerSheet] Is hierarchical:', isHierarchical);
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="bg-emerald-50 border-b">
+    <Card className="shadow-lg w-full h-full mx-auto p-4">
+      <CardHeader className="bg-muted/30 border-b border-border">
         <CardTitle className="text-xl md:text-2xl">
           Cartão de Respostas - {concurso.titulo}
         </CardTitle>
         <CardDescription>
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
               <span className="font-medium">Caderno selecionado:</span>
-              <span className="px-2 py-1 bg-primary-50 text-primary-800 rounded-md font-medium">
+              <span className="px-2 py-1 bg-primary/10 text-primary rounded-md font-medium break-words max-w-full">
                 {getBookletName(selectedBookletId)}
               </span>
             </div>
             {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
-              <div className="text-sm font-medium text-emerald-700">
+              <div className="text-sm font-medium text-primary">
                 Edições disponíveis: {editsLeft} de 5
                 {!canEdit && (
                   <span className="text-destructive ml-2">
@@ -561,13 +587,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             <div className="flex items-start gap-3">
               <HelpCircle className="h-5 w-5 text-amber-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-amber-800">Questões Anuladas</h4>
+                <h4 className="font-medium text-amber-800"></h4>
                 <p className="text-sm text-amber-700 mt-1">
                   Este concurso possui {nullifiedQuestions.size} {nullifiedQuestions.size === 1 ? 'questão anulada' : 'questões anuladas'}.
-                  Você receberá pontuação por estas questões independentemente da resposta marcada.
                 </p>
                 <p className="text-xs text-amber-600 mt-2">
-                  Questões anuladas: {Array.from(nullifiedQuestions).sort((a, b) => a - b).join(', ')}
+                  Questão anulada: {Array.from(nullifiedQuestions).sort((a, b) => a - b).join(', ')}
                 </p>
               </div>
             </div>

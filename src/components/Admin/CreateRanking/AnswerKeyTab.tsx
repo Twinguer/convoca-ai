@@ -77,9 +77,9 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
             </CardContent>
           </Card> : <Card>
           <CardContent className="pt-6">
-            <Alert className="border-blue-200 bg-blue-50">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
+            <Alert className="border-primary/20 bg-primary/10">
+              <AlertCircle className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-foreground">
                 <strong>Selecione um caderno:</strong> Escolha o caderno no seletor acima para preencher seu gabarito oficial.
               </AlertDescription>
             </Alert>

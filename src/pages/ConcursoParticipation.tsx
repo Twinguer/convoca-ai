@@ -79,23 +79,23 @@ const ConcursoParticipation = () => {
       <Card className="mx-auto max-w-4xl mt-6">
         <CardContent className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle className="h-6 w-6 text-red-500" />
-            <h1 className="text-2xl font-bold text-red-600">Erro ao carregar concurso</h1>
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+            <h1 className="text-2xl font-bold text-destructive">Erro ao carregar concurso</h1>
           </div>
           <div className="space-y-2">
-            <p className="text-gray-700">
+            <p className="text-foreground">
               Não foi possível encontrar o concurso solicitado.
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               ID: {id}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-muted-foreground">
               Erro: {concursoError.message}
             </p>
           </div>
           <button 
             onClick={() => navigate('/concursos')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
           >
             Voltar para Concursos
           </button>
@@ -108,8 +108,8 @@ const ConcursoParticipation = () => {
     return (
       <Card className="mx-auto max-w-4xl mt-6">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-4">ID do concurso não fornecido</h1>
-          <p>Por favor, acesse um concurso válido.</p>
+          <h1 className="text-2xl font-bold mb-4 text-foreground">ID do concurso não fornecido</h1>
+          <p className="text-muted-foreground">Por favor, acesse um concurso válido.</p>
         </CardContent>
       </Card>
     );
@@ -119,16 +119,16 @@ const ConcursoParticipation = () => {
     return (
       <Card className="mx-auto max-w-4xl mt-6">
         <CardContent className="p-6">
-          <h1 className="text-2xl font-bold mb-4">Concurso não encontrado</h1>
-          <p>O concurso que você está tentando acessar não existe ou foi removido.</p>
-          <p className="text-sm text-gray-500 mt-2">ID: {id}</p>
+          <h1 className="text-2xl font-bold mb-4 text-foreground">Concurso não encontrado</h1>
+          <p className="text-muted-foreground">O concurso que você está tentando acessar não existe ou foi removido.</p>
+          <p className="text-sm text-muted-foreground mt-2">ID: {id}</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl">
+    <div className="container mx-auto p-4">
       <div className="mt-4">
         <ParticipationForm 
           concurso={concurso} 

@@ -16,6 +16,7 @@ export interface UseSaveAnswersProps {
   editCount: number;
   nullifiedQuestions?: Set<number>;
   selectedBookletId?: string;
+  setSelectedBookletId?: (bookletId: string) => void;
 }
 
 export interface SaveAnswersResponse {

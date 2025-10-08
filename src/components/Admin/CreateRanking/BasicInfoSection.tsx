@@ -144,7 +144,15 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           }) => <FormItem className="mt-2">
                     <FormLabel>Banca personalizada</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Digite o nome da banca" />
+                      <Input 
+                        {...field} 
+                        placeholder="Digite o nome da banca" 
+                        maxLength={15}
+                        onChange={e => {
+                          const value = e.target.value.slice(0, 15);
+                          field.onChange(value);
+                        }}
+                      />
                     </FormControl>
                   </FormItem>} />}
           </div>
