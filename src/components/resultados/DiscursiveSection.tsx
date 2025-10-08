@@ -60,22 +60,22 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
 
   if (!hasAnySection) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-muted-foreground">
         Não há seções de discursiva ou estudo de caso para este concurso.
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 space-y-6">
+    <div className="p-6 bg-muted/30 space-y-6">
       {/* Discursive Section */}
       {concurso.has_discursive && (
-        <div className="border p-4 rounded-md shadow-sm bg-white space-y-3">
+        <div className="border border-border p-4 rounded-md shadow-sm bg-card space-y-3">
           <div className="flex justify-between items-center">
             <Label htmlFor="discursive-score" className="text-base font-medium">
               Nota da Prova Discursiva 
               {concurso.discursive_weight && concurso.discursive_weight > 1 && 
-                <span className="ml-1 text-sm text-gray-500">(Peso {concurso.discursive_weight})</span>
+                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.discursive_weight})</span>
               }
             </Label>
             <TooltipProvider>
@@ -102,19 +102,19 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
               className="w-64" 
               disabled={disabled}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}
 
       {/* Case Study 1 */}
       {concurso.has_case_study_1 && onCaseStudy1ScoreChange && (
-        <div className="border p-4 rounded-md shadow-sm bg-white space-y-3">
+        <div className="border border-border p-4 rounded-md shadow-sm bg-card space-y-3">
           <div className="flex justify-between items-center">
             <Label htmlFor="case-study-1-score" className="text-base font-medium">
               Nota do Estudo de Caso 1
               {concurso.case_study_1_weight && concurso.case_study_1_weight > 1 && 
-                <span className="ml-1 text-sm text-gray-500">(Peso {concurso.case_study_1_weight})</span>
+                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.case_study_1_weight})</span>
               }
             </Label>
             <TooltipProvider>
@@ -141,19 +141,19 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
               className="w-64" 
               disabled={disabled}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}
 
       {/* Case Study 2 */}
       {concurso.has_case_study_2 && onCaseStudy2ScoreChange && (
-        <div className="border p-4 rounded-md shadow-sm bg-white space-y-3">
+        <div className="border border-border p-4 rounded-md shadow-sm bg-card space-y-3">
           <div className="flex justify-between items-center">
             <Label htmlFor="case-study-2-score" className="text-base font-medium">
               Nota do Estudo de Caso 2
               {concurso.case_study_2_weight && concurso.case_study_2_weight > 1 && 
-                <span className="ml-1 text-sm text-gray-500">(Peso {concurso.case_study_2_weight})</span>
+                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.case_study_2_weight})</span>
               }
             </Label>
             <TooltipProvider>
@@ -180,19 +180,19 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
               className="w-64" 
               disabled={disabled}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}
 
       {/* Case Study 3 */}
       {concurso.has_case_study_3 && onCaseStudy3ScoreChange && (
-        <div className="border p-4 rounded-md shadow-sm bg-white space-y-3">
+        <div className="border border-border p-4 rounded-md shadow-sm bg-card space-y-3">
           <div className="flex justify-between items-center">
             <Label htmlFor="case-study-3-score" className="text-base font-medium">
               Nota do Estudo de Caso 3
               {concurso.case_study_3_weight && concurso.case_study_3_weight > 1 && 
-                <span className="ml-1 text-sm text-gray-500">(Peso {concurso.case_study_3_weight})</span>
+                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.case_study_3_weight})</span>
               }
             </Label>
             <TooltipProvider>
@@ -219,7 +219,7 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
               className="w-64" 
               disabled={disabled}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}

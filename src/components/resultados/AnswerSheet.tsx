@@ -373,7 +373,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <AlertTriangle className="h-8 w-8 text-amber-500" />
           <h3 className="text-lg font-semibold">Caderno não selecionado</h3>
-          <p className="text-center text-gray-600">
+          <p className="text-center text-muted-foreground">
             É necessário selecionar um caderno de prova antes de preencher o cartão de respostas.
           </p>
         </CardContent>
@@ -385,7 +385,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-center text-gray-600">Carregando cartão de respostas...</p>
+          <p className="text-center text-muted-foreground">Carregando cartão de respostas...</p>
         </CardContent>
       </Card>;
   }
@@ -576,9 +576,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
         <div className="flex items-center justify-between">
           <div className="font-medium">Progresso: {answeredQuestions} de {totalQuestions} questões</div>
-          <div className="text-sm text-gray-500">{Math.round(progressPercentage)}% completo</div>
+          <div className="text-sm text-muted-foreground">{Math.round(progressPercentage)}% completo</div>
         </div>
-        <Progress value={progressPercentage} className="h-2 bg-gray-200" />
+        <Progress value={progressPercentage} className="h-2" />
 
         {objectiveSections.length > 0 && (
           <div className="border rounded-md overflow-hidden shadow-sm">
@@ -632,7 +632,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         )}
       </CardContent>
 
-      <CardFooter className="p-4 bg-gray-50 border-t">
+      <CardFooter className="p-4 bg-muted/30 border-t border-border">
         <Button
           onClick={handleSaveAnswers}
           className="flex items-center w-full bg-emerald-600 hover:bg-emerald-700 text-white"

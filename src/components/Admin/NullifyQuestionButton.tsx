@@ -24,8 +24,8 @@ export const NullifyQuestionButton = ({
       disabled={disabled}
       className={`mt-2 w-full gap-2 ${
         isNullified 
-          ? 'bg-gray-100 text-gray-500' 
-          : 'hover:bg-red-50 hover:text-red-600'
+          ? 'bg-muted text-muted-foreground' 
+          : 'hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400'
       }`}
     >
       <Ban className="h-4 w-4" />

@@ -65,8 +65,12 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           }) => <FormItem className="mt-2">
                     <FormLabel>Cargo personalizado</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Digite o cargo" onChange={e => {
-                const up = e.target.value.toUpperCase();
+                      <Input 
+                        {...field} 
+                        placeholder="Digite o cargo" 
+                        maxLength={20}
+                        onChange={e => {
+                const up = e.target.value.toUpperCase().slice(0, 20);
                 field.onChange(up);
                 handleCustomTitleChange({
                   ...e,
@@ -86,8 +90,12 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         }) => <FormItem>
                 <FormLabel>Órgão</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Ex: MINISTÉRIO DA ECONOMIA" onChange={e => {
-              const up = e.target.value.toUpperCase();
+                  <Input 
+                    {...field} 
+                    placeholder="Ex: MINISTÉRIO DA ECONOMIA" 
+                    maxLength={20}
+                    onChange={e => {
+              const up = e.target.value.toUpperCase().slice(0, 20);
               field.onChange(up);
               handleOrgaoChange({
                 ...e,
@@ -210,7 +218,16 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         }) => <FormItem>
                 <FormLabel>Quantidade de Vagas</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} min="0" onChange={e => field.onChange(Number(e.target.value))} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    min="0" 
+                    max="1000000"
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      field.onChange(value > 1000000 ? 1000000 : value);
+                    }} 
+                  />
                 </FormControl>
               </FormItem>} />
           
@@ -220,7 +237,16 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         }) => <FormItem>
                 <FormLabel>Quantidade de Inscritos</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} min="0" onChange={e => field.onChange(Number(e.target.value))} />
+                  <Input 
+                    type="number" 
+                    {...field} 
+                    min="0" 
+                    max="1000000"
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      field.onChange(value > 1000000 ? 1000000 : value);
+                    }} 
+                  />
                 </FormControl>
               </FormItem>} />
         </div>

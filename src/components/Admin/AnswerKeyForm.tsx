@@ -456,7 +456,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-center text-gray-600">Carregando informações do gabarito...</p>
+          <p className="text-center text-muted-foreground">Carregando informações do gabarito...</p>
         </CardContent>
       </Card>;
   }
@@ -495,7 +495,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
             <p className="text-sm text-blue-700 mt-1">
               {answeredQuestions} de {totalQuestions} questões respondidas ({percentageComplete}%)
             </p>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+            <div className="w-full bg-muted rounded-full h-2.5 mt-2">
               <div className="bg-blue-600 h-2.5 rounded-full" style={{
               width: `${percentageComplete}%`
             }}></div>
@@ -518,11 +518,11 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
               </TabsList>
               
               {objectiveSections.map(section => <TabsContent key={section.key} value={section.key}>
-                  <div className="p-4 bg-gray-50">
+                  <div className="p-4 bg-muted/30">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {createAnswerMatrix().map((row, rowIndex) => <div key={`row-${rowIndex}`}>
-                          {row.map((questionNumber, colIndex) => questionNumber !== null ? <div key={`${rowIndex}-${colIndex}`} className="border rounded-md p-3 bg-white">
-                                <div className="mb-2 font-medium text-gray-700">Questão {questionNumber}</div>
+                          {row.map((questionNumber, colIndex) => questionNumber !== null ? <div key={`${rowIndex}-${colIndex}`} className="border border-border rounded-md p-3 bg-card">
+                                <div className="mb-2 font-medium text-foreground">Questão {questionNumber}</div>
                                 <div className="flex flex-wrap gap-2">
                                   {getOptionsForQuestion().map(option => <button key={option} className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
                                         ${answers[questionNumber] === option ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">

@@ -157,7 +157,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     }
   };
   if (!user) {
-    return <div className="bg-white p-6 rounded-lg shadow-sm border">
+    return <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
         <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
         <p className="mb-4">Faça login para participar do ranking deste concurso.</p>
         <Button onClick={() => navigate('/auth')} className="bg-emerald-600 hover:bg-emerald-700">
@@ -182,7 +182,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   }
 
   // Default view for non-participating users
-  return <div className="p-6 rounded-lg shadow-sm border bg-zinc-50">
+  return <div className="p-6 rounded-lg shadow-sm border border-border bg-muted/30">
       <h2 className="text-xl font-bold mb-4">Participe do Ranking</h2>
       
       

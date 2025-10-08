@@ -13,7 +13,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
   const totalQuestions = getTotalQuestions();
   const examTypeLabel = concurso.exam_type === 'Certo ou Errado' ? 'Certo ou Errado' : `${concurso.alternatives_count || 5} Alternativas`;
   return <div className="space-y-4">
-      <div className="bg-white p-4 rounded-lg border shadow-sm">
+      <div className="bg-card p-4 rounded-lg border border-border shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h3 className="text-xl font-bold">{concurso.orgao}</h3>
@@ -38,7 +38,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.basic_knowledge_weight}
                     </span>}
                 </p>
-                <div className="flex items-center text-gray-500">
+                <div className="flex items-center text-muted-foreground">
                   <p>{concurso.basic_knowledge_questions} questões</p>
                 </div>
               </div>
@@ -53,7 +53,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.specific_knowledge_1_weight}
                     </span>}
                 </p>
-                <div className="flex items-center text-gray-500">
+                <div className="flex items-center text-muted-foreground">
                   <p>{concurso.specific_knowledge_1_questions} questões</p>
                 </div>
               </div>
@@ -68,7 +68,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.specific_knowledge_2_weight}
                     </span>}
                 </p>
-                <div className="flex items-center text-gray-500">
+                <div className="flex items-center text-muted-foreground">
                   <p>{concurso.specific_knowledge_2_questions} questões</p>
                 </div>
               </div>
@@ -83,7 +83,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.specific_knowledge_3_weight}
                     </span>}
                 </p>
-                <div className="flex items-center text-gray-500">
+                <div className="flex items-center text-muted-foreground">
                   <p>{concurso.specific_knowledge_3_questions} questões</p>
                 </div>
               </div>
@@ -100,7 +100,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.case_study_1_weight}
                     </span>}
                 </p>
-                <p className="text-gray-500">Nota de 0 a 100</p>
+                <p className="text-muted-foreground">Nota de 0 a 100</p>
               </div>
             </div>}
           
@@ -113,7 +113,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.case_study_2_weight}
                     </span>}
                 </p>
-                <p className="text-gray-500">Nota de 0 a 100</p>
+                <p className="text-muted-foreground">Nota de 0 a 100</p>
               </div>
             </div>}
           
@@ -126,7 +126,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
                       Peso {concurso.case_study_3_weight}
                     </span>}
                 </p>
-                <p className="text-gray-500">Nota de 0 a 100</p>
+                <p className="text-muted-foreground">Nota de 0 a 100</p>
               </div>
             </div>}
         </div>

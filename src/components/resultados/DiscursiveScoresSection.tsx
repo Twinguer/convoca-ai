@@ -32,7 +32,7 @@ export const DiscursiveScoresSection: React.FC<DiscursiveScoresSectionProps> = (
   canEdit
 }) => {
   return (
-    <div className="space-y-4 p-6 bg-gray-50 border rounded-md mt-6">
+    <div className="space-y-4 p-6 bg-muted/30 border border-border rounded-md mt-6">
       <h3 className="text-lg font-medium mb-4">Notas Subjetivas</h3>
       
       {concurso.has_discursive && (
@@ -53,7 +53,7 @@ export const DiscursiveScoresSection: React.FC<DiscursiveScoresSectionProps> = (
               className="w-32"
               disabled={!canEdit}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}
@@ -76,7 +76,7 @@ export const DiscursiveScoresSection: React.FC<DiscursiveScoresSectionProps> = (
               className="w-32"
               disabled={!canEdit}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}
@@ -99,7 +99,7 @@ export const DiscursiveScoresSection: React.FC<DiscursiveScoresSectionProps> = (
               className="w-32"
               disabled={!canEdit}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}
@@ -122,7 +122,7 @@ export const DiscursiveScoresSection: React.FC<DiscursiveScoresSectionProps> = (
               className="w-32"
               disabled={!canEdit}
             />
-            <span className="ml-2 text-gray-500">/ 100</span>
+            <span className="ml-2 text-muted-foreground">/ 100</span>
           </div>
         </div>
       )}

@@ -38,12 +38,12 @@ const AdminLayout: React.FC = () => {
     navigate('/criar-ranking');
   };
   
-  return <div className="min-h-screen bg-gray-100 flex flex-col">
+  return <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-card shadow-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-gray-800">Convoca AI Admin</h1>
+            <h1 className="text-xl font-bold text-foreground">Convoca AI Admin</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleCreateRanking} className="flex items-center gap-2">
@@ -65,7 +65,7 @@ const AdminLayout: React.FC = () => {
       {/* Main content */}
       <div className="flex flex-1">
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r hidden md:block">
+        <aside className="w-64 bg-card border-r border-border hidden md:block">
           <nav className="p-4 space-y-2">
             <Button asChild variant="ghost" className="w-full justify-start">
               <Link to="/project/admin/man/dashboard" className="flex items-center gap-2">

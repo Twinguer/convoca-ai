@@ -30,7 +30,7 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
   onNullifyQuestion
 }) => {
   return (
-    <div className="border p-4 rounded-lg bg-white shadow-sm">
+    <div className="border border-border p-4 rounded-lg bg-card shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div>
           <Label className="text-sm font-medium">Questão {questionNumber}</Label>
@@ -72,7 +72,7 @@ export const WeightedAnswerInput: React.FC<WeightedAnswerInputProps> = ({
       </RadioGroup>
 
       <div className="mt-2">
-        <Label className="text-xs text-gray-500 mb-1">Peso da questão</Label>
+        <Label className="text-xs text-muted-foreground mb-1">Peso da questão</Label>
         <Input
           type="number"
           min="0.1"
