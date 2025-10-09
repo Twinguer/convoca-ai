@@ -13,13 +13,13 @@ export const saveBookletAnswerKey = async (
 
     // Garantir que bookletId seja sempre string
     const bookletIdString = String(bookletId);
-    console.log('[answerKeyService] Booklet ID (converted to string):', bookletIdString);
+    // Log removido por segurança
 
     // Converter o formato de answers para o formato esperado pela função RPC
     const formattedAnswers: Record<string, any> = {};
     
     Object.entries(answers).forEach(([questionNumber, answerData]) => {
-      console.log(`[answerKeyService] Processing question ${questionNumber}:`, answerData);
+      // Log removido por segurança
       
       formattedAnswers[questionNumber] = {
         correct_answer: answerData.correctAnswer,
@@ -31,8 +31,7 @@ export const saveBookletAnswerKey = async (
       };
     });
 
-    console.log('[answerKeyService] Formatted answers for RPC:', formattedAnswers);
-    console.log('[answerKeyService] Total questions to save:', Object.keys(formattedAnswers).length);
+    // Logs removidos por segurança
 
     // Usar a função RPC que agora deve funcionar sem trigger problems
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
@@ -51,7 +50,7 @@ export const saveBookletAnswerKey = async (
       return { success: false, error: error.message };
     }
 
-    console.log('[answerKeyService] RPC Success response:', data);
+    // Log removido por segurança
     
     // Verificar se a resposta indica sucesso
     if (data && typeof data === 'object' && 'success' in data && !data.success) {
@@ -72,8 +71,7 @@ export const updateSingleAnswer = async (
   answerData: AnswerKeyData
 ) => {
   try {
-    console.log('[answerKeyService] Updating single answer');
-    console.log('[answerKeyService] Question:', questionNumber, 'Answer:', answerData);
+    // Logs removidos por segurança
 
     // Como não temos mais a função update_answer_with_weight que usava booklet_id,
     // vamos usar a função consolidada para atualizar uma única resposta
@@ -105,7 +103,7 @@ export const updateSingleAnswer = async (
       return { success: false, error: data.error || 'Falha na atualização da resposta' };
     }
 
-    console.log('[answerKeyService] Successfully updated answer:', data);
+    // Log removido por segurança
     return { success: true, data };
   } catch (error: any) {
     console.error('[answerKeyService] Error in updateSingleAnswer:', error);

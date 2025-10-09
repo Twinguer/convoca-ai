@@ -91,7 +91,7 @@ export const consolidatedAnswerService = {
         }
       };
       
-      console.log('[consolidatedAnswerService] Dados consolidados encontrados:', consolidatedData);
+      // Log removido por segurança
       
       return consolidatedData;
     } catch (error) {
@@ -136,7 +136,7 @@ export const consolidatedAnswerService = {
         return { success: false, error: error.message };
       }
 
-      console.log('[consolidatedAnswerService] Switch response:', data);
+      // Log removido por segurança
       
       // Buscar as respostas específicas do novo caderno
       const bookletAnswers = await this.getBookletAnswers(rankingId, bookletId);
@@ -194,7 +194,7 @@ export const consolidatedAnswerService = {
         return { success: false, error: error.message };
       }
 
-      console.log('[consolidatedAnswerService] RPC Response:', data);
+      // Log removido por segurança
       
       return data;
     } catch (error: any) {

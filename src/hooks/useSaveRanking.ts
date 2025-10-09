@@ -36,7 +36,7 @@ export const useSaveRanking = () => {
           .single();
         
         if (!fetchError && existingConcurso?.disciplines) {
-          console.log('Retrieved existing disciplines:', existingConcurso.disciplines);
+          // Log removido por segurança
           existingDisciplines = existingConcurso.disciplines;
         }
       }
@@ -78,7 +78,7 @@ export const useSaveRanking = () => {
       
       // Se estamos editando e temos disciplinas existentes, preservar a estrutura
       if (editId && existingDisciplines.length > 0 && formValues.disciplines) {
-        console.log('Preservando estrutura de disciplinas para operação de edição');
+        // Log removido por segurança
         
         // Verificar se as disciplinas atuais e existentes usam a estrutura de blocos
         const hasCurrBlocks = formValues.disciplines.length > 0 && 
@@ -129,7 +129,7 @@ export const useSaveRanking = () => {
             return block;
           });
           
-          console.log('Estrutura de disciplinas mesclada:', JSON.stringify(formValues.disciplines, null, 2));
+          // Log removido por segurança
         }
       }
 
@@ -168,8 +168,7 @@ export const useSaveRanking = () => {
           // Preservar a estrutura hierárquica para o banco de dados
           formValues.hierarchicalDisciplines = disciplinesWithHierarchy;
           
-          console.log('Estrutura original preservada:', JSON.stringify(disciplinesWithHierarchy, null, 2));
-          console.log('Created flattened disciplines:', flattenedDisciplines);
+          // Logs removidos por segurança
         }
       }
       
@@ -276,15 +275,7 @@ export const useSaveRanking = () => {
         dataToSubmit.is_admin_update = formValues.is_admin_update;
       }
 
-      // Log for debugging
-      console.log("Submitting to database:", {
-        has_custom_knowledge: dataToSubmit.has_custom_knowledge,
-        disciplines: dataToSubmit.disciplines,
-        has_minimum_score: dataToSubmit.has_minimum_score,
-        total_minimum_score: dataToSubmit.total_minimum_score,
-        has_quota_minimum_score: dataToSubmit.has_quota_minimum_score,
-        quota_minimum_score: dataToSubmit.quota_minimum_score
-      });
+      // Log removido por segurança
 
       let result;
       let concursoIdToUse = editId;
@@ -303,11 +294,7 @@ export const useSaveRanking = () => {
         result = data;
         concursoIdToUse = editId;
         
-        // Log para debugging da atualização
-        console.log("Updated ranking successfully:", {
-          id: editId,
-          disciplines: result?.[0]?.disciplines
-        });
+        // Log removido por segurança
       } else {
         const { data, error } = await supabase
           .from('concursos')
@@ -352,7 +339,7 @@ export const useSaveRanking = () => {
             let questionCounter = 1;
 
             if (disciplines && Array.isArray(disciplines)) {
-              console.log(`Processando ${disciplines.length} disciplinas/blocos para inserir em official_answer_weights`);
+              // Log removido por segurança
               
               // Verificar se estamos lidando com estrutura hierárquica
               const isHierarchical = disciplines.length > 0 && 
@@ -363,12 +350,12 @@ export const useSaveRanking = () => {
               if (isHierarchical) {
                 // Processar estrutura hierárquica (blocos -> disciplinas)
                 for (const block of disciplines as any[]) {
-                  console.log(`Processando bloco: ${block.name}`);
+                  // Log removido por segurança
                   
                   if (block.disciplines && Array.isArray(block.disciplines)) {
                     for (const discipline of block.disciplines) {
                       if (discipline.isEnabled !== true) {
-                        console.log(`Pulando disciplina desabilitada: ${discipline.name}`);
+                        // Log removido por segurança
                         continue;
                       }
                       
@@ -376,7 +363,7 @@ export const useSaveRanking = () => {
                       const questionCount = ensureNumeric(discipline.questionCount);
                       const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
                       
-                      console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
+                      // Log removido por segurança
                       
                       if (disciplineType && questionCount > 0) {
                         for (let i = 0; i < questionCount; i++) {
@@ -399,7 +386,7 @@ export const useSaveRanking = () => {
                 // Processar estrutura plana (compatibilidade)
                 for (const discipline of disciplines) {
                   if (discipline.isEnabled !== true) {
-                    console.log(`Pulando disciplina desabilitada: ${discipline.name}`);
+                    // Log removido por segurança
                     continue;
                   }
 
@@ -407,7 +394,7 @@ export const useSaveRanking = () => {
                   const questionCount = ensureNumeric(discipline.questionCount);
                   const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
 
-                  console.log(`Processando disciplina: ${discipline.name}, tipo: ${disciplineType}, questões: ${questionCount}`);
+                  // Log removido por segurança
 
                   if (questionCount > 0) {
                     for (let i = 0; i < questionCount; i++) {
@@ -431,7 +418,7 @@ export const useSaveRanking = () => {
 
             // 3. Insert new records
             if (officialAnswerWeightsToInsert.length > 0) {
-              console.log(`Inserindo ${officialAnswerWeightsToInsert.length} registros em official_answer_weights`);
+              // Log removido por segurança
               
               const { error: insertError } = await supabase
                 .from('official_answer_weights')
@@ -444,7 +431,7 @@ export const useSaveRanking = () => {
                 // Log removido por segurança
               }
             } else {
-              console.log("Nenhuma disciplina customizada válida encontrada para inserir em official_answer_weights.");
+              // Log removido por segurança
             }
           } catch (syncError) {
             console.error("Erro durante a sincronização com official_answer_weights:", syncError);

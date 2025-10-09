@@ -74,7 +74,7 @@ const UserProfile = () => {
         if (error) {
           console.error('Error fetching profile:', error);
           if (error.code === 'PGRST116') {
-            console.log('Profile not found, creating new profile');
+            // Log removido por segurança
             const {
               data: newProfile,
               error: createError
@@ -95,7 +95,7 @@ const UserProfile = () => {
           }
           throw error;
         }
-        console.log('Profile fetched successfully:', data);
+        // Log removido por segurança
         return data;
       } catch (err) {
         console.error('Error in profile query:', err);
@@ -178,7 +178,7 @@ const UserProfile = () => {
 
   useEffect(() => {
     if (profile) {
-      console.log("Setting profile state with data:", profile);
+      // Log removido por segurança
       setName(profile.name || '');
       setBio(profile.bio || '');
       setConcursosAprovados(profile.concursos_aprovados || '');
@@ -208,7 +208,7 @@ const UserProfile = () => {
       const fileName = `${user!.id}-${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
       setUploading(true);
-      console.log("Uploading file to path:", filePath);
+      // Log removido por segurança
       const {
         data,
         error: uploadError
@@ -220,13 +220,13 @@ const UserProfile = () => {
         console.error("Upload error:", uploadError);
         throw uploadError;
       }
-      console.log("Upload data:", data);
+      // Log removido por segurança
       const {
         data: {
           publicUrl
         }
       } = supabase.storage.from('profiles').getPublicUrl(filePath);
-      console.log("Generated public URL:", publicUrl);
+      // Log removido por segurança
       const {
         data: profileData,
         error: updateError
@@ -238,7 +238,7 @@ const UserProfile = () => {
         console.error("Update profile error:", updateError);
         throw updateError;
       }
-      console.log("Updated profile data:", profileData);
+      // Log removido por segurança
       setAvatarUrl(publicUrl);
       toast({
         title: 'Foto de perfil atualizada',
@@ -260,22 +260,7 @@ const UserProfile = () => {
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      console.log("Saving profile with data:", {
-        name,
-        bio,
-        concursosAprovados,
-        concursosParticipando,
-        avatarUrl,
-        statusConcurseiro,
-        profileText,
-        estado,
-        formacao,
-        cargoAtual,
-        areaEstudos,
-        especialidade,
-        cursoPreparatorio,
-        rotinaEstudos
-      });
+      // Log removido por segurança
       const currentAvatarUrl = avatarUrl;
       const {
         data,
@@ -301,7 +286,7 @@ const UserProfile = () => {
         console.error("Error saving profile:", error);
         throw error;
       }
-      console.log("Profile saved successfully:", data);
+      // Log removido por segurança
       toast({
         title: 'Perfil atualizado',
         description: 'Seu perfil foi atualizado com sucesso.'

@@ -28,7 +28,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
           question_type: answerData.question_type || 'MULTIPLE_CHOICE'
         }));
         
-        console.log('[useOfficialAnswerWeights] Found', answers.length, 'answers for booklet:', bookletId);
+        // Log removido por segurança
         return answers;
       }
 

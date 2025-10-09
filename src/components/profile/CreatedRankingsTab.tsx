@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useSecureUrls } from '@/services/urlObfuscation';
+import { useEditUrls } from '@/hooks/useEditUrls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PencilLine, Trophy, Users, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
   } = useAuth();
   const navigate = useNavigate();
   const { generateSecureUrl } = useSecureUrls();
+  const { generateEditUrl } = useEditUrls();
   const {
     toast
   } = useToast();
@@ -150,7 +152,18 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
                   <span>Ver Ranking</span>
                 </Button>
                 
-                <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={() => navigate(`/criar-ranking?edit=${ranking.id}`)}>
+                <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={async () => {
+                  try {
+                    const editUrl = await generateEditUrl(ranking.id);
+                    navigate(editUrl);
+                  } catch (error) {
+                    toast({
+                      title: "Erro",
+                      description: "Não foi possível gerar link de edição",
+                      variant: "destructive"
+                    });
+                  }
+                }}>
                   <PencilLine className="h-4 w-4" />
                   <span>Editar</span>
                 </Button>

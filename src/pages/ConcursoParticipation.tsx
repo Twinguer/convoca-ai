@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById } from '@/services/concursoService';
@@ -21,9 +21,18 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
   const navigate = useNavigate();
   const { user } = useAuth();
   const { generateSecureUrl } = useSecureUrls();
+  const [showAnswerSheet, setShowAnswerSheet] = useState(false);
   
   // Usar concursoId passado como prop ou do URL
   const id = concursoId || urlId;
+
+  // Check URL params to see if we should force display answer sheet
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('showAnswerSheet') === 'true') {
+      setShowAnswerSheet(true);
+    }
+  }, []);
 
   // Log removido por segurança
 
@@ -52,7 +61,7 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
     data: userRanking,
     isLoading: isCheckingParticipation
   } = useQuery({
-    queryKey: ['participating', id, user?.id],
+    queryKey: ['user-participation', id, user?.id],
     queryFn: async () => {
       if (!user || !id) return null;
       
@@ -142,7 +151,8 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
         <ParticipationForm 
           concurso={concurso} 
           isAlreadyParticipating={!!userRanking} 
-          userRankingId={userRanking?.id} 
+          userRankingId={userRanking?.id}
+          showAnswerSheet={showAnswerSheet}
         />
       </div>
     </div>

@@ -35,10 +35,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
     
-    // Log da estrutura de disciplinas do concurso
-    console.log(`[recalculateUserScore] Concurso discipline structure:`, 
-               concurso.disciplines && concurso.disciplines.length > 0 ? 
-               `${concurso.disciplines.length} disciplines/blocks` : 'No custom disciplines');
+    // Log removido por segurança
 
     // Se o concurso exige pontuação mínima verificamos isso
     let minimumScoreRequired = 0;
@@ -50,7 +47,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         ? concurso.total_minimum_score 
         : parseInt(String(concurso?.total_minimum_score || '0'), 10);
         
-      console.log(`[recalculateUserScore] Pontuação mínima requerida: ${minimumScoreRequired}`);
+      // Log removido por segurança
     }
 
     // Primeiro, busque o ranking_id correspondente ao usuário/concurso
@@ -163,7 +160,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       // Verificar se estamos lidando com estrutura hierárquica (blocos -> disciplinas)
       const hierarchical = isHierarchicalStructure(concurso);
       
-      console.log(`[recalculateUserScore] Structure type: ${hierarchical ? 'hierarchical' : 'flat'}`);
+      // Log removido por segurança
       
       // Criar um mapeamento de tipo para peso com base no JSON de disciplinas
       const disciplineWeights: Record<string, number> = {};
@@ -200,7 +197,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         }
       }
       
-      console.log("[recalculateUserScore] Discipline weights:", disciplineWeights);
+      // Log removido por segurança
     }
 
     // Calcular a pontuação do usuário para cada resposta
@@ -256,7 +253,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           disciplineScores[sectionType] += 1;
           weightedDisciplineScores[sectionType] += questionWeight * disciplineWeight;
           
-          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight} * weight ${disciplineWeight}`);
+          // Log removido por segurança
         } else if (concurso.exam_type === 'Certo ou Errado') {
           const penalty = (concurso?.wrong_answer_penalty ?? 0);
           if (penalty > 0) {
@@ -288,7 +285,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             // Mantemos disciplineScores como contagem de acertos (não decrementar em erro)
             weightedDisciplineScores[sectionType] -= penalty * disciplineWeight; // Penalidade multiplicada apenas pelo peso da disciplina
             
-            console.log(`[recalculateUserScore] Question ${userAnswer.question_number} wrong (${sectionType}): -${penalty} penalty`);
+            // Log removido por segurança
           }
           // Se penalty = 0, não faz nada (resposta errada não impacta)
         }
@@ -300,9 +297,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Adicionar pontuações subjetivas ao total
     totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
     
-    console.log(`[recalculateUserScore] Calculated total score: ${totalScore}, discipline scores:`, disciplineScores);
-    console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
-    console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}`);
+    // Logs removidos por segurança
 
     // Se estivermos usando pesos de disciplina customizados, recalcular a pontuação total
     if (concurso.has_custom_knowledge && Object.keys(weightedDisciplineScores).length > 0) {
@@ -312,7 +307,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       // Adicionar pontuações subjetivas ponderadas
       totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
       
-      console.log(`[recalculateUserScore] Recalculated total with custom weights: ${totalScore}`);
+      // Log removido por segurança
     }
 
     // Atualizar a pontuação do usuário no ranking com as pontuações por disciplina

@@ -28,18 +28,17 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       .eq('concurso_id', rankingData.concurso_id)
       .maybeSingle();
 
-    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
-    console.log('[fetchExistingAnswers] Erro na busca consolidada:', consolidatedError);
+    // Logs removidos por segurança
 
     let answers: { [key: number]: string } = {};
 
     if (consolidatedData?.consolidated_data) {
       const data = consolidatedData.consolidated_data as any;
-      console.log('[fetchExistingAnswers] Estrutura de dados consolidados:', data);
+      // Log removido por segurança
 
       // Buscar dados do usuário específico dentro do JSON consolidado
       const userData = data.users?.[rankingData.user_id];
-      console.log('[fetchExistingAnswers] Dados do usuário no JSON consolidado:', userData);
+      // Log removido por segurança
 
       if (userData?.booklets) {
         // Preferir o caderno selecionado no JSON consolidado (última edição)
@@ -83,10 +82,10 @@ export const fetchExistingAnswers = async (rankingId: string) => {
         }
       }
     } else {
-      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado para o concurso');
+      // Log removido por segurança
     }
 
-    console.log('[fetchExistingAnswers] Respostas finais para retorno:', answers);
+    // Log removido por segurança
 
     return {
       answers,

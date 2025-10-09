@@ -17,7 +17,7 @@ export const createQuestionOptions = (concurso: Concurso): Record<number, string
     options[i] = questionOptions;
   }
   
-  console.log(`[createQuestionOptions] Created options for ${totalQuestions} questions with ${questionOptions.length} choices each`);
+  // Log removido por segurança
   return options;
 };
 

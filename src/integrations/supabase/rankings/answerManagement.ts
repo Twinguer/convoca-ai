@@ -36,7 +36,7 @@ export const saveUserAnswersData = async (
       };
     });
     
-    console.log('[answerManagement] Dados preparados para estrutura consolidada:', answersArray);
+    // Log removido por segurança
 
     // Usar a nova função RPC consolidada
     const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {

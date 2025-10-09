@@ -30,7 +30,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
+      // Log removido por segurança
     }
   }, [concurso]);
 
@@ -115,12 +115,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso && Object.keys(questionType).length === 0) {
       const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
       
-      console.log('[initializeQuestionTypes] Initializing question types for concurso:', concurso.id);
+      // Log removido por segurança
 
       // Verificar se estamos usando a estrutura customizada
       if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
         const hierarchical = isHierarchicalStructure(concurso);
-        console.log('[initializeQuestionTypes] Using hierarchical structure:', hierarchical);
+        // Log removido por segurança
         
         let questionNumber = 1;
 
@@ -129,11 +129,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           for (const block of concurso.disciplines) {
             // Use TypeGuard to check if this is a DisciplineBlock
             if (isDisciplineBlock(block)) {
-              console.log('[initializeQuestionTypes] Processing block:', block.name);
+              // Log removido por segurança
               for (const discipline of block.disciplines) {
                 if (discipline.isEnabled) {
                   const questionCount = getNumericValue(discipline.questionCount);
-                  console.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from discipline ${discipline.name}`);
+                  // Log removido por segurança
                   
                   for (let i = 0; i < questionCount; i++) {
                     typesMap[questionNumber] = discipline.type;
@@ -233,14 +233,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const getTotalQuestions = () => {
     if (!concurso) return 0;
     
-    console.log('[getTotalQuestions] Calculating total questions for concurso:', concurso.id);
+    // Log removido por segurança
 
     let total = 0;
 
     // Verificar se estamos usando a estrutura customizada
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const hierarchical = isHierarchicalStructure(concurso);
-      console.log('[getTotalQuestions] Using hierarchical structure:', hierarchical);
+      // Log removido por segurança
       
       if (hierarchical) {
         // Processar estrutura hierárquica (blocos -> disciplinas)
@@ -292,7 +292,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       }
     }
 
-    console.log(`[getTotalQuestions] Total questions: ${total}`);
+    // Log removido por segurança
     return total;
   };
 
@@ -311,12 +311,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const getSectionQuestions = () => {
     if (!concurso) return [];
 
-    console.log('[getSectionQuestions] Getting questions for section:', selectedSection);
+    // Log removido por segurança
 
     // Verificar se estamos usando a estrutura customizada
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const hierarchical = isHierarchicalStructure(concurso);
-      console.log('[getSectionQuestions] Using hierarchical structure:', hierarchical);
+      // Log removido por segurança
       
       let startIndex = 1;
 
@@ -334,7 +334,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
                     { length: questionCount },
                     (_, i) => startIndex + i
                   );
-                  console.log(`[getSectionQuestions] Questions for discipline ${discipline.name} (type: ${discipline.type}):`, questions);
+                  // Log removido por segurança
                   return questions;
                 }
 
@@ -356,7 +356,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
                 { length: questionCount },
                 (_, i) => startIndex + i
               );
-              console.log(`[getSectionQuestions] Questions for flat discipline ${discipline.name} (type: ${discipline.type}):`, questions);
+              // Log removido por segurança
               return questions;
             }
 
@@ -385,7 +385,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       });
     }
 
-    console.log('[getSectionQuestions] Questions for section', selectedSection, ':', questions);
+    // Log removido por segurança
     return questions.sort((a, b) => a - b);
   };
 
@@ -403,7 +403,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const createAnswerMatrix = () => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) {
-      console.log('[createAnswerMatrix] No questions found for section:', selectedSection);
+      // Log removido por segurança
       return [];
     }
 
@@ -425,7 +425,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       matrix.push(rowData);
     }
 
-    console.log('[createAnswerMatrix] Matrix for section', selectedSection, ':', matrix);
+    // Log removido por segurança
     return matrix;
   };
 

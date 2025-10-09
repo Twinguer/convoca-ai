@@ -206,7 +206,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         // Log removido por segurança
 
         // 1. Buscar dados consolidados
-        console.log('Buscando dados consolidados...');
+        // Log removido por segurança
         const { data: consolidatedData, error: fetchError } = await supabase
           .from('consolidated_answers_by_concurso')
           .select('consolidated_data')
@@ -220,7 +220,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
         // 2. Remover usuário do JSON consolidado
         if (consolidatedData?.consolidated_data?.users) {
-          console.log('Removendo usuário dos dados consolidados...');
+          // Log removido por segurança
           const updatedData = { ...consolidatedData.consolidated_data };
           delete updatedData.users[currentUserId];
           
@@ -244,7 +244,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         }
 
         // 3. Deletar das tabelas relacionadas
-        console.log('Deletando dados relacionados...');
+        // Log removido por segurança
         
         // Deletar score_calculation_logs
         const { error: logsError } = await supabase
@@ -277,7 +277,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           throw rankingError;
         }
 
-        console.log('Usuário saiu do ranking com sucesso');
+        // Log removido por segurança
         return { success: true };
       } catch (error) {
         console.error('Erro ao sair do ranking:', error);

@@ -50,13 +50,13 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   } = useQuery({
     queryKey: ['official-answers-weights', concursoId, bookletId],
     queryFn: async () => {
-      console.log('Buscando gabarito para caderno:', bookletId);
+      // Log removido por segurança
       const result = await getAnswerKeyForBooklet(concursoId, bookletId);
       if (!result.success) {
         console.error('Erro ao buscar gabarito:', result.error);
         throw new Error(result.error);
       }
-      console.log('Gabarito encontrado:', result.data);
+      // Log removido por segurança
       return result.data || [];
     },
     enabled: !!concursoId && !!bookletId
@@ -239,7 +239,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       // Preparar dados para salvar apenas este caderno
       const answerKeyData = allQuestions.map(qNum => {
         const sectionType = getSectionTypeForQuestion(concurso, qNum);
-        console.log(`Questão ${qNum}: usando section_type=${sectionType} para caderno ${bookletId}`);
+        // Log removido por segurança
         return {
           concurso_id: concursoId,
           booklet_id: bookletId,
@@ -250,14 +250,14 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           is_nullified: nullifiedQuestions.has(qNum)
         };
       });
-      console.log('Salvando gabarito para caderno:', bookletId, 'com', answerKeyData.length, 'questões');
+      // Log removido por segurança
 
       // Usar o serviço para salvar o caderno
       const result = await saveBookletAnswerKeyLegacy(concursoId, bookletId, answerKeyData);
       if (!result.success) {
         throw new Error(result.error);
       }
-      console.log('Gabarito salvo com sucesso para caderno:', bookletId);
+      // Log removido por segurança
       setSavedSuccess(true);
 
       // Atualizar dados
@@ -546,7 +546,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
                 Salvando...
               </> : <>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Gabarito do Caderno {bookletId}
+                Salvar Gabarito do Caderno
               </>}
           </Button>
         </div>

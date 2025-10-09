@@ -22,7 +22,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets?.[bookletId]) {
-      console.log('[getAnswerKeyForBooklet] No data found for booklet:', bookletId);
+      // Log removido por segurança
       return { success: true, data: [] };
     }
 
@@ -37,7 +37,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
       question_type: answerData.question_type || 'MULTIPLE_CHOICE'
     }));
 
-    console.log('[getAnswerKeyForBooklet] Found', answers.length, 'answers for booklet:', bookletId);
+    // Log removido por segurança
     return { success: true, data: answers };
   } catch (error: any) {
     console.error('[getAnswerKeyForBooklet] Error:', error);

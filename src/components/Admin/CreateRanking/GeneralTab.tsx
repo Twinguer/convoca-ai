@@ -62,7 +62,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
-    console.log("Validando form values:", currentValues);
+    // Log removido por segurança
 
     // Remover validação de cadernos salvos para permitir salvamento inicial
     // if (!areBookletsSaved) {

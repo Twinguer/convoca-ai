@@ -35,7 +35,7 @@ export const AnswerOption: React.FC<AnswerOptionProps> = ({
         ${disabled ? 'opacity-70 cursor-not-allowed' : 'transition-all duration-150 ease-in-out'}
       `}
       onClick={disabled ? undefined : () => {
-        console.log(`[AnswerOption] Clicked option: ${option}`);
+        // Log removido por segurança
         onClick();
       }}
       role="button"

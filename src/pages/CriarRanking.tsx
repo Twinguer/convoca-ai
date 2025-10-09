@@ -14,6 +14,7 @@ import { AnswerKeyTab } from '@/components/Admin/CreateRanking/AnswerKeyTab';
 import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
 import { getTotalQuestions } from '@/hooks/useAnswerSheet/questionCountUtils';
+import { useEditUrls } from '@/hooks/useEditUrls';
 const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
   try {
@@ -38,14 +39,16 @@ const CriarRanking = () => {
     user
   } = useAuth();
   const queryClient = useQueryClient();
+  const { validateEditToken } = useEditUrls();
   const [activeTab, setActiveTab] = useState('general-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
   const [isCustomBanca, setIsCustomBanca] = useState(false);
   const [createdConcursoId, setCreatedConcursoId] = useState<string | null>(null);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [isValidatingToken, setIsValidatingToken] = useState(false);
   const searchParams = new URLSearchParams(location.search);
-  const editId = searchParams.get('edit');
+  const editToken = searchParams.get('edit');
   const isAdmin = searchParams.get('admin') === 'true';
   const [jobTitles] = useState([{
     id: '1',
@@ -121,11 +124,40 @@ const CriarRanking = () => {
       localidades: []
     }
   });
+
+  // Validar token de edição se presente
+  useEffect(() => {
+    const validateEditTokenAsync = async () => {
+      if (editToken) {
+        setIsValidatingToken(true);
+        try {
+          const validConcursoId = await validateEditToken(editToken);
+          if (validConcursoId) {
+            // Token válido, continuar com a edição
+            setCreatedConcursoId(validConcursoId);
+          } else {
+            // Token inválido ou expirado
+            toast.error('Link de edição inválido ou expirado');
+            navigate('/criar-ranking');
+          }
+        } catch (error) {
+          console.error('Erro ao validar token de edição:', error);
+          toast.error('Erro ao validar link de edição');
+          navigate('/criar-ranking');
+        } finally {
+          setIsValidatingToken(false);
+        }
+      }
+    };
+
+    validateEditTokenAsync();
+  }, [editToken, validateEditToken, navigate]);
+
   useEffect(() => {
     const loadExistingData = async () => {
-      if (editId) {
+      if (editToken) {
         try {
-          const data = await fetchRankingData(editId);
+          const data = await fetchRankingData(createdConcursoId);
           if (data) {
             setCreatedConcursoId(data.id);
             const isOtherTitle = !jobTitles.find(jt => jt.title === data.titulo);
@@ -154,7 +186,7 @@ const CriarRanking = () => {
       }
     };
     loadExistingData();
-  }, [editId, form, jobTitles]);
+  }, [createdConcursoId, form, jobTitles]);
   useEffect(() => {
     // Se não for admin, verifica login
     if (!isAdmin && !user) {
@@ -204,7 +236,7 @@ const CriarRanking = () => {
         const saveResult = await saveRanking({
           formValues: formValuesWithAdminFlags,
           userId: user?.id,
-          editId,
+          createdConcursoId,
           jobTitles
         });
         if (saveResult?.duplicated) {
@@ -223,7 +255,7 @@ const CriarRanking = () => {
         queryClient.invalidateQueries({
           queryKey: ['rankings']
         });
-        return editId; // quando editando, retorna o id já existente
+        return createdConcursoId; // quando editando, retorna o id já existente
       } catch (error) {
         console.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
@@ -238,7 +270,7 @@ const CriarRanking = () => {
         const saveResult = await saveRanking({
           formValues,
           userId: user?.id,
-          editId,
+          createdConcursoId,
           jobTitles
         });
         if (saveResult?.duplicated) {
@@ -257,7 +289,7 @@ const CriarRanking = () => {
         queryClient.invalidateQueries({
           queryKey: ['rankings']
         });
-        return editId; // quando editando sem novo id
+        return createdConcursoId; // quando editando sem novo id
       } catch (error) {
         console.error("Erro ao salvar ranking:", error);
         toast.error("Erro ao salvar ranking: " + (error as Error).message);
@@ -357,6 +389,21 @@ const CriarRanking = () => {
       navigate('/pre-classificacao');
     }
   };
+
+  // Mostrar loading enquanto valida o token de edição
+  if (isValidatingToken) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="flex justify-center items-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p>Validando link de edição...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return <div className="container mx-auto p-4">
       <Button variant="ghost" className="mb-4 flex items-center gap-2" onClick={handleBack}>
         <ArrowLeft className="h-4 w-4" />
@@ -366,7 +413,7 @@ const CriarRanking = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
-            {editId ? 'Editar Ranking' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
+            {editToken ? 'Editar Ranking' : createdConcursoId ? 'Ranking Criado - Adicionar Gabarito' : 'Criar Novo Ranking'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -375,7 +422,7 @@ const CriarRanking = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editId} className="text-slate-800">
+                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editToken} className="text-slate-800">
                     Gabarito Oficial
                   </TabsTrigger>
                 </TabsList>
@@ -392,7 +439,7 @@ const CriarRanking = () => {
                     </Button>
                   </div>
                   
-                  {(createdConcursoId || editId) && <AnswerKeyTab concursoId={createdConcursoId || editId || ''} onGoToResults={handleGoToResults} />}
+                  {(createdConcursoId || editToken) && <AnswerKeyTab concursoId={createdConcursoId || ''} onGoToResults={handleGoToResults} />}
                 </TabsContent>
               </Tabs>
             </form>

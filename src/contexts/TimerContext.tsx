@@ -37,6 +37,11 @@ interface TimerProviderProps {
 export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { addStudySession } = useStudyStatistics();
+  
+  // Defensive check for hooks
+  if (!addStudySession) {
+    console.warn('addStudySession not available in TimerProvider');
+  }
   const [minutes, setMinutes] = useState(60);
   const [seconds, setSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -81,7 +86,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           }
 
           // Register study session
-          if (sessionStartTime) {
+          if (sessionStartTime && addStudySession) {
             const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / (1000 * 60));
             if (sessionDuration >= 20) {
               addStudySession(sessionDuration);
@@ -146,7 +151,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
   // Update database when studying status changes
   const updateStudyingStatus = async (studying: boolean) => {
-    if (!user) return;
+    if (!user?.id) return;
     
     try {
       await supabase
@@ -202,7 +207,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
   const stopTimer = () => {
     // Calcular duração da sessão
-    if (sessionStartTime) {
+    if (sessionStartTime && addStudySession) {
       const sessionDuration = Math.floor((Date.now() - sessionStartTime.getTime()) / (1000 * 60));
       if (sessionDuration >= 20) {
         addStudySession(sessionDuration);

@@ -13,29 +13,29 @@ export const useAnswerManagement = (): UseAnswerManagementResult => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
 
   const handleAnswerChange = (questionNumber: number, answer: string) => {
-    console.log(`[useAnswerManagement] Changing answer for question ${questionNumber} to ${answer}`);
+    // Log removido por segurança
     setAnswers((prev) => {
       const newAnswers = {
         ...prev,
         [questionNumber]: answer
       };
-      console.log(`[useAnswerManagement] New answers state:`, newAnswers);
+      // Log removido por segurança
       return newAnswers;
     });
   };
 
   const handleClearAnswer = (questionNumber: number) => {
-    console.log(`[useAnswerManagement] Clearing answer for question ${questionNumber}`);
+    // Log removido por segurança
     setAnswers((prev) => {
       const newAnswers = { ...prev };
       delete newAnswers[questionNumber];
-      console.log(`[useAnswerManagement] New answers state after clear:`, newAnswers);
+      // Log removido por segurança
       return newAnswers;
     });
   };
 
   const clearAllAnswers = () => {
-    console.log(`[useAnswerManagement] Clearing all answers`);
+    // Log removido por segurança
     setAnswers({});
   };
 

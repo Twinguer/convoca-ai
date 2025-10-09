@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+
+// Mutex global para evitar operações simultâneas
+let globalUpdateInProgress = false;
 
 interface StudyStatistics {
   totalHours: number;
@@ -61,6 +64,8 @@ export const useStudyStatistics = () => {
   const { user } = useAuth();
   const [statistics, setStatistics] = useState<StudyStatistics>(defaultStats);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadStatistics = async () => {
     if (!user) {
@@ -231,8 +236,8 @@ export const useStudyStatistics = () => {
 
         setStatistics(consolidatedStats);
         
-        // Salvar estatísticas consolidadas
-        await updateStatistics(consolidatedStats);
+        // Salvar estatísticas consolidadas diretamente no banco (sem triggerar updateStatistics)
+        await saveStatisticsToDatabase(consolidatedStats);
       } else {
         setStatistics(baseStats);
         if (!statsData?.statistics_data) {
@@ -246,21 +251,86 @@ export const useStudyStatistics = () => {
     }
   };
 
+  const saveStatisticsToDatabase = async (stats: StudyStatistics) => {
+    if (!user) return;
+
+    try {
+      // Primeiro verificar se já existe
+      const { data: existingStats, error: checkError } = await supabase
+        .from('study_statistics')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingStats && !checkError) {
+        // Se já existe, atualizar
+        const { error } = await supabase
+          .from('study_statistics')
+          .update({
+            statistics_data: stats,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error saving statistics to database:', error);
+        }
+      } else {
+        // Se não existe, inserir
+        const { error } = await supabase
+          .from('study_statistics')
+          .insert({
+            user_id: user.id,
+            statistics_data: stats
+          });
+
+        if (error) {
+          console.error('Error creating statistics in database:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving statistics to database:', error);
+    }
+  };
+
   const createInitialStatistics = async () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Primeiro verificar se já existe
+      const { data: existingStats, error: checkError } = await supabase
         .from('study_statistics')
-        .upsert({
-          user_id: user.id,
-          statistics_data: defaultStats
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error creating initial statistics:', error);
+      // Log removido por segurança
+
+      if (existingStats && !checkError) {
+        // Se já existe, atualizar
+        const { error } = await supabase
+          .from('study_statistics')
+          .update({
+            statistics_data: defaultStats,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating initial statistics:', error);
+        }
+      } else {
+        // Se não existe, inserir
+        const { error } = await supabase
+          .from('study_statistics')
+          .insert({
+            user_id: user.id,
+            statistics_data: defaultStats
+          });
+
+        if (error) {
+          console.error('Error creating initial statistics:', error);
+        }
       }
     } catch (error) {
       console.error('Error creating initial statistics:', error);
@@ -270,24 +340,103 @@ export const useStudyStatistics = () => {
   const updateStatistics = async (newStats: Partial<StudyStatistics>) => {
     if (!user) return;
 
+    // Log removido por segurança
+
+    // Atualizar estado local imediatamente
     const updatedStats = { ...statistics, ...newStats };
     setStatistics(updatedStats);
 
-    try {
-      const { error } = await supabase
-        .from('study_statistics')
-        .upsert({
-          user_id: user.id,
-          statistics_data: updatedStats
-        });
+    // Cancelar timeout anterior se existir
+    if (updateTimeoutRef.current) {
+      console.log('[DEBUG] Cancelando timeout anterior');
+      clearTimeout(updateTimeoutRef.current);
+    }
 
-      if (error) {
-        console.error('Error updating statistics:', error);
+    // Debounce: aguardar 500ms antes de salvar no banco
+    updateTimeoutRef.current = setTimeout(async () => {
+      console.log('[DEBUG] Timeout executado, chamando performDatabaseUpdate');
+      await performDatabaseUpdate(updatedStats);
+    }, 500);
+  };
+
+  const performDatabaseUpdate = async (updatedStats: StudyStatistics) => {
+    if (!user) return;
+
+    // Mutex global para evitar operações simultâneas de qualquer instância
+    if (globalUpdateInProgress) {
+      console.log('[DEBUG] performDatabaseUpdate ignorada - operação global em andamento');
+      return;
+    }
+
+    // Prevenir múltiplas chamadas simultâneas da mesma instância
+    if (isUpdating) {
+      console.log('[DEBUG] performDatabaseUpdate ignorada - já está atualizando');
+      return;
+    }
+
+    // Log removido por segurança
+
+    globalUpdateInProgress = true;
+    setIsUpdating(true);
+
+    try {
+      // Primeiro verificar se já existe
+      const { data: existingStats, error: checkError } = await supabase
+        .from('study_statistics')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Log removido por segurança
+
+      if (existingStats && !checkError) {
+        // Se já existe, atualizar
+        // Log removido por segurança
+        const { error } = await supabase
+          .from('study_statistics')
+          .update({
+            statistics_data: updatedStats,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error updating statistics:', error);
+        } else {
+          console.log('[DEBUG] UPDATE executado com sucesso');
+        }
+      } else {
+        // Se não existe, inserir
+        // Log removido por segurança
+        const { error } = await supabase
+          .from('study_statistics')
+          .insert({
+            user_id: user.id,
+            statistics_data: updatedStats
+          });
+
+        if (error) {
+          console.error('Error creating statistics:', error);
+        } else {
+          console.log('[DEBUG] INSERT executado com sucesso');
+        }
       }
     } catch (error) {
       console.error('Error updating statistics:', error);
+    } finally {
+      globalUpdateInProgress = false;
+      setIsUpdating(false);
     }
   };
+
+  // Cleanup do timeout quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const addStudySession = async (durationMinutes: number, type: 'timer' | 'manual' = 'timer', subject?: string) => {
     if (!user || durationMinutes < 20) return; // Só conta sessões > 20min

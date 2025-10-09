@@ -19,7 +19,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
             ? discipline.questionCount
             : Number(String(discipline.questionCount || '0'));
             
-          console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+          // Log removido por segurança
           totalQuestions += questionCount;
         }
       });
@@ -27,12 +27,12 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       console.warn('[getTotalQuestions] Nenhum array de disciplines encontrado para conhecimento customizado');
     }
     
-    console.log(`[getTotalQuestions] Total de questões customizadas: ${totalQuestions}`);
+    // Log removido por segurança
     return totalQuestions;
   }
   
   // Traditional structure
-  console.log('[getTotalQuestions] Usando estrutura tradicional');
+  // Log removido por segurança
   let total = 0;
   
   if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
@@ -40,7 +40,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.basic_knowledge_questions
       : Number(String(concurso.basic_knowledge_questions || '0'));
       
-    console.log(`[getTotalQuestions] Conhecimento básico: ${basicCount} questões`);
+    // Log removido por segurança
     total += basicCount;
   }
   
@@ -49,7 +49,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.specific_knowledge_1_questions
       : Number(String(concurso.specific_knowledge_1_questions || '0'));
       
-    console.log(`[getTotalQuestions] Conhecimento específico 1: ${count} questões`);
+    // Log removido por segurança
     total += count;
   }
   
@@ -58,7 +58,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.specific_knowledge_2_questions
       : Number(String(concurso.specific_knowledge_2_questions || '0'));
       
-    console.log(`[getTotalQuestions] Conhecimento específico 2: ${count} questões`);
+    // Log removido por segurança
     total += count;
   }
   
@@ -67,17 +67,17 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.specific_knowledge_3_questions
       : Number(String(concurso.specific_knowledge_3_questions || '0'));
       
-    console.log(`[getTotalQuestions] Conhecimento específico 3: ${count} questões`);
+    // Log removido por segurança
     total += count;
   }
   
-  console.log(`[getTotalQuestions] Total de questões tradicionais: ${total}`);
+  // Log removido por segurança
   return total;
 };
 
 // Get the count of questions that have been answered
 export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): number => {
   const count = Object.keys(answers).length;
-  console.log(`[getAnsweredQuestionsCount] Total de respostas: ${count}`);
+  // Log removido por segurança
   return count;
 };

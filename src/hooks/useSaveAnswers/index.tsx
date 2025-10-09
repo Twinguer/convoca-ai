@@ -36,22 +36,14 @@ export const useSaveAnswers = ({
         return;
       }
 
-      console.log('[useSaveAnswers] Preparando dados para salvamento');
-      console.log('[useSaveAnswers] Respostas do usuário:', answers);
+      // Logs removidos por segurança
       // Log removido por segurança
-      console.log('[useSaveAnswers] Todos os parâmetros recebidos:', {
-        rankingId,
-        concursoId: concurso?.id,
-        selectedBookletId,
-        answersCount: Object.keys(answers).length,
-        editCount
-      });
+      // Log removido por segurança
 
       // Preparar dados das respostas
       const answersObject = prepareAnswersData(answers, concurso, nullifiedQuestions);
 
-      console.log('[useSaveAnswers] Dados formatados para RPC:', answersObject);
-      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(answersObject).length);
+      // Logs removidos por segurança
 
       // Garantir que selectedBookletId seja sempre string para a função RPC
       const { data: currentRanking } = await supabase
@@ -82,14 +74,13 @@ export const useSaveAnswers = ({
         throw new Error(error.message || "Erro ao salvar respostas");
       }
 
-      console.log('[useSaveAnswers] Resposta da função RPC:', data);
+      // Log removido por segurança
 
       if (!data.success) {
         throw new Error(data.error || "Erro ao salvar respostas");
       }
 
-      console.log('[useSaveAnswers] Respostas salvas com sucesso:', data.saved_answers);
-      console.log('[useSaveAnswers] Total de respostas salvas:', data.answers_saved);
+      // Logs removidos por segurança
 
       setSavedSuccess(true);
       toast({

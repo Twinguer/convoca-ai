@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, newSession) => {
         if (!mounted) return;
 
-        console.log('Auth state change:', event);
+        // Log removido por segurança
         
         // Handle different auth events
         switch (event) {

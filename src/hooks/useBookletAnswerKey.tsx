@@ -29,7 +29,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
         throw error;
       }
       
-      console.log('Cadernos encontrados:', data || []);
+      // Log removido por segurança
       return data || [];
     },
     enabled: !!concursoId,
@@ -45,18 +45,18 @@ export const useBookletAnswerKey = (concursoId: string) => {
       // Log removido por segurança
       setSelectedBookletId(booklets[0].id);
     }
-  }, [booklets, selectedBookletId]);
+  }, [booklets]); // Removido selectedBookletId da dependência para evitar loop
 
   // Verificar completude de todos os cadernos
   const { data: completionStatus } = useQuery({
     queryKey: ['booklets-completion', concursoId, booklets?.length],
     queryFn: async () => {
       if (!booklets || booklets.length === 0) {
-        console.log('Nenhum caderno disponível para verificar completude');
+        // Log removido por segurança
         return { allComplete: true, details: [] };
       }
 
-      console.log('Verificando completude dos cadernos...');
+      // Log removido por segurança
       const completionDetails = [];
       let allComplete = true;
 
@@ -124,10 +124,10 @@ export const useBookletAnswerKey = (concursoId: string) => {
           (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
       }
 
-      console.log('[useBookletAnswerKey] Total de questões esperadas:', expectedQuestions);
+      // Log removido por segurança
 
       // Buscar dados consolidados uma vez só
-      console.log('[useBookletAnswerKey] Fetching consolidated answer key using new JSON structure');
+      // Log removido por segurança
       const { data: consolidatedData } = await supabase
         .from('official_answer_weights')
         .select('consolidated_answer_data')
@@ -169,12 +169,12 @@ export const useBookletAnswerKey = (concursoId: string) => {
         }
       }
 
-      console.log('Status de completude:', { allComplete, details: completionDetails });
+      // Log removido por segurança
       return { allComplete, details: completionDetails };
     },
     enabled: !!booklets && booklets.length > 0 && !!concursoId,
-    refetchInterval: 10000,
-    staleTime: 5000
+    refetchOnWindowFocus: false,
+    staleTime: 30000
   });
 
   const handleBookletChange = (bookletId: string) => {

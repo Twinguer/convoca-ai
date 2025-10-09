@@ -21,7 +21,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       return { success: false, error: `Erro ao recalcular pontuações: ${error.message}` };
     }
 
-    console.log('[recalculateAllUserScores] PostgreSQL function result:', data);
+    // Log removido por segurança
 
     if (!data || !data.success) {
       console.error('[recalculateAllUserScores] PostgreSQL function returned error:', data?.error);

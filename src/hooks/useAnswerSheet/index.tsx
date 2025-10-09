@@ -55,7 +55,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
+      // Log removido por segurança
     }
   }, [concurso]);
 
@@ -111,14 +111,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Handle data loading with useEffect instead of onSuccess
   useEffect(() => {
     if (existingAnswersData) {
-      console.log('[useAnswerSheet] Dados carregados:', existingAnswersData);
-      console.log('[useAnswerSheet] Answers recebidas:', existingAnswersData.answers);
-      console.log('[useAnswerSheet] Número de respostas:', Object.keys(existingAnswersData.answers || {}).length);
+      // Logs removidos por segurança
       
       if (existingAnswersData.answers) {
-        console.log('[useAnswerSheet] ANTES setAnswers - answers atuais:', answers);
+        // Logs removidos por segurança
         setAnswers(existingAnswersData.answers);
-        console.log('[useAnswerSheet] DEPOIS setAnswers - answers definidas:', existingAnswersData.answers);
+        // Logs removidos por segurança
         
         // Também definir as pontuações subjetivas
         if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
@@ -134,10 +132,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           setCaseStudy3Score(existingAnswersData.caseStudy3Score);
         }
       } else {
-        console.log('[useAnswerSheet] ATENÇÃO: Nenhuma resposta encontrada nos dados carregados');
+        // Log removido por segurança
       }
     } else {
-      console.log('[useAnswerSheet] ATENÇÃO: existingAnswersData está vazio ou undefined');
+      // Log removido por segurança
     }
   }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 

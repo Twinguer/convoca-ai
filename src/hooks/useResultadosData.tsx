@@ -69,14 +69,14 @@ export function useResultadosData(concursoId?: string) {
   });
   
   // Verificar se o usuário já está participando deste concurso
-  const { data: userParticipationStatus, isLoading: isCheckingParticipation } = useQuery({
+  const { data: userParticipationStatus, isLoading: isCheckingParticipation, refetch: refetchParticipation } = useQuery({
     queryKey: ['user-participation', id, user?.id],
     queryFn: async () => {
       if (!user || !id) return { isParticipating: false };
       
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('id')
+        .select('id, reservation_type')
         .eq('concurso_id', id)
         .eq('user_id', user.id)
         .maybeSingle();
@@ -86,13 +86,19 @@ export function useResultadosData(concursoId?: string) {
         return { isParticipating: false };
       }
       
-      return { 
-        isParticipating: !!data,
+      // Lógica robusta para determinar participação
+      const isParticipatingValue = data != null && data.id != null;
+
+      const result = { 
+        isParticipating: isParticipatingValue,
         rankingId: data?.id 
       };
+      
+      
+      return result;
     },
     enabled: !!user && !!id,
-    staleTime: 2 * 60 * 1000, // 2 minutos para participação do usuário
+    staleTime: 30 * 1000, // 30 segundos para participação do usuário
   });
   
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
@@ -177,6 +183,7 @@ export function useResultadosData(concursoId?: string) {
     }
   };
   
+
   return {
     concurso,
     rankings,

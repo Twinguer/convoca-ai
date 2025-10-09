@@ -42,8 +42,12 @@ const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken
     refreshData,
     creatorName,
     inscritos,
-    isParticipating
+    isParticipating: originalIsParticipating
   } = useResultadosData(concursoId);
+
+  // SOLUÇÃO TEMPORÁRIA: Verificar se o usuário está realmente participando
+  // baseado nos dados do ranking (que sabemos que funcionam)
+  const isParticipating = originalIsParticipating || (userRanking && userRanking.id);
   const { toast } = useToast();
   const { leave, isLeaving } = useLeaveRanking();
   const isAuthenticated = !!user;
@@ -95,6 +99,7 @@ const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken
   }
 
   return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
+      
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         
         

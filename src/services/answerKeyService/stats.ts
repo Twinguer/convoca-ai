@@ -44,7 +44,7 @@ export const checkAnswerKeyCompleteness = async (
 
     const allComplete = details.every(detail => detail.isComplete);
 
-    console.log(`[answerKeyService] Answer key completeness check result: ${allComplete ? 'ALL COMPLETE' : 'INCOMPLETE'}`);
+    // Log removido por segurança
 
     return {
       allComplete,
@@ -90,7 +90,7 @@ export const getAnswerKeyStats = async (concursoId: string): Promise<AnswerKeySt
       }
     });
 
-    console.log(`[answerKeyService] Stats: ${totalBooklets} booklets, ${totalAnswers} total answers`);
+    // Log removido por segurança
 
     return {
       totalBooklets,

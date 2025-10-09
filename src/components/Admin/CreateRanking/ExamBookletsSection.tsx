@@ -134,7 +134,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         console.error('Erro ao carregar cadernos:', error);
         throw error;
       }
-      console.log('Cadernos carregados:', data);
+      // Log removido por segurança
       if (data && data.length > 0) {
         setBooklets(data);
         setHasUnsavedChanges(false);
@@ -274,7 +274,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
 
       // Deletar cadernos removidos
       for (const booklet of toDelete) {
-        console.log('Deletando caderno:', booklet.id);
+        // Log removido por segurança
         const {
           error
         } = await supabase.from('exam_booklets').delete().eq('id', booklet.id);
@@ -287,10 +287,10 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       // Salvar cada caderno individualmente (criar ou atualizar)
       const savedBooklets = [];
       for (const [index, booklet] of booklets.entries()) {
-        console.log(`Processando caderno ${index + 1}:`, booklet);
+        // Log removido por segurança
         if (booklet.id) {
           // Atualizar caderno existente
-          console.log('Atualizando caderno existente:', booklet.id);
+          // Log removido por segurança
           const {
             data,
             error
@@ -302,11 +302,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             console.error('Erro ao atualizar caderno:', error);
             throw error;
           }
-          console.log('Caderno atualizado:', data);
+          // Log removido por segurança
           savedBooklets.push(data);
         } else {
           // Criar novo caderno
-          console.log('Criando novo caderno:', booklet.name);
+          // Log removido por segurança
           const {
             data,
             error
@@ -319,7 +319,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
             console.error('Erro ao criar caderno:', error);
             throw error;
           }
-          console.log('Caderno criado:', data);
+          // Log removido por segurança
           savedBooklets.push(data);
         }
       }

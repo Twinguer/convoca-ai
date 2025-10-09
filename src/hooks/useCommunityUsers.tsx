@@ -12,7 +12,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
     queryKey: ['community-users', debouncedSearchQuery],
     queryFn: async () => {
       try {
-        console.log('Fetching community users with query:', debouncedSearchQuery);
+        // Log removido por segurança
         
         // Fetching users with profile data including approvals
         let query = supabase
@@ -41,7 +41,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
           throw error;
         }
 
-        console.log(`Fetched ${profiles.length} community profiles`);
+        // Log removido por segurança
         
         // Add follower and rankings counts for each user
         const usersWithCounts = await Promise.all(
