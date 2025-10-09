@@ -49,9 +49,17 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 
   // Helper function to determine if a ranking is below the required minimum
   const isBelowMinimum = (ranking: Ranking): boolean => {
-    return !!ranking.belowMinimum || 
-           (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
-           (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
+    // Verificação existente para mínimos por disciplina/bloco
+    const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
+      ranking.belowDisciplineMinimums.length > 0;
+    const hasBlockMinimums = ranking.belowBlockMinimums && 
+      ranking.belowBlockMinimums.length > 0;
+    
+    // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+    const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
+      ranking.score <= 0;
+    
+    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated;
   };
 
   // Calculate quota positions for each ranking, separating classified from eliminated
@@ -272,9 +280,17 @@ const RankingTableContent: React.FC<{
 
   // Function to determine if a ranking is below the required minimum
   const isBelowMinimum = (ranking: Ranking): boolean => {
-    return !!ranking.belowMinimum || 
-           (ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0) || 
-           (ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0);
+    // Verificação existente para mínimos por disciplina/bloco
+    const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
+      ranking.belowDisciplineMinimums.length > 0;
+    const hasBlockMinimums = ranking.belowBlockMinimums && 
+      ranking.belowBlockMinimums.length > 0;
+    
+    // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+    const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
+      ranking.score <= 0;
+    
+    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated;
   };
   
   // Function to calculate the objective total score of the ranking

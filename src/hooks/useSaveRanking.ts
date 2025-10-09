@@ -26,19 +26,24 @@ export const useSaveRanking = () => {
     try {
       // Se estivermos editando, buscar dados existentes primeiro para preservar estrutura
       let existingDisciplines: any[] = [];
+      let examType: string = 'Alternativas'; // Default value
       
       if (editId) {
         // Buscar as disciplinas existentes para preservar IDs
         const { data: existingConcurso, error: fetchError } = await supabase
           .from('concursos')
-          .select('disciplines')
+          .select('disciplines, exam_type')
           .eq('id', editId)
           .single();
         
         if (!fetchError && existingConcurso?.disciplines) {
           // Log removido por segurança
           existingDisciplines = existingConcurso.disciplines;
+          examType = existingConcurso.exam_type || 'Alternativas';
         }
+      } else {
+        // Para novos concursos, usar o exam_type do formulário
+        examType = formValues.exam_type || 'Alternativas';
       }
 
       // Normalize strings for uniqueness check (handling case and spaces)
@@ -370,11 +375,11 @@ export const useSaveRanking = () => {
                           officialAnswerWeightsToInsert.push({
                             concurso_id: concursoIdToUse,
                             question_number: questionCounter,
-                            correct_answer: 'A', // Default initial value
+                            correct_answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default initial value
                             section_type: disciplineType,
                             weight: disciplineWeight,
                             is_nullified: false,
-                            question_type: 'MULTIPLE_CHOICE'
+                            question_type: examType === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE'
                           });
                           questionCounter++;
                         }
@@ -401,11 +406,11 @@ export const useSaveRanking = () => {
                       officialAnswerWeightsToInsert.push({
                         concurso_id: concursoIdToUse,
                         question_number: questionCounter,
-                        correct_answer: 'A', // Default initial value
+                        correct_answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default initial value
                         section_type: disciplineType, // CRUCIAL: Use discipline type as section_type
                         weight: disciplineWeight,
                         is_nullified: false,
-                        question_type: 'MULTIPLE_CHOICE'
+                        question_type: examType === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE'
                       });
                       questionCounter++;
                     }

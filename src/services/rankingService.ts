@@ -172,7 +172,14 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const totalObjScore = calculateObjectiveScore(ranking, weightedCustomDisciplineScores);
       
       // Verificar se está abaixo do mínimo geral da prova
-      const belowMinimum = hasMinimumScoreEnabled && totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
+      const belowMinimumGeneral = hasMinimumScoreEnabled && totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
+      
+      // Verificar se é prova "Certo ou Errado" e nota <= 0
+      const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+        (ranking.score || 0) <= 0;
+      
+      // Combinar todas as condições de eliminação
+      const belowMinimum = belowMinimumGeneral || isCertoErradoEliminated;
       
       // Log removido para reduzir overhead em produção
       

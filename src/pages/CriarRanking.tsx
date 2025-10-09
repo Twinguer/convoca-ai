@@ -236,7 +236,7 @@ const CriarRanking = () => {
         const saveResult = await saveRanking({
           formValues: formValuesWithAdminFlags,
           userId: user?.id,
-          createdConcursoId,
+          editId: createdConcursoId,
           jobTitles
         });
         if (saveResult?.duplicated) {
@@ -270,7 +270,7 @@ const CriarRanking = () => {
         const saveResult = await saveRanking({
           formValues,
           userId: user?.id,
-          createdConcursoId,
+          editId: createdConcursoId,
           jobTitles
         });
         if (saveResult?.duplicated) {
