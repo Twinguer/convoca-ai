@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useSecureUrls } from '@/services/urlObfuscation';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById } from '@/services/concursoService';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,8 @@ import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-reac
 
 const ConcursoDetails = () => {
   const { id } = useParams<{ id: string; }>();
+  const navigate = useNavigate();
+  const { generateSecureUrl } = useSecureUrls();
   
   const { data: concurso, isLoading } = useQuery({
     queryKey: ['concurso', id],
@@ -145,11 +148,20 @@ const ConcursoDetails = () => {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button variant="outline" className="border-0" asChild>
-              <Link to={`/concurso/${id}/resultados`} className="flex items-center">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Ver Ranking
-              </Link>
+            <Button 
+              variant="outline" 
+              className="border-0" 
+              onClick={async () => {
+                try {
+                  const secureUrl = await generateSecureUrl(id!, 'resultados');
+                  navigate(secureUrl);
+                } catch (error) {
+                  console.error('Erro ao gerar URL segura:', error);
+                }
+              }}
+            >
+              <ArrowRight className="mr-2 h-4 w-4" />
+              Ver Ranking
             </Button>
           </CardFooter>
         </Card>

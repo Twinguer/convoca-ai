@@ -31,7 +31,7 @@ export const checkAnswerKeyCompleteness = async (
       const completed = booklet?.answers ? Object.keys(booklet.answers).length : 0;
       const isComplete = completed >= expectedQuestions;
 
-      console.log(`[answerKeyService] Booklet ${bookletId}: ${completed}/${expectedQuestions} questions (complete: ${isComplete})`);
+      // Log removido por segurança
 
       return {
         bookletId,

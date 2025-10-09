@@ -39,7 +39,7 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
     setSelectedBookletId(currentBookletId);
   }, [currentBookletId]);
 
-  console.log('[BookletSwitcher] Estado inicial do selectedBookletId:', selectedBookletId);
+  // Log removido por segurança
 
   const handleSwitchBooklet = async (newBookletId: string) => {
     if (!newBookletId) {
@@ -52,27 +52,23 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
       return;
     }
 
-    console.log('[BookletSwitcher] DEBUG - Iniciando troca de caderno');
-    console.log('[BookletSwitcher] DEBUG - Caderno atual:', currentBookletId);
-    console.log('[BookletSwitcher] DEBUG - Novo caderno selecionado:', newBookletId);
-    console.log('[BookletSwitcher] DEBUG - RankingId:', rankingId);
+    // Log removido por segurança
+    // Logs removidos por segurança
 
     setIsSwitching(true);
     try {
-      console.log('[BookletSwitcher] Switching to booklet:', newBookletId);
-      console.log('[BookletSwitcher] Current booklet ID:', currentBookletId);
-      console.log('[BookletSwitcher] Ranking ID:', rankingId);
+      // Logs removidos por segurança
       
       // Usar o serviço consolidado para trocar caderno
       const result = await consolidatedAnswerService.switchBooklet(rankingId, newBookletId);
       
-      console.log('[BookletSwitcher] DEBUG - Resultado do switchBooklet:', result);
+      // Log removido por segurança
 
       if (result.success) {
         // Converter as respostas do formato JSON para o formato esperado
         const answers: Record<number, string> = {};
         if (result.answers && typeof result.answers === 'object') {
-          console.log('[BookletSwitcher] DEBUG - Respostas brutas recebidas:', result.answers);
+          // Log removido por segurança
           
           Object.entries(result.answers).forEach(([questionNum, answer]) => {
             const num = parseInt(questionNum);
@@ -82,7 +78,7 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
           });
         }
 
-        console.log('[BookletSwitcher] DEBUG - Respostas processadas:', answers);
+        // Log removido por segurança
 
         // Notify parent component about the change with isolated answers
         onBookletChanged(newBookletId, answers);
@@ -107,8 +103,7 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
     return name.length > 30 ? name.substring(0, 30) + '...' : name;
   };
 
-  // Após a troca de caderno, logar o novo estado
-  console.log('[BookletSwitcher] Novo estado do selectedBookletId após troca:', selectedBookletId);
+  // Log removido por segurança
 
   // Se há apenas um caderno, não mostra o switcher
   if (booklets.length <= 1) {

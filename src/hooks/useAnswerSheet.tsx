@@ -36,7 +36,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const fetchExistingAnswers = async () => {
     try {
-      console.log('Fetching existing answers for ranking ID:', rankingId);
+      // Log removido por segurança
 
       // Fetch answers
       const { data: answersData, error: answersError } = await supabase
@@ -82,7 +82,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
       if (rankingError) throw rankingError;
 
-      console.log('Fetched ranking data:', rankingData);
+      // Log removido por segurança
 
       if (rankingData) {
         setDiscursiveScore(

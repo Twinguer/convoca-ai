@@ -13,6 +13,7 @@ import { CommunityErrorState } from '@/components/community/CommunityErrorState'
 import { CommunityEmptyState } from '@/components/community/CommunityEmptyState';
 import { UserCard } from '@/components/community/UserCard';
 import { UserGrid } from '@/components/community/UserGrid';
+import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 
 /**
  * Comunidade page component
@@ -21,6 +22,7 @@ import { UserGrid } from '@/components/community/UserGrid';
 const Comunidade: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { generateSecureUserUrl } = useSecureUserUrls();
   const {
     toast
   } = useToast();
@@ -41,13 +43,24 @@ const Comunidade: React.FC = () => {
   const { isOnline } = usePresence();
 
   // Handle user card click - navigate to user profile
-  const handleUserClick = useCallback((userId: string) => {
+  const handleUserClick = useCallback(async (userId: string) => {
     if (!user) {
-      navigate('/auth', { state: { from: `/usuario/${userId}` } });
+      navigate('/auth', { state: { from: '/comunidade' } });
       return;
     }
-    navigate(`/usuario/${userId}`);
-  }, [navigate, user]);
+    
+    try {
+      const secureUrl = await generateSecureUserUrl(userId, 'profile');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura de usuário:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível acessar o perfil do usuário.',
+        variant: 'destructive'
+      });
+    }
+  }, [navigate, user, generateSecureUserUrl, toast]);
 
   // Handle refresh button click
   const handleRefresh = useCallback(async () => {

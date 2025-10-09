@@ -441,7 +441,7 @@ export const useSaveRanking = () => {
                 console.error("Erro ao inserir novos official_answer_weights:", insertError);
                 toast.error("Ranking salvo, mas houve um erro ao configurar os pesos das questões. O cálculo da pontuação pode estar incorreto.");
               } else {
-                console.log(`Official answer weights criados com sucesso para o concurso ${concursoIdToUse}. Total: ${officialAnswerWeightsToInsert.length} registros.`);
+                // Log removido por segurança
               }
             } else {
               console.log("Nenhuma disciplina customizada válida encontrada para inserir em official_answer_weights.");

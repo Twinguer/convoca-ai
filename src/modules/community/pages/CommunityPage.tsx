@@ -14,11 +14,13 @@ import { CommunityEmptyState } from '@/components/community/CommunityEmptyState'
 import { UserGrid } from '@/components/community/UserGrid';
 import { CommunitySectionHeader } from '@/components/community/CommunitySectionHeader';
 import Footer from '@/components/Footer';
+import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 const CommunityPage = () => {
   const {
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { generateSecureUserUrl } = useSecureUserUrls();
   const {
     users,
     isLoading,
@@ -44,8 +46,14 @@ const CommunityPage = () => {
       return (b.followerCount || 0) - (a.followerCount || 0);
     });
   }, [users, isOnline]);
-  const handleUserClick = (userId: string) => {
-    navigate(`/usuario/${userId}`);
+  const handleUserClick = async (userId: string) => {
+    try {
+      const secureUrl = await generateSecureUserUrl(userId, 'profile');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura de usuário:', error);
+      navigate('/comunidade');
+    }
   };
   if (isLoading) return <CommunityLoadingState />;
   if (isError) return <CommunityErrorState />;

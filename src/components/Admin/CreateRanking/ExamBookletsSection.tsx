@@ -125,7 +125,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     if (!concursoId) return;
     try {
       setIsLoading(true);
-      console.log('Carregando cadernos para concurso:', concursoId);
+      // Log removido por segurança
       const {
         data,
         error
@@ -245,12 +245,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       return false;
     }
 
-    // Log para debug
-    console.log('Salvando cadernos:', { concursoId, booklets });
+    // Log removido por segurança
 
     // Se não há concursoId ainda, mostrar aviso ao usuário
     if (!concursoId) {
-      console.log('Sem concursoId - não é possível salvar ainda');
+      // Log removido por segurança
       toast({
         title: "Atenção",
         description: "Salve primeiro as informações básicas do ranking antes de configurar os cadernos.",
@@ -260,7 +259,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     }
     try {
       setIsSaving(true);
-      console.log('Iniciando salvamento de cadernos para concurso:', concursoId);
+      // Log removido por segurança
 
       // Primeiro, obter cadernos existentes
       const {

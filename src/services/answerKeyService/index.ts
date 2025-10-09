@@ -17,7 +17,7 @@ const answerKeyService = {
 // Funções auxiliares exportadas individualmente (para compatibilidade)
 export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: string) => {
   try {
-    console.log('[getAnswerKeyForBooklet] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
+    // Log removido por segurança
     
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
@@ -47,7 +47,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
 
 export const getAllBookletsAnswerKeys = async (concursoId: string) => {
   try {
-    console.log('[getAllBookletsAnswerKeys] Fetching for concurso:', concursoId);
+    // Log removido por segurança
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData) {
@@ -67,8 +67,7 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
 // Função para salvar gabarito usando nova estrutura consolidada
 export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
-    console.log('[saveBookletAnswerKeyLegacy] Using consolidated structure - Saving for concurso:', concursoId, 'booklet:', bookletId);
-    console.log('[saveBookletAnswerKeyLegacy] Answers to save:', answersArray.length);
+    // Logs removidos por segurança
 
     // Converter array para o formato Record<string, AnswerKeyData> esperado
     const formattedAnswers: Record<string, any> = {};

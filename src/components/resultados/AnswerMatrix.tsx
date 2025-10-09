@@ -28,7 +28,7 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   onNullifyQuestion,
   isAdminView = false
 }) => {
-  console.log('Rendering AnswerMatrix with matrix:', matrix);
+  // Log removido por segurança - não expor estrutura interna
   
   if (!matrix || matrix.length === 0) {
     return (

@@ -22,20 +22,17 @@ export interface FeatureFlags {
 
 // Configuração baseada no ambiente
 const getDefaultFlags = (): FeatureFlags => {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const isProduction = process.env.NODE_ENV === 'production';
-  
   return {
-    // Em produção, usar backend por padrão
-    useBackendScoring: isProduction,
-    useBackendValidation: isProduction,
-    useBackendRanking: isProduction,
+    // SEMPRE usar backend - frontend não faz cálculos
+    useBackendScoring: true,
+    useBackendValidation: true,
+    useBackendRanking: true,
     
     // Logging sempre habilitado
     enableSecurityLogging: true,
     
-    // Modo dev para testes
-    enableDevMode: isDevelopment,
+    // Modo dev desabilitado
+    enableDevMode: false,
   };
 };
 
@@ -52,9 +49,10 @@ export const isFeatureEnabled = (feature: keyof FeatureFlags): boolean => {
   return featureFlags[feature];
 };
 
-// Função para logging de uso de features
+// Função para logging de uso de features (silenciosa em produção)
 export const logFeatureUsage = (feature: keyof FeatureFlags, context?: string) => {
-  if (featureFlags.enableSecurityLogging) {
+  // Log silencioso - apenas para monitoramento interno
+  if (featureFlags.enableSecurityLogging && process.env.NODE_ENV === 'development') {
     console.log(`[FEATURE_FLAG] ${feature} used${context ? ` in ${context}` : ''}`);
   }
 };

@@ -66,7 +66,7 @@ const UserProfile = () => {
     queryFn: async () => {
       if (!user) return null;
       try {
-        console.log('Fetching user profile for ID:', user.id);
+        // Log removido por segurança
         const {
           data,
           error

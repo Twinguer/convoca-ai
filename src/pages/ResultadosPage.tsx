@@ -6,6 +6,7 @@ import ConcursoInfoCard from '@/components/resultados/ConcursoInfoCard';
 import { RankingTable } from '@/components/resultados/RankingTable';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
+import { useSecureUrls } from '@/services/urlObfuscation';
 import { useLeaveRanking } from '@/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn, UserMinus } from 'lucide-react';
@@ -21,9 +22,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const ResultadosPage = () => {
+interface ResultadosPageProps {
+  concursoId?: string;
+  secureToken?: string;
+}
+
+const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken }) => {
   const navigate = useNavigate();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const { generateSecureUrl } = useSecureUrls();
   const {
     concurso,
     rankings,
@@ -36,40 +43,15 @@ const ResultadosPage = () => {
     creatorName,
     inscritos,
     isParticipating
-  } = useResultadosData();
+  } = useResultadosData(concursoId);
   const { toast } = useToast();
   const { leave, isLeaving } = useLeaveRanking();
   const isAuthenticated = !!user;
 
-  useEffect(() => {
-    if (concurso) {
-      console.log('Concurso data:', concurso);
-      console.log('Available quotas:', {
-        ampla: concurso.has_ampla_concorrencia,
-        ppp: concurso.has_ppp,
-        pcd: concurso.has_pcd,
-        hipossuficientes: concurso.has_hipossuficientes,
-        indigenas: concurso.has_indigenas,
-        transsexuais: concurso.has_transsexuais
-      });
-      console.log('Custom disciplines:', concurso.disciplines);
-    }
-    if (rankings?.length > 0) {
-      console.log('Rankings data:', rankings);
-      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
-      console.log('Custom discipline scores in first ranking:', rankings[0].customDisciplineScores);
-    }
-    
-    // Log para verificar status de participação
-    console.log('User participation status:', { 
-      isAuthenticated, 
-      isParticipating, 
-      userRankingExists: !!userRanking 
-    });
-  }, [concurso, rankings, isAuthenticated, isParticipating, userRanking]);
+  // Efeito removido para evitar re-renderizações desnecessárias
 
   const handleRefresh = async () => {
-    console.log("Manual refresh initiated by user");
+    // Log removido por segurança
     toast({
       title: "Atualizando ranking",
       description: "As pontuações estão sendo recalculadas em tempo real...",
@@ -122,7 +104,10 @@ const ResultadosPage = () => {
             {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
           </Button>
           
-          {concurso && !isParticipating && user && <Button onClick={() => navigate(`/concurso/${concurso.id}/participar`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
+          {concurso && !isParticipating && user && <Button onClick={async () => {
+              const secureUrl = await generateSecureUrl(concurso.id, 'participar');
+              navigate(secureUrl);
+            }} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}

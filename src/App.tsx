@@ -31,6 +31,8 @@ import VouchersManager from "./pages/Admin/VouchersManager";
 import AdminLayout from "./components/Admin/AdminLayout";
 import AdminProtectedRoute from "./components/Admin/ProtectedRoute";
 import { ProtectedRoute } from "./components/Security/ProtectedRoute";
+import { SecureConcursoRoute } from "./components/Security/SecureConcursoRoute";
+import { SecureUserRoute } from "./components/Security/SecureUserRoute";
 import CriarRanking from "./pages/CriarRanking";
 import EstudosDashboard from "./modules/study/pages/StudyDashboard";
 import Cronograma from "./pages/Estudos/Cronograma";
@@ -76,18 +78,28 @@ const AppContent = () => {
                         <Menu />
                         <UserProfile />
                       </>} />
-                     <Route path="/usuario/:id" element={<>
+                     <Route path="/usuario/profile/:token" element={<>
                         <Menu />
-                        <PublicUserProfile />
+                        <SecureUserRoute action="profile">
+                          <PublicUserProfile />
+                        </SecureUserRoute>
                       </>} />
-                     <Route path="/usuario/:id/seguidores" element={<>
+                     <Route path="/usuario/followers/:token" element={<>
                         <Menu />
-                        <UserFollowers />
+                        <SecureUserRoute action="followers">
+                          <UserFollowers />
+                        </SecureUserRoute>
                       </>} />
-                     <Route path="/usuario/:id/seguindo" element={<>
+                     <Route path="/usuario/following/:token" element={<>
                         <Menu />
-                        <UserFollowers />
+                        <SecureUserRoute action="following">
+                          <UserFollowers />
+                        </SecureUserRoute>
                       </>} />
+                    {/* Rotas legadas - redirecionar para versão segura */}
+                    <Route path="/usuario/:id" element={<Navigate to="/comunidade" replace />} />
+                    <Route path="/usuario/:id/seguidores" element={<Navigate to="/comunidade" replace />} />
+                    <Route path="/usuario/:id/seguindo" element={<Navigate to="/comunidade" replace />} />
                      <Route path="/seguidores" element={<>
                          <Menu />
                          <UserFollowers />
@@ -186,14 +198,21 @@ const AppContent = () => {
                         <Menu />
                         <ConcursoDetails />
                       </>} />
-                    <Route path="/concurso/:id/resultados" element={<>
+                    <Route path="/concurso/resultados/:token" element={<> 
                         <Menu />
-                        <ResultadosPage />
+                        <SecureConcursoRoute action="resultados">
+                          <ResultadosPage />
+                        </SecureConcursoRoute>
                       </>} />
-                    <Route path="/concurso/:id/participar" element={<>
+                    <Route path="/concurso/participar/:token" element={<> 
                         <Menu />
-                        <ConcursoParticipation />
+                        <SecureConcursoRoute action="participar">
+                          <ConcursoParticipation />
+                        </SecureConcursoRoute>
                       </>} />
+                    {/* Rotas legadas - redirecionar para versão segura */}
+                    <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="*" element={<>
                         <Menu />
                         <NotFound />

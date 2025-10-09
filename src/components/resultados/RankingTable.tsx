@@ -10,6 +10,8 @@ import { Concurso, isDisciplineBlock } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
+import { useQuotaCache } from '@/hooks/useQuotaCache';
+import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -27,6 +29,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   isRefetching = false
 }) => {
   const navigate = useNavigate();
+  const { generateSecureUserUrl } = useSecureUserUrls();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
   const [displayNames, setDisplayNames] = useState<Record<string, string>>(sectionDisplayNames);
 
@@ -35,42 +38,13 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
       setDisplayNames(updatedNames);
-      console.log('[RankingTable] Updated section display names:', updatedNames);
+      // Log removido por segurança
     }
   }, [concurso]);
 
+  // Logs removidos para reduzir overhead em produção
   useEffect(() => {
-    if (concurso) {
-      console.log('Available quotas in concurso:', {
-        ampla: concurso.has_ampla_concorrencia,
-        ppp: concurso.has_ppp,
-        pcd: concurso.has_pcd,
-        hipossuficientes: concurso.has_hipossuficientes,
-        indigenas: concurso.has_indigenas,
-        transsexuais: concurso.has_transsexuais
-      });
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        console.log('Custom disciplines:', concurso.disciplines);
-      }
-    }
-    if (rankings && rankings.length > 0) {
-      console.log('First ranking scores:', {
-        total: rankings[0].score,
-        customScores: rankings[0].customDisciplineScores,
-        weightedCustomScores: rankings[0].weightedCustomDisciplineScores
-      });
-      console.log('Reservation types in rankings:', [...new Set(rankings.map(r => r.reservationType))]);
-      
-      // Debugging minimum scores
-      console.log('Minimum score checks:', rankings.map(r => ({
-        id: r.id,
-        userId: r.userId,
-        name: r.name,
-        belowMinimum: r.belowMinimum,
-        belowBlockMinimums: r.belowBlockMinimums,
-        belowDisciplineMinimums: r.belowDisciplineMinimums
-      })));
-    }
+    // Efeito mantido para compatibilidade, mas sem logs
   }, [concurso, rankings]);
 
   // Helper function to determine if a ranking is below the required minimum
@@ -125,29 +99,42 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     return [...classifiedWithPositions, ...eliminatedWithoutPositions];
   }, [rankings]);
 
-  const getAvailableQuotas = () => {
+  // Usar cache de cotas para otimizar performance
+  const { data: quotaConfig } = useQuotaCache(concurso?.id || '');
+  
+  const getAvailableQuotas = React.useMemo(() => {
     if (!concurso) return ["Ampla Concorrência"];
+    
+    // Usar dados do cache se disponível, senão usar dados do concurso
+    const config = quotaConfig || {
+      has_ampla_concorrencia: concurso.has_ampla_concorrencia,
+      has_ppp: concurso.has_ppp,
+      has_pcd: concurso.has_pcd,
+      has_hipossuficientes: concurso.has_hipossuficientes,
+      has_indigenas: concurso.has_indigenas,
+      has_transsexuais: concurso.has_transsexuais,
+    };
+    
     const quotas = ["Ampla Concorrência"];
-    if (concurso.has_ppp === true) {
+    if (config.has_ppp === true) {
       quotas.push("PPP");
     }
-    if (concurso.has_pcd === true) {
+    if (config.has_pcd === true) {
       quotas.push("PCD");
     }
-    if (concurso.has_hipossuficientes === true) {
+    if (config.has_hipossuficientes === true) {
       quotas.push("Hipossuficientes");
     }
-    if (concurso.has_indigenas === true) {
+    if (config.has_indigenas === true) {
       quotas.push("Indígenas");
     }
-    if (concurso.has_transsexuais === true) {
+    if (config.has_transsexuais === true) {
       quotas.push("Pessoas Trans");
     }
-    console.log('Available quotas for display:', quotas);
     return quotas;
-  };
+  }, [concurso, quotaConfig]);
 
-  const availableQuotas = getAvailableQuotas();
+  const availableQuotas = getAvailableQuotas;
 
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
@@ -157,11 +144,19 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
   };
 
-  const handleUserClick = (userId: string) => {
+  const handleUserClick = async (userId: string) => {
     if (!isAuthenticated) {
-      navigate(`/auth?redirect=/usuario/${userId}`);
-    } else {
-      navigate(`/usuario/${userId}`);
+      navigate('/auth', { state: { from: '/comunidade' } });
+      return;
+    }
+    
+    try {
+      const secureUrl = await generateSecureUserUrl(userId, 'profile');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura de usuário:', error);
+      // Fallback para página de comunidade em caso de erro
+      navigate('/comunidade');
     }
   };
 

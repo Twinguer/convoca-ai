@@ -116,10 +116,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   // Handle booklet change from BookletSwitcher (CORRIGIDO - Limpa totalmente o estado)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
     console.log('[AnswerSheet] ===== INÍCIO DA TROCA DE CADERNO =====');
-    console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
-    console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
-    console.log('[AnswerSheet] Respostas atuais antes de limpar:', answers);
-    console.log('[AnswerSheet] selectedBookletId atual:', selectedBookletId);
+    // Logs removidos por segurança
     
     // CRÍTICO: Limpar COMPLETAMENTE o estado de respostas ANTES de atualizar
     clearAllAnswers();
@@ -134,7 +131,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       numberedAnswers[parseInt(questionNum)] = answer;
     });
     
-    console.log('[AnswerSheet] Carregando novas respostas (formato numérico):', numberedAnswers);
+    // Log removido por segurança
     
     // Forçar re-fetch das respostas do backend para garantir dados corretos
     await refetchAnswers();
@@ -149,7 +146,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
       setCheckingOfficialAnswers(true);
       try {
-        console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
+        // Log removido por segurança
         const result = await checkMissingOfficialAnswers(concurso.id);
 
         if (result.missing) {
@@ -214,7 +211,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           }
           
           if (!data?.consolidated_answer_data?.booklets?.[selectedBookletId]) {
-              console.log('[AnswerSheet] No consolidated data found for booklet:', selectedBookletId);
+              // Log removido por segurança
               return [];
           }
           
@@ -223,7 +220,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               .filter(([_, answerData]: [string, any]) => answerData.is_nullified)
               .map(([questionNum, _]) => ({ question_number: parseInt(questionNum) }));
               
-          console.log('[AnswerSheet] Found', nullifiedQuestions.length, 'nullified questions for booklet:', selectedBookletId);
+          // Log removido por segurança
           return nullifiedQuestions;
       },
       enabled: !!selectedBookletId,
@@ -298,7 +295,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
         if (updatedRanking?.selected_booklet) {
           setSelectedBookletId(updatedRanking.selected_booklet);
-          console.log('[AnswerSheet] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+          // Log removido por segurança
         }
       };
       updateBookletId();
@@ -316,8 +313,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       return;
     }
 
-    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Caderno selecionado no momento do salvamento:', selectedBookletId);
-    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Respostas atuais:', answers);
+    // Logs removidos por segurança
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();

@@ -40,7 +40,7 @@ export const consolidatedAnswerService = {
   // Buscar dados consolidados de um usuário específico dentro do concurso
   async getConsolidatedAnswers(rankingId: string): Promise<ConsolidatedAnswerData | null> {
     try {
-      console.log('[consolidatedAnswerService] Buscando dados consolidados para ranking:', rankingId);
+      // Log removido por segurança
       
       // Primeiro, obter o concurso_id e user_id do ranking
       const { data: rankingData, error: rankingError } = await supabase
@@ -103,17 +103,17 @@ export const consolidatedAnswerService = {
   // Buscar respostas de um caderno específico (ISOLADO)
   async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
     try {
-      console.log('[consolidatedAnswerService] Buscando respostas do caderno:', bookletId, 'para ranking:', rankingId);
+      // Log removido por segurança
       
       const consolidatedData = await this.getConsolidatedAnswers(rankingId);
       
       if (consolidatedData?.booklets?.[bookletId]) {
         const bookletData = consolidatedData.booklets[bookletId] as BookletData;
-        console.log('[consolidatedAnswerService] Respostas do caderno encontradas:', bookletData.answers);
+        // Log removido por segurança
         return bookletData.answers || {};
       }
       
-      console.log('[consolidatedAnswerService] Nenhuma resposta encontrada para o caderno:', bookletId);
+      // Log removido por segurança
       return {};
     } catch (error) {
       console.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
@@ -124,7 +124,7 @@ export const consolidatedAnswerService = {
   // Trocar caderno (CORRIGIDO para limpar estado anterior)
   async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
     try {
-      console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
+      // Log removido por segurança
       
       const { data, error } = await supabase.rpc('switch_user_booklet', {
         p_ranking_id: rankingId,
@@ -166,11 +166,7 @@ export const consolidatedAnswerService = {
   ) {
     try {
       console.log('[consolidatedAnswerService] Salvando respostas consolidadas via RPC');
-      console.log('[consolidatedAnswerService] Ranking ID:', rankingId);
-      console.log('[consolidatedAnswerService] Concurso ID:', concursoId);
-      console.log('[consolidatedAnswerService] Booklet ID:', bookletId);
-      console.log('[consolidatedAnswerService] Answers count:', answers.length);
-      console.log('[consolidatedAnswerService] Respostas a salvar:', answers);
+      // Logs removidos por segurança
 
       // Garantir que bookletId seja string
       const bookletIdString = String(bookletId);

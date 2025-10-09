@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useSecureUrls } from '@/services/urlObfuscation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PencilLine, Trophy, Users, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { generateSecureUrl } = useSecureUrls();
   const {
     toast
   } = useToast();
@@ -136,7 +138,14 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
               </div>
               
               <div className="flex items-center gap-2 self-end">
-                <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={() => navigate(`/concurso/${ranking.id}/resultados`)}>
+                <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={async () => {
+                  try {
+                    const secureUrl = await generateSecureUrl(ranking.id, 'resultados');
+                    navigate(secureUrl);
+                  } catch (error) {
+                    console.error('Erro ao gerar URL segura:', error);
+                  }
+                }}>
                   <Trophy className="h-4 w-4" />
                   <span>Ver Ranking</span>
                 </Button>

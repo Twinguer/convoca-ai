@@ -4,7 +4,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 // Function to get rankings for a concurso with user information
 export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concursoId: string) => {
   try {
-    console.log("[userRankings] Buscando rankings para concurso ID:", concursoId);
+    // Log removido por segurança
     
     const { data, error } = await supabase
       .from('user_rankings')      

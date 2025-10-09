@@ -100,7 +100,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         return {};
       }
       
-      console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
+      // Log removido por segurança
       return fetchExistingAnswers(rankingId);
     },
     enabled: !!rankingId && !!concurso?.id,

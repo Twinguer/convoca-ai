@@ -38,7 +38,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
     }
   };
   
-  console.log(`[QuestionCell] Question ${questionNumber} - Selected answer: ${selectedAnswer}`);
+  // Log removido por segurança - não expor respostas do usuário
   return (
     <div className={`border border-border rounded-md p-3 ${isNullified ? 'bg-muted/50' : 'bg-card'}`}>
       <div className="flex justify-between items-center mb-2">

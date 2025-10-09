@@ -16,7 +16,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
   const { data: booklets, isLoading: isLoadingBooklets } = useQuery({
     queryKey: ['exam-booklets', concursoId],
     queryFn: async () => {
-      console.log('Buscando cadernos para concurso:', concursoId);
+      // Log removido por segurança
       
       const { data, error } = await supabase
         .from('exam_booklets')
@@ -42,7 +42,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
   // Selecionar automaticamente o primeiro caderno disponível
   useEffect(() => {
     if (booklets && booklets.length > 0 && !selectedBookletId) {
-      console.log('Selecionando primeiro caderno automaticamente:', booklets[0].id);
+      // Log removido por segurança
       setSelectedBookletId(booklets[0].id);
     }
   }, [booklets, selectedBookletId]);
@@ -155,7 +155,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
             isComplete
           });
 
-          console.log(`[useBookletAnswerKey] Caderno ${booklet.name}: ${answerCount}/${expectedQuestions} questões (${isComplete ? 'completo' : 'incompleto'})`);
+          // Log removido por segurança
         } catch (error) {
           console.error(`Erro ao verificar completude do caderno ${booklet.id}:`, error);
           allComplete = false;
@@ -178,7 +178,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
   });
 
   const handleBookletChange = (bookletId: string) => {
-    console.log('Mudando caderno selecionado para:', bookletId);
+    // Log removido por segurança
     setSelectedBookletId(bookletId);
   };
 

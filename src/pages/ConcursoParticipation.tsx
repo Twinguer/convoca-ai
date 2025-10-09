@@ -6,16 +6,26 @@ import { fetchConcursoById } from '@/services/concursoService';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { ParticipationForm } from '@/components/resultados/ParticipationForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useSecureUrls } from '@/services/urlObfuscation';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 
-const ConcursoParticipation = () => {
-  const { id } = useParams<{ id: string }>();
+interface ConcursoParticipationProps {
+  concursoId?: string;
+  secureToken?: string;
+}
+
+const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoId, secureToken }) => {
+  const { id: urlId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { generateSecureUrl } = useSecureUrls();
+  
+  // Usar concursoId passado como prop ou do URL
+  const id = concursoId || urlId;
 
-  console.log('[ConcursoParticipation] Concurso ID from params:', id);
+  // Log removido por segurança
 
   // Fetch concurso details with better error handling
   const {
@@ -29,9 +39,8 @@ const ConcursoParticipation = () => {
         throw new Error('ID do concurso não fornecido');
       }
       
-      console.log('[ConcursoParticipation] Fetching concurso with ID:', id);
+      // Logs removidos por segurança
       const result = await fetchConcursoById(id);
-      console.log('[ConcursoParticipation] Concurso fetched:', result);
       return result;
     },
     enabled: !!id,
@@ -47,7 +56,7 @@ const ConcursoParticipation = () => {
     queryFn: async () => {
       if (!user || !id) return null;
       
-      console.log('[ConcursoParticipation] Checking participation for user:', user.id, 'concurso:', id);
+      // Log removido por segurança
       
       const { data, error } = await supabase
         .from('user_rankings')
@@ -61,7 +70,7 @@ const ConcursoParticipation = () => {
         throw error;
       }
       
-      console.log('[ConcursoParticipation] User ranking data:', data);
+      // Log removido por segurança
       return data;
     },
     enabled: !!user && !!id

@@ -68,8 +68,6 @@ class SecurityMonitor {
     this.alerts.push(alert);
     this.metrics.discrepancies++;
     
-    console.warn('🚨 SECURITY ALERT - Discrepância detectada:', alert);
-    
     // Enviar para backend para persistência
     this.persistAlert(alert);
   }
@@ -95,8 +93,6 @@ class SecurityMonitor {
     };
 
     this.alerts.push(alert);
-    console.warn('🚨 SECURITY ALERT - Acesso negado:', alert);
-    
     this.persistAlert(alert);
   }
 
@@ -125,8 +121,6 @@ class SecurityMonitor {
     };
 
     this.alerts.push(alert);
-    console.warn('🚨 SECURITY ALERT - Validação falhou:', alert);
-    
     this.persistAlert(alert);
   }
 

@@ -38,7 +38,7 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Preparando dados para salvamento');
       console.log('[useSaveAnswers] Respostas do usuário:', answers);
-      console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+      // Log removido por segurança
       console.log('[useSaveAnswers] Todos os parâmetros recebidos:', {
         rankingId,
         concursoId: concurso?.id,
@@ -108,7 +108,7 @@ export const useSaveAnswers = ({
         .single();
 
       if (updatedRanking?.selected_booklet) {
-        console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+        // Log removido por segurança
         // Nota: setSelectedBookletId será chamado pelo componente pai se necessário
       }
 

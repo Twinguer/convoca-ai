@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 // Retorna também as notas subjetivas e o caderno selecionado
 export const fetchExistingAnswers = async (rankingId: string) => {
   try {
-    console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
+    // Log removido por segurança
 
     // 1) Buscar dados do ranking para obter user_id e selected_booklet
     const { data: rankingData, error: rankingError } = await supabase
@@ -19,7 +19,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       return {};
     }
 
-    console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
+    // Log removido por segurança
 
     // 2) Buscar dados consolidados por concurso
     const { data: consolidatedData, error: consolidatedError } = await supabase
@@ -46,18 +46,17 @@ export const fetchExistingAnswers = async (rankingId: string) => {
         const consolidatedSelectedBooklet = userData.selected_booklet?.toString();
         const rankingSelectedBooklet = rankingData?.selected_booklet?.toString();
         
-        console.log('[fetchExistingAnswers] Caderno consolidado:', consolidatedSelectedBooklet);
-        console.log('[fetchExistingAnswers] Caderno do ranking:', rankingSelectedBooklet);
+        // Logs removidos por segurança
 
         // Prioridade: caderno selecionado no consolidado > caderno do ranking > primeiro disponível
         let bookletIdToUse = null;
         
         if (consolidatedSelectedBooklet && userData.booklets[consolidatedSelectedBooklet]) {
           bookletIdToUse = consolidatedSelectedBooklet;
-          console.log('[fetchExistingAnswers] Usando caderno consolidado:', bookletIdToUse);
+          // Log removido por segurança
         } else if (rankingSelectedBooklet && userData.booklets[rankingSelectedBooklet]) {
           bookletIdToUse = rankingSelectedBooklet;
-          console.log('[fetchExistingAnswers] Usando caderno do ranking:', bookletIdToUse);
+          // Log removido por segurança
         } else {
           // Fallback: pegar o caderno mais recente por completed_at
           const bookletKeys = Object.keys(userData.booklets);
@@ -68,13 +67,13 @@ export const fetchExistingAnswers = async (rankingId: string) => {
               return timeB.localeCompare(timeA); // mais recente primeiro
             });
             bookletIdToUse = bookletKeys[0];
-            console.log('[fetchExistingAnswers] Usando caderno mais recente:', bookletIdToUse);
+            // Log removido por segurança
           }
         }
 
         if (bookletIdToUse) {
           const bookletAnswers = userData.booklets[bookletIdToUse]?.answers || {};
-          console.log('[fetchExistingAnswers] Respostas do caderno', bookletIdToUse, ':', bookletAnswers);
+          // Log removido por segurança
           Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
             const num = parseInt(questionNum);
             if (!isNaN(num) && typeof answer === 'string') {

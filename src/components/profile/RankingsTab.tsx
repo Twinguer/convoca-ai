@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useSecureUrls } from '@/services/urlObfuscation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PencilLine, Trophy, ChevronDown, ChevronUp, UserX } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
@@ -39,6 +40,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   const [showAllRankings, setShowAllRankings] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { generateSecureUrl } = useSecureUrls();
   const {
     data: rankings,
     isLoading
@@ -175,7 +177,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   // Mutation para deixar de participar do ranking
   const leaveRankingMutation = useMutation({
     mutationFn: async (ranking: any) => {
-      console.log('DEBUG: Estrutura completa do ranking recebido:', JSON.stringify(ranking, null, 2));
+      // Log removido por segurança - não expor dados completos do ranking
       
       try {
         const concursoId = ranking.concurso_id || ranking.concursoId;
@@ -185,7 +187,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           throw new Error('Informações insuficientes - concursoId: ' + concursoId + ', userId: ' + currentUserId);
         }
 
-        console.log('Buscando ranking do usuário para concurso:', concursoId, 'usuário:', currentUserId);
+        // Log removido por segurança
 
         // Primeiro buscar o ID do user_ranking
         const { data: userRanking, error: findError } = await supabase
@@ -201,7 +203,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         }
 
         const rankingId = userRanking.id;
-        console.log('ID do ranking encontrado:', rankingId);
+        // Log removido por segurança
 
         // 1. Buscar dados consolidados
         console.log('Buscando dados consolidados...');
@@ -351,14 +353,20 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             </div>
             
             <div className="p-4 bg-card flex justify-end gap-2">
-              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/resultados`)}>
+              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={async () => {
+                const secureUrl = await generateSecureUrl(ranking.concursos?.id || ranking.concursoId, 'resultados');
+                navigate(secureUrl);
+              }}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>
               </Button>
               
               {isOwnProfile && (
                 <>
-                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => navigate(`/concurso/${ranking.concursos?.id || ranking.concursoId}/participar?showAnswerSheet=true`)}>
+                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={async () => {
+                    const secureUrl = await generateSecureUrl(ranking.concursos?.id || ranking.concursoId, 'participar');
+                    navigate(`${secureUrl}?showAnswerSheet=true`);
+                  }}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>
                   </Button>

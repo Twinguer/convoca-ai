@@ -5,11 +5,11 @@ import { Concurso } from '@/types/concursos';
 export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  console.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
+  // Log removido por segurança
   
   // If using custom knowledge structure
   if (concurso.has_custom_knowledge) {
-    console.log('[getTotalQuestions] Usando estrutura de conhecimento customizado');
+    // Log removido por segurança
     let totalQuestions = 0;
     
     if (concurso.disciplines && Array.isArray(concurso.disciplines)) {

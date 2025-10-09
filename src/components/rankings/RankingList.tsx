@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { Calendar, Trophy, Users, MapPin } from 'lucide-react';
+import { useSecureUrls } from '@/services/urlObfuscation';
+import { useNavigate } from 'react-router-dom';
 
 export interface RankingItemProps {
   id: string;
@@ -39,6 +40,8 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
   localidade,
   onRankingClick
 }) => {
+  const { generateSecureUrl } = useSecureUrls();
+  const navigate = useNavigate();
   const getStatusColor = (status?: string) => {
     if (!status || status === 'Em andamento') {
       return 'bg-primary/10 hover:bg-primary/20 text-primary';
@@ -46,8 +49,20 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
     return '';
   };
   
+  const handleClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    onRankingClick?.(e, id);
+    
+    try {
+      const secureUrl = await generateSecureUrl(id, 'resultados');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura:', error);
+    }
+  };
+
   return (
-    <Link to={`/concurso/${id}/resultados`} className="block h-full" onClick={(e) => onRankingClick?.(e, id)}>
+    <div className="block h-full cursor-pointer" onClick={handleClick}>
       <Card className="hover:shadow-lg transition-all duration-300 bg-card hover:translate-y-[-4px] h-full cursor-pointer">
         <CardContent className="p-6 h-full flex flex-col">
           <div className="space-y-3 flex-1 flex flex-col">
@@ -111,7 +126,7 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 };
 

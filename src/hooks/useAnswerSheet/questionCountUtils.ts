@@ -7,11 +7,11 @@ import { Concurso } from '@/types/concursos';
 export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  console.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
+  // Log removido por segurança
   
   // If using custom knowledge structure
   if (concurso.has_custom_knowledge) {
-    console.log('[getTotalQuestions] Usando estrutura de conhecimento customizado');
+    // Log removido por segurança
     let totalQuestions = 0;
     
     if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
@@ -19,14 +19,14 @@ export const getTotalQuestions = (concurso: Concurso): number => {
         // Verificar se é estrutura hierárquica (blocos) ou flat (disciplinas diretas)
         if ('disciplines' in item && Array.isArray(item.disciplines)) {
           // Estrutura hierárquica - item é um bloco com disciplinas
-          console.log(`[getTotalQuestions] Processando bloco: ${item.name}`);
+          // Log removido por segurança
           item.disciplines.forEach(discipline => {
             if (discipline.isEnabled && discipline.questionCount) {
               const questionCount = typeof discipline.questionCount === 'number'
                 ? discipline.questionCount
                 : Number(String(discipline.questionCount || '0'));
                 
-              console.log(`[getTotalQuestions] Disciplina ${discipline.name} (bloco ${item.name}): ${questionCount} questões`);
+              // Log removido por segurança
               totalQuestions += questionCount;
             }
           });
@@ -44,12 +44,12 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       console.warn('[getTotalQuestions] Nenhum array de disciplines encontrado para conhecimento customizado');
     }
     
-    console.log(`[getTotalQuestions] Total de questões customizadas: ${totalQuestions}`);
+    // Log removido por segurança
     return totalQuestions;
   }
   
   // Traditional structure
-  console.log('[getTotalQuestions] Usando estrutura tradicional');
+  // Log removido por segurança
   let total = 0;
   
   if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
@@ -101,7 +101,7 @@ export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): n
 
 export const checkMissingOfficialAnswers = async (concursoId: string) => {
   try {
-    console.log('[checkMissingOfficialAnswers] Verificando gabarito para concurso:', concursoId);
+    // Log removido por segurança
     
     // Buscar informações do concurso
     const { data: concurso, error: concursoError } = await supabase
@@ -118,7 +118,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string) => {
     // Calcular total de questões esperadas usando a função correta
     const totalExpectedQuestions = getTotalQuestions(concurso);
 
-    console.log('[checkMissingOfficialAnswers] Total esperado de questões:', totalExpectedQuestions);
+    // Log removido por segurança
 
     if (totalExpectedQuestions === 0) {
       return { missing: true, reason: 'Nenhuma questão configurada no concurso' };
@@ -128,7 +128,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string) => {
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData || !consolidatedData.booklets) {
-      console.log('[checkMissingOfficialAnswers] Nenhum gabarito consolidado encontrado');
+      // Log removido por segurança
       return { missing: true, reason: 'Gabarito oficial não encontrado' };
     }
 
@@ -137,7 +137,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string) => {
     
     Object.entries(consolidatedData.booklets).forEach(([bookletId, bookletData]: [string, any]) => {
       const answersCount = Object.keys(bookletData.answers || {}).length;
-      console.log(`[checkMissingOfficialAnswers] Caderno ${bookletId}: ${answersCount} respostas`);
+      // Log removido por segurança
       
       if (answersCount >= totalExpectedQuestions) {
         hasCompleteBooklet = true;
@@ -151,7 +151,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string) => {
       };
     }
 
-    console.log('[checkMissingOfficialAnswers] Gabarito oficial completo encontrado');
+    // Log removido por segurança
     return { missing: false };
 
   } catch (error) {

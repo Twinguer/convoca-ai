@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck } from 'lucide-react';
 import { UsersList, User } from './UsersList';
 import { getFollowers, getFollowing } from './FollowersService';
+import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 
 interface FollowersColumnProps {
   userId: string;
@@ -15,6 +16,7 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
   const [following, setFollowing] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const { generateSecureUserUrl } = useSecureUserUrls();
 
   useEffect(() => {
     const loadFollowersData = async () => {
@@ -43,8 +45,14 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
     }
   }, [userId]);
 
-  const handleViewProfile = (id: string) => {
-    navigate(`/usuario/${id}`);
+  const handleViewProfile = async (id: string) => {
+    try {
+      const secureUrl = await generateSecureUserUrl(id, 'profile');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura de usuário:', error);
+      navigate('/comunidade');
+    }
   };
 
   // Limitar para exatamente 6 usuários para exibição
@@ -68,7 +76,15 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             emptyMessage="Nenhum seguidor ainda"
             icon={<></>}
             onViewProfile={handleViewProfile}
-            onViewAll={() => navigate(`/usuario/${userId}/seguidores`)}
+            onViewAll={async () => {
+              try {
+                const secureUrl = await generateSecureUserUrl(userId, 'followers');
+                navigate(secureUrl);
+              } catch (error) {
+                console.error('Erro ao gerar URL segura:', error);
+                navigate('/comunidade');
+              }
+            }}
           />
         </CardContent>
       </Card>
@@ -88,7 +104,15 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
             emptyMessage="Não seguindo ninguém ainda"
             icon={<></>}
             onViewProfile={handleViewProfile}
-            onViewAll={() => navigate(`/usuario/${userId}/seguindo`)}
+            onViewAll={async () => {
+              try {
+                const secureUrl = await generateSecureUserUrl(userId, 'following');
+                navigate(secureUrl);
+              } catch (error) {
+                console.error('Erro ao gerar URL segura:', error);
+                navigate('/comunidade');
+              }
+            }}
           />
         </CardContent>
       </Card>

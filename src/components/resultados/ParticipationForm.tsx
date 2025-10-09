@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useSecureUrls } from '@/services/urlObfuscation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Concurso } from '@/types/concursos';
 import { ScoreForm } from './ScoreForm';
@@ -41,6 +42,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { generateSecureUrl } = useSecureUrls();
 
   // Carregar cadernos disponíveis
   useEffect(() => {
@@ -170,12 +172,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   if ((showAnswerSheet || isAlreadyParticipating) && userRankingId) {
     return (
       <div className="w-full h-full">
-        <AnswerSheet concurso={concurso} rankingId={userRankingId} onSuccess={() => {
+        <AnswerSheet concurso={concurso} rankingId={userRankingId} onSuccess={async () => {
           setShowAnswerSheet(false);
           queryClient.invalidateQueries({
             queryKey: ['rankings', concurso.id]
           });
-          navigate(`/concurso/${concurso.id}/resultados`);
+          const secureUrl = await generateSecureUrl(concurso.id, 'resultados');
+          navigate(secureUrl);
           toast({
             title: "Cartão de Respostas Processado",
             description: "Suas respostas foram processadas e seu ranking foi atualizado."

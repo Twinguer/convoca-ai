@@ -9,16 +9,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { useEffect } from 'react';
 
-export function useResultadosData() {
-  const { id } = useParams() as { id: string };
+export function useResultadosData(concursoId?: string) {
+  const { id: urlId } = useParams() as { id: string };
   const { user } = useAuth();
+  
+  // Usar concursoId passado como prop ou do URL
+  const id = concursoId || urlId;
   const isAuthenticated = !!user;
   
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 10000, // 10 segundos
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
   
   // Fetch creator information if available
@@ -53,8 +56,8 @@ export function useResultadosData() {
   } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchOnWindowFocus: true,
-    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
+    refetchOnWindowFocus: false, // Desabilitado para reduzir requisições
+    staleTime: 5 * 60 * 1000, // 5 minutos para reduzir atualizações
     enabled: !!id,
   });
   
@@ -62,7 +65,7 @@ export function useResultadosData() {
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
+    staleTime: 5 * 60 * 1000, // 5 minutos para reduzir atualizações
   });
   
   // Verificar se o usuário já está participando deste concurso
@@ -89,7 +92,7 @@ export function useResultadosData() {
       };
     },
     enabled: !!user && !!id,
-    staleTime: 10000,
+    staleTime: 2 * 60 * 1000, // 2 minutos para participação do usuário
   });
   
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
@@ -108,7 +111,7 @@ export function useResultadosData() {
           filter: `concurso_id=eq.${id}`
         },
         (payload) => {
-          console.log('[useResultadosData] Detected change in user_rankings:', payload);
+          // Log removido por segurança
           // Força atualização dos rankings quando houver mudanças
           refetchRankings();
           refetchCount();
@@ -129,7 +132,7 @@ export function useResultadosData() {
   
   // Function to manually refresh all data
   const refreshData = async () => {
-    console.log("[useResultadosData] Atualizando rankings manualmente");
+    // Log removido por segurança
     
     if (!id) {
       console.error("[useResultadosData] ID do concurso não fornecido");
@@ -141,7 +144,7 @@ export function useResultadosData() {
 
     // Verifica se o usuário está autenticado
     if (!isAuthenticated) {
-      console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
+      // Log removido por segurança
       await refetchRankings();
       await refetchCount();
       
@@ -153,14 +156,14 @@ export function useResultadosData() {
       
     // Recalcular pontuações para todos os usuários apenas se autenticado
     try {
-      console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
+      // Log removido por segurança
       const result = await recalculateAllUserScores(id);
       
       if (!result.success) {
         console.error("[useResultadosData] Erro ao recalcular pontuações:", result.error);
         return { success: false, error: result.error };
       } else {
-        console.log("[useResultadosData] Pontuações recalculadas com sucesso:", result);
+        // Log removido por segurança
         
         // Força imediatamente uma atualização dos dados
         await refetchRankings();

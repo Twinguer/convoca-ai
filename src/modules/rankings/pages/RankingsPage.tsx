@@ -9,6 +9,7 @@ import { Trophy, Users, TrendingUp, Search, Filter, Calendar, Plus, Medal, Star,
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSecureUrls } from '@/services/urlObfuscation';
 interface Concurso {
   id: string;
   titulo: string;
@@ -25,16 +26,28 @@ const RankingsPage = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { generateSecureUrl } = useSecureUrls();
   const [concursos, setConcursos] = useState<Concurso[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('participants');
 
-  const handleRankingClick = (e: React.MouseEvent, concursoId: string) => {
+  const handleRankingClick = async (e: React.MouseEvent, concursoId: string) => {
+    e.preventDefault();
+    
     if (!user) {
-      e.preventDefault();
-      navigate('/auth', { state: { from: `/concurso/${concursoId}/resultados` } });
+      navigate('/auth', { state: { from: `/pre-classificacao` } });
+      return;
+    }
+    
+    try {
+      const secureUrl = await generateSecureUrl(concursoId, 'resultados');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura:', error);
+      // Fallback para página de rankings em caso de erro
+      navigate('/pre-classificacao');
     }
   };
   useEffect(() => {
@@ -165,7 +178,7 @@ const RankingsPage = () => {
         
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
+            {filteredConcursos.map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -203,7 +216,7 @@ const RankingsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>)}
+              </div>)}
           </div>
           
           {filteredConcursos.length === 0 && <div className="text-center py-12">
@@ -220,7 +233,7 @@ const RankingsPage = () => {
 
         <TabsContent value="popular" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {topConcursos.map((concurso, index) => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
+            {topConcursos.map((concurso, index) => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -245,13 +258,13 @@ const RankingsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </Link>)}
+              </div>)}
           </div>
         </TabsContent>
 
         <TabsContent value="recent" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
+            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
                   <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -276,7 +289,7 @@ const RankingsPage = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </Link>)}
+                </div>)}
           </div>
         </TabsContent>
       </Tabs>

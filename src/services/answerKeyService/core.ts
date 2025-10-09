@@ -4,7 +4,7 @@ import { ConsolidatedAnswerKey } from './types';
 
 export const getConsolidatedAnswerKey = async (concursoId: string): Promise<ConsolidatedAnswerKey | null> => {
   try {
-    console.log('[getConsolidatedAnswerKey] Fetching consolidated answer key for concurso:', concursoId);
+    // Log removido por segurança
     
     const { data, error } = await supabase
       .from('official_answer_weights')
@@ -18,7 +18,7 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
     }
 
     if (!data?.consolidated_answer_data) {
-      console.log('[getConsolidatedAnswerKey] No consolidated data found for concurso:', concursoId);
+      // Log removido por segurança
       return null;
     }
 
@@ -36,7 +36,7 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
       };
     }
 
-    console.log('[getConsolidatedAnswerKey] Found consolidated data with booklets:', Object.keys(consolidatedData.booklets));
+    // Log removido por segurança
     return consolidatedData as ConsolidatedAnswerKey;
   } catch (error) {
     console.error('[getConsolidatedAnswerKey] Exception:', error);
@@ -46,17 +46,17 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
 
 export const getBookletAnswers = async (concursoId: string, bookletId: string) => {
   try {
-    console.log('[getBookletAnswers] Getting answers for concurso:', concursoId, 'booklet:', bookletId);
+    // Log removido por segurança
     
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets?.[bookletId]) {
-      console.log('[getBookletAnswers] No answers found for booklet:', bookletId);
+      // Log removido por segurança
       return {};
     }
 
     const answers = consolidatedData.booklets[bookletId].answers || {};
-    console.log('[getBookletAnswers] Found', Object.keys(answers).length, 'answers for booklet:', bookletId);
+    // Log removido por segurança
     return answers;
   } catch (error) {
     console.error('[getBookletAnswers] Error:', error);

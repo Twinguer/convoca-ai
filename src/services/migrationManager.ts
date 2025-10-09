@@ -101,8 +101,6 @@ class MigrationManager {
    * Inicializa o gerenciador de migração
    */
   async initialize(): Promise<void> {
-    console.log('🚀 Inicializando Migration Manager...');
-    
     // Carregar configuração do backend
     await this.loadConfig();
     
@@ -110,8 +108,6 @@ class MigrationManager {
     if (this.config.enabled) {
       this.startMonitoring();
     }
-    
-    console.log('✅ Migration Manager inicializado');
   }
 
   /**
@@ -125,7 +121,6 @@ class MigrationManager {
         .single();
 
       if (error && error.code !== 'PGRST116') { // Tabela não existe
-        console.warn('Configuração de migração não encontrada, usando padrão');
         return;
       }
 
@@ -134,7 +129,7 @@ class MigrationManager {
         this.status.config = this.config;
       }
     } catch (error) {
-      console.error('Erro ao carregar configuração de migração:', error);
+      // Erro silencioso - usar configuração padrão
     }
   }
 
@@ -156,7 +151,6 @@ class MigrationManager {
       
       this.logMigrationAction('config_updated', { config: this.config });
     } catch (error) {
-      console.error('Erro ao salvar configuração:', error);
       throw error;
     }
   }
@@ -169,8 +163,6 @@ class MigrationManager {
       throw new Error('Migração já está em andamento');
     }
 
-    console.log('🔄 Iniciando migração gradual...');
-    
     this.status.status = 'migrating';
     this.logMigrationAction('migration_started', { config: this.config });
 
@@ -198,7 +190,6 @@ class MigrationManager {
     const percentage = this.config.percentage || 0;
     
     if (percentage <= 0) {
-      console.log('Percentual de migração é 0, nenhuma migração será feita');
       return;
     }
 
@@ -219,7 +210,6 @@ class MigrationManager {
     const betaUserIds = this.config.betaUserIds || [];
     
     if (betaUserIds.length === 0) {
-      console.log('Nenhum usuário beta configurado');
       return;
     }
 
@@ -278,7 +268,6 @@ class MigrationManager {
 
     this.status.status = 'paused';
     this.logMigrationAction('migration_paused', {});
-    console.log('⏸️ Migração pausada');
   }
 
   /**
@@ -291,7 +280,6 @@ class MigrationManager {
 
     this.status.status = 'migrating';
     this.logMigrationAction('migration_resumed', {});
-    console.log('▶️ Migração retomada');
   }
 
   /**
@@ -310,8 +298,6 @@ class MigrationManager {
 
     this.status.currentPercentage = 0;
     this.logMigrationAction('rollback_executed', {});
-    
-    console.log('✅ Rollback concluído');
   }
 
   /**

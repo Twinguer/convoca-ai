@@ -8,9 +8,7 @@ export const saveBookletAnswerKey = async (
   answers: Record<string, AnswerKeyData>
 ) => {
   try {
-    console.log('[answerKeyService] Starting saveBookletAnswerKey');
-    console.log('[answerKeyService] Concurso ID:', concursoId);
-    console.log('[answerKeyService] Booklet ID (input):', bookletId, 'Type:', typeof bookletId);
+    // Logs removidos por segurança
     console.log('[answerKeyService] Input answers structure:', Object.keys(answers));
 
     // Garantir que bookletId seja sempre string

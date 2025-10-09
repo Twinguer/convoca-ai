@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
 import { Link } from 'react-router-dom';
 import { fetchUserRankings } from '@/services/rankingService';
+import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 interface UserProfile {
   id: string;
   name: string;
@@ -41,9 +42,14 @@ interface UserRanking {
   score: number;
   isClassified: boolean;
 }
-const PublicUserProfile: React.FC = () => {
+interface PublicUserProfileProps {
+  userId?: string;
+  secureToken?: string;
+}
+
+const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureToken }) => {
   const {
-    id
+    id: urlId
   } = useParams<{
     id: string;
   }>();
@@ -51,6 +57,10 @@ const PublicUserProfile: React.FC = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { generateSecureUserUrl } = useSecureUserUrls();
+  
+  // Usar userId passado como prop ou do URL
+  const id = userId || urlId;
   const {
     toast
   } = useToast();
@@ -281,8 +291,14 @@ const PublicUserProfile: React.FC = () => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-  const handleViewProfile = (userId: string) => {
-    navigate(`/usuario/${userId}`);
+  const handleViewProfile = async (userId: string) => {
+    try {
+      const secureUrl = await generateSecureUserUrl(userId, 'profile');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura de usuário:', error);
+      navigate('/comunidade');
+    }
   };
   if (profileLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
@@ -495,7 +511,15 @@ const PublicUserProfile: React.FC = () => {
                         </span>
                       </div>)}
                   </div>
-                  {followers.length > 6 && <Button variant="link" size="sm" className="w-full" onClick={() => navigate(`/usuario/${id}/seguidores`)}>
+                  {followers.length > 6 && <Button variant="link" size="sm" className="w-full" onClick={async () => {
+                      try {
+                        const secureUrl = await generateSecureUserUrl(id, 'followers');
+                        navigate(secureUrl);
+                      } catch (error) {
+                        console.error('Erro ao gerar URL segura:', error);
+                        navigate('/comunidade');
+                      }
+                    }}>
                       Ver todas
                     </Button>}
                 </div> : <p className="text-sm text-muted-foreground text-center">
@@ -527,7 +551,15 @@ const PublicUserProfile: React.FC = () => {
                         </span>
                       </div>)}
                   </div>
-                  {following.length > 6 && <Button variant="link" size="sm" className="w-full" onClick={() => navigate(`/usuario/${id}/seguindo`)}>
+                  {following.length > 6 && <Button variant="link" size="sm" className="w-full" onClick={async () => {
+                      try {
+                        const secureUrl = await generateSecureUserUrl(id, 'following');
+                        navigate(secureUrl);
+                      } catch (error) {
+                        console.error('Erro ao gerar URL segura:', error);
+                        navigate('/comunidade');
+                      }
+                    }}>
                       Ver todas
                     </Button>}
                 </div> : <p className="text-sm text-muted-foreground text-center">
