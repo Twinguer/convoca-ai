@@ -50,7 +50,7 @@ const Resultado: React.FC = () => {
         </label>
         <select
           id="concurso"
-          className="w-full border-gray-300 rounded-md shadow-sm focus:border-convoca-500 focus:ring-convoca-500"
+          className="w-full border-gray-300 rounded-md shadow-sm focus:border-nomeia-500 focus:ring-nomeia-500"
           value={selectedConcurso}
           onChange={(e) => setSelectedConcurso(e.target.value)}
         >
@@ -72,7 +72,7 @@ const Resultado: React.FC = () => {
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-convoca-500 focus:border-convoca-500"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-nomeia-500 focus:border-nomeia-500"
                 placeholder="Busque por nome ou inscrição"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -82,7 +82,7 @@ const Resultado: React.FC = () => {
             <div className="flex items-center space-x-2 sm:w-64">
               <Filter className="h-5 w-5 text-gray-400" />
               <select
-                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-convoca-500 focus:ring-convoca-500"
+                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-nomeia-500 focus:ring-nomeia-500"
                 value={filtroSelecionado}
                 onChange={(e) => setFiltroSelecionado(e.target.value)}
               >
@@ -95,7 +95,7 @@ const Resultado: React.FC = () => {
           
           <div className="flex justify-end mb-4">
             <button 
-              className="flex items-center text-sm text-convoca-600 hover:text-convoca-800"
+              className="flex items-center text-sm text-nomeia-600 hover:text-nomeia-800"
             >
               <Download className="h-4 w-4 mr-1" />
               Exportar resultados (PDF)
@@ -161,7 +161,7 @@ const Resultado: React.FC = () => {
             </table>
           </div>
           
-          <div className="bg-convoca-50 p-4 rounded-lg">
+          <div className="bg-nomeia-50 p-4 rounded-lg">
             <h3 className="font-medium text-gray-800 mb-2">Informações sobre este concurso:</h3>
             <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
               <li>Total de inscritos: 5.230 candidatos</li>

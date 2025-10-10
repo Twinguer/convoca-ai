@@ -152,8 +152,8 @@ const StatisticsPage = () => {
           <CardContent>
             <Tabs defaultValue="geral" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="geral" className="text-slate-800">Geral</TabsTrigger>
-                <TabsTrigger value="disciplinas" className="text-slate-800">Por Disciplina</TabsTrigger>
+                <TabsTrigger value="geral">Geral</TabsTrigger>
+                <TabsTrigger value="disciplinas">Por Disciplina</TabsTrigger>
               </TabsList>
               
               <TabsContent value="geral" className="mt-4">

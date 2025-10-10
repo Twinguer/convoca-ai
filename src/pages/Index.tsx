@@ -26,8 +26,8 @@ const Index = () => {
               {/* Logo added above the main heading */}
               <div className="flex justify-center md:justify-start mb-8">
                 <img
-                  src="https://tibizurada.store/logo-01.png"
-                  alt="Convoca.ai Logo"
+                  src="https://tibizurada.store/footer-logo.png"
+                  alt="Nomeia Aí Logo"
                   className="h-auto max-w-[350px] md:max-w-[437px]" // Increased by 25%: 280 * 1.25 = 350, and 350 * 1.25 = 437
                 />
               </div>

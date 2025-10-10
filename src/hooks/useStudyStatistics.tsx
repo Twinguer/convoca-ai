@@ -211,13 +211,14 @@ export const useStudyStatistics = () => {
         }
 
         // Atualizar estatísticas consolidadas
+        // CORREÇÃO: Usar dados das sessões como fonte principal para evitar duplicação
         consolidatedStats = {
           ...consolidatedStats,
-          totalHours: Math.max(consolidatedStats.totalHours, totalSessionHours),
-          totalSessions: Math.max(consolidatedStats.totalSessions, totalSessionsFromSchedule),
-          questionsAnswered: consolidatedStats.questionsAnswered + totalSessionQuestions,
-          correctAnswers: consolidatedStats.correctAnswers + totalCorrectAnswers,
-          wrongAnswers: consolidatedStats.wrongAnswers + (totalSessionQuestions - totalCorrectAnswers),
+          totalHours: totalSessionHours, // Usar dados das sessões como fonte principal
+          totalSessions: totalSessionsFromSchedule, // Usar dados das sessões como fonte principal
+          questionsAnswered: totalSessionQuestions, // Usar dados das sessões como fonte principal
+          correctAnswers: totalCorrectAnswers, // Usar dados das sessões como fonte principal
+          wrongAnswers: totalSessionQuestions - totalCorrectAnswers, // Usar dados das sessões como fonte principal
           currentStreak: Math.max(consolidatedStats.currentStreak, currentStreak),
           longestStreak: Math.max(consolidatedStats.longestStreak, longestStreak),
           lastStudyDate: sortedSessions.length > 0 ? sortedSessions[0].last_session_date : consolidatedStats.lastStudyDate,

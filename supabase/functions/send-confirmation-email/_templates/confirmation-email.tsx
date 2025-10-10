@@ -23,14 +23,14 @@ export const ConfirmationEmail = ({
 }: ConfirmationEmailProps) => (
   <Html>
     <Head />
-    <Preview>Confirme seu cadastro no Convoca Aí - Rankings de Concursos</Preview>
+    <Preview>Confirme seu cadastro no Nomeia Aí - Rankings de Concursos</Preview>
     <Body style={main}>
       <Container style={container}>
         {/* Header com gradiente verde */}
         <Section style={header}>
           <Text style={{ margin: 0 }}>
             <span style={logoIcon}>✓</span>
-            <Heading as="h1" style={h1}>Convoca Aí</Heading>
+            <Heading as="h1" style={h1}>Nomeia Aí</Heading>
           </Text>
           <Text style={tagline}>Rankings de Concursos Públicos</Text>
         </Section>
@@ -39,7 +39,7 @@ export const ConfirmationEmail = ({
         <Section style={contentCard}>
           <Heading as="h2" style={h2}>Bem-vindo! 🎉</Heading>
           <Text style={text}>
-            Estamos muito felizes em ter você conosco! O Convoca Aí é a plataforma perfeita para acompanhar sua classificação em rankings de concursos.
+            Estamos muito felizes em ter você conosco! O Nomeia Aí é a plataforma perfeita para acompanhar sua classificação em rankings de concursos.
           </Text>
 
           <Section style={featureBox}>
@@ -65,17 +65,17 @@ export const ConfirmationEmail = ({
           <Hr style={divider} />
 
           <Text style={disclaimerText}>
-            Se você não criou uma conta no Convoca Aí, ignore este e-mail.
+            Se você não criou uma conta no Nomeia Aí, ignore este e-mail.
           </Text>
         </Section>
 
         {/* Footer */}
         <Section style={footer}>
-          <Link href="https://www.convocai.com.br" style={footerLink}>
-            www.convocai.com.br
+          <Link href="https://www.nomeiaai.com.br" style={footerLink}>
+            www.nomeiaai.com.br
           </Link>
-          <Text style={footerText}>Convoca Aí - Sua classificação em rankings de concursos</Text>
-          <Text style={footerTextSmall}>© 2025 Convoca Aí. Todos os direitos reservados.</Text>
+          <Text style={footerText}>Nomeia Aí - Sua classificação em rankings de concursos</Text>
+          <Text style={footerTextSmall}>© 2025 Nomeia Aí. Todos os direitos reservados.</Text>
         </Section>
       </Container>
     </Body>

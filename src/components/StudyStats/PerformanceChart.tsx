@@ -189,15 +189,15 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
       <CardContent>
         <Tabs value={activeTab} onValueChange={(value: 'questions' | 'time' | 'subjects') => setActiveTab(value)} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="questions" className="flex items-center gap-2 text-slate-800">
+            <TabsTrigger value="questions" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Questões
             </TabsTrigger>
-            <TabsTrigger value="time" className="flex items-center gap-2 text-slate-800">
+            <TabsTrigger value="time" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Tempo
             </TabsTrigger>
-            <TabsTrigger value="subjects" className="flex items-center gap-2 text-slate-800">
+            <TabsTrigger value="subjects" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Disciplinas
             </TabsTrigger>

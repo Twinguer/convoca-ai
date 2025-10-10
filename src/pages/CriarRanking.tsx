@@ -422,7 +422,7 @@ const CriarRanking = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-6">
                   <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editToken} className="text-slate-800">
+                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editToken}>
                     Gabarito Oficial
                   </TabsTrigger>
                 </TabsList>

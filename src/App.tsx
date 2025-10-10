@@ -227,7 +227,7 @@ const App = () => {
   const queryClient = new QueryClient();
   return <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="system" storageKey="convoca-ui-theme" attribute="class" enableSystem>
+        <ThemeProvider defaultTheme="system" storageKey="nomeia-ui-theme" attribute="class" enableSystem>
           <AuthProvider>
             <TimerProvider>
               <TooltipProvider>

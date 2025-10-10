@@ -59,7 +59,11 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
       ranking.score <= 0;
     
-    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated;
+    // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+    const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
+      ranking.score <= 0;
+    
+    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
   };
 
   // Calculate quota positions for each ranking, separating classified from eliminated
@@ -290,7 +294,11 @@ const RankingTableContent: React.FC<{
     const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
       ranking.score <= 0;
     
-    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated;
+    // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+    const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
+      ranking.score <= 0;
+    
+    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
   };
   
   // Function to calculate the objective total score of the ranking

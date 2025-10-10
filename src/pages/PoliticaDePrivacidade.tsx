@@ -26,7 +26,7 @@ const PoliticaDePrivacidade = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3">1. Introdução</h2>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                A privacidade dos nossos usuários é fundamental para o Convoca.ai. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos seus dados pessoais em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
+                A privacidade dos nossos usuários é fundamental para o Nomeia Aí. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos seus dados pessoais em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Ao usar nossa plataforma, você concorda com as práticas descritas nesta política.
@@ -36,10 +36,10 @@ const PoliticaDePrivacidade = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3">2. Responsável pelo Tratamento de Dados</h2>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                <strong>Controlador:</strong> Convoca.ai
+                <strong>Controlador:</strong> Nomeia Aí
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                <strong>Email para Privacidade:</strong> contato@convocai.com.br
+                <strong>Email para Privacidade:</strong> contato@nomeiai.com.br
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
                 <strong>Telefone:</strong> (11) 95350-1988
@@ -191,7 +191,7 @@ const PoliticaDePrivacidade = () => {
                 <li><strong>Revisão de decisões automatizadas:</strong> Quando aplicável</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-3">
-                Para exercer seus direitos, entre em contato através do email <strong>contato@convocai.com.br</strong>. Responderemos sua solicitação em até 15 dias.
+                Para exercer seus direitos, entre em contato através do email <strong>contato@nomeiai.com.br</strong>. Responderemos sua solicitação em até 15 dias.
               </p>
             </section>
 
@@ -261,9 +261,9 @@ const PoliticaDePrivacidade = () => {
                 Para dúvidas sobre esta Política de Privacidade ou para exercer seus direitos:
               </p>
               <ul className="list-none text-muted-foreground space-y-1 ml-4">
-                <li><strong>Email:</strong> contato@convocai.com.br</li>
+                <li><strong>Email:</strong> contato@nomeiai.com.br</li>
                 <li><strong>Telefone:</strong> (11) 95350-1988</li>
-                <li><strong>Instagram:</strong> @convoca.ai</li>
+                <li><strong>Instagram:</strong> @nomeia.ai</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed mt-3">
                 Você também pode registrar reclamações junto à Autoridade Nacional de Proteção de Dados (ANPD) através do site <a href="https://www.gov.br/anpd" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">www.gov.br/anpd</a>.

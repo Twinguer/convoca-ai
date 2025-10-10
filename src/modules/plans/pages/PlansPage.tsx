@@ -200,7 +200,7 @@ const PlansPage = () => {
       <div className="mb-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-foreground mb-4">
-            Por que escolher o ConvocAI?
+            Por que escolher o Nomeia Aí?
           </h2>
           <p className="text-lg text-muted-foreground">
             Ferramentas desenvolvidas especificamente para concurseiros
@@ -254,7 +254,7 @@ const PlansPage = () => {
           Pronto para acelerar sua aprovação?
         </h2>
         <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Junte-se a milhares de candidatos que já escolheram o ConvocAI para 
+          Junte-se a milhares de candidatos que já escolheram o Nomeia Aí para 
           organizar seus estudos e alcançar a aprovação.
         </p>
         

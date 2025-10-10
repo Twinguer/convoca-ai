@@ -43,7 +43,7 @@ const AdminLayout: React.FC = () => {
       <header className="bg-card shadow-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold text-foreground">Convoca AI Admin</h1>
+            <h1 className="text-xl font-bold text-foreground">Nomeia Aí Admin</h1>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleCreateRanking} className="flex items-center gap-2">

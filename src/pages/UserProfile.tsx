@@ -508,7 +508,7 @@ const UserProfile = () => {
               <Logo className="h-16 w-auto" />
             </div>
             <p className="text-sm text-gray-600">
-              © {new Date().getFullYear()} Convoca Aí - Todos os direitos reservados
+              © {new Date().getFullYear()} Nomeia Aí - Todos os direitos reservados
             </p>
           </div>
         </div>

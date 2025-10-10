@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://convocaai.lovable.app'
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://nomeiaai.lovable.app'
     const redirectUrl = redirect_to || siteUrl
     const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirectUrl}`
 
@@ -45,9 +45,9 @@ Deno.serve(async (req) => {
     )
 
     const { error } = await resend.emails.send({
-      from: 'Convoca Aí <onboarding@resend.dev>',
+      from: 'Nomeia Aí <onboarding@resend.dev>',
       to: [user.email],
-      subject: 'Confirme seu cadastro no Convoca Aí',
+      subject: 'Confirme seu cadastro no Nomeia Aí',
       html,
     })
 

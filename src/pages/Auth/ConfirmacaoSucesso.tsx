@@ -30,7 +30,7 @@ const ConfirmacaoSucesso: React.FC = () => {
           </div>
           <div className="space-y-2">
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Bem-vindo ao Convocaí!
+              Bem-vindo ao Nomeia Aí!
             </CardTitle>
             <CardDescription className="text-lg">
               Seu email foi confirmado com sucesso! 🎉

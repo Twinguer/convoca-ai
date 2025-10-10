@@ -25,16 +25,16 @@ const FAQ = () => {
             Perguntas Frequentes (FAQ)
           </h1>
           <p className="text-muted-foreground mb-8">
-            Encontre respostas para as dúvidas mais comuns sobre o Convoca.ai
+            Encontre respostas para as dúvidas mais comuns sobre o Nomeia Aí
           </p>
 
           <Accordion type="single" collapsible className="space-y-2">
             <AccordionItem value="item-1" className="bg-card rounded-lg border px-6">
               <AccordionTrigger className="text-left">
-                O que é o Convoca.ai?
+                O que é o Nomeia Aí?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                O Convoca.ai é uma plataforma completa para candidatos de concursos públicos que permite criar e participar de rankings simulados, acompanhar seu desempenho, conectar-se com outros concurseiros e gerenciar seus estudos de forma organizada.
+                O Nomeia Aí é uma plataforma completa para candidatos de concursos públicos que permite criar e participar de rankings simulados, acompanhar seu desempenho, conectar-se com outros concurseiros e gerenciar seus estudos de forma organizada.
               </AccordionContent>
             </AccordionItem>
 
@@ -94,7 +94,7 @@ const FAQ = () => {
 
             <AccordionItem value="item-8" className="bg-card rounded-lg border px-6">
               <AccordionTrigger className="text-left">
-                O que é a comunidade do Convoca.ai?
+                O que é a comunidade do Nomeia Aí?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
                 A comunidade é um espaço para conectar-se com outros concurseiros. Você pode seguir candidatos, visualizar perfis públicos, acompanhar o progresso de outros usuários e trocar experiências sobre concursos e estudos.
@@ -124,7 +124,7 @@ const FAQ = () => {
                 Existe um aplicativo mobile?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Atualmente o Convoca.ai é uma plataforma web responsiva, funcionando perfeitamente em navegadores mobile. Você pode adicionar o site à tela inicial do seu smartphone para acesso rápido, funcionando como um aplicativo.
+                Atualmente o Nomeia Aí é uma plataforma web responsiva, funcionando perfeitamente em navegadores mobile. Você pode adicionar o site à tela inicial do seu smartphone para acesso rápido, funcionando como um aplicativo.
               </AccordionContent>
             </AccordionItem>
 
@@ -142,7 +142,7 @@ const FAQ = () => {
                 Como entrar em contato com o suporte?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Você pode entrar em contato através do email contato@convocai.com.br, WhatsApp (11) 95350-1988 ou pelo Instagram @convoca.ai. Nossa equipe responde em até 24 horas úteis.
+                Você pode entrar em contato através do email contato@nomeiai.com.br, WhatsApp (11) 95350-1988 ou pelo Instagram @nomeia.ai. Nossa equipe responde em até 24 horas úteis.
               </AccordionContent>
             </AccordionItem>
 
@@ -151,7 +151,7 @@ const FAQ = () => {
                 Os rankings são oficiais?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground">
-                Não. Os rankings no Convoca.ai são simulações criadas pela comunidade para fins de estudo e comparação. O resultado oficial do concurso sempre será divulgado pela banca organizadora. Nossa plataforma serve como ferramenta de apoio para estimar sua classificação.
+                Não. Os rankings no Nomeia Aí são simulações criadas pela comunidade para fins de estudo e comparação. O resultado oficial do concurso sempre será divulgado pela banca organizadora. Nossa plataforma serve como ferramenta de apoio para estimar sua classificação.
               </AccordionContent>
             </AccordionItem>
 
@@ -174,10 +174,10 @@ const FAQ = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <Button variant="default" className="border-0" asChild>
-                <a href="mailto:contato@convocai.com.br">Enviar Email</a>
+                <a href="mailto:contato@nomeiai.com.br">Enviar Email</a>
               </Button>
               <Button variant="outline" className="border-0" asChild>
-                <a href="https://instagram.com/convoca.ai" target="_blank" rel="noopener noreferrer">
+                <a href="https://instagram.com/nomeia.ai" target="_blank" rel="noopener noreferrer">
                   Falar no Instagram
                 </a>
               </Button>

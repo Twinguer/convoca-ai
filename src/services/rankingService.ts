@@ -178,8 +178,12 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
       const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
         (ranking.score || 0) <= 0;
       
+      // Verificar se é prova "Alternativas" e nota <= 0
+      const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+        (ranking.score || 0) <= 0;
+      
       // Combinar todas as condições de eliminação
-      const belowMinimum = belowMinimumGeneral || isCertoErradoEliminated;
+      const belowMinimum = belowMinimumGeneral || isCertoErradoEliminated || isAlternativasEliminated;
       
       // Log removido para reduzir overhead em produção
       

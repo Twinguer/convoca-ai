@@ -70,7 +70,7 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				convoca: {
+				nomeia: {
 					50: '#f0f7ff',
 					100: '#e0eefe',
 					200: '#b9ddfe',

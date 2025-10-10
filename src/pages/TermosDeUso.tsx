@@ -26,14 +26,14 @@ const TermosDeUso = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3">1. Aceitação dos Termos</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Ao acessar e usar a plataforma Convoca.ai, você concorda em cumprir e estar vinculado aos seguintes Termos de Uso. Se você não concordar com qualquer parte destes termos, não deverá usar nossos serviços.
+                Ao acessar e usar a plataforma Nomeia Aí, você concorda em cumprir e estar vinculado aos seguintes Termos de Uso. Se você não concordar com qualquer parte destes termos, não deverá usar nossos serviços.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold mb-3">2. Descrição do Serviço</h2>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                O Convoca.ai é uma plataforma online que oferece:
+                O Nomeia Aí é uma plataforma online que oferece:
               </p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1 ml-4">
                 <li>Criação e participação em rankings simulados de concursos públicos</li>
@@ -80,10 +80,10 @@ const TermosDeUso = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3">5. Propriedade Intelectual</h2>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                5.1. Todo o conteúdo da plataforma, incluindo código, design, textos, gráficos e logos, é propriedade do Convoca.ai ou de seus licenciadores e está protegido por leis de direitos autorais brasileiras e internacionais.
+                5.1. Todo o conteúdo da plataforma, incluindo código, design, textos, gráficos e logos, é propriedade do Nomeia Aí ou de seus licenciadores e está protegido por leis de direitos autorais brasileiras e internacionais.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                5.2. Você mantém os direitos sobre o conteúdo que cria na plataforma (rankings, estatísticas pessoais), mas concede ao Convoca.ai uma licença não exclusiva para usar, exibir e distribuir esse conteúdo dentro da plataforma.
+                5.2. Você mantém os direitos sobre o conteúdo que cria na plataforma (rankings, estatísticas pessoais), mas concede ao Nomeia Aí uma licença não exclusiva para usar, exibir e distribuir esse conteúdo dentro da plataforma.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 5.3. É proibida a reprodução, distribuição ou uso comercial de qualquer parte da plataforma sem autorização prévia e por escrito.
@@ -96,7 +96,7 @@ const TermosDeUso = () => {
                 6.1. Os rankings criados na plataforma são simulações não oficiais destinadas exclusivamente para fins de estudo e comparação entre usuários.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                6.2. O Convoca.ai não se responsabiliza pela precisão dos gabaritos inseridos por criadores de rankings ou pelas classificações resultantes.
+                6.2. O Nomeia Aí não se responsabiliza pela precisão dos gabaritos inseridos por criadores de rankings ou pelas classificações resultantes.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
                 6.3. Os resultados oficiais dos concursos públicos são divulgados exclusivamente pelas bancas organizadoras competentes.
@@ -109,13 +109,13 @@ const TermosDeUso = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3">7. Planos e Pagamentos</h2>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                7.1. O Convoca.ai oferece planos gratuitos e pagos (premium) com diferentes funcionalidades.
+                7.1. O Nomeia Aí oferece planos gratuitos e pagos (premium) com diferentes funcionalidades.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
                 7.2. Os valores dos planos pagos estão claramente indicados na página de assinatura.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                7.3. O pagamento é processado por plataformas terceiras seguras. O Convoca.ai não armazena dados completos de cartão de crédito.
+                7.3. O pagamento é processado por plataformas terceiras seguras. O Nomeia Aí não armazena dados completos de cartão de crédito.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
                 7.4. Assinaturas são renovadas automaticamente, salvo cancelamento pelo usuário.
@@ -138,7 +138,7 @@ const TermosDeUso = () => {
             <section>
               <h2 className="text-2xl font-semibold mb-3">9. Limitação de Responsabilidade</h2>
               <p className="text-muted-foreground leading-relaxed mb-2">
-                9.1. O Convoca.ai fornece a plataforma "como está" e "conforme disponível", sem garantias expressas ou implícitas.
+                9.1. O Nomeia Aí fornece a plataforma "como está" e "conforme disponível", sem garantias expressas ou implícitas.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-2">
                 9.2. Não garantimos que a plataforma estará sempre disponível, livre de erros ou vírus.
@@ -202,7 +202,7 @@ const TermosDeUso = () => {
                 Para questões sobre estes Termos de Uso, entre em contato:
               </p>
               <ul className="list-none text-muted-foreground space-y-1 ml-4">
-                <li><strong>Email:</strong> contato@convocai.com.br</li>
+                <li><strong>Email:</strong> contato@nomeiai.com.br</li>
                 <li><strong>Telefone:</strong> (11) 95350-1988</li>
                 <li><strong>Endereço:</strong> São Paulo, SP - Brasil</li>
               </ul>
@@ -210,7 +210,7 @@ const TermosDeUso = () => {
 
             <section className="border-t pt-6 mt-8">
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Ao utilizar o Convoca.ai, você declara ter lido, compreendido e concordado com estes Termos de Uso.
+                Ao utilizar o Nomeia Aí, você declara ter lido, compreendido e concordado com estes Termos de Uso.
               </p>
             </section>
           </div>

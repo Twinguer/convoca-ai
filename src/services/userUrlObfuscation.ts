@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Serviço para ofuscar URLs de usuários e controlar acesso
 export class UserUrlObfuscationService {
-  private static readonly OBFUSCATION_KEY = 'convoca_user_obfuscation_2024';
+  private static readonly OBFUSCATION_KEY = 'nomeia_user_obfuscation_2024';
   
   // Gerar um token ofuscado para um usuário
   static async generateUserToken(userId: string): Promise<string> {

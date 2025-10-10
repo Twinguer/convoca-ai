@@ -94,14 +94,33 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           const list = await fetchUserRankings(concursoId);
 
           // Mesma regra de eliminação usada na tabela de rankings
-          const isBelowMinimum = (rankingData: any) => {
-            return !!rankingData.belowMinimum || 
-                   (rankingData.belowBlockMinimums && rankingData.belowBlockMinimums.length > 0) || 
-                   (rankingData.belowDisciplineMinimums && rankingData.belowDisciplineMinimums.length > 0);
+          const isBelowMinimum = (rankingData: any, concursoData: any) => {
+            const hasDisciplineMinimums = rankingData.belowDisciplineMinimums && 
+              rankingData.belowDisciplineMinimums.length > 0;
+            const hasBlockMinimums = rankingData.belowBlockMinimums && 
+              rankingData.belowBlockMinimums.length > 0;
+            
+            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+              rankingData.score <= 0;
+            
+            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+              rankingData.score <= 0;
+            
+            return !!rankingData.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
+                   isCertoErradoEliminated || isAlternativasEliminated;
           };
 
+          // Buscar dados do concurso para verificar o tipo de exame
+          const { data: concursoData } = await supabase
+            .from('concursos')
+            .select('exam_type')
+            .eq('id', concursoId)
+            .single();
+
           // Filtrar classificados e ordenar por pontuação
-          const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
+          const classified = list.filter((r: any) => !isBelowMinimum(r, concursoData)).sort((a: any, b: any) => b.score - a.score);
           
           // Encontrar a posição do usuário
           const idx = classified.findIndex((r: any) => r.id === ranking.id);
@@ -138,10 +157,32 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         }
         try {
           const communityList = await fetchUserRankings(concursoId);
-          const isBelowMinimum = (r: any) =>
-            !!r.belowMinimum ||
-            (r.belowBlockMinimums && r.belowBlockMinimums.length > 0) ||
-            (r.belowDisciplineMinimums && r.belowDisciplineMinimums.length > 0);
+          
+          // Buscar dados do concurso para verificar o tipo de exame
+          const { data: concursoData } = await supabase
+            .from('concursos')
+            .select('exam_type')
+            .eq('id', concursoId)
+            .single();
+          
+          const isBelowMinimum = (r: any) => {
+            const hasDisciplineMinimums = r.belowDisciplineMinimums && 
+              r.belowDisciplineMinimums.length > 0;
+            const hasBlockMinimums = r.belowBlockMinimums && 
+              r.belowBlockMinimums.length > 0;
+            
+            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+              r.score <= 0;
+            
+            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+              r.score <= 0;
+            
+            return !!r.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
+                   isCertoErradoEliminated || isAlternativasEliminated;
+          };
+          
           const classified = communityList
             .filter((r: any) => !isBelowMinimum(r))
             .sort((a: any, b: any) => b.score - a.score);
