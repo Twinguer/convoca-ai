@@ -8,13 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X, Edit, Clock, BookOpen, Target, CheckCircle, FileText, Video, Calendar } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, X, Edit, BookOpen, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { toast } from 'sonner';
 interface Discipline {
   id: string;
@@ -31,15 +29,20 @@ interface Discipline {
   isCompleted: boolean;
   notes: string;
 }
+
+// Interface simplificada para compatibilidade com createStudyCycleV2
+interface SimpleDiscipline {
+  id: string;
+  name: string;
+}
 interface Block {
   id: string;
   name: string;
   disciplines: Discipline[];
 }
 const CriarCiclo = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const { createCycle } = useStudyCyclesV2();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +75,7 @@ const CriarCiclo = () => {
   const addBlock = () => {
     const newBlock: Block = {
       id: generateId(),
-      name: `Bloco ${blocks.length + 1}`,
+      name: `Matéria ${blocks.length + 1}`,
       disciplines: []
     };
     setBlocks([...blocks, newBlock]);
@@ -156,21 +159,41 @@ const CriarCiclo = () => {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
+    
+    // Debug: Verificar blocos antes de enviar
+    console.log('🔍 Debug - Blocos antes de enviar:', blocks);
+    console.log('🔍 Debug - Quantidade de blocos:', blocks.length);
+    
+    // Converter blocos para formato simplificado compatível com createStudyCycleV2
+    const simplifiedBlocks = blocks.map(block => ({
+      id: block.id,
+      name: block.name,
+      disciplines: block.disciplines.map(discipline => ({
+        id: discipline.id,
+        name: discipline.name
+      }))
+    }));
+    
+    console.log('🔍 Debug - Blocos simplificados:', simplifiedBlocks);
+    
     setLoading(true);
     try {
-      const {
-        error
-      } = await supabase.from('study_cycles').insert({
-        user_id: user.id,
-        name: cycleName,
+      const newCycle = await createCycle({
+        cycle_name: cycleName,
+        exam_date: examDate,
         organ,
         position,
-        exam_date: examDate,
-        blocks: blocks
+        edital_link: '',
+        curso_link: '',
+        video_link: '',
+        blocks: simplifiedBlocks // Enviar blocos no formato correto
       });
-      if (error) throw error;
-      toast.success('Ciclo de estudos criado com sucesso!');
-      navigate('/estudos');
+
+      if (newCycle) {
+        console.log('✅ Ciclo criado com sucesso:', newCycle);
+        toast.success('Ciclo de estudos criado com sucesso!');
+        navigate('/estudos');
+      }
     } catch (error) {
       console.error('Error creating study cycle:', error);
       toast.error('Erro ao criar ciclo de estudos');
@@ -190,7 +213,7 @@ const CriarCiclo = () => {
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Criando...' : 'Criar Ciclo'}
+            {loading ? 'Salvando...' : 'Salvar Ciclo'}
           </Button>
         </div>
       </div>
@@ -237,27 +260,24 @@ const CriarCiclo = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Edital</CardTitle>
-                <CardDescription>
-                  Organize suas disciplinas em blocos temáticos
-                </CardDescription>
+                <CardTitle>Edital Verticalizado</CardTitle>
               </div>
               <Button onClick={addBlock}>
                 <Plus className="h-4 w-4 mr-2" />
-                Adicionar Bloco
+                Adicionar Matéria
               </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {blocks.length === 0 ? <div className="text-center p-8 border-2 border-dashed border-muted rounded-lg">
                 <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhum bloco criado</h3>
+                <h3 className="text-lg font-semibold mb-2">Nenhuma matéria criada</h3>
                 <p className="text-muted-foreground mb-4">
-                  Crie seu primeiro bloco para organizar suas disciplinas
+                  Crie sua primeira matéria para organizar seus tópicos
                 </p>
                 <Button onClick={addBlock}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Criar Primeiro Bloco
+                  Criar Primeira Matéria
                 </Button>
               </div> : blocks.map(block => <BlockCard key={block.id} block={block} onRemove={() => removeBlock(block.id)} onUpdateName={name => updateBlockName(block.id, name)} onAddDiscipline={() => openDisciplineDialog(block.id)} onEditDiscipline={discipline => openDisciplineDialog(block.id, discipline)} onRemoveDiscipline={disciplineId => removeDiscipline(block.id, disciplineId)} />)}
           </CardContent>
@@ -269,12 +289,11 @@ const CriarCiclo = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingDiscipline?.discipline ? 'Editar' : 'Adicionar'} Disciplina
+              Adicionar Tópico
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="disciplineName">Nome da Disciplina *</Label>
               <Input 
                 id="disciplineName" 
                 value={disciplineForm.name} 
@@ -282,7 +301,7 @@ const CriarCiclo = () => {
                   ...disciplineForm,
                   name: e.target.value
                 })} 
-                placeholder="Ex: Direito Constitucional" 
+                placeholder="Ex: Art. 5º" 
               />
             </div>
 
@@ -321,15 +340,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
     onUpdateName(nameValue);
     setIsEditing(false);
   };
-  const calculateBlockProgress = () => {
-    if (block.disciplines.length === 0) return 0;
-    const completed = block.disciplines.filter(d => d.isCompleted).length;
-    return completed / block.disciplines.length * 100;
-  };
-  const totalStudyTime = block.disciplines.reduce((sum, d) => sum + d.studyTime, 0);
-  const totalQuestions = block.disciplines.reduce((sum, d) => sum + d.questionsResolved, 0);
-  const totalCorrect = block.disciplines.reduce((sum, d) => sum + d.correctAnswers, 0);
-  const accuracy = totalQuestions > 0 ? totalCorrect / totalQuestions * 100 : 0;
   return <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
@@ -348,11 +358,11 @@ const BlockCard: React.FC<BlockCardProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline">
-              {block.disciplines.length} disciplina(s)
+              {block.disciplines.length} tópico(s)
             </Badge>
             <Button size="sm" variant="outline" onClick={onAddDiscipline}>
               <Plus className="h-4 w-4 mr-1" />
-              Disciplina
+              Tópico
             </Button>
             <Button size="sm" variant="destructive" onClick={onRemove}>
               <X className="h-4 w-4" />
@@ -360,27 +370,6 @@ const BlockCard: React.FC<BlockCardProps> = ({
           </div>
         </div>
         
-        {block.disciplines.length > 0 && <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progresso do Bloco</span>
-              <span>{calculateBlockProgress().toFixed(1)}%</span>
-            </div>
-            <Progress value={calculateBlockProgress()} />
-            <div className="flex gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {totalStudyTime}h estudadas
-              </span>
-              <span className="flex items-center gap-1">
-                <Target className="h-3 w-3" />
-                {totalQuestions} questões
-              </span>
-              <span className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
-                {accuracy.toFixed(1)}% acertos
-              </span>
-            </div>
-          </div>}
       </CardHeader>
       
       {block.disciplines.length > 0 && <CardContent>
@@ -400,87 +389,19 @@ const DisciplineItem: React.FC<DisciplineItemProps> = ({
   onEdit,
   onRemove
 }) => {
-  const [localStatus, setLocalStatus] = useState(discipline.status);
-
-  const updateStatus = (newStatus: 'em-andamento' | 'finalizada' | 'em-revisao') => {
-    setLocalStatus(newStatus);
-    discipline.status = newStatus;
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'finalizada': return 'bg-green-100 text-green-800 border-green-200';
-      case 'em-revisao': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      default: return 'bg-blue-100 text-blue-800 border-blue-200';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'finalizada': return 'Finalizada';
-      case 'em-revisao': return 'Em Revisão';
-      default: return 'Em Andamento';
-    }
-  };
-
   return (
     <div className="flex items-center justify-between p-3 border rounded-lg">
       <div className="flex items-center gap-3 flex-1">
         <span className="font-medium">{discipline.name}</span>
-        <Badge className={getStatusColor(localStatus)}>
-          {getStatusLabel(localStatus)}
-        </Badge>
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Status Checkboxes */}
-        <div className="flex gap-3">
-          <div className="flex items-center space-x-1">
-            <Checkbox 
-              id={`${discipline.id}-em-andamento`}
-              checked={localStatus === 'em-andamento'} 
-              onCheckedChange={(checked) => {
-                if (checked) updateStatus('em-andamento');
-              }} 
-            />
-            <Label htmlFor={`${discipline.id}-em-andamento`} className="text-xs">
-              Em andamento
-            </Label>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Checkbox 
-              id={`${discipline.id}-finalizada`}
-              checked={localStatus === 'finalizada'} 
-              onCheckedChange={(checked) => {
-                if (checked) updateStatus('finalizada');
-              }} 
-            />
-            <Label htmlFor={`${discipline.id}-finalizada`} className="text-xs">
-              Finalizada
-            </Label>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Checkbox 
-              id={`${discipline.id}-em-revisao`}
-              checked={localStatus === 'em-revisao'} 
-              onCheckedChange={(checked) => {
-                if (checked) updateStatus('em-revisao');
-              }} 
-            />
-            <Label htmlFor={`${discipline.id}-em-revisao`} className="text-xs">
-              Em revisão
-            </Label>
-          </div>
-        </div>
-        
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={onEdit}>
-            <Edit className="h-3 w-3" />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onRemove}>
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
+        <Button size="sm" variant="ghost" onClick={onEdit}>
+          <Edit className="h-3 w-3" />
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onRemove}>
+          <X className="h-3 w-3" />
+        </Button>
       </div>
     </div>
   );

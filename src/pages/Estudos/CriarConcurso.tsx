@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Calendar, BookOpen, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyContest, StudySubject } from '@/types/userStudy';
 import { toast } from '@/hooks/use-toast';
 
 interface Discipline {
@@ -101,47 +102,45 @@ const CriarConcurso = () => {
 
     try {
       // Create study contest
-      const { data: contestData, error: contestError } = await supabase
-        .from('study_contests')
-        .insert({
-          user_id: user.id,
-          title,
-          description,
-          exam_date: examDate
-        })
-        .select()
-        .single();
-
-      if (contestError) throw contestError;
+      const newContest: Omit<StudyContest, 'id' | 'created_at' | 'updated_at'> = {
+        concurso_id: crypto.randomUUID(), // Usar como ID temporário
+        is_active: true,
+        registration_date: new Date().toISOString(),
+        exam_date: examDate,
+        notes: description
+      };
 
       // Create disciplines for each block
-      const allDisciplines = blocks.flatMap(block => 
+      const newSubjects: Omit<StudySubject, 'id' | 'created_at' | 'updated_at'>[] = blocks.flatMap(block => 
         block.disciplines.map(discipline => ({
-          user_id: user.id,
-          study_contest_id: contestData.id,
           name: discipline.name,
-          block_name: discipline.blockName,
-          estimated_hours: discipline.estimatedHours,
-          completed_hours: 0,
-          is_completed: false,
-          is_active: true
+          parent_id: undefined,
+          total_hours_studied: discipline.estimatedHours || 0,
+          last_studied_date: null
         }))
       );
 
-      if (allDisciplines.length > 0) {
-        const { error: disciplinesError } = await supabase
-          .from('study_subjects')
-          .insert(allDisciplines);
-
-        if (disciplinesError) throw disciplinesError;
+      // Get current user study data
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      if (!userStudyData) {
+        await UserStudyService.initializeUserStudyData(user.id);
       }
 
-      toast({
-        title: "Sucesso!",
-        description: "Concurso de estudo criado com sucesso!"
+      // Add new contest and subjects
+      const success = await UserStudyService.upsertUserStudyData(user.id, {
+        study_contests: [...(userStudyData?.study_contests || []), newContest],
+        study_subjects: [...(userStudyData?.study_subjects || []), ...newSubjects]
       });
 
-      navigate('/estudos');
+      if (success) {
+        toast({
+          title: "Sucesso!",
+          description: "Concurso de estudo criado com sucesso!"
+        });
+        navigate('/estudos');
+      } else {
+        throw new Error('Failed to save data');
+      }
     } catch (error) {
       console.error('Error creating study contest:', error);
       toast({

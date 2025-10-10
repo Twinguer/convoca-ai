@@ -12,15 +12,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { CalendarIcon, Plus, Settings, BookOpen, Clock, X, ArrowLeft, Timer, Play, Pause, Square, Minus, ExternalLink, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, generateId } from '@/lib/utils';
 import { useTimer } from '@/contexts/TimerContext';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useQuestionTracking } from '@/hooks/useQuestionTracking';
+import { StudyCycleV2 } from '@/types/userStudy';
 import { useStudySessions } from '@/hooks/useStudySessions';
+import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
+import { UserStudyService } from '@/services/userStudyService';
 import { v4 as uuidv4 } from 'uuid';
+import { useOptimizedSessionData } from '@/hooks/useOptimizedSessionData';
 interface StudySession {
   id: string;
   day: number; // 0-6 (Sunday to Saturday)
@@ -31,11 +34,7 @@ interface StudySession {
   cycleId: string;
   sessionLink?: string;
 }
-interface StudyCycle {
-  id: string;
-  name: string;
-  blocks: any[];
-}
+// Usar StudyCycleV2 do types
 const Cronograma = () => {
   const {
     user
@@ -52,119 +51,33 @@ const Cronograma = () => {
     stopTimer,
     setInitialTime
   } = useTimer();
+  const { addScheduleSession } = useStudyCyclesV2();
 
   // Clock state
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Calendar state
+  // Calendar state (simplificado - apenas visual)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [studiedDays, setStudiedDays] = useState<Date[]>([]);
-  const [selectedStudyDay, setSelectedStudyDay] = useState<Date | null>(null);
-  const [studyDayDetails, setStudyDayDetails] = useState<any[]>([]);
-  const [showStudyDetailsModal, setShowStudyDetailsModal] = useState(false);
 
-  // Load studied days from database
-  useEffect(() => {
-    if (user) {
-      loadStudiedDays();
-    }
-  }, [user]);
-  const loadStudiedDays = async () => {
-    try {
-      const {
-        data,
-        error
-      } = await supabase.from('study_sessions').select('session_date').eq('user_id', user?.id).order('session_date');
-      if (error) throw error;
+  // Calendário simplificado - sem funcionalidades de estatísticas
 
-      // Convert dates properly avoiding timezone issues
-      const uniqueDates = [...new Set((data || []).map(item => item.session_date))];
-      const dates = uniqueDates.map(dateStr => {
-        const [year, month, day] = dateStr.split('-');
-        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      });
-      setStudiedDays(dates);
-    } catch (error) {
-      console.error('Error loading studied days:', error);
-    }
-  };
-  // Handle clicking on calendar days to show study details
-  const handleCalendarDateClick = async (date: Date) => {
-    const isStudiedDay = studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString());
-    if (isStudiedDay) {
-      // Show study details
-      setSelectedStudyDay(date);
-      await loadStudyDayDetails(date);
-      setShowStudyDetailsModal(true);
-    }
-  };
-
-  // Handle unmarking a studied day
-  const handleUnmarkStudyDay = () => {
-    if (selectedStudyDay) {
-      const newStudiedDays = studiedDays.filter(studyDay => studyDay.toDateString() !== selectedStudyDay.toDateString());
-      setStudiedDays(newStudiedDays);
-      setShowStudyDetailsModal(false);
-      toast.success('Dia desmarcado como estudado');
-    }
-  };
-
-  // Load study session details for a specific day
-  const loadStudyDayDetails = async (date: Date) => {
-    try {
-      // Format date properly to avoid timezone issues
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      const dateStr = `${year}-${month}-${day}`;
-      const {
-        data,
-        error
-      } = await supabase.from('study_sessions').select('*').eq('user_id', user?.id).eq('session_date', dateStr).order('start_time');
-      if (error) throw error;
-
-      // Enriquecer os dados com informações do cronograma
-      const enrichedData = (data || []).map(session => {
-        // Buscar a sessão correspondente no cronograma
-        const scheduleSession = sessions.find(s => s.id === session.schedule_session_id);
-        return {
-          ...session,
-          course_name: scheduleSession?.disciplineName || 'Assunto não informado',
-          study_type: session.study_type || 'mixed',
-          block_name: scheduleSession?.blockName || '',
-          discipline_name: scheduleSession?.disciplineName || ''
-        };
-      });
-      setStudyDayDetails(enrichedData);
-    } catch (error) {
-      console.error('Error loading study day details:', error);
-      setStudyDayDetails([]);
-    }
-  };
-
-  // Handle marking new study days (only for adding, not removing)
-  const handleStudiedDaysChange = async (dates: Date[] | undefined) => {
-    if (!dates) return;
-
-    // Only add new dates, don't handle removal here
-    const newDates = dates.filter(date => !studiedDays.some(studyDay => studyDay.toDateString() === date.toDateString()));
-    if (newDates.length > 0) {
-      const updatedDates = [...studiedDays, ...newDates];
-      setStudiedDays(updatedDates);
-      toast.success(`${newDates.length} dia(s) marcado(s) como estudado(s)`);
-    }
-  };
-  const [cycles, setCycles] = useState<StudyCycle[]>([]);
+  // Calendário simplificado - sem funcionalidades de estatísticas
+  const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<string>('');
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>('');
   const [selectedBlock, setSelectedBlock] = useState<string>('');
   const [selectedDay, setSelectedDay] = useState<number>(0);
+  const [customBlock, setCustomBlock] = useState<string>('');
+  const [customDiscipline, setCustomDiscipline] = useState<string>('');
   const [startTime, setStartTime] = useState<string>('08:00');
   const [endTime, setEndTime] = useState<string>('09:00');
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
+  const [selectedDateSessions, setSelectedDateSessions] = useState<any[]>([]);
+  
   const [editingSession, setEditingSession] = useState<StudySession | null>(null);
   const [sessionLink, setSessionLink] = useState<string>('');
 
@@ -185,10 +98,12 @@ const Cronograma = () => {
     trackAnswer
   } = useQuestionTracking();
   const {
-    getSessionByScheduleId,
     createOrUpdateSession,
     updateSessionLink
   } = useStudySessions();
+
+  // Usar hook otimizado para dados de sessão
+  const { sessionData, loading: sessionDataLoading, error: sessionDataError, refreshData } = useOptimizedSessionData();
 
   // Timer helper functions
   const formatTime = (mins: number, secs: number) => {
@@ -231,38 +146,49 @@ const Cronograma = () => {
   }, []);
   const fetchCycles = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('study_cycles').select('id, name, blocks').eq('user_id', user?.id).eq('is_active', true);
-      if (error) throw error;
-      setCycles(data || []);
+      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      if (userStudyData) {
+        const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
+        setCycles(activeCycles);
+      }
     } catch (error) {
       console.error('Error fetching cycles:', error);
     }
   };
   const fetchSessions = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('study_schedule').select('*').eq('user_id', user?.id).eq('is_active', true);
-      if (error) throw error;
+      
+      // Buscar sessões de todos os ciclos ativos
+      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      if (!userStudyData) {
+        setSessions([]);
+        return;
+      }
 
-      // Transform database format to our StudySession format
-      const transformedSessions = (data || []).map(item => ({
-        id: item.id,
-        day: item.day_of_week,
-        startTime: item.start_time,
-        endTime: item.end_time,
-        disciplineName: item.discipline_name || 'Disciplina',
-        blockName: item.block_name || 'Bloco',
-        cycleId: item.cycle_id || '',
-        sessionLink: item.session_link || ''
-      }));
-      setSessions(transformedSessions);
+      const allSessions: StudySession[] = [];
+      
+      // Percorrer todos os ciclos e extrair sessões do weekly_schedule
+      userStudyData.study_cycles.forEach(cycle => {
+        if (cycle.is_active && cycle.schedule_data?.weekly_schedule) {
+          cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
+            daySchedule.sessions.forEach(session => {
+              allSessions.push({
+                id: session.id,
+                day: daySchedule.day,
+                startTime: session.start_time,
+                endTime: session.end_time,
+                disciplineName: session.discipline_name || 'Disciplina',
+                blockName: session.block_name || 'Bloco',
+                cycleId: cycle.id,
+                sessionLink: session.session_link || ''
+              });
+            });
+          });
+        }
+      });
+
+      setSessions(allSessions);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
     }
@@ -272,10 +198,8 @@ const Cronograma = () => {
       // Save to database instead of localStorage
       for (const session of newSessions) {
         if (!sessions.find(s => s.id === session.id)) {
-          // This is a new session, insert it
-          await supabase.from('study_schedule').insert({
-            id: session.id,
-            user_id: user?.id,
+          // This is a new session, add it
+          await UserStudyService.addScheduleSession(user?.id, {
             day_of_week: session.day,
             start_time: session.startTime,
             end_time: session.endTime,
@@ -283,8 +207,6 @@ const Cronograma = () => {
             block_name: session.blockName,
             cycle_id: session.cycleId,
             session_link: session.sessionLink,
-            subject_id: null,
-            study_plan_id: null,
             is_active: true
           });
         }
@@ -295,53 +217,108 @@ const Cronograma = () => {
       toast.error('Erro ao salvar cronograma');
     }
   };
+  // Função para extrair blocos únicos do available_blocks do schedule_data
+  const getAvailableBlocks = () => {
+    const selectedCycleData = cycles.find(c => c.id === selectedCycle);
+    if (!selectedCycleData) return [];
+    
+    // Buscar blocos salvos no ciclo (available_blocks)
+    const savedBlocks = selectedCycleData.schedule_data.available_blocks || [];
+    
+    // Se não há blocos salvos, mostrar opção customizada
+    if (savedBlocks.length === 0) {
+      return [{ name: '+ Adicionar novo bloco', id: '__custom__' }];
+    }
+    
+    return savedBlocks.map(block => ({
+      name: block.name,
+      id: block.name
+    }));
+  };
+
+  // Função para extrair disciplinas únicas do available_disciplines do schedule_data
   const getAvailableDisciplines = () => {
     const selectedCycleData = cycles.find(c => c.id === selectedCycle);
     if (!selectedCycleData || !selectedBlock) return [];
-    const block = selectedCycleData.blocks.find((b: any) => b.name === selectedBlock);
-    return block?.disciplines || [];
+    
+    // Buscar disciplinas salvas no ciclo (available_disciplines) para o bloco selecionado
+    const savedDisciplines = selectedCycleData.schedule_data.available_disciplines || [];
+    const blockDisciplines = savedDisciplines.filter(d => d.block_name === selectedBlock);
+    
+    // Se não há disciplinas salvas para este bloco, mostrar opção customizada
+    if (blockDisciplines.length === 0) {
+      return [{ name: '+ Adicionar nova disciplina', id: '__custom__' }];
+    }
+    
+    return blockDisciplines.map(discipline => ({
+      name: discipline.name,
+      id: discipline.name
+    }));
   };
-  const getAvailableBlocks = () => {
-    const selectedCycleData = cycles.find(c => c.id === selectedCycle);
-    return selectedCycleData?.blocks || [];
-  };
-  const addSession = () => {
-    if (!selectedCycle || !selectedBlock || !selectedDiscipline) {
+  const addSession = async () => {
+    // Usar valores customizados se selecionados
+    const finalBlock = selectedBlock === '__custom__' ? customBlock : selectedBlock;
+    const finalDiscipline = selectedDiscipline === '__custom__' ? customDiscipline : selectedDiscipline;
+
+    if (!selectedCycle || !finalBlock || !finalDiscipline) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-    const newSession: StudySession = {
-      id: uuidv4(),
-      day: selectedDay,
-      startTime,
-      endTime,
-      disciplineName: selectedDiscipline,
-      blockName: selectedBlock,
-      cycleId: selectedCycle,
-      sessionLink: sessionLink
-    };
-    const updatedSessions = [...sessions, newSession];
-    saveSessions(updatedSessions);
 
-    // Limpar campos
-    setSelectedCycle('');
-    setSelectedBlock('');
-    setSelectedDiscipline('');
-    setSessionLink('');
-    setShowAddModal(false);
-    toast.success('Sessão adicionada ao cronograma!');
+    try {
+      // Adicionar sessão ao cronograma usando o hook useStudyCyclesV2
+      const success = await addScheduleSession(
+        selectedCycle,
+        selectedDay,
+        {
+          start_time: startTime,
+          end_time: endTime,
+          discipline_name: finalDiscipline,
+          block_name: finalBlock,
+          session_link: sessionLink
+        }
+      );
+
+      if (success) {
+        // Recarregar ciclos para atualizar a lista de blocos e disciplinas
+        await fetchCycles();
+        
+        // Recarregar sessões para mostrar a nova sessão imediatamente
+        await fetchSessions();
+        
+        // Limpar campos
+        setSelectedBlock('');
+        setSelectedDiscipline('');
+        setCustomBlock('');
+        setCustomDiscipline('');
+        setStartTime('08:00');
+        setEndTime('09:00');
+        setSessionLink('');
+        setShowAddModal(false);
+        
+        toast.success('Sessão adicionada ao cronograma!');
+      } else {
+        toast.error('Erro ao adicionar sessão');
+      }
+    } catch (error) {
+      console.error('Error adding session:', error);
+      toast.error('Erro ao adicionar sessão');
+    }
   };
+
   const removeSession = async (sessionId: string) => {
     try {
-      // Soft delete para evitar possíveis conflitos/relacionamentos
-      await supabase.from('study_schedule').update({
-        is_active: false
-      }).eq('id', sessionId).eq('user_id', user?.id);
-      const updatedSessions = sessions.filter(s => s.id !== sessionId);
-      setSessions(updatedSessions);
-      toast.success('Sessão removida do cronograma!');
+      // Remove session from schedule
+      const success = await UserStudyService.removeScheduleSession(user?.id, sessionId);
+      
+      if (success) {
+        // Recarregar sessões do banco
+        await fetchSessions();
+        toast.success('Sessão removida do cronograma!');
+      } else {
+        toast.error('Erro ao remover sessão');
+      }
     } catch (error) {
-      console.error('Error removing session:', error);
       toast.error('Erro ao remover sessão');
     }
   };
@@ -363,11 +340,149 @@ const Cronograma = () => {
   const getCycleName = (cycleId: string) => {
     return cycles.find(c => c.id === cycleId)?.name || 'Ciclo não encontrado';
   };
+
+  // Função para verificar se um dia tem sessões estudadas
+  const getSessionsForDate = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    const allSessions: any[] = [];
+    
+    cycles.forEach(cycle => {
+      cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
+        daySchedule.sessions.forEach(session => {
+          if (session.completed_sessions) {
+            session.completed_sessions.forEach(completedSession => {
+              if (completedSession.date === dateString) {
+                allSessions.push({
+                  cycle: {
+                    name: cycle.cycle_name,
+                    organ: cycle.organ,
+                    position: cycle.position
+                  },
+                  session: {
+                    discipline: session.discipline_name,
+                    topic: session.block_name,
+                    startTime: session.start_time,
+                    endTime: session.end_time,
+                    duration: completedSession.duration_minutes,
+                    questions: completedSession.questions,
+                    correct: completedSession.correct_answers,
+                    notes: completedSession.notes,
+                    link: session.session_link
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+    });
+    
+    return allSessions;
+  };
+
+  // Função para abrir modal de detalhes das sessões
+  const openSessionDetailsModal = (date: Date) => {
+    const sessions = getSessionsForDate(date);
+    
+    setSelectedDate(date);
+    setSelectedDateSessions(sessions);
+    setShowSessionDetailsModal(true);
+  };
+
+  // Função para verificar se um dia tem sessões (para cor do calendário)
+  const hasSessionsOnDate = (date: Date) => {
+    const sessions = getSessionsForDate(date);
+    return sessions.length > 0;
+  };
+
+  // Função para atualizar total_stats e completed_sessions no cronograma
+  const updateScheduleSessionStats = async (sessionId: string, stats: {
+    duration: number;
+    questions: number;
+    correctAnswers: number;
+    sessionLink: string;
+    notes?: string;
+    courseName?: string;
+    studyType?: string;
+  }) => {
+    try {
+      // Buscar dados atuais do usuário
+      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      if (!userStudyData) {
+        return;
+      }
+
+      const currentDate = new Date().toISOString().split('T')[0];
+
+      // Encontrar e atualizar a sessão no cronograma
+      const updatedCycles = userStudyData.study_cycles.map(cycle => {
+        const updatedSchedule = { ...cycle.schedule_data };
+        
+        updatedSchedule.weekly_schedule = updatedSchedule.weekly_schedule.map(daySchedule => ({
+          ...daySchedule,
+          sessions: daySchedule.sessions.map(session => {
+            if (session.id === sessionId) {
+              const currentStats = session.total_stats || {
+                session_count: 0,
+                total_correct: 0,
+                total_questions: 0,
+                total_duration_minutes: 0
+              };
+
+              // Criar nova sessão completada
+              const newCompletedSession = {
+                id: generateId(),
+                date: currentDate,
+                duration_minutes: stats.duration,
+                questions: stats.questions,
+                correct_answers: stats.correctAnswers,
+                notes: stats.notes || '',
+                course_name: stats.courseName || '',
+                study_type: stats.studyType || 'manual',
+                created_at: new Date().toISOString()
+              };
+
+              // Adicionar à lista de completed_sessions
+              const completedSessions = session.completed_sessions || [];
+              completedSessions.push(newCompletedSession);
+
+              return {
+                ...session,
+                session_link: stats.sessionLink || session.session_link,
+                completed_sessions: completedSessions,
+                total_stats: {
+                  ...currentStats,
+                  session_count: currentStats.session_count + 1,
+                  total_correct: currentStats.total_correct + stats.correctAnswers,
+                  total_questions: currentStats.total_questions + stats.questions,
+                  total_duration_minutes: currentStats.total_duration_minutes + stats.duration,
+                  last_session_date: currentDate
+                }
+              };
+            }
+            return session;
+          })
+        }));
+
+        return {
+          ...cycle,
+          schedule_data: updatedSchedule
+        };
+      });
+
+      // Salvar no banco
+      await UserStudyService.upsertUserStudyData(user.id, {
+        study_cycles: updatedCycles
+      });
+    } catch (error) {
+      // Silently handle error
+    }
+  };
   const openEditModal = (session: StudySession) => {
     setEditingSession(session);
 
-    // Carregar dados existentes de sessões acumulativas
-    const existingSession = getSessionByScheduleId(session.id);
+    // Carregar dados existentes de sessões acumulativas do sessionData
+    const existingSession = sessionData[session.id];
     if (existingSession) {
       setSessionLink(existingSession.session_link || '');
     } else {
@@ -392,15 +507,17 @@ const Cronograma = () => {
       return;
     }
     try {
-      // Usar o novo sistema acumulativo de sessões
-      await createOrUpdateSession(editingSession.id, {
+
+      // Salvar APENAS no cronograma (fonte única de verdade)
+      await updateScheduleSessionStats(editingSession.id, {
         duration: studyDuration,
         questions: questionsTotal,
         correctAnswers: questionsCorrect,
+        sessionLink: sessionLink,
         notes: studyNotes,
         courseName: courseName,
         studyType: studyType
-      }, sessionLink);
+      });
 
       // Registrar no sistema de estatísticas globais se >= 20 minutos
       if (studyDuration >= 20) {
@@ -421,11 +538,13 @@ const Cronograma = () => {
           await trackAnswer('A', 'B'); // Simular erro
         }
       }
+
       setShowEditModal(false);
       setEditingSession(null);
 
-      // Recarregar os dias estudados para atualizar o calendário
-      await loadStudiedDays();
+      // Recarregar dados para sincronizar
+      await refreshData(); // Recarregar dados do cronograma
+      await fetchCycles(); // Recarregar ciclos para atualizar calendário
 
       // Limpar campos
       setStudyDuration(0);
@@ -437,7 +556,6 @@ const Cronograma = () => {
       setSessionLink('');
       toast.success('Sessão de estudo salva com sucesso!');
     } catch (error) {
-      console.error('Error saving study session:', error);
       toast.error('Erro ao salvar sessão de estudo');
     }
   };
@@ -451,12 +569,9 @@ const Cronograma = () => {
   }
   return <div className="min-h-screen p-6 bg-page-background">
       <div className="flex items-center gap-4 mb-6">
-        
-        <div>
-          
-          
-        </div>
+        <h1 className="text-2xl font-bold text-foreground">Cronograma de Estudos</h1>
       </div>
+
       {/* Clock, Timer, and Calendar Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-[5px]">
         {/* Clock Card */}
@@ -546,32 +661,61 @@ const Cronograma = () => {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Calendário
+              Calendário de Estudos
             </CardTitle>
+            <CardDescription>
+              Clique nos dias verdes para ver detalhes das sessões estudadas
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {studiedDays.length > 0 ? `${studiedDays.length} dias estudados` : "Marcar dias estudados"}
+                  {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : "Selecionar data"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent mode="multiple" selected={studiedDays} onSelect={handleStudiedDaysChange} onDayClick={handleCalendarDateClick} initialFocus className={cn("p-3")} modifiers={{
-                studied: studiedDays
-              }} modifiersStyles={{
-                studied: {
-                  backgroundColor: 'hsl(var(--primary))',
-                  color: 'hsl(var(--primary-foreground))',
-                  fontWeight: 'bold',
-                  border: '2px solid hsl(var(--primary))',
-                  borderRadius: '6px',
-                  position: 'relative'
-                }
-              }} modifiersClassNames={{
-                studied: 'studied-day'
-              }} />
+                <CalendarComponent 
+                  mode="single" 
+                  selected={selectedDate} 
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      if (hasSessionsOnDate(date)) {
+                        openSessionDetailsModal(date);
+                      }
+                    }
+                  }}
+                  initialFocus 
+                  className={cn("p-3")}
+                  components={{
+                    Day: ({ date, ...props }) => {
+                      const hasSessions = hasSessionsOnDate(date);
+                      
+                      return (
+                        <div
+                          {...props}
+                          className={cn(
+                            "relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                            hasSessions && "bg-primary/10 text-primary hover:bg-primary/20",
+                            hasSessions && "cursor-pointer"
+                          )}
+                          onClick={() => {
+                            if (hasSessions) {
+                              openSessionDetailsModal(date);
+                            }
+                          }}
+                        >
+                          {date.getDate()}
+                          {hasSessions && (
+                            <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
+                          )}
+                        </div>
+                      );
+                    }
+                  }}
+                />
               </PopoverContent>
             </Popover>
           </CardContent>
@@ -600,7 +744,7 @@ const Cronograma = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {cycles.map(cycle => <SelectItem key={cycle.id} value={cycle.id}>
-                          {cycle.name}
+                          {cycle.cycle_name}
                         </SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -610,28 +754,46 @@ const Cronograma = () => {
                   <label className="text-sm font-medium">Bloco</label>
                   <Select value={selectedBlock} onValueChange={setSelectedBlock}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um bloco" />
+                      <SelectValue placeholder="Selecione ou digite um bloco" />
                     </SelectTrigger>
                     <SelectContent>
                       {getAvailableBlocks().map((block: any) => <SelectItem key={block.name} value={block.name}>
                           {block.name}
                         </SelectItem>)}
+                      <SelectItem value="__custom__">+ Adicionar novo bloco</SelectItem>
                     </SelectContent>
                   </Select>
+                  {selectedBlock === '__custom__' && (
+                    <Input
+                      placeholder="Digite o nome do bloco"
+                      value={customBlock}
+                      onChange={(e) => setCustomBlock(e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div>
                   <label className="text-sm font-medium">Disciplina</label>
                   <Select value={selectedDiscipline} onValueChange={setSelectedDiscipline}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma disciplina" />
+                      <SelectValue placeholder="Selecione ou digite uma disciplina" />
                     </SelectTrigger>
                     <SelectContent>
                       {getAvailableDisciplines().map((discipline: any) => <SelectItem key={discipline.name} value={discipline.name}>
                           {discipline.name}
                         </SelectItem>)}
+                      <SelectItem value="__custom__">+ Adicionar nova disciplina</SelectItem>
                     </SelectContent>
                   </Select>
+                  {selectedDiscipline === '__custom__' && (
+                    <Input
+                      placeholder="Digite o nome da disciplina"
+                      value={customDiscipline}
+                      onChange={(e) => setCustomDiscipline(e.target.value)}
+                      className="mt-2"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -674,80 +836,7 @@ const Cronograma = () => {
         </div>
       </div>
 
-      {/* Modal de Detalhes do Dia Estudado */}
-      <Dialog open={showStudyDetailsModal} onOpenChange={setShowStudyDetailsModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>
-                Estudo do dia {selectedStudyDay && format(selectedStudyDay, 'dd/MM/yyyy', {
-                locale: ptBR
-              })}
-              </span>
-              <Button variant="outline" size="sm" onClick={handleUnmarkStudyDay} className="text-destructive hover:text-destructive mx-[30px]">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Desmarcar dia
-              </Button>
-            </DialogTitle>
-            <DialogDescription>
-              Visualize as sessões de estudo realizadas neste dia
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {studyDayDetails.length > 0 ? studyDayDetails.map((session, index) => <Card key={session.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <h4 className="font-semibold text-lg">{session.course_name || 'Assunto não informado'}</h4>
-                          <p className="text-sm text-muted-foreground">{session.block_name}</p>
-                        </div>
-                        <Badge variant="secondary" className="text-sm">
-                          {session.duration_minutes} min
-                        </Badge>
-                      </div>
-                    
-                    {session.session_link && <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
-                        <ExternalLink className="h-4 w-4 text-primary" />
-                        <a href={session.session_link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline font-medium">
-                          Ir para a aula
-                        </a>
-                      </div>}
-
-                    {session.study_type && <div className="text-sm">
-                        <span className="font-medium">Tipo de estudo:</span> {session.study_type === 'pdf' ? 'PDF' : session.study_type === 'video' ? 'Vídeo Aula' : session.study_type}
-                      </div>}
-
-                    {/* Página ou vídeo estudado */}
-                    {session.study_type === 'pdf' && session.current_page && <div className="text-sm">
-                        <span className="font-medium">Página ou vídeo estudado:</span> Página {session.current_page}
-                      </div>}
-                    {session.study_type === 'video' && session.current_video && <div className="text-sm">
-                        <span className="font-medium">Página ou vídeo estudado:</span> {session.current_video}
-                      </div>}
-                    
-                    {session.total_questions > 0 && <div className="text-sm p-2 bg-green-50 dark:bg-green-950/20 rounded-md">
-                        <span className="font-medium">Total de questões:</span> {session.total_correct_answers}/{session.total_questions} 
-                        <span className="ml-2 font-medium text-green-600">
-                          ({(session.total_correct_answers / session.total_questions * 100).toFixed(1)}% de acertos)
-                        </span>
-                      </div>}
-                    
-                    {session.course_progress && <div className="text-sm">
-                        <span className="font-medium">Progresso:</span> {session.course_progress}
-                      </div>}
-
-                    {session.notes && <div className="text-sm border-t pt-2">
-                        <span className="font-medium">Observações:</span>
-                        <p className="mt-1 text-muted-foreground">{session.notes}</p>
-                      </div>}
-                  </div>
-                </Card>) : <div className="text-center py-8 text-muted-foreground">
-                <BookOpen className="h-12 w-12 mx-auto mb-4" />
-                <p>Nenhuma sessão de estudo registrada para este dia</p>
-              </div>}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Calendário simplificado - sem funcionalidades de estatísticas */}
 
       {/* Modal de Edição de Sessão */}
       <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
@@ -887,7 +976,7 @@ const Cronograma = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {cycles.map(cycle => <SelectItem key={cycle.id} value={cycle.id}>
-                            {cycle.name}
+                            {cycle.cycle_name}
                           </SelectItem>)}
                       </SelectContent>
                     </Select>
@@ -964,59 +1053,224 @@ const Cronograma = () => {
             </Dialog>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-4">
               {weekDays.map((day, index) => <div key={index} className="space-y-2">
-                  <h3 className="font-semibold text-center p-2 bg-muted rounded-md">
+                  <h3 className="font-medium text-center p-2 bg-muted rounded-md text-sm">
                     {day}
                   </h3>
-                  <div className="space-y-2 min-h-[200px]">
-                      {getSessionsForDay(index).map(session => {
-                const cumulativeSession = getSessionByScheduleId(session.id);
-                const hasData = cumulativeSession && (cumulativeSession.total_duration_minutes > 0 || cumulativeSession.total_questions > 0);
-                return <div key={session.id} className={`p-3 rounded-md relative cursor-pointer transition-all duration-300 shadow-md hover:shadow-lg ${hasData ? 'bg-muted/70 hover:bg-muted/80' : 'bg-primary/10 border border-primary/20 hover:bg-primary/20'}`} onClick={() => openEditModal(session)}>
-                             <div className="flex flex-col gap-2">
-                               <div className="flex justify-between items-start">
-                                 <div className="flex-1">
-                                    <div className="text-xs font-medium mb-1 flex items-center gap-2">
-                                      <span className={hasData ? 'text-green-600' : 'text-primary'}>
-                                        {session.startTime.substring(0, 5)} - {session.endTime.substring(0, 5)}
-                                      </span>
-                                    </div>
-                                   <div className="text-sm font-medium">{session.disciplineName}</div>
-                                   <div className="text-xs text-muted-foreground">{session.blockName}</div>
-                                   <div className="text-xs text-muted-foreground">{getCycleName(session.cycleId)}</div>
-                                   {hasData && <div className="text-xs text-green-600 mt-1 space-y-0.5">
-                                       <div>{cumulativeSession.total_duration_minutes}min total • {cumulativeSession.session_count} sessões</div>
-                                       {cumulativeSession.total_questions > 0 && <div>{cumulativeSession.total_questions} questões • {Math.round(cumulativeSession.total_correct_answers / cumulativeSession.total_questions * 100)}% acertos</div>}
-                                     </div>}
-                                 </div>
-                                 <div className="flex gap-1">
-                                   {(session.sessionLink || cumulativeSession && cumulativeSession.session_link) && <Button variant="outline" size="sm" onClick={e => {
-                          e.stopPropagation();
-                          const linkToOpen = cumulativeSession && cumulativeSession.session_link || session.sessionLink;
-                          window.open(linkToOpen, '_blank');
-                        }} title="Abrir link da aula" className="h-6 text-xs text-primary mx-0 my-0 px-[6px] rounded">
-                                       Aula
-                                     </Button>}
-                                 </div>
-                               </div>
-                               
-                                <div className="flex justify-end pt-1 border-t border-border/50">
-                                  <div className="cursor-pointer transition-colors p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/20" onClick={e => {
-                        e.stopPropagation();
-                        removeSession(session.id);
-                      }} title="Remover sessão">
-                                    <Trash2 className="h-4 w-4 text-red-400 hover:text-red-600 transition-colors" />
+                  <div className="space-y-2 min-h-[250px]">
+                      {sessionDataLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <div className="text-sm text-muted-foreground">Carregando dados...</div>
+                        </div>
+                      ) : sessionDataError ? (
+                        <div className="flex flex-col items-center justify-center h-32 space-y-2">
+                          <div className="text-sm text-destructive">Erro ao carregar dados</div>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={refreshData}
+                            className="text-xs"
+                          >
+                            Tentar novamente
+                          </Button>
+                        </div>
+                      ) : (
+                        getSessionsForDay(index).map(session => {
+                        const cumulativeSession = sessionData[session.id];
+                        
+                        const hasData = cumulativeSession && (cumulativeSession.duration_minutes > 0 || cumulativeSession.questions > 0);
+                        const accuracy = cumulativeSession && cumulativeSession.questions > 0 ? 
+                          Math.round((cumulativeSession.correct_answers / cumulativeSession.questions) * 100) : 0;
+                        const sessionCount = cumulativeSession?.session_count || 1;
+                        
+
+                        return (
+                          <div key={session.id} className={`p-3 rounded-lg border relative cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md min-h-[180px] ${hasData ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-muted bg-muted/30 hover:bg-muted/50'}`} onClick={(e) => {
+                            openEditModal(session);
+                          }}>
+                            <div className="space-y-3 h-full flex flex-col">
+                              {/* Header com horário e botão de deletar */}
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm font-medium text-muted-foreground">
+                                  {session.startTime.substring(0, 5)} - {session.endTime.substring(0, 5)}
+                                </div>
+                                <div className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10" onClick={e => {
+                                  e.stopPropagation();
+                                  removeSession(session.id);
+                                }} title="Remover sessão">
+                                  <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive transition-colors" />
+                                </div>
+                              </div>
+                              
+                              {/* Disciplina principal */}
+                              <div className="space-y-1 flex-1">
+                                <h4 className="font-medium text-sm text-foreground leading-tight">{session.disciplineName}</h4>
+                                <p className="text-xs text-muted-foreground">{session.blockName}</p>
+                                {cumulativeSession?.cycle_name && (
+                                  <p className="text-xs text-primary font-medium">Ciclo: {cumulativeSession.cycle_name}</p>
+                                )}
+                                {!cumulativeSession?.cycle_name && (
+                                  <p className="text-xs text-red-500">⚠️ Nome do ciclo não encontrado</p>
+                                )}
+                              </div>
+                              
+                              {/* Estatísticas detalhadas */}
+                              {hasData && <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                                    <span className="text-muted-foreground">Tempo total:</span>
+                                    <span className="font-medium text-foreground">{cumulativeSession.duration_minutes}min</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                                    <span className="text-muted-foreground">Sessões:</span>
+                                    <span className="font-medium text-foreground">{sessionCount}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                                    <span className="text-muted-foreground">Questões:</span>
+                                    <span className="font-medium text-foreground">{cumulativeSession.questions}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                                    <span className="text-muted-foreground">Acertos:</span>
+                                    <span className="font-medium text-foreground">{accuracy}%</span>
                                   </div>
                                 </div>
-                             </div>
-                           </div>;
-              })}
+                              </div>}
+                              
+                              {/* Botão para ir à aula */}
+                              {(session.sessionLink || cumulativeSession?.session_link) && <div className="pt-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    const linkToOpen = cumulativeSession?.session_link || session.sessionLink;
+                                    window.open(linkToOpen, '_blank');
+                                  }} 
+                                  className="w-full text-xs"
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Ir à aula
+                                </Button>
+                              </div>}
+                            </div>
+                          </div>
+                        );
+                        })
+                      )}
                   </div>
                 </div>)}
             </div>
           </CardContent>
         </Card>}
+
+      {/* Modal de Detalhes das Sessões */}
+      <Dialog open={showSessionDetailsModal} onOpenChange={setShowSessionDetailsModal}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Sessões do dia {selectedDate && format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+            </DialogTitle>
+            <DialogDescription>
+              Detalhes das sessões de estudo realizadas neste dia
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedDateSessions.length === 0 ? (
+              <div className="text-center py-8">
+                <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h4 className="text-lg font-medium text-foreground mb-2">Nenhuma sessão registrada</h4>
+                <p className="text-muted-foreground">Este dia não possui sessões de estudo registradas.</p>
+              </div>
+            ) : (
+              selectedDateSessions.map((sessionData, index) => (
+                <div key={index} className="border border-border rounded-lg p-4 bg-card">
+                  {/* Header do Ciclo */}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-semibold text-foreground">{sessionData.cycle.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {sessionData.cycle.organ} - {sessionData.cycle.position}
+                      </p>
+                    </div>
+                    <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                      {sessionData.session.startTime} - {sessionData.session.endTime}
+                    </span>
+                  </div>
+                  
+                  {/* Matéria e Tópico */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium text-foreground">{sessionData.session.discipline}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full"></div>
+                      </div>
+                      <span className="text-sm text-muted-foreground">{sessionData.session.topic}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Estatísticas */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    <div className="bg-muted rounded-lg p-3 text-center">
+                      <div className="text-lg font-semibold text-foreground">{sessionData.session.duration}min</div>
+                      <div className="text-xs text-muted-foreground">Tempo</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-3 text-center">
+                      <div className="text-lg font-semibold text-foreground">{sessionData.session.questions}</div>
+                      <div className="text-xs text-muted-foreground">Questões</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-3 text-center">
+                      <div className="text-lg font-semibold text-foreground">{sessionData.session.correct}</div>
+                      <div className="text-xs text-muted-foreground">Acertos</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-3 text-center">
+                      <div className="text-lg font-semibold text-foreground">
+                        {Math.round((sessionData.session.correct / sessionData.session.questions) * 100)}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">Taxa</div>
+                    </div>
+                  </div>
+                  
+                  {/* Observações */}
+                  {sessionData.session.notes && (
+                    <div className="mb-3">
+                      <h5 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Observações
+                      </h5>
+                      <p className="text-sm text-muted-foreground bg-muted rounded p-3">
+                        {sessionData.session.notes}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Botão Ir à Aula */}
+                  {sessionData.session.link && (
+                    <div className="flex justify-end">
+                      <Button 
+                        onClick={() => window.open(sessionData.session.link, '_blank')}
+                        className="flex items-center gap-2"
+                        size="sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Ir à Aula
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>;
 };
 export default Cronograma;

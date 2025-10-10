@@ -8,19 +8,10 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Timer as TimerIcon, Play, Pause, Square, Plus, Minus, CheckCircle, RotateCcw, BookOpen, ExternalLink, Calendar, Target } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-interface StudyCycle {
-  id: string;
-  name: string;
-  organ: string;
-  position: string;
-  exam_date: string;
-  blocks: any[];
-  edital_link?: string;
-  curso_link?: string;
-  video_link?: string;
-}
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyCycleV2 } from '@/types/userStudy';
+import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
 interface Discipline {
   name: string;
   status: 'inProgress' | 'finished' | 'review';
@@ -50,13 +41,14 @@ const SessaoEstudos = () => {
     setInitialTime,
     hideTimer
   } = useTimer();
-  const [cycle, setCycle] = useState<StudyCycle | null>(null);
+  const [cycle, setCycle] = useState<StudyCycleV2 | null>(null);
   const [loading, setLoading] = useState(true);
   const [links, setLinks] = useState({
     edital_link: '',
     curso_link: '',
     video_link: ''
   });
+  const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (user && id) {
       fetchCycle();
@@ -69,17 +61,20 @@ const SessaoEstudos = () => {
   }, [hideTimer]);
   const fetchCycle = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from('study_cycles').select('*').eq('id', id).eq('user_id', user?.id).single();
-      if (error) throw error;
-      setCycle(data);
-      setLinks({
-        edital_link: data.edital_link || '',
-        curso_link: data.curso_link || '',
-        video_link: data.video_link || ''
-      });
+      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      if (userStudyData) {
+        const cycle = userStudyData.study_cycles.find(c => c.id === id);
+        if (cycle) {
+          setCycle(cycle);
+        }
+      }
+      if (cycle) {
+        setLinks({
+          edital_link: cycle.edital_link || '',
+          curso_link: cycle.curso_link || '',
+          video_link: cycle.video_link || ''
+        });
+      }
     } catch (error) {
       console.error('Error fetching cycle:', error);
       toast({
@@ -91,18 +86,15 @@ const SessaoEstudos = () => {
       setLoading(false);
     }
   };
-  const updateCycle = async (updatedCycle: StudyCycle) => {
+  const updateCycle = async (updatedCycle: StudyCycleV2) => {
     try {
-      const {
-        error
-      } = await supabase.from('study_cycles').update({
+      const success = await UserStudyService.updateCycle(user?.id, updatedCycle.id, {
         blocks: updatedCycle.blocks,
         edital_link: links.edital_link,
         curso_link: links.curso_link,
-        video_link: links.video_link,
-        updated_at: new Date().toISOString()
-      }).eq('id', updatedCycle.id).eq('user_id', user?.id);
-      if (error) throw error;
+        video_link: links.video_link
+      });
+      if (!success) throw new Error('Failed to update cycle');
       setCycle(updatedCycle);
       toast({
         title: 'Progresso atualizado',
@@ -119,15 +111,12 @@ const SessaoEstudos = () => {
   };
   const updateLinks = async (newLinks: typeof links) => {
     try {
-      const {
-        error
-      } = await supabase.from('study_cycles').update({
+      const success = await UserStudyService.updateCycle(user?.id, id, {
         edital_link: newLinks.edital_link,
         curso_link: newLinks.curso_link,
-        video_link: newLinks.video_link,
-        updated_at: new Date().toISOString()
-      }).eq('id', id).eq('user_id', user?.id);
-      if (error) throw error;
+        video_link: newLinks.video_link
+      });
+      if (!success) throw new Error('Failed to update links');
       setLinks(newLinks);
       toast({
         title: 'Link salvo',
@@ -224,11 +213,42 @@ const SessaoEstudos = () => {
     const updatedCycle = {
       ...cycle
     };
-    updatedCycle.blocks[blockIndex].disciplines[disciplineIndex].status = status;
+    updatedCycle.schedule_data.available_blocks[blockIndex].disciplines[disciplineIndex].status = status;
 
     // Update completion status based on new status
-    updatedCycle.blocks[blockIndex].disciplines[disciplineIndex].isCompleted = status === 'finished';
+    updatedCycle.schedule_data.available_blocks[blockIndex].disciplines[disciplineIndex].isCompleted = status === 'finished';
     updateCycle(updatedCycle);
+  };
+
+  const handleToggleDiscipline = (blockId: string, disciplineId: string) => {
+    if (!cycle) return;
+
+    const updatedCycle = { ...cycle };
+    const block = updatedCycle.schedule_data.available_blocks.find(b => b.id === blockId);
+    if (block) {
+      const discipline = block.disciplines.find(d => d.id === disciplineId);
+      if (discipline) {
+        // Toggle between finished and inProgress
+        if (discipline.status === 'finished') {
+          discipline.status = 'inProgress';
+          discipline.isCompleted = false;
+        } else {
+          discipline.status = 'finished';
+          discipline.isCompleted = true;
+        }
+        updateCycle(updatedCycle);
+      }
+    }
+  };
+
+  const handleToggleBlock = (blockId: string) => {
+    const newExpanded = new Set(expandedBlocks);
+    if (newExpanded.has(blockId)) {
+      newExpanded.delete(blockId);
+    } else {
+      newExpanded.add(blockId);
+    }
+    setExpandedBlocks(newExpanded);
   };
   const formatTime = (mins: number, secs: number) => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -282,7 +302,7 @@ const SessaoEstudos = () => {
     let inProgress = 0;
     let review = 0;
     let total = 0;
-    cycle.blocks.forEach((block: any) => {
+    cycle.schedule_data?.available_blocks?.forEach((block: any) => {
       if (block.disciplines) {
         block.disciplines.forEach((discipline: any) => {
           total++;
@@ -334,7 +354,7 @@ const SessaoEstudos = () => {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">{cycle.name}</h1>
+          <h1 className="text-2xl font-bold">{cycle.cycle_name}</h1>
           <p className="text-muted-foreground">{cycle.organ} - {cycle.position}</p>
         </div>
       </div>
@@ -504,55 +524,15 @@ const SessaoEstudos = () => {
         </CardContent>
       </Card>
 
-      {/* Study Syllabus */}
+      {/* Edital Verticalizado */}
       <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Edital de Estudos
-            </CardTitle>
-            <CardDescription>
-              Acompanhe seu progresso nas disciplinas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {cycle.blocks?.map((block: any, blockIndex: number) => <div key={blockIndex} className="space-y-3">
-                  <h3 className="font-semibold text-lg border-b pb-2">{block.name}</h3>
-                  <div className="space-y-3">
-                     {block.disciplines?.map((discipline: any, disciplineIndex: number) => <div key={disciplineIndex} className={`flex items-center justify-between p-2 rounded border transition-all ${discipline.status === 'finished' ? 'bg-muted/50 text-muted-foreground opacity-60' : 'bg-muted/20'}`}>
-                         <div className="flex items-center gap-2">
-                           <span className={`font-medium text-sm ${discipline.status === 'finished' ? 'line-through' : ''}`}>
-                             {discipline.name}
-                           </span>
-                            {getStatusBadge(discipline.status || '')}
-                         </div>
-                         
-                         <div className="flex items-center gap-3">
-                           <label className="flex items-center gap-1 cursor-pointer text-xs">
-                             <Checkbox checked={discipline.status === 'inProgress'} onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'inProgress')} className="h-3 w-3" />
-                             <span>Andamento</span>
-                           </label>
-                           
-                           <label className="flex items-center gap-1 cursor-pointer text-xs">
-                             <Checkbox checked={discipline.status === 'finished'} onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'finished')} className="h-3 w-3" />
-                             <CheckCircle className="h-3 w-3 text-green-600" />
-                             <span>Finalizada</span>
-                           </label>
-                           
-                           <label className="flex items-center gap-1 cursor-pointer text-xs">
-                             <Checkbox checked={discipline.status === 'review'} onCheckedChange={() => handleDisciplineStatusChange(blockIndex, disciplineIndex, 'review')} className="h-3 w-3" />
-                             <RotateCcw className="h-3 w-3 text-yellow-600" />
-                             <span>Revisão</span>
-                           </label>
-                         </div>
-                       </div>)}
-                  </div>
-                </div>)}
-            </div>
-          </CardContent>
-        </Card>
+        <EditalVerticalizado
+          blocks={cycle.schedule_data?.available_blocks || []}
+          onToggleDiscipline={handleToggleDiscipline}
+          onToggleBlock={handleToggleBlock}
+          expandedBlocks={expandedBlocks}
+          showProgress={true}
+        />
       </div>
     </div>;
 };

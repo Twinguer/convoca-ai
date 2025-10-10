@@ -11,7 +11,8 @@ import { Progress } from '@/components/ui/progress';
 import { Plus, X, Edit, Clock, BookOpen, Target, CheckCircle, Calendar } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyCycleV2 } from '@/types/userStudy';
 import { toast } from 'sonner';
 
 interface Discipline {
@@ -68,20 +69,24 @@ const EditarCiclo = () => {
 
   const fetchCycle = async () => {
     try {
-      const { data: cycle, error } = await supabase
-        .from('study_cycles')
-        .select('*')
-        .eq('id', id)
-        .eq('user_id', user?.id)
-        .single();
-
-      if (error) throw error;
-
-      setCycleName(cycle.name);
-      setOrgan(cycle.organ);
-      setPosition(cycle.position);
-      setExamDate(cycle.exam_date);
-      setBlocks(cycle.blocks || []);
+      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      if (userStudyData) {
+        const cycle = userStudyData.study_cycles.find(c => c.id === id);
+        if (cycle) {
+          setCycleName(cycle.cycle_name);
+          setOrgan(cycle.organ || '');
+          setPosition(cycle.position || '');
+          setExamDate(cycle.exam_date);
+          // Note: blocks não existe mais em StudyCycleV2, usar schedule_data se necessário
+          setBlocks([]);
+        } else {
+          toast.error('Ciclo não encontrado');
+          navigate('/estudos');
+        }
+      } else {
+        toast.error('Dados de estudo não encontrados');
+        navigate('/estudos');
+      }
     } catch (error) {
       console.error('Error fetching cycle:', error);
       toast.error('Erro ao carregar ciclo de estudos');
@@ -184,22 +189,22 @@ const EditarCiclo = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('study_cycles')
-        .update({
-          name: cycleName,
-          organ,
-          position,
-          exam_date: examDate,
-          blocks: blocks
-        })
-        .eq('id', id)
-        .eq('user_id', user.id);
+      const success = await UserStudyService.updateCycle(user.id, id, {
+        cycle_name: cycleName,
+        organ,
+        position,
+        exam_date: examDate,
+        edital_link: '',
+        curso_link: '',
+        video_link: ''
+      });
 
-      if (error) throw error;
-
-      toast.success('Ciclo de estudos atualizado com sucesso!');
-      navigate('/estudos');
+      if (success) {
+        toast.success('Ciclo de estudos atualizado com sucesso!');
+        navigate('/estudos');
+      } else {
+        toast.error('Erro ao atualizar ciclo de estudos');
+      }
     } catch (error) {
       console.error('Error updating study cycle:', error);
       toast.error('Erro ao atualizar ciclo de estudos');

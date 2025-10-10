@@ -1,29 +1,13 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-
-interface StudySession {
-  id: string;
-  schedule_session_id: string;
-  session_link?: string;
-  total_duration_minutes: number;
-  total_questions: number;
-  total_correct_answers: number;
-  session_count: number;
-  last_session_date: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface SessionProgress {
-  duration: number;
-  questions: number;
-  correctAnswers: number;
-  notes?: string;
-  courseName?: string;
-  studyType?: 'pdf' | 'video';
-}
+import { UserStudyService } from '@/services/userStudyService';
+import { StudySession, SessionProgress } from '@/types/userStudy';
+import { 
+  createStudySessionFromProgress, 
+  updateSessionWithProgress,
+  getTodayString 
+} from '@/utils/userStudyHelpers';
 
 export const useStudySessions = () => {
   const { user } = useAuth();
@@ -38,18 +22,8 @@ export const useStudySessions = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('study_sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching study sessions:', error);
-        return;
-      }
-
-      setSessions(data || []);
+      const sessionsData = await UserStudyService.getSessions(user.id);
+      setSessions(sessionsData);
     } catch (error) {
       console.error('Error fetching study sessions:', error);
     } finally {
@@ -57,8 +31,9 @@ export const useStudySessions = () => {
     }
   };
 
-  const getSessionByScheduleId = (scheduleSessionId: string): StudySession | null => {
-    return sessions.find(session => session.schedule_session_id === scheduleSessionId) || null;
+  const getSessionByScheduleId = async (scheduleSessionId: string): Promise<StudySession | null> => {
+    if (!user) return null;
+    return await UserStudyService.getSessionByScheduleId(user.id, scheduleSessionId);
   };
 
   const createOrUpdateSession = async (
@@ -69,30 +44,19 @@ export const useStudySessions = () => {
     if (!user) return;
 
     try {
-      const existingSession = getSessionByScheduleId(scheduleSessionId);
-      // Usar data local ao invés de UTC para evitar problemas de fuso horário
-      const today = new Date();
-      const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+      const existingSession = await getSessionByScheduleId(scheduleSessionId);
 
       if (existingSession) {
         // Atualizar sessão existente (acumular dados)
-        const updatedData = {
-          total_duration_minutes: existingSession.total_duration_minutes + progress.duration,
-          total_questions: existingSession.total_questions + progress.questions,
-          total_correct_answers: existingSession.total_correct_answers + progress.correctAnswers,
-          session_count: existingSession.session_count + 1,
-          last_session_date: localDate,
-          updated_at: new Date().toISOString(),
-          ...(sessionLink && { session_link: sessionLink })
-        };
+        const updatedSession = updateSessionWithProgress(existingSession, progress);
+        
+        if (sessionLink) {
+          updatedSession.session_link = sessionLink;
+        }
 
-        const { error } = await supabase
-          .from('study_sessions')
-          .update(updatedData)
-          .eq('id', existingSession.id);
-
-        if (error) {
-          console.error('Error updating study session:', error);
+        const success = await UserStudyService.updateSession(user.id, existingSession.id, updatedSession);
+        
+        if (!success) {
           toast({
             title: "Erro",
             description: "Erro ao atualizar sessão de estudo",
@@ -100,38 +64,12 @@ export const useStudySessions = () => {
           });
           return;
         }
-
-        // Atualizar estado local
-        setSessions(prev => prev.map(session => 
-          session.id === existingSession.id 
-            ? { ...session, ...updatedData }
-            : session
-        ));
       } else {
         // Criar nova sessão
-        const newSession = {
-          user_id: user.id,
-          schedule_session_id: scheduleSessionId,
-          session_link: sessionLink,
-          total_duration_minutes: progress.duration,
-          total_questions: progress.questions,
-          total_correct_answers: progress.correctAnswers,
-          session_count: 1,
-          last_session_date: localDate,
-          session_date: localDate,
-          start_time: new Date().toISOString(),
-          duration_minutes: progress.duration,
-          notes: progress.notes
-        };
-
-        const { data, error } = await supabase
-          .from('study_sessions')
-          .insert(newSession)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error creating study session:', error);
+        const newSessionData = createStudySessionFromProgress(progress, scheduleSessionId, sessionLink);
+        const success = await UserStudyService.addSession(user.id, newSessionData);
+        
+        if (!success) {
           toast({
             title: "Erro",
             description: "Erro ao criar sessão de estudo",
@@ -139,9 +77,10 @@ export const useStudySessions = () => {
           });
           return;
         }
-
-        setSessions(prev => [data, ...prev]);
       }
+
+      // Atualizar estado local
+      await fetchSessions();
 
       toast({
         title: "Sucesso",
@@ -163,24 +102,17 @@ export const useStudySessions = () => {
     if (!user) return;
 
     try {
-      const existingSession = getSessionByScheduleId(scheduleSessionId);
+      const existingSession = await getSessionByScheduleId(scheduleSessionId);
       
       if (existingSession) {
-        const { error } = await supabase
-          .from('study_sessions')
-          .update({ session_link: sessionLink })
-          .eq('id', existingSession.id);
+        const success = await UserStudyService.updateSession(user.id, existingSession.id, {
+          session_link: sessionLink
+        });
 
-        if (error) {
-          console.error('Error updating session link:', error);
-          return;
+        if (success) {
+          // Atualizar estado local
+          await fetchSessions();
         }
-
-        setSessions(prev => prev.map(session => 
-          session.id === existingSession.id 
-            ? { ...session, session_link: sessionLink }
-            : session
-        ));
       }
     } catch (error) {
       console.error('Error updating session link:', error);

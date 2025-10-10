@@ -84,7 +84,9 @@ export const BookletSwitcher: React.FC<BookletSwitcherProps> = ({
         onBookletChanged(newBookletId, answers);
         
         toast.success(`Caderno alterado para ${getBookletName(newBookletId)} com sucesso`);
-        await queryClient.invalidateQueries(['user-ranking', rankingId]);
+        await queryClient.invalidateQueries({ 
+          queryKey: ['user-ranking', rankingId] 
+        });
       } else {
         console.error('[BookletSwitcher] Error switching booklet:', result.error);
         toast.error(result.error || 'Falha ao trocar caderno');

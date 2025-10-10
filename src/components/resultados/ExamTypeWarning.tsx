@@ -7,7 +7,7 @@ export const ExamTypeWarning: React.FC<ExamTypeWarningProps> = ({
   examType
 }) => {
   if (examType === 'Alternativas') {
-    return;
+    return null;
   }
-  return;
+  return null;
 };

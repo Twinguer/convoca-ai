@@ -1,68 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyStatistics, defaultUserStudy } from '@/types/userStudy';
+import { calculateStudyStatistics } from '@/utils/userStudyHelpers';
 
 // Mutex global para evitar operações simultâneas
 let globalUpdateInProgress = false;
 
-interface StudyStatistics {
-  totalHours: number;
-  totalSessions: number;
-  questionsAnswered: number;
-  correctAnswers: number;
-  wrongAnswers: number;
-  currentStreak: number;
-  longestStreak: number;
-  lastStudyDate: string | null;
-  dailyStats: Record<string, { hours: number; sessions: number }>;
-  weeklyStats: Record<string, { hours: number; sessions: number }>;
-  monthlyStats: Record<string, { hours: number; sessions: number }>;
-  averages: {
-    dailyHours: number;
-    weeklyHours: number;
-    monthlyHours: number;
-  };
-  sessionHistory: Array<{
-    date: string;
-    duration: number;
-    type: 'timer' | 'manual';
-    subject?: string;
-  }>;
-  subjectStats: Record<string, {
-    totalHours: number;
-    totalSessions: number;
-    questionsAnswered: number;
-    correctAnswers: number;
-    wrongAnswers: number;
-  }>;
-  lastUpdated: string | null;
-}
-
-const defaultStats: StudyStatistics = {
-  totalHours: 0,
-  totalSessions: 0,
-  questionsAnswered: 0,
-  correctAnswers: 0,
-  wrongAnswers: 0,
-  currentStreak: 0,
-  longestStreak: 0,
-  lastStudyDate: null,
-  dailyStats: {},
-  weeklyStats: {},
-  monthlyStats: {},
-  averages: {
-    dailyHours: 0,
-    weeklyHours: 0,
-    monthlyHours: 0
-  },
-  sessionHistory: [],
-  subjectStats: {},
-  lastUpdated: null
-};
-
 export const useStudyStatistics = () => {
   const { user } = useAuth();
-  const [statistics, setStatistics] = useState<StudyStatistics>(defaultStats);
+  const [statistics, setStatistics] = useState<StudyStatistics>(defaultUserStudy.study_statistics as StudyStatistics);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -74,176 +21,28 @@ export const useStudyStatistics = () => {
     }
 
     try {
-      // Buscar estatísticas existentes
-      const { data: statsData, error: statsError } = await supabase
-        .from('study_statistics')
-        .select('statistics_data')
-        .eq('user_id', user.id)
-        .single();
-
-      // Buscar sessões de estudo do cronograma com informações da disciplina
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('study_sessions')
-        .select(`
-          *,
-          study_schedule (
-            discipline_name,
-            block_name
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-
-      if (statsError && statsError.code !== 'PGRST116') {
-        console.error('Error loading statistics:', statsError);
-        return;
-      }
-
-      let baseStats = defaultStats;
+      // Buscar dados consolidados do user_study
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
       
-      if (statsData?.statistics_data) {
-        const stats = statsData.statistics_data as StudyStatistics;
-        baseStats = {
-          ...defaultStats,
-          ...stats,
-          averages: {
-            ...defaultStats.averages,
-            ...stats.averages
-          }
-        };
-      }
-
-      // Consolidar com dados das sessões do cronograma
-      if (sessionsData && sessionsData.length > 0) {
-        let consolidatedStats = { ...baseStats };
+      if (userStudyData) {
+        // Calcular estatísticas baseadas nas sessões
+        const calculatedStats = calculateStudyStatistics(userStudyData.study_sessions);
         
-        // Somar horas das sessões
-        const totalSessionHours = sessionsData.reduce((sum, session) => 
-          sum + (session.total_duration_minutes / 60), 0
-        );
-        
-        // Somar questões das sessões
-        const totalSessionQuestions = sessionsData.reduce((sum, session) => 
-          sum + (session.total_questions || 0), 0
-        );
-        
-        const totalCorrectAnswers = sessionsData.reduce((sum, session) => 
-          sum + (session.total_correct_answers || 0), 0
-        );
-
-        // Contar sessões totais
-        const totalSessionsFromSchedule = sessionsData.reduce((sum, session) => 
-          sum + (session.session_count || 0), 0
-        );
-
-        // Processar estatísticas por disciplina
-        const subjectStats: Record<string, {
-          totalHours: number;
-          totalSessions: number;
-          questionsAnswered: number;
-          correctAnswers: number;
-          wrongAnswers: number;
-        }> = {};
-
-        sessionsData.forEach(session => {
-          const disciplineName = session.study_schedule?.discipline_name || session.study_schedule?.block_name;
-          
-          if (disciplineName) {
-            if (!subjectStats[disciplineName]) {
-              subjectStats[disciplineName] = {
-                totalHours: 0,
-                totalSessions: 0,
-                questionsAnswered: 0,
-                correctAnswers: 0,
-                wrongAnswers: 0
-              };
-            }
-            
-            const hours = session.total_duration_minutes / 60;
-            const questions = session.total_questions || 0;
-            const correct = session.total_correct_answers || 0;
-            const wrong = questions - correct;
-            
-            subjectStats[disciplineName].totalHours += hours;
-            subjectStats[disciplineName].totalSessions += session.session_count || 0;
-            subjectStats[disciplineName].questionsAnswered += questions;
-            subjectStats[disciplineName].correctAnswers += correct;
-            subjectStats[disciplineName].wrongAnswers += wrong;
-          }
-        });
-
-        // Construir histórico de sessões
-        const sessionHistory = sessionsData.map(session => ({
-          date: session.last_session_date || session.created_at,
-          duration: session.total_duration_minutes,
-          type: 'timer' as const,
-          subject: session.study_schedule?.discipline_name || session.study_schedule?.block_name
-        }));
-
-        // Calcular streak baseado nas datas das sessões
-        const sortedSessions = sessionsData
-          .filter(s => s.last_session_date)
-          .sort((a, b) => new Date(b.last_session_date).getTime() - new Date(a.last_session_date).getTime());
-        
-        let currentStreak = 0;
-        let longestStreak = 0;
-        if (sortedSessions.length > 0) {
-          const today = new Date();
-          const lastSessionDate = new Date(sortedSessions[0].last_session_date);
-          const daysDiff = Math.floor((today.getTime() - lastSessionDate.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (daysDiff <= 1) { // Se foi hoje ou ontem
-            currentStreak = 1;
-            // Calcular streak completo
-            for (let i = 1; i < sortedSessions.length; i++) {
-              const currentDate = new Date(sortedSessions[i-1].last_session_date);
-              const prevDate = new Date(sortedSessions[i].last_session_date);
-              const diff = Math.floor((currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-              
-              if (diff <= 1) {
-                currentStreak++;
-              } else {
-                break;
-              }
-            }
-          }
-          longestStreak = Math.max(currentStreak, consolidatedStats.longestStreak);
-        }
-
-        // Atualizar estatísticas consolidadas
-        // CORREÇÃO: Usar dados das sessões como fonte principal para evitar duplicação
-        consolidatedStats = {
-          ...consolidatedStats,
-          totalHours: totalSessionHours, // Usar dados das sessões como fonte principal
-          totalSessions: totalSessionsFromSchedule, // Usar dados das sessões como fonte principal
-          questionsAnswered: totalSessionQuestions, // Usar dados das sessões como fonte principal
-          correctAnswers: totalCorrectAnswers, // Usar dados das sessões como fonte principal
-          wrongAnswers: totalSessionQuestions - totalCorrectAnswers, // Usar dados das sessões como fonte principal
-          currentStreak: Math.max(consolidatedStats.currentStreak, currentStreak),
-          longestStreak: Math.max(consolidatedStats.longestStreak, longestStreak),
-          lastStudyDate: sortedSessions.length > 0 ? sortedSessions[0].last_session_date : consolidatedStats.lastStudyDate,
-          sessionHistory: [...consolidatedStats.sessionHistory, ...sessionHistory].slice(-100),
-          subjectStats: subjectStats,
+        // Mesclar com estatísticas existentes
+        const mergedStats = {
+          ...userStudyData.study_statistics,
+          ...calculatedStats,
           lastUpdated: new Date().toISOString()
         };
-
-        // Recalcular médias
-        const totalDays = Object.keys(consolidatedStats.dailyStats).length || 1;
-        consolidatedStats.averages = {
-          dailyHours: consolidatedStats.totalHours / totalDays,
-          weeklyHours: consolidatedStats.totalHours / Math.max(1, totalDays / 7),
-          monthlyHours: consolidatedStats.totalHours / Math.max(1, totalDays / 30)
-        };
-
-        setStatistics(consolidatedStats);
         
-        // Salvar estatísticas consolidadas diretamente no banco (sem triggerar updateStatistics)
-        await saveStatisticsToDatabase(consolidatedStats);
+        setStatistics(mergedStats);
+        
+        // Salvar estatísticas atualizadas
+        await UserStudyService.updateStatistics(user.id, mergedStats);
       } else {
-        setStatistics(baseStats);
-        if (!statsData?.statistics_data) {
-          await createInitialStatistics();
-        }
+        // Inicializar dados do usuário
+        await UserStudyService.initializeUserStudyData(user.id);
+        setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
       }
     } catch (error) {
       console.error('Error loading statistics:', error);
@@ -254,94 +53,16 @@ export const useStudyStatistics = () => {
 
   const saveStatisticsToDatabase = async (stats: StudyStatistics) => {
     if (!user) return;
-
-    try {
-      // Primeiro verificar se já existe
-      const { data: existingStats, error: checkError } = await supabase
-        .from('study_statistics')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingStats && !checkError) {
-        // Se já existe, atualizar
-        const { error } = await supabase
-          .from('study_statistics')
-          .update({
-            statistics_data: stats,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error saving statistics to database:', error);
-        }
-      } else {
-        // Se não existe, inserir
-        const { error } = await supabase
-          .from('study_statistics')
-          .insert({
-            user_id: user.id,
-            statistics_data: stats
-          });
-
-        if (error) {
-          console.error('Error creating statistics in database:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error saving statistics to database:', error);
-    }
+    await UserStudyService.updateStatistics(user.id, stats);
   };
 
   const createInitialStatistics = async () => {
     if (!user) return;
-
-    try {
-      // Primeiro verificar se já existe
-      const { data: existingStats, error: checkError } = await supabase
-        .from('study_statistics')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // Log removido por segurança
-
-      if (existingStats && !checkError) {
-        // Se já existe, atualizar
-        const { error } = await supabase
-          .from('study_statistics')
-          .update({
-            statistics_data: defaultStats,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error updating initial statistics:', error);
-        }
-      } else {
-        // Se não existe, inserir
-        const { error } = await supabase
-          .from('study_statistics')
-          .insert({
-            user_id: user.id,
-            statistics_data: defaultStats
-          });
-
-        if (error) {
-          console.error('Error creating initial statistics:', error);
-        }
-      }
-    } catch (error) {
-      console.error('Error creating initial statistics:', error);
-    }
+    await UserStudyService.initializeUserStudyData(user.id);
   };
 
   const updateStatistics = async (newStats: Partial<StudyStatistics>) => {
     if (!user) return;
-
-    // Log removido por segurança
 
     // Atualizar estado local imediatamente
     const updatedStats = { ...statistics, ...newStats };
@@ -349,13 +70,11 @@ export const useStudyStatistics = () => {
 
     // Cancelar timeout anterior se existir
     if (updateTimeoutRef.current) {
-      console.log('[DEBUG] Cancelando timeout anterior');
       clearTimeout(updateTimeoutRef.current);
     }
 
     // Debounce: aguardar 500ms antes de salvar no banco
     updateTimeoutRef.current = setTimeout(async () => {
-      console.log('[DEBUG] Timeout executado, chamando performDatabaseUpdate');
       await performDatabaseUpdate(updatedStats);
     }, 500);
   };
@@ -365,63 +84,19 @@ export const useStudyStatistics = () => {
 
     // Mutex global para evitar operações simultâneas de qualquer instância
     if (globalUpdateInProgress) {
-      console.log('[DEBUG] performDatabaseUpdate ignorada - operação global em andamento');
       return;
     }
 
     // Prevenir múltiplas chamadas simultâneas da mesma instância
     if (isUpdating) {
-      console.log('[DEBUG] performDatabaseUpdate ignorada - já está atualizando');
       return;
     }
-
-    // Log removido por segurança
 
     globalUpdateInProgress = true;
     setIsUpdating(true);
 
     try {
-      // Primeiro verificar se já existe
-      const { data: existingStats, error: checkError } = await supabase
-        .from('study_statistics')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      // Log removido por segurança
-
-      if (existingStats && !checkError) {
-        // Se já existe, atualizar
-        // Log removido por segurança
-        const { error } = await supabase
-          .from('study_statistics')
-          .update({
-            statistics_data: updatedStats,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
-
-        if (error) {
-          console.error('Error updating statistics:', error);
-        } else {
-          console.log('[DEBUG] UPDATE executado com sucesso');
-        }
-      } else {
-        // Se não existe, inserir
-        // Log removido por segurança
-        const { error } = await supabase
-          .from('study_statistics')
-          .insert({
-            user_id: user.id,
-            statistics_data: updatedStats
-          });
-
-        if (error) {
-          console.error('Error creating statistics:', error);
-        } else {
-          console.log('[DEBUG] INSERT executado com sucesso');
-        }
-      }
+      await UserStudyService.updateStatistics(user.id, updatedStats);
     } catch (error) {
       console.error('Error updating statistics:', error);
     } finally {
@@ -536,18 +211,9 @@ export const useStudyStatistics = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
-        .from('study_statistics')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error resetting statistics:', error);
-        return;
-      }
-
-      setStatistics(defaultStats);
-      await createInitialStatistics();
+      await UserStudyService.deleteUserStudyData(user.id);
+      await UserStudyService.initializeUserStudyData(user.id);
+      setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
     } catch (error) {
       console.error('Error resetting statistics:', error);
     }

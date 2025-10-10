@@ -7,21 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit, FileText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-interface StudyCycle {
-  id: string;
-  name: string;
-  organ: string;
-  position: string;
-  exam_date: string;
-  is_active: boolean;
-  blocks: any[];
-  created_at: string;
-  updated_at: string;
-}
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyCycleV2 } from '@/types/userStudy';
 interface StudyCycleProgress {
-  cycle: StudyCycle;
+  cycle: StudyCycleV2;
   totalDisciplines: number;
   completedDisciplines: number;
   totalStudyTime: number;
@@ -45,14 +35,19 @@ const EstudosDashboard = () => {
   }, [user]);
   const fetchStudyCycles = async () => {
     try {
-      const {
-        data: cycles,
-        error
-      } = await supabase.from('study_cycles').select('*').eq('user_id', user?.id).eq('is_active', true).order('exam_date', {
-        ascending: true
+      const startTime = performance.now();
+      logger.debug('Buscando ciclos ativos', { userId: user?.id });
+      
+      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
+      
+      const cycles = userStudyData?.study_cycles.filter(cycle => cycle.is_active) || [];
+      logger.debug('Ciclos ativos encontrados', { 
+        count: cycles.length,
+        cycles: cycles.map(c => ({ id: c.id, name: c.cycle_name }))
       });
-      if (error) throw error;
+      
       if (!cycles || cycles.length === 0) {
+        logger.warn('Nenhum ciclo ativo encontrado');
         setStudyCycles([]);
         setLoading(false);
         return;
@@ -62,56 +57,52 @@ const EstudosDashboard = () => {
         const examDate = new Date(cycle.exam_date);
         const daysUntilExam = Math.ceil((examDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-        // Calculate progress from blocks and disciplines
+        // Calculate progress from schedule_data sessions
         let totalDisciplines = 0;
         let completedDisciplines = 0;
         let totalStudyTime = 0;
-        cycle.blocks?.forEach((block: any) => {
-          block.disciplines?.forEach((discipline: any) => {
-            totalDisciplines++;
-            totalStudyTime += discipline.studyTime || 0;
-            if (discipline.isCompleted) {
-              completedDisciplines++;
+        
+        // Extrair disciplinas únicas das sessões
+        const disciplines = new Set<string>();
+        cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
+          daySchedule.sessions.forEach(session => {
+            if (session.discipline_name) {
+              disciplines.add(session.discipline_name);
+              totalStudyTime += session.total_stats?.total_duration_minutes || 0;
+              if (session.total_stats?.total_duration_minutes > 0) {
+                completedDisciplines++;
+              }
             }
           });
         });
-        const progressPercentage = totalDisciplines > 0 ? completedDisciplines / totalDisciplines * 100 : 0;
+        
+        totalDisciplines = disciplines.size;
+        const progressPercentage = totalDisciplines > 0 ? (completedDisciplines / totalDisciplines) * 100 : 0;
+        
         return {
           cycle,
           totalDisciplines,
           completedDisciplines,
-          totalStudyTime,
+          totalStudyTime: totalStudyTime / 60, // Converter minutos para horas
           daysUntilExam,
           progressPercentage
         };
       });
+      
+      const endTime = performance.now();
+      const loadTime = endTime - startTime;
+      
+      logger.info('Ciclos ativos carregados', { 
+        count: cycleProgressData.length,
+        loadTime: `${loadTime.toFixed(2)}ms`,
+        fromCache: loadTime < 50 // Se carregou em menos de 50ms, provavelmente veio do cache
+      });
+      
       setStudyCycles(cycleProgressData);
     } catch (error) {
-      console.error('Error fetching study cycles:', error);
+      logger.error('Erro ao buscar ciclos ativos', error);
     } finally {
       setLoading(false);
-    }
-  };
-  const deleteCycle = async (cycleId: string) => {
-    try {
-      const {
-        error
-      } = await supabase.from('study_cycles').delete().eq('id', cycleId).eq('user_id', user?.id);
-      if (error) throw error;
-      toast({
-        title: 'Ciclo excluído',
-        description: 'O ciclo de estudos foi excluído com sucesso.'
-      });
-
-      // Atualizar a lista
-      await fetchStudyCycles();
-    } catch (error) {
-      console.error('Error deleting cycle:', error);
-      toast({
-        title: 'Erro ao excluir',
-        description: 'Não foi possível excluir o ciclo. Tente novamente.',
-        variant: 'destructive'
-      });
     }
   };
   if (!user) {
@@ -263,7 +254,7 @@ const EstudosDashboard = () => {
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
             <div className="grid gap-2 md:grid-cols-2">
-              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={() => navigate(`/estudos/sessao/${data.cycle.id}`)} onDelete={() => deleteCycle(data.cycle.id)} />)}
+              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={() => navigate(`/estudos/sessao/${data.cycle.id}`)} />)}
             </div>
           </div>
         </>}
@@ -277,6 +268,7 @@ const EstudosDashboard = () => {
           
         </div>
       </div>
+
 
     </div>;
 };
@@ -327,7 +319,7 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{cycle.name}</CardTitle>
+            <CardTitle className="text-lg">{cycle.cycle_name}</CardTitle>
             <CardDescription className="mt-1">
               {cycle.organ} - {cycle.position}
             </CardDescription>
@@ -351,41 +343,69 @@ const StudyCycleCard: React.FC<StudyCycleCardProps> = ({
           </div>
         </div>
 
-        {/* Blocks Overview */}
+        {/* Sessions Overview */}
         <div className="space-y-2">
-          <h4 className="text-sm font-medium">Blocos de Estudo</h4>
+          <h4 className="text-sm font-medium">Sessões de Estudo</h4>
           <div className="space-y-1">
-            {cycle.blocks?.map((block: any, index: number) => {
-            const completedInBlock = block.disciplines?.filter((d: any) => d.isCompleted).length || 0;
-            const totalInBlock = block.disciplines?.length || 0;
-            return <div key={index} className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">{block.name}</span>
-                  <span>{completedInBlock}/{totalInBlock}</span>
-                </div>;
-          })}
+            {(() => {
+              // Agrupar sessões por bloco
+              const blockStats = new Map<string, { total: number, completed: number }>();
+              
+              cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
+                daySchedule.sessions.forEach(session => {
+                  if (session.block_name) {
+                    const current = blockStats.get(session.block_name) || { total: 0, completed: 0 };
+                    current.total++;
+                    if (session.total_stats?.total_duration_minutes > 0) {
+                      current.completed++;
+                    }
+                    blockStats.set(session.block_name, current);
+                  }
+                });
+              });
+              
+              return Array.from(blockStats.entries()).map(([blockName, stats], index) => (
+                <div key={index} className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">{blockName}</span>
+                  <span>{stats.completed}/{stats.total}</span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={onStartSession} size="sm" className="w-full sm:w-auto">
-            <Play className="h-4 w-4 mr-2" />
-            Iniciar Sessão
-          </Button>
-          <Button onClick={onViewEdital} variant="default" className="bg-success hover:bg-success/90 text-success-foreground w-full sm:w-auto">
-            <FileText className="h-4 w-4 mr-2" />
-            Edital
-          </Button>
+        <div className="space-y-2">
+          {/* Primary Actions */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={onStartSession} size="sm" className="w-full sm:w-auto">
+              <Play className="h-4 w-4 mr-2" />
+              Iniciar Sessão
+            </Button>
+            <Button 
+              onClick={onDelete} 
+              variant="destructive" 
+              size="sm" 
+              className="w-full sm:w-auto"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Excluir
+            </Button>
+          </div>
+          
+          {/* Secondary Actions */}
           <div className="flex gap-2">
-            <Link to={`/estudos/editar-ciclo/${cycle.id}`} className="flex-1 sm:flex-none">
-              <Button variant="outline" size="icon" className="w-full">
-                <Edit className="h-4 w-4" />
+            <Button onClick={onViewEdital} variant="default" className="bg-success hover:bg-success/90 text-success-foreground flex-1">
+              <FileText className="h-4 w-4 mr-2" />
+              Edital
+            </Button>
+            <Link to={`/estudos/editar-ciclo/${cycle.id}`} className="flex-1">
+              <Button variant="outline" className="w-full">
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
               </Button>
             </Link>
-            <Button variant="outline" size="icon" onClick={onDelete} className="text-destructive hover:text-destructive flex-1 sm:flex-none">
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
         </div>
       </CardContent>

@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyCycleV2 } from '@/types/userStudy';
+import { createStudyCycleV2 } from '@/utils/userStudyHelpers';
+import { generateId } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export interface SessionData {
   id: string;
@@ -34,28 +38,6 @@ export interface WeeklySchedule {
   sessions: SessionData[];
 }
 
-export interface StudyCycleV2 {
-  id: string;
-  user_id: string;
-  cycle_name: string;
-  exam_date: string;
-  organ?: string;
-  position?: string;
-  edital_link?: string;
-  curso_link?: string;
-  video_link?: string;
-  is_active: boolean;
-  schedule_data: {
-    weekly_schedule: WeeklySchedule[];
-    metadata: {
-      total_sessions: number;
-      total_hours: number;
-    };
-  };
-  created_at: string;
-  updated_at: string;
-}
-
 export const useStudyCyclesV2 = () => {
   const { user } = useAuth();
   const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
@@ -69,16 +51,14 @@ export const useStudyCyclesV2 = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('study_cycles_v2')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setCycles(data || []);
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      if (userStudyData) {
+        // Filtrar apenas ciclos ativos (study_cycles contém StudyCycleV2[])
+        const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
+        setCycles(activeCycles);
+      } else {
+        setCycles([]);
+      }
     } catch (error) {
       console.error('Error fetching cycles:', error);
       toast.error('Erro ao carregar ciclos');
@@ -96,38 +76,59 @@ export const useStudyCyclesV2 = () => {
     edital_link?: string;
     curso_link?: string;
     video_link?: string;
+    blocks?: Array<{
+      id: string;
+      name: string;
+      disciplines: Array<{
+        id: string;
+        name: string;
+      }>;
+    }>;
   }) => {
     if (!user) return null;
 
     try {
-      const { data, error } = await supabase
-        .from('study_cycles_v2')
-        .insert({
-          user_id: user.id,
-          ...cycleData,
-          schedule_data: {
-            weekly_schedule: [],
-            metadata: {
-              total_sessions: 0,
-              total_hours: 0
-            }
-          }
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setCycles(prev => [data, ...prev]);
-      toast.success('Ciclo criado com sucesso!');
-      return data;
-    } catch (error: any) {
-      console.error('Error creating cycle:', error);
-      if (error.message?.includes('2 ciclos ativos')) {
+      // Verificar se já existem 2 ciclos ativos
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      const activeCycles = userStudyData?.study_cycles.filter(cycle => cycle.is_active) || [];
+      
+      if (activeCycles.length >= 2) {
         toast.error('Você já possui 2 ciclos ativos. Desative um para criar outro.');
+        return null;
+      }
+
+      // Debug: Verificar blocos recebidos
+      console.log('🔍 Debug - Blocos recebidos no hook:', cycleData.blocks);
+      console.log('🔍 Debug - Quantidade de blocos no hook:', cycleData.blocks?.length || 0);
+
+      const newCycleData = createStudyCycleV2(
+        cycleData.cycle_name,
+        cycleData.exam_date,
+        cycleData.organ,
+        cycleData.position,
+        cycleData.edital_link,
+        cycleData.curso_link,
+        cycleData.video_link,
+        cycleData.blocks // Passar blocos para a função
+      );
+
+      // Debug: Verificar dados do ciclo criado
+      console.log('🔍 Debug - Dados do ciclo criado:', newCycleData);
+      console.log('🔍 Debug - Available blocks no ciclo:', newCycleData.schedule_data.available_blocks);
+
+      const success = await UserStudyService.addCycle(user.id, newCycleData);
+      
+      if (success) {
+        await fetchCycles(); // Recarregar ciclos
+        toast.success('Ciclo criado com sucesso!');
+        return newCycleData;
       } else {
         toast.error('Erro ao criar ciclo');
+        return null;
       }
+    } catch (error: any) {
+      console.error('Error creating cycle:', error);
+      toast.error('Erro ao criar ciclo');
       return null;
     }
   };
@@ -142,7 +143,7 @@ export const useStudyCyclesV2 = () => {
 
     try {
       const newSession = {
-        id: uuidv4(),
+        id: generateId(),
         ...sessionData,
         completed_sessions: [],
         total_stats: {
@@ -153,27 +154,45 @@ export const useStudyCyclesV2 = () => {
         }
       };
 
-      const { data, error } = await supabase.rpc('add_schedule_session', {
-        p_cycle_id: cycleId,
-        p_day_of_week: dayOfWeek,
-        p_session_data: newSession
-      });
+      // Buscar dados atuais do usuário
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      if (!userStudyData) return false;
 
-      if (error) throw error;
-
-      // Atualizar estado local
-      setCycles(prev => prev.map(cycle => {
+      // Encontrar o ciclo e atualizar
+      const updatedCycles = userStudyData.study_cycles.map(cycle => {
         if (cycle.id === cycleId) {
+          const updatedSchedule = { ...cycle.schedule_data };
+          let daySchedule = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
+          
+          if (!daySchedule) {
+            daySchedule = { day: dayOfWeek, sessions: [] };
+            updatedSchedule.weekly_schedule.push(daySchedule);
+          }
+          
+          daySchedule.sessions.push(newSession);
+          updatedSchedule.metadata.total_sessions += 1;
+          
           return {
             ...cycle,
-            schedule_data: data
+            schedule_data: updatedSchedule
           };
         }
         return cycle;
-      }));
+      });
 
-      toast.success('Sessão adicionada ao cronograma!');
-      return true;
+      // Salvar no banco
+      const success = await UserStudyService.upsertUserStudyData(user.id, {
+        study_cycles: updatedCycles
+      });
+
+      if (success) {
+        await fetchCycles(); // Recarregar ciclos
+        toast.success('Sessão adicionada ao cronograma!');
+        return true;
+      } else {
+        toast.error('Erro ao adicionar sessão');
+        return false;
+      }
     } catch (error) {
       console.error('Error adding session:', error);
       toast.error('Erro ao adicionar sessão');
@@ -201,28 +220,80 @@ export const useStudyCyclesV2 = () => {
         date: localDate
       };
 
-      const { data, error } = await supabase.rpc('record_completed_session', {
-        p_cycle_id: cycleId,
-        p_day_of_week: dayOfWeek,
-        p_session_id: sessionId,
-        p_session_details: completedSession
-      });
+      // Buscar dados atuais do usuário
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      if (!userStudyData) return false;
 
-      if (error) throw error;
-
-      // Atualizar estado local
-      setCycles(prev => prev.map(cycle => {
+      // Encontrar o ciclo e atualizar
+      const updatedCycles = userStudyData.study_cycles.map(cycle => {
         if (cycle.id === cycleId) {
+          const updatedSchedule = { ...cycle.schedule_data };
+          const daySchedule = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
+          
+          if (daySchedule) {
+            const session = daySchedule.sessions.find(s => s.id === sessionId);
+            if (session) {
+              // Adicionar sessão completada
+              if (!session.completed_sessions) {
+                session.completed_sessions = [];
+              }
+              session.completed_sessions.push(completedSession);
+              
+              // Atualizar estatísticas totais
+              if (!session.total_stats) {
+                session.total_stats = {
+                  total_duration_minutes: 0,
+                  total_questions: 0,
+                  total_correct: 0,
+                  session_count: 0
+                };
+              }
+              
+              session.total_stats.total_duration_minutes += completedSession.duration_minutes;
+              session.total_stats.total_questions += completedSession.questions;
+              session.total_stats.total_correct += completedSession.correct_answers;
+              session.total_stats.session_count += 1;
+              session.total_stats.last_session_date = localDate;
+            }
+          }
+          
           return {
             ...cycle,
-            schedule_data: data
+            schedule_data: updatedSchedule
           };
         }
         return cycle;
-      }));
+      });
 
-      toast.success('Sessão registrada com sucesso!');
-      return true;
+      // Debug: Verificar dados antes de salvar
+      logger.debug('Dados antes de salvar sessão', { updatedCycles, completedSession });
+
+      // Salvar no banco
+      const success = await UserStudyService.upsertUserStudyData(user.id, {
+        study_cycles: updatedCycles
+      });
+
+      logger.debug('Resultado do salvamento', { success });
+
+      if (success) {
+        // Atualizar estado local
+        setCycles(prev => prev.map(cycle => {
+          if (cycle.id === cycleId) {
+            const updatedCycle = updatedCycles.find(c => c.id === cycleId);
+            return updatedCycle || cycle;
+          }
+          return cycle;
+        }));
+
+        // Recarregar dados do banco para garantir sincronização
+        await fetchCycles();
+
+        toast.success('Sessão registrada com sucesso!');
+        return true;
+      } else {
+        toast.error('Erro ao registrar sessão');
+        return false;
+      }
     } catch (error) {
       console.error('Error recording session:', error);
       toast.error('Erro ao registrar sessão');
@@ -250,19 +321,20 @@ export const useStudyCyclesV2 = () => {
         updatedSchedule.metadata.total_sessions -= 1;
       }
 
-      const { error } = await supabase
-        .from('study_cycles_v2')
-        .update({ schedule_data: updatedSchedule })
-        .eq('id', cycleId);
+      const success = await UserStudyService.updateCycle(user.id, cycleId, {
+        schedule_data: updatedSchedule
+      });
 
-      if (error) throw error;
-
-      setCycles(prev => prev.map(c => 
-        c.id === cycleId ? { ...c, schedule_data: updatedSchedule } : c
-      ));
-
-      toast.success('Sessão removida!');
-      return true;
+      if (success) {
+        setCycles(prev => prev.map(c => 
+          c.id === cycleId ? { ...c, schedule_data: updatedSchedule } : c
+        ));
+        toast.success('Sessão removida!');
+        return true;
+      } else {
+        toast.error('Erro ao remover sessão');
+        return false;
+      }
     } catch (error) {
       console.error('Error removing session:', error);
       toast.error('Erro ao remover sessão');
@@ -278,19 +350,16 @@ export const useStudyCyclesV2 = () => {
     if (!user) return false;
 
     try {
-      const { error } = await supabase
-        .from('study_cycles_v2')
-        .update(updates)
-        .eq('id', cycleId);
-
-      if (error) throw error;
-
-      setCycles(prev => prev.map(c => 
-        c.id === cycleId ? { ...c, ...updates } : c
-      ));
-
-      toast.success('Ciclo atualizado!');
-      return true;
+      const success = await UserStudyService.updateCycle(user.id, cycleId, updates);
+      
+      if (success) {
+        await fetchCycles(); // Recarregar ciclos
+        toast.success('Ciclo atualizado!');
+        return true;
+      } else {
+        toast.error('Erro ao atualizar ciclo');
+        return false;
+      }
     } catch (error) {
       console.error('Error updating cycle:', error);
       toast.error('Erro ao atualizar ciclo');
@@ -317,6 +386,28 @@ export const useStudyCyclesV2 = () => {
     return cycles.flatMap(cycle => getSessionsForDay(cycle.id, dayOfWeek));
   };
 
+  // Remover ciclo
+  const removeCycle = async (cycleId: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const success = await UserStudyService.removeCycle(user.id, cycleId);
+      
+      if (success) {
+        await fetchCycles(); // Recarregar ciclos
+        toast.success('Ciclo removido com sucesso!');
+        return true;
+      } else {
+        toast.error('Erro ao remover ciclo');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error removing cycle:', error);
+      toast.error('Erro ao remover ciclo');
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchCycles();
   }, [user?.id]);
@@ -331,6 +422,7 @@ export const useStudyCyclesV2 = () => {
     removeScheduleSession,
     updateCycle,
     deactivateCycle,
+    removeCycle,
     getSessionsForDay,
     getAllSessionsForDay
   };

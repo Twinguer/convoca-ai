@@ -3,30 +3,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
-import { supabase } from '@/integrations/supabase/client';
 import Footer from '@/components/Footer';
-
-interface StudyCycle {
-  id: string;
-  name: string;
-  exam_date: string;
-  is_active: boolean;
-  organ: string;
-  position: string;
-  blocks: any[];
-}
+import { UserStudyService } from '@/services/userStudyService';
+import { StudyCycleV2 } from '@/types/userStudy';
 
 const StudyDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { statistics, isLoading } = useStudyStatistics();
-  const [cycles, setCycles] = useState<StudyCycle[]>([]);
+  const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
   const [upcomingSchedule, setUpcomingSchedule] = useState<any[]>([]);
   const [loadingCycles, setLoadingCycles] = useState(true);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [cycleToDelete, setCycleToDelete] = useState<StudyCycleV2 | null>(null);
+  const [confirmText, setConfirmText] = useState('');
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -39,19 +38,11 @@ const StudyDashboard = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('study_cycles')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading study cycles:', error);
-        return;
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      if (userStudyData) {
+        const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
+        setCycles(activeCycles);
       }
-
-      setCycles(data || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -63,25 +54,40 @@ const StudyDashboard = () => {
     if (!user) return;
 
     try {
-      const today = new Date().getDay();
-      const { data, error } = await supabase
-        .from('study_schedule')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .gte('day_of_week', today)
-        .order('day_of_week', { ascending: true })
-        .order('start_time', { ascending: true })
-        .limit(5);
-
-      if (error) {
-        console.error('Error loading schedule:', error);
-        return;
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      if (userStudyData) {
+        // Buscar sessões dos próximos dias nos ciclos ativos
+        const today = new Date().getDay();
+        const upcomingSessions: any[] = [];
+        
+        userStudyData.study_cycles
+          .filter(cycle => cycle.is_active)
+          .forEach(cycle => {
+            cycle.schedule_data.weekly_schedule
+              .filter(day => day.day >= today)
+              .forEach(day => {
+                day.sessions.forEach(session => {
+                  upcomingSessions.push({
+                    ...session,
+                    cycle_name: cycle.cycle_name,
+                    day_of_week: day.day
+                  });
+                });
+              });
+          });
+        
+        // Ordenar por dia da semana e horário
+        upcomingSessions.sort((a, b) => {
+          if (a.day_of_week !== b.day_of_week) {
+            return a.day_of_week - b.day_of_week;
+          }
+          return a.start_time.localeCompare(b.start_time);
+        });
+        
+        setUpcomingSchedule(upcomingSessions.slice(0, 5));
       }
-
-      setUpcomingSchedule(data || []);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error loading upcoming schedule:', error);
     }
   };
 
@@ -100,6 +106,44 @@ const StudyDashboard = () => {
       .filter(cycle => new Date(cycle.exam_date) > new Date())
       .sort((a, b) => new Date(a.exam_date).getTime() - new Date(b.exam_date).getTime());
     return upcomingExams[0];
+  };
+
+  const openDeleteModal = (cycle: StudyCycleV2) => {
+    setCycleToDelete(cycle);
+    setDeleteModalOpen(true);
+    setConfirmText('');
+  };
+
+  const confirmDeleteCycle = async () => {
+    if (!cycleToDelete || confirmText !== 'Excluir' || !user) {
+      return;
+    }
+
+    try {
+      const success = await UserStudyService.removeCycle(user.id, cycleToDelete.id);
+      if (!success) throw new Error('Failed to delete cycle');
+      
+      toast({
+        title: 'Ciclo excluído',
+        description: `O ciclo "${cycleToDelete.cycle_name}" foi excluído com sucesso.`
+      });
+
+      // Recarregar ciclos
+      await loadStudyCycles();
+      await loadUpcomingSchedule();
+      
+      // Fechar modal
+      setDeleteModalOpen(false);
+      setCycleToDelete(null);
+      setConfirmText('');
+    } catch (error) {
+      console.error('Error deleting cycle:', error);
+      toast({
+        title: 'Erro ao excluir',
+        description: 'Não foi possível excluir o ciclo. Tente novamente.',
+        variant: 'destructive'
+      });
+    }
   };
 
   const nextExam = getNextExamDate();
@@ -188,7 +232,7 @@ const StudyDashboard = () => {
                 {cycles.slice(0, 3).map((cycle) => (
                 <div key={cycle.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
                   <div className="flex-1">
-                    <h4 className="font-semibold text-foreground">{cycle.name}</h4>
+                    <h4 className="font-semibold text-foreground">{cycle.cycle_name}</h4>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
                       <span className="text-sm text-muted-foreground">{cycle.organ}</span>
                       <Badge variant="outline" className="w-fit">{cycle.position}</Badge>
@@ -208,6 +252,15 @@ const StudyDashboard = () => {
                     >
                       <BookOpen className="h-4 w-4 mr-2" />
                       Iniciar Sessão
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => openDeleteModal(cycle)}
+                      className="w-full sm:w-auto"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Excluir
                     </Button>
                   </div>
                 </div>
@@ -274,6 +327,61 @@ const StudyDashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o ciclo <strong>"{cycleToDelete?.cycle_name}"</strong>?
+              <br /><br />
+              <span className="text-destructive font-medium">
+                ⚠️ Esta ação irá excluir permanentemente:
+              </span>
+              <ul className="list-disc list-inside mt-2 text-sm text-muted-foreground">
+                <li>Todas as sessões de estudos</li>
+                <li>O edital verticalizado</li>
+                <li>Todo o progresso registrado</li>
+              </ul>
+              <br />
+              Para confirmar, digite <strong>"Excluir"</strong> no campo abaixo:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="confirmText" className="text-right">
+                Confirmação
+              </Label>
+              <Input
+                id="confirmText"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="Digite 'Excluir'"
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setDeleteModalOpen(false);
+              setCycleToDelete(null);
+              setConfirmText('');
+            }}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDeleteCycle}
+              disabled={confirmText !== 'Excluir'}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Excluir Ciclo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
