@@ -1,10 +1,20 @@
+import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
-import { databaseConfig } from '../src/config/database';
 
-const targetSupabase = createClient(
-  databaseConfig.development.url,
-  databaseConfig.development.serviceRoleKey
-);
+const developmentUrl = process.env.VITE_SUPABASE_URL;
+const developmentServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+// Verificar se as variáveis estão definidas
+if (!developmentUrl || !developmentServiceKey) {
+  console.error('❌ Variáveis de ambiente não encontradas!');
+  console.error('Verifique se o arquivo .env.local está configurado corretamente.');
+  console.error('Variáveis necessárias:');
+  console.error('- VITE_SUPABASE_URL');
+  console.error('- VITE_SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+const targetSupabase = createClient(developmentUrl, developmentServiceKey);
 
 async function verifyNomeiaDatabase() {
   console.log('🔍 Verificando banco nomeia-ai...');

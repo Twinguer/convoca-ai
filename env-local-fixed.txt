@@ -1,0 +1,23 @@
+# Banco de desenvolvimento (nomeia-ai) - NOVO
+VITE_SUPABASE_URL=https://xuovcuefnullpmpktrzd.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1b3ZjdWVmbnVsbHBtcGt0cnpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxMzIyNjMsImV4cCI6MjA3NTcwODI2M30.420ffZ_xUHt9IefywsLiOeEoehWQqBa9lcfXJUdGGUg
+VITE_SUPABASE_SERVICE_ROLE_KEY=[cole-aqui-a-service-role-key]
+
+# Banco de producao (original) - BACKUP
+VITE_SUPABASE_URL_ORIGINAL=https://ppsymqrdtjyaguftracc.supabase.co
+VITE_SUPABASE_ANON_KEY_ORIGINAL=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwc3ltcXJkdGp5YWd1ZnRyYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzEwNzIsImV4cCI6MjA1OTQ0NzA3Mn0.7ijkFzxTGirmC0R958v0Tr7p4TghM9A9J4BLI10OMgs
+VITE_SUPABASE_SERVICE_ROLE_KEY_ORIGINAL=[sua-chave-service-role-original]
+
+# Flag para identificar ambiente
+VITE_BRANCH=nomeia-ai
+
+# Security Keys (REQUIRED)
+VITE_OBFUSCATION_KEY=nomeia_obfuscation_2024_secure_key_32_chars
+VITE_URL_OBFUSCATION_KEY=nomeia_url_obfuscation_2024_secure_key_32_chars
+
+# CORS Configuration (REQUIRED for production)
+ALLOWED_ORIGIN=http://localhost:8080
+
+# Development Mode
+VITE_DEV_MODE=true
+VITE_DEBUG_LOGS=true

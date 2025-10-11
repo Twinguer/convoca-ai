@@ -1,16 +1,27 @@
+import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
-import { databaseConfig } from '../src/config/database';
+
+// Configuração direta para evitar problemas com import.meta.env
+const productionUrl = process.env.VITE_SUPABASE_URL_ORIGINAL;
+const productionServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY_ORIGINAL;
+const developmentUrl = process.env.VITE_SUPABASE_URL;
+const developmentServiceKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+// Verificar se todas as variáveis estão definidas
+if (!productionUrl || !productionServiceKey || !developmentUrl || !developmentServiceKey) {
+  console.error('❌ Variáveis de ambiente não encontradas!');
+  console.error('Verifique se o arquivo .env.local está configurado corretamente.');
+  console.error('Variáveis necessárias:');
+  console.error('- VITE_SUPABASE_URL_ORIGINAL');
+  console.error('- VITE_SUPABASE_SERVICE_ROLE_KEY_ORIGINAL');
+  console.error('- VITE_SUPABASE_URL');
+  console.error('- VITE_SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
 
 // Clientes para ambos os bancos
-const sourceSupabase = createClient(
-  databaseConfig.production.url,
-  databaseConfig.production.serviceRoleKey
-);
-
-const targetSupabase = createClient(
-  databaseConfig.development.url,
-  databaseConfig.development.serviceRoleKey
-);
+const sourceSupabase = createClient(productionUrl, productionServiceKey);
+const targetSupabase = createClient(developmentUrl, developmentServiceKey);
 
 async function migrateData() {
   console.log('🚀 Iniciando migração para banco nomeia-ai...');
