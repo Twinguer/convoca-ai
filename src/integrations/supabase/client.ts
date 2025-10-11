@@ -1,10 +1,11 @@
 
 import { createClient } from '@supabase/supabase-js';
+import { currentConfig } from '@/config/database';
 
-// Initialize the Supabase client with environment variables
+// Initialize the Supabase client with dynamic configuration
 // CRITICAL: Never hardcode credentials in production code
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = currentConfig.url;
+const supabaseAnonKey = currentConfig.anonKey;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
@@ -32,6 +33,18 @@ export const supabase = createClient(
       params: {
         eventsPerSecond: 10
       }
+    }
+  }
+);
+
+// Cliente para operações administrativas
+export const supabaseAdmin = createClient(
+  currentConfig.url,
+  currentConfig.serviceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
     }
   }
 );
