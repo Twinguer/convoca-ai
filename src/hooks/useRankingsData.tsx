@@ -80,9 +80,9 @@ export function useRankingsData() {
   const { data: rankings = [], isLoading } = useQuery({
     queryKey: ['rankings'],
     queryFn: fetchRankings,
-    // Ensuring data is updated every 5 minutes for all users
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    // Ensuring data is updated every 2 minutes for all users
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     // Disabling retry to avoid too many calls in case of error
     retry: 1
   });

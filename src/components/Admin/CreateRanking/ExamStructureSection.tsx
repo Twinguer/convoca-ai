@@ -378,7 +378,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                               className="w-24 text-sm bg-muted"
                             />
                             <span className="text-xs text-muted-foreground">
-                              Fixo em 1 para Certo/Errado
+                              Fixo em 1 para Certo ou Errado
                             </span>
                           </div>
                         ) : (

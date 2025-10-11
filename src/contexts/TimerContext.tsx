@@ -117,7 +117,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
       // Run an initial tick immediately
       tick();
-      intervalRef.current = setInterval(tick, 1000);
+      intervalRef.current = setInterval(tick, 5000); // Reduzido de 1s para 5s
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);

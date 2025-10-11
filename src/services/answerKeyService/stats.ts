@@ -31,7 +31,7 @@ export const checkAnswerKeyCompleteness = async (
       const completed = booklet?.answers ? Object.keys(booklet.answers).length : 0;
       const isComplete = completed >= expectedQuestions;
 
-      // Log removido por segurança
+      console.log(`[answerKeyService] Booklet ${bookletId}: ${completed}/${expectedQuestions} questions (complete: ${isComplete})`);
 
       return {
         bookletId,
@@ -44,7 +44,7 @@ export const checkAnswerKeyCompleteness = async (
 
     const allComplete = details.every(detail => detail.isComplete);
 
-    // Log removido por segurança
+    console.log(`[answerKeyService] Answer key completeness check result: ${allComplete ? 'ALL COMPLETE' : 'INCOMPLETE'}`);
 
     return {
       allComplete,
@@ -90,7 +90,7 @@ export const getAnswerKeyStats = async (concursoId: string): Promise<AnswerKeySt
       }
     });
 
-    // Log removido por segurança
+    console.log(`[answerKeyService] Stats: ${totalBooklets} booklets, ${totalAnswers} total answers`);
 
     return {
       totalBooklets,

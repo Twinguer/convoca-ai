@@ -6,7 +6,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
   return useQuery({
     queryKey: ['official-answers-weights', concursoId, bookletId],
     queryFn: async () => {
-      // Log removido por segurança
+      console.log('[useOfficialAnswerWeights] Fetching for concurso:', concursoId, 'booklet:', bookletId);
       
       const consolidatedData = await getConsolidatedAnswerKey(concursoId);
       
@@ -28,7 +28,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
           question_type: answerData.question_type || 'MULTIPLE_CHOICE'
         }));
         
-        // Log removido por segurança
+        console.log('[useOfficialAnswerWeights] Found', answers.length, 'answers for booklet:', bookletId);
         return answers;
       }
 

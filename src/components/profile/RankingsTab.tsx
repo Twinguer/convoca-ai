@@ -11,7 +11,7 @@ import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { fetchUserRankings } from '@/services/rankingService';
+import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -72,7 +72,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       const rankingsWithPositions = await Promise.all((data || []).map(async ranking => {
         // Verificar se concursos existe e é um objeto válido
         if (!ranking.concursos || typeof ranking.concursos !== 'object') {
-          console.error('Invalid concurso data for ranking:', ranking);
+          console.error('Invalid concurso data for ranking');
           return {
             ...ranking,
             position: null
@@ -81,7 +81,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         
         const concursoId = ranking.concurso_id;
         if (!concursoId) {
-          console.error('No concurso ID found for ranking:', ranking);
+          console.error('No concurso ID found for ranking');
           return {
             ...ranking,
             position: null,
@@ -91,10 +91,11 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
         try {
           // Usar a mesma função que é usada na página de comunidade
-          const list = await fetchUserRankings(concursoId);
+          const list = await getRankingsWithUserInfo(supabase, concursoId);
 
           // Mesma regra de eliminação usada na tabela de rankings
           const isBelowMinimum = (rankingData: any, concursoData: any) => {
+            // Verificação existente para mínimos por disciplina/bloco
             const hasDisciplineMinimums = rankingData.belowDisciplineMinimums && 
               rankingData.belowDisciplineMinimums.length > 0;
             const hasBlockMinimums = rankingData.belowBlockMinimums && 
@@ -156,7 +157,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           return { ...ranking, position: null, isEliminated: false };
         }
         try {
-          const communityList = await fetchUserRankings(concursoId);
+          const communityList = await getRankingsWithUserInfo(supabase, concursoId);
           
           // Buscar dados do concurso para verificar o tipo de exame
           const { data: concursoData } = await supabase
@@ -166,6 +167,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             .single();
           
           const isBelowMinimum = (r: any) => {
+            // Verificação existente para mínimos por disciplina/bloco
             const hasDisciplineMinimums = r.belowDisciplineMinimums && 
               r.belowDisciplineMinimums.length > 0;
             const hasBlockMinimums = r.belowBlockMinimums && 
@@ -186,8 +188,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           const classified = communityList
             .filter((r: any) => !isBelowMinimum(r))
             .sort((a: any, b: any) => b.score - a.score);
-          // Encontrar posição pelo userId do perfil
-          const idx = classified.findIndex((r: any) => r.userId === userId);
+          // Encontrar posição pelo id do ranking específico
+          const idx = classified.findIndex((r: any) => r.id === ranking.id);
           const isClassified = idx >= 0;
           const position = isClassified ? idx + 1 : null;
           return { ...ranking, position, isEliminated: !isClassified };
@@ -394,9 +396,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             </div>
             
             <div className="p-4 bg-card flex justify-end gap-2">
-              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={async () => {
-                const secureUrl = await generateSecureUrl(ranking.concursos?.id || ranking.concursoId, 'resultados');
-                navigate(secureUrl);
+              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => {
+                navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}`);
               }}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>
@@ -404,9 +405,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               
               {isOwnProfile && (
                 <>
-                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={async () => {
-                    const secureUrl = await generateSecureUrl(ranking.concursos?.id || ranking.concursoId, 'participar');
-                    navigate(`${secureUrl}?showAnswerSheet=true`);
+                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => {
+                    navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}/participate?showAnswerSheet=true`);
                   }}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>

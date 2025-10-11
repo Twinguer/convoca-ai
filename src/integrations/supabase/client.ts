@@ -2,10 +2,17 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize the Supabase client with environment variables
-// These values will be properly set in the deployment environment
+// CRITICAL: Never hardcode credentials in production code
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
+}
+
 export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://ppsymqrdtjyaguftracc.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwc3ltcXJkdGp5YWd1ZnRyYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzEwNzIsImV4cCI6MjA1OTQ0NzA3Mn0.7ijkFzxTGirmC0R958v0Tr7p4TghM9A9J4BLI10OMgs',
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       persistSession: true,

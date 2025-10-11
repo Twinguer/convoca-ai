@@ -17,9 +17,14 @@ interface Discipline {
   status: 'inProgress' | 'finished' | 'review';
   studyTime: number;
 }
-const SessaoEstudos = () => {
+interface SessaoEstudosProps {
+  cycleId?: string;
+  secureToken?: string;
+}
+
+const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) => {
   const {
-    id
+    id: urlId
   } = useParams();
   const navigate = useNavigate();
   const {
@@ -28,6 +33,9 @@ const SessaoEstudos = () => {
   const {
     toast
   } = useToast();
+
+  // Usar cycleId da prop ou do URL
+  const id = cycleId || urlId;
   const {
     minutes,
     seconds,

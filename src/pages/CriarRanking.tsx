@@ -216,7 +216,9 @@ const CriarRanking = () => {
     saveRanking
   } = useSaveRanking();
   const handleSaveRanking = async (): Promise<string | null> => {
+    console.log('[CriarRanking] handleSaveRanking called');
     const formValues = form.getValues();
+    console.log('[CriarRanking] Form values:', formValues);
 
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, {
@@ -379,7 +381,8 @@ const CriarRanking = () => {
   };
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      navigate(`/concurso/${createdConcursoId}/resultados`);
+      // Redirecionar para lista de rankings em vez de URL com ID
+      navigate('/pre-classificacao');
     }
   };
   const handleBack = () => {

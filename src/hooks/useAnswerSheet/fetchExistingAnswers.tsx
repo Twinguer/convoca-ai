@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (rankingId: string) => {
   try {
-    // Log removido por segurança
+    console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
 
     // Primeiro, buscar informações do user_ranking para obter o caderno selecionado
     const { data: rankingData, error: rankingError } = await supabase
@@ -17,7 +17,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       return {};
     }
 
-    // Log removido por segurança
+    console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
 
     // Buscar dados consolidados por concurso (NOVA ESTRUTURA)
     const { data: consolidatedData, error: consolidatedError } = await supabase
@@ -26,36 +26,38 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       .eq('concurso_id', rankingData.concurso_id)
       .maybeSingle();
 
-    // Logs removidos por segurança
+    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
+    console.log('[fetchExistingAnswers] Erro na busca consolidada:', consolidatedError);
 
     let answers: { [key: number]: string } = {};
 
     if (consolidatedData?.consolidated_data) {
       const data = consolidatedData.consolidated_data;
-      // Log removido por segurança
+      console.log('[fetchExistingAnswers] Estrutura de dados consolidados:', data);
       
       // Buscar dados do usuário específico
       const userData = data.users?.[rankingData.user_id];
-      // Log removido por segurança
+      console.log('[fetchExistingAnswers] Dados do usuário no JSON consolidado:', userData);
       
       if (userData?.booklets && rankingData?.selected_booklet) {
         const selectedBookletId = rankingData.selected_booklet.toString();
-        // Logs removidos por segurança
+        console.log('[fetchExistingAnswers] Caderno selecionado:', selectedBookletId);
         
         const bookletAnswers = userData.booklets[selectedBookletId]?.answers || {};
+        console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
 
         // Converter para formato esperado (número da questão como chave)
         Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
           answers[parseInt(questionNum)] = answer as string;
         });
         
-        // Log removido por segurança
+        console.log('[fetchExistingAnswers] Answers convertidas:', answers);
       } else if (userData?.booklets) {
         // Fallback: usar primeiro caderno disponível se nenhum selecionado
         const bookletIds = Object.keys(userData.booklets);
         if (bookletIds.length > 0) {
           const firstBookletId = bookletIds[0];
-          // Log removido por segurança
+          console.log('[fetchExistingAnswers] Fallback: usando primeiro caderno disponível:', firstBookletId);
           
           const bookletAnswers = userData.booklets[firstBookletId]?.answers || {};
           Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
@@ -63,13 +65,15 @@ export const fetchExistingAnswers = async (rankingId: string) => {
           });
         }
       } else {
-        // Logs removidos por segurança
+        console.log('[fetchExistingAnswers] Nenhum caderno encontrado para o usuário');
+        console.log('[fetchExistingAnswers] User booklets:', userData?.booklets);
+        console.log('[fetchExistingAnswers] Selected booklet:', rankingData?.selected_booklet);
       }
     } else {
-      // Log removido por segurança
+      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado para o concurso');
     }
 
-    // Log removido por segurança
+    console.log('[fetchExistingAnswers] Respostas finais para retorno:', answers);
 
     return {
       answers,

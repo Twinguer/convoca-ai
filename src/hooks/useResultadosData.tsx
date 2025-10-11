@@ -7,21 +7,23 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { logger } from '@/utils/logger';
 
 export function useResultadosData(concursoId?: string) {
   const { id: urlId } = useParams() as { id: string };
   const { user } = useAuth();
+  const isAuthenticated = !!user;
   
   // Usar concursoId passado como prop ou do URL
   const id = concursoId || urlId;
-  const isAuthenticated = !!user;
   
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
     queryFn: () => fetchConcursoById(id),
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 10000, // 10 segundos
+    enabled: !!id, // Só executar se tiver um ID válido
   });
   
   // Fetch creator information if available
@@ -37,7 +39,7 @@ export function useResultadosData(concursoId?: string) {
         .single();
         
       if (error) {
-        console.error('Error fetching creator info:', error);
+        logger.error('Error fetching creator info', 'USE_RESULTADOS_DATA', error);
         return null;
       }
       
@@ -47,7 +49,7 @@ export function useResultadosData(concursoId?: string) {
     staleTime: 300000, // 5 minutos
   });
   
-  // Configuração para rankings, sem atualização automática frequente
+  // Configuração para rankings (query simples) - DESABILITADO para usar paginação
   const { 
     data: rankings = [], 
     isLoading: isLoadingRankings, 
@@ -56,80 +58,75 @@ export function useResultadosData(concursoId?: string) {
   } = useQuery({
     queryKey: ['rankings', id],
     queryFn: () => fetchUserRankings(id),
-    refetchOnWindowFocus: false, // Desabilitado para reduzir requisições
-    staleTime: 5 * 60 * 1000, // 5 minutos para reduzir atualizações
-    enabled: !!id,
+    refetchOnWindowFocus: false,
+    staleTime: 10 * 60 * 1000, // Aumentado para 10 minutos
+    enabled: false, // DESABILITADO - usar useRankingsPagination
   });
   
   // Fetch participant count - for all users (authenticated or not)
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count', id],
     queryFn: () => getParticipantCount(id),
-    staleTime: 5 * 60 * 1000, // 5 minutos para reduzir atualizações
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
   
   // Verificar se o usuário já está participando deste concurso
-  const { data: userParticipationStatus, isLoading: isCheckingParticipation, refetch: refetchParticipation } = useQuery({
+  const { data: userParticipationStatus, isLoading: isCheckingParticipation } = useQuery({
     queryKey: ['user-participation', id, user?.id],
     queryFn: async () => {
       if (!user || !id) return { isParticipating: false };
       
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('id, reservation_type')
+        .select('id')
         .eq('concurso_id', id)
         .eq('user_id', user.id)
         .maybeSingle();
         
       if (error) {
-        console.error('Error checking participation:', error);
+        logger.error('Error checking participation', 'USE_RESULTADOS_DATA', error);
         return { isParticipating: false };
       }
       
-      // Lógica robusta para determinar participação
-      const isParticipatingValue = data != null && data.id != null;
-
-      const result = { 
-        isParticipating: isParticipatingValue,
+      return { 
+        isParticipating: !!data,
         rankingId: data?.id 
       };
-      
-      
-      return result;
     },
     enabled: !!user && !!id,
-    staleTime: 30 * 1000, // 30 segundos para participação do usuário
+    staleTime: 10000,
   });
   
   // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
-  useEffect(() => {
-    if (!id) return;
+  // DESABILITADO TEMPORARIAMENTE para melhorar performance e evitar travamentos
+  // useEffect(() => {
+  //   if (!id) return;
 
-    // Configura um canal para escutar atualizações na tabela user_rankings
-    const channel = supabase
-      .channel('rankings-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'user_rankings',
-          filter: `concurso_id=eq.${id}`
-        },
-        (payload) => {
-          // Log removido por segurança
-          // Força atualização dos rankings quando houver mudanças
-          refetchRankings();
-          refetchCount();
-        }
-      )
-      .subscribe();
+  //   // Configura um canal para escutar atualizações na tabela user_rankings
+  //   const channel = supabase
+  //     .channel('rankings-updates')
+  //     .on(
+  //       'postgres_changes',
+  //       {
+  //         event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+  //         schema: 'public',
+  //         table: 'user_rankings',
+  //         filter: `concurso_id=eq.${id}`
+  //       },
+  //       (payload) => {
+  //         console.log('[useResultadosData] Detected change in user_rankings:', payload);
+  //         // Força atualização dos rankings quando houver mudanças
+  //         refetchRankings();
+  //         refetchCount();
+  //       }
+  //     )
+  //     .subscribe();
 
-    // Cleanup: remover inscrição quando o componente for desmontado
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [id, refetchRankings, refetchCount]);
+  //   // Cleanup: remover inscrição quando o componente for desmontado
+  //   return () => {
+  //     supabase.removeChannel(channel);
+  //   };
+  // }, [id, refetchRankings, refetchCount]);
   
   // Find user's ranking - only if user is authenticated
   const userRanking = isAuthenticated ? rankings.find((r: Ranking) => r.userId === user?.id) : null;
@@ -138,7 +135,7 @@ export function useResultadosData(concursoId?: string) {
   
   // Function to manually refresh all data
   const refreshData = async () => {
-    // Log removido por segurança
+    console.log("[useResultadosData] Atualizando rankings manualmente");
     
     if (!id) {
       console.error("[useResultadosData] ID do concurso não fornecido");
@@ -150,7 +147,7 @@ export function useResultadosData(concursoId?: string) {
 
     // Verifica se o usuário está autenticado
     if (!isAuthenticated) {
-      // Log removido por segurança
+      logger.info('Usuário não autenticado, atualizando apenas os dados locais', 'USE_RESULTADOS_DATA');
       await refetchRankings();
       await refetchCount();
       
@@ -162,14 +159,14 @@ export function useResultadosData(concursoId?: string) {
       
     // Recalcular pontuações para todos os usuários apenas se autenticado
     try {
-      // Log removido por segurança
+      logger.info('Chamando recalculateAllUserScores para concurso', 'USE_RESULTADOS_DATA', { concursoId: id });
       const result = await recalculateAllUserScores(id);
       
       if (!result.success) {
-        console.error("[useResultadosData] Erro ao recalcular pontuações:", result.error);
+        logger.error('Erro ao recalcular pontuações', 'USE_RESULTADOS_DATA', result.error);
         return { success: false, error: result.error };
       } else {
-        // Log removido por segurança
+        logger.info('Pontuações recalculadas com sucesso', 'USE_RESULTADOS_DATA', result);
         
         // Força imediatamente uma atualização dos dados
         await refetchRankings();
@@ -178,12 +175,11 @@ export function useResultadosData(concursoId?: string) {
         return { success: true, updatedCount: result.updatedCount };
       }
     } catch (err) {
-      console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);
+      logger.error('Erro inesperado ao recalcular pontuações', 'USE_RESULTADOS_DATA', err);
       return { success: false, error: String(err) };
     }
   };
   
-
   return {
     concurso,
     rankings,

@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 import { Calendar, Trophy, Users, MapPin } from 'lucide-react';
-import { useSecureUrls } from '@/services/urlObfuscation';
 import { useNavigate } from 'react-router-dom';
 
 export interface RankingItemProps {
@@ -40,7 +39,6 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
   localidade,
   onRankingClick
 }) => {
-  const { generateSecureUrl } = useSecureUrls();
   const navigate = useNavigate();
   const getStatusColor = (status?: string) => {
     if (!status || status === 'Em andamento') {
@@ -49,16 +47,12 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
     return '';
   };
   
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onRankingClick?.(e, id);
     
-    try {
-      const secureUrl = await generateSecureUrl(id, 'resultados');
-      navigate(secureUrl);
-    } catch (error) {
-      console.error('Erro ao gerar URL segura:', error);
-    }
+    // Navegação direta sem ofuscação
+    navigate(`/ranking/${id}`);
   };
 
   return (

@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Lê as credenciais de ambiente ou usa os fallbacks do projeto
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://ppsymqrdtjyaguftracc.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwc3ltcXJkdGp5YWd1ZnRyYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzEwNzIsImV4cCI6MjA1OTQ0NzA3Mn0.7ijkFzxTGirmC0R958v0Tr7p4TghM9A9J4BLI10OMgs';
+// Lê as credenciais de ambiente - NUNCA usar fallbacks hardcoded em produção
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('✖ Variáveis VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY ausentes e sem fallback.');
+  console.error('✖ Variáveis VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY ausentes.');
+  console.error('✖ Configure as variáveis de ambiente antes de executar o script.');
   process.exit(1);
 }
 

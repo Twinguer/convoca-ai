@@ -94,12 +94,14 @@ const ListarConcursos: React.FC = () => {
   };
   
   const handleViewRanking = (id: string) => {
-    window.open(`/concurso/${id}/resultados?admin=true`, '_blank');
+    // Redirecionar para lista de rankings em vez de URL com ID
+    window.open('/pre-classificacao', '_blank');
   };
   
   const handleEditRanking = (id: string) => {
     // Redirecionar para o formulário de edição com flag de admin
-    navigate(`/criar-ranking?edit=${id}&admin=true`);
+    // Usar query parameter seguro em vez de ID na URL
+    navigate(`/criar-ranking?edit=${encodeURIComponent(id)}&admin=true`);
   };
   
   const filteredConcursos = concursos?.filter(concurso =>

@@ -4,7 +4,7 @@ import { fetchUserRankings as fetchRankingsFromService } from "./rankingService"
 
 export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
   try {
-    // Log removido por segurança
+    console.log('[fetchConcursoById] Fetching concurso with ID:', id);
     
     const { data, error } = await supabase
       .from("concursos")
@@ -26,7 +26,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       throw new Error(`Concurso com ID ${id} não encontrado`);
     }
 
-    // Log removido por segurança
+    console.log('[fetchConcursoById] Concurso found:', data);
     return data;
   } catch (error: any) {
     console.error('[fetchConcursoById] Error:', error);
@@ -90,8 +90,11 @@ export const fetchUserConcursoRankings = async (userId: string) => {
     const { data, error } = await supabase
       .from('user_rankings')
       .select(`
+        id,
         score,
+        concurso_id,
         concursos (
+          id,
           titulo,
           orgao,
           banca,
@@ -119,6 +122,8 @@ export const fetchUserConcursoRankings = async (userId: string) => {
       } || {};
       
       return {
+        id: item.concurso_id,
+        rankingId: item.id,
         score: item.score,
         titulo: concurso.titulo || '',
         orgao: concurso.orgao || '',

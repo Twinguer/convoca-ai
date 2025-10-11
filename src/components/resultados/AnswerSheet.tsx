@@ -29,6 +29,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
+  console.log('[AnswerSheet] Rendered with:', { concursoId: concurso?.id, rankingId });
+  
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
@@ -115,7 +117,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Handle booklet change from BookletSwitcher (CORRIGIDO - Limpa totalmente o estado)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
-    // Logs removidos por segurança
+    console.log('[AnswerSheet] ===== INÍCIO DA TROCA DE CADERNO =====');
+    console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
+    console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
+    console.log('[AnswerSheet] Respostas atuais antes de limpar:', answers);
+    console.log('[AnswerSheet] selectedBookletId atual:', selectedBookletId);
     
     // CRÍTICO: Limpar COMPLETAMENTE o estado de respostas ANTES de atualizar
     clearAllAnswers();
@@ -130,6 +136,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       numberedAnswers[parseInt(questionNum)] = answer;
     });
     
+    console.log('[AnswerSheet] Carregando novas respostas (formato numérico):', numberedAnswers);
+    
     // Forçar re-fetch das respostas do backend para garantir dados corretos
     await refetchAnswers();
     
@@ -143,7 +151,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
       setCheckingOfficialAnswers(true);
       try {
-        // Log removido por segurança
+        console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
         const result = await checkMissingOfficialAnswers(concurso.id);
 
         if (result.missing) {
@@ -157,7 +165,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             { duration: 8000 }
           );
         } else {
-          // Log removido por segurança
+          console.log(`[AnswerSheet] Gabarito oficial verificado e completo!`);
           setMissingOfficialAnswers(false);
         }
       } catch (err) {
@@ -175,7 +183,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
       setSectionLabels(updatedNames);
-      // Log removido por segurança
+      console.log('[AnswerSheet] Updated section labels:', updatedNames);
     }
   }, [concurso]);
 
@@ -193,7 +201,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       queryFn: async () => {
           if (!selectedBookletId) return [];
           
-          // Log removido por segurança
+          console.log('[AnswerSheet] Fetching nullified questions using consolidated structure');
           
           // Usar a nova estrutura JSON consolidada
           const { data, error } = await supabase
@@ -208,7 +216,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           }
           
           if (!data?.consolidated_answer_data?.booklets?.[selectedBookletId]) {
-              // Log removido por segurança
+              console.log('[AnswerSheet] No consolidated data found for booklet:', selectedBookletId);
               return [];
           }
           
@@ -217,13 +225,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               .filter(([_, answerData]: [string, any]) => answerData.is_nullified)
               .map(([questionNum, _]) => ({ question_number: parseInt(questionNum) }));
               
-          // Log removido por segurança
+          console.log('[AnswerSheet] Found', nullifiedQuestions.length, 'nullified questions for booklet:', selectedBookletId);
           return nullifiedQuestions;
       },
       enabled: !!selectedBookletId,
-      staleTime: 0, // Always fetch fresh data to detect changes in nullified questions
-      refetchOnWindowFocus: true,
-      refetchInterval: 5000 // Check for updates every 5 seconds
+      staleTime: 300000, // 5 minutos - reduzir queries desnecessárias
+      refetchOnWindowFocus: false, // Desabilitado para melhor performance
+      refetchInterval: false // Desabilitado - era muito agressivo (5s)
   });
 
   // Import saveAnswers hook with booklet support (CORRIGIDO para reagir a mudanças no selectedBookletId)
@@ -265,11 +273,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
-      // Log removido por segurança
+      console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
 
       // Check if there was a change in the number of nullified questions
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
-        // Log removido por segurança
+        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:',
+          `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
+
         setLastCheckedNullifiedCount(nullifiedSet.size);
       }
     }
@@ -278,7 +288,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   // Certifique-se de que setSelectedBookletId é usado corretamente após salvar as respostas
   useEffect(() => {
     if (savedSuccess) {
-      // Log removido por segurança
+      console.log('[AnswerSheet] Respostas salvas com sucesso. Atualizando estado do caderno.');
       refetchRanking();
       // Atualizar o estado do caderno após refetch
       const updateBookletId = async () => {
@@ -290,7 +300,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
         if (updatedRanking?.selected_booklet) {
           setSelectedBookletId(updatedRanking.selected_booklet);
-          // Log removido por segurança
+          console.log('[AnswerSheet] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
         }
       };
       updateBookletId();
@@ -308,7 +318,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       return;
     }
 
-    // Logs removidos por segurança
+    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Caderno selecionado no momento do salvamento:', selectedBookletId);
+    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Respostas atuais:', answers);
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
@@ -340,14 +351,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
 
     try {
-      // Log removido por segurança
+      console.log("[AnswerSheet] Iniciando processo de salvamento");
       setIsSaving(true);
       setError(null);
 
       // Call the saveAnswersService
       await saveAnswersService();
       await refetchNullified();
-      // Log removido por segurança
+      console.log("[AnswerSheet] Salvamento concluído com sucesso");
     } catch (error: any) {
       console.error("[AnswerSheet] Erro durante o salvamento:", error);
       setIsSaving(false);
@@ -422,7 +433,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       allQuestions.push(i);
     }
     
-    // Log removido por segurança
+    console.log('[AnswerSheet] getAllQuestionsFromAllSections result:', allQuestions);
     return allQuestions;
   };
 
@@ -480,20 +491,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
     }
     
-    // Log removido por segurança
+    console.log('[AnswerSheet] Objective sections:', sections);
     return sections;
   };
 
   // Handle section changes
   const handleSectionChange = (value: string) => {
-    // Log removido por segurança
+    console.log('[AnswerSheet] Changing section to:', value);
     setSelectedSection(value as SectionType);
   };
 
   const objectiveSections = getObjectiveSections();
   const matrix = createAnswerMatrix();
   
-  // Logs removidos por segurança
+  console.log('[AnswerSheet] Selected section:', selectedSection);
+  console.log('[AnswerSheet] Answer matrix:', matrix);
+  console.log('[AnswerSheet] Is hierarchical:', isHierarchical);
 
   return (
     <Card className="shadow-lg w-full h-full mx-auto p-4">

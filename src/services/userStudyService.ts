@@ -409,10 +409,6 @@ export class UserStudyService {
    */
   static async addCycle(userId: string, cycle: Omit<StudyCycleV2, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
-      // Debug: Verificar ciclo recebido
-      console.log('🔍 Debug - Ciclo recebido no addCycle:', cycle);
-      console.log('🔍 Debug - Available blocks no ciclo:', cycle.schedule_data?.available_blocks);
-
       const newCycle: StudyCycleV2 = {
         ...cycle,
         id: generateId(),
@@ -420,16 +416,11 @@ export class UserStudyService {
         updated_at: new Date().toISOString()
       };
 
-      // Debug: Verificar ciclo final
-      console.log('🔍 Debug - Ciclo final criado:', newCycle);
-      console.log('🔍 Debug - Available blocks no ciclo final:', newCycle.schedule_data?.available_blocks);
-
       // Buscar dados existentes do usuário
       const data = await this.getUserStudyData(userId);
       
       if (!data) {
         // Se não existir dados, criar com ciclo já incluído
-        console.log('🔍 Debug - Criando dados iniciais do usuário com ciclo');
         return await this.upsertUserStudyData(userId, {
           study_cycles: [newCycle],
           ...defaultUserStudy
@@ -439,8 +430,6 @@ export class UserStudyService {
       // Se existir, adicionar ciclo aos existentes
       const currentCycles = data.study_cycles || [];
       const updatedCycles = [...currentCycles, newCycle];
-
-      console.log('🔍 Debug - Adicionando ciclo aos existentes. Total de ciclos:', updatedCycles.length);
 
       return await this.upsertUserStudyData(userId, {
         study_cycles: updatedCycles

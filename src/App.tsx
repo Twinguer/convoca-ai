@@ -45,9 +45,22 @@ import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
 import CommunityPage from "./modules/community/pages/CommunityPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
+import RankingParticipationWrapper from "./components/resultados/RankingParticipationWrapper";
+import SecureStudyCycleRoute from "./components/Security/SecureStudyCycleRoute";
+import { useParams } from 'react-router-dom';
+// Páginas de teste removidas após migração completa
+// import TestRankingsV2 from "./pages/TestRankingsV2";
+// import DebugRanking from "./pages/DebugRanking";
+// import TestSupabaseConnection from "./pages/TestSupabaseConnection";
 import FAQ from "./pages/FAQ";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
+// Wrapper components for passing URL parameters
+const ConcursoResultadosWrapper = () => {
+  const { token } = useParams<{ token: string }>();
+  return <ResultadosPage secureToken={token} />;
+};
+
 const AppContent = () => {
   const {
     showFloatingTimer,
@@ -164,24 +177,36 @@ const AppContent = () => {
                           <CriarCiclo />
                         </ProtectedRoute>
                       </>} />
-                     <Route path="/estudos/editar-ciclo/:id" element={<>
+                     {/* Rotas legadas - redirecionar para versão segura */}
+                     <Route path="/estudos/editar-ciclo/:id" element={<Navigate to="/estudos" replace />} />
+                     <Route path="/estudos/ciclo/:id" element={<Navigate to="/estudos" replace />} />
+                     <Route path="/estudos/sessao/:id" element={<Navigate to="/estudos" replace />} />
+                     
+                     {/* Rotas seguras para ciclos de estudo */}
+                     <Route path="/estudos/edit/:token" element={<>
                         <Menu />
                         <ProtectedRoute>
-                          <EditarCiclo />
+                          <SecureStudyCycleRoute action="edit">
+                            <EditarCiclo />
+                          </SecureStudyCycleRoute>
                         </ProtectedRoute>
                       </>} />
-                      <Route path="/estudos/ciclo/:id" element={<>
+                     <Route path="/estudos/view/:token" element={<>
                         <Menu />
                         <ProtectedRoute>
-                          <CicloDetalhes />
+                          <SecureStudyCycleRoute action="view">
+                            <CicloDetalhes />
+                          </SecureStudyCycleRoute>
                         </ProtectedRoute>
                       </>} />
-                       <Route path="/estudos/sessao/:id" element={<>
-                         <Menu />
-                         <ProtectedRoute>
-                           <SessaoEstudos />
-                         </ProtectedRoute>
-                       </>} />
+                     <Route path="/estudos/session/:token" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <SecureStudyCycleRoute action="session">
+                            <SessaoEstudos />
+                          </SecureStudyCycleRoute>
+                        </ProtectedRoute>
+                      </>} />
                      <Route path="/pre-classificacao" element={<>
                           <Menu />
                           <RankingsPage />
@@ -194,22 +219,31 @@ const AppContent = () => {
                         <Menu />
                         <Resultado />
                       </>} />
-                    <Route path="/concurso/:id" element={<>
+                    {/* Rota legada removida - usar apenas rotas com token */}
+                    <Route path="/concurso/:id" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/view/:token" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/resultados/:token" element={<Navigate to="/pre-classificacao" replace />} />
+                    {/* Rotas simplificadas - sem ofuscação temporariamente */}
+                    <Route path="/ranking/:id" element={<>
                         <Menu />
-                        <ConcursoDetails />
+                        <ResultadosPage />
                       </>} />
-                    <Route path="/concurso/resultados/:token" element={<> 
+                    <Route path="/ranking/:id/participate" element={<>
                         <Menu />
-                        <SecureConcursoRoute action="resultados">
-                          <ResultadosPage />
-                        </SecureConcursoRoute>
+                        <RankingParticipationWrapper />
                       </>} />
-                    <Route path="/concurso/participar/:token" element={<> 
+                    {/* Rotas de teste removidas após migração completa */}
+                    {/* <Route path="/test-rankings-v2" element={<>
                         <Menu />
-                        <SecureConcursoRoute action="participar">
-                          <ConcursoParticipation />
-                        </SecureConcursoRoute>
-                      </>} />
+                        <TestRankingsV2 />
+                      </>} /> */}
+                    {/* Rota de debug removida por segurança */}
+                    <Route path="/debug-ranking/:id" element={<Navigate to="/pre-classificacao" replace />} />
+                    {/* <Route path="/test-supabase" element={<>
+                        <Menu />
+                        <TestSupabaseConnection />
+                      </>} /> */}
+                    <Route path="/concurso/participar/:token" element={<Navigate to="/pre-classificacao" replace />} />
                     {/* Rotas legadas - redirecionar para versão segura */}
                     <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />

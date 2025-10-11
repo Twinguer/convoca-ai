@@ -17,12 +17,12 @@ const answerKeyService = {
 // Funções auxiliares exportadas individualmente (para compatibilidade)
 export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: string) => {
   try {
-    // Log removido por segurança
+    console.log('[getAnswerKeyForBooklet] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
     
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets?.[bookletId]) {
-      // Log removido por segurança
+      console.log('[getAnswerKeyForBooklet] No data found for booklet:', bookletId);
       return { success: true, data: [] };
     }
 
@@ -37,7 +37,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
       question_type: answerData.question_type || 'MULTIPLE_CHOICE'
     }));
 
-    // Log removido por segurança
+    console.log('[getAnswerKeyForBooklet] Found', answers.length, 'answers for booklet:', bookletId);
     return { success: true, data: answers };
   } catch (error: any) {
     console.error('[getAnswerKeyForBooklet] Error:', error);
@@ -47,7 +47,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
 
 export const getAllBookletsAnswerKeys = async (concursoId: string) => {
   try {
-    // Log removido por segurança
+    console.log('[getAllBookletsAnswerKeys] Fetching for concurso:', concursoId);
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData) {
@@ -67,7 +67,8 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
 // Função para salvar gabarito usando nova estrutura consolidada
 export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
-    // Logs removidos por segurança
+    console.log('[saveBookletAnswerKeyLegacy] Using consolidated structure - Saving for concurso:', concursoId, 'booklet:', bookletId);
+    console.log('[saveBookletAnswerKeyLegacy] Answers to save:', answersArray.length);
 
     // Converter array para o formato Record<string, AnswerKeyData> esperado
     const formattedAnswers: Record<string, any> = {};

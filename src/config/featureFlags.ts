@@ -13,6 +13,9 @@ export interface FeatureFlags {
   // Operações de ranking
   useBackendRanking: boolean;
   
+  // Nova estrutura de rankings
+  useNewRankingStructure: boolean;
+  
   // Logging e monitoramento
   enableSecurityLogging: boolean;
   
@@ -27,6 +30,9 @@ const getDefaultFlags = (): FeatureFlags => {
     useBackendScoring: true,
     useBackendValidation: true,
     useBackendRanking: true,
+    
+    // Nova estrutura de rankings (PERMANENTEMENTE ATIVA)
+    useNewRankingStructure: true,
     
     // Logging sempre habilitado
     enableSecurityLogging: true,
@@ -48,6 +54,9 @@ export const updateFeatureFlags = (updates: Partial<FeatureFlags>) => {
 export const isFeatureEnabled = (feature: keyof FeatureFlags): boolean => {
   return featureFlags[feature];
 };
+
+// Função simplificada para nova estrutura (sempre true)
+export const useNewRankingStructure = (): boolean => true;
 
 // Função para logging de uso de features (silenciosa em produção)
 export const logFeatureUsage = (feature: keyof FeatureFlags, context?: string) => {

@@ -13,7 +13,7 @@ import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
 import { Link } from 'react-router-dom';
-import { fetchUserRankings } from '@/services/rankingService';
+import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 interface UserProfile {
   id: string;
@@ -158,11 +158,33 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
 
         // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
         const results = await Promise.all(concursoIds.map(async cid => {
-          const list = await fetchUserRankings(cid);
+          const list = await getRankingsWithUserInfo(supabase, cid);
+
+          // Buscar dados do concurso para verificar o tipo de exame
+          const { data: concursoData } = await supabase
+            .from('concursos')
+            .select('exam_type')
+            .eq('id', cid)
+            .single();
 
           // Mesma regra de eliminação usada na tabela de rankings
           const isBelowMinimum = (ranking: any) => {
-            return !!ranking.belowMinimum || ranking.belowBlockMinimums && ranking.belowBlockMinimums.length > 0 || ranking.belowDisciplineMinimums && ranking.belowDisciplineMinimums.length > 0;
+            // Verificação existente para mínimos por disciplina/bloco
+            const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
+              ranking.belowDisciplineMinimums.length > 0;
+            const hasBlockMinimums = ranking.belowBlockMinimums && 
+              ranking.belowBlockMinimums.length > 0;
+            
+            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+              ranking.score <= 0;
+            
+            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+              ranking.score <= 0;
+            
+            return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
+                   isCertoErradoEliminated || isAlternativasEliminated;
           };
           const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
           const rid = userRankingIdByConcurso.get(cid);

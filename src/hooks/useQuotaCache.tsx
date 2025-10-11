@@ -11,6 +11,8 @@ interface QuotaConfig {
 }
 
 const fetchQuotaConfig = async (concursoId: string): Promise<QuotaConfig> => {
+  console.log('[useQuotaCache] Fetching quota config for concurso:', concursoId);
+  
   const { data, error } = await supabase
     .from('concursos')
     .select(`
@@ -25,7 +27,7 @@ const fetchQuotaConfig = async (concursoId: string): Promise<QuotaConfig> => {
     .single();
     
   if (error) {
-    console.error('Error fetching quota config:', error);
+    console.error('[useQuotaCache] Error fetching quota config:', error);
     return {
       has_ampla_concorrencia: true,
       has_ppp: false,
@@ -36,6 +38,7 @@ const fetchQuotaConfig = async (concursoId: string): Promise<QuotaConfig> => {
     };
   }
   
+  console.log('[useQuotaCache] Quota config fetched:', data);
   return data;
 };
 

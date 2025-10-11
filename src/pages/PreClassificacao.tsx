@@ -17,7 +17,7 @@ const PreClassificacao = () => {
   const handleRankingClick = (e: React.MouseEvent, rankingId: string) => {
     if (!user) {
       e.preventDefault();
-      navigate('/auth', { state: { from: `/concurso/${rankingId}/resultados` } });
+      navigate('/auth', { state: { from: `/pre-classificacao` } });
     }
   };
 

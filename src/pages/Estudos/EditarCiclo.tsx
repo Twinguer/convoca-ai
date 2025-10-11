@@ -37,10 +37,18 @@ interface Block {
   disciplines: Discipline[];
 }
 
-const EditarCiclo = () => {
-  const { id } = useParams();
+interface EditarCicloProps {
+  cycleId?: string;
+  secureToken?: string;
+}
+
+const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
+  const { id: urlId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Usar cycleId da prop ou do URL
+  const id = cycleId || urlId;
   const [loading, setLoading] = useState(false);
   const [loadingCycle, setLoadingCycle] = useState(true);
 

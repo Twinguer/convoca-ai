@@ -5,11 +5,11 @@ import { Concurso } from '@/types/concursos';
 export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  // Log removido por segurança
+  console.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
   
   // If using custom knowledge structure
   if (concurso.has_custom_knowledge) {
-    // Log removido por segurança
+    console.log('[getTotalQuestions] Usando estrutura de conhecimento customizado');
     let totalQuestions = 0;
     
     if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
@@ -19,7 +19,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
             ? discipline.questionCount
             : Number(String(discipline.questionCount || '0'));
             
-          // Log removido por segurança
+          console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
           totalQuestions += questionCount;
         }
       });
@@ -27,12 +27,12 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       console.warn('[getTotalQuestions] Nenhum array de disciplines encontrado para conhecimento customizado');
     }
     
-    // Log removido por segurança
+    console.log(`[getTotalQuestions] Total de questões customizadas: ${totalQuestions}`);
     return totalQuestions;
   }
   
   // Traditional structure
-  // Log removido por segurança
+  console.log('[getTotalQuestions] Usando estrutura tradicional');
   let total = 0;
   
   if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
@@ -40,7 +40,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.basic_knowledge_questions
       : Number(String(concurso.basic_knowledge_questions || '0'));
       
-    // Log removido por segurança
+    console.log(`[getTotalQuestions] Conhecimento básico: ${basicCount} questões`);
     total += basicCount;
   }
   
@@ -49,7 +49,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.specific_knowledge_1_questions
       : Number(String(concurso.specific_knowledge_1_questions || '0'));
       
-    // Log removido por segurança
+    console.log(`[getTotalQuestions] Conhecimento específico 1: ${count} questões`);
     total += count;
   }
   
@@ -58,7 +58,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.specific_knowledge_2_questions
       : Number(String(concurso.specific_knowledge_2_questions || '0'));
       
-    // Log removido por segurança
+    console.log(`[getTotalQuestions] Conhecimento específico 2: ${count} questões`);
     total += count;
   }
   
@@ -67,17 +67,47 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       ? concurso.specific_knowledge_3_questions
       : Number(String(concurso.specific_knowledge_3_questions || '0'));
       
-    // Log removido por segurança
+    console.log(`[getTotalQuestions] Conhecimento específico 3: ${count} questões`);
     total += count;
   }
   
-  // Log removido por segurança
+  console.log(`[getTotalQuestions] Total de questões tradicionais: ${total}`);
   return total;
 };
 
 // Get the count of questions that have been answered
 export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): number => {
   const count = Object.keys(answers).length;
-  // Log removido por segurança
+  console.log(`[getAnsweredQuestionsCount] Total de respostas: ${count}`);
   return count;
+};
+
+// Check if official answers are missing for a given concurso and booklet
+export const checkMissingOfficialAnswers = async (concursoId: string, bookletId: string): Promise<boolean> => {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    const { data, error } = await supabase
+      .from('official_answer_weights')
+      .select('consolidated_answer_data')
+      .eq('concurso_id', concursoId)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.log('[checkMissingOfficialAnswers] Erro ao buscar gabarito oficial ou gabarito não encontrado');
+      return true;
+    }
+
+    const bookletData = data?.consolidated_answer_data?.booklets?.[bookletId];
+    if (!bookletData || !bookletData.answers) {
+      console.log('[checkMissingOfficialAnswers] Gabarito não encontrado para o caderno:', bookletId);
+      return true;
+    }
+
+    console.log('[checkMissingOfficialAnswers] Gabarito oficial encontrado');
+    return false;
+  } catch (error) {
+    console.error('[checkMissingOfficialAnswers] Erro ao verificar gabarito oficial:', error);
+    return true;
+  }
 };

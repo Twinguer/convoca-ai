@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { UserStudyService } from '@/services/userStudyService';
+import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
 import { StudyCycleV2 } from '@/types/userStudy';
 interface StudyCycleProgress {
   cycle: StudyCycleV2;
@@ -26,6 +27,7 @@ const EstudosDashboard = () => {
   const {
     toast
   } = useToast();
+  const { generateSecureUrl } = useSecureStudyCycleUrls();
   const [studyCycles, setStudyCycles] = useState<StudyCycleProgress[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -254,7 +256,15 @@ const EstudosDashboard = () => {
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-foreground">Seus Ciclos de Estudos</h2>
             <div className="grid gap-2 md:grid-cols-2">
-              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={() => navigate(`/estudos/sessao/${data.cycle.id}`)} />)}
+              {studyCycles.map(data => <StudyCycleCard key={data.cycle.id} cycleProgress={data} onStartSession={() => navigate(`/estudos/cronograma`)} onViewEdital={async () => {
+                try {
+                  const secureUrl = await generateSecureUrl(data.cycle.id, user?.id || '', 'session');
+                  navigate(secureUrl);
+                } catch (error) {
+                  console.error('Erro ao gerar URL segura:', error);
+                  navigate('/estudos');
+                }
+              }} />)}
             </div>
           </div>
         </>}

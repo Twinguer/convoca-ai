@@ -161,8 +161,6 @@ const CriarCiclo = () => {
     }
     
     // Debug: Verificar blocos antes de enviar
-    console.log('🔍 Debug - Blocos antes de enviar:', blocks);
-    console.log('🔍 Debug - Quantidade de blocos:', blocks.length);
     
     // Converter blocos para formato simplificado compatível com createStudyCycleV2
     const simplifiedBlocks = blocks.map(block => ({
@@ -174,7 +172,6 @@ const CriarCiclo = () => {
       }))
     }));
     
-    console.log('🔍 Debug - Blocos simplificados:', simplifiedBlocks);
     
     setLoading(true);
     try {

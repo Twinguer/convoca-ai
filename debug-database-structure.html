@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Estrutura do Banco de Dados</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border-color: #ffeaa7; }
+        .log { background-color: #f8f9fa; padding: 10px; border-radius: 3px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Estrutura do Banco de Dados</h1>
+    
+    <div class="debug-section error">
+        <h3>❌ Problema Identificado:</h3>
+        <p><strong>Erro:</strong> Cycle not found or not authorized</p>
+        <p><strong>CycleId:</strong> <code>id-mgl375ei-xqu2j1doh</code></p>
+        <p><strong>UserId:</strong> <code>34d22725-d158-4d75-9089-efd049a1fb98</code></p>
+    </div>
+
+    <div class="debug-section warning">
+        <h3>🔍 Análise do ID:</h3>
+        <ul>
+            <li><strong>Formato do CycleId:</strong> <code>id-mgl375ei-xqu2j1doh</code></li>
+            <li><strong>Padrão esperado:</strong> UUID (ex: 123e4567-e89b-12d3-a456-426614174000)</li>
+            <li><strong>Possível problema:</strong> ID customizado não é UUID padrão</li>
+        </ul>
+    </div>
+
+    <div class="debug-section info">
+        <h3>📊 Logs de Debug Adicionados:</h3>
+        <div class="log">
+🔍 [DEBUG] Querying study_cycles_v2 table: { 
+  cycleId, 
+  userId, 
+  cycleIdType: typeof cycleId,
+  cycleIdLength: cycleId?.length,
+  userIdType: typeof userId,
+  userIdLength: userId?.length
+}
+
+🔍 [DEBUG] All user cycles: { userCycles, userCyclesError }
+
+❌ [DEBUG] Cycle not found or not authorized: { 
+  error: error?.message || error, 
+  errorCode: error?.code,
+  errorDetails: error?.details,
+  cycle, 
+  cycleId, 
+  userId 
+}
+        </div>
+    </div>
+
+    <div class="debug-section error">
+        <h3>🚨 Possíveis Causas:</h3>
+        <ol>
+            <li><strong>ID incorreto:</strong> O cycleId não existe na tabela study_cycles_v2</li>
+            <li><strong>Formato de ID:</strong> ID customizado vs UUID esperado</li>
+            <li><strong>Usuário incorreto:</strong> O ciclo não pertence ao usuário atual</li>
+            <li><strong>Tabela vazia:</strong> Não há dados na tabela study_cycles_v2</li>
+            <li><strong>RLS Policy:</strong> Row Level Security bloqueando a consulta</li>
+            <li><strong>Estrutura da tabela:</strong> Campos ou tipos incorretos</li>
+        </ol>
+    </div>
+
+    <div class="debug-section success">
+        <h3>✅ Próximos Passos:</h3>
+        <ol>
+            <li><strong>Verifique os logs detalhados</strong> no console do navegador</li>
+            <li><strong>Observe o campo "All user cycles"</strong> para ver se há ciclos para o usuário</li>
+            <li><strong>Verifique o formato dos IDs</strong> nos logs</li>
+            <li><strong>Confirme se a tabela study_cycles_v2</strong> tem dados</li>
+        </ol>
+    </div>
+
+    <div class="debug-section info">
+        <h3>🔧 Informações Técnicas:</h3>
+        <ul>
+            <li><strong>Tabela:</strong> study_cycles_v2</li>
+            <li><strong>Campos:</strong> id, user_id, cycle_name, is_active</li>
+            <li><strong>Filtros:</strong> id = cycleId AND user_id = userId</li>
+            <li><strong>ID suspeito:</strong> id-mgl375ei-xqu2j1doh (não é UUID)</li>
+            <li><strong>UserId válido:</strong> 34d22725-d158-4d75-9089-efd049a1fb98 (UUID válido)</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔍 Debug - Estrutura do Banco de Dados');
+        console.log('❌ Problema: Cycle not found or not authorized');
+        console.log('🔍 CycleId suspeito: id-mgl375ei-xqu2j1doh');
+        console.log('✅ UserId válido: 34d22725-d158-4d75-9089-efd049a1fb98');
+        console.log('🎯 Verifique os logs detalhados no console');
+    </script>
+</body>
+</html>

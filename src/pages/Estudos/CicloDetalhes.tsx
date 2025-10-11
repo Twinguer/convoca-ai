@@ -12,8 +12,13 @@ import { toast } from 'sonner';
 import { useToast } from '@/hooks/use-toast';
 import { EditalVerticalizado } from '@/components/study/EditalVerticalizado';
 
-const CicloDetalhes = () => {
-  const { id } = useParams<{ id: string }>();
+interface CicloDetalhesProps {
+  cycleId?: string;
+  secureToken?: string;
+}
+
+const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken }) => {
+  const { id: urlId } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast: toastHook } = useToast();
   const [cycle, setCycle] = useState<StudyCycleV2 | null>(null);
@@ -21,6 +26,9 @@ const CicloDetalhes = () => {
   const [editingDiscipline, setEditingDiscipline] = useState<string | null>(null);
   const [tempStudyTime, setTempStudyTime] = useState<number>(0);
   const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
+
+  // Usar cycleId da prop ou do URL
+  const id = cycleId || urlId;
 
   useEffect(() => {
     if (user && id) {

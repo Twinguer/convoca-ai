@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { showErrorToast, showSuccessToast } from '@/integrations/supabase/toast-utils';
+import { PasswordValidator } from '@/utils/passwordValidator';
+import { RateLimiters } from '@/utils/rateLimiter';
+import { logError, logSecurity } from '@/utils/secureLogger';
 import DOMPurify from 'dompurify';
 
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -25,13 +28,20 @@ export const useSecureAuth = () => {
     return emailRegex.test(email) && email.length <= 254;
   }, []);
 
-  // Modern password validation - more flexible
+  // Robust password validation using security requirements
   const isPasswordValid = useCallback((password: string): boolean => {
-    return password.length >= 8 && password.length <= 72; // bcrypt limit
+    const validation = PasswordValidator.validate(password);
+    return validation.isValid;
   }, []);
 
-  // Check for rate limiting
-  const checkRateLimit = useCallback((): boolean => {
+  // Get password validation details for UI feedback
+  const getPasswordValidation = useCallback((password: string) => {
+    return PasswordValidator.validate(password);
+  }, []);
+
+  // Check for rate limiting using advanced rate limiter
+  const checkRateLimit = useCallback((email: string): boolean => {
+    // Check both local storage and rate limiter
     const storedLockoutEnd = localStorage.getItem('auth_lockout_end');
     if (storedLockoutEnd) {
       const lockoutEndTime = parseInt(storedLockoutEnd, 10);
@@ -46,11 +56,22 @@ export const useSecureAuth = () => {
         setLoginAttempts(0);
       }
     }
+
+    // Check rate limiter
+    const rateLimitResult = RateLimiters.auth.check(email, false);
+    if (!rateLimitResult.allowed) {
+      const lockoutTime = Date.now() + (rateLimitResult.retryAfter || 900) * 1000;
+      localStorage.setItem('auth_lockout_end', lockoutTime.toString());
+      setIsLocked(true);
+      setLockoutEnd(lockoutTime);
+      return false;
+    }
+
     return true;
   }, []);
 
   const handleLogin = useCallback(async (email: string, password: string) => {
-    if (!checkRateLimit()) {
+    if (!checkRateLimit(email)) {
       const remainingTime = Math.ceil((lockoutEnd! - Date.now()) / 60000);
       showErrorToast('Conta temporariamente bloqueada', `Muitas tentativas de login. Tente novamente em ${remainingTime} minutos.`);
       return;
@@ -98,7 +119,8 @@ export const useSecureAuth = () => {
       showSuccessToast('Login realizado com sucesso!', 'Você foi logado no sistema.');
       navigate('/');
     } catch (error: any) {
-      console.error('Login error:', error);
+      logError('Login failed', { error: error.message }, 'AUTH');
+      logSecurity('Login attempt failed', { email: sanitizedEmail }, 'AUTH');
       showErrorToast('Erro interno', 'Ocorreu um erro interno. Tente novamente.');
     } finally {
       setIsLoading(false);
@@ -155,7 +177,8 @@ export const useSecureAuth = () => {
         }
       }
     } catch (error: any) {
-      console.error('Signup error:', error);
+      logError('Signup failed', { error: error.message }, 'AUTH');
+      logSecurity('Signup attempt failed', { email: sanitizedEmail }, 'AUTH');
       
       // Mensagem específica baseada no tipo de erro
       let errorMessage = 'Não foi possível criar sua conta. Tente novamente.';

@@ -346,8 +346,6 @@ export function createStudyCycleV2(
   }>
 ): Omit<StudyCycleV2, 'id' | 'created_at' | 'updated_at'> {
   // Debug: Verificar blocos recebidos
-  console.log('🔍 Debug - createStudyCycleV2 - Blocos recebidos:', blocks);
-  console.log('🔍 Debug - createStudyCycleV2 - Quantidade de blocos:', blocks?.length || 0);
 
   // Criar disciplinas disponíveis a partir dos blocos
   const availableDisciplines = blocks?.flatMap(block => 
@@ -358,7 +356,6 @@ export function createStudyCycleV2(
     }))
   ) || [];
 
-  console.log('🔍 Debug - createStudyCycleV2 - Disciplinas criadas:', availableDisciplines);
 
   const result = {
     cycle_name: cycleName,
@@ -380,8 +377,6 @@ export function createStudyCycleV2(
     }
   };
 
-  console.log('🔍 Debug - createStudyCycleV2 - Resultado final:', result);
-  console.log('🔍 Debug - createStudyCycleV2 - Available blocks no resultado:', result.schedule_data.available_blocks);
 
   return result;
 }

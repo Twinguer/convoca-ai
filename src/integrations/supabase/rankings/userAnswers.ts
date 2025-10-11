@@ -29,7 +29,7 @@ interface ConsolidatedAnswers {
 // Função para buscar as respostas consolidadas
 export const fetchUserAnswers = async (rankingId: string) => {
   try {
-    // Log removido por segurança
+    console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
 
     // Buscar dados consolidados usando nova estrutura
     const { data, error } = await supabase
@@ -50,7 +50,7 @@ export const fetchUserAnswers = async (rankingId: string) => {
     }
 
     const consolidatedData = data.answers_data as ConsolidatedAnswers;
-    // Log removido por segurança
+    console.log('[fetchUserAnswers] Retrieved consolidated data:', consolidatedData);
 
     // Extrair respostas de todos os cadernos para compatibilidade
     const answers: { [key: number]: string } = {};

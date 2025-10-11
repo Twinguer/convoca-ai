@@ -21,6 +21,8 @@ interface FetchedAnswersData {
 }
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
+  console.log('[useAnswerSheet] Initialized with:', { concursoId: concurso?.id, rankingId });
+  
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      // Log removido por segurança
+      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
     }
   }, [concurso]);
 
@@ -100,7 +102,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         return {};
       }
       
-      // Log removido por segurança
+      console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
       return fetchExistingAnswers(rankingId);
     },
     enabled: !!rankingId && !!concurso?.id,
@@ -111,12 +113,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Handle data loading with useEffect instead of onSuccess
   useEffect(() => {
     if (existingAnswersData) {
-      // Logs removidos por segurança
+      console.log('[useAnswerSheet] Dados carregados:', existingAnswersData);
+      console.log('[useAnswerSheet] Answers recebidas:', existingAnswersData.answers);
+      console.log('[useAnswerSheet] Número de respostas:', Object.keys(existingAnswersData.answers || {}).length);
       
       if (existingAnswersData.answers) {
-        // Logs removidos por segurança
+        console.log('[useAnswerSheet] ANTES setAnswers - answers atuais:', answers);
         setAnswers(existingAnswersData.answers);
-        // Logs removidos por segurança
+        console.log('[useAnswerSheet] DEPOIS setAnswers - answers definidas:', existingAnswersData.answers);
         
         // Também definir as pontuações subjetivas
         if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
@@ -132,10 +136,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           setCaseStudy3Score(existingAnswersData.caseStudy3Score);
         }
       } else {
-        // Log removido por segurança
+        console.log('[useAnswerSheet] ATENÇÃO: Nenhuma resposta encontrada nos dados carregados');
       }
     } else {
-      // Log removido por segurança
+      console.log('[useAnswerSheet] ATENÇÃO: existingAnswersData está vazio ou undefined');
     }
   }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 

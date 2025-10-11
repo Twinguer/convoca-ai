@@ -6,11 +6,12 @@ export const prepareAnswersData = (
   concurso: Concurso,
   nullifiedQuestions?: Set<number>
 ) => {
-  // Logs removidos por segurança
+  console.log('[prepareAnswersData] Input answers:', answers);
+  console.log('[prepareAnswersData] Input nullifiedQuestions:', nullifiedQuestions);
   
   // Verificar se há respostas para processar
   if (!answers || typeof answers !== 'object') {
-    // Log removido por segurança
+    console.log('[prepareAnswersData] No answers provided or invalid format');
     return {};
   }
 
@@ -25,7 +26,7 @@ export const prepareAnswersData = (
     }
   });
   
-  // Log removido por segurança
+  console.log('[prepareAnswersData] Processed answers before nullified:', answersObject);
   
   // Adicionar todas as questões anuladas com uma resposta padrão
   if (nullifiedQuestions && nullifiedQuestions.size > 0) {
@@ -37,6 +38,6 @@ export const prepareAnswersData = (
     });
   }
 
-  // Log removido por segurança
+  console.log('[prepareAnswersData] Final answers object:', answersObject);
   return answersObject;
 };

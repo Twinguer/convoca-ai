@@ -1,13 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
+import { rankingCache } from './rankingCache';
 
-// Interface de Ranking sem dados sensíveis
+// Defining the Ranking interface to fix TypeScript errors
 export interface Ranking {
-  id: string; // ID do ranking (user_ranking.id)
-  userId: string; // ID do usuário
   position: number;
   name: string;
   score: number;
+  userId: string;
   avatarUrl?: string | null;
   // Pontuações subjetivas
   discursiveScore?: number | null;
@@ -25,6 +26,7 @@ export interface Ranking {
   // Campos adicionais
   reservationType: string;
   displayReservation?: string;
+  id: string;
   quotaPosition?: number; // Posição dentro da cota - será calculado em runtime
   // Flags para mínimos não atingidos
   belowMinimum?: boolean; // Não atingiu mínimo geral
@@ -41,201 +43,120 @@ const getReservationAbbreviation = (reservationType: string): string => {
   return abbr;
 };
 
-export const fetchUserRankings = async (concursoId: string, reservationType?: string): Promise<Ranking[]> => {
+export const fetchUserRankings = async (
+  concursoId: string,
+  reservationType?: string,
+  offset = 0,
+  limit = 100
+): Promise<Ranking[]> => {
+  const startTime = performance.now();
+  const page = Math.floor(offset / limit) + 1;
+
   try {
-    // Log removido por segurança - não expor IDs de concurso
+    logger.ranking('Fetching rankings', `concursoId: ${concursoId}, page: ${page}, limit: ${limit}`);
+
+    // Verificar cache local primeiro
+    const localCachedRankings = rankingCache.getRankings(concursoId, page, limit);
     
-    // Buscar dados do concurso e rankings em paralelo para otimizar performance
-    const [concursoResult, rankingsResult] = await Promise.all([
-      supabase
-        .from('concursos')
-        .select(`
-          id,
-          total_minimum_score,
-          has_minimum_score,
-          disciplines
-        `)
-        .eq('id', concursoId)
-        .single(),
-      supabase
-        .from('user_rankings')
-        .select(`
-          id,
-          user_id,
-          score,
-          discursive_score,
-          case_study_1_score,
-          case_study_2_score,
-          case_study_3_score,
-          weighted_discursive_score,
-          weighted_case_study_1_score,
-          weighted_case_study_2_score,
-          weighted_case_study_3_score,
-          subject_scores,
-          customDisciplineScores,
-          weightedCustomDisciplineScores,
-          reservation_type,
-          users_profiles(name, avatar_url)
-        `)
-        .eq('concurso_id', concursoId)
-        .order('score', { ascending: false })
-    ]);
-    
-    const { data: concursoData, error: concursoError } = concursoResult;
-    const { data, error } = rankingsResult;
-    
-    if (concursoError) {
-      console.error('Error fetching concurso data:', concursoError);
-    }
+    if (localCachedRankings) {
+      logger.ranking('Rankings loaded from local cache', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
       
-    if (error) {
-      console.error('Error fetching rankings:', error);
-      return [];
+      const endTime = performance.now();
+      logger.performance('fetchUserRankings (local cached)', endTime - startTime, 'RANKING_SERVICE');
+      
+      return localCachedRankings;
     }
     
-    // Se não há rankings, retornar array vazio
-    if (!data || data.length === 0) {
+    // Query usando tabela user_rankings (estrutura atual)
+    logger.ranking('Executing ranking query', `concursoId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
+    
+    const { data: rankingData, error: rankingError } = await supabase
+      .from('user_rankings')
+      .select(`
+        id,
+        user_id,
+        score,
+        discursive_score,
+        case_study_1_score,
+        case_study_2_score,
+        case_study_3_score,
+        weighted_discursive_score,
+        weighted_case_study_1_score,
+        weighted_case_study_2_score,
+        weighted_case_study_3_score,
+        subject_scores,
+        customDisciplineScores,
+        weightedCustomDisciplineScores,
+        reservation_type
+      `)
+      .eq('concurso_id', concursoId)
+      .order('score', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    logger.ranking('Query result', `data: ${rankingData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
+
+    if (rankingError) {
+      throw new Error(`Ranking query error: ${rankingError.message}`);
+    }
+
+    if (!rankingData || rankingData.length === 0) {
+      logger.ranking('No rankings found', `concursoId: ${concursoId}`);
       return [];
     }
-    
-    // Log removido por segurança
-    
-    // Verificar se o concurso tem mínimo habilitado
-    const hasMinimumScoreEnabled = concursoData?.has_minimum_score === true;
-    
-    // Mínimo geral da prova
-    const totalMinimumScore = hasMinimumScoreEnabled ? concursoData?.total_minimum_score || 0 : 0;
-    
-    // Log removido para reduzir overhead em produção
-    
-    // Extrair mínimos por bloco e disciplina
-    const blockMinimums: Record<string, number> = {};
-    const disciplineMinimums: Record<string, number> = {};
-    
-    if (hasMinimumScoreEnabled && concursoData?.disciplines && Array.isArray(concursoData.disciplines)) {
-      // Iterar pelos blocos
-      concursoData.disciplines.forEach(block => {
-        if (block.id && block.minimum_score !== undefined && block.minimum_score > 0) {
-          blockMinimums[block.id] = parseFloat(String(block.minimum_score));
-        }
-        
-        // Iterar pelas disciplinas
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          block.disciplines.forEach(discipline => {
-            if (discipline.id && discipline.minimum_score !== undefined && discipline.minimum_score > 0) {
-              disciplineMinimums[discipline.type] = parseFloat(String(discipline.minimum_score));
-            }
-          });
-        }
+
+    // Buscar dados do concurso
+    const { data: concursoData, error: concursoError } = await supabase
+      .from('concursos')
+      .select('id, total_minimum_score, has_minimum_score, disciplines')
+      .eq('id', concursoId)
+      .single();
+
+    if (concursoError) {
+      logger.warn('Could not fetch concurso data', 'RANKING_SERVICE', concursoError);
+    }
+
+    // Buscar dados dos usuários
+    const userIds = rankingData.map(r => r.user_id);
+    const { data: userData, error: userError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+
+    if (userError) {
+      logger.warn('Could not fetch user data', 'RANKING_SERVICE', userError);
+    }
+
+    // Criar mapa de usuários para lookup rápido
+    const userMap = new Map();
+    if (userData) {
+      userData.forEach(user => {
+        userMap.set(user.id, user);
       });
     }
-    
-    // Formatar os dados do ranking com posições
-    const formattedRankings = data.map((ranking, index) => {
-      // Corrigir o problema de TypeScript aqui
-      // Verificando corretamente se users_profiles é um array ou um objeto individual
-      const userProfile = Array.isArray(ranking.users_profiles) ? 
-                        ranking.users_profiles[0] : 
-                        ranking.users_profiles;
-      
-      const name = userProfile?.name || 'Usuário Anônimo';
-      const avatarUrl = userProfile?.avatar_url || null;
-      
-      // Parse custom discipline scores from subject_scores jsonb if available
-      const subjectScores = ranking.subject_scores || {};
-      
-      // Usar as pontuações customizadas do JSONB, ou criar um objeto vazio se não existir
-      const customDisciplineScores = ranking.customDisciplineScores || {};
-      const weightedCustomDisciplineScores = ranking.weightedCustomDisciplineScores || {};
-      
-      // Se não tiver pontuações customizadas, tentar criar a partir do subject_scores para compatibilidade
-      if (Object.keys(customDisciplineScores).length === 0) {
-        // Processar pontuações customizadas do subject_scores
-        Object.entries(subjectScores).forEach(([key, value]) => {
-          // Processar todas as chaves como disciplinas potencialmente customizadas
-          if (key !== 'total') { // Ignorar chave especial 'total' se existir
-            customDisciplineScores[key] = typeof value === 'number' ? value : Number(value);
-            
-            // Se não houver pontuações ponderadas, usar as pontuações brutas
-            if (Object.keys(weightedCustomDisciplineScores).length === 0) {
-              weightedCustomDisciplineScores[key] = customDisciplineScores[key];
-            }
-          }
-        });
 
-        // Log removido por segurança
-      }
+    // Obter dados do concurso
+    const hasMinimumScoreEnabled = concursoData?.has_minimum_score === true;
+    const totalMinimumScore = hasMinimumScoreEnabled ? concursoData?.total_minimum_score || 0 : 0;
+
+    // Formatar os dados do ranking com posições
+    const formattedRankings = rankingData.map((ranking, index) => {
+      const user = userMap.get(ranking.user_id);
+      const name = user?.name || 'Usuário Anônimo';
+      const avatarUrl = user?.avatar_url || null;
+
+      // Processar pontuações customizadas
+      const customDisciplineScores = ranking.custom_discipline_scores || {};
+      const weightedCustomDisciplineScores = ranking.weighted_custom_discipline_scores || {};
       
-      // Logs removidos por segurança
-      
-      // Calcular o total objetivo (excluindo discursivas e estudos de caso)
-      const totalObjScore = calculateObjectiveScore(ranking, weightedCustomDisciplineScores);
-      
-      // Verificar se está abaixo do mínimo geral da prova
-      const belowMinimumGeneral = hasMinimumScoreEnabled && totalMinimumScore > 0 && totalObjScore < totalMinimumScore;
-      
-      // Verificar se é prova "Certo ou Errado" e nota <= 0
-      const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
-        (ranking.score || 0) <= 0;
-      
-      // Verificar se é prova "Alternativas" e nota <= 0
-      const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
-        (ranking.score || 0) <= 0;
-      
-      // Combinar todas as condições de eliminação
-      const belowMinimum = belowMinimumGeneral || isCertoErradoEliminated || isAlternativasEliminated;
-      
-      // Log removido para reduzir overhead em produção
-      
-      // Verificar mínimos por bloco e disciplina
-      const belowBlockMinimums: string[] = [];
-      const belowDisciplineMinimums: string[] = [];
-      
-      // Função auxiliar para agrupar pontuações por bloco
-      const getBlockScores = () => {
-        const blockScores: Record<string, number> = {};
-        
-        if (concursoData?.disciplines && Array.isArray(concursoData.disciplines)) {
-          concursoData.disciplines.forEach(block => {
-            if (block.id && block.disciplines && Array.isArray(block.disciplines)) {
-              let blockScore = 0;
-              
-              // Somar scores das disciplinas deste bloco
-              block.disciplines.forEach(discipline => {
-                if (discipline.id && discipline.type) {
-                  const disciplineScore = weightedCustomDisciplineScores[discipline.type] || 0;
-                  blockScore += disciplineScore;
-                  
-                  // Verificar mínimo da disciplina
-                  if (hasMinimumScoreEnabled && disciplineMinimums[discipline.type] > 0 && 
-                      disciplineScore < disciplineMinimums[discipline.type]) {
-                    belowDisciplineMinimums.push(discipline.type);
-                  }
-                }
-              });
-              
-              blockScores[block.id] = blockScore;
-              
-              // Verificar mínimo do bloco
-              if (hasMinimumScoreEnabled && blockMinimums[block.id] > 0 && blockScore < blockMinimums[block.id]) {
-                belowBlockMinimums.push(block.id);
-              }
-            }
-          });
-        }
-        
-        return blockScores;
-      };
-      
-      // Calcular scores por bloco
-      const blockScores = getBlockScores();
-      
+      // Verificação de mínimos
+      const belowMinimum = ranking.score <= 0 || 
+        (hasMinimumScoreEnabled && totalMinimumScore > 0 && ranking.score < totalMinimumScore);
+    
       return {
-        id: ranking.id,
-        userId: ranking.user_id,
-        position: index + 1,
+        position: offset + index + 1, // Posição global considerando offset
         name: name,
         score: ranking.score || 0,
+        userId: ranking.user_id,
         avatarUrl: avatarUrl,
         // Pontuações subjetivas
         discursiveScore: ranking.discursive_score || 0,
@@ -252,37 +173,34 @@ export const fetchUserRankings = async (concursoId: string, reservationType?: st
         weightedCustomDisciplineScores: weightedCustomDisciplineScores,
         // Flags de mínimos não atingidos
         belowMinimum,
-        belowBlockMinimums: belowBlockMinimums.length > 0 ? belowBlockMinimums : undefined,
-        belowDisciplineMinimums: belowDisciplineMinimums.length > 0 ? belowDisciplineMinimums : undefined,
         // Dados do ranking
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),
-        // IDs removidos por segurança
+        id: ranking.id,
       };
     });
+        
+    // Armazenar no cache local
+    rankingCache.setRankings(concursoId, formattedRankings, page, limit);
+    
+    const endTime = performance.now();
+    logger.performance('fetchUserRankings', endTime - startTime, 'RANKING_SERVICE');
     
     return formattedRankings;
+    
   } catch (error) {
-    console.error('Error fetching rankings:', error);
+    logger.error('Error fetching rankings', 'RANKING_SERVICE', error);
+    
+    // Tentar cache local como fallback
+    const fallbackRankings = rankingCache.getRankings(concursoId, page, limit);
+    if (fallbackRankings) {
+      return fallbackRankings;
+    }
+    
     return [];
   }
 };
 
-// Nova função auxiliar para calcular pontuação objetiva (excluindo discursivas e estudos de caso)
-const calculateObjectiveScore = (ranking: any, weightedCustomDisciplineScores: { [key: string]: number }) => {
-  // Se temos pontuações customizadas, usar a soma delas
-  if (weightedCustomDisciplineScores && Object.keys(weightedCustomDisciplineScores).length > 0) {
-    return Object.values(weightedCustomDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
-  }
-  
-  // Caso contrário, usar a soma das pontuações básicas/específicas
-  return (
-    (ranking.weighted_basic_score || 0) +
-    (ranking.weighted_specific_1_score || 0) +
-    (ranking.weighted_specific_2_score || 0) +
-    (ranking.weighted_specific_3_score || 0)
-  );
-};
 
 // Get the available reservation types for a concurso
 export const getAvailableReservationTypes = async (concursoId: string): Promise<string[]> => {
@@ -316,7 +234,7 @@ export const getAvailableReservationTypes = async (concursoId: string): Promise<
     if (data.has_indigenas) types.push('Indígenas');
     if (data.has_transsexuais) types.push('Pessoas Trans');
     
-    // Log removido por segurança
+    console.log('Available reservation types for concurso', concursoId, ':', types);
     return types;
   } catch (error) {
     console.error('Error determining available reservation types:', error);

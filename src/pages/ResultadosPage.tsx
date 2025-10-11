@@ -1,16 +1,18 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { RankingCard } from '@/components/resultados/RankingCard';
 import ConcursoInfoCard from '@/components/resultados/ConcursoInfoCard';
 import { RankingTable } from '@/components/resultados/RankingTable';
+// import { performanceMonitor } from '@/utils/performanceMonitor'; // Removido - sistema simplificado
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
-import { useSecureUrls } from '@/services/urlObfuscation';
+import { useRankingsPagination } from '@/hooks/useRankingsPagination';
 import { useLeaveRanking } from '@/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn, UserMinus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,63 +25,135 @@ import {
 } from '@/components/ui/alert-dialog';
 
 interface ResultadosPageProps {
-  concursoId?: string;
-  secureToken?: string;
+  rankingId?: string;
 }
 
-const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken }) => {
+const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const { generateSecureUrl } = useSecureUrls();
+  
+  // Usar ID da URL ou prop
+  const finalRankingId = rankingId || id;
+  
+  // Hook principal para dados do concurso e informações básicas
   const {
     concurso,
-    rankings,
     participantCount,
     userRanking,
-    isLoading,
+    isLoading: isLoadingConcurso,
     isRefetching,
     user,
     refreshData,
     creatorName,
     inscritos,
-    isParticipating: originalIsParticipating
-  } = useResultadosData(concursoId);
+    isParticipating
+  } = useResultadosData(finalRankingId);
+  
+  // Hook otimizado para paginação de rankings
+  const {
+    rankings: paginatedRankings,
+    isLoading: isLoadingRankings,
+    hasMore,
+    loadMore,
+    refresh: refreshRankings,
+    totalLoaded
+  } = useRankingsPagination({
+    concursoId: finalRankingId || '',
+    initialLimit: 50
+  });
 
-  // SOLUÇÃO TEMPORÁRIA: Verificar se o usuário está realmente participando
-  // baseado nos dados do ranking (que sabemos que funcionam)
-  const isParticipating = originalIsParticipating || (userRanking && userRanking.id);
+  // Debug: verificar se o ID está sendo passado
+  useEffect(() => {
+    logger.info('ResultadosPage debug', 'RESULTADOS_PAGE', {
+      finalRankingId,
+      paginatedRankingsLength: paginatedRankings.length,
+      isLoadingRankings,
+      hasMore
+    });
+  }, [finalRankingId, paginatedRankings.length, isLoadingRankings, hasMore]);
+  
   const { toast } = useToast();
   const { leave, isLeaving } = useLeaveRanking();
   const isAuthenticated = !!user;
+  
+  // Estado de loading combinado
+  const isLoading = isLoadingConcurso || isLoadingRankings;
 
-  // Efeito removido para evitar re-renderizações desnecessárias
+  useEffect(() => {
+    if (concurso) {
+      logger.info('Concurso data loaded', 'RESULTADOS_PAGE', {
+        concursoId: concurso.id,
+        titulo: concurso.titulo,
+        quotas: {
+          ampla: concurso.has_ampla_concorrencia,
+          ppp: concurso.has_ppp,
+          pcd: concurso.has_pcd,
+          hipossuficientes: concurso.has_hipossuficientes,
+          indigenas: concurso.has_indigenas,
+          transsexuais: concurso.has_transsexuais
+        },
+        disciplinesCount: concurso.disciplines?.length || 0
+      });
+    }
+    if (paginatedRankings?.length > 0) {
+      logger.info('Rankings loaded', 'RESULTADOS_PAGE', {
+        count: paginatedRankings.length,
+        totalLoaded,
+        hasMore,
+        reservationTypes: [...new Set(paginatedRankings.map(r => r.reservationType))]
+      });
+    }
+    
+    logger.info('User participation status', 'RESULTADOS_PAGE', { 
+      isAuthenticated, 
+      isParticipating, 
+      userRankingExists: !!userRanking 
+    });
+  }, [concurso, paginatedRankings, isAuthenticated, isParticipating, userRanking, totalLoaded, hasMore]);
 
   const handleRefresh = async () => {
-    // Log removido por segurança
+    logger.info('Manual refresh initiated by user', 'RESULTADOS_PAGE');
     toast({
       title: "Atualizando ranking",
       description: "As pontuações estão sendo recalculadas em tempo real...",
       duration: 3000
     });
-    const result = await refreshData();
-    if (result?.success) {
-      toast({
-        title: "Ranking atualizado",
-        description: `As pontuações foram recalculadas com sucesso para ${result.updatedCount} usuário(s)!`,
-        duration: 4000
-      });
-    } else if (result?.error) {
+    
+    try {
+      // Refresh dados do concurso
+      const result = await refreshData();
+      
+      // Refresh rankings paginados
+      await refreshRankings();
+      
+      if (result?.success) {
+        toast({
+          title: "Ranking atualizado",
+          description: `As pontuações foram recalculadas com sucesso para ${result.updatedCount} usuário(s)!`,
+          duration: 4000
+        });
+      } else if (result?.error) {
+        toast({
+          title: "Erro na atualização",
+          description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
+          variant: "destructive",
+          duration: 5000
+        });
+      } else {
+        toast({
+          title: "Ranking atualizado",
+          description: "As pontuações foram recalculadas com sucesso!",
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      logger.error('Error during refresh', 'RESULTADOS_PAGE', error);
       toast({
         title: "Erro na atualização",
-        description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
+        description: "Ocorreu um erro inesperado ao atualizar o ranking.",
         variant: "destructive",
         duration: 5000
-      });
-    } else {
-      toast({
-        title: "Ranking atualizado",
-        description: "As pontuações foram recalculadas com sucesso!",
-        duration: 3000
       });
     }
   };
@@ -99,7 +173,6 @@ const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken
   }
 
   return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
-      
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
         
         
@@ -109,9 +182,8 @@ const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken
             {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
           </Button>
           
-          {concurso && !isParticipating && user && <Button onClick={async () => {
-              const secureUrl = await generateSecureUrl(concurso.id, 'participar');
-              navigate(secureUrl);
+          {concurso && !isParticipating && user && <Button onClick={() => {
+              navigate(`/ranking/${concurso.id}/participate`);
             }} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
@@ -139,7 +211,17 @@ const ResultadosPage: React.FC<ResultadosPageProps> = ({ concursoId, secureToken
         </div>}
       
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
-      <RankingTable rankings={rankings} concurso={concurso} currentUserId={user?.id} isAuthenticated={isAuthenticated} isRefetching={isRefetching} />
+      <RankingTable 
+        rankings={paginatedRankings} 
+        concurso={concurso} 
+        currentUserId={user?.id} 
+        isAuthenticated={isAuthenticated} 
+        isRefetching={isRefetching}
+        hasMore={hasMore}
+        onLoadMore={loadMore}
+        isLoadingMore={isLoadingRankings && paginatedRankings.length > 0}
+        totalLoaded={totalLoaded}
+      />
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">
           <p className="text-center text-muted-foreground">

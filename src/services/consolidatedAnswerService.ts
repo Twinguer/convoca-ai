@@ -40,7 +40,7 @@ export const consolidatedAnswerService = {
   // Buscar dados consolidados de um usuário específico dentro do concurso
   async getConsolidatedAnswers(rankingId: string): Promise<ConsolidatedAnswerData | null> {
     try {
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] Buscando dados consolidados para ranking:', rankingId);
       
       // Primeiro, obter o concurso_id e user_id do ranking
       const { data: rankingData, error: rankingError } = await supabase
@@ -91,7 +91,7 @@ export const consolidatedAnswerService = {
         }
       };
       
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] Dados consolidados encontrados:', consolidatedData);
       
       return consolidatedData;
     } catch (error) {
@@ -103,17 +103,17 @@ export const consolidatedAnswerService = {
   // Buscar respostas de um caderno específico (ISOLADO)
   async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
     try {
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] Buscando respostas do caderno:', bookletId, 'para ranking:', rankingId);
       
       const consolidatedData = await this.getConsolidatedAnswers(rankingId);
       
       if (consolidatedData?.booklets?.[bookletId]) {
         const bookletData = consolidatedData.booklets[bookletId] as BookletData;
-        // Log removido por segurança
+        console.log('[consolidatedAnswerService] Respostas do caderno encontradas:', bookletData.answers);
         return bookletData.answers || {};
       }
       
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] Nenhuma resposta encontrada para o caderno:', bookletId);
       return {};
     } catch (error) {
       console.error('[consolidatedAnswerService] Error fetching booklet answers:', error);
@@ -124,7 +124,7 @@ export const consolidatedAnswerService = {
   // Trocar caderno (CORRIGIDO para limpar estado anterior)
   async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
     try {
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
       
       const { data, error } = await supabase.rpc('switch_user_booklet', {
         p_ranking_id: rankingId,
@@ -136,7 +136,7 @@ export const consolidatedAnswerService = {
         return { success: false, error: error.message };
       }
 
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] Switch response:', data);
       
       // Buscar as respostas específicas do novo caderno
       const bookletAnswers = await this.getBookletAnswers(rankingId, bookletId);
@@ -166,7 +166,11 @@ export const consolidatedAnswerService = {
   ) {
     try {
       console.log('[consolidatedAnswerService] Salvando respostas consolidadas via RPC');
-      // Logs removidos por segurança
+      console.log('[consolidatedAnswerService] Ranking ID:', rankingId);
+      console.log('[consolidatedAnswerService] Concurso ID:', concursoId);
+      console.log('[consolidatedAnswerService] Booklet ID:', bookletId);
+      console.log('[consolidatedAnswerService] Answers count:', answers.length);
+      console.log('[consolidatedAnswerService] Respostas a salvar:', answers);
 
       // Garantir que bookletId seja string
       const bookletIdString = String(bookletId);
@@ -194,7 +198,7 @@ export const consolidatedAnswerService = {
         return { success: false, error: error.message };
       }
 
-      // Log removido por segurança
+      console.log('[consolidatedAnswerService] RPC Response:', data);
       
       return data;
     } catch (error: any) {

@@ -1,8 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logError, logWarn } from '@/utils/secureLogger';
 
 // Serviço para ofuscar URLs de usuários e controlar acesso
 export class UserUrlObfuscationService {
-  private static readonly OBFUSCATION_KEY = 'nomeia_user_obfuscation_2024';
+  // SECURITY: Use environment variable for obfuscation key
+  private static readonly OBFUSCATION_KEY = import.meta.env.VITE_OBFUSCATION_KEY || 'fallback_key_change_in_production';
   
   // Gerar um token ofuscado para um usuário
   static async generateUserToken(userId: string): Promise<string> {
@@ -38,7 +40,7 @@ export class UserUrlObfuscationService {
       
       return obfuscatedToken;
     } catch (error) {
-      console.error('Erro ao gerar token de usuário:', error);
+      logError('Failed to generate user token', { userId }, 'URL_OBFUSCATION');
       throw error;
     }
   }
@@ -84,7 +86,7 @@ export class UserUrlObfuscationService {
       
       return userId;
     } catch (error) {
-      console.error('Erro ao validar token de usuário:', error);
+      logError('Failed to validate user token', { token: token.substring(0, 10) + '...' }, 'URL_OBFUSCATION');
       return null;
     }
   }
@@ -101,7 +103,7 @@ export class UserUrlObfuscationService {
       localStorage.setItem(`user_token_${token}`, JSON.stringify(tokenData));
     } catch (error) {
       // Falha silenciosa - não é crítico
-      console.warn('Erro ao armazenar token de usuário:', error);
+      logWarn('Failed to store user token', { userId }, 'URL_OBFUSCATION');
     }
   }
   

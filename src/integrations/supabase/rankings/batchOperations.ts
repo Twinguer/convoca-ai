@@ -9,7 +9,7 @@ interface BatchRecalculationResult {
 
 export const recalculateAllUserScores = async (concursoId: string): Promise<BatchRecalculationResult> => {
   try {
-    // Log removido por segurança
+    console.log(`[recalculateAllUserScores] Starting batch recalculation for concurso: ${concursoId}`);
 
     // Chamar a função PostgreSQL que já está corrigida
     const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', {
@@ -21,7 +21,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       return { success: false, error: `Erro ao recalcular pontuações: ${error.message}` };
     }
 
-    // Log removido por segurança
+    console.log('[recalculateAllUserScores] PostgreSQL function result:', data);
 
     if (!data || !data.success) {
       console.error('[recalculateAllUserScores] PostgreSQL function returned error:', data?.error);

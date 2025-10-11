@@ -7,7 +7,7 @@ import { AlertTriangle, Shield } from 'lucide-react';
 
 interface SecureConcursoRouteProps {
   children: React.ReactNode;
-  action: 'resultados' | 'participar';
+  action: 'resultados' | 'participar' | 'view';
 }
 
 export const SecureConcursoRoute: React.FC<SecureConcursoRouteProps> = ({ 

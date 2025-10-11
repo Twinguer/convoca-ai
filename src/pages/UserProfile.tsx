@@ -14,8 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
-import { fetchUserRankings } from '@/services/concursoService';
-import { UserRankingDisplay } from '@/types/concursos';
 import { FollowersColumn } from '@/components/profile/FollowersColumn';
 import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
@@ -44,7 +42,6 @@ const UserProfile = () => {
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [followersCount, setFollowersCount] = useState(0);
-  const [userRankings, setUserRankings] = useState<UserRankingDisplay[]>([]);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
   
@@ -113,35 +110,6 @@ const UserProfile = () => {
     staleTime: 300000
   });
 
-  const {
-    data: rankings
-  } = useQuery({
-    queryKey: ['user-rankings', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const {
-        data,
-        error
-      } = await supabase.from('user_rankings').select(`
-          id,
-          concurso_id,
-          score,
-          concursos(titulo)
-        `).eq('user_id', user.id);
-      if (error) throw error;
-      return data.map(item => {
-        const concursoData = item.concursos || {};
-        const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String(concursoData.titulo) : 'Concurso sem título';
-        return {
-          concursoId: item.concurso_id,
-          concursoTitle: titulo,
-          position: 0,
-          score: item.score
-        };
-      }) as UserRankingDisplay[];
-    },
-    enabled: !!user
-  });
 
   const {
     data: followerData
@@ -170,11 +138,6 @@ const UserProfile = () => {
     }
   }, [followerData]);
 
-  useEffect(() => {
-    if (rankings && rankings.length > 0) {
-      setUserRankings(rankings);
-    }
-  }, [rankings]);
 
   useEffect(() => {
     if (profile) {
@@ -465,7 +428,6 @@ const UserProfile = () => {
                 <CardContent className="pt-6">
                   <CombinedRankingsTab 
                     userId={user?.id || ''}
-                    userRankings={userRankings}
                     isAuthenticated={!!user}
                   />
                 </CardContent>

@@ -8,7 +8,7 @@ export const useDeleteRanking = () => {
 
   const deleteRankingMutation = useMutation({
     mutationFn: async (concursoId: string) => {
-      // Log removido por segurança
+      console.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
         // 1. Primeiro buscar os IDs dos user_rankings para deletar dependências
@@ -99,7 +99,7 @@ export const useDeleteRanking = () => {
           throw concursoError;
         }
 
-        // Log removido por segurança
+        console.log('Ranking deletado com sucesso:', concursoId);
         return { success: true };
       } catch (error) {
         console.error('Erro na exclusão do ranking:', error);

@@ -8,18 +8,20 @@ export const saveBookletAnswerKey = async (
   answers: Record<string, AnswerKeyData>
 ) => {
   try {
-    // Logs removidos por segurança
+    console.log('[answerKeyService] Starting saveBookletAnswerKey');
+    console.log('[answerKeyService] Concurso ID:', concursoId);
+    console.log('[answerKeyService] Booklet ID (input):', bookletId, 'Type:', typeof bookletId);
     console.log('[answerKeyService] Input answers structure:', Object.keys(answers));
 
     // Garantir que bookletId seja sempre string
     const bookletIdString = String(bookletId);
-    // Log removido por segurança
+    console.log('[answerKeyService] Booklet ID (converted to string):', bookletIdString);
 
     // Converter o formato de answers para o formato esperado pela função RPC
     const formattedAnswers: Record<string, any> = {};
     
     Object.entries(answers).forEach(([questionNumber, answerData]) => {
-      // Log removido por segurança
+      console.log(`[answerKeyService] Processing question ${questionNumber}:`, answerData);
       
       formattedAnswers[questionNumber] = {
         correct_answer: answerData.correctAnswer,
@@ -31,7 +33,8 @@ export const saveBookletAnswerKey = async (
       };
     });
 
-    // Logs removidos por segurança
+    console.log('[answerKeyService] Formatted answers for RPC:', formattedAnswers);
+    console.log('[answerKeyService] Total questions to save:', Object.keys(formattedAnswers).length);
 
     // Usar a função RPC que agora deve funcionar sem trigger problems
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
@@ -50,7 +53,7 @@ export const saveBookletAnswerKey = async (
       return { success: false, error: error.message };
     }
 
-    // Log removido por segurança
+    console.log('[answerKeyService] RPC Success response:', data);
     
     // Verificar se a resposta indica sucesso
     if (data && typeof data === 'object' && 'success' in data && !data.success) {
@@ -71,7 +74,8 @@ export const updateSingleAnswer = async (
   answerData: AnswerKeyData
 ) => {
   try {
-    // Logs removidos por segurança
+    console.log('[answerKeyService] Updating single answer');
+    console.log('[answerKeyService] Question:', questionNumber, 'Answer:', answerData);
 
     // Como não temos mais a função update_answer_with_weight que usava booklet_id,
     // vamos usar a função consolidada para atualizar uma única resposta
@@ -103,7 +107,7 @@ export const updateSingleAnswer = async (
       return { success: false, error: data.error || 'Falha na atualização da resposta' };
     }
 
-    // Log removido por segurança
+    console.log('[answerKeyService] Successfully updated answer:', data);
     return { success: true, data };
   } catch (error: any) {
     console.error('[answerKeyService] Error in updateSingleAnswer:', error);

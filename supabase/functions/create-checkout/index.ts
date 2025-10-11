@@ -1,12 +1,35 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 
+// SECURITY: Restrict CORS to specific origins only
+const allowedOrigins = [
+  "https://nomeiai.lovable.app",
+  "https://nomeiai.com.br",
+  "http://localhost:3000", // Development only
+  "http://localhost:5173"  // Development only
+];
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "https://nomeiai.lovable.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Max-Age": "86400"
 };
 
 serve(async (req) => {
+  // SECURITY: Validate origin before processing any request
+  const origin = req.headers.get("origin");
+  const isAllowedOrigin = allowedOrigins.includes(origin || "");
+  
+  if (origin && !isAllowedOrigin) {
+    console.warn(`Blocked request from unauthorized origin: ${origin}`);
+    return new Response(JSON.stringify({ error: "Unauthorized origin" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });

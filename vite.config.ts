@@ -19,4 +19,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: ['ioredis'],
+    },
+  },
+  optimizeDeps: {
+    include: ['react-window'],
+  },
 }));

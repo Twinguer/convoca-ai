@@ -2,7 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Serviço para ofuscar URLs e controlar acesso
 export class UrlObfuscationService {
-  private static readonly OBFUSCATION_KEY = 'nomeia_obfuscation_2024';
+  // SECURITY: Use environment variable for obfuscation key
+  private static readonly OBFUSCATION_KEY = import.meta.env.VITE_URL_OBFUSCATION_KEY || 'fallback_key_change_in_production';
   
   // Gerar um token ofuscado para um concurso
   static async generateConcursoToken(concursoId: string): Promise<string> {

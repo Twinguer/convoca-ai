@@ -30,13 +30,13 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      // Log removido por segurança
+      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
     }
   }, [concurso]);
 
   const fetchExistingAnswers = async () => {
     try {
-      // Log removido por segurança
+      console.log('Fetching existing answers for ranking ID:', rankingId);
 
       // Fetch answers
       const { data: answersData, error: answersError } = await supabase
@@ -82,7 +82,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
       if (rankingError) throw rankingError;
 
-      // Log removido por segurança
+      console.log('Fetched ranking data:', rankingData);
 
       if (rankingData) {
         setDiscursiveScore(
@@ -115,12 +115,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     if (concurso && Object.keys(questionType).length === 0) {
       const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
       
-      // Log removido por segurança
+      console.log('[initializeQuestionTypes] Initializing question types for concurso:', concurso.id);
 
       // Verificar se estamos usando a estrutura customizada
       if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
         const hierarchical = isHierarchicalStructure(concurso);
-        // Log removido por segurança
+        console.log('[initializeQuestionTypes] Using hierarchical structure:', hierarchical);
         
         let questionNumber = 1;
 
@@ -129,11 +129,11 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
           for (const block of concurso.disciplines) {
             // Use TypeGuard to check if this is a DisciplineBlock
             if (isDisciplineBlock(block)) {
-              // Log removido por segurança
+              console.log('[initializeQuestionTypes] Processing block:', block.name);
               for (const discipline of block.disciplines) {
                 if (discipline.isEnabled) {
                   const questionCount = getNumericValue(discipline.questionCount);
-                  // Log removido por segurança
+                  console.log(`[initializeQuestionTypes] Adding ${questionCount} questions of type ${discipline.type} from discipline ${discipline.name}`);
                   
                   for (let i = 0; i < questionCount; i++) {
                     typesMap[questionNumber] = discipline.type;
@@ -233,14 +233,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const getTotalQuestions = () => {
     if (!concurso) return 0;
     
-    // Log removido por segurança
+    console.log('[getTotalQuestions] Calculating total questions for concurso:', concurso.id);
 
     let total = 0;
 
     // Verificar se estamos usando a estrutura customizada
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const hierarchical = isHierarchicalStructure(concurso);
-      // Log removido por segurança
+      console.log('[getTotalQuestions] Using hierarchical structure:', hierarchical);
       
       if (hierarchical) {
         // Processar estrutura hierárquica (blocos -> disciplinas)
@@ -292,7 +292,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       }
     }
 
-    // Log removido por segurança
+    console.log(`[getTotalQuestions] Total questions: ${total}`);
     return total;
   };
 
@@ -311,12 +311,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const getSectionQuestions = () => {
     if (!concurso) return [];
 
-    // Log removido por segurança
+    console.log('[getSectionQuestions] Getting questions for section:', selectedSection);
 
     // Verificar se estamos usando a estrutura customizada
     if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
       const hierarchical = isHierarchicalStructure(concurso);
-      // Log removido por segurança
+      console.log('[getSectionQuestions] Using hierarchical structure:', hierarchical);
       
       let startIndex = 1;
 
@@ -334,7 +334,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
                     { length: questionCount },
                     (_, i) => startIndex + i
                   );
-                  // Log removido por segurança
+                  console.log(`[getSectionQuestions] Questions for discipline ${discipline.name} (type: ${discipline.type}):`, questions);
                   return questions;
                 }
 
@@ -356,7 +356,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
                 { length: questionCount },
                 (_, i) => startIndex + i
               );
-              // Log removido por segurança
+              console.log(`[getSectionQuestions] Questions for flat discipline ${discipline.name} (type: ${discipline.type}):`, questions);
               return questions;
             }
 
@@ -385,7 +385,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       });
     }
 
-    // Log removido por segurança
+    console.log('[getSectionQuestions] Questions for section', selectedSection, ':', questions);
     return questions.sort((a, b) => a - b);
   };
 
@@ -403,7 +403,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   const createAnswerMatrix = () => {
     const sectionQuestions = getSectionQuestions();
     if (sectionQuestions.length === 0) {
-      // Log removido por segurança
+      console.log('[createAnswerMatrix] No questions found for section:', selectedSection);
       return [];
     }
 
@@ -425,7 +425,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       matrix.push(rowData);
     }
 
-    // Log removido por segurança
+    console.log('[createAnswerMatrix] Matrix for section', selectedSection, ':', matrix);
     return matrix;
   };
 

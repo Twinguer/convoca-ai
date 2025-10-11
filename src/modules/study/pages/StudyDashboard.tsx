@@ -13,11 +13,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import Footer from '@/components/Footer';
 import { UserStudyService } from '@/services/userStudyService';
+import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
 import { StudyCycleV2 } from '@/types/userStudy';
 
 const StudyDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { generateSecureUrl } = useSecureStudyCycleUrls();
   const { statistics, isLoading } = useStudyStatistics();
   const [cycles, setCycles] = useState<StudyCycleV2[]>([]);
   const [upcomingSchedule, setUpcomingSchedule] = useState<any[]>([]);
@@ -242,7 +244,15 @@ const StudyDashboard = () => {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/estudos/ciclo/${cycle.id}`)} className="w-full sm:w-auto">
+                    <Button size="sm" variant="outline" onClick={async () => {
+                      try {
+                        const secureUrl = await generateSecureUrl(cycle.id, user?.id || '', 'view');
+                        navigate(secureUrl);
+                      } catch (error) {
+                        console.error('Erro ao gerar URL segura:', error);
+                        navigate('/estudos');
+                      }
+                    }} className="w-full sm:w-auto">
                       Disciplinas
                     </Button>
                     <Button 

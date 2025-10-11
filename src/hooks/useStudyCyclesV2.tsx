@@ -97,9 +97,6 @@ export const useStudyCyclesV2 = () => {
         return null;
       }
 
-      // Debug: Verificar blocos recebidos
-      console.log('🔍 Debug - Blocos recebidos no hook:', cycleData.blocks);
-      console.log('🔍 Debug - Quantidade de blocos no hook:', cycleData.blocks?.length || 0);
 
       const newCycleData = createStudyCycleV2(
         cycleData.cycle_name,
@@ -112,9 +109,6 @@ export const useStudyCyclesV2 = () => {
         cycleData.blocks // Passar blocos para a função
       );
 
-      // Debug: Verificar dados do ciclo criado
-      console.log('🔍 Debug - Dados do ciclo criado:', newCycleData);
-      console.log('🔍 Debug - Available blocks no ciclo:', newCycleData.schedule_data.available_blocks);
 
       const success = await UserStudyService.addCycle(user.id, newCycleData);
       

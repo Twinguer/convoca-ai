@@ -10,14 +10,23 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { Trophy, ArrowRight, FileText, AlertCircle, UserPlus } from 'lucide-react';
 
-const ConcursoDetails = () => {
+interface ConcursoDetailsProps {
+  concursoId?: string;
+  secureToken?: string;
+}
+
+const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureToken }) => {
   const { id } = useParams<{ id: string; }>();
   const navigate = useNavigate();
   const { generateSecureUrl } = useSecureUrls();
   
+  // Usar concursoId da prop se disponível, senão usar id da URL
+  const actualConcursoId = concursoId || id;
+  
   const { data: concurso, isLoading } = useQuery({
-    queryKey: ['concurso', id],
-    queryFn: () => fetchConcursoById(id!)
+    queryKey: ['concurso', actualConcursoId],
+    queryFn: () => fetchConcursoById(actualConcursoId!),
+    enabled: !!actualConcursoId
   });
 
   if (isLoading) {
@@ -151,13 +160,8 @@ const ConcursoDetails = () => {
             <Button 
               variant="outline" 
               className="border-0" 
-              onClick={async () => {
-                try {
-                  const secureUrl = await generateSecureUrl(id!, 'resultados');
-                  navigate(secureUrl);
-                } catch (error) {
-                  console.error('Erro ao gerar URL segura:', error);
-                }
+              onClick={() => {
+                navigate(`/ranking/${actualConcursoId}`);
               }}
             >
               <ArrowRight className="mr-2 h-4 w-4" />

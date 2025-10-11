@@ -23,6 +23,7 @@ const ensureNumeric = (value: any): number => {
 
 export const useSaveRanking = () => {
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
+    console.log('[useSaveRanking] saveRanking called with:', { formValues, userId, editId, jobTitles });
     try {
       // Se estivermos editando, buscar dados existentes primeiro para preservar estrutura
       let existingDisciplines: any[] = [];
@@ -445,6 +446,7 @@ export const useSaveRanking = () => {
       }
 
       // Show success message after the whole process
+      console.log('[useSaveRanking] Ranking salvo com sucesso, ID:', concursoIdToUse);
       if (editId) {
         toast.success("Ranking atualizado com sucesso!");
       } else {

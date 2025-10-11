@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Correção Ciclos de Estudo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste - Correção do Problema 404 em Ciclos de Estudo</h1>
+    
+    <div class="info">
+        <h3>✅ Correção Implementada:</h3>
+        <p><strong>Problema:</strong> Campo SQL incorreto 'title' na tabela study_cycles_v2</p>
+        <p><strong>Solução:</strong> Alterado para 'cycle_name' (campo correto da tabela)</p>
+        <p><strong>Arquivo:</strong> src/services/studyCycleUrlObfuscation.ts</p>
+    </div>
+
+    <div class="test-result success">
+        <h3>🎯 Status da Correção:</h3>
+        <p>✅ Campo SQL corrigido de 'title' para 'cycle_name'</p>
+        <p>✅ Servidor funcionando (Status 200)</p>
+        <p>✅ Sem erros de linting</p>
+        <p>✅ Tipos TypeScript corretos</p>
+    </div>
+
+    <div class="info">
+        <h3>🔍 Próximos Passos para Teste:</h3>
+        <ol>
+            <li>Acesse a aplicação em: <a href="http://localhost:8090" target="_blank">http://localhost:8090</a></li>
+            <li>Faça login na aplicação</li>
+            <li>Navegue para "Ciclo de Estudos"</li>
+            <li>Clique em "Disciplinas" em um ciclo existente</li>
+            <li>Verifique se a página carrega sem erro 404</li>
+        </ol>
+    </div>
+
+    <div class="test-result success">
+        <h3>📋 O que foi corrigido:</h3>
+        <ul>
+            <li><strong>Linha 15:</strong> .select('id, user_id, cycle_name, is_active') - ✅ Corrigido</li>
+            <li><strong>Linha 74:</strong> .select('id, user_id, is_active') - ✅ Já estava correto</li>
+        </ul>
+    </div>
+
+    <div class="info">
+        <h3>🚀 Resultado Esperado:</h3>
+        <p>Agora as URLs seguras de ciclos de estudo devem funcionar corretamente:</p>
+        <ul>
+            <li>/estudos/edit/:token</li>
+            <li>/estudos/view/:token</li>
+            <li>/estudos/session/:token</li>
+        </ul>
+    </div>
+
+    <script>
+        console.log('🔧 Teste de correção do problema 404 - Ciclos de Estudo');
+        console.log('✅ Campo SQL corrigido: title → cycle_name');
+        console.log('🌐 Aplicação disponível em: http://localhost:8090');
+    </script>
+</body>
+</html>

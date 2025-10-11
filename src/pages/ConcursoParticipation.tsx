@@ -1,40 +1,21 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById } from '@/services/concursoService';
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { ParticipationForm } from '@/components/resultados/ParticipationForm';
 import { useAuth } from '@/hooks/useAuth';
-import { useSecureUrls } from '@/services/urlObfuscation';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 
-interface ConcursoParticipationProps {
-  concursoId?: string;
-  secureToken?: string;
-}
-
-const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoId, secureToken }) => {
-  const { id: urlId } = useParams<{ id: string }>();
+const ConcursoParticipation = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { generateSecureUrl } = useSecureUrls();
-  const [showAnswerSheet, setShowAnswerSheet] = useState(false);
-  
-  // Usar concursoId passado como prop ou do URL
-  const id = concursoId || urlId;
 
-  // Check URL params to see if we should force display answer sheet
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('showAnswerSheet') === 'true') {
-      setShowAnswerSheet(true);
-    }
-  }, []);
-
-  // Log removido por segurança
+  console.log('[ConcursoParticipation] Concurso ID from params:', id);
 
   // Fetch concurso details with better error handling
   const {
@@ -48,8 +29,9 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
         throw new Error('ID do concurso não fornecido');
       }
       
-      // Logs removidos por segurança
+      console.log('[ConcursoParticipation] Fetching concurso with ID:', id);
       const result = await fetchConcursoById(id);
+      console.log('[ConcursoParticipation] Concurso fetched:', result);
       return result;
     },
     enabled: !!id,
@@ -61,11 +43,11 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
     data: userRanking,
     isLoading: isCheckingParticipation
   } = useQuery({
-    queryKey: ['user-participation', id, user?.id],
+    queryKey: ['participating', id, user?.id],
     queryFn: async () => {
       if (!user || !id) return null;
       
-      // Log removido por segurança
+      console.log('[ConcursoParticipation] Checking participation for user:', user.id, 'concurso:', id);
       
       const { data, error } = await supabase
         .from('user_rankings')
@@ -79,7 +61,7 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
         throw error;
       }
       
-      // Log removido por segurança
+      console.log('[ConcursoParticipation] User ranking data:', data);
       return data;
     },
     enabled: !!user && !!id
@@ -151,8 +133,7 @@ const ConcursoParticipation: React.FC<ConcursoParticipationProps> = ({ concursoI
         <ParticipationForm 
           concurso={concurso} 
           isAlreadyParticipating={!!userRanking} 
-          userRankingId={userRanking?.id}
-          showAnswerSheet={showAnswerSheet}
+          userRankingId={userRanking?.id} 
         />
       </div>
     </div>

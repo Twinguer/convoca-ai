@@ -11,7 +11,8 @@ import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
 import { useQuotaCache } from '@/hooks/useQuotaCache';
-import { useSecureUserUrls } from '@/services/userUrlObfuscation';
+// import { useSecureUserUrls } from '@/services/userUrlObfuscation';
+import { LoadMoreButton } from './LoadMoreButton';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -19,6 +20,11 @@ interface RankingTableProps {
   currentUserId?: string | null;
   isAuthenticated: boolean;
   isRefetching?: boolean;
+  // Props de paginação
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  totalLoaded?: number;
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({
@@ -26,10 +32,34 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   concurso,
   currentUserId,
   isAuthenticated,
-  isRefetching = false
+  isRefetching = false,
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
+  totalLoaded = 0
 }) => {
   const navigate = useNavigate();
-  const { generateSecureUserUrl } = useSecureUserUrls();
+
+  // Debug: verificar se os rankings estão sendo recebidos
+  useEffect(() => {
+    console.log('RankingTable received rankings:', {
+      rankingsLength: rankings?.length || 0,
+      rankings: rankings?.slice(0, 3), // Primeiros 3 para debug
+      hasMore,
+      totalLoaded,
+      isAuthenticated,
+      currentUserId
+    });
+  }, [rankings, hasMore, totalLoaded, isAuthenticated, currentUserId]);
+
+  // Debug: verificar se o componente está sendo renderizado
+  console.log('RankingTable render:', {
+    rankingsLength: rankings?.length || 0,
+    isLoadingMore,
+    hasMore,
+    totalLoaded
+  });
+  // const { generateSecureUserUrl } = useSecureUserUrls();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
   const [displayNames, setDisplayNames] = useState<Record<string, string>>(sectionDisplayNames);
 
@@ -62,6 +92,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
     const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
       ranking.score <= 0;
+    
     
     return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
   };
@@ -163,8 +194,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     
     try {
-      const secureUrl = await generateSecureUserUrl(userId, 'profile');
-      navigate(secureUrl);
+      // Navegação direta sem ofuscação temporariamente
+      navigate(`/profile/${userId}`);
     } catch (error) {
       console.error('Erro ao gerar URL segura de usuário:', error);
       // Fallback para página de comunidade em caso de erro
@@ -203,6 +234,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   isRefetching={isRefetching} 
                   activeTab={quota}
                   displayNames={displayNames} // Pass display names
+                  hasMore={hasMore}
+                  onLoadMore={onLoadMore}
+                  isLoadingMore={isLoadingMore}
+                  totalLoaded={totalLoaded}
                 />
               </TabsContent>)}
           </Tabs> : <RankingTableContent 
@@ -216,6 +251,10 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                     isRefetching={isRefetching} 
                     activeTab="Ampla Concorrência" 
                     displayNames={displayNames} // Pass display names
+                    hasMore={hasMore}
+                    onLoadMore={onLoadMore}
+                    isLoadingMore={isLoadingMore}
+                    totalLoaded={totalLoaded}
                   />}
       </CardContent>
     </Card>;
@@ -244,6 +283,11 @@ const RankingTableContent: React.FC<{
   isRefetching?: boolean;
   activeTab: string;
   displayNames: Record<string, string>; // Added display names prop
+  // Props de paginação
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  totalLoaded?: number;
 }> = ({
   rankings,
   currentUserId,
@@ -254,7 +298,12 @@ const RankingTableContent: React.FC<{
   isAuthenticated,
   isRefetching = false,
   activeTab,
-  displayNames // Accept display names
+  displayNames, // Accept display names
+  // Props de paginação
+  hasMore = false,
+  onLoadMore,
+  isLoadingMore = false,
+  totalLoaded = 0
 }) => {
   const isAdminMode = React.useMemo(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -297,6 +346,7 @@ const RankingTableContent: React.FC<{
     // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
     const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
       ranking.score <= 0;
+    
     
     return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
   };
@@ -539,8 +589,23 @@ const RankingTableContent: React.FC<{
         </TableRow>}
     </TableBody>;
     
-  return <Table>
-      {renderTableHeader()}
-      {renderRankingRows()}
-    </Table>;
+  return (
+    <div>
+      <Table>
+        {renderTableHeader()}
+        {renderRankingRows()}
+      </Table>
+      
+      {/* Botão Carregar Mais */}
+      {onLoadMore && (
+        <LoadMoreButton
+          onLoadMore={onLoadMore}
+          isLoading={isLoadingMore}
+          hasMore={hasMore}
+          totalLoaded={totalLoaded}
+          className="mt-4"
+        />
+      )}
+    </div>
+  );
 };

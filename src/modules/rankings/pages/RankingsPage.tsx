@@ -9,7 +9,6 @@ import { Trophy, Users, TrendingUp, Search, Filter, Calendar, Plus, Medal, Star,
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useSecureUrls } from '@/services/urlObfuscation';
 interface Concurso {
   id: string;
   titulo: string;
@@ -26,7 +25,6 @@ const RankingsPage = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
-  const { generateSecureUrl } = useSecureUrls();
   const [concursos, setConcursos] = useState<Concurso[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,18 +35,12 @@ const RankingsPage = () => {
     e.preventDefault();
     
     if (!user) {
-      navigate('/auth', { state: { from: `/pre-classificacao` } });
+      navigate('/auth', { state: { from: `/concurso/${concursoId}/resultados` } });
       return;
     }
-    
-    try {
-      const secureUrl = await generateSecureUrl(concursoId, 'resultados');
-      navigate(secureUrl);
-    } catch (error) {
-      console.error('Erro ao gerar URL segura:', error);
-      // Fallback para página de rankings em caso de erro
-      navigate('/pre-classificacao');
-    }
+
+    // Navegar diretamente para a URL do ranking
+    navigate(`/ranking/${concursoId}`);
   };
   useEffect(() => {
     loadConcursos();
@@ -171,14 +163,14 @@ const RankingsPage = () => {
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">Concursos</TabsTrigger>
-          <TabsTrigger value="popular">Populares</TabsTrigger>
-          <TabsTrigger value="recent">Recentes</TabsTrigger>
+          <TabsTrigger value="all" className="text-green-300">Concursos</TabsTrigger>
+          <TabsTrigger value="popular" className="text-green-300">Populares</TabsTrigger>
+          <TabsTrigger value="recent" className="text-green-300">Recentes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {filteredConcursos.map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
+            {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
                 <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
@@ -216,7 +208,7 @@ const RankingsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>)}
+              </Link>)}
           </div>
           
           {filteredConcursos.length === 0 && <div className="text-center py-12">

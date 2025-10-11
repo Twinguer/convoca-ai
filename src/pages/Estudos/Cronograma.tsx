@@ -137,11 +137,11 @@ const Cronograma = () => {
     }
   }, [user]);
 
-  // Update clock every second
+  // Update clock every 5 seconds - otimizado para melhor performance
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
+    }, 5000); // 5 segundos em vez de 1 segundo para reduzir re-renders
     return () => clearInterval(timer);
   }, []);
   const fetchCycles = async () => {

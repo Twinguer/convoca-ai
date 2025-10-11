@@ -1,81 +1,96 @@
 /**
- * Sistema de logging condicional
- * Funciona apenas em ambiente de desenvolvimento
+ * Logger simples e funcional
+ * Sistema leve para desenvolvimento e produção
  */
+
+import { isDevelopment, isProduction } from '@/config/environment';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-interface LoggerConfig {
-  enabled: boolean;
-  level: LogLevel;
-}
-
 class Logger {
-  private config: LoggerConfig;
-
-  constructor() {
-    this.config = {
-      enabled: process.env.NODE_ENV === 'development',
-      level: 'debug'
-    };
-  }
+  private isDevelopment = isDevelopment;
+  private isProduction = isProduction;
 
   private shouldLog(level: LogLevel): boolean {
-    if (!this.config.enabled) return false;
-    
-    const levels: Record<LogLevel, number> = {
-      debug: 0,
-      info: 1,
-      warn: 2,
-      error: 3
-    };
-    
-    return levels[level] >= levels[this.config.level];
+    // Em desenvolvimento: log tudo
+    if (this.isDevelopment) return true;
+
+    // Em produção: apenas warn e error
+    if (this.isProduction) {
+      return level === 'warn' || level === 'error';
+    }
+
+    return true;
   }
 
-  private formatMessage(level: LogLevel, message: string, data?: any): string {
+  private log(level: LogLevel, message: string, context?: string, data?: any): void {
+    if (!this.shouldLog(level)) return;
+
     const timestamp = new Date().toISOString();
-    const prefix = `[${timestamp}] [${level.toUpperCase()}]`;
-    return `${prefix} ${message}`;
-  }
+    const contextStr = context ? `[${context}]` : '';
+    const formattedMessage = `[${level.toUpperCase()}] ${timestamp} ${contextStr} ${message}`;
 
-  debug(message: string, data?: any): void {
-    if (this.shouldLog('debug')) {
-      console.log(`🔍 ${this.formatMessage('debug', message)}`, data || '');
+    // Converter dados para string de forma segura
+    let safeData = '';
+    if (data) {
+      try {
+        safeData = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+      } catch (error) {
+        safeData = '[Error converting data to string]';
+      }
+    }
+
+    switch (level) {
+      case 'debug':
+        console.log(formattedMessage, safeData);
+        break;
+      case 'info':
+        console.info(formattedMessage, safeData);
+        break;
+      case 'warn':
+        console.warn(formattedMessage, safeData);
+        break;
+      case 'error':
+        console.error(formattedMessage, safeData);
+        break;
     }
   }
 
-  info(message: string, data?: any): void {
-    if (this.shouldLog('info')) {
-      console.info(`ℹ️ ${this.formatMessage('info', message)}`, data || '');
-    }
+  debug(message: string, context?: string, data?: any): void {
+    this.log('debug', message, context, data);
   }
 
-  warn(message: string, data?: any): void {
-    if (this.shouldLog('warn')) {
-      console.warn(`⚠️ ${this.formatMessage('warn', message)}`, data || '');
-    }
+  info(message: string, context?: string, data?: any): void {
+    this.log('info', message, context, data);
   }
 
-  error(message: string, error?: any): void {
-    if (this.shouldLog('error')) {
-      console.error(`❌ ${this.formatMessage('error', message)}`, error || '');
-    }
+  warn(message: string, context?: string, data?: any): void {
+    this.log('warn', message, context, data);
   }
 
-  // Método para configurar o logger
-  configure(config: Partial<LoggerConfig>): void {
-    this.config = { ...this.config, ...config };
+  error(message: string, context?: string, data?: any): void {
+    this.log('error', message, context, data);
   }
 
-  // Método para desabilitar logs em produção
-  disable(): void {
-    this.config.enabled = false;
+  // Método para logging de performance
+  performance(operation: string, duration: number, context?: string): void {
+    const message = `${operation} completed in ${duration.toFixed(2)}ms`;
+    this.info(message, context || 'PERFORMANCE');
+  }
+
+  // Método para logging de ranking específico
+  ranking(message: string, data?: any): void {
+    this.debug(message, 'RANKING', data);
+  }
+
+  // Método para logging de answer sheet específico
+  answerSheet(message: string, data?: any): void {
+    this.debug(message, 'ANSWER_SHEET', data);
   }
 }
 
-// Instância singleton
+// Instância singleton do logger
 export const logger = new Logger();
 
-// Exportar tipos para uso em outros arquivos
-export type { LogLevel, LoggerConfig };
+// Exportar métodos individuais para compatibilidade
+export const { debug, info, warn, error, performance, ranking, answerSheet } = logger;

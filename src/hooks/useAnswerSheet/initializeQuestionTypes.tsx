@@ -30,7 +30,7 @@ export const createQuestionOptions = (concurso: Concurso): Record<number, string
   return questionOptions;
 };
 
-const getTotalQuestions = (concurso: Concurso): number => {
+export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
   if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {

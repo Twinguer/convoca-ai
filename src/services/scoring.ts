@@ -8,7 +8,6 @@ export interface ScoringInput {
   isCorrect: boolean;
   isNullified?: boolean;
   isBlank?: boolean;
-  concursoId?: string; // para validação de segurança
 }
 
 export interface ScoringOutput {
@@ -17,12 +16,48 @@ export interface ScoringOutput {
   weightedDisciplineDelta: number; // delta para weightedDisciplineScores
 }
 
-/**
- * @deprecated REMOVIDO POR SEGURANÇA - Use apenas backend
- * Esta função foi removida para evitar cálculos no frontend
- */
 export function scoreObjectiveAnswer(input: ScoringInput): ScoringOutput {
-  throw new Error('Cálculos de pontuação devem ser feitos no backend por segurança');
+  const questionWeight = input.questionWeight ?? 1;
+  const disciplineWeight = input.disciplineWeight ?? 1;
+
+  const fixNegZero = (n: number) => (n === 0 ? 0 : n);
+
+  // Questão anulada: sempre soma o peso bruto
+  if (input.isNullified) {
+    return {
+      totalDelta: fixNegZero(questionWeight),
+      disciplineDelta: 1,
+      weightedDisciplineDelta: fixNegZero(questionWeight * disciplineWeight),
+    };
+  }
+
+  // Em branco: não impacta
+  if (input.isBlank) {
+    return { totalDelta: 0, disciplineDelta: 0, weightedDisciplineDelta: 0 };
+  }
+
+  if (input.isCorrect) {
+    return {
+      totalDelta: fixNegZero(questionWeight),
+      disciplineDelta: 1,
+      weightedDisciplineDelta: fixNegZero(questionWeight * disciplineWeight),
+    };
+  }
+
+  // Errada
+  if (input.examType === 'Certo ou Errado') {
+    const penalty = input.wrongAnswerPenalty ?? 0;
+    if (penalty > 0) {
+      return {
+        totalDelta: fixNegZero(-penalty), // Penalidade é valor absoluto, não multiplicado pelo peso
+        disciplineDelta: 0, // mantemos contagem de acertos apenas com acertos
+        weightedDisciplineDelta: fixNegZero(-penalty * disciplineWeight), // Penalidade multiplicada apenas pelo peso da disciplina
+      };
+    }
+  }
+
+  // Errada sem penalidade (ou múltipla escolha): sem impacto
+  return { totalDelta: 0, disciplineDelta: 0, weightedDisciplineDelta: 0 };
 }
 
 
