@@ -70,11 +70,11 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Data da Prova</dt>
-                <dd>{concurso.data_publicacao || 'Não informado'}</dd>
+                <dd>{concurso.created_at || 'Não informado'}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Etapa Atual</dt>
-                <dd>{concurso.etapa_atual || 'Não informado'}</dd>
+                <dd>{concurso.status || 'Não informado'}</dd>
               </div>
             </dl>
           </CardContent>

@@ -16,7 +16,7 @@ interface Concurso {
   banca: string;
   vagas: number;
   inscritos: number;
-  data_publicacao: string;
+  created_at: string;
   status: string;
   participant_count?: number;
 }
@@ -57,7 +57,7 @@ const RankingsPage = () => {
           banca,
           vagas,
           inscritos,
-          data_publicacao,
+          created_at,
           status
         `).order('created_at', {
         ascending: false
@@ -97,7 +97,7 @@ const RankingsPage = () => {
       case 'vagas':
         return (b.vagas || 0) - (a.vagas || 0);
       case 'recent':
-        return new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime();
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       default:
         return 0;
     }
@@ -256,7 +256,7 @@ const RankingsPage = () => {
 
         <TabsContent value="recent" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {concursos.sort((a, b) => new Date(b.data_publicacao).getTime() - new Date(a.data_publicacao).getTime()).slice(0, 6).map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
+            {concursos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
                   <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -273,7 +273,7 @@ const RankingsPage = () => {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Publicado em {concurso.data_publicacao ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR') : 'Data não informada'}
+                        Publicado em {concurso.created_at ? new Date(concurso.created_at).toLocaleDateString('pt-BR') : 'Data não informada'}
                       </p>
                       <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <Trophy className="h-4 w-4" />

@@ -192,7 +192,7 @@ const Home: React.FC = () => {
               id={concurso.id}
               titulo={concurso.titulo}
               orgao={concurso.orgao}
-              data={new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')}
+              data={new Date(concurso.created_at).toLocaleDateString('pt-BR')}
               vagas={concurso.vagas}
               status={concurso.status}
             />

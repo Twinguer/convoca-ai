@@ -76,26 +76,43 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   }, [localIsParticipating, isAlreadyParticipating]);
 
   const shouldShowAnswerSheet = React.useMemo(() => {
-    return (showAnswerSheet || isUserParticipating) && localUserRankingId;
+    const result = (showAnswerSheet || isUserParticipating) && localUserRankingId;
+    console.log('[ParticipationForm] shouldShowAnswerSheet:', {
+      showAnswerSheet,
+      isUserParticipating,
+      localUserRankingId,
+      result
+    });
+    return result;
   }, [showAnswerSheet, isUserParticipating, localUserRankingId]);
   const loadBooklets = async () => {
     try {
+      console.log('[ParticipationForm] Carregando cadernos para concurso:', concurso.id);
       setIsLoadingBooklets(true);
-      const {
-        data,
-        error
-      } = await supabase.rpc('manage_exam_booklets', {
-        p_operation: 'GET',
-        p_concurso_id: concurso.id
-      });
+      const { data: concursoData, error } = await supabase
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concurso.id)
+        .single();
+      
       if (error) throw error;
-      if (data?.booklets && data.booklets.length > 0) {
-        setBooklets(data.booklets);
+      
+      const booklets = concursoData?.exam_booklets || [];
+      // Ordenar por display_order
+      const sortedBooklets = booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+      
+      console.log('[ParticipationForm] Cadernos encontrados:', sortedBooklets.length);
+      console.log('[ParticipationForm] Cadernos:', sortedBooklets.map(b => ({ id: b.id, name: b.name })));
+      
+      if (sortedBooklets && sortedBooklets.length > 0) {
+        setBooklets(sortedBooklets);
         // Se há apenas um caderno, seleciona automaticamente
-        if (data.booklets.length === 1) {
-          setSelectedBooklet(data.booklets[0].id);
+        if (sortedBooklets.length === 1) {
+          console.log('[ParticipationForm] Selecionando automaticamente o caderno único:', sortedBooklets[0].name);
+          setSelectedBooklet(sortedBooklets[0].id);
         }
       } else {
+        console.log('[ParticipationForm] Nenhum caderno encontrado');
         setBooklets([]);
       }
     } catch (error) {
@@ -106,10 +123,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     }
   };
   const validateParticipation = () => {
-    // Validating participation
+    console.log('[ParticipationForm] Validando participação...');
+    console.log('[ParticipationForm] selectedQuota:', selectedQuota);
+    console.log('[ParticipationForm] booklets.length:', booklets.length);
+    console.log('[ParticipationForm] selectedBooklet:', selectedBooklet);
     
     if (!selectedQuota) {
-      // Validation failed: no quota selected
+      console.log('[ParticipationForm] ❌ Validação falhou: cota não selecionada');
       toast({
         title: "Cota obrigatória",
         description: "Por favor, selecione uma cota de reserva",
@@ -120,7 +140,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
     // Se há múltiplos cadernos, a seleção é obrigatória
     if (booklets.length > 1 && !selectedBooklet) {
-      // Validation failed: no booklet selected
+      console.log('[ParticipationForm] ❌ Validação falhou: caderno não selecionado (múltiplos cadernos)');
       toast({
         title: "Caderno obrigatório",
         description: "Por favor, selecione o caderno da sua prova",
@@ -129,7 +149,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       return false;
     }
     
-    // Validation passed
+    console.log('[ParticipationForm] ✅ Validação passou');
     return true;
   };
   const handleParticipate = async () => {
@@ -151,31 +171,94 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     // Starting participation process
     setIsLoading(true);
     try {
+      // Verificar se o concurso existe antes de permitir participação
+      const { data: rankingExists, error: rankingError } = await supabase
+        .from('concursos')
+        .select('id')
+        .eq('id', concurso.id)
+        .single();
+
+      if (rankingError || !rankingExists) {
+        toast({
+          title: "Erro",
+          description: "Ranking não encontrado ou não está ativo.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Verificar se o usuário já está participando do concurso
+      const { data: existingParticipation, error: participationError } = await supabase
+        .from('user_rankings')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('concurso_id', concurso.id)
+        .maybeSingle();
+
+      if (participationError) {
+        console.error('Erro ao verificar participação:', participationError);
+        toast({
+          title: "Erro",
+          description: "Erro ao verificar participação no ranking.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (existingParticipation) {
+        toast({
+          title: "Já participando",
+          description: "Você já está participando deste ranking.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const {
         data,
         error
       } = await supabase.from('user_rankings').insert({
         user_id: user.id,
-        concurso_id: concurso.id,
+        concurso_id: concurso.id, // ✅ CORREÇÃO: ranking_id -> concurso_id
         score: 0,
-        edit_count: 0,
-        all_questions_answered: false,
         reservation_type: selectedQuota,
         selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet as string : null
       }).select('id').single();
       if (error) throw error;
-      // Invalidar todas as queries relacionadas para garantir atualização
+      // Invalidar todas as queries relacionadas para garantir atualização automática
+      console.log('[ParticipationForm] 🔄 Invalidando queries para refresh automático...');
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['participating', concurso.id, user.id]
         }),
         queryClient.invalidateQueries({
-          queryKey: ['rankings', concurso.id]
+          queryKey: ['concursos', concurso.id]
         }),
         queryClient.invalidateQueries({
           queryKey: ['concurso', concurso.id]
+        }),
+        // ✅ ADICIONAR: invalidação para nova estrutura
+        queryClient.invalidateQueries({
+          queryKey: ['participant-count-v2', concurso.id]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['user-participation-v2', concurso.id, user.id]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['concursos-pagination', concurso.id]
+        }),
+        // ✅ ADICIONAR: invalidação para rankings
+        queryClient.invalidateQueries({
+          queryKey: ['rankings', concurso.id]
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['rankings']
         })
       ]);
+      console.log('[ParticipationForm] ✅ Queries invalidadas, dados serão atualizados automaticamente');
       toast({
         title: "Inscrição iniciada!",
         description: "Preencha o cartão de respostas para participar oficialmente do ranking."
@@ -212,7 +295,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Debug states log removed to reduce console spam
 
   // Show the answer sheet if selected and we have a ranking ID
+  console.log('[ParticipationForm] Verificando condição shouldShowAnswerSheet:', shouldShowAnswerSheet);
   if (shouldShowAnswerSheet) {
+    console.log('[ParticipationForm] Renderizando AnswerSheet com rankingId:', localUserRankingId);
     // Rendering AnswerSheet
     return (
       <div className="w-full h-full">
@@ -220,7 +305,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           setLocalIsParticipating(true);
           setShowAnswerSheet(false);
           queryClient.invalidateQueries({
-            queryKey: ['rankings', concurso.id]
+            queryKey: ['concursos', concurso.id]
           });
           navigate(`/concurso/${concurso.id}/resultados`);
           toast({
@@ -241,11 +326,11 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         {/* Quota selection component */}
         <QuotaSelector concurso={concurso} selectedQuota={selectedQuota} onQuotaChange={setSelectedQuota} />
         
-        {/* Booklet selection (only if multiple booklets available) */}
+        {/* Booklet selection (always show if booklets available) */}
         {isLoadingBooklets ? <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Carregando cadernos...
-          </div> : <BookletSelector booklets={booklets} selectedBooklet={selectedBooklet} onBookletChange={setSelectedBooklet} required={booklets.length > 1} />}
+          </div> : booklets.length > 0 ? <BookletSelector booklets={booklets} selectedBooklet={selectedBooklet} onBookletChange={setSelectedBooklet} required={booklets.length > 1} /> : <div className="text-sm text-muted-foreground">Nenhum caderno disponível</div>}
       </div>
       
       <Button onClick={() => {

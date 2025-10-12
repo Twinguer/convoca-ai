@@ -12,13 +12,13 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
         titulo,
         orgao,
         banca,
-        data_publicacao,
-        etapa_atual,
+        created_at,
+        status,
         created_by_user_id,
         is_admin_created,
         localidades
       `)
-      .order('data_publicacao', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -38,7 +38,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
         let creatorName = null;
         if (concurso.created_by_user_id && !concurso.is_admin_created) {
           const { data: userData, error: userError } = await supabase
-            .from('public_profiles')
+            .from('users_profiles')
             .select('name')
             .eq('id', concurso.created_by_user_id)
             .maybeSingle();
@@ -56,7 +56,7 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
 
         return {
           id: concurso.id,
-          examDate: concurso.data_publicacao || new Date().toISOString(),
+          examDate: concurso.created_at || new Date().toISOString(),
           banca: concurso.banca,
           concursoTitle: concurso.orgao,
           cargoTitle: concurso.titulo,

@@ -7,8 +7,10 @@ export const handleQuestionSectionSelection = (
 ) => {
   if (!concurso) return;
   
-  // Estrutura customizada com disciplinas
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+  // Always use disciplines structure (new system)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    console.log('[handleQuestionSectionSelection] Usando estrutura de disciplinas');
+    
     // Selecionar primeira disciplina habilitada
     let foundSection = false;
     
@@ -39,24 +41,11 @@ export const handleQuestionSectionSelection = (
         }
       }
     }
-  } else {
-    // Estrutura tradicional - selecionar primeira seção disponível
-    if (concurso.has_basic_knowledge) {
-      setSelectedSection('basic');
-    } else if (concurso.has_specific_knowledge_1) {
-      setSelectedSection('specific1');
-    } else if (concurso.has_specific_knowledge_2) {
-      setSelectedSection('specific2');
-    } else if (concurso.has_specific_knowledge_3) {
-      setSelectedSection('specific3');
-    } else if (concurso.has_discursive) {
-      setSelectedSection('discursive');
-    } else if (concurso.has_case_study_1) {
-      setSelectedSection('case_study1');
-    } else if (concurso.has_case_study_2) {
-      setSelectedSection('case_study2');
-    } else if (concurso.has_case_study_3) {
-      setSelectedSection('case_study3');
+    
+    if (!foundSection) {
+      console.warn('[handleQuestionSectionSelection] No enabled disciplines found');
     }
+  } else {
+    console.warn('[handleQuestionSectionSelection] No disciplines found');
   }
 };

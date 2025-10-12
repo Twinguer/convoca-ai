@@ -158,7 +158,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           </div>
           
           {/* Data da Prova */}
-          <FormField control={form.control} name="data_publicacao" render={({
+          <FormField control={form.control} name="created_at" render={({
           field
         }) => <FormItem>
                 <FormLabel>Data da Prova</FormLabel>

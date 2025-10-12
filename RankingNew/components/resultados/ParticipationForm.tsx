@@ -58,13 +58,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const loadBooklets = async () => {
     try {
       setIsLoadingBooklets(true);
-      const {
-        data,
-        error
-      } = await supabase.rpc('manage_exam_booklets', {
-        p_operation: 'GET',
-        p_concurso_id: concurso.id
-      });
+      const { data: concursoData, error } = await supabase
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concurso.id)
+        .single();
+      
+      if (error) throw error;
+      
+      const data = {
+        booklets: concursoData?.exam_booklets || []
+      };
       if (error) throw error;
       if (data?.booklets && data.booklets.length > 0) {
         setBooklets(data.booklets);

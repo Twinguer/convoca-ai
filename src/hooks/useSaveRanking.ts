@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface SaveRankingOptions {
   formValues: any;
@@ -21,7 +22,134 @@ const ensureNumeric = (value: any): number => {
   return 0;
 };
 
+// Helper to create disciplines from structure fields
+const createDisciplinesFromStructure = (formValues: any): any[] => {
+  const disciplines = [];
+
+  // Conhecimentos Básicos
+  if (formValues.has_basic_knowledge) {
+    disciplines.push({
+      id: 'basic-knowledge',
+      name: 'Conhecimentos Básicos',
+      type: 'basic_knowledge',
+      isEnabled: true,
+      questionCount: formValues.basic_knowledge_questions || 0,
+      weight: formValues.basic_knowledge_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Conhecimentos Específicos 1
+  if (formValues.has_specific_knowledge_1) {
+    disciplines.push({
+      id: 'specific-knowledge-1',
+      name: 'Conhecimentos Específicos 1',
+      type: 'specific_knowledge_1',
+      isEnabled: true,
+      questionCount: formValues.specific_knowledge_1_questions || 0,
+      weight: formValues.specific_knowledge_1_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Conhecimentos Específicos 2
+  if (formValues.has_specific_knowledge_2) {
+    disciplines.push({
+      id: 'specific-knowledge-2',
+      name: 'Conhecimentos Específicos 2',
+      type: 'specific_knowledge_2',
+      isEnabled: true,
+      questionCount: formValues.specific_knowledge_2_questions || 0,
+      weight: formValues.specific_knowledge_2_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Conhecimentos Específicos 3
+  if (formValues.has_specific_knowledge_3) {
+    disciplines.push({
+      id: 'specific-knowledge-3',
+      name: 'Conhecimentos Específicos 3',
+      type: 'specific_knowledge_3',
+      isEnabled: true,
+      questionCount: formValues.specific_knowledge_3_questions || 0,
+      weight: formValues.specific_knowledge_3_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Discursiva
+  if (formValues.has_discursive) {
+    disciplines.push({
+      id: 'discursive',
+      name: 'Prova Discursiva',
+      type: 'discursive',
+      isEnabled: true,
+      questionCount: 1,
+      weight: formValues.discursive_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Estudo de Caso 1
+  if (formValues.has_case_study_1) {
+    disciplines.push({
+      id: 'case-study-1',
+      name: 'Estudo de Caso 1',
+      type: 'case_study_1',
+      isEnabled: true,
+      questionCount: 1,
+      weight: formValues.case_study_1_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Estudo de Caso 2
+  if (formValues.has_case_study_2) {
+    disciplines.push({
+      id: 'case-study-2',
+      name: 'Estudo de Caso 2',
+      type: 'case_study_2',
+      isEnabled: true,
+      questionCount: 1,
+      weight: formValues.case_study_2_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Estudo de Caso 3
+  if (formValues.has_case_study_3) {
+    disciplines.push({
+      id: 'case-study-3',
+      name: 'Estudo de Caso 3',
+      type: 'case_study_3',
+      isEnabled: true,
+      questionCount: 1,
+      weight: formValues.case_study_3_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  // Conhecimentos Customizados
+  if (formValues.has_custom_knowledge) {
+    disciplines.push({
+      id: 'custom-knowledge',
+      name: 'Conhecimentos Customizados',
+      type: 'custom_knowledge',
+      isEnabled: true,
+      questionCount: formValues.custom_knowledge_questions || 0,
+      weight: formValues.custom_knowledge_weight || 1,
+      minimum_score: 0
+    });
+  }
+
+  console.log('[useSaveRanking] Disciplinas criadas automaticamente:', disciplines);
+  return disciplines;
+};
+
 export const useSaveRanking = () => {
+  const queryClient = useQueryClient();
+  
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
     console.log('[useSaveRanking] saveRanking called with:', { formValues, userId, editId, jobTitles });
     try {
@@ -29,18 +157,18 @@ export const useSaveRanking = () => {
       let existingDisciplines: any[] = [];
       let examType: string = 'Alternativas'; // Default value
       
-      if (editId) {
-        // Buscar as disciplinas existentes para preservar IDs
-        const { data: existingConcurso, error: fetchError } = await supabase
-          .from('concursos')
-          .select('disciplines, exam_type')
-          .eq('id', editId)
-          .single();
+        if (editId) {
+          // Buscar as disciplinas existentes para preservar IDs
+          const { data: existingRanking, error: fetchError } = await supabase
+            .from('concursos')
+            .select('disciplines, exam_type')
+            .eq('id', editId)
+            .single();
         
-        if (!fetchError && existingConcurso?.disciplines) {
+        if (!fetchError && existingRanking?.disciplines) {
           // Log removido por segurança
-          existingDisciplines = existingConcurso.disciplines;
-          examType = existingConcurso.exam_type || 'Alternativas';
+          existingDisciplines = existingRanking.disciplines;
+          examType = existingRanking.exam_type || 'Alternativas';
         }
       } else {
         // Para novos concursos, usar o exam_type do formulário
@@ -79,8 +207,7 @@ export const useSaveRanking = () => {
         formValues.quota_minimum_score = 0;
       }
 
-      // Always use custom knowledge mode
-      formValues.has_custom_knowledge = true;
+      // Don't force custom knowledge mode - let the form values determine this
       
       // Se estamos editando e temos disciplinas existentes, preservar a estrutura
       if (editId && existingDisciplines.length > 0 && formValues.disciplines) {
@@ -222,11 +349,10 @@ export const useSaveRanking = () => {
         return { duplicated: false, error: true };
       }
 
-      // Fetch concursos and do the comparison in JS for robust uniqueness
+      // Fetch rankings and do the comparison in JS for robust uniqueness
       const { data: founds, error: findError } = await supabase
         .from('concursos')
-        .select('id, titulo, orgao, banca, data_publicacao')
-        .eq('data_publicacao', formValues.data_publicacao);
+        .select('id, titulo, orgao, banca, created_at');
 
       if (findError) throw findError;
 
@@ -240,32 +366,16 @@ export const useSaveRanking = () => {
       );
 
       if (isDuplicate) {
-        toast.error("Já existe um ranking com mesmo título, órgão, banca e data.");
+        toast.error("Já existe um ranking com mesmo título, órgão e banca.");
         return { duplicated: true };
       }
 
-      // Create a clean object with the data for submission
+      // Create a clean object with the data for submission (only essential fields)
       const dataToSubmit: Record<string, any> = {
-        ...formValues,
-        created_by_user_id: formValues.created_by_user_id || userId, // Keep original creator when admin is editing
         titulo: title,
         orgao: orgao,
         banca: formValues.custom_banca || formValues.banca,
-        localidades: formValues.localidades,
-        has_custom_knowledge: true,
-        
-        // Use the hierarchical structure if available, otherwise use flattened or original
-        disciplines: formValues.hierarchicalDisciplines || formValues.disciplines,
-        
-        // Process minimum score fields
-        has_minimum_score: formValues.has_minimum_score === true,
-        minimum_score_unit_type: formValues.minimum_score_unit_type || 'percentage',
-        minimum_score_type: formValues.minimum_score_type || 'knowledge',
-        total_minimum_score: formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0,
-        
-        has_quota_minimum_score: formValues.has_quota_minimum_score === true,
-        quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
-        quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0
+        status: formValues.status || 'Ativo'
       };
 
       // Remove any temporary fields not needed in database
@@ -287,9 +397,47 @@ export const useSaveRanking = () => {
       let concursoIdToUse = editId;
 
       if (editId) {
+        // Para edição, incluir todos os campos necessários
+        const editDataToSubmit = {
+          ...dataToSubmit,
+          // Campos de localidade e cotas
+          localidades: formValues.localidades,
+          has_ampla_concorrencia: formValues.has_ampla_concorrencia === true,
+          has_ppp: formValues.has_ppp === true,
+          has_pcd: formValues.has_pcd === true,
+          has_hipossuficientes: formValues.has_hipossuficientes === true,
+          has_indigenas: formValues.has_indigenas === true,
+          has_transsexuais: formValues.has_transsexuais === true,
+          // Campos de exames subjetivos
+          has_discursive: formValues.has_discursive === true,
+          has_case_study_1: formValues.has_case_study_1 === true,
+          has_case_study_2: formValues.has_case_study_2 === true,
+          has_case_study_3: formValues.has_case_study_3 === true,
+          // Campos de configuração de exame
+          exam_type: formValues.exam_type || 'Alternativas',
+          alternatives_count: ensureNumeric(formValues.alternatives_count),
+          wrong_answer_penalty: ensureNumeric(formValues.wrong_answer_penalty),
+          // Campos de pontuação mínima
+          has_minimum_score: formValues.has_minimum_score === true,
+          minimum_score_unit_type: formValues.minimum_score_unit_type || 'percentage',
+          minimum_score_type: formValues.minimum_score_type || 'knowledge',
+          total_minimum_score: formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0,
+          has_quota_minimum_score: formValues.has_quota_minimum_score === true,
+          quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
+          quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0,
+          // Campos de disciplinas
+          has_custom_knowledge: true,
+          disciplines: formValues.hierarchicalDisciplines || formValues.disciplines,
+          subjects: formValues.subjects || [],
+          form_config: formValues.form_config || {},
+          official_answers: formValues.official_answers || {},
+          exam_booklets: formValues.exam_booklets || [],
+          metadata: formValues.metadata || {}
+        };
+
         const { data, error } = await supabase
           .from('concursos')
-          .update(dataToSubmit)
+          .update(editDataToSubmit)
           .eq('id', editId)
           .select();
 
@@ -300,7 +448,7 @@ export const useSaveRanking = () => {
         result = data;
         concursoIdToUse = editId;
         
-        // Log removido por segurança
+        console.log('[useSaveRanking] Ranking editado com sucesso, campos atualizados:', Object.keys(editDataToSubmit));
       } else {
         const { data, error } = await supabase
           .from('concursos')
@@ -315,19 +463,80 @@ export const useSaveRanking = () => {
         concursoIdToUse = result?.[0]?.id;
       }
 
-      // Logic to synchronize official_answer_weights with the disciplines
+      // Segunda etapa: atualizar com campos adicionais se não for edição
+      if (!editId && concursoIdToUse) {
+        // Usar as disciplinas do formulário se existirem, senão criar automaticamente
+        let disciplinesData = formValues.disciplines || [];
+        
+        // Se não há disciplinas no formulário, criar baseadas na estrutura de prova
+        if (!disciplinesData || disciplinesData.length === 0) {
+          disciplinesData = createDisciplinesFromStructure(formValues);
+        }
+        
+        // Determinar se há disciplinas customizadas baseado nas disciplinas criadas
+        const hasCustomDisciplines = disciplinesData && disciplinesData.length > 0;
+        
+        console.log('[useSaveRanking] Usando disciplinas:', disciplinesData);
+        console.log('[useSaveRanking] hasCustomDisciplines:', hasCustomDisciplines);
+        
+        const { error: updateError } = await supabase
+          .from('concursos')
+          .update({ 
+            exam_type: formValues.exam_type || 'Alternativas',
+            has_minimum_score: formValues.has_minimum_score === true,
+            total_minimum_score: formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0,
+            wrong_answer_penalty: ensureNumeric(formValues.wrong_answer_penalty),
+            has_custom_knowledge: hasCustomDisciplines, // Definir baseado nas disciplinas criadas
+            created_by_user_id: formValues.created_by_user_id || userId,
+            // Campos de localidade e cotas
+            localidades: formValues.localidades,
+            has_ampla_concorrencia: formValues.has_ampla_concorrencia === true,
+            has_ppp: formValues.has_ppp === true,
+            has_pcd: formValues.has_pcd === true,
+            has_hipossuficientes: formValues.has_hipossuficientes === true,
+            has_indigenas: formValues.has_indigenas === true,
+            has_transsexuais: formValues.has_transsexuais === true,
+            // Campos de exames subjetivos
+            has_discursive: formValues.has_discursive === true,
+            has_case_study_1: formValues.has_case_study_1 === true,
+            has_case_study_2: formValues.has_case_study_2 === true,
+            has_case_study_3: formValues.has_case_study_3 === true,
+            // Campos de pontuação mínima para cotas
+            has_quota_minimum_score: formValues.has_quota_minimum_score === true,
+            quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
+            quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0,
+            // Campos JSONB sincronizados com convoca-ai
+            disciplines: disciplinesData,
+            subjects: formValues.subjects || [],
+            form_config: formValues.form_config || {},
+            official_answers: formValues.official_answers || {},
+            exam_booklets: formValues.exam_booklets || [],
+            metadata: formValues.metadata || {},
+            total_participants: 0
+          })
+          .eq('id', concursoIdToUse);
+
+        if (updateError) {
+          console.error("Error updating additional fields:", updateError);
+          // Não falhar a operação, apenas logar o erro
+        }
+      }
+
+      // REMOVIDO: Logic to synchronize official_answer_weights with the disciplines
+      // Dados agora são salvos no JSONB da tabela concursos
+      /* REMOVIDO - Dados salvos no JSONB
       if (concursoIdToUse) {
         // Get the saved ranking to access its disciplines
-        const { data: savedConcurso, error: getConcursoError } = await supabase
+        const { data: savedRanking, error: getRankingError } = await supabase
           .from('concursos')
           .select('disciplines')
           .eq('id', concursoIdToUse)
           .single();
 
-        if (getConcursoError) {
-          console.error("Erro ao buscar concurso para sincronização:", getConcursoError);
+        if (getRankingError) {
+          console.error("Erro ao buscar ranking para sincronização:", getRankingError);
           // Continue even with error, as the ranking was already saved
-        } else if (savedConcurso && savedConcurso.disciplines) {
+        } else if (savedRanking && savedRanking.disciplines) {
           try {
             // 1. Delete existing records for this ranking
             const { error: deleteError } = await supabase
@@ -444,9 +653,20 @@ export const useSaveRanking = () => {
           }
         }
       }
+      */
 
       // Show success message after the whole process
       console.log('[useSaveRanking] Ranking salvo com sucesso, ID:', concursoIdToUse);
+      
+      // Invalidar queries para refresh automático
+      console.log('[useSaveRanking] 🔄 Invalidando queries para refresh automático...');
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      queryClient.invalidateQueries({ queryKey: ['concursos'] });
+      queryClient.invalidateQueries({ queryKey: ['concurso', concursoIdToUse] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoIdToUse] });
+      queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concursoIdToUse] });
+      console.log('[useSaveRanking] ✅ Queries invalidadas, dados serão atualizados automaticamente');
+      
       if (editId) {
         toast.success("Ranking atualizado com sucesso!");
       } else {

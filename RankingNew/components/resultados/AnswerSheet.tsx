@@ -16,6 +16,7 @@ import { ExamTypeWarning } from './ExamTypeWarning';
 import { BookletSwitcher } from './BookletSwitcher';
 import { getDisciplines, isHierarchicalStructure, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCountUtils';
+import { getNullifiedQuestionsFromOfficialAnswers } from '@/hooks/useAnswerSheet/officialAnswersUtils';
 import { toast } from 'sonner';
 
 interface AnswerSheetProps {
@@ -36,6 +37,28 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
   // Definir o estado do selectedBookletId corretamente
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
+
+  // Fetch user ranking data first to get selectedBookletId
+  const {
+    data: userRankingData,
+    isLoading: isLoadingRanking,
+    refetch: refetchRanking
+  } = useQuery({
+    queryKey: ['user-ranking-detail', rankingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+      if (error) throw error;
+      return data || {};
+    },
+    staleTime: 1000
+  });
+
+  // Get selected booklet ID from user ranking data
+  const selectedBookletIdFromData = userRankingData?.selected_booklet || '';
 
   const {
     answers,
@@ -68,26 +91,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isHierarchical,
     isLoading,
     refetchAnswers
-  } = useAnswerSheet(concurso, rankingId);
-
-  // Fetch user ranking data
-  const {
-    data: userRankingData,
-    isLoading: isLoadingRanking,
-    refetch: refetchRanking
-  } = useQuery({
-    queryKey: ['user-ranking-detail', rankingId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-      if (error) throw error;
-      return data || {};
-    },
-    staleTime: 1000
-  });
+  } = useAnswerSheet(concurso, rankingId, selectedBookletIdFromData);
 
   // Fetch exam booklets for this concurso
   const {
@@ -97,12 +101,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     queryKey: ['exam-booklets', concurso.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', concurso.id)
-        .order('display_order');
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concurso.id)
+        .single();
       if (error) throw error;
-      return data || [];
+      // Ordenar por display_order e retornar array
+      const booklets = data?.exam_booklets || [];
+      return booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
     }
   });
 
@@ -195,41 +201,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isLoading: isLoadingNullified,
     refetch: refetchNullified
   } = useQuery({
-      queryKey: ['nullified-questions', concurso.id, selectedBookletId],
+      queryKey: ['nullified-questions', concurso.id, selectedBookletIdFromData],
       queryFn: async () => {
-          if (!selectedBookletId) return [];
+          if (!selectedBookletIdFromData) return [];
           
-          console.log('[AnswerSheet] Fetching nullified questions using consolidated structure');
-          
-          // Usar a nova estrutura JSON consolidada
-          const { data, error } = await supabase
-              .from('official_answer_weights')
-              .select('consolidated_answer_data')
-              .eq('concurso_id', concurso.id)
-              .maybeSingle();
-              
-          if (error) {
-              console.error('[AnswerSheet] Error fetching consolidated data:', error);
-              throw error;
-          }
-          
-          if (!data?.consolidated_answer_data?.booklets?.[selectedBookletId]) {
-              console.log('[AnswerSheet] No consolidated data found for booklet:', selectedBookletId);
-              return [];
-          }
-          
-          const bookletData = data.consolidated_answer_data.booklets[selectedBookletId];
-          const nullifiedQuestions = Object.entries(bookletData.answers || {})
-              .filter(([_, answerData]: [string, any]) => answerData.is_nullified)
-              .map(([questionNum, _]) => ({ question_number: parseInt(questionNum) }));
-              
-          console.log('[AnswerSheet] Found', nullifiedQuestions.length, 'nullified questions for booklet:', selectedBookletId);
-          return nullifiedQuestions;
+          console.log('[AnswerSheet] Fetching nullified questions using official answers');
+          return await getNullifiedQuestionsFromOfficialAnswers(concurso.id, selectedBookletIdFromData);
       },
-      enabled: !!selectedBookletId,
-      staleTime: 0, // Always fetch fresh data to detect changes in nullified questions
-      refetchOnWindowFocus: true,
-      refetchInterval: 5000 // Check for updates every 5 seconds
+      enabled: !!selectedBookletIdFromData,
+      staleTime: 300000, // 5 minutos - reduzir queries desnecessárias
+      refetchOnWindowFocus: false, // Desabilitado para melhor performance
+      refetchInterval: false // Desabilitado - era muito agressivo (5s)
   });
 
   // Import saveAnswers hook with booklet support (CORRIGIDO para reagir a mudanças no selectedBookletId)

@@ -7,12 +7,36 @@ export const getTotalQuestions = (concurso: Concurso): number => {
   
   console.log('[getTotalQuestions] Calculando total de questões para concurso:', concurso.id);
   
-  // If using custom knowledge structure
-  if (concurso.has_custom_knowledge) {
-    console.log('[getTotalQuestions] Usando estrutura de conhecimento customizado');
+  // Always use disciplines structure (new system)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    console.log('[getTotalQuestions] Usando estrutura de disciplinas');
     let totalQuestions = 0;
     
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Check if hierarchical structure (blocks -> disciplines)
+    const isHierarchical = concurso.disciplines.length > 0 && 
+                          concurso.disciplines[0] && 
+                          typeof concurso.disciplines[0] === 'object' && 
+                          'name' in concurso.disciplines[0] && 
+                          'disciplines' in concurso.disciplines[0];
+    
+    if (isHierarchical) {
+      // Process hierarchical structure
+      for (const block of concurso.disciplines) {
+        if ('disciplines' in block && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.questionCount) {
+              const questionCount = typeof discipline.questionCount === 'number'
+                ? discipline.questionCount
+                : Number(String(discipline.questionCount || '0'));
+                
+              console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+              totalQuestions += questionCount;
+            }
+          }
+        }
+      }
+    } else {
+      // Process flat structure
       concurso.disciplines.forEach(discipline => {
         if (discipline.isEnabled && discipline.questionCount) {
           const questionCount = typeof discipline.questionCount === 'number'
@@ -23,56 +47,14 @@ export const getTotalQuestions = (concurso: Concurso): number => {
           totalQuestions += questionCount;
         }
       });
-    } else {
-      console.warn('[getTotalQuestions] Nenhum array de disciplines encontrado para conhecimento customizado');
     }
     
-    console.log(`[getTotalQuestions] Total de questões customizadas: ${totalQuestions}`);
+    console.log(`[getTotalQuestions] Total de questões: ${totalQuestions}`);
     return totalQuestions;
   }
   
-  // Traditional structure
-  console.log('[getTotalQuestions] Usando estrutura tradicional');
-  let total = 0;
-  
-  if (concurso.has_basic_knowledge && concurso.basic_knowledge_questions) {
-    const basicCount = typeof concurso.basic_knowledge_questions === 'number'
-      ? concurso.basic_knowledge_questions
-      : Number(String(concurso.basic_knowledge_questions || '0'));
-      
-    console.log(`[getTotalQuestions] Conhecimento básico: ${basicCount} questões`);
-    total += basicCount;
-  }
-  
-  if (concurso.has_specific_knowledge_1 && concurso.specific_knowledge_1_questions) {
-    const count = typeof concurso.specific_knowledge_1_questions === 'number'
-      ? concurso.specific_knowledge_1_questions
-      : Number(String(concurso.specific_knowledge_1_questions || '0'));
-      
-    console.log(`[getTotalQuestions] Conhecimento específico 1: ${count} questões`);
-    total += count;
-  }
-  
-  if (concurso.has_specific_knowledge_2 && concurso.specific_knowledge_2_questions) {
-    const count = typeof concurso.specific_knowledge_2_questions === 'number'
-      ? concurso.specific_knowledge_2_questions
-      : Number(String(concurso.specific_knowledge_2_questions || '0'));
-      
-    console.log(`[getTotalQuestions] Conhecimento específico 2: ${count} questões`);
-    total += count;
-  }
-  
-  if (concurso.has_specific_knowledge_3 && concurso.specific_knowledge_3_questions) {
-    const count = typeof concurso.specific_knowledge_3_questions === 'number'
-      ? concurso.specific_knowledge_3_questions
-      : Number(String(concurso.specific_knowledge_3_questions || '0'));
-      
-    console.log(`[getTotalQuestions] Conhecimento específico 3: ${count} questões`);
-    total += count;
-  }
-  
-  console.log(`[getTotalQuestions] Total de questões tradicionais: ${total}`);
-  return total;
+  console.warn('[getTotalQuestions] No disciplines found, returning 0');
+  return 0;
 };
 
 // Get the count of questions that have been answered
@@ -88,9 +70,9 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
     const { supabase } = await import('@/integrations/supabase/client');
     
     const { data, error } = await supabase
-      .from('official_answer_weights')
-      .select('consolidated_answer_data')
-      .eq('concurso_id', concursoId)
+      .from('concursos')
+      .select('official_answers')
+      .eq('id', concursoId)
       .maybeSingle();
 
     if (error || !data) {
@@ -98,8 +80,8 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
       return true;
     }
 
-    const bookletData = data?.consolidated_answer_data?.booklets?.[bookletId];
-    if (!bookletData || !bookletData.answers) {
+    const bookletData = data?.official_answers?.[bookletId];
+    if (!bookletData || !bookletData.questions) {
       console.log('[checkMissingOfficialAnswers] Gabarito não encontrado para o caderno:', bookletId);
       return true;
     }

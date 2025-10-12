@@ -29,68 +29,59 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
         
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-          {concurso.has_basic_knowledge && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Básicos
-                  {concurso.basic_knowledge_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.basic_knowledge_weight}
-                    </span>}
-                </p>
-                <div className="flex items-center text-muted-foreground">
-                  <p>{concurso.basic_knowledge_questions} questões</p>
+          {/* Render disciplines from the new structure */}
+          {concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.map((discipline, index) => {
+            // Check if it's a hierarchical structure (block with disciplines)
+            if ('disciplines' in discipline && Array.isArray(discipline.disciplines)) {
+              // Render each discipline in the block
+              return discipline.disciplines.map((subDiscipline: any, subIndex: number) => {
+                if (!subDiscipline.isEnabled) return null;
+                
+                return (
+                  <div key={`${index}-${subIndex}`} className="flex items-start">
+                    <div>
+                      <p className="font-medium flex items-center">
+                        {subDiscipline.name || subDiscipline.type}
+                        {subDiscipline.weight > 0 && (
+                          <span className="ml-2 flex items-center text-emerald-700 font-medium">
+                            <Scale className="h-3.5 w-3.5 mr-1" />
+                            Peso {subDiscipline.weight}
+                          </span>
+                        )}
+                      </p>
+                      <div className="flex items-center text-muted-foreground">
+                        <p>{subDiscipline.questionCount || 0} questões</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              });
+            } else {
+              // Flat structure - render discipline directly
+              if (!discipline.isEnabled) return null;
+              
+              return (
+                <div key={index} className="flex items-start">
+                  <div>
+                    <p className="font-medium flex items-center">
+                      {discipline.name || discipline.type}
+                      {discipline.weight > 0 && (
+                        <span className="ml-2 flex items-center text-emerald-700 font-medium">
+                          <Scale className="h-3.5 w-3.5 mr-1" />
+                          Peso {discipline.weight}
+                        </span>
+                      )}
+                    </p>
+                    <div className="flex items-center text-muted-foreground">
+                      <p>{discipline.questionCount || 0} questões</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>}
+              );
+            }
+          }).flat().filter(Boolean)}
           
-          {concurso.has_specific_knowledge_1 && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Específicos 1
-                  {concurso.specific_knowledge_1_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.specific_knowledge_1_weight}
-                    </span>}
-                </p>
-                <div className="flex items-center text-muted-foreground">
-                  <p>{concurso.specific_knowledge_1_questions} questões</p>
-                </div>
-              </div>
-            </div>}
-          
-          {concurso.has_specific_knowledge_2 && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Específicos 2
-                  {concurso.specific_knowledge_2_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.specific_knowledge_2_weight}
-                    </span>}
-                </p>
-                <div className="flex items-center text-muted-foreground">
-                  <p>{concurso.specific_knowledge_2_questions} questões</p>
-                </div>
-              </div>
-            </div>}
-          
-          {concurso.has_specific_knowledge_3 && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Conhecimentos Específicos 3
-                  {concurso.specific_knowledge_3_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.specific_knowledge_3_weight}
-                    </span>}
-                </p>
-                <div className="flex items-center text-muted-foreground">
-                  <p>{concurso.specific_knowledge_3_questions} questões</p>
-                </div>
-              </div>
-            </div>}
-          
-          {concurso.has_discursive}
-          
+          {/* Keep case study sections as they are not part of disciplines */}
           {concurso.has_case_study_1 && <div className="flex items-start">
               <div>
                 <p className="font-medium flex items-center">

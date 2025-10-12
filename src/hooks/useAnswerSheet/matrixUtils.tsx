@@ -12,7 +12,10 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
 
   if (!concurso) return result;
 
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+  // Always use disciplines structure (new system)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    console.log('[getSectionQuestionsDict] Using disciplines structure');
+    
     // Check if hierarchical (blocks -> disciplines)
     const isHierarchical = concurso.disciplines.length > 0 && 
                            isDisciplineBlock(concurso.disciplines[0]);
@@ -60,65 +63,7 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
       }
     }
   } else {
-    // Traditional sections
-    let questionNumber = 1;
-
-    // Basic knowledge
-    if (concurso.has_basic_knowledge) {
-      result['basic'] = [];
-      const questionCount = parseInt(String(concurso.basic_knowledge_questions), 10) || 0;
-      for (let i = 0; i < questionCount; i++) {
-        result['basic'].push(questionNumber);
-        questionNumber++;
-      }
-    }
-
-    // Specific knowledge 1
-    if (concurso.has_specific_knowledge_1) {
-      result['specific1'] = [];
-      const questionCount = parseInt(String(concurso.specific_knowledge_1_questions), 10) || 0;
-      for (let i = 0; i < questionCount; i++) {
-        result['specific1'].push(questionNumber);
-        questionNumber++;
-      }
-    }
-
-    // Specific knowledge 2
-    if (concurso.has_specific_knowledge_2) {
-      result['specific2'] = [];
-      const questionCount = parseInt(String(concurso.specific_knowledge_2_questions), 10) || 0;
-      for (let i = 0; i < questionCount; i++) {
-        result['specific2'].push(questionNumber);
-        questionNumber++;
-      }
-    }
-
-    // Specific knowledge 3
-    if (concurso.has_specific_knowledge_3) {
-      result['specific3'] = [];
-      const questionCount = parseInt(String(concurso.specific_knowledge_3_questions), 10) || 0;
-      for (let i = 0; i < questionCount; i++) {
-        result['specific3'].push(questionNumber);
-        questionNumber++;
-      }
-    }
-
-    // Discursive sections (no question numbers)
-    if (concurso.has_discursive) {
-      result['discursive'] = [];
-    }
-
-    if (concurso.has_case_study_1) {
-      result['case_study1'] = [];
-    }
-
-    if (concurso.has_case_study_2) {
-      result['case_study2'] = [];
-    }
-
-    if (concurso.has_case_study_3) {
-      result['case_study3'] = [];
-    }
+    console.warn('[getSectionQuestionsDict] No disciplines found, returning empty result');
   }
 
   return result;
@@ -155,11 +100,18 @@ export const getQuestionMatrixForSection = (
   section: SectionType,
   sectionQuestions: SectionQuestions
 ): (number | null)[][] => {
+  console.log('[getQuestionMatrixForSection] Parâmetros:', { concurso: concurso?.id, section, sectionQuestions });
+  
   if (!concurso || !section || !sectionQuestions) {
+    console.log('[getQuestionMatrixForSection] Parâmetros inválidos, retornando matriz vazia');
     return [[null]];
   }
 
   const questionNumbers = sectionQuestions[section] || [];
+  console.log('[getQuestionMatrixForSection] Números das questões para seção', section, ':', questionNumbers);
   
-  return createQuestionMatrix(questionNumbers);
+  const matrix = createQuestionMatrix(questionNumbers);
+  console.log('[getQuestionMatrixForSection] Matriz criada:', matrix);
+  
+  return matrix;
 };

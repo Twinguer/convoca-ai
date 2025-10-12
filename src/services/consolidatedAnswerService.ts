@@ -182,7 +182,7 @@ export const consolidatedAnswerService = {
       });
 
       const { data, error } = await supabase.rpc('save_user_answers_consolidated_by_concurso', {
-        p_ranking_id: rankingId,
+        p_concurso_id: rankingId,
         p_concurso_id: concursoId,
         p_booklet_id: bookletIdString,
         p_answers: answersObject,

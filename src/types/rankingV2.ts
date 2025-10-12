@@ -17,7 +17,7 @@ export interface CreateRankingNew {
 
 export interface UserRankingNew {
   id: string;
-  ranking_id: string;
+  concurso_id: string;
   user_id: string;
   score: number;
   position: number;
@@ -34,8 +34,8 @@ export interface RankingConfig {
     titulo: string;
     orgao: string;
     banca: string;
-    data_publicacao: string;
-    etapa_atual: string;
+    created_at: string;
+    status: string;
     status: string;
     link: string;
     vagas: number;
@@ -266,8 +266,8 @@ export interface CreateRankingFormData {
   titulo: string;
   orgao: string;
   banca: string;
-  data_publicacao: string;
-  etapa_atual: string;
+  created_at: string;
+  status: string;
   status: string;
   link: string;
   vagas: number;

@@ -16,6 +16,7 @@ import { ExamTypeWarning } from './ExamTypeWarning';
 import { BookletSwitcher } from './BookletSwitcher';
 import { getDisciplines, isHierarchicalStructure, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCountUtils';
+import { getNullifiedQuestionsFromOfficialAnswers } from '@/hooks/useAnswerSheet/officialAnswersUtils';
 import { toast } from 'sonner';
 
 interface AnswerSheetProps {
@@ -36,8 +37,37 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [sectionLabels, setSectionLabels] = useState<Record<string, string>>({...sectionDisplayNames});
   const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
-  // Definir o estado do selectedBookletId corretamente
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
+
+  // Fetch user ranking data first to get selectedBookletId
+  const {
+    data: userRankingData,
+    isLoading: isLoadingRanking,
+    refetch: refetchRanking
+  } = useQuery({
+    queryKey: ['user-ranking-detail', rankingId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('*')
+        .eq('id', rankingId)
+        .single();
+      if (error) throw error;
+      return data || {};
+    },
+    staleTime: 1000
+  });
+
+  // Get selected booklet ID from user ranking data
+  const selectedBookletIdFromData = userRankingData?.selected_booklet || '';
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (selectedBookletIdFromData && selectedBookletIdFromData !== selectedBookletId) {
+      setSelectedBookletId(selectedBookletIdFromData);
+      console.log('[AnswerSheet] selectedBookletId atualizado para:', selectedBookletIdFromData);
+    }
+  }, [selectedBookletIdFromData, selectedBookletId]);
 
   const {
     answers,
@@ -67,29 +97,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setCaseStudy3Score,
     isDiscursiveSection,
     getSectionQuestions,
+    sectionQuestions,
     isHierarchical,
     isLoading,
     refetchAnswers
-  } = useAnswerSheet(concurso, rankingId);
-
-  // Fetch user ranking data
-  const {
-    data: userRankingData,
-    isLoading: isLoadingRanking,
-    refetch: refetchRanking
-  } = useQuery({
-    queryKey: ['user-ranking-detail', rankingId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-      if (error) throw error;
-      return data || {};
-    },
-    staleTime: 1000
-  });
+  } = useAnswerSheet(concurso, rankingId, selectedBookletIdFromData);
 
   // Fetch exam booklets for this concurso
   const {
@@ -99,21 +111,25 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     queryKey: ['exam-booklets', concurso.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', concurso.id)
-        .order('display_order');
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concurso.id)
+        .single();
       if (error) throw error;
-      return data || [];
+      // Ordenar por display_order e retornar array
+      const booklets = data?.exam_booklets || [];
+      return booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
     }
   });
 
   // Set selected booklet from user ranking data
   useEffect(() => {
+    console.log('[AnswerSheet] useEffect executado - userRankingData:', userRankingData?.selected_booklet, 'selectedBookletId atual:', selectedBookletId);
     if (userRankingData?.selected_booklet && !selectedBookletId) {
+      console.log('[AnswerSheet] Definindo selectedBookletId:', userRankingData.selected_booklet);
       setSelectedBookletId(userRankingData.selected_booklet);
     }
-  }, [userRankingData, selectedBookletId]);
+  }, [userRankingData]);
 
   // Handle booklet change from BookletSwitcher (CORRIGIDO - Limpa totalmente o estado)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
@@ -197,44 +213,28 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isLoading: isLoadingNullified,
     refetch: refetchNullified
   } = useQuery({
-      queryKey: ['nullified-questions', concurso.id, selectedBookletId],
+      queryKey: ['nullified-questions', concurso.id, selectedBookletIdFromData],
       queryFn: async () => {
-          if (!selectedBookletId) return [];
+          if (!selectedBookletIdFromData) return [];
           
-          console.log('[AnswerSheet] Fetching nullified questions using consolidated structure');
-          
-          // Usar a nova estrutura JSON consolidada
-          const { data, error } = await supabase
-              .from('official_answer_weights')
-              .select('consolidated_answer_data')
-              .eq('concurso_id', concurso.id)
-              .maybeSingle();
-              
-          if (error) {
-              console.error('[AnswerSheet] Error fetching consolidated data:', error);
-              throw error;
-          }
-          
-          if (!data?.consolidated_answer_data?.booklets?.[selectedBookletId]) {
-              console.log('[AnswerSheet] No consolidated data found for booklet:', selectedBookletId);
-              return [];
-          }
-          
-          const bookletData = data.consolidated_answer_data.booklets[selectedBookletId];
-          const nullifiedQuestions = Object.entries(bookletData.answers || {})
-              .filter(([_, answerData]: [string, any]) => answerData.is_nullified)
-              .map(([questionNum, _]) => ({ question_number: parseInt(questionNum) }));
-              
-          console.log('[AnswerSheet] Found', nullifiedQuestions.length, 'nullified questions for booklet:', selectedBookletId);
-          return nullifiedQuestions;
+          console.log('[AnswerSheet] Fetching nullified questions using official answers');
+          return await getNullifiedQuestionsFromOfficialAnswers(concurso.id, selectedBookletIdFromData);
       },
-      enabled: !!selectedBookletId,
+      enabled: !!selectedBookletIdFromData,
       staleTime: 300000, // 5 minutos - reduzir queries desnecessárias
       refetchOnWindowFocus: false, // Desabilitado para melhor performance
       refetchInterval: false // Desabilitado - era muito agressivo (5s)
   });
 
   // Import saveAnswers hook with booklet support (CORRIGIDO para reagir a mudanças no selectedBookletId)
+  console.log('[AnswerSheet] Parâmetros para useSaveAnswers:', {
+    rankingId,
+    concursoId: concurso?.id,
+    selectedBookletIdFromData,
+    editCount: userRankingData?.edit_count || 0,
+    answersCount: Object.keys(answers).length
+  });
+
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -249,7 +249,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy3Score,
     editCount: userRankingData?.edit_count || 0,
     nullifiedQuestions,
-    selectedBookletId // CRÍTICO: Reage a mudanças no caderno selecionado
+    selectedBookletId: selectedBookletIdFromData // CRÍTICO: Reage a mudanças no caderno selecionado
   });
 
   // Set initial subjective scores from user ranking data
@@ -313,12 +313,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       return;
     }
 
-    if (!selectedBookletId) {
+    if (!selectedBookletIdFromData) {
       setError("É necessário selecionar um caderno de prova antes de salvar as respostas");
       return;
     }
 
-    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Caderno selecionado no momento do salvamento:', selectedBookletId);
+    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Caderno selecionado no momento do salvamento:', selectedBookletIdFromData);
     console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Respostas atuais:', answers);
 
     const totalQuestions = getTotalQuestions();
@@ -395,7 +395,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   // Show warning if no booklet is selected
-  if (!selectedBookletId && !isLoadingRanking) {
+  console.log('[AnswerSheet] Verificando selectedBookletIdFromData:', {
+    selectedBookletIdFromData,
+    isLoadingRanking,
+    shouldShowWarning: !selectedBookletIdFromData && !isLoadingRanking
+  });
+
+  if (!selectedBookletIdFromData && !isLoadingRanking) {
+    console.log('[AnswerSheet] Mostrando aviso de caderno não selecionado');
     return (
       <Card className="shadow-lg">
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -409,7 +416,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     );
   }
 
+  console.log('[AnswerSheet] Estados de loading:', {
+    isLoadingRanking,
+    isLoadingBooklets,
+    checkingOfficialAnswers,
+    missingOfficialAnswers,
+    shouldShowLoading: isLoadingRanking || isLoadingBooklets || (checkingOfficialAnswers && !missingOfficialAnswers)
+  });
+
   if (isLoadingRanking || isLoadingBooklets || (checkingOfficialAnswers && !missingOfficialAnswers)) {
+    console.log('[AnswerSheet] Mostrando tela de loading');
     return <Card>
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -438,14 +454,28 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   // Get objective sections
-  const getObjectiveSections = () => {
+  const getObjectiveSections = (sectionQuestionsData: any) => {
+    console.log('[getObjectiveSections] Chamada com concurso:', concurso?.id);
+    console.log('[getObjectiveSections] sectionQuestionsData recebido:', sectionQuestionsData);
     if (!concurso) return [];
     
     const sections = [];
     
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a estrutura de disciplinas do concurso (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+      console.log('[getObjectiveSections] Usando estrutura de disciplinas');
+      
       // Check if we're using the hierarchical structure (blocks -> disciplines)
-      if (isHierarchical) {
+      const isHierarchicalStructure = concurso.disciplines.length > 0 && 
+                                    concurso.disciplines[0] && 
+                                    typeof concurso.disciplines[0] === 'object' && 
+                                    'name' in concurso.disciplines[0] && 
+                                    'disciplines' in concurso.disciplines[0];
+      
+      console.log('[AnswerSheet] isHierarchicalStructure:', isHierarchicalStructure);
+      console.log('[AnswerSheet] disciplines:', concurso.disciplines);
+      
+      if (isHierarchicalStructure) {
         // Hierarchical structure (blocks -> disciplines)
         for (const block of concurso.disciplines) {
           // TypeGuard to check if it's a block with disciplines property
@@ -454,7 +484,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               if (discipline.isEnabled && discipline.type) {
                 sections.push({
                   key: discipline.type,
-                  label: discipline.name || discipline.type
+                  label: `${block.name} - ${discipline.name}`
                 });
               }
             }
@@ -473,22 +503,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         }
       }
     } else {
-      // Traditional structure
-      if (concurso.has_basic_knowledge) {
-        sections.push({ key: 'basic', label: sectionLabels.basic || 'Conhecimentos Básicos' });
-      }
-      
-      if (concurso.has_specific_knowledge_1) {
-        sections.push({ key: 'specific1', label: sectionLabels.specific1 || 'Conhecimentos Específicos 1' });
-      }
-      
-      if (concurso.has_specific_knowledge_2) {
-        sections.push({ key: 'specific2', label: sectionLabels.specific2 || 'Conhecimentos Específicos 2' });
-      }
-      
-      if (concurso.has_specific_knowledge_3) {
-        sections.push({ key: 'specific3', label: sectionLabels.specific3 || 'Conhecimentos Específicos 3' });
-      }
+      console.warn('[getObjectiveSections] No disciplines found, returning empty sections');
     }
     
     console.log('[AnswerSheet] Objective sections:', sections);
@@ -501,12 +516,18 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setSelectedSection(value as SectionType);
   };
 
-  const objectiveSections = getObjectiveSections();
+  console.log('[AnswerSheet] sectionQuestions sendo passado para getObjectiveSections:', sectionQuestions);
+  console.log('[AnswerSheet] concurso.disciplines antes de chamar getObjectiveSections:', concurso?.disciplines);
+  
+  const objectiveSections = getObjectiveSections(sectionQuestions);
   const matrix = createAnswerMatrix();
   
   console.log('[AnswerSheet] Selected section:', selectedSection);
   console.log('[AnswerSheet] Answer matrix:', matrix);
   console.log('[AnswerSheet] Is hierarchical:', isHierarchical);
+  console.log('[AnswerSheet] Objective sections:', objectiveSections);
+  console.log('[AnswerSheet] Section questions:', getSectionQuestions());
+  console.log('[AnswerSheet] Total questions:', getTotalQuestions());
 
   return (
     <Card className="shadow-lg w-full h-full mx-auto p-4">
@@ -519,7 +540,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
               <span className="font-medium">Caderno selecionado:</span>
               <span className="px-2 py-1 bg-primary/10 text-primary rounded-md font-medium break-words max-w-full">
-                {getBookletName(selectedBookletId)}
+                {getBookletName(selectedBookletIdFromData)}
               </span>
             </div>
             {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
@@ -574,10 +595,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         <ExamTypeWarning examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'} />
 
         {/* Booklet Switcher - NOVO */}
-        {examBooklets && examBooklets.length > 1 && selectedBookletId && (
+        {examBooklets && examBooklets.length > 1 && selectedBookletIdFromData && (
           <BookletSwitcher
             booklets={examBooklets}
-            currentBookletId={selectedBookletId}
+            currentBookletId={selectedBookletIdFromData}
             rankingId={rankingId}
             onBookletChanged={handleBookletChanged}
             disabled={isSaving}

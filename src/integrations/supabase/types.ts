@@ -33,11 +33,11 @@ export type Database = {
           custom_job_title: string | null
           custom_knowledge_questions: number | null
           custom_knowledge_weight: number | null
-          data_publicacao: string | null
+          created_at: string | null
           disciplines: Json | null
           discursive_minimum_score: number | null
           discursive_weight: number | null
-          etapa_atual: string | null
+          status: string | null
           exam_type: string | null
           has_ampla_concorrencia: boolean | null
           has_basic_knowledge: boolean | null
@@ -105,11 +105,11 @@ export type Database = {
           custom_job_title?: string | null
           custom_knowledge_questions?: number | null
           custom_knowledge_weight?: number | null
-          data_publicacao?: string | null
+          created_at?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
           discursive_weight?: number | null
-          etapa_atual?: string | null
+          status?: string | null
           exam_type?: string | null
           has_ampla_concorrencia?: boolean | null
           has_basic_knowledge?: boolean | null
@@ -177,11 +177,11 @@ export type Database = {
           custom_job_title?: string | null
           custom_knowledge_questions?: number | null
           custom_knowledge_weight?: number | null
-          data_publicacao?: string | null
+          created_at?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
           discursive_weight?: number | null
-          etapa_atual?: string | null
+          status?: string | null
           exam_type?: string | null
           has_ampla_concorrencia?: boolean | null
           has_basic_knowledge?: boolean | null

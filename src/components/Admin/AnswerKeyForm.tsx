@@ -88,7 +88,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     let currentQuestionNumber = 1;
 
     // Verificar se estamos lidando com a estrutura hierárquica (blocos -> disciplinas)
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Estrutura hierárquica
@@ -144,7 +145,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   // Função unificada para obter o número de questões por seção
   const getQuestionsCount = (section: string): number => {
     if (!concurso) return 0;
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Estrutura hierárquica
@@ -296,7 +298,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     const sections = [];
 
     // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Processar a estrutura hierárquica para criar as abas
@@ -358,7 +361,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     if (!concurso) return [];
 
     // Verificar se estamos usando a estrutura hierárquica
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       let startQuestion = 1;
       if (isHierarchical) {

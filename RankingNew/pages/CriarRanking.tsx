@@ -299,11 +299,13 @@ const CriarRanking = () => {
       }
       
       // Buscar cadernos
-      const { data: booklets } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', createdConcursoId);
+      const { data: concursoData } = await supabase
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', createdConcursoId)
+        .single();
       
+      const booklets = concursoData?.exam_booklets || [];
       if (!booklets || booklets.length === 0) {
         toast.error('Nenhum caderno configurado');
         return false;

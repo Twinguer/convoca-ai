@@ -66,7 +66,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
         )}
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      <div className="flex flex-wrap gap-2">
         {options.map((option) => (
           <AnswerOption
             key={option}

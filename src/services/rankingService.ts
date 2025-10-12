@@ -23,15 +23,15 @@ export interface Ranking {
   // Pontuações de disciplinas customizadas
   customDisciplineScores?: { [key: string]: number };
   weightedCustomDisciplineScores?: { [key: string]: number };
+  // Flags de mínimos não atingidos
+  belowMinimum?: boolean;
+  belowDisciplineMinimums?: string[];
+  belowBlockMinimums?: string[];
   // Campos adicionais
   reservationType: string;
   displayReservation?: string;
   id: string;
   quotaPosition?: number; // Posição dentro da cota - será calculado em runtime
-  // Flags para mínimos não atingidos
-  belowMinimum?: boolean; // Não atingiu mínimo geral
-  belowBlockMinimums?: string[]; // Blocos com mínimo não atingido (IDs)
-  belowDisciplineMinimums?: string[]; // Disciplinas com mínimo não atingido (IDs)
 }
 
 // Helper function to get abbreviation for reservation type
@@ -67,27 +67,29 @@ export const fetchUserRankings = async (
       return localCachedRankings;
     }
     
-    // Query usando tabela user_rankings (estrutura atual)
-    logger.ranking('Executing ranking query', `concursoId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
+    // Query usando nova estrutura normalizada
+    logger.ranking('Executing ranking query V2', `rankingId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
     
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select(`
         id,
+        concurso_id,
         user_id,
         score,
-        discursive_score,
-        case_study_1_score,
-        case_study_2_score,
-        case_study_3_score,
-        weighted_discursive_score,
-        weighted_case_study_1_score,
-        weighted_case_study_2_score,
-        weighted_case_study_3_score,
-        subject_scores,
-        customDisciplineScores,
-        weightedCustomDisciplineScores,
-        reservation_type
+        reservation_type,
+        created_at,
+        "weightedCustomDisciplineScores",
+        "customDisciplineScores",
+        "weighted_discursive_score",
+        "weighted_case_study_1_score", 
+        "weighted_case_study_2_score",
+        "weighted_case_study_3_score",
+        users_profiles!inner(
+          id,
+          name,
+          avatar_url
+        )
       `)
       .eq('concurso_id', concursoId)
       .order('score', { ascending: false })
@@ -104,75 +106,53 @@ export const fetchUserRankings = async (
       return [];
     }
 
-    // Buscar dados do concurso
-    const { data: concursoData, error: concursoError } = await supabase
+    // Buscar dados do ranking (nova estrutura)
+    const { data: rankingInfo, error: rankingInfoError } = await supabase
       .from('concursos')
-      .select('id, total_minimum_score, has_minimum_score, disciplines')
+      .select('id, total_minimum_score, has_minimum_score')
       .eq('id', concursoId)
       .single();
 
-    if (concursoError) {
-      logger.warn('Could not fetch concurso data', 'RANKING_SERVICE', concursoError);
+    if (rankingInfoError) {
+      logger.warn('Could not fetch ranking data', 'RANKING_SERVICE', rankingInfoError);
     }
 
-    // Buscar dados dos usuários
-    const userIds = rankingData.map(r => r.user_id);
-    const { data: userData, error: userError } = await supabase
-      .from('users_profiles')
-      .select('id, name, avatar_url')
-      .in('id', userIds);
+    // Obter dados do ranking
+    const hasMinimumScoreEnabled = rankingInfo?.has_minimum_score === true;
+    const totalMinimumScore = hasMinimumScoreEnabled ? rankingInfo?.total_minimum_score || 0 : 0;
 
-    if (userError) {
-      logger.warn('Could not fetch user data', 'RANKING_SERVICE', userError);
-    }
-
-    // Criar mapa de usuários para lookup rápido
-    const userMap = new Map();
-    if (userData) {
-      userData.forEach(user => {
-        userMap.set(user.id, user);
-      });
-    }
-
-    // Obter dados do concurso
-    const hasMinimumScoreEnabled = concursoData?.has_minimum_score === true;
-    const totalMinimumScore = hasMinimumScoreEnabled ? concursoData?.total_minimum_score || 0 : 0;
-
-    // Formatar os dados do ranking com posições
+    // Formatar os dados do ranking com posições (nova estrutura normalizada)
     const formattedRankings = rankingData.map((ranking, index) => {
-      const user = userMap.get(ranking.user_id);
-      const name = user?.name || 'Usuário Anônimo';
-      const avatarUrl = user?.avatar_url || null;
+      const name = ranking.users_profiles?.name || 'Usuário Anônimo';
+      const avatarUrl = ranking.users_profiles?.avatar_url || null;
 
-      // Processar pontuações customizadas
-      const customDisciplineScores = ranking.custom_discipline_scores || {};
-      const weightedCustomDisciplineScores = ranking.weighted_custom_discipline_scores || {};
-      
-      // Verificação de mínimos
+      // Verificação de mínimos (simplificada para nova estrutura)
       const belowMinimum = ranking.score <= 0 || 
         (hasMinimumScoreEnabled && totalMinimumScore > 0 && ranking.score < totalMinimumScore);
     
       return {
-        position: offset + index + 1, // Posição global considerando offset
+        position: offset + index + 1, // Calcular posição baseada no índice
         name: name,
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
         // Pontuações subjetivas
-        discursiveScore: ranking.discursive_score || 0,
-        caseStudy1Score: ranking.case_study_1_score || 0,
-        caseStudy2Score: ranking.case_study_2_score || 0,
-        caseStudy3Score: ranking.case_study_3_score || 0,
+        discursiveScore: 0,
+        caseStudy1Score: 0,
+        caseStudy2Score: 0,
+        caseStudy3Score: 0,
         // Pontuações subjetivas com peso
         weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
         weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
         // Pontuações de disciplinas customizadas
-        customDisciplineScores: customDisciplineScores,
-        weightedCustomDisciplineScores: weightedCustomDisciplineScores,
-        // Flags de mínimos não atingidos
-        belowMinimum,
+        customDisciplineScores: ranking.customDisciplineScores || {},
+        weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores || {},
+        // Flags de mínimos não atingidos (valores padrão já que as colunas não existem)
+        belowMinimum: belowMinimum,
+        belowDisciplineMinimums: [],
+        belowBlockMinimums: [],
         // Dados do ranking
         reservationType: ranking.reservation_type || 'Ampla Concorrência',
         displayReservation: getReservationAbbreviation(ranking.reservation_type || 'Ampla Concorrência'),

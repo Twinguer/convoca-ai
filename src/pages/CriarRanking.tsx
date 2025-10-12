@@ -86,7 +86,7 @@ const CriarRanking = () => {
       orgao: '',
       banca: '',
       custom_banca: '',
-      data_publicacao: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
+      created_at: new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
       etapa_atual: 'Prova Objetiva',
       status: 'Em andamento',
       link: '',
@@ -176,7 +176,7 @@ const CriarRanking = () => {
               custom_job_title: isOtherTitle ? data.titulo : '',
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
-              data_publicacao: data.data_publicacao ? new Date(new Date(data.data_publicacao).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]
+              created_at: data.created_at ? new Date(new Date(data.created_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]
             });
           }
         } catch (error) {
@@ -321,9 +321,21 @@ const CriarRanking = () => {
     
     try {
       // Buscar dados completos do concurso
-      const { data: concursoData, error: concursoError } = await supabase
+      const { data: rankingData, error: rankingError } = await supabase
         .from('concursos')
         .select('*')
+        .eq('id', createdConcursoId)
+        .single();
+      
+      if (rankingError || !rankingData) {
+        toast.error('Erro ao buscar dados do concurso');
+        return false;
+      }
+      
+      // Buscar dados do concurso (cadernos e gabarito)
+      const { data: concursoData, error: concursoError } = await supabase
+        .from('concursos')
+        .select('exam_booklets, official_answers')
         .eq('id', createdConcursoId)
         .single();
       
@@ -332,25 +344,14 @@ const CriarRanking = () => {
         return false;
       }
       
-      // Buscar cadernos
-      const { data: booklets } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', createdConcursoId);
+      const booklets = concursoData?.exam_booklets || [];
       
       if (!booklets || booklets.length === 0) {
         toast.error('Nenhum caderno configurado');
         return false;
       }
       
-      // Buscar gabarito oficial
-      const { data: answerKey } = await supabase
-        .from('official_answer_weights')
-        .select('consolidated_answer_data')
-        .eq('concurso_id', createdConcursoId)
-        .maybeSingle();
-      
-      if (!answerKey?.consolidated_answer_data?.booklets) {
+      if (!concursoData?.official_answers || Object.keys(concursoData.official_answers).length === 0) {
         toast.error('Gabarito oficial não encontrado');
         return false;
       }
@@ -359,13 +360,13 @@ const CriarRanking = () => {
       
       // Verificar se todos os cadernos têm gabarito completo
       for (const booklet of booklets) {
-        const bookletAnswers = answerKey.consolidated_answer_data.booklets[booklet.id];
-        if (!bookletAnswers?.answers) {
+        const bookletAnswers = concursoData.official_answers[booklet.id];
+        if (!bookletAnswers?.questions) {
           toast.error(`Caderno "${booklet.name}" não possui gabarito oficial`);
           return false;
         }
         
-        const answerCount = Object.keys(bookletAnswers.answers).length;
+        const answerCount = Object.keys(bookletAnswers.questions).length;
         if (answerCount < totalQuestions) {
           toast.error(`Caderno "${booklet.name}" possui apenas ${answerCount} de ${totalQuestions} questões`);
           return false;

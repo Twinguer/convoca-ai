@@ -40,7 +40,6 @@ export const saveUserAnswersData = async (
 
     // Usar a nova função RPC consolidada
     const { data, error } = await supabase.rpc('save_user_answers_with_booklet', {
-      p_ranking_id: rankingId,
       p_concurso_id: concursoId,
       p_booklet_id: 'default', // Caderno padrão para compatibilidade
       p_answers: answersArray,

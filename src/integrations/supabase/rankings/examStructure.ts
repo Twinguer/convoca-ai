@@ -57,8 +57,8 @@ export const getNumericValue = (value: any): number => {
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): string => {
   if (!concurso) return 'basic';
 
-  // Se estamos usando conhecimentos customizáveis
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+  // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
     // Verificar se temos estrutura hierárquica
     const hierarchical = isHierarchicalStructure(concurso);
     let currentIndex = 1;
@@ -148,20 +148,34 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
  * @returns true se usa estrutura hierárquica, false se usa estrutura plana
  */
 export const isHierarchicalStructure = (concurso: any): boolean => {
-  return concurso?.disciplines && 
+  const result = concurso?.disciplines && 
          Array.isArray(concurso.disciplines) &&
          concurso.disciplines[0] &&
          typeof concurso.disciplines[0] === 'object' &&
          'name' in concurso.disciplines[0] &&
          'disciplines' in concurso.disciplines[0];
+  
+  console.log('[isHierarchicalStructure] Verificando estrutura:', {
+    hasDisciplines: !!concurso?.disciplines,
+    isArray: Array.isArray(concurso?.disciplines),
+    firstItem: concurso?.disciplines?.[0],
+    hasName: 'name' in (concurso?.disciplines?.[0] || {}),
+    hasDisciplines: 'disciplines' in (concurso?.disciplines?.[0] || {}),
+    result
+  });
+  
+  return result;
 };
 
 // Get disciplines from both hierarchical and flat structures
 export const getDisciplines = (concurso: Concurso) => {
   if (!concurso) return [];
   
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+  // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    console.log('[getDisciplines] Usando estrutura JSONB disciplines:', concurso.disciplines);
     const hierarchical = isHierarchicalStructure(concurso);
+    console.log('[getDisciplines] Estrutura hierárquica:', hierarchical);
     
     if (hierarchical) {
       // Flatten the hierarchical structure to get all disciplines
@@ -171,26 +185,35 @@ export const getDisciplines = (concurso: Concurso) => {
         // Verificar se é um bloco usando typeguard
         if ('disciplines' in item && Array.isArray(item.disciplines)) {
           const block = item as DisciplineBlock;
+          console.log('[getDisciplines] Processando bloco:', block.name);
           for (const discipline of block.disciplines) {
-            // Add block information to the discipline
-            disciplines.push({
-              ...discipline,
-              blockName: block.name,
-              blockId: block.id,
-              blockWeight: block.weight
-            } as any);
+            if (discipline.isEnabled) {
+              console.log('[getDisciplines] Processando disciplina:', discipline.name, 'tipo:', discipline.type);
+              // Add block information to the discipline
+              disciplines.push({
+                ...discipline,
+                blockName: block.name,
+                blockId: block.id,
+                blockWeight: block.weight
+              } as any);
+            }
           }
         }
       }
       
+      console.log('[getDisciplines] Disciplinas hierárquicas processadas:', disciplines);
       return disciplines;
     } else {
       // Return flat structure directly as NestedDiscipline array
-      return concurso.disciplines.filter(item => 'isEnabled' in item) as NestedDiscipline[];
+      console.log('[getDisciplines] Estrutura plana detectada');
+      const flatDisciplines = concurso.disciplines.filter(item => 'isEnabled' in item) as NestedDiscipline[];
+      console.log('[getDisciplines] Disciplinas planas processadas:', flatDisciplines);
+      return flatDisciplines;
     }
   }
   
-  // For traditional structure, create discipline objects
+  // Fallback para estrutura tradicional (apenas se não houver disciplines JSONB)
+  console.warn('[getDisciplines] Usando estrutura tradicional como fallback - disciplines JSONB não encontrado');
   const disciplines: any[] = [];
   
   if (concurso.has_basic_knowledge) {
@@ -240,15 +263,19 @@ export const getDisciplines = (concurso: Concurso) => {
 export const updateSectionDisplayNames = (concurso: Concurso) => {
   const displayNames = { ...sectionDisplayNames };
   
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+  // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    console.log('[updateSectionDisplayNames] Atualizando nomes de exibição para disciplinas customizadas');
     const disciplines = getDisciplines(concurso);
     
     disciplines.forEach(discipline => {
       if (discipline.isEnabled && discipline.type && discipline.name) {
+        console.log('[updateSectionDisplayNames] Atualizando:', discipline.type, '->', discipline.name);
         displayNames[discipline.type] = discipline.name;
       }
     });
   }
   
+  console.log('[updateSectionDisplayNames] Nomes de exibição finais:', displayNames);
   return displayNames;
 };

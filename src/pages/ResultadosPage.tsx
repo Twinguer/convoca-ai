@@ -7,12 +7,12 @@ import { RankingTable } from '@/components/resultados/RankingTable';
 // import { performanceMonitor } from '@/utils/performanceMonitor'; // Removido - sistema simplificado
 import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
-import { useRankingsPagination } from '@/hooks/useRankingsPagination';
 import { useLeaveRanking } from '@/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn, UserMinus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { rankingCache } from '@/services/rankingCache';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,39 +39,32 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
   // Hook principal para dados do concurso e informações básicas
   const {
     concurso,
+    rankings,
     participantCount,
     userRanking,
     isLoading: isLoadingConcurso,
     isRefetching,
     user,
     refreshData,
+    refetchRankings,
+    refetchCount,
     creatorName,
     inscritos,
     isParticipating
   } = useResultadosData(finalRankingId);
   
-  // Hook otimizado para paginação de rankings
-  const {
-    rankings: paginatedRankings,
-    isLoading: isLoadingRankings,
-    hasMore,
-    loadMore,
-    refresh: refreshRankings,
-    totalLoaded
-  } = useRankingsPagination({
-    concursoId: finalRankingId || '',
-    initialLimit: 50
-  });
+  // Usar rankings do hook principal
+  const paginatedRankings = rankings;
+  const isLoadingRankings = isLoadingConcurso;
 
   // Debug: verificar se o ID está sendo passado
   useEffect(() => {
     logger.info('ResultadosPage debug', 'RESULTADOS_PAGE', {
       finalRankingId,
       paginatedRankingsLength: paginatedRankings.length,
-      isLoadingRankings,
-      hasMore
+      isLoadingRankings
     });
-  }, [finalRankingId, paginatedRankings.length, isLoadingRankings, hasMore]);
+  }, [finalRankingId, paginatedRankings.length, isLoadingRankings]);
   
   const { toast } = useToast();
   const { leave, isLeaving } = useLeaveRanking();
@@ -99,8 +92,6 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
     if (paginatedRankings?.length > 0) {
       logger.info('Rankings loaded', 'RESULTADOS_PAGE', {
         count: paginatedRankings.length,
-        totalLoaded,
-        hasMore,
         reservationTypes: [...new Set(paginatedRankings.map(r => r.reservationType))]
       });
     }
@@ -110,30 +101,40 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
       isParticipating, 
       userRankingExists: !!userRanking 
     });
-  }, [concurso, paginatedRankings, isAuthenticated, isParticipating, userRanking, totalLoaded, hasMore]);
+  }, [concurso, paginatedRankings, isAuthenticated, isParticipating, userRanking]);
 
   const handleRefresh = async () => {
-    logger.info('Manual refresh initiated by user', 'RESULTADOS_PAGE');
-    toast({
-      title: "Atualizando ranking",
-      description: "As pontuações estão sendo recalculadas em tempo real...",
-      duration: 3000
-    });
+    logger.info('Manual refresh initiated by user for classification', 'RESULTADOS_PAGE');
+    console.log('[ResultadosPage] ===== INÍCIO REFRESH MANUAL =====');
+    console.log('[ResultadosPage] handleRefresh called - updating classification');
+    
     
     try {
+      // Limpar cache local para forçar busca de dados frescos
+      console.log('[ResultadosPage] 🗑️ Limpando cache local...');
+      rankingCache.clear();
+      console.log('[ResultadosPage] ✅ Cache local limpo com sucesso');
+      
+      console.log('[ResultadosPage] Calling refreshData...');
       // Refresh dados do concurso
       const result = await refreshData();
+      console.log('[ResultadosPage] refreshData result:', result);
       
-      // Refresh rankings paginados
-      await refreshRankings();
+      // Forçar atualização adicional dos rankings e contagem
+      console.log('[ResultadosPage] Forçando atualização de rankings e contagem...');
+      await refetchRankings();
+      await refetchCount();
+      console.log('[ResultadosPage] ✅ Rankings e contagem atualizados');
       
       if (result?.success) {
+        console.log('[ResultadosPage] Success case - showing success toast');
         toast({
-          title: "Ranking atualizado",
-          description: `As pontuações foram recalculadas com sucesso para ${result.updatedCount} usuário(s)!`,
+          title: "Classificação atualizada",
+          description: `Pontuações recalculadas para ${result.updatedCount || 0} usuário(s)!`,
           duration: 4000
         });
       } else if (result?.error) {
+        console.log('[ResultadosPage] Error case - showing error toast:', result.error);
         toast({
           title: "Erro na atualização",
           description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
@@ -141,17 +142,22 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
           duration: 5000
         });
       } else {
+        console.log('[ResultadosPage] No result case - showing generic success toast');
         toast({
-          title: "Ranking atualizado",
+          title: "Classificação atualizada",
           description: "As pontuações foram recalculadas com sucesso!",
           duration: 3000
         });
       }
+      
+      console.log('[ResultadosPage] ===== FIM REFRESH MANUAL =====');
     } catch (error) {
+      console.error('[ResultadosPage] ===== ERRO NO REFRESH MANUAL =====');
+      console.error('[ResultadosPage] Error during refresh:', error);
       logger.error('Error during refresh', 'RESULTADOS_PAGE', error);
       toast({
         title: "Erro na atualização",
-        description: "Ocorreu um erro inesperado ao atualizar o ranking.",
+        description: "Ocorreu um erro inesperado ao atualizar a classificação.",
         variant: "destructive",
         duration: 5000
       });
@@ -177,10 +183,17 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         
         
         <div className="flex gap-1 sm:gap-2 flex-wrap">
-          <Button onClick={handleRefresh} className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isRefetching}>
+          <Button 
+            onClick={handleRefresh} 
+            className="flex items-center gap-2 text-xs sm:text-sm" 
+            size="sm" 
+            disabled={isRefetching}
+            variant="outline"
+          >
             <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isRefetching ? 'animate-spin' : ''}`} />
-            {isRefetching ? 'Atualizando...' : 'Atualizar Pontuações'}
+            {isRefetching ? 'Atualizando...' : 'Atualizar Classificação'}
           </Button>
+          
           
           {concurso && !isParticipating && user && <Button onClick={() => {
               navigate(`/ranking/${concurso.id}/participate`);
@@ -206,9 +219,6 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         {concurso && <ConcursoInfoCard concurso={concurso} creatorName={creatorName} />}
       </div>
       
-      {isRefetching && <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2 rounded-md mb-2 text-center text-sm">
-          Atualizando dados em tempo real... As pontuações estão sendo recalculadas.
-        </div>}
       
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
       <RankingTable 
@@ -217,10 +227,6 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         currentUserId={user?.id} 
         isAuthenticated={isAuthenticated} 
         isRefetching={isRefetching}
-        hasMore={hasMore}
-        onLoadMore={loadMore}
-        isLoadingMore={isLoadingRankings && paginatedRankings.length > 0}
-        totalLoaded={totalLoaded}
       />
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">

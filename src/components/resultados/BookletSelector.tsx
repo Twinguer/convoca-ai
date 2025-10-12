@@ -58,8 +58,6 @@ export const BookletSelector: React.FC<BookletSelectorProps> = ({
         Caderno da Prova {required && <span className="text-red-500">*</span>}
       </Label>
       
-      {required && !selectedBooklet}
-      
       <Select value={selectedBooklet} onValueChange={onBookletChange} disabled={disabled} required={required}>
         <SelectTrigger id="booklet-select" className={!selectedBooklet && required ? "border-red-300" : ""}>
           <SelectValue placeholder="Selecione o caderno da sua prova" />
@@ -74,6 +72,8 @@ export const BookletSelector: React.FC<BookletSelectorProps> = ({
         </SelectContent>
       </Select>
       
-      
+      {required && !selectedBooklet && (
+        <p className="text-xs text-red-500">Por favor, selecione um caderno</p>
+      )}
     </div>;
 };

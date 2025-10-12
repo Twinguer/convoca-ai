@@ -89,9 +89,9 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
     // Obter os pesos das respostas corretas usando a estrutura consolidada
     const { data: consolidatedAnswers, error: consolidatedError } = await supabase
-      .from('official_answer_weights')
-      .select('consolidated_answer_data')
-      .eq('concurso_id', concursoId)
+      .from('concursos')
+      .select('official_answers')
+      .eq('id', concursoId)
       .single();
 
     if (consolidatedError) {
@@ -159,7 +159,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const weightedCaseStudy3Score = caseStudy3Score * (concurso.case_study_3_weight || 1);
 
     // Processar pontuações da disciplina baseadas no JSON de disciplinas
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       // Verificar se estamos lidando com estrutura hierárquica (blocos -> disciplinas)
       const hierarchical = isHierarchicalStructure(concurso);
       
@@ -223,7 +224,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           // Obter o peso para esta disciplina do JSON de disciplines
           let disciplineWeight = 1;
           
-          if (concurso.has_custom_knowledge && concurso.disciplines) {
+          // SEMPRE usar a nova estrutura JSONB disciplines
+          if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
             const hierarchical = isHierarchicalStructure(concurso);
             
             if (hierarchical) {
@@ -261,7 +263,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           const penalty = (concurso?.wrong_answer_penalty ?? 0);
           if (penalty > 0) {
             let disciplineWeight = 1;
-            if (concurso.has_custom_knowledge && concurso.disciplines) {
+            // SEMPRE usar a nova estrutura JSONB disciplines
+          if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
               const hierarchical = isHierarchicalStructure(concurso);
               if (hierarchical) {
                 for (const block of concurso.disciplines) {
@@ -305,7 +308,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}`);
 
     // Se estivermos usando pesos de disciplina customizados, recalcular a pontuação total
-    if (concurso.has_custom_knowledge && Object.keys(weightedDisciplineScores).length > 0) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0 && Object.keys(weightedDisciplineScores).length > 0) {
       // Resetar a pontuação total para incluir apenas as pontuações ponderadas
       totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + score, 0);
       

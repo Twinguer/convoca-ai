@@ -25,8 +25,8 @@ export interface Concurso {
   titulo: string;
   orgao: string;
   banca: string;
-  data_publicacao: string | null;
-  etapa_atual?: string;
+  created_at: string | null;
+  status?: string;
   created_at: string;
   updated_at: string;
   link?: string | null;
@@ -149,12 +149,12 @@ export const getEnabledKnowledgeSections = (concurso: Concurso) => {
     useCustomKnowledge: true
   };
 
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    for (const item of concurso.disciplines) {
+  if (concurso && Array.isArray(concurso)) {
+    for (const item of concurso) {
       // Verificar se é um bloco (tem propriedade disciplines)
-      if ('disciplines' in item && Array.isArray(item.disciplines)) {
+      if ('disciplines' in item && Array.isArray(item)) {
         // É um bloco
-        for (const discipline of item.disciplines) {
+        for (const discipline of item) {
           if (discipline.isEnabled && discipline.type) {
             enabledSections[discipline.type] = true;
           }

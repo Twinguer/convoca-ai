@@ -18,11 +18,15 @@ export const useBookletAnswerKey = (concursoId: string) => {
     queryFn: async () => {
       // Log removido por segurança
       
-      const { data, error } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', concursoId)
-        .order('display_order');
+      const { data: concursoData, error } = await supabase
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concursoId)
+        .single();
+      
+      const data = concursoData?.exam_booklets || [];
+      // Ordenar por display_order
+      const sortedData = data.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
 
       if (error) {
         console.error('Erro ao buscar cadernos:', error);
@@ -30,7 +34,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
       }
       
       // Log removido por segurança
-      return data || [];
+      return sortedData || [];
     },
     enabled: !!concursoId,
     refetchOnWindowFocus: false,
@@ -80,7 +84,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
       let expectedQuestions = 0;
       
-      if (concurso?.has_custom_knowledge && concurso.disciplines) {
+      // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+      if (concurso?.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
         // Calcular questões para conhecimentos customizados
         const disciplines = Array.isArray(concurso.disciplines) ? concurso.disciplines : [];
         
@@ -126,21 +131,21 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
       // Log removido por segurança
 
-      // Buscar dados consolidados uma vez só
+      // Buscar dados do gabarito oficial uma vez só
       // Log removido por segurança
-      const { data: consolidatedData } = await supabase
-        .from('official_answer_weights')
-        .select('consolidated_answer_data')
-        .eq('concurso_id', concursoId)
-        .maybeSingle();
+      const { data: concursoData } = await supabase
+        .from('concursos')
+        .select('official_answers')
+        .eq('id', concursoId)
+        .single();
 
       for (const booklet of booklets) {
         try {
           let answerCount = 0;
           
-          if (consolidatedData?.consolidated_answer_data?.booklets?.[booklet.id]) {
-            const bookletData = consolidatedData.consolidated_answer_data.booklets[booklet.id];
-            answerCount = Object.keys(bookletData.answers || {}).length;
+          if (concursoData?.official_answers?.[booklet.id]) {
+            const bookletData = concursoData.official_answers[booklet.id];
+            answerCount = Object.keys(bookletData.questions || {}).length;
           }
 
           const isComplete = expectedQuestions > 0 ? answerCount >= expectedQuestions : false;

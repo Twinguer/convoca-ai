@@ -286,8 +286,8 @@ const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete,
         </span>
       </TableCell>
       <TableCell>
-        {concurso.data_publicacao
-          ? new Date(concurso.data_publicacao).toLocaleDateString('pt-BR')
+        {concurso.created_at
+          ? new Date(concurso.created_at).toLocaleDateString('pt-BR')
           : 'N/A'}
       </TableCell>
       <TableCell className="text-right space-x-1">

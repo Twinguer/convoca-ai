@@ -205,113 +205,77 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            {/* Basic Knowledge Score */}
-            {concurso.has_basic_knowledge && (
-              <FormField
-                control={form.control}
-                name="basicKnowledgeScore"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Conhecimentos Básicos (C.B.)
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Ex: 80.5" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Sua nota na parte de conhecimentos básicos (0-100)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Specific Knowledge 1 Score */}
-            {concurso.has_specific_knowledge_1 && (
-              <FormField
-                control={form.control}
-                name="specificKnowledge1Score"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Conhecimentos Específicos 1 (C.E.1)
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Ex: 75.0" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Sua nota na parte de conhecimentos específicos 1 (0-100)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Specific Knowledge 2 Score */}
-            {concurso.has_specific_knowledge_2 && (
-              <FormField
-                control={form.control}
-                name="specificKnowledge2Score"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Conhecimentos Específicos 2 (C.E.2)
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Ex: 82.5" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Sua nota na parte de conhecimentos específicos 2 (0-100)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {/* Specific Knowledge 3 Score */}
-            {concurso.has_specific_knowledge_3 && (
-              <FormField
-                control={form.control}
-                name="specificKnowledge3Score"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Conhecimentos Específicos 3 (C.E.3)
-                    </FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        placeholder="Ex: 78.0" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Sua nota na parte de conhecimentos específicos 3 (0-100)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            {/* Render disciplines from the new structure */}
+            {concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.map((discipline, index) => {
+              // Check if it's a hierarchical structure (block with disciplines)
+              if ('disciplines' in discipline && Array.isArray(discipline.disciplines)) {
+                // Render each discipline in the block
+                return discipline.disciplines.map((subDiscipline: any, subIndex: number) => {
+                  if (!subDiscipline.isEnabled) return null;
+                  
+                  const fieldName = `customDiscipline_${subDiscipline.type}`;
+                  
+                  return (
+                    <FormField
+                      key={`${index}-${subIndex}`}
+                      control={form.control}
+                      name={fieldName}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {subDiscipline.name || subDiscipline.type}
+                          </FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="Ex: 80.5" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Sua nota em {subDiscipline.name || subDiscipline.type} (0-100)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  );
+                });
+              } else {
+                // Flat structure - render discipline directly
+                if (!discipline.isEnabled) return null;
+                
+                const fieldName = `customDiscipline_${discipline.type}`;
+                
+                return (
+                  <FormField
+                    key={index}
+                    control={form.control}
+                    name={fieldName}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {discipline.name || discipline.type}
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Ex: 80.5" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Sua nota em {discipline.name || discipline.type} (0-100)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                );
+              }
+            }).flat().filter(Boolean)}
 
             {/* Custom Disciplines Scores */}
             {concurso.disciplines && Array.isArray(concurso.disciplines) && 

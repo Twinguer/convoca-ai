@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { PasswordValidator } from '@/utils/passwordValidator';
 import { PasswordStrengthIndicator } from './PasswordStrengthIndicator';
 
 interface SignupFormProps {
@@ -27,7 +28,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
   }, []);
 
   const validatePassword = useCallback((password: string): boolean => {
-    return password.length >= 8;
+    const validation = PasswordValidator.validate(password);
+    return validation.isValid;
   }, []);
 
   const validateForm = useCallback(() => {
@@ -48,7 +50,8 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) =
     if (!password) {
       newErrors.password = 'Senha é obrigatória';
     } else if (!validatePassword(password)) {
-      newErrors.password = 'Senha deve ter pelo menos 8 caracteres';
+      const validation = PasswordValidator.validate(password);
+      newErrors.password = validation.errors[0] || 'Senha não atende aos requisitos de segurança';
     }
 
     if (!confirmPassword) {

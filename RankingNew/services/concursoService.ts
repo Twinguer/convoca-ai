@@ -7,7 +7,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
     console.log('[fetchConcursoById] Fetching concurso with ID:', id);
     
     const { data, error } = await supabase
-      .from("concursos")
+      .from('rankings')
       .select("*")
       .eq("id", id)
       .single();
@@ -37,7 +37,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
 export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso[]> => {
   try {
     let query = supabase
-      .from("concursos")
+      .from('rankings')
       .select("*");
     
     // Add filters if provided
@@ -59,7 +59,7 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
     }
     
     // Order by most recent first
-    query = query.order('data_publicacao', { ascending: false });
+    query = query.order('created_at', { ascending: false });
     
     const { data, error } = await query;
     
@@ -99,7 +99,7 @@ export const fetchUserConcursoRankings = async (userId: string) => {
           orgao,
           banca,
           etapa_atual,
-          data_publicacao,
+          created_at,
           status
         )
       `)
@@ -110,14 +110,14 @@ export const fetchUserConcursoRankings = async (userId: string) => {
 
     // Map each item individually and access the nested properties correctly
     return data?.map(item => {
-      // Safely access the nested concursos object with type assertion
+      // rankings
       const concurso = item.concursos as {
         id?: string;
         titulo?: string; 
         orgao?: string;
         banca?: string;
         etapa_atual?: string;
-        data_publicacao?: string;
+        created_at?: string;
         status?: string;
       } || {};
       
@@ -129,7 +129,7 @@ export const fetchUserConcursoRankings = async (userId: string) => {
         orgao: concurso.orgao || '',
         banca: concurso.banca || '',
         etapa_atual: concurso.etapa_atual || '',
-        data_publicacao: concurso.data_publicacao || '',
+        created_at: concurso.created_at || '',
         status: concurso.status || ''
       };
     }) || [];

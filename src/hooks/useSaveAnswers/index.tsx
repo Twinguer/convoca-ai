@@ -1,9 +1,11 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { UseSaveAnswersProps, SaveAnswersResponse } from './types';
 import { validateSaveAnswers } from './validation';
 import { prepareAnswersData } from './prepareData';
+import { rankingCache } from '@/services/rankingCache';
 
 export const useSaveAnswers = ({
   rankingId,
@@ -22,6 +24,7 @@ export const useSaveAnswers = ({
   selectedBookletId
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSaveAnswers = async () => {
     try {
@@ -111,6 +114,20 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Respostas salvas com sucesso:', data.saved_answers);
       console.log('[useSaveAnswers] Total de respostas salvas:', data.answers_saved);
+
+      // Limpar cache local para forçar busca de dados frescos
+      console.log('[useSaveAnswers] 🗑️ Limpando cache local...');
+      rankingCache.clear();
+      
+      // Invalidar queries para refresh automático
+      console.log('[useSaveAnswers] 🔄 Invalidando queries para refresh automático...');
+      queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['concurso', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['user-answers', rankingId] });
+      queryClient.invalidateQueries({ queryKey: ['answer-stats', rankingId] });
+      console.log('[useSaveAnswers] ✅ Cache limpo e queries invalidadas, dados serão atualizados automaticamente');
 
       setSavedSuccess(true);
       toast({

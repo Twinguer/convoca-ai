@@ -249,6 +249,20 @@ export const useSaveRanking = () => {
         localidades: formValues.localidades,
         has_custom_knowledge: true,
         
+        // Campos de cotas (garantir que sejam salvos)
+        has_ampla_concorrencia: formValues.has_ampla_concorrencia === true,
+        has_ppp: formValues.has_ppp === true,
+        has_pcd: formValues.has_pcd === true,
+        has_hipossuficientes: formValues.has_hipossuficientes === true,
+        has_indigenas: formValues.has_indigenas === true,
+        has_transsexuais: formValues.has_transsexuais === true,
+        
+        // Campos de exames subjetivos (garantir que sejam salvos)
+        has_discursive: formValues.has_discursive === true,
+        has_case_study_1: formValues.has_case_study_1 === true,
+        has_case_study_2: formValues.has_case_study_2 === true,
+        has_case_study_3: formValues.has_case_study_3 === true,
+        
         // Use the hierarchical structure if available, otherwise use flattened or original
         disciplines: formValues.hierarchicalDisciplines || formValues.disciplines,
         

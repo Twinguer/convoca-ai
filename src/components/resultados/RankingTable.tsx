@@ -496,7 +496,12 @@ const RankingTableContent: React.FC<{
     </TableHeader>;
 
   // Render each ranking row
-  const renderRankingRows = () => <TableBody className="space-y-0.5">
+  const renderRankingRows = () => {
+    console.log('[RankingTable] renderRankingRows - rankings:', rankings);
+    console.log('[RankingTable] renderRankingRows - rankings.length:', rankings?.length);
+    console.log('[RankingTable] renderRankingRows - customDisciplines:', customDisciplines);
+    
+    return <TableBody className="space-y-0.5">
       {rankings.length > 0 ? rankings.map(ranking => {
       const scoreChanged = hasScoreChanged(ranking.id, ranking.score);
       const belowMinimum = isBelowMinimum(ranking);
@@ -554,7 +559,7 @@ const RankingTableContent: React.FC<{
               // Access the score using the discipline type as the key
               const scoreValue = ranking.weightedCustomDisciplineScores?.[discipline.type] || 0;
               // Check if this specific discipline is below minimum
-              const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes(discipline.type);
+              const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes?.(discipline.type) || false;
               
               return <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
                       {Number(scoreValue).toFixed(2)}
@@ -588,6 +593,7 @@ const RankingTableContent: React.FC<{
           </TableCell>
         </TableRow>}
     </TableBody>;
+  };
     
   return (
     <div>

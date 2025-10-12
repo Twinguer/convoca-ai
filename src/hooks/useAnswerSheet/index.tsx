@@ -10,6 +10,7 @@ import { useAnswerManagement } from './useAnswerManagement';
 import { useScoreManagement } from './useScoreManagement';
 import { getSectionDisplayName, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './sectionUtils';
+import { getQuestionStructureFromOfficialAnswers } from './officialAnswersUtils';
 
 // Interface para a resposta do fetchExistingAnswers
 interface FetchedAnswersData {
@@ -20,8 +21,8 @@ interface FetchedAnswersData {
   caseStudy3Score?: number | null;
 }
 
-export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
-  console.log('[useAnswerSheet] Initialized with:', { concursoId: concurso?.id, rankingId });
+export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
+  console.log('[useAnswerSheet] Initialized with:', { concursoId: concurso?.id, rankingId, selectedBookletId });
   
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
@@ -68,13 +69,32 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     }
   }, [concurso]);
 
-  // Get section questions mapping
+  // Get section questions mapping - use official answers if available, fallback to concurso structure
+  const { 
+    data: questionStructure, 
+    isLoading: isLoadingStructure 
+  } = useQuery({
+    queryKey: ['question-structure', concurso?.id, selectedBookletId],
+    queryFn: async () => {
+      if (!concurso?.id || !selectedBookletId) return null;
+      return await getQuestionStructureFromOfficialAnswers(concurso.id, selectedBookletId);
+    },
+    enabled: !!concurso?.id && !!selectedBookletId,
+    staleTime: 300000, // 5 minutes
+    retry: 2
+  });
+
+  // Update section questions based on official answers or fallback to concurso structure
   useEffect(() => {
-    if (concurso) {
+    if (questionStructure?.hasOfficialAnswers) {
+      console.log('[useAnswerSheet] Usando estrutura das respostas oficiais:', questionStructure);
+      setSectionQuestions(questionStructure.sectionQuestions);
+    } else if (concurso) {
+      console.log('[useAnswerSheet] Usando estrutura do concurso (fallback)');
       const questions = getSectionQuestionsDict(concurso);
       setSectionQuestions(questions);
     }
-  }, [concurso]);
+  }, [concurso, questionStructure]);
 
   // Initialize with the first available section
   useEffect(() => {
@@ -153,9 +173,17 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   // Function to create the answer matrix for rendering
   const createAnswerMatrix = useCallback(() => {
-    if (!concurso || !selectedSection) return [[]];
+    console.log('[createAnswerMatrix] Chamada com:', { concurso: concurso?.id, selectedSection, sectionQuestions });
+    
+    if (!concurso || !selectedSection) {
+      console.log('[createAnswerMatrix] Parâmetros inválidos, retornando matriz vazia');
+      return [[]];
+    }
 
-    return getQuestionMatrixForSection(concurso, selectedSection, sectionQuestions);
+    const matrix = getQuestionMatrixForSection(concurso, selectedSection, sectionQuestions);
+    console.log('[createAnswerMatrix] Matriz retornada:', matrix);
+    
+    return matrix;
   }, [concurso, selectedSection, sectionQuestions]);
 
   // Returns the list of answers options for a specific question
@@ -169,8 +197,17 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   // Function to get the total number of questions
   const getTotalQuestionsFunc = useCallback(() => {
     if (!concurso) return 0;
+    
+    // Use official answers structure if available
+    if (questionStructure?.hasOfficialAnswers) {
+      console.log('[useAnswerSheet] Usando total de questões das respostas oficiais:', questionStructure.totalQuestions);
+      return questionStructure.totalQuestions;
+    }
+    
+    // Fallback to concurso structure
+    console.log('[useAnswerSheet] Usando total de questões do concurso (fallback)');
     return getTotalQuestions(concurso);
-  }, [concurso]);
+  }, [concurso, questionStructure]);
 
   // Function to get the number of answered questions
   const getAnsweredQuestionsCount = useCallback(() => {
@@ -220,8 +257,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     setCaseStudy3Score,
     isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
+    sectionQuestions,
     isHierarchical,
-    isLoading,
+    isLoading: isLoading || isLoadingStructure,
     refetchAnswers
   };
 };

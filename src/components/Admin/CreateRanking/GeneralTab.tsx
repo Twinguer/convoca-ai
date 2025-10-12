@@ -234,47 +234,24 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     try {
       const currentBooklets = bookletsRef.current;
       
-      const { data: existingBooklets } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', concursoId);
+      // Processar cadernos para JSONB
+      const processedBooklets = currentBooklets.map((booklet, index) => ({
+        id: booklet.id || crypto.randomUUID(),
+        name: booklet.name,
+        display_order: booklet.display_order || index + 1,
+        is_active: true,
+        total_questions: 0
+      }));
 
-      const currentIds = currentBooklets.filter(b => b.id).map(b => b.id);
-      const toDelete = (existingBooklets || []).filter(b => !currentIds.includes(b.id));
+      // Atualizar a coluna exam_booklets na tabela concursos
+      const { error: updateError } = await supabase
+        .from('concursos')
+        .update({ exam_booklets: processedBooklets })
+        .eq('id', concursoId);
 
-      for (const booklet of toDelete) {
-        const { error } = await supabase
-          .from('exam_booklets')
-          .delete()
-          .eq('id', booklet.id);
-        if (error) throw error;
-      }
+      if (updateError) throw updateError;
 
-      const savedBooklets = [];
-      for (const booklet of currentBooklets) {
-        if (booklet.id) {
-          const { data, error } = await supabase
-            .from('exam_booklets')
-            .update({ name: booklet.name, display_order: booklet.display_order })
-            .eq('id', booklet.id)
-            .select()
-            .single();
-          if (error) throw error;
-          savedBooklets.push(data);
-        } else {
-          const { data, error } = await supabase
-            .from('exam_booklets')
-            .insert({
-              concurso_id: concursoId,
-              name: booklet.name,
-              display_order: booklet.display_order
-            })
-            .select()
-            .single();
-          if (error) throw error;
-          savedBooklets.push(data);
-        }
-      }
+      const savedBooklets = processedBooklets;
 
       setBooklets(savedBooklets);
       return true;

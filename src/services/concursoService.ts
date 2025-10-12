@@ -6,28 +6,123 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
   try {
     console.log('[fetchConcursoById] Fetching concurso with ID:', id);
     
-    const { data, error } = await supabase
+    // Nota: Função ensure_ranking_exists não existe mais, removida para simplificar
+
+    // Buscar dados do concurso (estrutura híbrida)
+    const { data: rankingData, error: rankingError } = await supabase
       .from("concursos")
       .select("*")
       .eq("id", id)
       .single();
 
-    if (error) {
-      console.error('[fetchConcursoById] Supabase error:', error);
+    if (rankingError) {
+      console.error('[fetchConcursoById] Ranking error:', rankingError);
       
-      if (error.code === 'PGRST116') {
+      // Fallback: buscar do concurso original
+      const { data: concursoData, error: concursoError } = await supabase
+        .from("concursos")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (concursoError) {
+        console.error('[fetchConcursoById] Concurso error:', concursoError);
+        
+        if (concursoError.code === 'PGRST116') {
+          throw new Error(`Concurso com ID ${id} não encontrado`);
+        }
+        
+        throw new Error(`Erro ao buscar concurso: ${concursoError.message}`);
+      }
+
+      if (!concursoData) {
         throw new Error(`Concurso com ID ${id} não encontrado`);
       }
-      
-      throw new Error(`Erro ao buscar concurso: ${error.message}`);
+
+      console.log('[fetchConcursoById] Concurso found (fallback):', concursoData);
+      return concursoData;
     }
 
-    if (!data) {
-      throw new Error(`Concurso com ID ${id} não encontrado`);
+    if (!rankingData) {
+      throw new Error(`Ranking com ID ${id} não encontrado`);
     }
 
-    console.log('[fetchConcursoById] Concurso found:', data);
-    return data;
+    // Buscar disciplinas do JSONB disciplines na tabela concursos
+    const disciplines = rankingData?.disciplines || [];
+
+    // Converter ranking para formato de concurso
+    console.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
+    console.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
+    console.log('[fetchConcursoById] ===== DADOS DO CRIADOR =====');
+    console.log('[fetchConcursoById] rankingData.created_by_user_id:', rankingData.created_by_user_id);
+    console.log('[fetchConcursoById] rankingData.is_admin_created:', rankingData.is_admin_created);
+    
+    const concursoData: Concurso = {
+      id: rankingData.id,
+      titulo: rankingData.titulo,
+      orgao: rankingData.orgao,
+      banca: rankingData.banca,
+      created_at: rankingData.created_at,
+      status: rankingData.status,
+      updated_at: rankingData.updated_at,
+      link: rankingData.descricao,
+      inscritos: rankingData.total_participants,
+      vagas: null,
+      knowledgeAreas: null,
+      localidades: null,
+      custom_banca: null,
+      is_admin_created: rankingData.is_admin_created,
+      created_by_user_id: rankingData.created_by_user_id,
+      has_custom_knowledge: true,
+      exam_type: rankingData.exam_type,
+      alternatives_count: 5,
+      wrong_answer_penalty: rankingData.wrong_answer_penalty,
+      predefined_job_title: null,
+      custom_job_title: null,
+      has_ampla_concorrencia: true,
+      has_ppp: false,
+      has_pcd: false,
+      has_hipossuficientes: false,
+      has_indigenas: false,
+      has_transsexuais: false,
+      is_admin_update: false,
+      disciplines: disciplines, // Usar disciplinas já convertidas
+      has_basic_knowledge: false,
+      has_specific_knowledge_1: false,
+      has_specific_knowledge_2: false,
+      has_specific_knowledge_3: false,
+      has_discursive: false,
+      has_case_study_1: false,
+      has_case_study_2: false,
+      has_case_study_3: false,
+      basic_knowledge_questions: 0,
+      specific_knowledge_1_questions: 0,
+      specific_knowledge_2_questions: 0,
+      specific_knowledge_3_questions: 0,
+      basic_knowledge_weight: 0,
+      specific_knowledge_1_weight: 0,
+      specific_knowledge_2_weight: 0,
+      specific_knowledge_3_weight: 0,
+      discursive_weight: 0,
+      case_study_1_weight: 0,
+      case_study_2_weight: 0,
+      case_study_3_weight: 0,
+      custom_knowledge_questions: 0,
+      custom_knowledge_weight: 0,
+      has_minimum_score: rankingData.has_minimum_score,
+      minimum_score_type: null,
+      minimum_score_unit_type: null,
+      total_minimum_score: rankingData.total_minimum_score
+    };
+
+    console.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);
+    console.log('[fetchConcursoById] FINAL disciplines being returned:', concursoData.disciplines);
+    console.log('[fetchConcursoById] FINAL has_custom_knowledge:', concursoData.has_custom_knowledge);
+    console.log('[fetchConcursoById] FINAL has_basic_knowledge:', concursoData.has_basic_knowledge);
+    console.log('[fetchConcursoById] ===== DADOS FINAIS DO CRIADOR =====');
+    console.log('[fetchConcursoById] FINAL created_by_user_id:', concursoData.created_by_user_id);
+    console.log('[fetchConcursoById] FINAL is_admin_created:', concursoData.is_admin_created);
+    return concursoData;
   } catch (error: any) {
     console.error('[fetchConcursoById] Error:', error);
     throw error;
@@ -59,7 +154,7 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
     }
     
     // Order by most recent first
-    query = query.order('data_publicacao', { ascending: false });
+    query = query.order('created_at', { ascending: false });
     
     const { data, error } = await query;
     
@@ -98,8 +193,8 @@ export const fetchUserConcursoRankings = async (userId: string) => {
           titulo,
           orgao,
           banca,
-          etapa_atual,
-          data_publicacao,
+          status,
+          created_at,
           status
         )
       `)
@@ -116,8 +211,8 @@ export const fetchUserConcursoRankings = async (userId: string) => {
         titulo?: string; 
         orgao?: string;
         banca?: string;
-        etapa_atual?: string;
-        data_publicacao?: string;
+        status?: string;
+        created_at?: string;
         status?: string;
       } || {};
       
@@ -128,8 +223,8 @@ export const fetchUserConcursoRankings = async (userId: string) => {
         titulo: concurso.titulo || '',
         orgao: concurso.orgao || '',
         banca: concurso.banca || '',
-        etapa_atual: concurso.etapa_atual || '',
-        data_publicacao: concurso.data_publicacao || '',
+        status: concurso.status || '',
+        created_at: concurso.created_at || '',
         status: concurso.status || ''
       };
     }) || [];

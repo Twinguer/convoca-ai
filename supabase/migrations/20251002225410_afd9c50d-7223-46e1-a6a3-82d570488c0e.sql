@@ -102,12 +102,12 @@ BEGIN
     RETURN 0;
   END IF;
 
-  -- Buscar gabarito oficial do caderno específico
-  SELECT consolidated_answer_data INTO v_official_answers
-  FROM official_answer_weights
-  WHERE concurso_id = v_concurso_id;
+  -- Buscar gabarito oficial do caderno específico (CORRIGIDO para usar concursos.official_answers)
+  SELECT official_answers INTO v_official_answers
+  FROM concursos
+  WHERE id = v_concurso_id;
 
-  v_official_answers := v_official_answers->'booklets'->v_selected_booklet->'answers';
+  v_official_answers := v_official_answers->v_selected_booklet->'questions';
 
   IF v_official_answers IS NULL THEN
     RETURN 0;

@@ -118,7 +118,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       console.log('[initializeQuestionTypes] Initializing question types for concurso:', concurso.id);
 
       // Verificar se estamos usando a estrutura customizada
-      if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+      if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
         const hierarchical = isHierarchicalStructure(concurso);
         console.log('[initializeQuestionTypes] Using hierarchical structure:', hierarchical);
         
@@ -238,7 +239,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     let total = 0;
 
     // Verificar se estamos usando a estrutura customizada
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const hierarchical = isHierarchicalStructure(concurso);
       console.log('[getTotalQuestions] Using hierarchical structure:', hierarchical);
       
@@ -314,7 +316,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     console.log('[getSectionQuestions] Getting questions for section:', selectedSection);
 
     // Verificar se estamos usando a estrutura customizada
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const hierarchical = isHierarchicalStructure(concurso);
       console.log('[getSectionQuestions] Using hierarchical structure:', hierarchical);
       

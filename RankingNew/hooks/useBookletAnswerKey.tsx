@@ -19,18 +19,21 @@ export const useBookletAnswerKey = (concursoId: string) => {
       console.log('Buscando cadernos para concurso:', concursoId);
       
       const { data, error } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', concursoId)
-        .order('display_order');
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concursoId)
+        .single();
 
       if (error) {
         console.error('Erro ao buscar cadernos:', error);
         throw error;
       }
       
-      console.log('Cadernos encontrados:', data || []);
-      return data || [];
+      // Ordenar por display_order e retornar array
+      const booklets = data?.exam_booklets || [];
+      const sortedBooklets = booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+      console.log('Cadernos encontrados:', sortedBooklets);
+      return sortedBooklets;
     },
     enabled: !!concursoId,
     refetchOnWindowFocus: false,

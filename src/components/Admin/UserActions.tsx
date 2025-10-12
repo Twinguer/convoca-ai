@@ -40,7 +40,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
     try {
       const { error } = await supabase
         .rpc('admin_delete_user_from_ranking', {
-          ranking_id_param: rankingId
+          concurso_id_param: rankingId
         });
 
       if (error) throw error;

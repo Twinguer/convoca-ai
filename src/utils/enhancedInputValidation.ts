@@ -135,7 +135,7 @@ export class EnhancedInputValidator {
   public static validatePassword(password: string): ValidationResult {
     return this.validate(password, {
       required: true,
-      minLength: 12,
+      minLength: 8,
       maxLength: 128,
       sanitize: true,
       custom: (value) => {

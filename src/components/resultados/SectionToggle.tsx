@@ -20,8 +20,9 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
     
     const result: {type: string, name: string, weight?: number}[] = [];
     
-    // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-    if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Always use disciplines structure (new system)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      console.log('[SectionToggle] Usando estrutura de disciplinas');
       const hierarchical = isHierarchicalStructure(concurso);
       
       if (hierarchical) {
@@ -44,38 +45,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
         return getDisciplines(concurso).filter(d => d.isEnabled);
       }
     } else {
-      // Estrutura tradicional
-      if (concurso.has_basic_knowledge) {
-        result.push({
-          type: 'basic',
-          name: 'Conhecimentos Básicos',
-          weight: concurso.basic_knowledge_weight
-        });
-      }
-      
-      if (concurso.has_specific_knowledge_1) {
-        result.push({
-          type: 'specific1',
-          name: 'Conhecimentos Específicos 1',
-          weight: concurso.specific_knowledge_1_weight
-        });
-      }
-      
-      if (concurso.has_specific_knowledge_2) {
-        result.push({
-          type: 'specific2',
-          name: 'Conhecimentos Específicos 2',
-          weight: concurso.specific_knowledge_2_weight
-        });
-      }
-      
-      if (concurso.has_specific_knowledge_3) {
-        result.push({
-          type: 'specific3',
-          name: 'Conhecimentos Específicos 3',
-          weight: concurso.specific_knowledge_3_weight
-        });
-      }
+      console.warn('[SectionToggle] No disciplines found');
     }
     
     return result;

@@ -33,8 +33,9 @@ export const createQuestionOptions = (concurso: Concurso): Record<number, string
 export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  if (concurso.has_custom_knowledge && concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    // Para disciplinas customizadas
+  // Always use disciplines structure (new system)
+  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    console.log('[getTotalQuestions] Usando estrutura de disciplinas');
     let total = 0;
     
     // Verificar se temos estrutura hierárquica (blocos -> disciplinas)
@@ -61,14 +62,10 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       }
     }
     
+    console.log(`[getTotalQuestions] Total de questões: ${total}`);
     return total;
-  } else {
-    // Estrutura tradicional
-    return (
-      (concurso.has_basic_knowledge ? parseInt(String(concurso.basic_knowledge_questions)) || 0 : 0) +
-      (concurso.has_specific_knowledge_1 ? parseInt(String(concurso.specific_knowledge_1_questions)) || 0 : 0) +
-      (concurso.has_specific_knowledge_2 ? parseInt(String(concurso.specific_knowledge_2_questions)) || 0 : 0) +
-      (concurso.has_specific_knowledge_3 ? parseInt(String(concurso.specific_knowledge_3_questions)) || 0 : 0)
-    );
   }
+  
+  console.warn('[getTotalQuestions] No disciplines found, returning 0');
+  return 0;
 };

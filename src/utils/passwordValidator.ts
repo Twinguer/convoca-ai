@@ -22,15 +22,15 @@ export interface PasswordRequirements {
 
 export class PasswordValidator {
   private static readonly DEFAULT_REQUIREMENTS: PasswordRequirements = {
-    minLength: 12, // Increased from 8
+    minLength: 8, // Standard minimum
     requireUppercase: true,
     requireLowercase: true,
     requireNumbers: true,
     requireSpecialChars: true,
     maxLength: 128, // Reasonable limit
     forbiddenPatterns: [
-      /(.)\1{3,}/g, // No 4+ consecutive identical characters
-      /123456|abcdef|qwerty|password|admin|user/gi, // Common patterns
+      /(.)\1{4,}/g, // No 5+ consecutive identical characters (relaxed)
+      /123456789|abcdefgh|qwertyui|password123|admin123|user123/gi, // Very common patterns only
       /^\d+$/, // Not all numbers
       /^[a-zA-Z]+$/, // Not all letters
     ]
@@ -96,25 +96,25 @@ export class PasswordValidator {
       }
     }
 
-    // Entropy calculation
+    // Entropy calculation (very relaxed)
     const entropy = this.calculateEntropy(password);
-    if (entropy < 50) {
+    if (entropy < 20) {
       errors.push('Senha muito previsível');
       suggestions.push('Use uma combinação mais aleatória de caracteres');
     } else {
       score += Math.min(entropy / 2, 20);
     }
 
-    // Common password check
+    // Common password check (very relaxed - only very obvious patterns)
     if (this.isCommonPassword(password)) {
-      errors.push('Senha muito comum - escolha uma mais única');
-      suggestions.push('Evite senhas que aparecem em listas de senhas comuns');
+      // Only warn, don't block
+      suggestions.push('Considere usar uma senha mais única');
     }
 
     // Generate suggestions if password is weak
-    if (score < 60) {
+    if (score < 40) {
       suggestions.push('Combine letras maiúsculas, minúsculas, números e símbolos');
-      suggestions.push('Use pelo menos 12 caracteres');
+      suggestions.push('Use pelo menos 8 caracteres');
       suggestions.push('Evite informações pessoais óbvias');
       suggestions.push('Considere usar uma frase secreta');
     }

@@ -181,7 +181,7 @@ RankingNew/
 - `user_rankings` - Participações dos usuários
 - `user_answers` - Respostas consolidadas
 - `official_answer_weights` - Gabaritos oficiais
-- `exam_booklets` - Cadernos de prova
+- `concursos.exam_booklets` - Cadernos de prova (JSONB)
 - `consolidated_answers_by_concurso` - Cache de respostas
 
 ## 🚀 Como Usar

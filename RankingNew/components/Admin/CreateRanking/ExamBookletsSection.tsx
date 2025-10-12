@@ -38,49 +38,24 @@ export const useBookletsSave = (
     }
 
     try {
-      const { data: existingBooklets } = await supabase
-        .from('exam_booklets')
-        .select('*')
-        .eq('concurso_id', concursoId);
+      // Processar cadernos para JSONB
+      const processedBooklets = booklets.map((booklet, index) => ({
+        id: booklet.id || crypto.randomUUID(),
+        name: booklet.name,
+        display_order: booklet.display_order || index + 1,
+        is_active: true,
+        total_questions: 0
+      }));
 
-      const currentIds = booklets.filter(b => b.id).map(b => b.id);
-      const toDelete = (existingBooklets || []).filter(b => !currentIds.includes(b.id));
+      // Atualizar a coluna exam_booklets na tabela concursos
+      const { error: updateError } = await supabase
+        .from('concursos')
+        .update({ exam_booklets: processedBooklets })
+        .eq('id', concursoId);
 
-      for (const booklet of toDelete) {
-        const { error } = await supabase
-          .from('exam_booklets')
-          .delete()
-          .eq('id', booklet.id);
-        if (error) throw error;
-      }
+      if (updateError) throw updateError;
 
-      const savedBooklets = [];
-      for (const booklet of booklets) {
-        if (booklet.id) {
-          const { data, error } = await supabase
-            .from('exam_booklets')
-            .update({ name: booklet.name, display_order: booklet.display_order })
-            .eq('id', booklet.id)
-            .select()
-            .single();
-          if (error) throw error;
-          savedBooklets.push(data);
-        } else {
-          const { data, error } = await supabase
-            .from('exam_booklets')
-            .insert({
-              concurso_id: concursoId,
-              name: booklet.name,
-              display_order: booklet.display_order
-            })
-            .select()
-            .single();
-          if (error) throw error;
-          savedBooklets.push(data);
-        }
-      }
-
-      onSuccess(savedBooklets);
+      onSuccess(processedBooklets);
       return true;
     } catch (error: any) {
       onError(error.message || "Não foi possível salvar os cadernos");
@@ -126,20 +101,24 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     try {
       setIsLoading(true);
       console.log('Carregando cadernos para concurso:', concursoId);
-      const {
-        data,
-        error
-      } = await supabase.from('exam_booklets').select('*').eq('concurso_id', concursoId).order('display_order');
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('exam_booklets')
+        .eq('id', concursoId)
+        .single();
+      
       if (error) {
         console.error('Erro ao carregar cadernos:', error);
         throw error;
       }
-      console.log('Cadernos carregados:', data);
-      if (data && data.length > 0) {
-        setBooklets(data);
+      
+      const booklets = data?.exam_booklets || [];
+      console.log('Cadernos carregados:', booklets);
+      if (booklets && booklets.length > 0) {
+        setBooklets(booklets);
         setHasUnsavedChanges(false);
         setIsBookletsSaved(true);
-        onBookletsChange?.(data);
+        onBookletsChange?.(booklets);
         onBookletsSaved?.(true);
       } else {
         // Se não há cadernos salvos, inicializar com um caderno padrão
@@ -262,77 +241,35 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       setIsSaving(true);
       console.log('Iniciando salvamento de cadernos para concurso:', concursoId);
 
-      // Primeiro, obter cadernos existentes
-      const {
-        data: existingBooklets
-      } = await supabase.from('exam_booklets').select('*').eq('concurso_id', concursoId);
-      console.log('Cadernos existentes:', existingBooklets || []);
+      // Processar cadernos para JSONB
+      const processedBooklets = booklets.map((booklet, index) => ({
+        id: booklet.id || crypto.randomUUID(),
+        name: booklet.name,
+        display_order: booklet.display_order || index + 1,
+        is_active: true,
+        total_questions: 0
+      }));
 
-      // Identificar cadernos para deletar (que existem no banco mas não estão no estado local)
-      const currentIds = booklets.filter(b => b.id).map(b => b.id);
-      const toDelete = (existingBooklets || []).filter(b => !currentIds.includes(b.id));
-      console.log('Cadernos para deletar:', toDelete);
+      // Atualizar a coluna exam_booklets na tabela concursos
+      const { error: updateError } = await supabase
+        .from('concursos')
+        .update({ exam_booklets: processedBooklets })
+        .eq('id', concursoId);
 
-      // Deletar cadernos removidos
-      for (const booklet of toDelete) {
-        console.log('Deletando caderno:', booklet.id);
-        const {
-          error
-        } = await supabase.from('exam_booklets').delete().eq('id', booklet.id);
-        if (error) {
-          console.error('Erro ao deletar caderno:', error);
-          throw error;
-        }
+      if (updateError) {
+        console.error('Erro ao atualizar cadernos:', updateError);
+        throw updateError;
       }
 
-      // Salvar cada caderno individualmente (criar ou atualizar)
-      const savedBooklets = [];
-      for (const [index, booklet] of booklets.entries()) {
-        console.log(`Processando caderno ${index + 1}:`, booklet);
-        if (booklet.id) {
-          // Atualizar caderno existente
-          console.log('Atualizando caderno existente:', booklet.id);
-          const {
-            data,
-            error
-          } = await supabase.from('exam_booklets').update({
-            name: booklet.name,
-            display_order: booklet.display_order
-          }).eq('id', booklet.id).select().single();
-          if (error) {
-            console.error('Erro ao atualizar caderno:', error);
-            throw error;
-          }
-          console.log('Caderno atualizado:', data);
-          savedBooklets.push(data);
-        } else {
-          // Criar novo caderno
-          console.log('Criando novo caderno:', booklet.name);
-          const {
-            data,
-            error
-          } = await supabase.from('exam_booklets').insert({
-            concurso_id: concursoId,
-            name: booklet.name,
-            display_order: booklet.display_order
-          }).select().single();
-          if (error) {
-            console.error('Erro ao criar caderno:', error);
-            throw error;
-          }
-          console.log('Caderno criado:', data);
-          savedBooklets.push(data);
-        }
-      }
-      console.log('Todos os cadernos salvos:', savedBooklets);
-      setBooklets(savedBooklets);
+      console.log('Todos os cadernos salvos:', processedBooklets);
+      setBooklets(processedBooklets);
       setHasUnsavedChanges(false);
       setIsBookletsSaved(true);
-      onBookletsChange?.(savedBooklets);
+      onBookletsChange?.(processedBooklets);
       onBookletsSaved?.(true);
       toast({
         title: "Cadernos salvos",
-        description: `${savedBooklets.length} caderno(s) configurado(s) com sucesso`
+        description: `${processedBooklets.length} caderno(s) configurado(s) com sucesso`
       });
       return true;
     } catch (error: any) {

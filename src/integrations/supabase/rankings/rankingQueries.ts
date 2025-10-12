@@ -50,7 +50,7 @@ export const fetchAllRankings = async (filters?: {
     }
     
     // Ordenar por data de publicação mais recente primeiro
-    query = query.order('data_publicacao', { ascending: false });
+    query = query.order('created_at', { ascending: false });
     
     const { data, error } = await query;
     
@@ -66,10 +66,10 @@ export const fetchAllRankings = async (filters?: {
 export const fetchOfficialAnswers = async (concursoId: string) => {
   try {
     const { data, error } = await supabase
-      .from('official_answer_weights')
-      .select('*')
-      .eq('concurso_id', concursoId)
-      .order('question_number', { ascending: true });
+      .from('concursos')
+      .select('official_answers')
+      .eq('id', concursoId)
+      .single();
       
     if (error) throw error;
     return data || [];

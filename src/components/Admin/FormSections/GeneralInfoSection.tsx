@@ -181,7 +181,7 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FormField control={form.control} name="data_publicacao" render={({field}) => (
+        <FormField control={form.control} name="created_at" render={({field}) => (
           <FormItem>
             <FormLabel>Data da Prova</FormLabel>
             <FormControl>

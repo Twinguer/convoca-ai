@@ -13,7 +13,7 @@ const RankingParticipationWrapper: React.FC<RankingParticipationWrapperProps> = 
   const { id } = useParams<{ id: string }>();
   const finalRankingId = rankingId || id;
   // Usar dados de concurso específico
-  const { concurso, userRanking, isParticipating, isLoading, error } = useResultadosData(finalRankingId);
+  const { concurso, userRanking, isParticipating, isLoading, error, userRankingId } = useResultadosData(finalRankingId);
   
   // Log para debugging
   React.useEffect(() => {
@@ -59,7 +59,7 @@ const RankingParticipationWrapper: React.FC<RankingParticipationWrapperProps> = 
       <ParticipationForm
         concurso={concurso}
         isAlreadyParticipating={isParticipating}
-        userRankingId={userRanking?.id}
+        userRankingId={userRankingId}
         showAnswerSheet={true}
       />
     </div>

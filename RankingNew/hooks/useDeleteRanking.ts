@@ -75,19 +75,7 @@ export const useDeleteRanking = () => {
           // Não joga erro aqui pois pode não existir
         }
 
-        // 6. Deletar exam_booklets
-        console.log('Deletando exam_booklets...');
-        const { error: bookletsError } = await supabase
-          .from('exam_booklets')
-          .delete()
-          .eq('concurso_id', concursoId);
-        
-        if (bookletsError) {
-          console.error('Erro ao deletar exam_booklets:', bookletsError);
-          // Continua mesmo com erro nos cadernos
-        }
-
-        // 7. Finalmente deletar o concurso
+        // 6. Finalmente deletar o concurso (exam_booklets são deletados automaticamente via CASCADE)
         console.log('Deletando concurso...');
         const { error: concursoError } = await supabase
           .from('concursos')

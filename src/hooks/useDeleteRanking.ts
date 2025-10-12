@@ -63,29 +63,11 @@ export const useDeleteRanking = () => {
           throw rankingsError;
         }
 
-        // 5. Deletar official_answer_weights
-        console.log('Deletando official_answer_weights...');
-        const { error: weightsError } = await supabase
-          .from('official_answer_weights')
-          .delete()
-          .eq('concurso_id', concursoId);
-        
-        if (weightsError) {
-          console.error('Erro ao deletar official_answer_weights:', weightsError);
-          // Não joga erro aqui pois pode não existir
-        }
+        // 5. official_answer_weights agora são gerenciados via JSONB na tabela concursos
+        console.log('official_answer_weights são gerenciados via JSONB na tabela concursos - não precisa deletar');
 
-        // 6. Deletar exam_booklets
-        console.log('Deletando exam_booklets...');
-        const { error: bookletsError } = await supabase
-          .from('exam_booklets')
-          .delete()
-          .eq('concurso_id', concursoId);
-        
-        if (bookletsError) {
-          console.error('Erro ao deletar exam_booklets:', bookletsError);
-          // Continua mesmo com erro nos cadernos
-        }
+        // 6. Cadernos são gerenciados via JSONB na tabela concursos
+        console.log('Cadernos são gerenciados via JSONB na tabela concursos - não precisa deletar');
 
         // 7. Finalmente deletar o concurso
         console.log('Deletando concurso...');

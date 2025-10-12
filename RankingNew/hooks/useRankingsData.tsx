@@ -6,19 +6,19 @@ import { RankingItemProps } from '@/components/rankings/RankingList';
 const fetchRankings = async (): Promise<RankingItemProps[]> => {
   try {
     const { data: concursos, error } = await supabase
-      .from('concursos')
+      .from('rankings')
       .select(`
         id,
         titulo,
         orgao,
         banca,
-        data_publicacao,
+        created_at,
         etapa_atual,
-        created_by_user_id,
+        created_by,
         is_admin_created,
         localidades
       `)
-      .order('data_publicacao', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
@@ -36,11 +36,11 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
 
         // If there's a creator user ID, fetch their name (using public view)
         let creatorName = null;
-        if (concurso.created_by_user_id && !concurso.is_admin_created) {
+        if (concurso.created_by && !concurso.is_admin_created) {
           const { data: userData, error: userError } = await supabase
             .from('public_profiles')
             .select('name')
-            .eq('id', concurso.created_by_user_id)
+            .eq('id', concurso.created_by)
             .maybeSingle();
 
           if (!userError && userData) {
@@ -56,12 +56,12 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
 
         return {
           id: concurso.id,
-          examDate: concurso.data_publicacao || new Date().toISOString(),
+          examDate: concurso.created_at || new Date().toISOString(),
           banca: concurso.banca,
           concursoTitle: concurso.orgao,
           cargoTitle: concurso.titulo,
           participantCount: countData || 0,
-          createdByUserId: concurso.created_by_user_id || null,
+          createdByUserId: concurso.created_by || null,
           creatorName: creatorName,
           isAdminCreated: concurso.is_admin_created,
           localidade: localidade

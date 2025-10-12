@@ -170,6 +170,28 @@ export const useSecureAuth = () => {
       }
 
       if (data.user) {
+        // Criar perfil manualmente (temporário até o trigger funcionar)
+        try {
+          const { error: profileError } = await supabase
+            .from('users_profiles')
+            .insert({
+              id: data.user.id,
+              email: sanitizedEmail,
+              name: sanitizedName,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (profileError) {
+            // Se já existe, não é erro
+            if (!profileError.message?.includes('duplicate key') && !profileError.message?.includes('unique constraint')) {
+              console.warn('Erro ao criar perfil:', profileError.message);
+            }
+          }
+        } catch (profileErr) {
+          console.warn('Erro ao criar perfil:', profileErr);
+        }
+
         if (data.user.email_confirmed_at) {
           showSuccessToast('Cadastro realizado com sucesso!', 'Sua conta foi criada e confirmada automaticamente.');
         } else {

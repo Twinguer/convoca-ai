@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { rankingCache } from '@/services/rankingCache';
 
 export const useLeaveRanking = () => {
   const queryClient = useQueryClient();
@@ -65,11 +66,26 @@ export const useLeaveRanking = () => {
 
       return { success: true };
     },
-    onSuccess: () => {
+    onSuccess: (data, concursoId) => {
+      console.log('[useLeaveRanking] 🎉 Usuário saiu do ranking com sucesso, invalidando queries...');
       toast.success('Você saiu do ranking com sucesso');
+      
+      // Limpar cache local para forçar busca de dados frescos
+      console.log('[useLeaveRanking] 🗑️ Limpando cache local...');
+      rankingCache.clear();
+      
+      // Invalidar todas as queries relacionadas ao concurso para refresh automático
+      queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoId] });
+      queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concursoId] });
+      queryClient.invalidateQueries({ queryKey: ['concurso', concursoId] });
+      
+      // Invalidar queries gerais também
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
       queryClient.invalidateQueries({ queryKey: ['participant-count'] });
       queryClient.invalidateQueries({ queryKey: ['user-participation'] });
+      
+      console.log('[useLeaveRanking] ✅ Cache limpo e queries invalidadas, dados serão atualizados automaticamente');
     },
     onError: (error: Error) => {
       toast.error(`Erro ao sair do ranking: ${error.message}`);

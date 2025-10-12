@@ -7,26 +7,26 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
     console.log('[getConsolidatedAnswerKey] Fetching consolidated answer key for concurso:', concursoId);
     
     const { data, error } = await supabase
-      .from('official_answer_weights')
-      .select('consolidated_answer_data')
-      .eq('concurso_id', concursoId)
-      .maybeSingle();
+      .from('concursos')
+      .select('official_answers')
+      .eq('id', concursoId)
+      .single();
 
     if (error) {
       console.error('[getConsolidatedAnswerKey] Error fetching consolidated answer key:', error);
       return null;
     }
 
-    if (!data?.consolidated_answer_data) {
-      console.log('[getConsolidatedAnswerKey] No consolidated data found for concurso:', concursoId);
+    if (!data?.official_answers) {
+      console.log('[getConsolidatedAnswerKey] No official answers found for concurso:', concursoId);
       return null;
     }
 
-    const consolidatedData = data.consolidated_answer_data;
+    const officialAnswers = data.official_answers;
     
     // Validar estrutura dos dados
-    if (!consolidatedData.booklets || typeof consolidatedData.booklets !== 'object') {
-      console.warn('[getConsolidatedAnswerKey] Invalid booklets structure, initializing empty booklets');
+    if (!officialAnswers || typeof officialAnswers !== 'object') {
+      console.warn('[getConsolidatedAnswerKey] Invalid official answers structure, initializing empty booklets');
       return {
         booklets: {},
         metadata: {
@@ -36,8 +36,8 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
       };
     }
 
-    console.log('[getConsolidatedAnswerKey] Found consolidated data with booklets:', Object.keys(consolidatedData.booklets));
-    return consolidatedData as ConsolidatedAnswerKey;
+    console.log('[getConsolidatedAnswerKey] Found official answers with booklets:', Object.keys(officialAnswers));
+    return { booklets: officialAnswers } as ConsolidatedAnswerKey;
   } catch (error) {
     console.error('[getConsolidatedAnswerKey] Exception:', error);
     return null;

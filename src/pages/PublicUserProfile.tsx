@@ -79,7 +79,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const {
           data: profileData,
           error: profileError
-        } = await supabase.from('public_profiles').select('id, name, avatar_url').eq('id', id).single();
+        } = await supabase.from('users_profiles').select('id, name, avatar_url').eq('id', id).single();
         if (profileError) throw profileError;
 
         // Get follower count
@@ -149,7 +149,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
             id,
             concurso_id,
             score,
-            concursos(titulo, id)
+            concursos!inner(titulo, id)
           `).eq('user_id', id);
         if (error || !data) throw error || new Error('Sem rankings');
         const concursoIds: string[] = Array.from(new Set(data.map((r: any) => r.concurso_id)));
@@ -160,8 +160,8 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const results = await Promise.all(concursoIds.map(async cid => {
           const list = await getRankingsWithUserInfo(supabase, cid);
 
-          // Buscar dados do concurso para verificar o tipo de exame
-          const { data: concursoData } = await supabase
+          // Buscar dados do ranking para verificar o tipo de exame
+          const { data: rankingData } = await supabase
             .from('concursos')
             .select('exam_type')
             .eq('id', cid)
@@ -176,11 +176,11 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               ranking.belowBlockMinimums.length > 0;
             
             // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+            const isCertoErradoEliminated = rankingData?.exam_type === 'Certo ou Errado' && 
               ranking.score <= 0;
             
             // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+            const isAlternativasEliminated = rankingData?.exam_type === 'Alternativas' && 
               ranking.score <= 0;
             
             return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 

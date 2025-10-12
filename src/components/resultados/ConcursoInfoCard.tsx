@@ -12,7 +12,7 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   concurso,
   creatorName
 }) => {
-  const formattedDate = concurso.data_publicacao ? format(new Date(concurso.data_publicacao), "dd 'de' MMMM 'de' yyyy", {
+  const formattedDate = concurso.created_at ? format(new Date(concurso.created_at), "dd 'de' MMMM 'de' yyyy", {
     locale: ptBR
   }) : 'Data não informada';
   const getLocalidadesText = () => {
