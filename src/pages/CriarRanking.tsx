@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
@@ -380,8 +379,8 @@ const CriarRanking = () => {
   };
   const handleGoToResults = () => {
     if (createdConcursoId) {
-      // Redirecionar para lista de rankings em vez de URL com ID
-      navigate('/pre-classificacao');
+      // Redirecionar para a classificação específica do ranking criado
+      navigate(`/ranking/${createdConcursoId}`);
     }
   };
   const handleBack = () => {
@@ -407,11 +406,6 @@ const CriarRanking = () => {
   }
 
   return <div className="container mx-auto p-4">
-      <Button variant="ghost" className="mb-4 flex items-center gap-2" onClick={handleBack}>
-        <ArrowLeft className="h-4 w-4" />
-        {isAdmin ? 'Voltar para Dashboard' : 'Voltar para Rankings'}
-      </Button>
-      
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
@@ -422,25 +416,23 @@ const CriarRanking = () => {
           <Form {...form}>
             <form onSubmit={e => e.preventDefault()}>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6">
-                  <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
-                  <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editToken}>
-                    Gabarito Oficial
-                  </TabsTrigger>
-                </TabsList>
+                <div className="flex justify-between items-center mb-6">
+                  <TabsList>
+                    <TabsTrigger value="general-info">Informações Gerais</TabsTrigger>
+                    <TabsTrigger value="answer-key" disabled={!createdConcursoId && !editToken}>
+                      Gabarito Oficial
+                    </TabsTrigger>
+                  </TabsList>
+                  {activeTab === 'answer-key' && (
+                    <Button type="button" onClick={handleGoToResults}>
+                      Ir para Resultados
+                    </Button>
+                  )}
+                </div>
                 <TabsContent value="general-info">
                   <GeneralTab form={form} jobTitles={jobTitles} isCustomTitle={isCustomTitle} isCustomBanca={isCustomBanca} handleJobTitleChange={handleJobTitleChange} handleCustomTitleChange={handleCustomTitleChange} handleBancaChange={handleBancaChange} handleOrgaoChange={handleOrgaoChange} handleNextTab={handleNextTab} onSaveRanking={handleSaveRanking} isSubmitting={isSubmitting} selectedStates={selectedStates} setSelectedStates={setSelectedStates} createdConcursoId={createdConcursoId} />
                 </TabsContent>
                 <TabsContent value="answer-key">
-                  <div className="mb-4 flex justify-between items-center">
-                    <Button type="button" variant="outline" onClick={() => setActiveTab('general-info')}>
-                      Voltar às Informações Gerais
-                    </Button>
-                    <Button type="button" onClick={handleGoToResults}>
-                      Ir para Resultados
-                    </Button>
-                  </div>
-                  
                   {(createdConcursoId || editToken) && <AnswerKeyTab concursoId={createdConcursoId || ''} onGoToResults={handleGoToResults} />}
                 </TabsContent>
               </Tabs>

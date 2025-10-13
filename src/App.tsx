@@ -55,6 +55,7 @@ import { useParams } from 'react-router-dom';
 import FAQ from "./pages/FAQ";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
+import EmailPreview from "./pages/EmailPreview";
 // Wrapper components for passing URL parameters
 const ConcursoResultadosWrapper = () => {
   const { token } = useParams<{ token: string }>();
@@ -142,6 +143,10 @@ const AppContent = () => {
                     <Route path="/politica-de-privacidade" element={<>
                         <Menu />
                         <PoliticaDePrivacidade />
+                      </>} />
+                    <Route path="/email-preview" element={<>
+                        <Menu />
+                        <EmailPreview />
                       </>} />
                     <Route path="/criar-ranking" element={<>
                         <Menu />

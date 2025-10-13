@@ -72,14 +72,6 @@ export const SecureConcursoRoute: React.FC<SecureConcursoRouteProps> = ({
             <p className="text-sm text-muted-foreground">
               O link que você está tentando acessar é inválido, expirado ou não existe.
             </p>
-            <div className="pt-4">
-              <a 
-                href="/pre-classificacao" 
-                className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Voltar para Rankings
-              </a>
-            </div>
           </CardContent>
         </Card>
       </div>
