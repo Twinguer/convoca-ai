@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AnswerKeyForm } from '../AnswerKeyForm';
 import { BookletAnswerKeySelector } from './BookletAnswerKeySelector';
 import { useBookletAnswerKey } from '@/hooks/useBookletAnswerKey';
-import { FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 interface AnswerKeyTabProps {
@@ -86,13 +86,6 @@ export const AnswerKeyTab: React.FC<AnswerKeyTabProps> = ({
           </CardContent>
         </Card>}
 
-      {/* Botão para ir aos resultados - só aparece quando todos os gabaritos estão completos */}
-      {completionStatus?.allComplete && onGoToResults && <div className="flex justify-center pt-6">
-          <Button onClick={onGoToResults} className="bg-primary hover:bg-primary/90">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Ver Resultados do Ranking
-          </Button>
-        </div>}
       
       {/* Alerta quando não estiver completo */}
       {!completionStatus?.allComplete && onGoToResults && <Alert className="border-amber-200 bg-amber-50 mt-6">
