@@ -48,10 +48,16 @@ const fetchRankings = async (): Promise<RankingItemProps[]> => {
           }
         }
 
-        // Obter a primeira localidade (para compatibilidade com versões anteriores)
+        // Processar todas as localidades selecionadas
         let localidade = null;
         if (concurso.localidades && Array.isArray(concurso.localidades) && concurso.localidades.length > 0) {
-          localidade = concurso.localidades[0];
+          if (concurso.localidades.includes('Nacional')) {
+            localidade = 'Nacional';
+          } else if (concurso.localidades.length > 3) {
+            localidade = `${concurso.localidades.slice(0, 3).join(', ')} e outras`;
+          } else {
+            localidade = concurso.localidades.join(', ');
+          }
         }
 
         return {

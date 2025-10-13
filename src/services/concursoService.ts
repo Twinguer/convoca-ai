@@ -69,7 +69,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       inscritos: rankingData.total_participants,
       vagas: null,
       knowledgeAreas: null,
-      localidades: null,
+      localidades: rankingData.localidades || [],
       custom_banca: null,
       is_admin_created: rankingData.is_admin_created,
       created_by_user_id: rankingData.created_by_user_id,
