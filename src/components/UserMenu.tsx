@@ -47,10 +47,6 @@ const UserMenu: React.FC = () => {
     try {
       await signOut();
       queryClient.clear();
-      toast({
-        title: 'Desconectado com sucesso',
-        description: 'Você foi desconectado da sua conta.'
-      });
       navigate('/', { replace: true });
     } catch (error) {
       toast({
