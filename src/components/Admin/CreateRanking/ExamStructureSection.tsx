@@ -123,7 +123,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
   }) => <FormItem>
           <FormLabel>Número de Questões</FormLabel>
           <FormControl>
-            <Input type="number" {...field} min="0" onChange={e => field.onChange(Number(e.target.value))} />
+            <Input 
+              type="number" 
+              {...field} 
+              min="0" 
+              max="999"
+              maxLength={3}
+              onChange={e => {
+                const value = e.target.value;
+                if (value.length <= 3 && !isNaN(Number(value)) && Number(value) <= 999) {
+                  field.onChange(Number(value));
+                }
+              }} 
+            />
           </FormControl>
         </FormItem>} />;
 
@@ -335,7 +347,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           {form.watch('disciplines')?.map((block, blockIndex) => <div key={block.id} className="border border-border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex-grow">
-                  <input className="font-medium text-lg bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={block.name?.slice(0, 10) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Nome do Bloco (máx. 10)" maxLength={10} />
+                  <input className="font-medium text-lg bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={block.name?.slice(0, 20) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Nome do Bloco (máx. 20)" maxLength={20} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
@@ -369,7 +381,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <div className="space-y-4 pl-4 border-l-2 border-border">
                 {block.disciplines?.map((discipline, disciplineIndex) => <div key={discipline.id} className="border border-border p-4 rounded-md">
                     <div className="flex justify-between items-center mb-4">
-                      <input className="font-medium bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={discipline.name?.slice(0, 5) || ''} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value.slice(0, 5))} placeholder="Nome da Disciplina (máx. 5)" maxLength={5} />
+                      <input className="font-medium bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={discipline.name?.slice(0, 5) || ''} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value.slice(0, 5))} placeholder="Sigla (máx. 5)" maxLength={5} />
                       <Button variant="ghost" size="sm" onClick={() => handleRemoveDiscipline(block.id, discipline.id)} className="text-red-500 hover:text-red-700">
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remover
@@ -379,7 +391,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <FormLabel>Número de Questões</FormLabel>
-                        <Input type="number" value={discipline.questionCount || 0} min="0" onChange={e => handleDisciplineChange(block.id, discipline.id, 'questionCount', Number(e.target.value))} />
+                        <Input 
+                          type="number" 
+                          value={discipline.questionCount || 0} 
+                          min="0" 
+                          max="999"
+                          maxLength={3}
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (value.length <= 3 && !isNaN(Number(value)) && Number(value) <= 999) {
+                              handleDisciplineChange(block.id, discipline.id, 'questionCount', Number(value));
+                            }
+                          }} 
+                        />
                       </div>
                       <div>
                         <FormLabel>Peso</FormLabel>

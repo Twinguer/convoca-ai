@@ -147,9 +147,9 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                       <Input 
                         {...field} 
                         placeholder="Digite o nome da banca" 
-                        maxLength={15}
+                        maxLength={20}
                         onChange={e => {
-                          const value = e.target.value.slice(0, 15);
+                          const value = e.target.value.toUpperCase().slice(0, 20);
                           field.onChange(value);
                         }}
                       />
