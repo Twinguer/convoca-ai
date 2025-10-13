@@ -17,7 +17,7 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
   }) : 'Data não informada';
   const getLocalidadesText = () => {
     if (!concurso.localidades || concurso.localidades.length === 0) {
-      return 'Nacional';
+      return 'Não informado';
     }
     if (concurso.localidades.includes('Nacional')) {
       return 'Nacional';
