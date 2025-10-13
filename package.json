@@ -105,7 +105,6 @@
     "test:disciplines-structure": "tsx scripts/test-disciplines-structure.ts",
     "test:new-ranking-creation": "tsx scripts/test-new-ranking-creation.ts",
     "test:gabarito-frontend": "tsx scripts/test-gabarito-frontend.ts",
-    "test:participation-flow": "tsx scripts/test-participation-flow.ts",
     "test:switch-booklet": "tsx scripts/test-switch-booklet.ts",
     "test:question-construction": "tsx scripts/test-question-construction.ts",
     "test:answer-sheet-rendering": "tsx scripts/test-answer-sheet-rendering.ts",
@@ -155,7 +154,6 @@
     "create:valid-passwords": "tsx scripts/create-valid-passwords.ts",
     "test:simplified-validation": "tsx scripts/test-simplified-validation.ts",
     "update:concursos-to-rankings": "tsx scripts/update-concursos-to-rankings.ts",
-    "check:rankings-structure": "tsx scripts/check-rankings-structure.ts",
     "test:rankings-query": "tsx scripts/test-rankings-query.ts",
     "fix:data-publicacao": "tsx scripts/fix-data-publicacao-references.ts",
     "test:final-system": "tsx scripts/test-final-system.ts",
@@ -202,7 +200,6 @@
     "analyze:jsonb-structure": "tsx scripts/analyze-jsonb-data-structure.ts",
     "cleanup:unnecessary-tables": "tsx scripts/cleanup-unnecessary-tables.ts",
     "diagnose:system-issues": "tsx scripts/diagnose-system-issues.ts",
-    "fix:ambiguous-relationships": "tsx scripts/fix-ambiguous-relationships.ts",
     "test:system-after-fixes": "tsx scripts/test-system-after-fixes.ts",
     "fix:profile-tables": "tsx scripts/fix-profile-table-references.ts",
     "fix:all-table-references": "tsx scripts/fix-all-table-references-to-normalized-structure.ts",
@@ -245,8 +242,8 @@
     "@radix-ui/react-toggle": "^1.1.0",
     "@radix-ui/react-toggle-group": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
-    "@supabase/supabase-js": "^2.49.4",
-    "@tanstack/react-query": "^5.56.2",
+    "@supabase/supabase-js": "^2.75.0",
+    "@tanstack/react-query": "^5.90.2",
     "@types/dompurify": "^3.0.5",
     "@types/react-window": "^1.8.8",
     "class-variance-authority": "^0.7.1",
@@ -281,7 +278,7 @@
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react-swc": "^3.5.0",
+    "@vitejs/plugin-react-swc": "^4.1.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.2.3",
     "eslint": "^9.9.0",
@@ -295,7 +292,7 @@
     "tsx": "^4.20.6",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1",
-    "vitest": "^2.1.9"
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4"
   }
 }
