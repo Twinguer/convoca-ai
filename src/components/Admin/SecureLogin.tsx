@@ -55,7 +55,6 @@ export const SecureAdminLogin: React.FC = () => {
           }
         });
 
-        toast.success('Login realizado com sucesso!');
         navigate('/project/admin/man/dashboard');
       }
     } catch (error) {

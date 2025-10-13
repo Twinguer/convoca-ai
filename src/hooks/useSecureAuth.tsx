@@ -116,7 +116,6 @@ export const useSecureAuth = () => {
       // Reset attempts on successful login
       setLoginAttempts(0);
       localStorage.removeItem('auth_lockout_end');
-      showSuccessToast('Login realizado com sucesso!', 'Você foi logado no sistema.');
       navigate('/');
     } catch (error: any) {
       logError('Login failed', { error: error.message }, 'AUTH');
