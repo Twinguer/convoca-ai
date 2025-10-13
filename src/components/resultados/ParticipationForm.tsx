@@ -318,9 +318,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Debug states log removed to reduce console spam
 
   // Show the answer sheet if selected and we have a ranking ID
-  console.log('[ParticipationForm] Verificando condição shouldShowAnswerSheet:', shouldShowAnswerSheet);
+  // console.log('[ParticipationForm] Verificando condição shouldShowAnswerSheet:', shouldShowAnswerSheet);
   if (shouldShowAnswerSheet) {
-    console.log('[ParticipationForm] Renderizando AnswerSheet com rankingId:', localUserRankingId);
+    // console.log('[ParticipationForm] Renderizando AnswerSheet com rankingId:', localUserRankingId);
     // Rendering AnswerSheet
     return (
       <div className="w-full h-full">

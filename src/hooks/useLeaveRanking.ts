@@ -67,11 +67,11 @@ export const useLeaveRanking = () => {
       return { success: true };
     },
     onSuccess: (data, concursoId) => {
-      console.log('[useLeaveRanking] 🎉 Usuário saiu do ranking com sucesso, invalidando queries...');
+      // console.log('[useLeaveRanking] 🎉 Usuário saiu do ranking com sucesso, invalidando queries...');
       toast.success('Você saiu do ranking com sucesso');
       
       // Limpar cache local para forçar busca de dados frescos
-      console.log('[useLeaveRanking] 🗑️ Limpando cache local...');
+      // console.log('[useLeaveRanking] 🗑️ Limpando cache local...');
       rankingCache.clear();
       
       // Invalidar todas as queries relacionadas ao concurso para refresh automático
@@ -85,7 +85,7 @@ export const useLeaveRanking = () => {
       queryClient.invalidateQueries({ queryKey: ['participant-count'] });
       queryClient.invalidateQueries({ queryKey: ['user-participation'] });
       
-      console.log('[useLeaveRanking] ✅ Cache limpo e queries invalidadas, dados serão atualizados automaticamente');
+      // console.log('[useLeaveRanking] ✅ Cache limpo e queries invalidadas, dados serão atualizados automaticamente');
     },
     onError: (error: Error) => {
       toast.error(`Erro ao sair do ranking: ${error.message}`);

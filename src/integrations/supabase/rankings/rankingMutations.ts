@@ -17,7 +17,7 @@ const isPositionThreshold = (value: string): value is PositionThreshold => {
 
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
-    console.log(`[recalculateUserScore] Recalculating scores for ranking`);
+    // console.log(`[recalculateUserScore] Recalculating scores for ranking`);
     
     // Obter dados do concurso para aplicar regras específicas
     const { data: concurso, error: concursoError } = await supabase

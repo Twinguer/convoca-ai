@@ -5,7 +5,7 @@ import { recalculateAllUserScores } from './userAnswers';
 // Function to create a new ranking
 export const createRanking = async (rankingData: any) => {
   try {
-    console.log('Creating new ranking with data:', rankingData);
+    // console.log('Creating new ranking with data:', rankingData);
     
     // First, check if all required fields are present
     const requiredFields = ['titulo', 'orgao', 'banca'];
@@ -22,9 +22,8 @@ export const createRanking = async (rankingData: any) => {
       banca: rankingData.banca,
       created_at: rankingData.created_at,
       vagas: rankingData.vagas,
-      inscritos: rankingData.inscritos,
-      status: rankingData.status,
-      status: rankingData.status,
+        inscritos: rankingData.inscritos,
+        status: rankingData.status,
       exam_type: rankingData.exam_type,
       alternatives_count: rankingData.alternatives_count,
       wrong_answer_penalty: rankingData.wrong_answer_penalty,
@@ -97,7 +96,7 @@ export const createRanking = async (rankingData: any) => {
       throw error;
     }
     
-    console.log('Ranking created successfully:', data);
+    // console.log('Ranking created successfully:', data);
     return data;
   } catch (error) {
     console.error('Error creating ranking:', error);
@@ -205,7 +204,7 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
       for (const field of structureFields) {
         if (rankingData[field] !== undefined && rankingData[field] !== oldData[field]) {
           structureChanged = true;
-          console.log(`Field ${field} changed from ${oldData[field]} to ${rankingData[field]}`);
+          // console.log(`Field ${field} changed from ${oldData[field]} to ${rankingData[field]}`);
           break;
         }
       }

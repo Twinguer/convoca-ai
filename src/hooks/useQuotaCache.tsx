@@ -11,7 +11,7 @@ interface QuotaConfig {
 }
 
 const fetchQuotaConfig = async (concursoId: string): Promise<QuotaConfig> => {
-  console.log('[useQuotaCache] Fetching quota config for concurso:', concursoId);
+    // console.log('[useQuotaCache] Fetching quota config for concurso:', concursoId);
   
   const { data, error } = await supabase
     .from('concursos')
@@ -38,7 +38,7 @@ const fetchQuotaConfig = async (concursoId: string): Promise<QuotaConfig> => {
     };
   }
   
-  console.log('[useQuotaCache] Quota config fetched:', data);
+    // console.log('[useQuotaCache] Quota config fetched:', data);
   return data;
 };
 

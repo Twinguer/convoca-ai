@@ -30,32 +30,32 @@ export function useResultadosData(concursoId?: string) {
   const { data: creatorInfo, isLoading: isLoadingCreator } = useQuery({
     queryKey: ['creator', concurso?.created_by_user_id],
     queryFn: async () => {
-      console.log('[useResultadosData] ===== BUSCANDO CRIADOR =====');
-      console.log('[useResultadosData] Concurso completo:', concurso);
-      console.log('[useResultadosData] created_by_user_id:', concurso?.created_by_user_id);
-      console.log('[useResultadosData] is_admin_created:', concurso?.is_admin_created);
+    // console.log('[useResultadosData] ===== BUSCANDO CRIADOR =====');
+    // console.log('[useResultadosData] Concurso completo:', concurso);
+    // console.log('[useResultadosData] created_by_user_id:', concurso?.created_by_user_id);
+    // console.log('[useResultadosData] is_admin_created:', concurso?.is_admin_created);
       
       if (!concurso?.created_by_user_id) {
-        console.log('[useResultadosData] ❌ created_by_user_id não disponível');
+        // console.log('[useResultadosData] ❌ created_by_user_id não disponível');
         return null;
       }
       
-      console.log('[useResultadosData] 🔍 Executando query para buscar criador...');
+      // console.log('[useResultadosData] 🔍 Executando query para buscar criador...');
       const { data, error } = await supabase
         .from('users_profiles')
         .select('name')
         .eq('id', concurso.created_by_user_id)
         .single();
         
-      console.log('[useResultadosData] 📊 Resultado da query de criador:', { data, error });
+      // console.log('[useResultadosData] 📊 Resultado da query de criador:', { data, error });
         
       if (error) {
-        console.log('[useResultadosData] ❌ Erro na query:', error);
+        // console.log('[useResultadosData] ❌ Erro na query:', error);
         logger.error('Error fetching creator info', 'USE_RESULTADOS_DATA', error);
         return null;
       }
       
-      console.log('[useResultadosData] ✅ Criador encontrado:', data);
+      // console.log('[useResultadosData] ✅ Criador encontrado:', data);
       return data;
     },
     enabled: !!concurso?.created_by_user_id && !!concurso,
@@ -99,10 +99,10 @@ export function useResultadosData(concursoId?: string) {
   const { data: userParticipationStatus, isLoading: isCheckingParticipation } = useQuery({
     queryKey: ['user-participation-v2', id, user?.id],
     queryFn: async () => {
-      console.log('[useResultadosData] Verificando participação do usuário:', { userId: user?.id, concursoId: id });
+      // console.log('[useResultadosData] Verificando participação do usuário:', { userId: user?.id, concursoId: id });
       
       if (!user || !id) {
-        console.log('[useResultadosData] Usuário ou ID não disponível');
+        // console.log('[useResultadosData] Usuário ou ID não disponível');
         return { isParticipating: false };
       }
       
@@ -113,7 +113,7 @@ export function useResultadosData(concursoId?: string) {
         .eq('user_id', user.id)
         .maybeSingle();
         
-      console.log('[useResultadosData] Resultado da query de participação:', { data, error });
+      // console.log('[useResultadosData] Resultado da query de participação:', { data, error });
         
       if (error) {
         logger.error('Error checking participation', 'USE_RESULTADOS_DATA', error);
@@ -125,7 +125,7 @@ export function useResultadosData(concursoId?: string) {
         rankingId: data?.id 
       };
       
-      console.log('[useResultadosData] Status de participação:', result);
+      // console.log('[useResultadosData] Status de participação:', result);
       return result;
     },
     enabled: !!user && !!id,
@@ -136,7 +136,7 @@ export function useResultadosData(concursoId?: string) {
   useEffect(() => {
     if (!id) return;
 
-    console.log('[useResultadosData] Configurando real-time para concurso:', id);
+    // console.log('[useResultadosData] Configurando real-time para concurso:', id);
 
     // Configura um canal para escutar atualizações na tabela user_rankings
     const channel = supabase
@@ -150,7 +150,7 @@ export function useResultadosData(concursoId?: string) {
           filter: `concurso_id=eq.${id}`
         },
         (payload) => {
-          console.log('[useResultadosData] 🔄 Detected change in user_rankings:', payload);
+          // console.log('[useResultadosData] 🔄 Detected change in user_rankings:', payload);
           // Força atualização dos rankings quando houver mudanças
           refetchRankings();
           refetchCount();
@@ -160,7 +160,7 @@ export function useResultadosData(concursoId?: string) {
 
     // Cleanup: remover inscrição quando o componente for desmontado
     return () => {
-      console.log('[useResultadosData] Limpando real-time channel');
+      // console.log('[useResultadosData] Limpando real-time channel');
       supabase.removeChannel(channel);
     };
   }, [id, refetchRankings, refetchCount]);
@@ -172,11 +172,11 @@ export function useResultadosData(concursoId?: string) {
   
   // Function to manually refresh all data
   const refreshData = async () => {
-    console.log("[useResultadosData] ===== INÍCIO refreshData =====");
-    console.log("[useResultadosData] Atualizando rankings manualmente");
-    console.log("[useResultadosData] ID do concurso:", id);
-    console.log("[useResultadosData] Usuário autenticado:", isAuthenticated);
-    console.log("[useResultadosData] Timestamp:", new Date().toISOString());
+    // console.log("[useResultadosData] ===== INÍCIO refreshData =====");
+    // console.log("[useResultadosData] Atualizando rankings manualmente");
+    // console.log("[useResultadosData] ID do concurso:", id);
+    // console.log("[useResultadosData] Usuário autenticado:", isAuthenticated);
+    // console.log("[useResultadosData] Timestamp:", new Date().toISOString());
     
     if (!id) {
       console.error("[useResultadosData] ID do concurso não fornecido");
@@ -188,17 +188,17 @@ export function useResultadosData(concursoId?: string) {
 
     // Verifica se o usuário está autenticado
     if (!isAuthenticated) {
-      console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
+      // console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
       logger.info('Usuário não autenticado, atualizando apenas os dados locais', 'USE_RESULTADOS_DATA');
       
       try {
-        console.log("[useResultadosData] Chamando refetchRankings...");
+        // console.log("[useResultadosData] Chamando refetchRankings...");
         await refetchRankings();
-        console.log("[useResultadosData] refetchRankings concluído");
+        // console.log("[useResultadosData] refetchRankings concluído");
         
-        console.log("[useResultadosData] Chamando refetchCount...");
+        // console.log("[useResultadosData] Chamando refetchCount...");
         await refetchCount();
-        console.log("[useResultadosData] refetchCount concluído");
+        // console.log("[useResultadosData] refetchCount concluído");
       } catch (error) {
         console.error("[useResultadosData] Erro ao atualizar dados locais:", error);
       }
@@ -211,13 +211,13 @@ export function useResultadosData(concursoId?: string) {
       
     // Recalcular pontuações para todos os usuários apenas se autenticado
     try {
-      console.log("[useResultadosData] ===== INICIANDO RECÁLCULO =====");
-      console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
+      // console.log("[useResultadosData] ===== INICIANDO RECÁLCULO =====");
+      // console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
       logger.info('Chamando recalculateAllUserScores para concurso', 'USE_RESULTADOS_DATA', { concursoId: id });
       
       const result = await recalculateAllUserScores(id);
-      console.log("[useResultadosData] ===== RESULTADO RECÁLCULO =====");
-      console.log("[useResultadosData] Resultado do recalculateAllUserScores:", result);
+      // console.log("[useResultadosData] ===== RESULTADO RECÁLCULO =====");
+      // console.log("[useResultadosData] Resultado do recalculateAllUserScores:", result);
       
       if (!result.success) {
         console.error("[useResultadosData] ===== ERRO NO RECÁLCULO =====");
@@ -225,36 +225,36 @@ export function useResultadosData(concursoId?: string) {
         logger.error('Erro ao recalcular pontuações', 'USE_RESULTADOS_DATA', result.error);
         return { success: false, error: result.error };
       } else {
-        console.log("[useResultadosData] ===== RECÁLCULO BEM-SUCEDIDO =====");
-        console.log("[useResultadosData] Pontuações recalculadas com sucesso:", result);
+        // console.log("[useResultadosData] ===== RECÁLCULO BEM-SUCEDIDO =====");
+        // console.log("[useResultadosData] Pontuações recalculadas com sucesso:", result);
         logger.info('Pontuações recalculadas com sucesso', 'USE_RESULTADOS_DATA', result);
         
         // Força imediatamente uma atualização dos dados
-        console.log("[useResultadosData] ===== ATUALIZANDO UI =====");
-        console.log("[useResultadosData] Atualizando rankings e contagem...");
+        // console.log("[useResultadosData] ===== ATUALIZANDO UI =====");
+        // console.log("[useResultadosData] Atualizando rankings e contagem...");
         
         try {
-          console.log("[useResultadosData] Chamando refetchRankings...");
+          // console.log("[useResultadosData] Chamando refetchRankings...");
           await refetchRankings();
-          console.log("[useResultadosData] ===== RANKINGS ATUALIZADOS =====");
-          console.log("[useResultadosData] Rankings atualizados com sucesso");
+          // console.log("[useResultadosData] ===== RANKINGS ATUALIZADOS =====");
+          // console.log("[useResultadosData] Rankings atualizados com sucesso");
         } catch (refetchError) {
           console.error("[useResultadosData] ===== ERRO AO ATUALIZAR RANKINGS =====");
           console.error("[useResultadosData] Erro ao atualizar rankings:", refetchError);
         }
         
         try {
-          console.log("[useResultadosData] Chamando refetchCount...");
+          // console.log("[useResultadosData] Chamando refetchCount...");
           await refetchCount();
-          console.log("[useResultadosData] ===== CONTAGEM ATUALIZADA =====");
-          console.log("[useResultadosData] Contagem atualizada com sucesso");
+          // console.log("[useResultadosData] ===== CONTAGEM ATUALIZADA =====");
+          // console.log("[useResultadosData] Contagem atualizada com sucesso");
         } catch (countError) {
           console.error("[useResultadosData] ===== ERRO AO ATUALIZAR CONTAGEM =====");
           console.error("[useResultadosData] Erro ao atualizar contagem:", countError);
         }
         
-        console.log("[useResultadosData] ===== FIM refreshData =====");
-        console.log("[useResultadosData] Rankings e contagem atualizados");
+        // console.log("[useResultadosData] ===== FIM refreshData =====");
+        // console.log("[useResultadosData] Rankings e contagem atualizados");
         
         return { success: true, updatedCount: result.updatedCount };
       }
@@ -267,12 +267,12 @@ export function useResultadosData(concursoId?: string) {
   };
   
   // Debug log para verificar o userRankingId
-  console.log('[useResultadosData] Retornando dados:', {
-    concursoId: id,
-    isParticipating: userParticipationStatus?.isParticipating || false,
-    userRankingId: userParticipationStatus?.rankingId,
-    userParticipationStatus
-  });
+  // console.log('[useResultadosData] Retornando dados:', {
+  //   concursoId: id,
+  //   isParticipating: userParticipationStatus?.isParticipating || false,
+  //   userRankingId: userParticipationStatus?.rankingId,
+  //   userParticipationStatus
+  // });
 
   return {
     concurso,
@@ -287,11 +287,11 @@ export function useResultadosData(concursoId?: string) {
     refetchCount,
     creatorName: (() => {
       const name = creatorInfo?.name || (concurso?.is_admin_created ? 'Administrador' : 'Usuário');
-      console.log('[useResultadosData] Creator name calculado:', { 
-        creatorInfo: creatorInfo?.name, 
-        is_admin_created: concurso?.is_admin_created, 
-        finalName: name 
-      });
+      // console.log('[useResultadosData] Creator name calculado:', { 
+      //   creatorInfo: creatorInfo?.name, 
+      //   is_admin_created: concurso?.is_admin_created, 
+      //   finalName: name 
+      // });
       return name;
     })(),
     inscritos: concurso?.inscritos || 0,

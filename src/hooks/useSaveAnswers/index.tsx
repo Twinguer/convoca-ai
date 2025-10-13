@@ -154,7 +154,7 @@ export const useSaveAnswers = ({
         .single();
 
       if (updatedRanking?.selected_booklet) {
-        console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+        // console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
         // Nota: setSelectedBookletId será chamado pelo componente pai se necessário
       }
 

@@ -29,7 +29,7 @@ interface ConsolidatedAnswers {
 // Função para buscar as respostas consolidadas
 export const fetchUserAnswers = async (rankingId: string) => {
   try {
-    console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
+    // console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
 
     // Buscar dados consolidados usando nova estrutura
     const { data, error } = await supabase

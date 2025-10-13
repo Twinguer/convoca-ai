@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (rankingId: string) => {
   try {
-    console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
+    // console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
 
     // Primeiro, buscar informações do user_ranking para obter o caderno selecionado e concurso_id
     const { data: rankingData, error: rankingError } = await supabase
@@ -16,7 +16,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       return {};
     }
 
-    console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
+    // console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
 
     // Buscar respostas da tabela consolidated_answers_by_concurso
     const { data: consolidatedData, error: consolidatedError } = await supabase

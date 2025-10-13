@@ -143,7 +143,7 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
     });
   }
 
-  console.log('[useSaveRanking] Disciplinas criadas automaticamente:', disciplines);
+  // console.log('[useSaveRanking] Disciplinas criadas automaticamente:', disciplines);
   return disciplines;
 };
 
@@ -151,7 +151,7 @@ export const useSaveRanking = () => {
   const queryClient = useQueryClient();
   
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
-    console.log('[useSaveRanking] saveRanking called with:', { formValues, userId, editId, jobTitles });
+    // console.log('[useSaveRanking] saveRanking called with:', { formValues, userId, editId, jobTitles });
     try {
       // Se estivermos editando, buscar dados existentes primeiro para preservar estrutura
       let existingDisciplines: any[] = [];
@@ -448,7 +448,7 @@ export const useSaveRanking = () => {
         result = data;
         concursoIdToUse = editId;
         
-        console.log('[useSaveRanking] Ranking editado com sucesso, campos atualizados:', Object.keys(editDataToSubmit));
+        // console.log('[useSaveRanking] Ranking editado com sucesso, campos atualizados:', Object.keys(editDataToSubmit));
       } else {
         const { data, error } = await supabase
           .from('concursos')
@@ -476,8 +476,8 @@ export const useSaveRanking = () => {
         // Determinar se há disciplinas customizadas baseado nas disciplinas criadas
         const hasCustomDisciplines = disciplinesData && disciplinesData.length > 0;
         
-        console.log('[useSaveRanking] Usando disciplinas:', disciplinesData);
-        console.log('[useSaveRanking] hasCustomDisciplines:', hasCustomDisciplines);
+        // console.log('[useSaveRanking] Usando disciplinas:', disciplinesData);
+        // console.log('[useSaveRanking] hasCustomDisciplines:', hasCustomDisciplines);
         
         const { error: updateError } = await supabase
           .from('concursos')
@@ -656,16 +656,16 @@ export const useSaveRanking = () => {
       */
 
       // Show success message after the whole process
-      console.log('[useSaveRanking] Ranking salvo com sucesso, ID:', concursoIdToUse);
+      // console.log('[useSaveRanking] Ranking salvo com sucesso, ID:', concursoIdToUse);
       
       // Invalidar queries para refresh automático
-      console.log('[useSaveRanking] 🔄 Invalidando queries para refresh automático...');
+      // console.log('[useSaveRanking] 🔄 Invalidando queries para refresh automático...');
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
       queryClient.invalidateQueries({ queryKey: ['concursos'] });
       queryClient.invalidateQueries({ queryKey: ['concurso', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concursoIdToUse] });
-      console.log('[useSaveRanking] ✅ Queries invalidadas, dados serão atualizados automaticamente');
+      // console.log('[useSaveRanking] ✅ Queries invalidadas, dados serão atualizados automaticamente');
       
       if (editId) {
         toast.success("Ranking atualizado com sucesso!");

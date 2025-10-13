@@ -2,6 +2,7 @@
 import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { onlineStatusService } from '@/services/onlineStatusService';
 
 interface AuthContextType {
   user: User | null;
@@ -59,11 +60,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setSession(newSession);
             setUser(newSession?.user ?? null);
             setIsLoading(false);
+            // Marcar usuário como online
+            if (newSession?.user?.id) {
+              onlineStatusService.setUserOnline(newSession.user.id);
+            }
             break;
           case 'SIGNED_OUT':
             setSession(null);
             setUser(null);
             setIsLoading(false);
+            // Marcar usuário como offline
+            if (user?.id) {
+              onlineStatusService.setUserOffline(user.id);
+            }
             // Clear any cached data
             localStorage.removeItem('auth_lockout_end');
             break;
@@ -93,12 +102,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      // Cleanup online status quando o componente for desmontado
+      onlineStatusService.cleanup();
     };
   }, []);
 
   const signOut = async () => {
     try {
       setIsLoading(true);
+      
+      // Marcar usuário como offline antes de fazer logout
+      if (user?.id) {
+        await onlineStatusService.setUserOffline(user.id);
+      }
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);

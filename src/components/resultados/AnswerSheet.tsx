@@ -31,14 +31,14 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
-  console.log('[AnswerSheet] Rendered with:', { concursoId: concurso?.id, rankingId });
-  console.log('[AnswerSheet] DEBUG - Concurso subjective flags:', {
-    has_discursive: concurso?.has_discursive,
-    has_case_study_1: concurso?.has_case_study_1,
-    has_case_study_2: concurso?.has_case_study_2,
-    has_case_study_3: concurso?.has_case_study_3,
-    shouldShowSubjective: concurso?.has_discursive || concurso?.has_case_study_1 || concurso?.has_case_study_2 || concurso?.has_case_study_3
-  });
+  // console.log('[AnswerSheet] Rendered with:', { concursoId: concurso?.id, rankingId });
+  // console.log('[AnswerSheet] DEBUG - Concurso subjective flags:', {
+  //   has_discursive: concurso?.has_discursive,
+  //   has_case_study_1: concurso?.has_case_study_1,
+  //   has_case_study_2: concurso?.has_case_study_2,
+  //   has_case_study_3: concurso?.has_case_study_3,
+  //   shouldShowSubjective: concurso?.has_discursive || concurso?.has_case_study_1 || concurso?.has_case_study_2 || concurso?.has_case_study_3
+  // });
   
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
@@ -133,9 +133,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Set selected booklet from user ranking data
   useEffect(() => {
-    console.log('[AnswerSheet] useEffect executado - userRankingData:', userRankingData?.selected_booklet, 'selectedBookletId atual:', selectedBookletId);
+    // console.log('[AnswerSheet] useEffect executado - userRankingData:', userRankingData?.selected_booklet, 'selectedBookletId atual:', selectedBookletId);
     if (userRankingData?.selected_booklet && !selectedBookletId) {
-      console.log('[AnswerSheet] Definindo selectedBookletId:', userRankingData.selected_booklet);
+      // console.log('[AnswerSheet] Definindo selectedBookletId:', userRankingData.selected_booklet);
       setSelectedBookletId(userRankingData.selected_booklet);
     }
   }, [userRankingData]);
@@ -289,7 +289,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     });
     
     if (userRankingData?.subject_scores) {
-      console.log('[AnswerSheet] DEBUG - Using existing subject_scores:', userRankingData.subject_scores);
+      // console.log('[AnswerSheet] DEBUG - Using existing subject_scores:', userRankingData.subject_scores);
       setSubjectScores(userRankingData.subject_scores);
     } else {
       // Initialize with default values based on concurso configuration
@@ -346,7 +346,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
         if (updatedRanking?.selected_booklet) {
           setSelectedBookletId(updatedRanking.selected_booklet);
-          console.log('[AnswerSheet] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+          // console.log('[AnswerSheet] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
         }
       };
       updateBookletId();

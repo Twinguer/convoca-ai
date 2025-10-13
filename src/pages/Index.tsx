@@ -90,11 +90,16 @@ const Index = () => {
             <CarouselContent>
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
                 <div className="">
-                  <div className="relative overflow-hidden h-48">
+                  <div className="relative overflow-hidden h-40 sm:h-52">
                     <img
                       src="/images/img-03.png"
                       alt="Tempo TBC"
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
+                      loading="eager"
+                      decoding="sync"
+                      style={{
+                        imageRendering: 'auto'
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
@@ -113,11 +118,16 @@ const Index = () => {
 
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
                 <div className="">
-                  <div className="relative overflow-hidden h-48">
+                  <div className="relative overflow-hidden h-40 sm:h-52">
                     <img
                       src="/images/img-04.png"
                       alt="Dia da Prova"
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
+                      loading="eager"
+                      decoding="sync"
+                      style={{
+                        imageRendering: 'auto'
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
@@ -136,11 +146,16 @@ const Index = () => {
 
               <CarouselItem className="md:basis-1/2 lg:basis-1/3">
                 <div className="">
-                  <div className="relative overflow-hidden h-48">
+                  <div className="relative overflow-hidden h-40 sm:h-52">
                     <img
                       src="/images/img-05.png"
                       alt="Resultado"
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
+                      loading="eager"
+                      decoding="sync"
+                      style={{
+                        imageRendering: 'auto'
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
@@ -166,7 +181,7 @@ const Index = () => {
         <div className="container mx-auto text-center">
           <h2 className="text-3xl font-bold mb-6">Pronto para conquistar sua aprovação?</h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Junte-se a nós e vamos juntos iniciar uma comunidade onde temos o mesmo propósito: A tão sonhada convocação
+            Junte-se a nós e vamos juntos iniciar uma comunidade onde temos o mesmo propósito: A tão sonhada nomeação
             para o cargo dos sonhos!
           </p>
         </div>

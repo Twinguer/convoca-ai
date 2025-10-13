@@ -155,14 +155,14 @@ export const isHierarchicalStructure = (concurso: any): boolean => {
          'name' in concurso.disciplines[0] &&
          'disciplines' in concurso.disciplines[0];
   
-  console.log('[isHierarchicalStructure] Verificando estrutura:', {
-    hasDisciplines: !!concurso?.disciplines,
-    isArray: Array.isArray(concurso?.disciplines),
-    firstItem: concurso?.disciplines?.[0],
-    hasName: 'name' in (concurso?.disciplines?.[0] || {}),
-    hasDisciplines: 'disciplines' in (concurso?.disciplines?.[0] || {}),
-    result
-  });
+  // console.log('[isHierarchicalStructure] Verificando estrutura:', {
+  //   hasDisciplines: !!concurso?.disciplines,
+  //   isArray: Array.isArray(concurso?.disciplines),
+  //   firstItem: concurso?.disciplines?.[0],
+  //   hasName: 'name' in (concurso?.disciplines?.[0] || {}),
+  //   hasDisciplines: 'disciplines' in (concurso?.disciplines?.[0] || {}),
+  //   result
+  // });
   
   return result;
 };
@@ -173,9 +173,9 @@ export const getDisciplines = (concurso: Concurso) => {
   
   // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
   if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-    console.log('[getDisciplines] Usando estrutura JSONB disciplines:', concurso.disciplines);
+    // console.log('[getDisciplines] Usando estrutura JSONB disciplines:', concurso.disciplines);
     const hierarchical = isHierarchicalStructure(concurso);
-    console.log('[getDisciplines] Estrutura hierárquica:', hierarchical);
+    // console.log('[getDisciplines] Estrutura hierárquica:', hierarchical);
     
     if (hierarchical) {
       // Flatten the hierarchical structure to get all disciplines
@@ -185,10 +185,10 @@ export const getDisciplines = (concurso: Concurso) => {
         // Verificar se é um bloco usando typeguard
         if ('disciplines' in item && Array.isArray(item.disciplines)) {
           const block = item as DisciplineBlock;
-          console.log('[getDisciplines] Processando bloco:', block.name);
+          // console.log('[getDisciplines] Processando bloco:', block.name);
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
-              console.log('[getDisciplines] Processando disciplina:', discipline.name, 'tipo:', discipline.type);
+              // console.log('[getDisciplines] Processando disciplina:', discipline.name, 'tipo:', discipline.type);
               // Add block information to the discipline
               disciplines.push({
                 ...discipline,
@@ -201,13 +201,13 @@ export const getDisciplines = (concurso: Concurso) => {
         }
       }
       
-      console.log('[getDisciplines] Disciplinas hierárquicas processadas:', disciplines);
+      // console.log('[getDisciplines] Disciplinas hierárquicas processadas:', disciplines);
       return disciplines;
     } else {
       // Return flat structure directly as NestedDiscipline array
-      console.log('[getDisciplines] Estrutura plana detectada');
+      // console.log('[getDisciplines] Estrutura plana detectada');
       const flatDisciplines = concurso.disciplines.filter(item => 'isEnabled' in item) as NestedDiscipline[];
-      console.log('[getDisciplines] Disciplinas planas processadas:', flatDisciplines);
+      // console.log('[getDisciplines] Disciplinas planas processadas:', flatDisciplines);
       return flatDisciplines;
     }
   }
@@ -265,17 +265,17 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
   
   // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
   if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-    console.log('[updateSectionDisplayNames] Atualizando nomes de exibição para disciplinas customizadas');
+    // console.log('[updateSectionDisplayNames] Atualizando nomes de exibição para disciplinas customizadas');
     const disciplines = getDisciplines(concurso);
     
     disciplines.forEach(discipline => {
       if (discipline.isEnabled && discipline.type && discipline.name) {
-        console.log('[updateSectionDisplayNames] Atualizando:', discipline.type, '->', discipline.name);
+        // console.log('[updateSectionDisplayNames] Atualizando:', discipline.type, '->', discipline.name);
         displayNames[discipline.type] = discipline.name;
       }
     });
   }
   
-  console.log('[updateSectionDisplayNames] Nomes de exibição finais:', displayNames);
+  // console.log('[updateSectionDisplayNames] Nomes de exibição finais:', displayNames);
   return displayNames;
 };

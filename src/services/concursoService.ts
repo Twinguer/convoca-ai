@@ -4,7 +4,7 @@ import { fetchUserRankings as fetchRankingsFromService } from "./rankingService"
 
 export const fetchConcursoById = async (id: string): Promise<Concurso | null> => {
   try {
-    console.log('[fetchConcursoById] Fetching concurso with ID:', id);
+    // console.log('[fetchConcursoById] Fetching concurso with ID:', id);
     
     // Nota: Função ensure_ranking_exists não existe mais, removida para simplificar
 
@@ -51,11 +51,11 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
     const disciplines = rankingData?.disciplines || [];
 
     // Converter ranking para formato de concurso
-    console.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
-    console.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
-    console.log('[fetchConcursoById] ===== DADOS DO CRIADOR =====');
-    console.log('[fetchConcursoById] rankingData.created_by_user_id:', rankingData.created_by_user_id);
-    console.log('[fetchConcursoById] rankingData.is_admin_created:', rankingData.is_admin_created);
+    // console.log('[fetchConcursoById] Criando concursoData com disciplines:', disciplines);
+    // console.log('[fetchConcursoById] rankingData.disciplines original:', rankingData.disciplines);
+    // console.log('[fetchConcursoById] ===== DADOS DO CRIADOR =====');
+    // console.log('[fetchConcursoById] rankingData.created_by_user_id:', rankingData.created_by_user_id);
+    // console.log('[fetchConcursoById] rankingData.is_admin_created:', rankingData.is_admin_created);
     
     const concursoData: Concurso = {
       id: rankingData.id,
@@ -115,13 +115,13 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       total_minimum_score: rankingData.total_minimum_score
     };
 
-    console.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);
-    console.log('[fetchConcursoById] FINAL disciplines being returned:', concursoData.disciplines);
-    console.log('[fetchConcursoById] FINAL has_custom_knowledge:', concursoData.has_custom_knowledge);
-    console.log('[fetchConcursoById] FINAL has_basic_knowledge:', concursoData.has_basic_knowledge);
-    console.log('[fetchConcursoById] ===== DADOS FINAIS DO CRIADOR =====');
-    console.log('[fetchConcursoById] FINAL created_by_user_id:', concursoData.created_by_user_id);
-    console.log('[fetchConcursoById] FINAL is_admin_created:', concursoData.is_admin_created);
+    // console.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);
+    // console.log('[fetchConcursoById] FINAL disciplines being returned:', concursoData.disciplines);
+    // console.log('[fetchConcursoById] FINAL has_custom_knowledge:', concursoData.has_custom_knowledge);
+    // console.log('[fetchConcursoById] FINAL has_basic_knowledge:', concursoData.has_basic_knowledge);
+    // console.log('[fetchConcursoById] ===== DADOS FINAIS DO CRIADOR =====');
+    // console.log('[fetchConcursoById] FINAL created_by_user_id:', concursoData.created_by_user_id);
+    // console.log('[fetchConcursoById] FINAL is_admin_created:', concursoData.is_admin_created);
     return concursoData;
   } catch (error: any) {
     console.error('[fetchConcursoById] Error:', error);
@@ -223,9 +223,8 @@ export const fetchUserConcursoRankings = async (userId: string) => {
         titulo: concurso.titulo || '',
         orgao: concurso.orgao || '',
         banca: concurso.banca || '',
-        status: concurso.status || '',
-        created_at: concurso.created_at || '',
-        status: concurso.status || ''
+          status: concurso.status || '',
+          created_at: concurso.created_at || ''
       };
     }) || [];
   } catch (error) {

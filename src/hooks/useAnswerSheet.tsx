@@ -36,7 +36,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
   const fetchExistingAnswers = async () => {
     try {
-      console.log('Fetching existing answers for ranking ID:', rankingId);
+      // console.log('Fetching existing answers for ranking ID:', rankingId);
 
       // Fetch answers from consolidated_answers_by_concurso
       const { data: rankingData, error: rankingError } = await supabase
@@ -96,7 +96,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
 
       if (rankingError) throw rankingError;
 
-      console.log('Fetched ranking data:', rankingData);
+      // console.log('Fetched ranking data:', rankingData);
 
       if (rankingData) {
         setDiscursiveScore(

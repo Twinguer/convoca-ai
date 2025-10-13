@@ -257,10 +257,10 @@ const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete,
       <TableCell>{concurso.vagas}</TableCell>
       <TableCell>
         {isLoadingCount ? (
-          <span className="text-gray-400">Carregando...</span>
+          <span className="text-muted-foreground">Carregando...</span>
         ) : (
           <div className="flex items-center gap-1">
-            <Users className="h-3.5 w-3.5 text-gray-500" />
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{participantCount}</span>
           </div>
         )}
@@ -276,10 +276,10 @@ const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete,
         <span
           className={`px-2 py-1 rounded-full text-xs ${
             concurso.status === 'Aberto'
-              ? 'bg-green-100 text-green-800'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
               : concurso.status === 'Em andamento'
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+              : 'bg-muted text-muted-foreground'
           }`}
         >
           {concurso.status}
@@ -296,7 +296,7 @@ const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete,
           size="sm"
           onClick={() => onView(concurso.id)}
         >
-          <Eye className="h-4 w-4 text-blue-500" />
+          <Eye className="h-4 w-4 text-blue-500 dark:text-blue-400" />
           <span className="sr-only">Ver</span>
         </Button>
         <Button 
@@ -304,7 +304,7 @@ const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete,
           size="sm"
           onClick={() => onEdit(concurso.id)}
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil className="h-4 w-4 text-muted-foreground" />
           <span className="sr-only">Editar</span>
         </Button>
         <Button 
@@ -312,7 +312,7 @@ const ConcursoTableRow: React.FC<ConcursoTableRowProps> = ({ concurso, onDelete,
           size="sm"
           onClick={() => onDelete(concurso.id)}
         >
-          <Trash2 className="h-4 w-4 text-red-500" />
+          <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
           <span className="sr-only">Excluir</span>
         </Button>
       </TableCell>

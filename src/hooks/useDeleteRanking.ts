@@ -8,11 +8,11 @@ export const useDeleteRanking = () => {
 
   const deleteRankingMutation = useMutation({
     mutationFn: async (concursoId: string) => {
-      console.log('Iniciando exclusão do ranking:', concursoId);
+      // console.log('Iniciando exclusão do ranking:', concursoId);
       
       try {
         // 1. Primeiro buscar os IDs dos user_rankings para deletar dependências
-        console.log('Buscando user_rankings para deletar dependências...');
+        // console.log('Buscando user_rankings para deletar dependências...');
         const { data: userRankings, error: fetchError } = await supabase
           .from('user_rankings')
           .select('id')
@@ -44,7 +44,7 @@ export const useDeleteRanking = () => {
         }
 
         // 4. Deletar todos os user_rankings
-        console.log('Deletando user_rankings...');
+        // console.log('Deletando user_rankings...');
         const { error: rankingsError } = await supabase
           .from('user_rankings')
           .delete()
@@ -73,7 +73,7 @@ export const useDeleteRanking = () => {
           throw concursoError;
         }
 
-        console.log('Ranking deletado com sucesso:', concursoId);
+        // console.log('Ranking deletado com sucesso:', concursoId);
         return { success: true };
       } catch (error) {
         console.error('Erro na exclusão do ranking:', error);

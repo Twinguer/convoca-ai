@@ -14,6 +14,36 @@ const PresenceContext = createContext<PresenceContextValue>({
 export const PresenceProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
+  // Buscar usuários online do banco de dados periodicamente
+  useEffect(() => {
+    const fetchOnlineUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users_profiles')
+          .select('id')
+          .eq('is_online', true);
+        
+        if (error) {
+          console.error('Error fetching online users:', error);
+          return;
+        }
+        
+        const userIds = data?.map(user => user.id) || [];
+        setOnlineUserIds(new Set(userIds));
+      } catch (error) {
+        console.error('Error in fetchOnlineUsers:', error);
+      }
+    };
+
+    // Buscar imediatamente
+    fetchOnlineUsers();
+
+    // Configurar intervalo para buscar a cada 10 segundos
+    const interval = setInterval(fetchOnlineUsers, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let isMounted = true;

@@ -4,7 +4,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 // Function to get rankings for a concurso with user information
 export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concursoId: string) => {
   try {
-    console.log("[userRankings] Buscando rankings para concurso ID:", concursoId);
+    // console.log("[userRankings] Buscando rankings para concurso ID:", concursoId);
     
     const { data, error } = await supabase
       .from('user_rankings')      
@@ -38,11 +38,11 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
     }
     
     if (!data || data.length === 0) {
-      console.log("[userRankings] Nenhum ranking encontrado para o concurso");
+      // console.log("[userRankings] Nenhum ranking encontrado para o concurso");
       return [];
     }
     
-    console.log(`[userRankings] ${data.length} rankings encontrados`);
+    // console.log(`[userRankings] ${data.length} rankings encontrados`);
     
     // Format the data with position
     return data.map((item, index) => {

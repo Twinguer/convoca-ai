@@ -22,6 +22,7 @@ import UserProfile from "./pages/UserProfile";
 import PublicUserProfile from "./pages/PublicUserProfile";
 import Notifications from "./pages/Notifications";
 import { AuthProvider } from "./hooks/useAuth";
+import { PresenceProvider } from "./contexts/PresenceContext";
 import UserFollowers from "./pages/UserFollowers";
 import { SecureAdminLogin } from "./components/Admin/SecureLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -268,11 +269,13 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="system" storageKey="nomeia-ui-theme" attribute="class" enableSystem>
           <AuthProvider>
-            <TimerProvider>
-              <TooltipProvider>
-                <AppContent />
-              </TooltipProvider>
-            </TimerProvider>
+            <PresenceProvider>
+              <TimerProvider>
+                <TooltipProvider>
+                  <AppContent />
+                </TooltipProvider>
+              </TimerProvider>
+            </PresenceProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>

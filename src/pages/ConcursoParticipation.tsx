@@ -61,7 +61,7 @@ const ConcursoParticipation = () => {
         throw error;
       }
       
-      console.log('[ConcursoParticipation] User ranking data:', data);
+      // console.log('[ConcursoParticipation] User ranking data:', data);
       return data;
     },
     enabled: !!user && !!id

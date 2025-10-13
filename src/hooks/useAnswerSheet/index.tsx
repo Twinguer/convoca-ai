@@ -22,7 +22,7 @@ interface FetchedAnswersData {
 }
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
-  console.log('[useAnswerSheet] Initialized with:', { concursoId: concurso?.id, rankingId, selectedBookletId });
+  // console.log('[useAnswerSheet] Initialized with:', { concursoId: concurso?.id, rankingId, selectedBookletId });
   
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
@@ -122,7 +122,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
         return {};
       }
       
-      console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
+      // console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
       return fetchExistingAnswers(rankingId);
     },
     enabled: !!rankingId && !!concurso?.id,

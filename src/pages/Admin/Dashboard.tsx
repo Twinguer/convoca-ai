@@ -1,46 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Calendar, User, FileText } from 'lucide-react';
+import { Building, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationManager } from '@/components/Admin/NotificationManager';
+import MonitoringMetrics from '@/components/Admin/MonitoringMetrics';
 
 const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
-  const [recentConcursos, setRecentConcursos] = useState(0);
   const [activeConcursos, setActiveConcursos] = useState(0);
 
   const {
-    data: statsData,
+    data: activeConcursosData,
     isLoading
   } = useQuery({
-    queryKey: ['admin-dashboard-stats'],
+    queryKey: ['admin-active-concursos'],
     queryFn: async () => {
-      const {
-        count: concursosCount
-      } = await supabase.from('concursos').select('*', {
-        count: 'exact',
-        head: true
-      });
-
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const {
-        count: recentCount
-      } = await supabase.from('concursos').select('*', {
-        count: 'exact',
-        head: true
-      }).gte('created_at', thirtyDaysAgo.toISOString());
-
       const {
         count: activeCount
       } = await supabase.from('concursos').select('*', {
         count: 'exact',
         head: true
       }).eq('status', 'Em andamento');
+      
       return {
-        concursosCount: concursosCount || 0,
-        recentConcursos: recentCount || 0,
         activeConcursos: activeCount || 0
       };
     }
@@ -69,23 +52,12 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (statsData) {
-      setRecentConcursos(statsData.recentConcursos);
-      setActiveConcursos(statsData.activeConcursos);
+    if (activeConcursosData) {
+      setActiveConcursos(activeConcursosData.activeConcursos);
     }
-  }, [statsData]);
+  }, [activeConcursosData]);
   
   const dashboardCards = [{
-    title: 'Total de Rankings',
-    value: isLoading ? '...' : statsData?.concursosCount.toString(),
-    description: 'Rankings cadastrados',
-    icon: <FileText className="h-6 w-6 text-blue-500" />
-  }, {
-    title: 'Rankings Recentes',
-    value: isLoading ? '...' : recentConcursos.toString(),
-    description: 'Adicionados nos últimos 30 dias',
-    icon: <Calendar className="h-6 w-6 text-green-500" />
-  }, {
     title: 'Rankings Ativos',
     value: isLoading ? '...' : activeConcursos.toString(),
     description: 'Em andamento',
@@ -101,7 +73,7 @@ const AdminDashboard: React.FC = () => {
     <div>
       <h1 className="text-2xl font-bold mb-6">Painel Administrativo</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-8">
         {dashboardCards.map((card, index) => <Card key={index}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
@@ -116,6 +88,11 @@ const AdminDashboard: React.FC = () => {
           </Card>)}
       </div>
 
+      {/* Métricas de Monitoramento */}
+      <div className="mb-8">
+        <MonitoringMetrics />
+      </div>
+
       {/* Gerenciador de Notificações */}
       <div className="mb-8">
         <NotificationManager />
@@ -128,11 +105,11 @@ const AdminDashboard: React.FC = () => {
             <CardDescription>Acesse as principais funcionalidades</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <a href="/criar-ranking" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Cadastrar Novo Ranking</a>
-            <a href="/project/admin/man/concursos" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Rankings</a>
-            <a href="/project/admin/man/usuarios" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Usuários</a>
-            <a href="/project/admin/man/vouchers" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Gerenciar Vouchers</a>
-            <a href="/?admin=true" target="_blank" className="block p-3 bg-gray-50 hover:bg-gray-100 rounded-md">Visualizar Site (Admin)</a>
+            <a href="/criar-ranking" className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors">Cadastrar Novo Ranking</a>
+            <a href="/project/admin/man/concursos" className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors">Gerenciar Rankings</a>
+            <a href="/project/admin/man/usuarios" className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors">Gerenciar Usuários</a>
+            <a href="/project/admin/man/vouchers" className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors">Gerenciar Vouchers</a>
+            <a href="/?admin=true" target="_blank" className="block p-3 bg-muted hover:bg-muted/80 rounded-md transition-colors">Visualizar Site (Admin)</a>
           </CardContent>
         </Card>
 
@@ -142,17 +119,17 @@ const AdminDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">Versão</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Versão</span>
                 <span className="font-medium">1.0.0</span>
               </div>
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">Última atualização</span>
+              <div className="flex justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Última atualização</span>
                 <span className="font-medium">{new Date().toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between py-2">
-                <span className="text-gray-500">Status</span>
-                <span className="text-green-500 font-medium">Operacional</span>
+                <span className="text-muted-foreground">Status</span>
+                <span className="text-green-500 dark:text-green-400 font-medium">Operacional</span>
               </div>
             </div>
           </CardContent>

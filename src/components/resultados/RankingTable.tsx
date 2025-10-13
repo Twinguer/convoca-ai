@@ -41,24 +41,24 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   const navigate = useNavigate();
 
   // Debug: verificar se os rankings estão sendo recebidos
-  useEffect(() => {
-    console.log('RankingTable received rankings:', {
-      rankingsLength: rankings?.length || 0,
-      rankings: rankings?.slice(0, 3), // Primeiros 3 para debug
-      hasMore,
-      totalLoaded,
-      isAuthenticated,
-      currentUserId
-    });
-  }, [rankings, hasMore, totalLoaded, isAuthenticated, currentUserId]);
+  // useEffect(() => {
+  //   console.log('RankingTable received rankings:', {
+  //     rankingsLength: rankings?.length || 0,
+  //     rankings: rankings?.slice(0, 3), // Primeiros 3 para debug
+  //     hasMore,
+  //     totalLoaded,
+  //     isAuthenticated,
+  //     currentUserId
+  //   });
+  // }, [rankings, hasMore, totalLoaded, isAuthenticated, currentUserId]);
 
   // Debug: verificar se o componente está sendo renderizado
-  console.log('RankingTable render:', {
-    rankingsLength: rankings?.length || 0,
-    isLoadingMore,
-    hasMore,
-    totalLoaded
-  });
+  // console.log('RankingTable render:', {
+  //   rankingsLength: rankings?.length || 0,
+  //   isLoadingMore,
+  //   hasMore,
+  //   totalLoaded
+  // });
   // const { generateSecureUserUrl } = useSecureUserUrls();
   const [activeTab, setActiveTab] = useState("Ampla Concorrência");
   const [displayNames, setDisplayNames] = useState<Record<string, string>>(sectionDisplayNames);
@@ -498,9 +498,9 @@ const RankingTableContent: React.FC<{
 
   // Render each ranking row
   const renderRankingRows = () => {
-    console.log('[RankingTable] renderRankingRows - rankings:', rankings);
-    console.log('[RankingTable] renderRankingRows - rankings.length:', rankings?.length);
-    console.log('[RankingTable] renderRankingRows - customDisciplines:', customDisciplines);
+    // console.log('[RankingTable] renderRankingRows - rankings:', rankings);
+    // console.log('[RankingTable] renderRankingRows - rankings.length:', rankings?.length);
+    // console.log('[RankingTable] renderRankingRows - customDisciplines:', customDisciplines);
     
     return <TableBody className="space-y-0.5">
       {rankings.length > 0 ? rankings.map(ranking => {
