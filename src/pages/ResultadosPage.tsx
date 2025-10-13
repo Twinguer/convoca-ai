@@ -127,12 +127,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
       console.log('[ResultadosPage] ✅ Rankings e contagem atualizados');
       
       if (result?.success) {
-        console.log('[ResultadosPage] Success case - showing success toast');
-        toast({
-          title: "Classificação atualizada",
-          description: `Pontuações recalculadas para ${result.updatedCount || 0} usuário(s)!`,
-          duration: 4000
-        });
+        console.log('[ResultadosPage] Success case - recálculo bem-sucedido');
       } else if (result?.error) {
         console.log('[ResultadosPage] Error case - showing error toast:', result.error);
         toast({
@@ -142,12 +137,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
           duration: 5000
         });
       } else {
-        console.log('[ResultadosPage] No result case - showing generic success toast');
-        toast({
-          title: "Classificação atualizada",
-          description: "As pontuações foram recalculadas com sucesso!",
-          duration: 3000
-        });
+        console.log('[ResultadosPage] No result case - recálculo concluído');
       }
       
       console.log('[ResultadosPage] ===== FIM REFRESH MANUAL =====');
