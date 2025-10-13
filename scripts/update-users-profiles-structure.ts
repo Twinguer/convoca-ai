@@ -90,3 +90,5 @@ CREATE POLICY "users_profiles_own_data" ON users_profiles
 // Executar geração
 updateUsersProfilesStructure().catch(console.error);
 
+
+

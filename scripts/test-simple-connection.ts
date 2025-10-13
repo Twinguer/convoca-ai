@@ -13,3 +13,5 @@ try {
   console.log('❌ Erro:', error);
 }
 
+
+

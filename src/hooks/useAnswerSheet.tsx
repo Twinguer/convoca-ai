@@ -38,39 +38,53 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     try {
       console.log('Fetching existing answers for ranking ID:', rankingId);
 
-      // Fetch answers
-      const { data: answersData, error: answersError } = await supabase
-        .from('user_answers')
-        .select('*')
-        .eq('user_ranking_id', rankingId);
+      // Fetch answers from consolidated_answers_by_concurso
+      const { data: rankingData, error: rankingError } = await supabase
+        .from('user_rankings')
+        .select('concurso_id, user_id, selected_booklet')
+        .eq('id', rankingId)
+        .single();
 
-      if (answersError) throw answersError;
+      if (rankingError) throw rankingError;
 
-      console.log('Fetched answers data:', answersData);
+      const { data: consolidatedData, error: consolidatedError } = await supabase
+        .from('consolidated_answers_by_concurso')
+        .select('consolidated_data')
+        .eq('concurso_id', rankingData.concurso_id)
+        .single();
 
-      if (answersData?.length) {
-        const answersMap: { [key: number]: string } = {};
-        const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
+      if (consolidatedError) {
+        console.log('No consolidated data found, using empty answers');
+        return;
+      }
 
-        answersData.forEach((item: any) => {
-          answersMap[item.question_number] = item.answer;
+      console.log('Fetched consolidated data:', consolidatedData.consolidated_data);
 
-          if (item.is_basic_knowledge) {
-            typesMap[item.question_number] = 'basic';
-          } else if (item.is_specific_1) {
-            typesMap[item.question_number] = 'specific1';
-          } else if (item.is_specific_2) {
-            typesMap[item.question_number] = 'specific2';
-          } else if (item.is_specific_3) {
-            typesMap[item.question_number] = 'specific3';
-          }
-        });
+      // Extract user answers from consolidated data
+      const userData = consolidatedData.consolidated_data?.users?.[rankingData.user_id];
+      if (userData?.booklets) {
+        const selectedBookletId = rankingData.selected_booklet?.toString();
+        const bookletData = selectedBookletId ? userData.booklets[selectedBookletId] : null;
+        
+        if (bookletData?.answers) {
+          const answersMap: { [key: number]: string } = {};
+          const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
 
-        console.log('Parsed answers map:', answersMap);
-        console.log('Parsed question types map:', typesMap);
+          Object.entries(bookletData.answers).forEach(([questionNumber, answer]) => {
+            const questionNum = parseInt(questionNumber);
+            if (!isNaN(questionNum)) {
+              answersMap[questionNum] = answer as string;
+              // Set default type - this would need to be determined from concurso structure
+              typesMap[questionNum] = 'basic';
+            }
+          });
 
-        setAnswers(answersMap);
-        setQuestionType(typesMap);
+          console.log('Parsed answers map:', answersMap);
+          console.log('Parsed question types map:', typesMap);
+
+          setAnswers(answersMap);
+          setQuestionType(typesMap);
+        }
       }
 
       // Fetch user ranking for scores

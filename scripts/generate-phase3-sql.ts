@@ -43,3 +43,5 @@ console.log(phase3SQL);
 console.log('\n✅ Copie o SQL acima e execute no Supabase SQL Editor');
 console.log('🔗 Acesse: https://supabase.com/dashboard/project/[SEU_PROJECT_ID]/sql');
 
+
+

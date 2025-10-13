@@ -61,10 +61,10 @@ export class UrlObfuscationService {
         throw new Error('Token expirado');
       }
       
-      // Verificar se o concurso ainda existe e está ativo
+      // Verificar se o concurso ainda existe (mas não verificar status)
       const { data: concurso, error } = await supabase
         .from('concursos')
-        .select('id, status')
+        .select('id')
         .eq('id', concursoId)
         .single();
       
@@ -72,11 +72,7 @@ export class UrlObfuscationService {
         throw new Error('Concurso não encontrado');
       }
       
-      // Verificar se o concurso ainda está ativo
-      if (concurso.status === 'Finalizado' || concurso.status === 'Suspenso') {
-        throw new Error('Concurso não está mais ativo');
-      }
-      
+      // Retornar o ID do concurso (não verificar status para permitir acesso a rankings finalizados)
       return concursoId;
     } catch (error) {
       console.error('Erro ao validar token:', error);

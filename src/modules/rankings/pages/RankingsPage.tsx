@@ -31,7 +31,7 @@ const RankingsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('participants');
 
-  const handleRankingClick = async (e: React.MouseEvent, concursoId: string) => {
+  const handleRankingClick = (e: React.MouseEvent, concursoId: string) => {
     e.preventDefault();
     
     if (!user) {
@@ -39,7 +39,6 @@ const RankingsPage = () => {
       return;
     }
 
-    // Navegar diretamente para a URL do ranking
     navigate(`/ranking/${concursoId}`);
   };
   useEffect(() => {

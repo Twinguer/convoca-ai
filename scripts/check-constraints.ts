@@ -97,3 +97,5 @@ async function checkConstraints() {
 // Executar verificação
 checkConstraints().catch(console.error);
 
+
+

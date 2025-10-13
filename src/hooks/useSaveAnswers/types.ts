@@ -13,6 +13,7 @@ export interface UseSaveAnswersProps {
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
+  subjectScores?: Record<string, number>;
   editCount: number;
   nullifiedQuestions?: Set<number>;
   selectedBookletId?: string;

@@ -111,3 +111,5 @@ COMMENT ON CONSTRAINT fk_ranking_disciplines_ranking ON ranking_disciplines
 // Executar geração de SQL
 generateFixForeignKeysSql().catch(console.error);
 
+
+

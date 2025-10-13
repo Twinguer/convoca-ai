@@ -4,7 +4,8 @@ import { Concurso } from '@/types/concursos';
 export const prepareAnswersData = (
   answers: { [key: number]: string },
   concurso: Concurso,
-  nullifiedQuestions?: Set<number>
+  nullifiedQuestions?: Set<number>,
+  subjectScores?: Record<string, number>
 ) => {
   console.log('[prepareAnswersData] Input answers:', answers);
   console.log('[prepareAnswersData] Input nullifiedQuestions:', nullifiedQuestions);
@@ -39,5 +40,10 @@ export const prepareAnswersData = (
   }
 
   console.log('[prepareAnswersData] Final answers object:', answersObject);
-  return answersObject;
+  console.log('[prepareAnswersData] Subject scores:', subjectScores);
+  
+  return {
+    answers: answersObject,
+    subjectScores: subjectScores || {}
+  };
 };

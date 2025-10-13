@@ -69,3 +69,5 @@ ORDER BY column_name;
 
 fixConcursosAddJsonbColumns();
 
+
+

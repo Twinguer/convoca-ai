@@ -61,3 +61,5 @@ COMMENT ON COLUMN user_answers.user_id IS 'ID do usuário (referência para user
 // Executar geração de SQL
 generateFixUserForeignKeySql().catch(console.error);
 
+
+

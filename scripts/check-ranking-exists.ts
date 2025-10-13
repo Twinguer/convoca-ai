@@ -72,3 +72,5 @@ if (import.meta.main) {
   checkRankingExists().catch(console.error);
 }
 
+
+

@@ -61,3 +61,5 @@ WHERE titulo = 'Teste JSONB';
 -- 6. Limpar dados de teste
 DELETE FROM public.rankings WHERE titulo = 'Teste JSONB';
 
+
+

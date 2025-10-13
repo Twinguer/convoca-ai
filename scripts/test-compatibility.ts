@@ -331,3 +331,5 @@ async function runTest(name: string, testFn: () => Promise<any>): Promise<Compat
 // Executar testes
 testCompatibility().catch(console.error);
 
+
+

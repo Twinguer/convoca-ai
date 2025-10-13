@@ -137,3 +137,5 @@ COMMENT ON TABLE users_profiles IS 'Perfis públicos dos usuários';
 
 cleanupUnnecessaryTables();
 
+
+

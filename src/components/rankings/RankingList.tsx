@@ -50,8 +50,6 @@ export const RankingItem: React.FC<RankingItemProps & { onRankingClick?: (e: Rea
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     onRankingClick?.(e, id);
-    
-    // Navegação direta sem ofuscação
     navigate(`/ranking/${id}`);
   };
 

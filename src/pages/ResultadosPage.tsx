@@ -195,9 +195,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
           </Button>
           
           
-          {concurso && !isParticipating && user && <Button onClick={() => {
-              navigate(`/ranking/${concurso.id}/participate`);
-            }} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
+          {concurso && !isParticipating && user && <Button onClick={() => navigate(`/ranking/${concurso.id}/participate`)} className="flex items-center gap-2 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700" size="sm">
               <UserPlus className="h-3 w-3 sm:h-4 sm:w-4" />
               Participar
             </Button>}

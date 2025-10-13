@@ -265,41 +265,7 @@ export type Database = {
           },
         ]
       }
-      exam_booklets: {
-        Row: {
-          concurso_id: string
-          created_at: string | null
-          display_order: number
-          id: string
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          concurso_id: string
-          created_at?: string | null
-          display_order?: number
-          id?: string
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          concurso_id?: string
-          created_at?: string | null
-          display_order?: number
-          id?: string
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "exam_booklets_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      // exam_booklets table removed - data now stored in concursos.exam_booklets JSONB
       migration_logs: {
         Row: {
           applied_at: string | null
@@ -357,77 +323,8 @@ export type Database = {
         }
         Relationships: []
       }
-      official_answer_weights: {
-        Row: {
-          concurso_id: string
-          consolidated_answer_data: Json | null
-          created_at: string
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          concurso_id: string
-          consolidated_answer_data?: Json | null
-          created_at?: string
-          id?: string
-          updated_at?: string
-        }
-        Update: {
-          concurso_id?: string
-          consolidated_answer_data?: Json | null
-          created_at?: string
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "official_answer_weights_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: true
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      schedule_templates: {
-        Row: {
-          created_at: string | null
-          created_by: string | null
-          id: string
-          is_public: boolean | null
-          name: string
-          organization: string
-          schedule_data: Json
-          template_type: string
-          updated_at: string | null
-          usage_count: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_public?: boolean | null
-          name: string
-          organization: string
-          schedule_data?: Json
-          template_type: string
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          created_by?: string | null
-          id?: string
-          is_public?: boolean | null
-          name?: string
-          organization?: string
-          schedule_data?: Json
-          template_type?: string
-          updated_at?: string | null
-          usage_count?: number | null
-        }
-        Relationships: []
-      }
+      // official_answer_weights table removed - data now stored in concursos.official_answers JSONB
+      // schedule_templates table removed - functionality not implemented
       score_calculation_logs: {
         Row: {
           calculation_details: Json | null
@@ -1168,83 +1065,7 @@ export type Database = {
         }
         Relationships: []
       }
-      user_answers: {
-        Row: {
-          answer: string | null
-          answer_format: string | null
-          answers_data: Json | null
-          booklet_id: string | null
-          id: number
-          is_basic_knowledge: boolean | null
-          is_specific_1: boolean | null
-          is_specific_2: boolean | null
-          is_specific_3: boolean | null
-          question_number: number | null
-          section_type: string | null
-          updated_at: string | null
-          user_ranking_id: string | null
-        }
-        Insert: {
-          answer?: string | null
-          answer_format?: string | null
-          answers_data?: Json | null
-          booklet_id?: string | null
-          id?: number
-          is_basic_knowledge?: boolean | null
-          is_specific_1?: boolean | null
-          is_specific_2?: boolean | null
-          is_specific_3?: boolean | null
-          question_number?: number | null
-          section_type?: string | null
-          updated_at?: string | null
-          user_ranking_id?: string | null
-        }
-        Update: {
-          answer?: string | null
-          answer_format?: string | null
-          answers_data?: Json | null
-          booklet_id?: string | null
-          id?: number
-          is_basic_knowledge?: boolean | null
-          is_specific_1?: boolean | null
-          is_specific_2?: boolean | null
-          is_specific_3?: boolean | null
-          question_number?: number | null
-          section_type?: string | null
-          updated_at?: string | null
-          user_ranking_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_answers_booklet_id_fkey"
-            columns: ["booklet_id"]
-            isOneToOne: false
-            referencedRelation: "exam_booklets"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_answers_user_ranking_id_fkey"
-            columns: ["user_ranking_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_rankings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_answers_user_ranking_id_fkey"
-            columns: ["user_ranking_id"]
-            isOneToOne: false
-            referencedRelation: "public_rankings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_answers_user_ranking_id_fkey"
-            columns: ["user_ranking_id"]
-            isOneToOne: false
-            referencedRelation: "user_rankings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      -- user_answers table removed - data now stored in consolidated_answers_by_concurso
       user_followers: {
         Row: {
           created_at: string
@@ -1888,14 +1709,7 @@ export type Database = {
           weightedCustomDisciplineScores: Json
         }[]
       }
-      get_user_answers_consolidated: {
-        Args: { p_ranking_id: string }
-        Returns: Json
-      }
-      get_user_answers_jsonb: {
-        Args: { p_booklet_id?: string; p_ranking_id: string }
-        Returns: Json
-      }
+      -- get_user_answers_consolidated and get_user_answers_jsonb removed - use consolidated_answers_by_concurso directly
       get_user_booklets_with_answers: {
         Args: { p_ranking_id: string }
         Returns: Json
@@ -1956,10 +1770,7 @@ export type Database = {
         }
         Returns: Json
       }
-      restructure_user_answers_by_concurso: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      -- restructure_user_answers_by_concurso removed - migration completed
       save_consolidated_answer_key: {
         Args: { p_answers: Json; p_booklet_id: string; p_concurso_id: string }
         Returns: Json
@@ -2000,49 +1811,12 @@ export type Database = {
         }
         Returns: Json
       }
-      save_user_answers_with_booklet: {
-        Args: {
-          p_answers: Json
-          p_booklet_id: string
-          p_case_study_1_score?: number
-          p_case_study_2_score?: number
-          p_case_study_3_score?: number
-          p_concurso_id: string
-          p_current_edit_count?: number
-          p_discursive_score?: number
-          p_ranking_id: string
-        }
-        Returns: Json
-      }
+      -- save_user_answers_with_booklet removed - use save_user_answers_consolidated_by_concurso
       switch_user_booklet: {
         Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
-      update_answer_with_weight: {
-        Args:
-          | {
-              p_booklet_id?: string
-              p_concurso_id: string
-              p_correct_answer: string
-              p_is_nullified?: boolean
-              p_question_number: number
-              p_section_type?: string
-              p_weight: number
-            }
-          | {
-              p_concurso_id: string
-              p_correct_answer: string
-              p_is_nullified?: boolean
-              p_question_number: number
-              p_section_type?: string
-              p_weight?: number
-            }
-        Returns: Json
-      }
-      update_official_answers_and_recalculate: {
-        Args: { p_answers_data: Json; p_concurso_id: string }
-        Returns: Json
-      }
+      // update_answer_with_weight and update_official_answers_and_recalculate removed - use concursos.official_answers JSONB
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

@@ -13,7 +13,7 @@ const RankingParticipationWrapper: React.FC<RankingParticipationWrapperProps> = 
   const { id } = useParams<{ id: string }>();
   const finalRankingId = rankingId || id;
   // Usar dados de concurso específico
-  const { concurso, userRanking, isParticipating, isLoading, error, userRankingId } = useResultadosData(finalRankingId);
+  const { concurso, userRanking, isParticipating, isLoading, userRankingId } = useResultadosData(finalRankingId);
   
   // Log para debugging
   React.useEffect(() => {
@@ -22,25 +22,15 @@ const RankingParticipationWrapper: React.FC<RankingParticipationWrapperProps> = 
       concursoId: concurso?.id,
       isParticipating,
       isLoading,
-      hasError: !!error
+      hasError: false
     });
-  }, [finalRankingId, concurso?.id, isParticipating, isLoading, error]);
+  }, [finalRankingId, concurso?.id, isParticipating, isLoading]);
 
   if (isLoading) {
     return <LoadingState />;
   }
 
-  if (error) {
-    logger.error('Error loading ranking for participation', 'RANKING_PARTICIPATION', { error, rankingId: finalRankingId });
-    return (
-      <div className="container mx-auto p-4">
-        <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-md">
-          <h2 className="text-lg font-semibold mb-2">Erro ao carregar ranking</h2>
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
+  // Removido tratamento de erro pois não está disponível no hook
 
   if (!concurso) {
     logger.warn('Ranking not found for participation', 'RANKING_PARTICIPATION', { rankingId: finalRankingId });

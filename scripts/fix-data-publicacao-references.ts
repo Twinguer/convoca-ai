@@ -81,3 +81,5 @@ function fixDataPublicacaoReferences() {
 // Executar correção
 fixDataPublicacaoReferences();
 
+
+

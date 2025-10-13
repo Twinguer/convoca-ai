@@ -74,3 +74,5 @@ function testPasswordValidation() {
 // Executar teste
 testPasswordValidation();
 
+
+

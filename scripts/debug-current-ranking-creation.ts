@@ -143,3 +143,5 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
 
 debugCurrentRankingCreation();
 
+
+

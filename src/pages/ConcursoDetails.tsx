@@ -160,9 +160,7 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
             <Button 
               variant="outline" 
               className="border-0" 
-              onClick={() => {
-                navigate(`/ranking/${actualConcursoId}`);
-              }}
+              onClick={() => navigate(`/ranking/${actualConcursoId}`)}
             >
               <ArrowRight className="mr-2 h-4 w-4" />
               Ver Ranking

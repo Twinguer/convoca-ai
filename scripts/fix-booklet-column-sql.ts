@@ -237,3 +237,5 @@ COMMENT ON VIEW exam_booklets IS 'View de compatibilidade para exam_booklets bas
 
 fixBookletColumnSQL();
 
+
+

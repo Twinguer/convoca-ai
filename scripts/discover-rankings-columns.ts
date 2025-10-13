@@ -88,3 +88,5 @@ async function discoverRankingsColumns() {
 // Executar descoberta
 discoverRankingsColumns().catch(console.error);
 
+
+

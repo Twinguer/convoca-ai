@@ -182,3 +182,5 @@ if (import.meta.main) {
   migrateConcursosToRankings().catch(console.error);
 }
 
+
+

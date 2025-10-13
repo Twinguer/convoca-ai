@@ -50,3 +50,5 @@ COMMENT ON COLUMN users_profiles.id IS 'ID do usuário (referência para auth.us
 // Executar geração
 fixForeignKeyConstraint().catch(console.error);
 
+
+

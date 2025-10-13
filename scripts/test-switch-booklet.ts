@@ -106,3 +106,5 @@ async function testSwitchBooklet() {
 
 testSwitchBooklet();
 
+
+

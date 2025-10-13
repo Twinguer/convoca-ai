@@ -266,3 +266,5 @@ async function createCompleteTestData() {
 // Executar criação de dados
 createCompleteTestData().catch(console.error);
 
+
+

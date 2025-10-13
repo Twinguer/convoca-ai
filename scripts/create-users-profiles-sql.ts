@@ -76,3 +76,5 @@ COMMENT ON COLUMN users_profiles.updated_at IS 'Data da última atualização do
 // Executar geração
 generateUsersProfilesSQL().catch(console.error);
 
+
+

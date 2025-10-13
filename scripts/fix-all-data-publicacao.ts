@@ -107,3 +107,5 @@ function fixAllDataPublicacao() {
 // Executar correção
 fixAllDataPublicacao();
 
+
+

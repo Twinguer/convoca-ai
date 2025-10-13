@@ -219,11 +219,7 @@ const AppContent = () => {
                         <Menu />
                         <Resultado />
                       </>} />
-                    {/* Rota legada removida - usar apenas rotas com token */}
-                    <Route path="/concurso/:id" element={<Navigate to="/pre-classificacao" replace />} />
-                    <Route path="/concurso/view/:token" element={<Navigate to="/pre-classificacao" replace />} />
-                    <Route path="/concurso/resultados/:token" element={<Navigate to="/pre-classificacao" replace />} />
-                    {/* Rotas simplificadas - sem ofuscação temporariamente */}
+                    {/* Rotas de rankings - sistema original */}
                     <Route path="/ranking/:id" element={<>
                         <Menu />
                         <ResultadosPage />
@@ -232,6 +228,10 @@ const AppContent = () => {
                         <Menu />
                         <RankingParticipationWrapper />
                       </>} />
+                    {/* Rotas legadas - redirecionar para pre-classificacao */}
+                    <Route path="/concurso/:id" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/view/:token" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/resultados/:token" element={<Navigate to="/pre-classificacao" replace />} />
                     {/* Rotas de teste removidas após migração completa */}
                     {/* <Route path="/test-rankings-v2" element={<>
                         <Menu />

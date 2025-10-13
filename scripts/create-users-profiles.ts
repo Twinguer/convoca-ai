@@ -100,3 +100,5 @@ async function createUsersProfiles() {
 // Executar criação
 createUsersProfiles().catch(console.error);
 
+
+

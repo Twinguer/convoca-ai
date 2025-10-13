@@ -336,3 +336,5 @@ COMMENT ON FUNCTION generate_performance_report() IS 'Gera relatório de perform
 // Executar geração
 implementMonitoring().catch(console.error);
 
+
+

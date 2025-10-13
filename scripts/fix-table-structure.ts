@@ -70,3 +70,5 @@ ORDER BY ordinal_position;
 // Executar geração de SQL
 generateFixTableStructureSql().catch(console.error);
 
+
+

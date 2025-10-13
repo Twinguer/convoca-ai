@@ -144,3 +144,5 @@ async function checkTableStructure() {
 // Executar verificação
 checkTableStructure().catch(console.error);
 
+
+

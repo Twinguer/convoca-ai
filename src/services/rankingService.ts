@@ -85,6 +85,7 @@ export const fetchUserRankings = async (
         "weighted_case_study_1_score", 
         "weighted_case_study_2_score",
         "weighted_case_study_3_score",
+        subject_scores,
         users_profiles!inner(
           id,
           name,
@@ -136,11 +137,11 @@ export const fetchUserRankings = async (
         score: ranking.score || 0,
         userId: ranking.user_id,
         avatarUrl: avatarUrl,
-        // Pontuações subjetivas
-        discursiveScore: 0,
-        caseStudy1Score: 0,
-        caseStudy2Score: 0,
-        caseStudy3Score: 0,
+        // Pontuações subjetivas (do subject_scores)
+        discursiveScore: ranking.subject_scores?.discursive || 0,
+        caseStudy1Score: ranking.subject_scores?.case1 || 0,
+        caseStudy2Score: ranking.subject_scores?.case2 || 0,
+        caseStudy3Score: ranking.subject_scores?.case3 || 0,
         // Pontuações subjetivas com peso
         weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
         weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,

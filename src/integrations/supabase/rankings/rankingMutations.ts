@@ -70,36 +70,73 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    // Obter as respostas do usuário usando o ranking_id
-    const { data: userAnswers, error: userAnswersError } = await supabase
-      .from('user_answers')
-      .select('question_number, answer')
-      .eq('user_ranking_id', userRanking.id);
+    // Obter as respostas do usuário usando consolidated_answers_by_concurso
+    const { data: rankingData, error: rankingError } = await supabase
+      .from('user_rankings')
+      .select('concurso_id, user_id, selected_booklet')
+      .eq('id', userRanking.id)
+      .single();
 
-    if (userAnswersError) {
-      console.error('Erro ao buscar respostas do usuário:', userAnswersError);
+    if (rankingError) {
+      console.error('Erro ao buscar dados do ranking:', rankingError);
       return { 
         success: false, 
-        message: 'Erro ao obter respostas do usuário', 
-        error: userAnswersError 
+        message: 'Erro ao obter dados do ranking', 
+        error: rankingError 
       };
+    }
+
+    const { data: consolidatedData, error: consolidatedError } = await supabase
+      .from('consolidated_answers_by_concurso')
+      .select('consolidated_data')
+      .eq('concurso_id', rankingData.concurso_id)
+      .single();
+
+    if (consolidatedError) {
+      console.log('Nenhum dado consolidado encontrado');
+      return { 
+        success: false, 
+        message: 'Nenhum dado consolidado encontrado', 
+        error: consolidatedError 
+      };
+    }
+
+    // Extrair respostas do usuário específico
+    const userData = consolidatedData.consolidated_data?.users?.[rankingData.user_id];
+    const userAnswers: any[] = [];
+    
+    if (userData?.booklets) {
+      const selectedBookletId = rankingData.selected_booklet?.toString();
+      const bookletData = selectedBookletId ? userData.booklets[selectedBookletId] : null;
+      
+      if (bookletData?.answers) {
+        Object.entries(bookletData.answers).forEach(([questionNumber, answer]) => {
+          const questionNum = parseInt(questionNumber);
+          if (!isNaN(questionNum)) {
+            userAnswers.push({
+              question_number: questionNum,
+              answer: answer
+            });
+          }
+        });
+      }
     }
     
     console.log(`[recalculateUserScore] Found ${userAnswers?.length || 0} answers for user`);
 
     // Obter os pesos das respostas corretas usando a estrutura consolidada
-    const { data: consolidatedAnswers, error: consolidatedError } = await supabase
+    const { data: consolidatedAnswers, error: consolidatedAnswersError } = await supabase
       .from('concursos')
       .select('official_answers')
       .eq('id', concursoId)
       .single();
 
-    if (consolidatedError) {
-      console.error('Erro ao buscar pesos das respostas corretas:', consolidatedError);
+    if (consolidatedAnswersError) {
+      console.error('Erro ao buscar pesos das respostas corretas:', consolidatedAnswersError);
       return { 
         success: false, 
         message: 'Erro ao obter pesos das respostas corretas', 
-        error: consolidatedError 
+        error: consolidatedAnswersError 
       };
     }
     

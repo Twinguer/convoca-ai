@@ -70,3 +70,5 @@ COMMENT ON COLUMN user_answers.user_id IS 'ID do usuário (constraint removida t
 // Executar geração de SQL
 generateRemoveSpecificConstraintSql().catch(console.error);
 
+
+

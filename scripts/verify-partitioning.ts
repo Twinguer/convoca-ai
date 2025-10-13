@@ -127,3 +127,5 @@ async function verifyPartitioning() {
 // Executar verificação
 verifyPartitioning().catch(console.error);
 
+
+

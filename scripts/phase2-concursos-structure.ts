@@ -123,3 +123,5 @@ async function phase2ConcursosStructure() {
 
 phase2ConcursosStructure();
 
+
+

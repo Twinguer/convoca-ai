@@ -212,3 +212,5 @@ COMMENT ON VIEW public_profiles IS 'View pública dos perfis de usuários basead
 
 fixProfileTableReferences();
 
+
+

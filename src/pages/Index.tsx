@@ -26,7 +26,7 @@ const Index = () => {
               {/* Logo added above the main heading */}
               <div className="flex justify-center md:justify-start mb-8">
                 <img
-                  src="https://tibizurada.store/footer-logo.png"
+                  src="/images/footer-logo.png"
                   alt="Nomeia Aí Logo"
                   className="h-auto max-w-[350px] md:max-w-[437px]" // Increased by 25%: 280 * 1.25 = 350, and 350 * 1.25 = 437
                 />
@@ -70,7 +70,7 @@ const Index = () => {
               <img
                 alt="Estudante se preparando para concurso"
                 className="w-full h-auto object-cover"
-                src="https://www.tibizurada.store/img-10.png"
+                src="/images/img-10.png"
               />
             </div>
           </div>
@@ -92,7 +92,7 @@ const Index = () => {
                 <div className="">
                   <div className="relative overflow-hidden h-48">
                     <img
-                      src="https://tibizurada.store/img-03.png"
+                      src="/images/img-03.png"
                       alt="Tempo TBC"
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -115,7 +115,7 @@ const Index = () => {
                 <div className="">
                   <div className="relative overflow-hidden h-48">
                     <img
-                      src="https://tibizurada.store/img-04.png"
+                      src="/images/img-04.png"
                       alt="Dia da Prova"
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />
@@ -138,7 +138,7 @@ const Index = () => {
                 <div className="">
                   <div className="relative overflow-hidden h-48">
                     <img
-                      src="https://tibizurada.store/img-05.png"
+                      src="/images/img-05.png"
                       alt="Resultado"
                       className="feature-card-image group-hover:scale-105 transition-transform duration-300"
                     />

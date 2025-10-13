@@ -75,3 +75,5 @@ function updateConcursosToRankings() {
 // Executar atualização
 updateConcursosToRankings();
 
+
+

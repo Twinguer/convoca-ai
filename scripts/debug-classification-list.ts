@@ -192,3 +192,5 @@ async function debugClassificationList() {
 // Executar investigação
 debugClassificationList().catch(console.error);
 
+
+

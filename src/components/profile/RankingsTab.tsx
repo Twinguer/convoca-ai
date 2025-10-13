@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useSecureUrls } from '@/services/urlObfuscation';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PencilLine, Trophy, ChevronDown, ChevronUp, UserX } from 'lucide-react';
 import { UserRankingDisplay } from '@/types/concursos';
@@ -40,7 +39,6 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   const [showAllRankings, setShowAllRankings] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { generateSecureUrl } = useSecureUrls();
   const {
     data: rankings,
     isLoading
@@ -60,9 +58,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           specific_knowledge_3_score,
           discursive_score,
           created_at,
-          position,
+          reservation_type,
           concurso_id,
-          concursos:concurso_id (id, titulo, orgao, banca)
+          concursos!inner (
+            id,
+            titulo,
+            orgao,
+            banca
+          )
         `).eq('user_id', userId).order('score', {
         ascending: false
       });
@@ -299,15 +302,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           console.error('Erro ao deletar score_calculation_logs:', logsError);
         }
 
-        // Deletar user_answers
-        const { error: answersError } = await supabase
-          .from('user_answers')
-          .delete()
-          .eq('user_ranking_id', rankingId);
-        
-        if (answersError) {
-          console.error('Erro ao deletar user_answers:', answersError);
-        }
+        // user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
+        // A remoção dos dados consolidados é feita automaticamente via CASCADE
 
         // Deletar user_ranking
         const { error: rankingError } = await supabase
@@ -396,18 +392,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             </div>
             
             <div className="p-4 bg-card flex justify-end gap-2">
-              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => {
-                navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}`);
-              }}>
+              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}`)}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>
               </Button>
               
               {isOwnProfile && (
                 <>
-                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => {
-                    navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}/participate?showAnswerSheet=true`);
-                  }}>
+                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}/participate?showAnswerSheet=true`)}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>
                   </Button>

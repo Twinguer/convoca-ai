@@ -318,3 +318,5 @@ async function migrateToNewStructure(): Promise<MigrationStats> {
 // Executar migração
 migrateToNewStructure().catch(console.error);
 
+
+

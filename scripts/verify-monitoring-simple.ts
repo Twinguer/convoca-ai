@@ -186,3 +186,5 @@ async function verifyMonitoringSimple() {
 // Executar verificação
 verifyMonitoringSimple().catch(console.error);
 
+
+

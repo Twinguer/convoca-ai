@@ -55,7 +55,7 @@ export const useLeaveRanking = () => {
 
       // Deletar registros relacionados
       await supabase.from('score_calculation_logs').delete().eq('user_ranking_id', rankingId);
-      await supabase.from('user_answers').delete().eq('user_ranking_id', rankingId);
+      // user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
       
       const { error: deleteError } = await supabase
         .from('user_rankings')

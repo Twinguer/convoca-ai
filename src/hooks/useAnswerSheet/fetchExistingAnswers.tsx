@@ -4,10 +4,10 @@ export const fetchExistingAnswers = async (rankingId: string) => {
   try {
     console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
 
-    // Primeiro, buscar informações do user_ranking para obter o caderno selecionado
+    // Primeiro, buscar informações do user_ranking para obter o caderno selecionado e concurso_id
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
-      .select('selected_booklet, discursive_score, case_study_1_score, case_study_2_score, case_study_3_score, concurso_id, user_id')
+      .select('selected_booklet, discursive_score, case_study_1_score, case_study_2_score, case_study_3_score, subject_scores, concurso_id, user_id')
       .eq('id', rankingId)
       .maybeSingle();
 
@@ -18,37 +18,45 @@ export const fetchExistingAnswers = async (rankingId: string) => {
 
     console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
 
-    // Buscar respostas diretamente da tabela user_answers (NOVA ESTRUTURA)
-    const { data: userAnswers, error: userAnswersError } = await supabase
-      .from('user_answers')
-      .select('question_number, answer, booklet_id')
-      .eq('user_ranking_id', rankingId);
+    // Buscar respostas da tabela consolidated_answers_by_concurso
+    const { data: consolidatedData, error: consolidatedError } = await supabase
+      .from('consolidated_answers_by_concurso')
+      .select('consolidated_data')
+      .eq('concurso_id', rankingData.concurso_id)
+      .single();
 
-    if (userAnswersError) {
-      console.error('[fetchExistingAnswers] Erro ao buscar respostas:', userAnswersError);
-      return {};
+    if (consolidatedError || !consolidatedData) {
+      console.error('[fetchExistingAnswers] Erro ao buscar dados consolidados:', consolidatedError);
+      return {
+        answers: {},
+        discursiveScore: rankingData.discursive_score,
+        caseStudy1Score: rankingData.case_study_1_score,
+        caseStudy2Score: rankingData.case_study_2_score,
+        caseStudy3Score: rankingData.case_study_3_score
+      };
     }
 
-    console.log('[fetchExistingAnswers] Respostas encontradas:', userAnswers);
+    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData.consolidated_data);
 
     let answers: { [key: number]: string } = {};
 
-    if (userAnswers && userAnswers.length > 0) {
-      // Filtrar respostas do caderno selecionado se houver
+    // Extrair respostas do usuário específico
+    const userData = consolidatedData.consolidated_data?.users?.[rankingData.user_id];
+    if (userData?.booklets) {
       const selectedBookletId = rankingData.selected_booklet?.toString();
-      let filteredAnswers = userAnswers;
       
-      if (selectedBookletId) {
-        filteredAnswers = userAnswers.filter(answer => 
-          answer.booklet_id === selectedBookletId || !answer.booklet_id
-        );
-        console.log('[fetchExistingAnswers] Respostas filtradas para caderno:', selectedBookletId, filteredAnswers);
+      // Buscar respostas do caderno selecionado
+      const bookletData = selectedBookletId ? userData.booklets[selectedBookletId] : null;
+      
+      if (bookletData?.answers) {
+        // Converter para formato esperado (número da questão como chave)
+        Object.entries(bookletData.answers).forEach(([questionNumber, answer]) => {
+          const questionNum = parseInt(questionNumber);
+          if (!isNaN(questionNum)) {
+            answers[questionNum] = answer as string;
+          }
+        });
       }
-
-      // Converter para formato esperado (número da questão como chave)
-      filteredAnswers.forEach(answer => {
-        answers[answer.question_number] = answer.answer;
-      });
     }
 
     console.log('[fetchExistingAnswers] Respostas finais:', answers);
@@ -59,7 +67,8 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       discursiveScore: rankingData.discursive_score,
       caseStudy1Score: rankingData.case_study_1_score,
       caseStudy2Score: rankingData.case_study_2_score,
-      caseStudy3Score: rankingData.case_study_3_score
+      caseStudy3Score: rankingData.case_study_3_score,
+      subjectScores: rankingData.subject_scores || {}
     };
 
   } catch (error) {

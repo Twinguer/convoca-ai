@@ -11,7 +11,7 @@ import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
 import { useQuotaCache } from '@/hooks/useQuotaCache';
-// import { useSecureUserUrls } from '@/services/userUrlObfuscation';
+import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadMoreButton } from './LoadMoreButton';
 
 interface RankingTableProps {
@@ -194,8 +194,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     
     try {
-      // Navegação direta sem ofuscação temporariamente
-      navigate(`/profile/${userId}`);
+      // Usar o sistema de ofuscação de URLs para navegar para o perfil
+      const secureUrl = await UserUrlObfuscationService.generateSecureProfileUrl(userId);
+      navigate(secureUrl);
     } catch (error) {
       console.error('Erro ao gerar URL segura de usuário:', error);
       // Fallback para página de comunidade em caso de erro

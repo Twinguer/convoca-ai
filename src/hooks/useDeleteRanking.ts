@@ -38,17 +38,9 @@ export const useDeleteRanking = () => {
             throw logsError;
           }
 
-          // 3. Deletar user_answers
-          console.log('Deletando user_answers...');
-          const { error: answersError } = await supabase
-            .from('user_answers')
-            .delete()
-            .in('user_ranking_id', userRankingIds);
-          
-          if (answersError) {
-            console.error('Erro ao deletar user_answers:', answersError);
-            throw answersError;
-          }
+          // 3. user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
+          // A remoção dos dados consolidados é feita automaticamente via CASCADE
+          console.log('user_answers removido - usando dados consolidados');
         }
 
         // 4. Deletar todos os user_rankings

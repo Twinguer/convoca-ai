@@ -158,3 +158,5 @@ ORDER BY ordinal_position;
 
 fixConcursosTableCorrected();
 
+
+

@@ -75,3 +75,5 @@ async function checkOriginalUsersProfiles() {
 // Executar verificação
 checkOriginalUsersProfiles().catch(console.error);
 
+
+

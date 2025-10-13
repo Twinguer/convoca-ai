@@ -144,3 +144,5 @@ async function verifyCleanupSimple() {
 // Executar verificação
 verifyCleanupSimple().catch(console.error);
 
+
+

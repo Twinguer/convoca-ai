@@ -125,3 +125,5 @@ ORDER BY ordinal_position;
 
 fixConcursosTableDefinitive();
 
+
+

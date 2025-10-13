@@ -143,3 +143,5 @@ async function migrateExamBookletsToJsonb() {
 
 migrateExamBookletsToJsonb();
 
+
+

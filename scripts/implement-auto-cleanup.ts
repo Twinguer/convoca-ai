@@ -219,3 +219,5 @@ COMMENT ON TABLE system_logs IS 'Logs de operações do sistema';
 // Executar geração
 implementAutoCleanup().catch(console.error);
 
+
+

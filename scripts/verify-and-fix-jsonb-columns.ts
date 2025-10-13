@@ -133,3 +133,5 @@ CREATE INDEX IF NOT EXISTS idx_concursos_metadata ON public.concursos USING GIN 
 
 verifyAndFixJsonbColumns();
 
+
+

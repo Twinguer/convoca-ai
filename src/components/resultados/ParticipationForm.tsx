@@ -217,6 +217,28 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         return;
       }
 
+      // Inicializar subject_scores baseado nas seções habilitadas do concurso
+      const initializeSubjectScores = (concurso: any) => {
+        const subjectScores: Record<string, number> = {};
+        
+        // Seções de discursivas/estudo de caso
+        if (concurso.has_discursive) subjectScores.discursive = 0;
+        if (concurso.has_case_study_1) subjectScores.case1 = 0;
+        if (concurso.has_case_study_2) subjectScores.case2 = 0;
+        if (concurso.has_case_study_3) subjectScores.case3 = 0;
+        
+        // Disciplinas customizadas (se existirem)
+        if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+          concurso.disciplines.forEach((discipline: any) => {
+            if (discipline.isEnabled && discipline.id) {
+              subjectScores[`custom_${discipline.id}`] = 0;
+            }
+          });
+        }
+        
+        return subjectScores;
+      };
+
       const {
         data,
         error
@@ -225,7 +247,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         concurso_id: concurso.id, // ✅ CORREÇÃO: ranking_id -> concurso_id
         score: 0,
         reservation_type: selectedQuota,
-        selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet as string : null
+        selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet as string : null,
+        subject_scores: initializeSubjectScores(concurso) // ✅ NOVO: Inicializar subject_scores
       }).select('id').single();
       if (error) throw error;
       // Invalidar todas as queries relacionadas para garantir atualização automática

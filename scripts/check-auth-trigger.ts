@@ -76,3 +76,5 @@ checkAuthTrigger().then(() => {
   process.exit(1);
 });
 
+
+

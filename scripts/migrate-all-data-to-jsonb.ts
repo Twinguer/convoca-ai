@@ -221,3 +221,5 @@ async function migrateAllDataToJsonb() {
 
 migrateAllDataToJsonb();
 
+
+

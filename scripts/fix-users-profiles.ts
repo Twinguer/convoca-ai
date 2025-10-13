@@ -137,3 +137,5 @@ async function fixUsersProfiles() {
 // Executar correção
 fixUsersProfiles().catch(console.error);
 
+
+

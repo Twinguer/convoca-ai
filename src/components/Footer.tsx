@@ -12,7 +12,7 @@ const Footer = () => {
               <img 
                 alt="Nomeia Aí Logo" 
                 className="h-30 w-auto object-contain" 
-                src="https://tibizurada.store/footer-logo.png"
+                src="/images/footer-logo.png"
               />
             </div>
           </div>

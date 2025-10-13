@@ -193,3 +193,5 @@ async function createMissingRanking() {
 
 createMissingRanking().catch(console.error);
 
+
+

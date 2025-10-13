@@ -19,6 +19,7 @@ export const useSaveAnswers = ({
   caseStudy1Score,
   caseStudy2Score,
   caseStudy3Score,
+  subjectScores,
   editCount,
   nullifiedQuestions = new Set(),
   selectedBookletId
@@ -51,10 +52,10 @@ export const useSaveAnswers = ({
       });
 
       // Preparar dados das respostas
-      const answersObject = prepareAnswersData(answers, concurso, nullifiedQuestions);
+      const preparedData = prepareAnswersData(answers, concurso, nullifiedQuestions, subjectScores);
 
-      console.log('[useSaveAnswers] Dados formatados para RPC:', answersObject);
-      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(answersObject).length);
+      console.log('[useSaveAnswers] Dados formatados para RPC:', preparedData);
+      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(preparedData.answers).length);
 
       // Garantir que selectedBookletId seja sempre string para a função RPC
       const { data: currentRanking } = await supabase
@@ -72,7 +73,8 @@ export const useSaveAnswers = ({
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_booklet_id: bookletIdString,
-        p_answers: answersObject,
+        p_answers: preparedData.answers,
+        p_subject_scores: preparedData.subjectScores,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
         p_case_study_2_score: caseStudy2Score || 0,
@@ -80,7 +82,8 @@ export const useSaveAnswers = ({
         p_current_edit_count: editCount
       });
       
-      console.log('[useSaveAnswers] Pontuações discursivas sendo enviadas:', {
+      console.log('[useSaveAnswers] Pontuações subjetivas sendo enviadas:', {
+        subjectScores: preparedData.subjectScores,
         discursiveScore,
         caseStudy1Score,
         caseStudy2Score,
@@ -91,7 +94,8 @@ export const useSaveAnswers = ({
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_booklet_id: bookletIdString,
-        p_answers: answersObject,
+        p_answers: preparedData.answers,
+        p_subject_scores: preparedData.subjectScores,
         p_discursive_score: discursiveScore || 0,
         p_case_study_1_score: caseStudy1Score || 0,
         p_case_study_2_score: caseStudy2Score || 0,
@@ -122,11 +126,15 @@ export const useSaveAnswers = ({
       // Invalidar queries para refresh automático
       console.log('[useSaveAnswers] 🔄 Invalidando queries para refresh automático...');
       queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
+      queryClient.invalidateQueries({ queryKey: ['rankings-v2', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['concurso', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['user-answers', rankingId] });
       queryClient.invalidateQueries({ queryKey: ['answer-stats', rankingId] });
+      queryClient.invalidateQueries({ queryKey: ['user-ranking-detail', rankingId] });
+      // Invalidar todas as queries de rankings para garantir atualização
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
       console.log('[useSaveAnswers] ✅ Cache limpo e queries invalidadas, dados serão atualizados automaticamente');
 
       setSavedSuccess(true);

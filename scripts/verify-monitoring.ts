@@ -192,3 +192,5 @@ async function verifyMonitoring() {
 // Executar verificação
 verifyMonitoring().catch(console.error);
 
+
+

@@ -100,3 +100,5 @@ function fixMissingColumns() {
 // Executar correção
 fixMissingColumns();
 
+
+

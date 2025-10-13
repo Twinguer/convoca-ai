@@ -90,3 +90,5 @@ SELECT 'public_profiles view created successfully' as status;
 
 createPublicProfilesView();
 
+
+

@@ -99,3 +99,5 @@ COMMENT ON POLICY "ranking_disciplines_migration" ON ranking_disciplines IS 'Pol
 // Executar geração
 fixRLSPolicies().catch(console.error);
 
+
+

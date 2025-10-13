@@ -277,17 +277,9 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       }
     }
     
-    // 3. Delete all user_answers
-    for (const userRankingId of userRankingIds) {
-      const { error: answersError } = await supabase
-        .from('user_answers')
-        .delete()
-        .eq('user_ranking_id', userRankingId);
-        
-      if (answersError) {
-        console.error(`Error deleting user answers for user_ranking ${userRankingId}:`, answersError);
-      }
-    }
+    // 3. user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
+    // A remoção dos dados consolidados é feita automaticamente via CASCADE
+    console.log('user_answers removido - usando dados consolidados');
     
     // 4. Delete all user_rankings for this concurso
     const { error: rankingsError } = await supabase

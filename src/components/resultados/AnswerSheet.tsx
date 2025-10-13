@@ -12,6 +12,7 @@ import { useSaveAnswers } from '@/hooks/useSaveAnswers';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DiscursiveScoresSection } from './DiscursiveScoresSection';
+import { SubjectScoresTab } from './SubjectScoresTab';
 import { ExamTypeWarning } from './ExamTypeWarning';
 import { BookletSwitcher } from './BookletSwitcher';
 import { getDisciplines, isHierarchicalStructure, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
@@ -31,6 +32,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   onSuccess
 }) => {
   console.log('[AnswerSheet] Rendered with:', { concursoId: concurso?.id, rankingId });
+  console.log('[AnswerSheet] DEBUG - Concurso subjective flags:', {
+    has_discursive: concurso?.has_discursive,
+    has_case_study_1: concurso?.has_case_study_1,
+    has_case_study_2: concurso?.has_case_study_2,
+    has_case_study_3: concurso?.has_case_study_3,
+    shouldShowSubjective: concurso?.has_discursive || concurso?.has_case_study_1 || concurso?.has_case_study_2 || concurso?.has_case_study_3
+  });
   
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
@@ -38,6 +46,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [missingOfficialAnswers, setMissingOfficialAnswers] = useState<boolean>(false);
   const [checkingOfficialAnswers, setCheckingOfficialAnswers] = useState<boolean>(true);
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
+  const [subjectScores, setSubjectScores] = useState<Record<string, number>>({});
 
   // Fetch user ranking data first to get selectedBookletId
   const {
@@ -247,6 +256,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     caseStudy1Score,
     caseStudy2Score,
     caseStudy3Score,
+    subjectScores,
     editCount: userRankingData?.edit_count || 0,
     nullifiedQuestions,
     selectedBookletId: selectedBookletIdFromData // CRÍTICO: Reage a mudanças no caderno selecionado
@@ -267,6 +277,42 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setCaseStudy3Score(userRankingData.case_study_3_score);
     }
   }, [userRankingData, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
+
+  // Initialize subject_scores from user ranking data
+  useEffect(() => {
+    console.log('[AnswerSheet] DEBUG - Initializing subject_scores:', {
+      userRankingData_subject_scores: userRankingData?.subject_scores,
+      concurso_has_discursive: concurso.has_discursive,
+      concurso_has_case_study_1: concurso.has_case_study_1,
+      concurso_has_case_study_2: concurso.has_case_study_2,
+      concurso_has_case_study_3: concurso.has_case_study_3
+    });
+    
+    if (userRankingData?.subject_scores) {
+      console.log('[AnswerSheet] DEBUG - Using existing subject_scores:', userRankingData.subject_scores);
+      setSubjectScores(userRankingData.subject_scores);
+    } else {
+      // Initialize with default values based on concurso configuration
+      const initialScores: Record<string, number> = {};
+      
+      if (concurso.has_discursive) initialScores.discursive = 0;
+      if (concurso.has_case_study_1) initialScores.case1 = 0;
+      if (concurso.has_case_study_2) initialScores.case2 = 0;
+      if (concurso.has_case_study_3) initialScores.case3 = 0;
+      
+      // Add custom disciplines
+      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        concurso.disciplines.forEach((discipline: any) => {
+          if (discipline.isEnabled && discipline.id) {
+            initialScores[`custom_${discipline.id}`] = 0;
+          }
+        });
+      }
+      
+      console.log('[AnswerSheet] DEBUG - Initializing with default scores:', initialScores);
+      setSubjectScores(initialScores);
+    }
+  }, [userRankingData, concurso]);
 
   // Update nullified questions set
   useEffect(() => {
@@ -385,6 +431,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
 
     setter(numberValue);
+  };
+
+  const handleSubjectScoreChange = (key: string, value: number) => {
+    setSubjectScores(prev => ({ ...prev, [key]: value }));
   };
 
   // Get booklet name
@@ -528,6 +578,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   console.log('[AnswerSheet] Objective sections:', objectiveSections);
   console.log('[AnswerSheet] Section questions:', getSectionQuestions());
   console.log('[AnswerSheet] Total questions:', getTotalQuestions());
+  
 
   return (
     <Card className="shadow-lg w-full h-full mx-auto p-4">
@@ -628,56 +679,72 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         </div>
         <Progress value={progressPercentage} className="h-2" />
 
-        {objectiveSections.length > 0 && (
-          <div className="border rounded-md overflow-hidden shadow-sm">
-            <Tabs
-              value={selectedSection}
-              onValueChange={handleSectionChange}
-              className="w-full"
-            >
-              <TabsList className="grid w-full" style={{ 
-                gridTemplateColumns: `repeat(${Math.min(objectiveSections.length, 4)}, 1fr)` 
-              }}>
-                {objectiveSections.map(section => (
-                  <TabsTrigger key={section.key} value={section.key}>
-                    {section.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
+        {/* Sistema de abas unificado para questões objetivas e subjetivas */}
+        <div className="border rounded-md overflow-hidden shadow-sm">
+          <Tabs
+            value={selectedSection}
+            onValueChange={handleSectionChange}
+            className="w-full"
+          >
+            <TabsList className="grid w-full" style={{ 
+              gridTemplateColumns: `repeat(${Math.min(objectiveSections.length + (concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3 ? 1 : 0), 5)}, 1fr)` 
+            }}>
               {objectiveSections.map(section => (
-                <TabsContent key={section.key} value={section.key}>
-                  <AnswerMatrix
-                    matrix={section.key === selectedSection ? matrix : []}
-                    answers={answers}
-                    onAnswerChange={handleAnswerChange}
-                    onClearAnswer={handleClearAnswer}
-                    getOptionsForQuestion={getOptionsForQuestion}
-                    disabled={!canEdit}
-                    examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
-                    nullifiedQuestions={nullifiedQuestions}
+                <TabsTrigger key={section.key} value={section.key}>
+                  {section.label}
+                </TabsTrigger>
+              ))}
+              {(() => {
+                const shouldShowSubjective = concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3;
+                console.log('[AnswerSheet] DEBUG - Should show subjective tab:', shouldShowSubjective);
+                console.log('[AnswerSheet] DEBUG - Concurso subjective flags:', {
+                  has_discursive: concurso.has_discursive,
+                  has_case_study_1: concurso.has_case_study_1,
+                  has_case_study_2: concurso.has_case_study_2,
+                  has_case_study_3: concurso.has_case_study_3,
+                  concurso_id: concurso.id
+                });
+                
+                return shouldShowSubjective ? (
+                  <TabsTrigger value="subjective">
+                    Discursivas/Est.Caso
+                  </TabsTrigger>
+                ) : null;
+              })()}
+            </TabsList>
+
+            {objectiveSections.map(section => (
+              <TabsContent key={section.key} value={section.key}>
+                <AnswerMatrix
+                  matrix={section.key === selectedSection ? matrix : []}
+                  answers={answers}
+                  onAnswerChange={handleAnswerChange}
+                  onClearAnswer={handleClearAnswer}
+                  getOptionsForQuestion={getOptionsForQuestion}
+                  disabled={!canEdit}
+                  examType={concurso.exam_type as 'Alternativas' | 'Certo ou Errado'}
+                  nullifiedQuestions={nullifiedQuestions}
+                />
+              </TabsContent>
+            ))}
+
+            {(() => {
+              const shouldShowSubjectiveContent = concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3;
+              console.log('[AnswerSheet] DEBUG - Should show subjective content:', shouldShowSubjectiveContent);
+              
+              return shouldShowSubjectiveContent ? (
+                <TabsContent value="subjective">
+                  <SubjectScoresTab
+                    concurso={concurso}
+                    subjectScores={subjectScores}
+                    onSubjectScoreChange={handleSubjectScoreChange}
+                    canEdit={canEdit}
                   />
                 </TabsContent>
-              ))}
-            </Tabs>
-          </div>
-        )}
-
-        {(concurso.has_discursive || concurso.has_case_study_1 || concurso.has_case_study_2 || concurso.has_case_study_3) && (
-          <DiscursiveScoresSection
-            concurso={concurso}
-            discursiveScore={discursiveScore}
-            caseStudy1Score={caseStudy1Score}
-            caseStudy2Score={caseStudy2Score}
-            caseStudy3Score={caseStudy3Score}
-            handleScoreChange={handleScoreChange}
-            setDiscursiveScore={setDiscursiveScore}
-            setCaseStudy1Score={setCaseStudy1Score}
-            setCaseStudy2Score={setCaseStudy2Score}
-            setCaseStudy3Score={setCaseStudy3Score}
-            canEdit={canEdit}
-          />
-        )}
+              ) : null;
+            })()}
+          </Tabs>
+        </div>
       </CardContent>
 
       <CardFooter className="p-4 bg-muted/30 border-t border-border">

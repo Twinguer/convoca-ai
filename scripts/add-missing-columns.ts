@@ -71,3 +71,5 @@ ORDER BY ordinal_position;
 // Executar geração de SQL
 generateAddMissingColumnsSql().catch(console.error);
 
+
+
