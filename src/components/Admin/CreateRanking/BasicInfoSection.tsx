@@ -230,10 +230,13 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     type="number" 
                     {...field} 
                     min="0" 
-                    max="1000000"
+                    max="999999"
+                    maxLength={6}
                     onChange={e => {
-                      const value = Number(e.target.value);
-                      field.onChange(value > 1000000 ? 1000000 : value);
+                      const value = e.target.value;
+                      if (value.length <= 6 && !isNaN(Number(value)) && Number(value) <= 999999) {
+                        field.onChange(Number(value));
+                      }
                     }} 
                   />
                 </FormControl>
@@ -249,10 +252,13 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     type="number" 
                     {...field} 
                     min="0" 
-                    max="1000000"
+                    max="999999"
+                    maxLength={6}
                     onChange={e => {
-                      const value = Number(e.target.value);
-                      field.onChange(value > 1000000 ? 1000000 : value);
+                      const value = e.target.value;
+                      if (value.length <= 6 && !isNaN(Number(value)) && Number(value) <= 999999) {
+                        field.onChange(Number(value));
+                      }
                     }} 
                   />
                 </FormControl>

@@ -149,7 +149,19 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           <FormItem>
             <FormLabel>Vagas</FormLabel>
             <FormControl>
-              <Input type="number" {...field} />
+              <Input 
+                type="number" 
+                min="0" 
+                max="999999"
+                maxLength={6}
+                {...field} 
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value.length <= 6 && !isNaN(Number(value)) && Number(value) <= 999999) {
+                    field.onChange(Number(value));
+                  }
+                }} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -159,7 +171,19 @@ export const GeneralInfoSection: React.FC<GeneralInfoSectionProps> = ({
           <FormItem>
             <FormLabel>Inscritos</FormLabel>
             <FormControl>
-              <Input type="number" {...field} />
+              <Input 
+                type="number" 
+                min="0" 
+                max="999999"
+                maxLength={6}
+                {...field} 
+                onChange={e => {
+                  const value = e.target.value;
+                  if (value.length <= 6 && !isNaN(Number(value)) && Number(value) <= 999999) {
+                    field.onChange(Number(value));
+                  }
+                }} 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
