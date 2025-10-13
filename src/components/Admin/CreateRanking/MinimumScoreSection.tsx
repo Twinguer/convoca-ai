@@ -38,13 +38,25 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
             }) => <FormItem>
                     <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" min="0" {...field} value={field.value || 0} onChange={e => {
-                  const value = parseFloat(e.target.value) || 0;
-                  field.onChange(value);
-                }} className="w-full md:w-1/3" />
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        min="0" 
+                        max="999"
+                        maxLength={3}
+                        {...field} 
+                        value={field.value || 0} 
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                            field.onChange(parseFloat(value) || 0);
+                          }
+                        }} 
+                        className="w-full md:w-1/3" 
+                      />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Insira o valor mínimo de pontos que o candidato precisa obter
+                      Insira o valor mínimo de pontos que o candidato precisa obter (máx. 999)
                     </FormDescription>
                   </FormItem>} />
               

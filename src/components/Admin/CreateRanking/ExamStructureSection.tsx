@@ -348,7 +348,21 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               {/* Nota mínima do bloco */}
               <div className="mb-4">
                 <FormLabel>Nota mínima do bloco (valor absoluto)</FormLabel>
-                <Input type="number" step="0.01" min="0" value={block.minimum_score || 0} onChange={e => handleBlockMinimumScoreChange(block.id, parseFloat(e.target.value) || 0)} className="w-full md:w-1/3" />
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  max="999"
+                  maxLength={3}
+                  value={block.minimum_score || 0} 
+                  onChange={e => {
+                    const value = e.target.value;
+                    if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                      handleBlockMinimumScoreChange(block.id, parseFloat(value) || 0);
+                    }
+                  }} 
+                  className="w-full md:w-1/3" 
+                />
               </div>
               
               {/* Disciplinas do bloco */}
@@ -396,7 +410,20 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       </div>
                       <div>
                         <FormLabel>Nota mínima (valor absoluto)</FormLabel>
-                        <Input type="number" step="0.01" min="0" value={discipline.minimum_score || 0} onChange={e => handleDisciplineChange(block.id, discipline.id, 'minimum_score', parseFloat(e.target.value) || 0)} />
+                        <Input 
+                          type="number" 
+                          step="0.01" 
+                          min="0" 
+                          max="999"
+                          maxLength={3}
+                          value={discipline.minimum_score || 0} 
+                          onChange={e => {
+                            const value = e.target.value;
+                            if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                              handleDisciplineChange(block.id, discipline.id, 'minimum_score', parseFloat(value) || 0);
+                            }
+                          }} 
+                        />
                       </div>
                     </div>
                   </div>)}
