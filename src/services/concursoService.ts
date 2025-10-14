@@ -47,6 +47,7 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       throw new Error(`Ranking com ID ${id} não encontrado`);
     }
 
+
     // Buscar disciplinas do JSONB disciplines na tabela concursos
     const disciplines = rankingData?.disciplines || [];
 

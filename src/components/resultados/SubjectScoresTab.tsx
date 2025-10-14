@@ -161,6 +161,7 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     return false;
   });
 
+
   return (
     <div className="p-6 space-y-6">
         {enabledSections.map(key => (

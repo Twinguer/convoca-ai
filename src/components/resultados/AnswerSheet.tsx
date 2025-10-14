@@ -186,9 +186,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setCheckingOfficialAnswers(true);
       try {
         console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
-        const result = await checkMissingOfficialAnswers(concurso.id);
+        const result = await checkMissingOfficialAnswers(concurso.id, selectedBookletIdFromData || 'default');
 
-        if (result.missing) {
+        if (result) {
           console.warn(`[AnswerSheet] Gabarito oficial incompleto ou não encontrado!`, result);
           setMissingOfficialAnswers(true);
 
