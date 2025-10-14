@@ -2,7 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Concurso } from '@/types/concursos';
+import { Concurso, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
+
+// Função auxiliar para buscar disciplina por ID na nova estrutura JSONB
+const findDisciplineById = (disciplines: (DisciplineBlock | NestedDiscipline)[] | undefined, id: string): NestedDiscipline | undefined => {
+  if (!disciplines) return undefined;
+  
+  for (const discipline of disciplines) {
+    if ('disciplines' in discipline) {
+      // Estrutura hierárquica (blocos)
+      const found = discipline.disciplines?.find(d => d.id === id);
+      if (found) return found;
+    } else {
+      // Estrutura plana
+      if (discipline.id === id) return discipline;
+    }
+  }
+  
+  return undefined;
+};
 
 interface SubjectScoresTabProps {
   concurso: Concurso;
@@ -17,21 +35,10 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
   onSubjectScoreChange,
   canEdit
 }) => {
-  console.log('[SubjectScoresTab] DEBUG - Props received:', {
-    concurso_id: concurso?.id,
-    subjectScores,
-    canEdit,
-    concurso_has_discursive: concurso?.has_discursive,
-    concurso_has_case_study_1: concurso?.has_case_study_1,
-    concurso_has_case_study_2: concurso?.has_case_study_2,
-    concurso_has_case_study_3: concurso?.has_case_study_3
-  });
-  
   const [localScores, setLocalScores] = useState<Record<string, number>>(subjectScores);
 
   // Atualizar scores locais quando subjectScores mudar
   useEffect(() => {
-    console.log('[SubjectScoresTab] DEBUG - subjectScores changed:', subjectScores);
     setLocalScores(subjectScores);
   }, [subjectScores]);
 
@@ -42,44 +49,64 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
   };
 
   const getScoreLabel = (key: string): string => {
-    switch (key) {
-      case 'discursive':
-        return 'Prova Discursiva';
-      case 'case1':
-        return 'Estudo de Caso 1';
-      case 'case2':
-        return 'Estudo de Caso 2';
-      case 'case3':
-        return 'Estudo de Caso 3';
-      default:
-        if (key.startsWith('custom_')) {
-          // Buscar nome da disciplina customizada
-          const disciplineId = key.replace('custom_', '');
-          const discipline = concurso.disciplines?.find(d => d.id === disciplineId);
-          return discipline?.name || `Disciplina ${disciplineId}`;
-        }
-        return key;
+    // Check for other_subjective (campo direto)
+    if (key === 'other_subjective' && concurso.other_subjective_name) {
+      return concurso.other_subjective_name;
     }
+    
+    // Check for standard subjective types in JSONB disciplines
+    if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
+      const discipline = findDisciplineById(concurso.disciplines, key);
+      if (discipline?.name) {
+        return discipline.name;
+      }
+      
+      // Fallback labels for standard types
+      const fallbackLabels: Record<string, string> = {
+        'discursive': 'Prova Discursiva',
+        'case_study_1': 'Estudo de Caso 1',
+        'case_study_2': 'Estudo de Caso 2',
+        'case_study_3': 'Estudo de Caso 3',
+        'other_subjective': 'Outro Subjetivo'
+      };
+      return fallbackLabels[key] || key;
+    }
+    
+    // Check for custom disciplines
+    if (key.startsWith('custom_')) {
+      const disciplineId = key.replace('custom_', '');
+      const discipline = findDisciplineById(concurso.disciplines, disciplineId);
+      return discipline?.name || `Disciplina ${disciplineId}`;
+    }
+    
+    return key;
   };
 
   const getScoreWeight = (key: string): number => {
-    switch (key) {
-      case 'discursive':
-        return concurso.discursive_weight || 1;
-      case 'case1':
-        return concurso.case_study_1_weight || 1;
-      case 'case2':
-        return concurso.case_study_2_weight || 1;
-      case 'case3':
-        return concurso.case_study_3_weight || 1;
-      default:
-        if (key.startsWith('custom_')) {
-          const disciplineId = key.replace('custom_', '');
-          const discipline = concurso.disciplines?.find(d => d.id === disciplineId);
-          return discipline?.weight || 1;
-        }
-        return 1;
+    // Check for standard subjective types in JSONB disciplines
+    if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
+      const discipline = findDisciplineById(concurso.disciplines, key);
+      return discipline?.weight || 1;
     }
+    
+    // Check for other_subjective_name (campo direto)
+    if (key === 'other_subjective_name' && concurso.other_subjective_weight) {
+      return concurso.other_subjective_weight;
+    }
+    
+    // Check for discursive weight (campo direto)
+    if (key === 'discursive' && concurso.discursive_weight) {
+      return parseFloat(concurso.discursive_weight);
+    }
+    
+    // Check for custom disciplines
+    if (key.startsWith('custom_')) {
+      const disciplineId = key.replace('custom_', '');
+      const discipline = findDisciplineById(concurso.disciplines, disciplineId);
+      return discipline?.weight || 1;
+    }
+    
+    return 1;
   };
 
   const getWeightedScore = (key: string): number => {
@@ -88,11 +115,24 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     return score * weight;
   };
 
-  // Verificar se o concurso tem seções subjetivas habilitadas
-  const hasSubjectiveSections = concurso.has_discursive || 
-                                concurso.has_case_study_1 || 
-                                concurso.has_case_study_2 || 
-                                concurso.has_case_study_3;
+  // Verificar se o concurso tem seções subjetivas habilitadas - JSONB + CAMPOS DIRETOS
+  const hasSubjectiveSections = concurso.disciplines?.some(discipline => {
+    if ('disciplines' in discipline) {
+      // Estrutura hierárquica (blocos)
+      return discipline.disciplines?.some(d => 
+        d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
+      );
+    } else {
+      // Estrutura plana
+      return discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+    }
+  }) || 
+  // Fallback para campos diretos (compatibilidade)
+  concurso.has_discursive || 
+  concurso.has_case_study_1 || 
+  concurso.has_case_study_2 || 
+  concurso.has_case_study_3 || 
+  concurso.has_other_subjective;
 
   if (!hasSubjectiveSections) {
     return (
@@ -109,43 +149,70 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     );
   }
 
-  // Filtrar apenas as seções habilitadas no concurso
+  // Filtrar apenas as seções habilitadas no concurso - JSONB + CAMPOS DIRETOS
   const enabledSections = Object.keys(localScores).filter(key => {
-    switch (key) {
-      case 'discursive':
-        return concurso.has_discursive;
-      case 'case1':
-        return concurso.has_case_study_1;
-      case 'case2':
-        return concurso.has_case_study_2;
-      case 'case3':
-        return concurso.has_case_study_3;
-      default:
-        return key.startsWith('custom_');
+    // Primeiro, verificar no JSONB disciplines
+    if (concurso.disciplines) {
+      const foundInJsonb = concurso.disciplines.some(discipline => {
+        if ('disciplines' in discipline) {
+          // Estrutura hierárquica (blocos)
+          return discipline.disciplines?.some(d => {
+            if (!d.isEnabled) return false;
+            
+            // Check for standard subjective types
+            if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
+              return d.type === key;
+            }
+            
+            // Check for custom disciplines - ONLY if they are subjective
+            if (key.startsWith('custom_')) {
+              // Only include custom disciplines that are explicitly subjective
+              return false; // Skip all custom disciplines for now
+            }
+            
+            return false;
+          });
+        } else {
+          // Estrutura plana
+          if (!discipline.isEnabled) return false;
+          
+          // Check for standard subjective types
+          if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
+            return discipline.type === key;
+          }
+          
+          // Check for custom disciplines - ONLY if they are subjective
+          if (key.startsWith('custom_')) {
+            // Only include custom disciplines that are explicitly subjective
+            return false; // Skip all custom disciplines for now
+          }
+          
+          return false;
+        }
+      });
+      
+      if (foundInJsonb) return true;
     }
+    
+    // Fallback para campos diretos (compatibilidade)
+    if (key === 'discursive' && concurso.has_discursive) return true;
+    if (key === 'case_study_1' && concurso.has_case_study_1) return true;
+    if (key === 'case_study_2' && concurso.has_case_study_2) return true;
+    if (key === 'case_study_3' && concurso.has_case_study_3) return true;
+    if (key === 'other_subjective' && concurso.has_other_subjective) return true;
+    
+    return false;
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Pontuações Subjetivas</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Preencha suas notas para as seções subjetivas do concurso.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="p-6 space-y-6">
         {enabledSections.map(key => (
           <div key={key} className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="space-y-2">
               <Label htmlFor={`score-${key}`} className="font-medium">
-                {getScoreLabel(key)}:
+                {getScoreLabel(key)}
               </Label>
-              <div className="text-sm text-muted-foreground">
-                Peso: {getScoreWeight(key)}x
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
+              
               <Input
                 id={`score-${key}`}
                 type="number"
@@ -158,10 +225,6 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
                 disabled={!canEdit}
                 className="w-32"
               />
-              
-              <div className="text-sm text-muted-foreground">
-                Pontuação ponderada: <span className="font-medium">{getWeightedScore(key).toFixed(2)}</span>
-              </div>
             </div>
           </div>
         ))}
@@ -174,7 +237,6 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
             </span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 };

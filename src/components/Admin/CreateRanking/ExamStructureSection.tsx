@@ -251,7 +251,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Modified handler for toggle between knowledge types
   const handleKnowledgeTypeToggle = (value: boolean) => {
-    console.log(`Toggling knowledge type to custom: ${value}`);
     setIsCustomKnowledge(value);
     form.setValue('has_custom_knowledge', value);
     if (value) {
@@ -478,18 +477,29 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {!form.watch('has_discursive') && <DropdownMenuItem onClick={() => form.setValue('has_discursive', true)}>
-                  Dissertativa
-                </DropdownMenuItem>}
-                {!form.watch('has_case_study_1') && <DropdownMenuItem onClick={() => form.setValue('has_case_study_1', true)}>
-                  Estudo de Caso
-                </DropdownMenuItem>}
-                {!form.watch('has_case_study_2') && <DropdownMenuItem onClick={() => form.setValue('has_case_study_2', true)}>
-                  Estudo de Caso 2
-                </DropdownMenuItem>}
-                {!form.watch('has_case_study_3') && <DropdownMenuItem onClick={() => form.setValue('has_case_study_3', true)}>
-                  Estudo de Caso 3
-                </DropdownMenuItem>}
+                {!form.watch('has_discursive') && (
+                  <DropdownMenuItem onClick={() => form.setValue('has_discursive', true)}>
+                    Dissertativa
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_case_study_1') && (
+                  <DropdownMenuItem onClick={() => form.setValue('has_case_study_1', true)}>
+                    Estudo de Caso
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_case_study_2') && (
+                  <DropdownMenuItem onClick={() => form.setValue('has_case_study_2', true)}>
+                    Estudo de Caso 2
+                  </DropdownMenuItem>
+                )}
+                {!form.watch('has_case_study_3') && (
+                  <DropdownMenuItem onClick={() => form.setValue('has_case_study_3', true)}>
+                    Estudo de Caso 3
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => form.setValue('has_other_subjective', true)}>
+                  Outro
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -589,6 +599,45 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                 <div>
                   <FormLabel>Peso</FormLabel>
                   <Select value={String(form.watch('case_study_3_weight') || 1)} onValueChange={value => form.setValue('case_study_3_weight', Number(value))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o peso" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>}
+            
+          {/* Outro Subjetivo */}
+          {form.watch('has_other_subjective') && <div className="border p-4 rounded-md mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <h5 className="font-medium">Outro</h5>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  form.setValue('has_other_subjective', false);
+                  form.setValue('other_subjective_name', '');
+                  form.setValue('other_subjective_weight', 1);
+                }} className="text-red-500 hover:text-red-700">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remover
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <FormLabel>Nome da Seção</FormLabel>
+                  <Input 
+                    placeholder="Ex: Prova Prática, Redação, etc." 
+                    value={form.watch('other_subjective_name') || ''} 
+                    onChange={(e) => form.setValue('other_subjective_name', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <FormLabel>Peso</FormLabel>
+                  <Select value={String(form.watch('other_subjective_weight') || 1)} onValueChange={value => form.setValue('other_subjective_weight', Number(value))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o peso" />
                     </SelectTrigger>

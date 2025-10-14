@@ -19,10 +19,10 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
   try {
     // console.log(`[recalculateUserScore] Recalculating scores for ranking`);
     
-    // Obter dados do concurso para aplicar regras específicas
+    // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('*')
+      .select('id, disciplines, has_minimum_score, total_minimum_score, exam_type, alternatives_count, wrong_answer_penalty')
       .eq('id', concursoId)
       .single();
 
@@ -140,15 +140,15 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
     
-    if (!consolidatedAnswers?.consolidated_answer_data) {
-      console.log('[recalculateUserScore] No consolidated answer data found');
+    if (!consolidatedAnswers?.official_answers) {
+      console.log('[recalculateUserScore] No official answers found');
       return { 
         success: false, 
         message: 'Gabarito não encontrado para este concurso' 
       };
     }
 
-    const answerData = consolidatedAnswers.consolidated_answer_data;
+    const answerData = consolidatedAnswers.official_answers;
     const booklets = answerData.booklets || {};
     
     // Usar o primeiro caderno disponível ou 'default'
@@ -184,16 +184,36 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       console.error('Erro ao buscar pontuações subjetivas:', subjectiveScoresError);
     }
     
-    // Pontuações subjetivas e seus pesos
-    const discursiveScore = subjectiveScores?.discursive_score || 0;
-    const caseStudy1Score = subjectiveScores?.case_study_1_score || 0;
-    const caseStudy2Score = subjectiveScores?.case_study_2_score || 0;
-    const caseStudy3Score = subjectiveScores?.case_study_3_score || 0;
+    // Pontuações subjetivas - usar subject_scores JSONB se disponível, senão campos diretos
+    const subjectScores = subjectiveScores?.subject_scores || {};
+    const discursiveScore = subjectScores.discursive || subjectiveScores?.discursive_score || 0;
+    const caseStudy1Score = subjectScores.case_study_1 || subjectiveScores?.case_study_1_score || 0;
+    const caseStudy2Score = subjectScores.case_study_2 || subjectiveScores?.case_study_2_score || 0;
+    const caseStudy3Score = subjectScores.case_study_3 || subjectiveScores?.case_study_3_score || 0;
+    const otherSubjectiveScore = subjectScores.other_subjective || 0;
     
-    const weightedDiscursiveScore = discursiveScore * (concurso.discursive_weight || 1);
-    const weightedCaseStudy1Score = caseStudy1Score * (concurso.case_study_1_weight || 1);
-    const weightedCaseStudy2Score = caseStudy2Score * (concurso.case_study_2_weight || 1);
-    const weightedCaseStudy3Score = caseStudy3Score * (concurso.case_study_3_weight || 1);
+    // Calcular pesos usando JSONB disciplines (prioridade) ou campos diretos (fallback)
+    const getWeightFromDisciplines = (type: string): number => {
+      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        for (const discipline of concurso.disciplines) {
+          if ('disciplines' in discipline) {
+            // Estrutura hierárquica
+            const found = discipline.disciplines?.find(d => d.type === type);
+            if (found) return found.weight || 1;
+          } else {
+            // Estrutura plana
+            if (discipline.type === type) return discipline.weight || 1;
+          }
+        }
+      }
+      return 1; // Fallback
+    };
+    
+    const weightedDiscursiveScore = discursiveScore * getWeightFromDisciplines('discursive');
+    const weightedCaseStudy1Score = caseStudy1Score * getWeightFromDisciplines('case_study_1');
+    const weightedCaseStudy2Score = caseStudy2Score * getWeightFromDisciplines('case_study_2');
+    const weightedCaseStudy3Score = caseStudy3Score * getWeightFromDisciplines('case_study_3');
+    const weightedOtherSubjectiveScore = otherSubjectiveScore * getWeightFromDisciplines('other_subjective');
 
     // Processar pontuações da disciplina baseadas no JSON de disciplinas
     // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)

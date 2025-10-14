@@ -68,38 +68,26 @@ export const useSaveAnswers = ({
         ? String(currentRanking.selected_booklet) 
         : (selectedBookletId ? String(selectedBookletId) : 'default');
 
-      // Chamar a nova função RPC consolidada por concurso
+      // Chamar a nova função RPC consolidada por concurso - APENAS JSONB
       console.log('[useSaveAnswers] Chamando RPC com parâmetros:', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_booklet_id: bookletIdString,
         p_answers: preparedData.answers,
         p_subject_scores: preparedData.subjectScores,
-        p_discursive_score: discursiveScore || 0,
-        p_case_study_1_score: caseStudy1Score || 0,
-        p_case_study_2_score: caseStudy2Score || 0,
-        p_case_study_3_score: caseStudy3Score || 0,
         p_current_edit_count: editCount
       });
       
-      console.log('[useSaveAnswers] Pontuações subjetivas sendo enviadas:', {
-        subjectScores: preparedData.subjectScores,
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score
+      console.log('[useSaveAnswers] Pontuações subjetivas sendo enviadas (JSONB):', {
+        subjectScores: preparedData.subjectScores
       });
       
-      const { data, error } = await supabase.rpc('save_user_answers_consolidated_by_concurso', {
+      const { data, error } = await supabase.rpc('save_user_answers_v3', {
         p_ranking_id: rankingId,
         p_concurso_id: concurso.id,
         p_booklet_id: bookletIdString,
         p_answers: preparedData.answers,
-        p_subject_scores: preparedData.subjectScores,
-        p_discursive_score: discursiveScore || 0,
-        p_case_study_1_score: caseStudy1Score || 0,
-        p_case_study_2_score: caseStudy2Score || 0,
-        p_case_study_3_score: caseStudy3Score || 0,
+        p_subjective_scores: preparedData.subjectScores,
         p_current_edit_count: editCount
       });
 

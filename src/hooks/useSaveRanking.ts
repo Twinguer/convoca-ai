@@ -130,6 +130,19 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
     });
   }
 
+  // Outro Subjetivo
+  if (formValues.has_other_subjective) {
+    disciplines.push({
+      id: 'other-subjective',
+      name: formValues.other_subjective_name || 'Outro Subjetivo',
+      type: 'other_subjective',
+      isEnabled: true,
+      questionCount: 1,
+      weight: formValues.other_subjective_weight || 1,
+      minimum_score: 0
+    });
+  }
+
   // Conhecimentos Customizados
   if (formValues.has_custom_knowledge) {
     disciplines.push({
@@ -375,7 +388,8 @@ export const useSaveRanking = () => {
         titulo: title,
         orgao: orgao,
         banca: formValues.custom_banca || formValues.banca,
-        status: formValues.status || 'Ativo'
+        status: formValues.status || 'Ativo',
+        created_by_user_id: userId
       };
 
       // Remove any temporary fields not needed in database
@@ -501,6 +515,9 @@ export const useSaveRanking = () => {
             has_case_study_1: formValues.has_case_study_1 === true,
             has_case_study_2: formValues.has_case_study_2 === true,
             has_case_study_3: formValues.has_case_study_3 === true,
+            has_other_subjective: formValues.has_other_subjective === true,
+            other_subjective_name: formValues.other_subjective_name || null,
+            other_subjective_weight: formValues.other_subjective_weight || 1,
             // Campos de pontuação mínima para cotas
             has_quota_minimum_score: formValues.has_quota_minimum_score === true,
             quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
@@ -665,6 +682,7 @@ export const useSaveRanking = () => {
       queryClient.invalidateQueries({ queryKey: ['concurso', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concursoIdToUse] });
+      queryClient.invalidateQueries({ queryKey: ['user-created-rankings', userId] });
       // console.log('[useSaveRanking] ✅ Queries invalidadas, dados serão atualizados automaticamente');
       
       if (editId) {

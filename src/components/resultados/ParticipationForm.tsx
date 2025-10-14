@@ -218,20 +218,76 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       }
 
       // Inicializar subject_scores baseado nas seções habilitadas do concurso
+      // Considera tanto campos diretos quanto JSONB disciplines
       const initializeSubjectScores = (concurso: any) => {
         const subjectScores: Record<string, number> = {};
         
-        // Seções de discursivas/estudo de caso
+        // 1. Verificar campos diretos (sistema legacy)
         if (concurso.has_discursive) subjectScores.discursive = 0;
         if (concurso.has_case_study_1) subjectScores.case1 = 0;
         if (concurso.has_case_study_2) subjectScores.case2 = 0;
         if (concurso.has_case_study_3) subjectScores.case3 = 0;
+        if (concurso.has_other_subjective) subjectScores.other = 0;
         
-        // Disciplinas customizadas (se existirem)
-        if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+        // 2. Verificar JSONB disciplines (sistema atual)
+        if (concurso.disciplines) {
           concurso.disciplines.forEach((discipline: any) => {
-            if (discipline.isEnabled && discipline.id) {
-              subjectScores[`custom_${discipline.id}`] = 0;
+            if ('disciplines' in discipline) {
+              // Estrutura hierárquica (blocos)
+              discipline.disciplines?.forEach((d: any) => {
+                if (d.isEnabled) {
+                  switch (d.type) {
+                    case 'discursive':
+                      subjectScores.discursive = 0;
+                      break;
+                    case 'case_study_1':
+                      subjectScores.case1 = 0;
+                      break;
+                    case 'case_study_2':
+                      subjectScores.case2 = 0;
+                      break;
+                    case 'case_study_3':
+                      subjectScores.case3 = 0;
+                      break;
+                    case 'other_subjective':
+                      subjectScores.other = 0;
+                      break;
+                    default:
+                      // Disciplinas customizadas
+                      if (d.id) {
+                        subjectScores[`custom_${d.id}`] = 0;
+                      }
+                      break;
+                  }
+                }
+              });
+            } else {
+              // Estrutura plana
+              if (discipline.isEnabled) {
+                switch (discipline.type) {
+                  case 'discursive':
+                    subjectScores.discursive = 0;
+                    break;
+                  case 'case_study_1':
+                    subjectScores.case1 = 0;
+                    break;
+                  case 'case_study_2':
+                    subjectScores.case2 = 0;
+                    break;
+                  case 'case_study_3':
+                    subjectScores.case3 = 0;
+                    break;
+                  case 'other_subjective':
+                    subjectScores.other = 0;
+                    break;
+                  default:
+                    // Disciplinas customizadas
+                    if (discipline.id) {
+                      subjectScores[`custom_${discipline.id}`] = 0;
+                    }
+                    break;
+                }
+              }
             }
           });
         }

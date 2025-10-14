@@ -81,45 +81,7 @@ export const AnswerSheetHeader: React.FC<AnswerSheetHeaderProps> = ({
             }
           }).flat().filter(Boolean)}
           
-          {/* Keep case study sections as they are not part of disciplines */}
-          {concurso.has_case_study_1 && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Estudo de Caso 1
-                  {concurso.case_study_1_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.case_study_1_weight}
-                    </span>}
-                </p>
-                <p className="text-muted-foreground">Nota de 0 a 100</p>
-              </div>
-            </div>}
-          
-          {concurso.has_case_study_2 && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Estudo de Caso 2
-                  {concurso.case_study_2_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.case_study_2_weight}
-                    </span>}
-                </p>
-                <p className="text-muted-foreground">Nota de 0 a 100</p>
-              </div>
-            </div>}
-          
-          {concurso.has_case_study_3 && <div className="flex items-start">
-              <div>
-                <p className="font-medium flex items-center">
-                  Estudo de Caso 3
-                  {concurso.case_study_3_weight > 0 && <span className="ml-2 flex items-center text-emerald-700 font-medium">
-                      <Scale className="h-3.5 w-3.5 mr-1" />
-                      Peso {concurso.case_study_3_weight}
-                    </span>}
-                </p>
-                <p className="text-muted-foreground">Nota de 0 a 100</p>
-              </div>
-            </div>}
+          {/* All subjective sections are now handled by JSONB disciplines above */}
         </div>
       </div>
     </div>;

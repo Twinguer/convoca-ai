@@ -69,16 +69,17 @@ BEGIN
     -- Preparar pontuações subjetivas (usar subject_scores se disponível, senão usar campos individuais)
     v_subjective_scores := jsonb_build_object(
         'discursive', COALESCE((p_subject_scores->>'discursive')::numeric, p_discursive_score),
-        'case_study_1', COALESCE((p_subject_scores->>'case1')::numeric, p_case_study_1_score),
-        'case_study_2', COALESCE((p_subject_scores->>'case2')::numeric, p_case_study_2_score),
-        'case_study_3', COALESCE((p_subject_scores->>'case3')::numeric, p_case_study_3_score)
+        'case_study_1', COALESCE((p_subject_scores->>'case_study_1')::numeric, p_case_study_1_score),
+        'case_study_2', COALESCE((p_subject_scores->>'case_study_2')::numeric, p_case_study_2_score),
+        'case_study_3', COALESCE((p_subject_scores->>'case_study_3')::numeric, p_case_study_3_score),
+        'other_subjective', COALESCE((p_subject_scores->>'other_subjective')::numeric, 0)
     );
     
     -- Adicionar disciplinas customizadas do subject_scores
     IF p_subject_scores IS NOT NULL AND p_subject_scores != '{}'::jsonb THEN
         FOR key, value IN SELECT * FROM jsonb_each(p_subject_scores)
         LOOP
-            IF key NOT IN ('discursive', 'case1', 'case2', 'case3') THEN
+            IF key NOT IN ('discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective') THEN
                 v_subjective_scores := jsonb_set(v_subjective_scores, ARRAY[key], value);
             END IF;
         END LOOP;
@@ -140,9 +141,9 @@ BEGIN
     UPDATE user_rankings
     SET 
         discursive_score = COALESCE((p_subject_scores->>'discursive')::numeric, p_discursive_score),
-        case_study_1_score = COALESCE((p_subject_scores->>'case1')::numeric, p_case_study_1_score),
-        case_study_2_score = COALESCE((p_subject_scores->>'case2')::numeric, p_case_study_2_score),
-        case_study_3_score = COALESCE((p_subject_scores->>'case3')::numeric, p_case_study_3_score),
+        case_study_1_score = COALESCE((p_subject_scores->>'case_study_1')::numeric, p_case_study_1_score),
+        case_study_2_score = COALESCE((p_subject_scores->>'case_study_2')::numeric, p_case_study_2_score),
+        case_study_3_score = COALESCE((p_subject_scores->>'case_study_3')::numeric, p_case_study_3_score),
         subject_scores = p_subject_scores,
         edit_count = v_edit_count,
         updated_at = now()

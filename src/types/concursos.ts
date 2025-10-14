@@ -74,6 +74,7 @@ export interface Concurso {
   has_case_study_1?: boolean;
   has_case_study_2?: boolean;
   has_case_study_3?: boolean;
+  has_other_subjective?: boolean;
 
   basic_knowledge_questions?: number;
   specific_knowledge_1_questions?: number;
@@ -88,6 +89,8 @@ export interface Concurso {
   case_study_1_weight?: number;
   case_study_2_weight?: number;
   case_study_3_weight?: number;
+  other_subjective_name?: string;
+  other_subjective_weight?: number;
   custom_knowledge_questions?: number;
   custom_knowledge_weight?: number;
 

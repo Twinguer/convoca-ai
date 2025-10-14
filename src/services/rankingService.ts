@@ -15,11 +15,13 @@ export interface Ranking {
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
+  otherSubjectiveScore?: number | null;
   // Pontuações subjetivas com peso
   weightedDiscursiveScore?: number | null;
   weightedCaseStudy1Score?: number | null;
   weightedCaseStudy2Score?: number | null;
   weightedCaseStudy3Score?: number | null;
+  weightedOtherSubjectiveScore?: number | null;
   // Pontuações de disciplinas customizadas
   customDisciplineScores?: { [key: string]: number };
   weightedCustomDisciplineScores?: { [key: string]: number };
@@ -81,10 +83,6 @@ export const fetchUserRankings = async (
         created_at,
         "weightedCustomDisciplineScores",
         "customDisciplineScores",
-        "weighted_discursive_score",
-        "weighted_case_study_1_score", 
-        "weighted_case_study_2_score",
-        "weighted_case_study_3_score",
         subject_scores,
         users_profiles!inner(
           id,
@@ -139,14 +137,16 @@ export const fetchUserRankings = async (
         avatarUrl: avatarUrl,
         // Pontuações subjetivas (do subject_scores)
         discursiveScore: ranking.subject_scores?.discursive || 0,
-        caseStudy1Score: ranking.subject_scores?.case1 || 0,
-        caseStudy2Score: ranking.subject_scores?.case2 || 0,
-        caseStudy3Score: ranking.subject_scores?.case3 || 0,
-        // Pontuações subjetivas com peso
-        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
-        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
-        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
-        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
+        caseStudy1Score: ranking.subject_scores?.case_study_1 || 0,
+        caseStudy2Score: ranking.subject_scores?.case_study_2 || 0,
+        caseStudy3Score: ranking.subject_scores?.case_study_3 || 0,
+        otherSubjectiveScore: ranking.subject_scores?.other_subjective || 0,
+        // Pontuações subjetivas com peso - calcular a partir do JSONB
+        weightedDiscursiveScore: (ranking.subject_scores?.discursive || 0) * 1, // Peso será calculado dinamicamente
+        weightedCaseStudy1Score: (ranking.subject_scores?.case_study_1 || 0) * 1,
+        weightedCaseStudy2Score: (ranking.subject_scores?.case_study_2 || 0) * 1,
+        weightedCaseStudy3Score: (ranking.subject_scores?.case_study_3 || 0) * 1,
+        weightedOtherSubjectiveScore: (ranking.subject_scores?.other_subjective || 0) * 1,
         // Pontuações de disciplinas customizadas
         customDisciplineScores: ranking.customDisciplineScores || {},
         weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores || {},

@@ -1,0 +1,7 @@
+################## DUMP NOMEIA AI #####################
+
+"C:\Program Files\PostgreSQL\18\bin\pg_dump.exe" -h db.ppsymqrdtjyaguftracc.supabase.co -U postgres -d postgres -F p -f nomeia-ai-dump.sql
+
+psql "postgresql://postgres:OBAaEtWWofMUF82Y@db.pbsxnmioktgniyoyqqwb.supabase.co:5432/postgres" < nomeia-ai-dump.sql
+
+Senha Supa nomeia-ai: OBAaEtWWofMUF82Y

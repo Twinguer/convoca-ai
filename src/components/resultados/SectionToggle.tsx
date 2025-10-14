@@ -22,7 +22,6 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
     
     // Always use disciplines structure (new system)
     if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      console.log('[SectionToggle] Usando estrutura de disciplinas');
       const hierarchical = isHierarchicalStructure(concurso);
       
       if (hierarchical) {
@@ -59,9 +58,6 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
   const hasCaseStudy2 = concurso.has_case_study_2;
   const hasCaseStudy3 = concurso.has_case_study_3;
 
-  // Registrar no console para depuração
-  console.log('SectionToggle - enabled disciplines:', enabledDisciplines);
-  console.log('SectionToggle - selected section:', selectedSection);
 
   return (
     <div className="bg-muted/30 border-b border-border overflow-x-auto">

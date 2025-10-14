@@ -29,6 +29,7 @@ interface FormValues {
   caseStudy1Score: number;
   caseStudy2Score: number;
   caseStudy3Score: number;
+  otherSubjectiveScore: number;
   [key: string]: number; // Para campos dinâmicos como customDiscipline_*
 }
 
@@ -57,6 +58,9 @@ const createFormSchema = (concurso?: Concurso) => {
       .min(0, 'A nota não pode ser negativa')
       .max(100, 'A nota não pode ser maior que 100'),
     caseStudy3Score: z.coerce.number()
+      .min(0, 'A nota não pode ser negativa')
+      .max(100, 'A nota não pode ser maior que 100'),
+    otherSubjectiveScore: z.coerce.number()
       .min(0, 'A nota não pode ser negativa')
       .max(100, 'A nota não pode ser maior que 100'),
   };
@@ -95,6 +99,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       caseStudy1Score: 0,
       caseStudy2Score: 0,
       caseStudy3Score: 0,
+      otherSubjectiveScore: 0,
     };
 
     // Add custom discipline default values
@@ -410,6 +415,33 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
                     </FormControl>
                     <FormDescription>
                       Sua nota no estudo de caso 3 (0-100)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Outro Subjetivo Score */}
+            {concurso.has_other_subjective && (
+              <FormField
+                control={form.control}
+                name="otherSubjectiveScore"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {concurso.other_subjective_name || 'Outro Subjetivo'}
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="Ex: 75.0" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Sua nota na seção subjetiva personalizada (0-100)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

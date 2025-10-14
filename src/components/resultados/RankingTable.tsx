@@ -491,6 +491,28 @@ const RankingTableContent: React.FC<{
         {concurso.has_case_study_2 === true && <TableHead className="text-right">ec2</TableHead>}
         
         {concurso.has_case_study_3 === true && <TableHead className="text-right">ec3</TableHead>}
+        
+        {(() => {
+          // Verificar se tem seção "Outro" usando sistema híbrido
+          const hasOtherDirect = concurso.has_other_subjective === true;
+          const hasOtherJsonb = concurso.disciplines?.some(discipline => {
+            if ('disciplines' in discipline) {
+              return discipline.disciplines?.some(d => 
+                d.isEnabled && d.type === 'other_subjective'
+              );
+            } else {
+              return discipline.isEnabled && discipline.type === 'other_subjective';
+            }
+          }) || false;
+          
+          const hasOther = hasOtherDirect || hasOtherJsonb;
+          
+          return hasOther ? (
+            <TableHead className="text-right">
+              {concurso.other_subjective_name || 'Outro'}
+            </TableHead>
+          ) : null;
+        })()}
           
         {isAdminMode && isAuthenticated && <TableHead className="w-24">Ações</TableHead>}
       </TableRow>
@@ -584,12 +606,55 @@ const RankingTableContent: React.FC<{
                 {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
               </TableCell>}
             
+            {(() => {
+              // Verificar se tem seção "Outro" usando sistema híbrido
+              const hasOtherDirect = concurso.has_other_subjective === true;
+              const hasOtherJsonb = concurso.disciplines?.some(discipline => {
+                if ('disciplines' in discipline) {
+                  return discipline.disciplines?.some(d => 
+                    d.isEnabled && d.type === 'other_subjective'
+                  );
+                } else {
+                  return discipline.isEnabled && discipline.type === 'other_subjective';
+                }
+              }) || false;
+              
+              const hasOther = hasOtherDirect || hasOtherJsonb;
+              
+              return hasOther ? (
+                <TableCell className="text-right">
+                  {Number(ranking.subject_scores?.other || 0).toFixed(2)}
+                </TableCell>
+              ) : null;
+            })()}
+            
             {isAdminMode && isAuthenticated && <TableCell>
                 <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
               </TableCell>}
           </TableRow>;
     }) : <TableRow>
-          <TableCell colSpan={4 + customDisciplines.length + (concurso.has_discursive ? 1 : 0) + (concurso.has_case_study_1 ? 1 : 0) + (concurso.has_case_study_2 ? 1 : 0) + (concurso.has_case_study_3 ? 1 : 0) + (isAdminMode && isAuthenticated ? 1 : 0)} className="text-center py-4">
+          <TableCell colSpan={(() => {
+            // Calcular colSpan usando sistema híbrido
+            const hasOtherDirect = concurso.has_other_subjective === true;
+            const hasOtherJsonb = concurso.disciplines?.some(discipline => {
+              if ('disciplines' in discipline) {
+                return discipline.disciplines?.some(d => 
+                  d.isEnabled && d.type === 'other_subjective'
+                );
+              } else {
+                return discipline.isEnabled && discipline.type === 'other_subjective';
+              }
+            }) || false;
+            const hasOther = hasOtherDirect || hasOtherJsonb;
+            
+            return 4 + customDisciplines.length + 
+                   (concurso.has_discursive ? 1 : 0) + 
+                   (concurso.has_case_study_1 ? 1 : 0) + 
+                   (concurso.has_case_study_2 ? 1 : 0) + 
+                   (concurso.has_case_study_3 ? 1 : 0) + 
+                   (hasOther ? 1 : 0) + 
+                   (isAdminMode && isAuthenticated ? 1 : 0);
+          })()} className="text-center py-4">
             Nenhum participante registrado nesta lista ainda
           </TableCell>
         </TableRow>}

@@ -44,7 +44,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
           orgao,
           banca,
           created_at,
-          created_at,
+          created_by_user_id,
           is_admin_created
         `).eq('created_by_user_id', userId).order('created_at', {
         ascending: false

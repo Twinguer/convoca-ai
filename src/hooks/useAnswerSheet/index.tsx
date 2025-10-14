@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso, SectionType } from '@/types/concursos';
@@ -41,7 +40,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     caseStudy2Score,
     setCaseStudy2Score,
     caseStudy3Score,
-    setCaseStudy3Score
+    setCaseStudy3Score,
+    otherSubjectiveScore,
+    setOtherSubjectiveScore
   } = useScoreManagement();
 
   // Get answer management functions and state from useAnswerManagement hook

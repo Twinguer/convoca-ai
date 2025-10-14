@@ -181,16 +181,19 @@ export const consolidatedAnswerService = {
         answersObject[answer.questionNumber.toString()] = answer.answer;
       });
 
-        const { data, error } = await supabase.rpc('save_user_answers_consolidated_by_concurso', {
+        const { data, error } = await supabase.rpc('save_user_answers_v3', {
+          p_ranking_id: rankingId,
           p_concurso_id: concursoId,
-        p_booklet_id: bookletIdString,
-        p_answers: answersObject,
-        p_discursive_score: discursiveScore,
-        p_case_study_1_score: caseStudy1Score,
-        p_case_study_2_score: caseStudy2Score,
-        p_case_study_3_score: caseStudy3Score,
-        p_current_edit_count: editCount
-      });
+          p_booklet_id: bookletIdString,
+          p_answers: answersObject,
+          p_subjective_scores: {
+            'discursive': discursiveScore,
+            'case_study_1': caseStudy1Score,
+            'case_study_2': caseStudy2Score,
+            'case_study_3': caseStudy3Score
+          },
+          p_current_edit_count: editCount
+        });
 
       if (error) {
         console.error('[consolidatedAnswerService] RPC Error:', error);

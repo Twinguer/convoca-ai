@@ -26,17 +26,16 @@ interface ConsolidatedAnswers {
   };
 }
 
-// Função para buscar as respostas consolidadas
-export const fetchUserAnswers = async (rankingId: string) => {
+// Função para buscar as respostas consolidadas (NOVA ESTRUTURA)
+export const fetchUserAnswers = async (rankingId: string, concursoId?: string) => {
   try {
-    // console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
+    console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
 
-    // Buscar dados consolidados usando nova estrutura
+    // Buscar dados consolidados da nova estrutura
     const { data, error } = await supabase
-      .from('user_answers')
-      .select('answers_data')
-      .eq('user_ranking_id', rankingId)
-      .is('question_number', null)
+      .from('user_rankings')
+      .select('consolidated_data, subjective_scores, selected_booklet, edit_count')
+      .eq('id', rankingId)
       .single();
       
     if (error) {
@@ -44,36 +43,64 @@ export const fetchUserAnswers = async (rankingId: string) => {
       return {};
     }
 
-    if (!data?.answers_data) {
+    if (!data?.consolidated_data || data.consolidated_data === '{}') {
       console.log('[fetchUserAnswers] No consolidated data found');
       return {};
     }
 
-    const consolidatedData = data.answers_data as ConsolidatedAnswers;
+    const consolidatedData = data.consolidated_data;
+    const subjectiveScores = data.subjective_scores || {};
+    const selectedBooklet = data.selected_booklet;
+    const editCount = data.edit_count || 0;
+
     console.log('[fetchUserAnswers] Retrieved consolidated data:', consolidatedData);
 
-    // Extrair respostas de todos os cadernos para compatibilidade
-    const answers: { [key: number]: string } = {};
-    
-    if (consolidatedData.booklets) {
-      Object.values(consolidatedData.booklets).forEach(booklet => {
-        if (booklet.answers) {
-          Object.entries(booklet.answers).forEach(([questionNum, answer]) => {
-            answers[parseInt(questionNum)] = answer;
+    // Se especificou concurso, buscar apenas dados desse concurso
+    let answers: { [key: number]: string } = {};
+    let subjectiveScoresForConcurso = {};
+
+    if (concursoId) {
+      const concursoKey = concursoId;
+      const concursoData = consolidatedData[concursoKey];
+      
+      if (concursoData?.answers) {
+        // Buscar respostas do caderno selecionado ou primeiro disponível
+        const bookletId = selectedBooklet || Object.keys(concursoData.answers)[0];
+        if (bookletId && concursoData.answers[bookletId]) {
+          Object.entries(concursoData.answers[bookletId]).forEach(([questionNum, answer]) => {
+            answers[parseInt(questionNum)] = answer as string;
+          });
+        }
+      }
+      
+      subjectiveScoresForConcurso = subjectiveScores[concursoKey] || {};
+    } else {
+      // Buscar respostas de todos os concursos (compatibilidade)
+      Object.values(consolidatedData).forEach((concursoData: any) => {
+        if (concursoData?.answers) {
+          Object.values(concursoData.answers).forEach((booklet: any) => {
+            if (booklet) {
+              Object.entries(booklet).forEach(([questionNum, answer]) => {
+                answers[parseInt(questionNum)] = answer as string;
+              });
+            }
           });
         }
       });
+      
+      subjectiveScoresForConcurso = subjectiveScores;
     }
 
     return {
       answers,
-      discursiveScore: consolidatedData.subjective_scores?.discursive || null,
-      caseStudy1Score: consolidatedData.subjective_scores?.case_study_1 || null,
-      caseStudy2Score: consolidatedData.subjective_scores?.case_study_2 || null,
-      caseStudy3Score: consolidatedData.subjective_scores?.case_study_3 || null,
-      selectedBooklet: consolidatedData.selected_booklet || null,
-      editCount: consolidatedData.total_edit_count || 0,
-      consolidatedData // Retornar dados completos para uso avançado
+      discursiveScore: subjectiveScoresForConcurso?.discursive || null,
+      caseStudy1Score: subjectiveScoresForConcurso?.case_study_1 || null,
+      caseStudy2Score: subjectiveScoresForConcurso?.case_study_2 || null,
+      caseStudy3Score: subjectiveScoresForConcurso?.case_study_3 || null,
+      selectedBooklet: selectedBooklet,
+      editCount: editCount,
+      consolidatedData, // Retornar dados completos para uso avançado
+      subjectiveScores: subjectiveScoresForConcurso
     };
   } catch (error) {
     console.error('[fetchUserAnswers] Erro ao buscar respostas consolidadas:', error);
@@ -81,13 +108,26 @@ export const fetchUserAnswers = async (rankingId: string) => {
   }
 };
 
-// Função para buscar respostas de um caderno específico
-export const fetchUserAnswersForBooklet = async (rankingId: string, bookletId: string) => {
+// Função para buscar respostas de um caderno específico (NOVA ESTRUTURA)
+export const fetchUserAnswersForBooklet = async (rankingId: string, bookletId: string, concursoId?: string) => {
   try {
-    const result = await fetchUserAnswers(rankingId);
+    const result = await fetchUserAnswers(rankingId, concursoId);
     
-    if (result.consolidatedData?.booklets?.[bookletId]) {
-      return result.consolidatedData.booklets[bookletId].answers;
+    if (result.consolidatedData) {
+      // Buscar em todos os concursos se não especificado
+      if (concursoId) {
+        const concursoData = result.consolidatedData[concursoId];
+        if (concursoData?.answers?.[bookletId]) {
+          return concursoData.answers[bookletId];
+        }
+      } else {
+        // Buscar em todos os concursos
+        for (const concursoData of Object.values(result.consolidatedData)) {
+          if (concursoData?.answers?.[bookletId]) {
+            return concursoData.answers[bookletId];
+          }
+        }
+      }
     }
     
     return {};
