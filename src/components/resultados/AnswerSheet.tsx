@@ -58,6 +58,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   concurso.has_case_study_3 || 
   concurso.has_other_subjective;
 
+
   // Fetch user ranking data first to get selectedBookletId
   const {
     data: userRankingData,
@@ -286,53 +287,49 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 
-  // Initialize subject_scores from user ranking data - NOVA ESTRUTURA JSONB
+  // Initialize subject_scores from user ranking data - CONTROLADO PELOS CAMPOS has_X DO CONCURSO
   useEffect(() => {
+    const initialScores: Record<string, number> = {};
+    
+    // Se há dados do banco, usar como base (mas filtrar apenas subjetivas ativas)
     if (userRankingData?.subject_scores) {
-      setSubjectScores(userRankingData.subject_scores);
-    } else {
-      // Initialize with default values based on JSONB disciplines structure
-      const initialScores: Record<string, number> = {};
-      
-      // Process JSONB disciplines to find subjective types ONLY
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        concurso.disciplines.forEach((discipline: any) => {
-          if ('disciplines' in discipline) {
-            // Hierarchical structure (blocks -> disciplines)
-            discipline.disciplines?.forEach((nestedDiscipline: any) => {
-              if (nestedDiscipline.isEnabled && nestedDiscipline.type) {
-                // ONLY include subjective types
-                if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(nestedDiscipline.type)) {
-                  initialScores[nestedDiscipline.type] = 0;
-                }
-                // Skip custom disciplines that are not subjective
-              }
-            });
-          } else {
-            // Flat structure
-            if (discipline.isEnabled && discipline.type) {
-              // ONLY include subjective types
-              if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
-                initialScores[discipline.type] = 0;
-              }
-              // Skip custom disciplines that are not subjective
-            }
-          }
-        });
+      // Preservar apenas as chaves subjetivas que estão ativas no concurso
+      if (concurso.has_discursive && userRankingData.subject_scores.discursive !== undefined) {
+        initialScores.discursive = userRankingData.subject_scores.discursive;
       }
-      
-      // Fallback para campos diretos (compatibilidade)
-      if (concurso.has_discursive) initialScores.discursive = 0;
-      if (concurso.has_case_study_1) initialScores.case_study_1 = 0;
-      if (concurso.has_case_study_2) initialScores.case_study_2 = 0;
-      if (concurso.has_case_study_3) initialScores.case_study_3 = 0;
-      if (concurso.has_other_subjective) {
-        // Sempre usar 'other_subjective' como chave, independente do nome
-        initialScores.other_subjective = 0;
+      if (concurso.has_case_study_1 && userRankingData.subject_scores.case_study_1 !== undefined) {
+        initialScores.case_study_1 = userRankingData.subject_scores.case_study_1;
       }
-      
-      setSubjectScores(initialScores);
+      if (concurso.has_case_study_2 && userRankingData.subject_scores.case_study_2 !== undefined) {
+        initialScores.case_study_2 = userRankingData.subject_scores.case_study_2;
+      }
+      if (concurso.has_case_study_3 && userRankingData.subject_scores.case_study_3 !== undefined) {
+        initialScores.case_study_3 = userRankingData.subject_scores.case_study_3;
+      }
+      if (concurso.has_other_subjective && userRankingData.subject_scores.other_subjective !== undefined) {
+        initialScores.other_subjective = userRankingData.subject_scores.other_subjective;
+      }
     }
+    
+    // SEMPRE aplicar os campos ativos do concurso (fonte primária de verdade)
+    if (concurso.has_discursive) {
+      initialScores.discursive = initialScores.discursive || 0;
+    }
+    if (concurso.has_case_study_1) {
+      initialScores.case_study_1 = initialScores.case_study_1 || 0;
+    }
+    if (concurso.has_case_study_2) {
+      initialScores.case_study_2 = initialScores.case_study_2 || 0;
+    }
+    if (concurso.has_case_study_3) {
+      initialScores.case_study_3 = initialScores.case_study_3 || 0;
+    }
+    if (concurso.has_other_subjective) {
+      // Sempre usar 'other_subjective' como chave, independente do nome
+      initialScores.other_subjective = initialScores.other_subjective || 0;
+    }
+    
+    setSubjectScores(initialScores);
   }, [userRankingData, concurso]);
 
   // Update nullified questions set

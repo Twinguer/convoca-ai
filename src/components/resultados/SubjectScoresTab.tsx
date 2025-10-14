@@ -149,52 +149,9 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     );
   }
 
-  // Filtrar apenas as seções habilitadas no concurso - JSONB + CAMPOS DIRETOS
+  // Filtrar apenas as seções habilitadas no concurso - CONTROLADO PELOS CAMPOS has_X
   const enabledSections = Object.keys(localScores).filter(key => {
-    // Primeiro, verificar no JSONB disciplines
-    if (concurso.disciplines) {
-      const foundInJsonb = concurso.disciplines.some(discipline => {
-        if ('disciplines' in discipline) {
-          // Estrutura hierárquica (blocos)
-          return discipline.disciplines?.some(d => {
-            if (!d.isEnabled) return false;
-            
-            // Check for standard subjective types
-            if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
-              return d.type === key;
-            }
-            
-            // Check for custom disciplines - ONLY if they are subjective
-            if (key.startsWith('custom_')) {
-              // Only include custom disciplines that are explicitly subjective
-              return false; // Skip all custom disciplines for now
-            }
-            
-            return false;
-          });
-        } else {
-          // Estrutura plana
-          if (!discipline.isEnabled) return false;
-          
-          // Check for standard subjective types
-          if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
-            return discipline.type === key;
-          }
-          
-          // Check for custom disciplines - ONLY if they are subjective
-          if (key.startsWith('custom_')) {
-            // Only include custom disciplines that are explicitly subjective
-            return false; // Skip all custom disciplines for now
-          }
-          
-          return false;
-        }
-      });
-      
-      if (foundInJsonb) return true;
-    }
-    
-    // Fallback para campos diretos (compatibilidade)
+    // Verificar se a chave existe no localScores E se o campo correspondente está ativo no concurso
     if (key === 'discursive' && concurso.has_discursive) return true;
     if (key === 'case_study_1' && concurso.has_case_study_1) return true;
     if (key === 'case_study_2' && concurso.has_case_study_2) return true;
