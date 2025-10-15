@@ -38,35 +38,27 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
     try {
       // console.log('Fetching existing answers for ranking ID:', rankingId);
 
-      // Fetch answers from consolidated_answers_by_concurso
-      const { data: rankingData, error: rankingError } = await supabase
+      // Fetch answers from user_rankings consolidated_data
+      const { data: userRankingData, error: rankingError } = await supabase
         .from('user_rankings')
-        .select('concurso_id, user_id, selected_booklet')
-        .eq('id', rankingId)
-        .single();
-
-      if (rankingError) throw rankingError;
-
-      const { data: consolidatedData, error: consolidatedError } = await supabase
-        .from('consolidated_answers_by_concurso')
         .select('consolidated_data')
-        .eq('concurso_id', rankingData.concurso_id)
+        .eq('user_id', user.id)
         .single();
 
-      if (consolidatedError) {
-        console.log('No consolidated data found, using empty answers');
+      if (rankingError) {
+        console.log('No user ranking data found, using empty answers');
         return;
       }
 
-      console.log('Fetched consolidated data:', consolidatedData.consolidated_data);
+      console.log('Fetched user ranking data:', userRankingData.consolidated_data);
 
       // Extract user answers from consolidated data
-      const userData = consolidatedData.consolidated_data?.users?.[rankingData.user_id];
-      if (userData?.booklets) {
-        const selectedBookletId = rankingData.selected_booklet?.toString();
-        const bookletData = selectedBookletId ? userData.booklets[selectedBookletId] : null;
+      const rankingData = userRankingData.consolidated_data?.rankings?.[rankingId];
+      if (rankingData?.user_data?.answers) {
+        const selectedBookletId = rankingData.selected_booklet_id;
+        const bookletData = selectedBookletId ? rankingData.user_data.answers[selectedBookletId] : null;
         
-        if (bookletData?.answers) {
+        if (bookletData) {
           const answersMap: { [key: number]: string } = {};
           const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
 

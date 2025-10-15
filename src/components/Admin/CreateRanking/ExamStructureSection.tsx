@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
@@ -478,7 +478,11 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 {!form.watch('has_discursive') && (
-                  <DropdownMenuItem onClick={() => form.setValue('has_discursive', true)}>
+                  <DropdownMenuItem onClick={() => {
+                    console.log('Adding discursive section');
+                    form.setValue('has_discursive', true);
+                    form.setValue('discursive_minimum_score', 0);
+                  }}>
                     Dissertativa
                   </DropdownMenuItem>
                 )}
@@ -516,17 +520,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <FormLabel>Peso</FormLabel>
-                  <Select value={String(form.watch('discursive_weight') || 1)} onValueChange={value => form.setValue('discursive_weight', Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o peso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Nota Mínima</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Ex: 6.0"
+                    value={form.watch('discursive_minimum_score') || ''}
+                    onChange={(e) => form.setValue('discursive_minimum_score', Number(e.target.value))}
+                  />
+                  <FormDescription>
+                    Nota mínima necessária para aprovação nesta seção
+                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -543,17 +549,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <FormLabel>Peso</FormLabel>
-                  <Select value={String(form.watch('case_study_1_weight') || 1)} onValueChange={value => form.setValue('case_study_1_weight', Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o peso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Nota Mínima</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Ex: 6.0"
+                    value={form.watch('case_study_1_minimum_score') || ''}
+                    onChange={(e) => form.setValue('case_study_1_minimum_score', Number(e.target.value))}
+                  />
+                  <FormDescription>
+                    Nota mínima necessária para aprovação nesta seção
+                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -570,17 +578,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <FormLabel>Peso</FormLabel>
-                  <Select value={String(form.watch('case_study_2_weight') || 1)} onValueChange={value => form.setValue('case_study_2_weight', Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o peso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Nota Mínima</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Ex: 6.0"
+                    value={form.watch('case_study_2_minimum_score') || ''}
+                    onChange={(e) => form.setValue('case_study_2_minimum_score', Number(e.target.value))}
+                  />
+                  <FormDescription>
+                    Nota mínima necessária para aprovação nesta seção
+                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -597,21 +607,23 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <FormLabel>Peso</FormLabel>
-                  <Select value={String(form.watch('case_study_3_weight') || 1)} onValueChange={value => form.setValue('case_study_3_weight', Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o peso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Nota Mínima</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Ex: 6.0"
+                    value={form.watch('case_study_3_minimum_score') || ''}
+                    onChange={(e) => form.setValue('case_study_3_minimum_score', Number(e.target.value))}
+                  />
+                  <FormDescription>
+                    Nota mínima necessária para aprovação nesta seção
+                  </FormDescription>
                 </div>
               </div>
             </div>}
-            
+          
           {/* Outro Subjetivo */}
           {form.watch('has_other_subjective') && <div className="border p-4 rounded-md mb-4">
               <div className="flex justify-between items-center mb-4">
@@ -619,7 +631,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                 <Button variant="ghost" size="sm" onClick={() => {
                   form.setValue('has_other_subjective', false);
                   form.setValue('other_subjective_name', '');
-                  form.setValue('other_subjective_weight', 1);
                 }} className="text-red-500 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Remover
@@ -636,17 +647,19 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   />
                 </div>
                 <div>
-                  <FormLabel>Peso</FormLabel>
-                  <Select value={String(form.watch('other_subjective_weight') || 1)} onValueChange={value => form.setValue('other_subjective_weight', Number(value))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o peso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Nota Mínima</FormLabel>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Ex: 6.0"
+                    value={form.watch('other_subjective_minimum_score') || ''}
+                    onChange={(e) => form.setValue('other_subjective_minimum_score', Number(e.target.value))}
+                  />
+                  <FormDescription>
+                    Nota mínima necessária para aprovação nesta seção
+                  </FormDescription>
                 </div>
               </div>
             </div>}

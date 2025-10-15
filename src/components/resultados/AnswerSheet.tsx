@@ -186,7 +186,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setCheckingOfficialAnswers(true);
       try {
         console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
-        const result = await checkMissingOfficialAnswers(concurso.id, selectedBookletIdFromData || 'default');
+        // Se não há caderno selecionado, usar o primeiro caderno disponível
+        const bookletToCheck = selectedBookletIdFromData || (examBooklets && examBooklets.length > 0 ? examBooklets[0].id : 'default');
+        const result = await checkMissingOfficialAnswers(concurso.id, bookletToCheck);
 
         if (result) {
           console.warn(`[AnswerSheet] Gabarito oficial incompleto ou não encontrado!`, result);
@@ -253,6 +255,15 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     answersCount: Object.keys(answers).length
   });
 
+  console.log('[AnswerSheet] DEBUG - Parâmetros para useSaveAnswers:', {
+    selectedBookletIdFromData,
+    selectedBookletIdFromDataType: typeof selectedBookletIdFromData,
+    selectedBookletIdFromDataLength: selectedBookletIdFromData?.length,
+    selectedBookletIdFromDataTrimmed: selectedBookletIdFromData?.trim(),
+    isEmpty: selectedBookletIdFromData?.trim() === '',
+    isUndefined: selectedBookletIdFromData === undefined
+  });
+
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -261,10 +272,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setError,
     setSavedSuccess,
     onSuccess,
-    discursiveScore,
-    caseStudy1Score,
-    caseStudy2Score,
-    caseStudy3Score,
+    discursiveScore: subjectScores.discursive || 0,
+    caseStudy1Score: subjectScores.case_study_1 || 0,
+    caseStudy2Score: subjectScores.case_study_2 || 0,
+    caseStudy3Score: subjectScores.case_study_3 || 0,
     subjectScores,
     editCount: userRankingData?.edit_count || 0,
     nullifiedQuestions,
@@ -391,6 +402,15 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const effectivelyAnsweredQuestions = answeredQuestions +
       Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
+    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Validação de questões:', {
+      totalQuestions,
+      answeredQuestions,
+      nullifiedQuestions: Array.from(nullifiedQuestions),
+      effectivelyAnsweredQuestions,
+      examType: concurso.exam_type,
+      answers: Object.keys(answers).length
+    });
+
     // Para provas "Certo ou Errado", permitir questões em branco
     // Para provas de múltipla escolha, exigir todas as respostas
     const isCertoErrado = concurso.exam_type === 'Certo ou Errado';
@@ -408,13 +428,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
 
       if (unansweredQuestions.length > 0) {
-        setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
-        return;
+        console.log('[AnswerSheet.handleSaveAnswers] AVISO - Questões não respondidas:', unansweredQuestions);
+        console.log('[AnswerSheet.handleSaveAnswers] PERMITINDO SALVAMENTO MESMO COM QUESTÕES VAZIAS');
+        // COMENTADO PARA PERMITIR SALVAMENTO EM consolidated_data
+        // setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
+        // return;
       }
     }
 
     try {
       console.log("[AnswerSheet] Iniciando processo de salvamento");
+      console.log("[AnswerSheet] Chamando saveAnswersService para salvar em consolidated_data");
       setIsSaving(true);
       setError(null);
 

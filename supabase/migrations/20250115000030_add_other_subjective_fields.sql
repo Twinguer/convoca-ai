@@ -10,3 +10,4 @@ COMMENT ON COLUMN concursos.other_subjective_name IS 'Nome personalizado da seç
 COMMENT ON COLUMN concursos.other_subjective_weight IS 'Peso da seção subjetiva personalizada no cálculo da nota final';
 
 
+

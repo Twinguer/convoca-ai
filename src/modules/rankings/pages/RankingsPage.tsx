@@ -68,14 +68,27 @@ const RankingsPage = () => {
 
       // Load participant count for each concurso
       const concursosWithParticipants = await Promise.all((data || []).map(async concurso => {
-        const {
-          count
-        } = await supabase.from('user_rankings').select('id', {
-          count: 'exact'
-        }).eq('concurso_id', concurso.id);
+        // Count users who have this concurso in their consolidated_data
+        const { data: userRankings } = await supabase
+          .from('user_rankings')
+          .select('consolidated_data');
+        
+        let participantCount = 0;
+        if (userRankings) {
+          userRankings.forEach(userRanking => {
+            if (userRanking.consolidated_data?.rankings) {
+              Object.values(userRanking.consolidated_data.rankings).forEach((ranking: any) => {
+                if (ranking.concurso_id === concurso.id) {
+                  participantCount++;
+                }
+              });
+            }
+          });
+        }
+        
         return {
           ...concurso,
-          participant_count: count || 0
+          participant_count: participantCount
         };
       }));
       setConcursos(concursosWithParticipants);

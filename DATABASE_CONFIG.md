@@ -86,3 +86,4 @@ cat .env.local | grep VITE_SUPABASE_URL
 - 🔄 **Sincronização**: Automática via dump/restore
 
 
+

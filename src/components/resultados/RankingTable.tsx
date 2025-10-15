@@ -188,19 +188,28 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   };
 
   const handleUserClick = async (userId: string) => {
+    console.log('handleUserClick called with userId:', userId);
+    
+    if (!userId || userId === 'undefined') {
+      console.error('Invalid userId:', userId);
+      return;
+    }
+    
     if (!isAuthenticated) {
-      navigate('/auth', { state: { from: '/comunidade' } });
+      navigate('/auth', { state: { from: window.location.pathname } });
       return;
     }
     
     try {
       // Usar o sistema de ofuscação de URLs para navegar para o perfil
       const secureUrl = await UserUrlObfuscationService.generateSecureProfileUrl(userId);
+      console.log('Generated secure URL:', secureUrl);
       navigate(secureUrl);
     } catch (error) {
       console.error('Erro ao gerar URL segura de usuário:', error);
-      // Fallback para página de comunidade em caso de erro
-      navigate('/comunidade');
+      // Fallback: usar a rota correta do sistema
+      console.log('Using fallback URL:', `/usuario/profile/${userId}`);
+      navigate(`/usuario/profile/${userId}`);
     }
   };
 
@@ -520,9 +529,12 @@ const RankingTableContent: React.FC<{
 
   // Render each ranking row
   const renderRankingRows = () => {
-    // console.log('[RankingTable] renderRankingRows - rankings:', rankings);
-    // console.log('[RankingTable] renderRankingRows - rankings.length:', rankings?.length);
-    // console.log('[RankingTable] renderRankingRows - customDisciplines:', customDisciplines);
+    console.log('[RankingTable] renderRankingRows debug:', {
+      rankingsLength: rankings?.length || 0,
+      currentUserId,
+      isAuthenticated,
+      customDisciplinesLength: customDisciplines?.length || 0
+    });
     
     return <TableBody className="space-y-0.5">
       {rankings.length > 0 ? rankings.map(ranking => {
@@ -558,7 +570,10 @@ const RankingTableContent: React.FC<{
             </TableCell>}
             
             <TableCell>
-              <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => handleUserClick(ranking.userId)}>
+              <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => {
+                console.log('User click debug:', { userId: ranking.userId, name: ranking.name });
+                handleUserClick(ranking.userId);
+              }}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={ranking.avatarUrl || undefined} alt={ranking.name} />
                   <AvatarFallback>{ranking.name.substring(0, 2).toUpperCase()}</AvatarFallback>
@@ -591,7 +606,14 @@ const RankingTableContent: React.FC<{
             
             {/* Subjective part scores */}
             {concurso.has_discursive === true && <TableCell className="text-right">
-                {Number(ranking.weightedDiscursiveScore || 0).toFixed(2)}
+                {(() => {
+                  console.log('Discursive score debug:', {
+                    rankingId: ranking.id,
+                    weightedDiscursiveScore: ranking.weightedDiscursiveScore,
+                    discursiveScore: ranking.discursiveScore
+                  });
+                  return Number(ranking.weightedDiscursiveScore || 0).toFixed(2);
+                })()}
               </TableCell>}
             
             {concurso.has_case_study_1 === true && <TableCell className="text-right">
@@ -623,7 +645,7 @@ const RankingTableContent: React.FC<{
               
               return hasOther ? (
                 <TableCell className="text-right">
-                  {Number(ranking.subject_scores?.other || 0).toFixed(2)}
+                  {Number(ranking.weightedOtherSubjectiveScore || 0).toFixed(2)}
                 </TableCell>
               ) : null;
             })()}

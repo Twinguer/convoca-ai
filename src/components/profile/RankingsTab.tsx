@@ -49,101 +49,111 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         data,
         error
       } = await supabase.from('user_rankings').select(`
-          id, 
-          score,
-          subject_scores,
-          weighted_discursive_score,
-          weighted_case_study_1_score,
-          weighted_case_study_2_score,
-          weighted_case_study_3_score,
-          created_at,
-          reservation_type,
-          concurso_id,
-          concursos!inner (
-            id,
-            titulo,
-            orgao,
-            banca
-          )
-        `).eq('user_id', userId).order('score', {
-        ascending: false
-      });
+          user_id,
+          consolidated_data
+        `).eq('user_id', userId);
       if (error) throw error;
 
-      // Para cada ranking, calcular a posição real usando a mesma lógica da comunidade
-      const rankingsWithPositions = await Promise.all((data || []).map(async ranking => {
-        // Verificar se concursos existe e é um objeto válido
-        if (!ranking.concursos || typeof ranking.concursos !== 'object') {
-          console.error('Invalid concurso data for ranking');
-          return {
-            ...ranking,
-            position: null
-          };
-        }
+      // Processar dados da nova estrutura consolidated_data
+      const rankingsWithPositions = [];
+      
+      if (data && data.length > 0) {
+        const userRanking = data[0]; // Deve haver apenas um registro por usuário
         
-        const concursoId = ranking.concurso_id;
-        if (!concursoId) {
-          console.error('No concurso ID found for ranking');
-          return {
-            ...ranking,
-            position: null,
-            isEliminated: false
-          };
+        if (userRanking.consolidated_data?.rankings) {
+          // Iterar sobre todos os rankings do usuário
+          for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
+            const concursoId = rankingData.concurso_id;
+            if (!concursoId) {
+              console.error('No concurso ID found for ranking');
+              continue;
+            }
+
+            try {
+              // Usar a mesma função que é usada na página de comunidade
+              const list = await getRankingsWithUserInfo(supabase, concursoId);
+
+              // Mesma regra de eliminação usada na tabela de rankings
+              const isBelowMinimum = (rankingData: any, concursoData: any) => {
+                // Verificação existente para mínimos por disciplina/bloco
+                const hasDisciplineMinimums = rankingData.belowDisciplineMinimums && 
+                  rankingData.belowDisciplineMinimums.length > 0;
+                const hasBlockMinimums = rankingData.belowBlockMinimums && 
+                  rankingData.belowBlockMinimums.length > 0;
+                
+                // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+                const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+                  rankingData.score <= 0;
+                
+                // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+                const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+                  rankingData.score <= 0;
+                
+                return !!rankingData.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
+                       isCertoErradoEliminated || isAlternativasEliminated;
+              };
+
+              // Buscar dados do concurso para verificar o tipo de exame
+              const { data: concursoData } = await supabase
+                .from('concursos')
+                .select('exam_type, titulo, orgao, banca')
+                .eq('id', concursoId)
+                .single();
+
+              // Filtrar classificados e ordenar por pontuação
+              const classified = list.filter((r: any) => !isBelowMinimum(r, concursoData)).sort((a: any, b: any) => b.score - a.score);
+              
+              // Encontrar a posição do usuário
+              const idx = classified.findIndex((r: any) => r.id === rankingId);
+              const isClassified = idx >= 0;
+              const position = isClassified ? idx + 1 : null;
+
+              // Mapear dados da nova estrutura para a estrutura esperada
+              const mappedRanking = {
+                id: rankingId,
+                score: rankingData.user_data?.score || 0,
+                subject_scores: rankingData.user_data?.subject_scores || {},
+                weighted_discursive_score: rankingData.user_data?.subjective_scores?.discursive_score || 0,
+                weighted_case_study_1_score: rankingData.user_data?.subjective_scores?.case_study_1_score || 0,
+                weighted_case_study_2_score: rankingData.user_data?.subjective_scores?.case_study_2_score || 0,
+                weighted_case_study_3_score: rankingData.user_data?.subjective_scores?.case_study_3_score || 0,
+                created_at: rankingData.control_metadata?.created_at,
+                reservation_type: rankingData.user_data?.reservation_type || 'Ampla Concorrência',
+                concurso_id: concursoId,
+                concursos: concursoData,
+                position,
+                isEliminated: !isClassified
+              };
+
+              rankingsWithPositions.push(mappedRanking);
+            } catch (error) {
+              console.error('Erro ao calcular posição:', error);
+              // Adicionar ranking com dados básicos mesmo em caso de erro
+              const { data: concursoData } = await supabase
+                .from('concursos')
+                .select('exam_type, titulo, orgao, banca')
+                .eq('id', concursoId)
+                .single();
+
+              rankingsWithPositions.push({
+                id: rankingId,
+                score: rankingData.user_data?.score || 0,
+                subject_scores: rankingData.user_data?.subject_scores || {},
+                weighted_discursive_score: rankingData.user_data?.subjective_scores?.discursive_score || 0,
+                weighted_case_study_1_score: rankingData.user_data?.subjective_scores?.case_study_1_score || 0,
+                weighted_case_study_2_score: rankingData.user_data?.subjective_scores?.case_study_2_score || 0,
+                weighted_case_study_3_score: rankingData.user_data?.subjective_scores?.case_study_3_score || 0,
+                created_at: rankingData.control_metadata?.created_at,
+                reservation_type: rankingData.user_data?.reservation_type || 'Ampla Concorrência',
+                concurso_id: concursoId,
+                concursos: concursoData,
+                position: null,
+                isEliminated: false
+              });
+            }
+          }
         }
-
-        try {
-          // Usar a mesma função que é usada na página de comunidade
-          const list = await getRankingsWithUserInfo(supabase, concursoId);
-
-          // Mesma regra de eliminação usada na tabela de rankings
-          const isBelowMinimum = (rankingData: any, concursoData: any) => {
-            // Verificação existente para mínimos por disciplina/bloco
-            const hasDisciplineMinimums = rankingData.belowDisciplineMinimums && 
-              rankingData.belowDisciplineMinimums.length > 0;
-            const hasBlockMinimums = rankingData.belowBlockMinimums && 
-              rankingData.belowBlockMinimums.length > 0;
-            
-            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
-              rankingData.score <= 0;
-            
-            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
-              rankingData.score <= 0;
-            
-            return !!rankingData.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
-                   isCertoErradoEliminated || isAlternativasEliminated;
-          };
-
-          // Buscar dados do concurso para verificar o tipo de exame
-          const { data: concursoData } = await supabase
-            .from('concursos')
-            .select('exam_type')
-            .eq('id', concursoId)
-            .single();
-
-          // Filtrar classificados e ordenar por pontuação
-          const classified = list.filter((r: any) => !isBelowMinimum(r, concursoData)).sort((a: any, b: any) => b.score - a.score);
-          
-          // Encontrar a posição do usuário
-          const idx = classified.findIndex((r: any) => r.id === ranking.id);
-          const isClassified = idx >= 0;
-          const position = isClassified ? idx + 1 : null;
-
-          return {
-            ...ranking,
-            position,
-            isEliminated: !isClassified
-          };
-        } catch (error) {
-          console.error('Erro ao calcular posição:', error);
-          return {
-            ...ranking,
-            position: null,
-            isEliminated: false
-          };
-        }
-      }));
+      }
       return rankingsWithPositions || [];
     },
     enabled: !userRankings && !!userId // Only fetch if userRankings is not provided and userId exists
@@ -250,37 +260,28 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         const rankingId = userRanking.id;
         // Log removido por segurança
 
-        // 1. Buscar dados consolidados
-        // Log removido por segurança
-        const { data: consolidatedData, error: fetchError } = await supabase
-          .from('consolidated_answers_by_concurso')
+        // 1. Buscar dados do usuário
+        const { data: userRankingData, error: fetchError } = await supabase
+          .from('user_rankings')
           .select('consolidated_data')
-          .eq('concurso_id', concursoId)
+          .eq('user_id', currentUserId)
           .single();
         
         if (fetchError) {
-          console.error('Erro ao buscar dados consolidados:', fetchError);
+          console.error('Erro ao buscar dados do usuário:', fetchError);
           throw fetchError;
         }
 
-        // 2. Remover usuário do JSON consolidado
-        if (consolidatedData?.consolidated_data?.users) {
-          // Log removido por segurança
-          const updatedData = { ...consolidatedData.consolidated_data };
-          delete updatedData.users[currentUserId];
+        // 2. Remover ranking específico do JSON consolidado
+        if (userRankingData?.consolidated_data?.rankings) {
+          const updatedData = { ...userRankingData.consolidated_data };
+          delete updatedData.rankings[rankingId];
           
-          // Atualizar metadados
-          updatedData.metadata = {
-            ...updatedData.metadata,
-            total_users: Object.keys(updatedData.users).length,
-            last_updated: new Date().toISOString()
-          };
-
           // Atualizar dados consolidados
           const { error: updateError } = await supabase
-            .from('consolidated_answers_by_concurso')
+            .from('user_rankings')
             .update({ consolidated_data: updatedData })
-            .eq('concurso_id', concursoId);
+            .eq('user_id', currentUserId);
           
           if (updateError) {
             console.error('Erro ao atualizar dados consolidados:', updateError);
@@ -301,7 +302,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           console.error('Erro ao deletar score_calculation_logs:', logsError);
         }
 
-        // user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
+        // user_answers não é mais usado - dados estão em user_rankings consolidated_data
         // A remoção dos dados consolidados é feita automaticamente via CASCADE
 
         // Deletar user_ranking

@@ -89,14 +89,9 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
       return discipline?.weight || 1;
     }
     
-    // Check for other_subjective_name (campo direto)
-    if (key === 'other_subjective_name' && concurso.other_subjective_weight) {
-      return concurso.other_subjective_weight;
-    }
-    
-    // Check for discursive weight (campo direto)
-    if (key === 'discursive' && concurso.discursive_weight) {
-      return parseFloat(concurso.discursive_weight);
+    // Subjective questions don't have weights - return 1 as default
+    if (key === 'other_subjective_name' || key === 'discursive') {
+      return 1;
     }
     
     // Check for custom disciplines

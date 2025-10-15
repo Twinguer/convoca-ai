@@ -2,12 +2,12 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (rankingId: string) => {
   try {
-    // console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
+    console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
 
-    // Primeiro, buscar informações do user_ranking para obter o caderno selecionado e concurso_id
+    // Buscar dados consolidados diretamente da tabela user_rankings
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
-      .select('selected_booklet, discursive_score, case_study_1_score, case_study_2_score, case_study_3_score, subject_scores, concurso_id, user_id')
+      .select('consolidated_data, selected_booklet, subject_scores, concurso_id, user_id, edit_count')
       .eq('id', rankingId)
       .maybeSingle();
 
@@ -16,59 +16,67 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       return {};
     }
 
-    // console.log('[fetchExistingAnswers] Dados do ranking:', rankingData);
+    console.log('[fetchExistingAnswers] Dados do ranking encontrados:', rankingData);
 
-    // Buscar respostas da tabela consolidated_answers_by_concurso
-    const { data: consolidatedData, error: consolidatedError } = await supabase
-      .from('consolidated_answers_by_concurso')
-      .select('consolidated_data')
-      .eq('concurso_id', rankingData.concurso_id)
-      .single();
-
-    if (consolidatedError || !consolidatedData) {
-      console.error('[fetchExistingAnswers] Erro ao buscar dados consolidados:', consolidatedError);
+    // Verificar se há dados consolidados
+    if (!rankingData.consolidated_data || rankingData.consolidated_data === '{}') {
+      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado');
       return {
         answers: {},
-        discursiveScore: rankingData.discursive_score,
-        caseStudy1Score: rankingData.case_study_1_score,
-        caseStudy2Score: rankingData.case_study_2_score,
-        caseStudy3Score: rankingData.case_study_3_score
+        discursiveScore: null,
+        caseStudy1Score: null,
+        caseStudy2Score: null,
+        caseStudy3Score: null,
+        otherSubjectiveScore: null,
+        subjectScores: rankingData.subject_scores || {},
+        selectedBooklet: rankingData.selected_booklet,
+        editCount: rankingData.edit_count || 0
       };
     }
 
-    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData.consolidated_data);
+    const consolidatedData = rankingData.consolidated_data;
+    const selectedBooklet = rankingData.selected_booklet;
+    const userId = rankingData.user_id;
+
+    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
 
     let answers: { [key: number]: string } = {};
+    let subjectiveScores = {};
 
-    // Extrair respostas do usuário específico
-    const userData = consolidatedData.consolidated_data?.users?.[rankingData.user_id];
-    if (userData?.booklets) {
-      const selectedBookletId = rankingData.selected_booklet?.toString();
-      
-      // Buscar respostas do caderno selecionado
-      const bookletData = selectedBookletId ? userData.booklets[selectedBookletId] : null;
-      
-      if (bookletData?.answers) {
-        // Converter para formato esperado (número da questão como chave)
-        Object.entries(bookletData.answers).forEach(([questionNumber, answer]) => {
-          const questionNum = parseInt(questionNumber);
-          if (!isNaN(questionNum)) {
-            answers[questionNum] = answer as string;
+        // Extrair dados usando a estrutura de backup: users -> user_id -> booklets -> booklet_id -> answers
+        const userData = consolidatedData.users?.[userId];
+        if (userData?.booklets) {
+          const bookletId = selectedBooklet || Object.keys(userData.booklets)[0];
+          if (bookletId && userData.booklets[bookletId]?.answers) {
+            const bookletAnswers = userData.booklets[bookletId].answers;
+            
+            // Processar estrutura simples (questionNum -> answer)
+            Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
+              answers[parseInt(questionNum)] = answer as string;
+            });
           }
-        });
-      }
+        }
+
+    // Extrair pontuações subjetivas usando a estrutura de backup: users -> user_id -> subjective_scores
+    if (userData?.subjective_scores) {
+      subjectiveScores = userData.subjective_scores;
     }
 
     console.log('[fetchExistingAnswers] Respostas finais:', answers);
+    console.log('[fetchExistingAnswers] Pontuações subjetivas:', subjectiveScores);
     console.log('[fetchExistingAnswers] Número de respostas encontradas:', Object.keys(answers).length);
 
     return {
       answers,
-      discursiveScore: rankingData.discursive_score,
-      caseStudy1Score: rankingData.case_study_1_score,
-      caseStudy2Score: rankingData.case_study_2_score,
-      caseStudy3Score: rankingData.case_study_3_score,
-      subjectScores: rankingData.subject_scores || {}
+      discursiveScore: subjectiveScores?.discursive || null,
+      caseStudy1Score: subjectiveScores?.case_study_1 || null,
+      caseStudy2Score: subjectiveScores?.case_study_2 || null,
+      caseStudy3Score: subjectiveScores?.case_study_3 || null,
+      otherSubjectiveScore: subjectiveScores?.other_subjective || null,
+      subjectScores: subjectiveScores || {},
+      selectedBooklet: selectedBooklet,
+      editCount: rankingData.edit_count || 0,
+      consolidatedData: consolidatedData
     };
 
   } catch (error) {

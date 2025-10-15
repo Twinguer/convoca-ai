@@ -85,12 +85,7 @@ export interface Concurso {
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;
-  discursive_weight?: number;
-  case_study_1_weight?: number;
-  case_study_2_weight?: number;
-  case_study_3_weight?: number;
   other_subjective_name?: string;
-  other_subjective_weight?: number;
   custom_knowledge_questions?: number;
   custom_knowledge_weight?: number;
 
@@ -99,6 +94,18 @@ export interface Concurso {
   minimum_score_type?: string | null; // Pode ser que ainda precise para o mínimo total
   minimum_score_unit_type?: string | null; // Pode ser que ainda precise para o mínimo total
   total_minimum_score?: number;
+  
+  // Campos relacionados a mínimo para cotas
+  has_quota_minimum_score?: boolean;
+  quota_minimum_score?: number;
+  quota_minimum_score_unit_type?: string | null;
+  
+  // Notas mínimas para questões subjetivas
+  discursive_minimum_score?: number;
+  case_study_1_minimum_score?: number;
+  case_study_2_minimum_score?: number;
+  case_study_3_minimum_score?: number;
+  other_subjective_minimum_score?: number;
 }
 
 export interface ConcursoFilter {

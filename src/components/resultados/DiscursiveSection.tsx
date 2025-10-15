@@ -12,10 +12,12 @@ interface DiscursiveSectionProps {
   caseStudy1Score?: number | null;
   caseStudy2Score?: number | null;
   caseStudy3Score?: number | null;
+  otherSubjectiveScore?: number | null;
   onDiscursiveScoreChange: (value: number | null) => void;
   onCaseStudy1ScoreChange?: (value: number | null) => void;
   onCaseStudy2ScoreChange?: (value: number | null) => void;
   onCaseStudy3ScoreChange?: (value: number | null) => void;
+  onOtherSubjectiveScoreChange?: (value: number | null) => void;
   disabled?: boolean;
 }
 
@@ -25,10 +27,12 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
   caseStudy1Score,
   caseStudy2Score,
   caseStudy3Score,
+  otherSubjectiveScore,
   onDiscursiveScoreChange,
   onCaseStudy1ScoreChange,
   onCaseStudy2ScoreChange,
   onCaseStudy3ScoreChange,
+  onOtherSubjectiveScoreChange,
   disabled = false
 }) => {
   const handleScoreChange = (
@@ -56,7 +60,8 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
     concurso.has_discursive || 
     concurso.has_case_study_1 || 
     concurso.has_case_study_2 || 
-    concurso.has_case_study_3;
+    concurso.has_case_study_3 ||
+    concurso.has_other_subjective;
 
   if (!hasAnySection) {
     return (
@@ -73,9 +78,11 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
         <div className="border border-border p-4 rounded-md shadow-sm bg-card space-y-3">
           <div className="flex justify-between items-center">
             <Label htmlFor="discursive-score" className="text-base font-medium">
-              Nota da Prova Discursiva 
-              {concurso.discursive_weight && concurso.discursive_weight > 1 && 
-                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.discursive_weight})</span>
+              Nota da Prova Discursiva
+              {concurso.discursive_minimum_score && concurso.discursive_minimum_score > 0 && 
+                <span className="ml-2 text-sm text-orange-600 font-normal">
+                  (Mín: {concurso.discursive_minimum_score})
+                </span>
               }
             </Label>
             <TooltipProvider>
@@ -113,8 +120,10 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
           <div className="flex justify-between items-center">
             <Label htmlFor="case-study-1-score" className="text-base font-medium">
               Nota do Estudo de Caso 1
-              {concurso.case_study_1_weight && concurso.case_study_1_weight > 1 && 
-                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.case_study_1_weight})</span>
+              {concurso.case_study_1_minimum_score && concurso.case_study_1_minimum_score > 0 && 
+                <span className="ml-2 text-sm text-orange-600 font-normal">
+                  (Mín: {concurso.case_study_1_minimum_score})
+                </span>
               }
             </Label>
             <TooltipProvider>
@@ -152,8 +161,10 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
           <div className="flex justify-between items-center">
             <Label htmlFor="case-study-2-score" className="text-base font-medium">
               Nota do Estudo de Caso 2
-              {concurso.case_study_2_weight && concurso.case_study_2_weight > 1 && 
-                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.case_study_2_weight})</span>
+              {concurso.case_study_2_minimum_score && concurso.case_study_2_minimum_score > 0 && 
+                <span className="ml-2 text-sm text-orange-600 font-normal">
+                  (Mín: {concurso.case_study_2_minimum_score})
+                </span>
               }
             </Label>
             <TooltipProvider>
@@ -191,8 +202,10 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
           <div className="flex justify-between items-center">
             <Label htmlFor="case-study-3-score" className="text-base font-medium">
               Nota do Estudo de Caso 3
-              {concurso.case_study_3_weight && concurso.case_study_3_weight > 1 && 
-                <span className="ml-1 text-sm text-muted-foreground">(Peso {concurso.case_study_3_weight})</span>
+              {concurso.case_study_3_minimum_score && concurso.case_study_3_minimum_score > 0 && 
+                <span className="ml-2 text-sm text-orange-600 font-normal">
+                  (Mín: {concurso.case_study_3_minimum_score})
+                </span>
               }
             </Label>
             <TooltipProvider>
@@ -216,6 +229,47 @@ export const DiscursiveSection: React.FC<DiscursiveSectionProps> = ({
               placeholder="Informe sua nota" 
               value={caseStudy3Score === null ? '' : caseStudy3Score} 
               onChange={(e) => handleScoreChange(e, onCaseStudy3ScoreChange)}
+              className="w-64" 
+              disabled={disabled}
+            />
+            <span className="ml-2 text-muted-foreground">/ 100</span>
+          </div>
+        </div>
+      )}
+
+      {/* Other Subjective Section */}
+      {concurso.has_other_subjective && onOtherSubjectiveScoreChange && (
+        <div className="border border-border p-4 rounded-md shadow-sm bg-card space-y-3">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="other-subjective-score" className="text-base font-medium">
+              Nota da {concurso.other_subjective_name || 'Outro Subjetivo'}
+              {concurso.other_subjective_minimum_score && concurso.other_subjective_minimum_score > 0 && 
+                <span className="ml-2 text-sm text-orange-600 font-normal">
+                  (Mín: {concurso.other_subjective_minimum_score})
+                </span>
+              }
+            </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="h-4 w-4 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">Informe sua nota na seção subjetiva personalizada (0-100).</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center">
+            <Input
+              id="other-subjective-score"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              placeholder="0.0"
+              value={otherSubjectiveScore === null ? '' : otherSubjectiveScore} 
+              onChange={(e) => handleScoreChange(e, onOtherSubjectiveScoreChange)}
               className="w-64" 
               disabled={disabled}
             />

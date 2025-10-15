@@ -17,6 +17,16 @@ export interface RankingV2 {
   belowDisciplineMinimums?: string[];
   rankingId: string;
   createdAt: string;
+  // Campos das notas individuais
+  discursiveScore?: number;
+  caseStudy1Score?: number;
+  caseStudy2Score?: number;
+  caseStudy3Score?: number;
+  weightedDiscursiveScore?: number;
+  weightedCaseStudy1Score?: number;
+  weightedCaseStudy2Score?: number;
+  weightedCaseStudy3Score?: number;
+  subjectScores?: any;
 }
 
 // Interface para dados do ranking
@@ -76,41 +86,104 @@ export const fetchUserRankingsV2 = async (
       return localCachedRankings as RankingV2[];
     }
     
-    // Query usando nova estrutura normalizada
+    // Query usando nova estrutura consolidated_data
     logger.ranking('Executing ranking query V2', `rankingId: ${rankingId}, offset: ${offset}, limit: ${limit}`);
     
-    let query = supabase
+    // Buscar todos os user_rankings com consolidated_data
+    const { data: allUserRankings, error: rankingError } = await supabase
       .from('user_rankings')
       .select(`
-        id,
-        concurso_id,
         user_id,
-        score,
-        position,
-        reservation_type,
-        created_at,
-        users_profiles!inner(
-          id,
-          name,
-          avatar_url
-        )
-      `)
-      .eq('concurso_id', rankingId)
-      .order('score', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    // Filtrar por tipo de reserva se especificado
-    if (reservationType && reservationType !== 'Ampla Concorrência') {
-      query = query.eq('reservation_type', reservationType);
-    }
-
-    const { data: rankingData, error: rankingError } = await query;
-
-    logger.ranking('Query result V2', `data: ${rankingData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
+        consolidated_data
+      `);
 
     if (rankingError) {
-      throw new Error(`Ranking query error V2: ${rankingError.message}`);
+      logger.error('Error fetching user rankings V2', 'RANKING_SERVICE_V2', rankingError);
+      throw rankingError;
     }
+
+    // Filtrar rankings para o concurso específico
+    const rankingsForConcurso = [];
+    if (allUserRankings) {
+      allUserRankings.forEach(userRanking => {
+        if (userRanking.consolidated_data?.rankings) {
+          Object.entries(userRanking.consolidated_data.rankings).forEach(([rankingIdKey, rankingData]: [string, any]) => {
+            if (rankingData.concurso_id === rankingId) {
+              rankingsForConcurso.push({
+                id: rankingIdKey,
+                user_id: userRanking.user_id,
+                ...rankingData
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Filtrar por tipo de reserva se especificado
+    let filteredRankings = rankingsForConcurso;
+    if (reservationType && reservationType !== 'Ampla Concorrência') {
+      filteredRankings = rankingsForConcurso.filter(r => r.user_data?.reservation_type === reservationType);
+    }
+
+    // Ordenar por score
+    filteredRankings.sort((a, b) => (b.user_data?.score || 0) - (a.user_data?.score || 0));
+
+    // Aplicar paginação
+    const paginatedRankings = filteredRankings.slice(offset, offset + limit);
+
+    // Buscar perfis dos usuários
+    const userIds = paginatedRankings.map(r => r.user_id);
+    const { data: userProfiles, error: profileError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+
+    if (profileError) {
+      logger.error('Error fetching user profiles V2', 'RANKING_SERVICE_V2', profileError);
+      throw profileError;
+    }
+
+    // Criar mapa de perfis para lookup rápido
+    const profileMap = new Map();
+    if (userProfiles) {
+      userProfiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+
+    // Mapear dados para a estrutura esperada
+    const rankingData = paginatedRankings.map((item, index) => {
+      const userProfile = profileMap.get(item.user_id) || { name: 'Usuário', avatar_url: null };
+      
+      return {
+        id: item.id,
+        position: offset + index + 1,
+        name: userProfile.name,
+        score: item.user_data?.score || 0,
+        userId: item.user_id,
+        avatarUrl: userProfile.avatar_url,
+        reservationType: item.user_data?.reservation_type || 'Ampla Concorrência',
+        displayReservation: item.user_data?.reservation_type || 'Ampla Concorrência',
+        // Pontuações subjetivas
+        discursiveScore: item.user_data?.subjective_scores?.discursive_score || 0,
+        caseStudy1Score: item.user_data?.subjective_scores?.case_study_1_score || 0,
+        caseStudy2Score: item.user_data?.subjective_scores?.case_study_2_score || 0,
+        caseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
+        otherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
+        // Pontuações com peso (mesmo valor, pois não há mais pesos)
+        weightedDiscursiveScore: item.user_data?.subjective_scores?.discursive_score || 0,
+        weightedCaseStudy1Score: item.user_data?.subjective_scores?.case_study_1_score || 0,
+        weightedCaseStudy2Score: item.user_data?.subjective_scores?.case_study_2_score || 0,
+        weightedCaseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
+        weightedOtherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
+        // Pontuações de disciplinas customizadas
+        customDisciplineScores: item.user_data?.subject_scores || {},
+        weightedCustomDisciplineScores: item.user_data?.subject_scores || {},
+      };
+    });
+
+    logger.ranking('Query result V2', `data: ${rankingData?.length || 0} records`);
 
     if (!rankingData || rankingData.length === 0) {
       logger.ranking('No rankings found V2', `rankingId: ${rankingId}`);
@@ -182,6 +255,16 @@ export const fetchUserRankingsV2 = async (
         createdAt: ranking.created_at,
         belowMinimum,
         belowDisciplineMinimums,
+        // Campos das notas individuais
+        discursiveScore: ranking.discursive_score || 0,
+        caseStudy1Score: ranking.case_study_1_score || 0,
+        caseStudy2Score: ranking.case_study_2_score || 0,
+        caseStudy3Score: ranking.case_study_3_score || 0,
+        weightedDiscursiveScore: ranking.weighted_discursive_score || 0,
+        weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
+        weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
+        weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
+        subjectScores: ranking.subject_scores || {},
       };
     });
         

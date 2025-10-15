@@ -190,10 +190,12 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
               Participar
             </Button>}
           
-          {concurso && isParticipating && user && <Button onClick={() => setShowLeaveDialog(true)} variant="destructive" className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isLeaving}>
+          {concurso && isParticipating && user && (
+            <Button onClick={() => setShowLeaveDialog(true)} variant="destructive" className="flex items-center gap-2 text-xs sm:text-sm" size="sm" disabled={isLeaving}>
               <UserMinus className="h-3 w-3 sm:h-4 sm:w-4" />
               Deixar Ranking
-            </Button>}
+            </Button>
+          )}
           
           {concurso && !user && <Button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-xs sm:text-sm" size="sm">
               <LogIn className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -209,6 +211,15 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
       
       
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
+      {(() => {
+        console.log('ResultadosPage debug:', {
+          userId: user?.id,
+          isAuthenticated,
+          rankingsLength: paginatedRankings?.length || 0,
+          concursoId: concurso?.id
+        });
+        return null;
+      })()}
       <RankingTable 
         rankings={paginatedRankings} 
         concurso={concurso} 

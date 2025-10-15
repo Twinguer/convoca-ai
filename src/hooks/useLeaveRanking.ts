@@ -24,38 +24,32 @@ export const useLeaveRanking = () => {
 
       const rankingId = ranking.id;
 
-      // Remover usuário do JSON consolidado
-      const { data: consolidatedData, error: consolidatedError } = await supabase
-        .from('consolidated_answers_by_concurso')
+      // Remover ranking do JSON consolidado do usuário
+      const { data: userRankingData, error: consolidatedError } = await supabase
+        .from('user_rankings')
         .select('consolidated_data')
-        .eq('concurso_id', concursoId)
+        .eq('user_id', user.id)
         .single();
 
       if (consolidatedError && consolidatedError.code !== 'PGRST116') {
-        console.error('Error fetching consolidated data:', consolidatedError);
+        console.error('Error fetching user ranking data:', consolidatedError);
       }
 
-      if (consolidatedData?.consolidated_data) {
-        const updatedData = { ...consolidatedData.consolidated_data };
-        if (updatedData.users && updatedData.users[user.id]) {
-          delete updatedData.users[user.id];
-          
-          // Atualizar contagem de usuários
-          if (updatedData.metadata) {
-            updatedData.metadata.total_users = Object.keys(updatedData.users).length;
-            updatedData.metadata.last_updated = new Date().toISOString();
-          }
+      if (userRankingData?.consolidated_data) {
+        const updatedData = { ...userRankingData.consolidated_data };
+        if (updatedData.rankings && updatedData.rankings[rankingId]) {
+          delete updatedData.rankings[rankingId];
 
           await supabase
-            .from('consolidated_answers_by_concurso')
-            .update({ consolidated_data: updatedData, updated_at: new Date().toISOString() })
-            .eq('concurso_id', concursoId);
+            .from('user_rankings')
+            .update({ consolidated_data: updatedData })
+            .eq('user_id', user.id);
         }
       }
 
       // Deletar registros relacionados
       await supabase.from('score_calculation_logs').delete().eq('user_ranking_id', rankingId);
-      // user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
+      // user_answers não é mais usado - dados estão em user_rankings consolidated_data
       
       const { error: deleteError } = await supabase
         .from('user_rankings')

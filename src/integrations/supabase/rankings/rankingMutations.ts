@@ -70,7 +70,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    // Obter as respostas do usuário usando consolidated_answers_by_concurso
+    // Obter as respostas do usuário usando user_rankings consolidated_data
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select('concurso_id, user_id, selected_booklet')
@@ -86,10 +86,10 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    const { data: consolidatedData, error: consolidatedError } = await supabase
-      .from('consolidated_answers_by_concurso')
+    const { data: userRankingData, error: consolidatedError } = await supabase
+      .from('user_rankings')
       .select('consolidated_data')
-      .eq('concurso_id', rankingData.concurso_id)
+      .eq('user_id', rankingData.user_id)
       .single();
 
     if (consolidatedError) {
@@ -102,15 +102,15 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // Extrair respostas do usuário específico
-    const userData = consolidatedData.consolidated_data?.users?.[rankingData.user_id];
+    const rankingDataFromConsolidated = userRankingData.consolidated_data?.rankings?.[rankingId];
     const userAnswers: any[] = [];
     
-    if (userData?.booklets) {
-      const selectedBookletId = rankingData.selected_booklet?.toString();
-      const bookletData = selectedBookletId ? userData.booklets[selectedBookletId] : null;
+    if (rankingDataFromConsolidated?.user_data?.answers) {
+      const selectedBookletId = rankingDataFromConsolidated.selected_booklet_id;
+      const bookletData = selectedBookletId ? rankingDataFromConsolidated.user_data.answers[selectedBookletId] : null;
       
-      if (bookletData?.answers) {
-        Object.entries(bookletData.answers).forEach(([questionNumber, answer]) => {
+      if (bookletData) {
+        Object.entries(bookletData).forEach(([questionNumber, answer]) => {
           const questionNum = parseInt(questionNumber);
           if (!isNaN(questionNum)) {
             userAnswers.push({
@@ -358,11 +358,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
     
     // Adicionar pontuações subjetivas ao total
-    totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
+    totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore;
     
     console.log(`[recalculateUserScore] Calculated total score: ${totalScore}, discipline scores:`, disciplineScores);
     console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
-    console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}`);
+    console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}, other=${weightedOtherSubjectiveScore}`);
 
     // Se estivermos usando pesos de disciplina customizados, recalcular a pontuação total
     // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
@@ -371,7 +371,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + score, 0);
       
       // Adicionar pontuações subjetivas ponderadas
-      totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score;
+      totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore;
       
       console.log(`[recalculateUserScore] Recalculated total with custom weights: ${totalScore}`);
     }

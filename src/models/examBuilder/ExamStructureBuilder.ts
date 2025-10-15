@@ -116,11 +116,7 @@ export class ExamStructureBuilder {
       has_case_study_2: false,
       has_case_study_3: false,
       
-      // Pesos das seções subjetivas
-      discursive_weight: 1,
-      case_study_1_weight: 1,
-      case_study_2_weight: 1,
-      case_study_3_weight: 1
+      // Subjective sections don't have weights
     };
     
     // Converter seções para disciplinas
@@ -128,19 +124,15 @@ export class ExamStructureBuilder {
       // Verificar se é um tipo de seção subjetiva
       if (section.sectionType === 'discursive') {
         concurso.has_discursive = true;
-        concurso.discursive_weight = Number(section.weight);
         return null; // Não criar disciplina para seções subjetivas
       } else if (section.sectionType === 'case_study1') {
         concurso.has_case_study_1 = true;
-        concurso.case_study_1_weight = Number(section.weight);
         return null;
       } else if (section.sectionType === 'case_study2') {
         concurso.has_case_study_2 = true;
-        concurso.case_study_2_weight = Number(section.weight);
         return null;
       } else if (section.sectionType === 'case_study3') {
         concurso.has_case_study_3 = true;
-        concurso.case_study_3_weight = Number(section.weight);
         return null;
       }
       

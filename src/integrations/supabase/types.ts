@@ -22,11 +22,8 @@ export type Database = {
           basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
           case_study_1_minimum_score: number | null
-          case_study_1_weight: number | null
           case_study_2_minimum_score: number | null
-          case_study_2_weight: number | null
           case_study_3_minimum_score: number | null
-          case_study_3_weight: number | null
           created_at: string
           created_by_user_id: string | null
           custom_banca: string | null
@@ -36,7 +33,6 @@ export type Database = {
           created_at: string | null
           disciplines: Json | null
           discursive_minimum_score: number | null
-          discursive_weight: number | null
           status: string | null
           exam_type: string | null
           has_ampla_concorrencia: boolean | null

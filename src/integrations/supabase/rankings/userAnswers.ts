@@ -31,10 +31,10 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
   try {
     console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
 
-    // Buscar dados consolidados da nova estrutura
+    // Buscar dados consolidados da nova estrutura unificada
     const { data, error } = await supabase
       .from('user_rankings')
-      .select('consolidated_data, subjective_scores, selected_booklet, edit_count')
+      .select('consolidated_data, selected_booklet, edit_count')
       .eq('id', rankingId)
       .single();
       
@@ -49,7 +49,6 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
     }
 
     const consolidatedData = data.consolidated_data;
-    const subjectiveScores = data.subjective_scores || {};
     const selectedBooklet = data.selected_booklet;
     const editCount = data.edit_count || 0;
 
@@ -73,7 +72,8 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
         }
       }
       
-      subjectiveScoresForConcurso = subjectiveScores[concursoKey] || {};
+      // Buscar notas subjetivas da estrutura consolidada
+      subjectiveScoresForConcurso = concursoData?.subjective_scores || {};
     } else {
       // Buscar respostas de todos os concursos (compatibilidade)
       Object.values(consolidatedData).forEach((concursoData: any) => {
@@ -88,7 +88,9 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
         }
       });
       
-      subjectiveScoresForConcurso = subjectiveScores;
+      // Para múltiplos concursos, retornar o primeiro encontrado
+      const firstConcurso = Object.values(consolidatedData)[0] as any;
+      subjectiveScoresForConcurso = firstConcurso?.subjective_scores || {};
     }
 
     return {
@@ -97,6 +99,7 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
       caseStudy1Score: subjectiveScoresForConcurso?.case_study_1 || null,
       caseStudy2Score: subjectiveScoresForConcurso?.case_study_2 || null,
       caseStudy3Score: subjectiveScoresForConcurso?.case_study_3 || null,
+      otherSubjectiveScore: subjectiveScoresForConcurso?.other_subjective || null,
       selectedBooklet: selectedBooklet,
       editCount: editCount,
       consolidatedData, // Retornar dados completos para uso avançado

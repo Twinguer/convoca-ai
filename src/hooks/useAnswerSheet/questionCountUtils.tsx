@@ -67,6 +67,8 @@ export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): n
 // Check if official answers are missing for a given concurso and booklet
 export const checkMissingOfficialAnswers = async (concursoId: string, bookletId: string): Promise<boolean> => {
   try {
+    console.log('[checkMissingOfficialAnswers] DEBUG - Parâmetros recebidos:', { concursoId, bookletId });
+    
     const { supabase } = await import('@/integrations/supabase/client');
     
     const { data, error } = await supabase
@@ -75,18 +77,34 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
       .eq('id', concursoId)
       .maybeSingle();
 
+    console.log('[checkMissingOfficialAnswers] DEBUG - Resposta do Supabase:', { data, error });
+
     if (error || !data) {
       console.log('[checkMissingOfficialAnswers] Erro ao buscar gabarito oficial ou gabarito não encontrado');
       return true;
     }
 
+    console.log('[checkMissingOfficialAnswers] DEBUG - official_answers encontrado:', data.official_answers);
+    console.log('[checkMissingOfficialAnswers] DEBUG - Chaves disponíveis:', Object.keys(data.official_answers || {}));
+
     const bookletData = data?.official_answers?.[bookletId];
+    console.log('[checkMissingOfficialAnswers] DEBUG - Dados do caderno:', bookletData);
+    console.log('[checkMissingOfficialAnswers] DEBUG - bookletData.questions:', bookletData?.questions);
+    console.log('[checkMissingOfficialAnswers] DEBUG - Quantidade de questões:', bookletData?.questions ? Object.keys(bookletData.questions).length : 0);
+    
     if (!bookletData || !bookletData.questions) {
       console.log('[checkMissingOfficialAnswers] Gabarito não encontrado para o caderno:', bookletId);
       return true;
     }
 
-    console.log('[checkMissingOfficialAnswers] Gabarito oficial encontrado');
+    // Verificar se há pelo menos uma questão
+    const questionCount = Object.keys(bookletData.questions).length;
+    if (questionCount === 0) {
+      console.log('[checkMissingOfficialAnswers] Gabarito encontrado mas sem questões');
+      return true;
+    }
+
+    console.log('[checkMissingOfficialAnswers] Gabarito oficial encontrado com', questionCount, 'questões');
     return false;
   } catch (error) {
     console.error('[checkMissingOfficialAnswers] Erro ao verificar gabarito oficial:', error);

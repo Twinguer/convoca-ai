@@ -10,7 +10,11 @@ export const validateSaveAnswers = (
     selectedBookletId,
     editCountType: typeof editCount,
     selectedBookletIdType: typeof selectedBookletId,
-    selectedBookletIdLength: selectedBookletId?.length
+    selectedBookletIdLength: selectedBookletId?.length,
+    selectedBookletIdTrimmed: selectedBookletId?.trim(),
+    isEmpty: selectedBookletId?.trim() === '',
+    isUndefined: selectedBookletId === undefined,
+    isNull: selectedBookletId === null
   });
   
   // Verificar se o usuário já atingiu o limite de edições (5)

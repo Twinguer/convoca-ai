@@ -18,6 +18,14 @@ export function useResultadosData(concursoId?: string) {
   // Usar concursoId passado como prop ou do URL
   const id = concursoId || urlId;
   
+  // Debug logs
+  console.log('useResultadosData debug:', {
+    userId: user?.id,
+    isAuthenticated,
+    concursoId: id,
+    hasUser: !!user
+  });
+  
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
     queryKey: ['concurso', id],
@@ -82,15 +90,28 @@ export function useResultadosData(concursoId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('id', { count: 'exact' })
-        .eq('concurso_id', id);
+        .select('consolidated_data');
       
       if (error) {
         logger.error('Error fetching participant count', 'USE_RESULTADOS_DATA', error);
         return 0;
       }
       
-      return data?.length || 0;
+      // Count users who have this concurso in their consolidated_data
+      let count = 0;
+      if (data) {
+        data.forEach(userRanking => {
+          if (userRanking.consolidated_data?.rankings) {
+            Object.values(userRanking.consolidated_data.rankings).forEach((rankingData: any) => {
+              if (rankingData.concurso_id === id) {
+                count++;
+              }
+            });
+          }
+        });
+      }
+      
+      return count;
     },
     staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
@@ -108,8 +129,7 @@ export function useResultadosData(concursoId?: string) {
       
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('id')
-        .eq('concurso_id', id)
+        .select('consolidated_data')
         .eq('user_id', user.id)
         .maybeSingle();
         
@@ -120,9 +140,22 @@ export function useResultadosData(concursoId?: string) {
         return { isParticipating: false };
       }
       
+      // Check if user has this concurso in their consolidated_data
+      let isParticipating = false;
+      let rankingId = null;
+      
+      if (data?.consolidated_data?.rankings) {
+        Object.entries(data.consolidated_data.rankings).forEach(([rankingIdKey, rankingData]: [string, any]) => {
+          if (rankingData.concurso_id === id) {
+            isParticipating = true;
+            rankingId = rankingIdKey;
+          }
+        });
+      }
+      
       const result = { 
-        isParticipating: !!data,
-        rankingId: data?.id 
+        isParticipating,
+        rankingId 
       };
       
       // console.log('[useResultadosData] Status de participação:', result);

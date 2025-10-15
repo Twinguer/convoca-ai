@@ -189,11 +189,10 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       }
 
       // Verificar se o usuário já está participando do concurso
-      const { data: existingParticipation, error: participationError } = await supabase
+      const { data: userRankingData, error: participationError } = await supabase
         .from('user_rankings')
-        .select('id')
+        .select('consolidated_data')
         .eq('user_id', user.id)
-        .eq('concurso_id', concurso.id)
         .maybeSingle();
 
       if (participationError) {
@@ -207,7 +206,17 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         return;
       }
 
-      if (existingParticipation) {
+      // Check if user already has this concurso in their consolidated_data
+      let isAlreadyParticipating = false;
+      if (userRankingData?.consolidated_data?.rankings) {
+        Object.values(userRankingData.consolidated_data.rankings).forEach((rankingData: any) => {
+          if (rankingData.concurso_id === concurso.id) {
+            isAlreadyParticipating = true;
+          }
+        });
+      }
+
+      if (isAlreadyParticipating) {
         toast({
           title: "Já participando",
           description: "Você já está participando deste ranking.",
@@ -295,17 +304,69 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         return subjectScores;
       };
 
+      // Generate a unique ranking ID
+      const rankingId = `ranking_${concurso.id}_${user.id}_${Date.now()}`;
+      
+      // Create the new ranking data structure
+      const newRankingData = {
+        concurso_id: concurso.id,
+        selected_booklet_id: booklets.length > 0 && selectedBooklet ? selectedBooklet as string : null,
+        user_data: {
+          score: 0,
+          edit_count: 0,
+          all_questions_answered: false,
+          reservation_type: selectedQuota,
+          subject_scores: initializeSubjectScores(concurso),
+          subjective_scores: {
+            discursive_score: 0,
+            case_study_1_score: 0,
+            case_study_2_score: 0,
+            case_study_3_score: 0,
+            other_subjective_score: 0
+          },
+          answers: {}
+        },
+        control_metadata: {
+          is_score_recalculated: false,
+          edit_history: [],
+          last_updated: new Date().toISOString(),
+          created_at: new Date().toISOString()
+        }
+      };
+
+      // Check if user already has a user_rankings record
+      const { data: existingUserRanking } = await supabase
+        .from('user_rankings')
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let consolidatedData;
+      if (existingUserRanking?.consolidated_data) {
+        // Update existing consolidated_data
+        consolidatedData = {
+          ...existingUserRanking.consolidated_data,
+          rankings: {
+            ...existingUserRanking.consolidated_data.rankings,
+            [rankingId]: newRankingData
+          }
+        };
+      } else {
+        // Create new consolidated_data
+        consolidatedData = {
+          rankings: {
+            [rankingId]: newRankingData
+          }
+        };
+      }
+
       const {
         data,
         error
-      } = await supabase.from('user_rankings').insert({
+      } = await supabase.from('user_rankings').upsert({
         user_id: user.id,
-        concurso_id: concurso.id, // ✅ CORREÇÃO: ranking_id -> concurso_id
-        score: 0,
-        reservation_type: selectedQuota,
-        selected_booklet: booklets.length > 0 && selectedBooklet ? selectedBooklet as string : null,
-        subject_scores: initializeSubjectScores(concurso) // ✅ NOVO: Inicializar subject_scores
-      }).select('id').single();
+        consolidated_data: consolidatedData
+      }).select('user_id').single();
       if (error) throw error;
       // Invalidar todas as queries relacionadas para garantir atualização automática
       console.log('[ParticipationForm] 🔄 Invalidando queries para refresh automático...');

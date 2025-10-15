@@ -68,15 +68,11 @@ export const createRanking = async (rankingData: any) => {
       has_transsexuais: rankingData.has_transsexuais === true
     };
     
-    // Add additional weight fields if they exist
+    // Add additional weight fields if they exist (only objective knowledge weights)
     const weightFields = [
       'specific_knowledge_1_weight',
       'specific_knowledge_2_weight',
-      'specific_knowledge_3_weight',
-      'discursive_weight',
-      'case_study_1_weight',
-      'case_study_2_weight',
-      'case_study_3_weight'
+      'specific_knowledge_3_weight'
     ];
     
     for (const field of weightFields) {
@@ -139,10 +135,6 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         specific_knowledge_1_weight,
         specific_knowledge_2_weight,
         specific_knowledge_3_weight,
-        discursive_weight,
-        case_study_1_weight,
-        case_study_2_weight,
-        case_study_3_weight,
         has_basic_knowledge,
         has_specific_knowledge_1,
         has_specific_knowledge_2,
@@ -150,7 +142,19 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         has_discursive,
         has_case_study_1,
         has_case_study_2,
-        has_case_study_3
+        has_case_study_3,
+        has_minimum_score,
+        minimum_score_type,
+        minimum_score_unit_type,
+        total_minimum_score,
+        has_quota_minimum_score,
+        quota_minimum_score,
+        quota_minimum_score_unit_type,
+        discursive_minimum_score,
+        case_study_1_minimum_score,
+        case_study_2_minimum_score,
+        case_study_3_minimum_score,
+        other_subjective_minimum_score
       `)
       .eq('id', rankingId)
       .single();
@@ -187,10 +191,6 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         'specific_knowledge_1_weight',
         'specific_knowledge_2_weight',
         'specific_knowledge_3_weight',
-        'discursive_weight',
-        'case_study_1_weight',
-        'case_study_2_weight',
-        'case_study_3_weight',
         'has_basic_knowledge',
         'has_specific_knowledge_1',
         'has_specific_knowledge_2',
@@ -198,7 +198,19 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         'has_discursive',
         'has_case_study_1',
         'has_case_study_2',
-        'has_case_study_3'
+        'has_case_study_3',
+        'has_minimum_score',
+        'minimum_score_type',
+        'minimum_score_unit_type',
+        'total_minimum_score',
+        'has_quota_minimum_score',
+        'quota_minimum_score',
+        'quota_minimum_score_unit_type',
+        'discursive_minimum_score',
+        'case_study_1_minimum_score',
+        'case_study_2_minimum_score',
+        'case_study_3_minimum_score',
+        'other_subjective_minimum_score'
       ];
       
       for (const field of structureFields) {
@@ -276,7 +288,7 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       }
     }
     
-    // 3. user_answers não é mais usado - dados estão em consolidated_answers_by_concurso
+    // 3. user_answers não é mais usado - dados estão em user_rankings consolidated_data
     // A remoção dos dados consolidados é feita automaticamente via CASCADE
     console.log('user_answers removido - usando dados consolidados');
     

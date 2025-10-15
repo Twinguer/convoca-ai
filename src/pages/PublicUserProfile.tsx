@@ -95,7 +95,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const {
           count: postCount,
           error: postError
-        } = await supabase.from('user_rankings').select('*', {
+        } = await supabase.from('user_rankings').select('consolidated_data', {
           count: 'exact',
           head: true
         }).eq('user_id', id);
@@ -146,15 +146,29 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           data,
           error
         } = await supabase.from('user_rankings').select(`
-            id,
-            concurso_id,
-            score,
-            concursos!inner(titulo, id)
+            user_id,
+            consolidated_data
           `).eq('user_id', id);
         if (error || !data) throw error || new Error('Sem rankings');
-        const concursoIds: string[] = Array.from(new Set(data.map((r: any) => r.concurso_id)));
+        
+        // Processar dados da nova estrutura consolidated_data
+        const concursoIds: string[] = [];
         const userRankingIdByConcurso = new Map<string, string>();
-        data.forEach((r: any) => userRankingIdByConcurso.set(r.concurso_id, r.id));
+        
+        if (data && data.length > 0) {
+          const userRanking = data[0]; // Deve haver apenas um registro por usuário
+          
+          if (userRanking.consolidated_data?.rankings) {
+            // Iterar sobre todos os rankings do usuário
+            for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
+              const concursoId = rankingData.concurso_id;
+              if (concursoId) {
+                concursoIds.push(concursoId);
+                userRankingIdByConcurso.set(concursoId, rankingId);
+              }
+            }
+          }
+        }
 
         // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
         const results = await Promise.all(concursoIds.map(async cid => {
@@ -168,7 +182,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
             .single();
 
           // Mesma regra de eliminação usada na tabela de rankings
-          const isBelowMinimum = (ranking: any) => {
+          const isBelowMinimum = (ranking: any, concursoData: any) => {
             // Verificação existente para mínimos por disciplina/bloco
             const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
               ranking.belowDisciplineMinimums.length > 0;
@@ -176,17 +190,30 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               ranking.belowBlockMinimums.length > 0;
             
             // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-            const isCertoErradoEliminated = rankingData?.exam_type === 'Certo ou Errado' && 
+            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
               ranking.score <= 0;
             
             // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-            const isAlternativasEliminated = rankingData?.exam_type === 'Alternativas' && 
+            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
               ranking.score <= 0;
+            
+            // Debug log
+            console.log('PublicUserProfile isBelowMinimum debug:', {
+              userId: ranking.userId,
+              name: ranking.name,
+              score: ranking.score,
+              belowMinimum: ranking.belowMinimum,
+              hasDisciplineMinimums,
+              hasBlockMinimums,
+              isCertoErradoEliminated,
+              isAlternativasEliminated,
+              examType: concursoData?.exam_type
+            });
             
             return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
                    isCertoErradoEliminated || isAlternativasEliminated;
           };
-          const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
+          const classified = list.filter((r: any) => !isBelowMinimum(r, rankingData)).sort((a: any, b: any) => b.score - a.score);
           const rid = userRankingIdByConcurso.get(cid);
           const idx = classified.findIndex((r: any) => r.id === rid);
           const isClassified = idx >= 0;
@@ -475,7 +502,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                       </Link>
                     </Button>
                   </div> : rankings && rankings.length > 0 ? <div className="space-y-3">
-                    {rankings.map(ranking => <Card key={ranking.concursoId} className="p-4">
+                    {rankings.map((ranking, index) => <Card key={`${ranking.concursoId}-${index}`} className="p-4">
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
                             <h4 className="font-medium text-sm mb-1">

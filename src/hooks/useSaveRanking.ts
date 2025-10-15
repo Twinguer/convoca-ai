@@ -86,7 +86,7 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
       type: 'discursive',
       isEnabled: true,
       questionCount: 1,
-      weight: formValues.discursive_weight || 1,
+      weight: 1,
       minimum_score: 0
     });
   }
@@ -99,7 +99,7 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
       type: 'case_study_1',
       isEnabled: true,
       questionCount: 1,
-      weight: formValues.case_study_1_weight || 1,
+      weight: 1,
       minimum_score: 0
     });
   }
@@ -112,7 +112,7 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
       type: 'case_study_2',
       isEnabled: true,
       questionCount: 1,
-      weight: formValues.case_study_2_weight || 1,
+      weight: 1,
       minimum_score: 0
     });
   }
@@ -125,7 +125,7 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
       type: 'case_study_3',
       isEnabled: true,
       questionCount: 1,
-      weight: formValues.case_study_3_weight || 1,
+      weight: 1,
       minimum_score: 0
     });
   }
@@ -138,7 +138,7 @@ const createDisciplinesFromStructure = (formValues: any): any[] => {
       type: 'other_subjective',
       isEnabled: true,
       questionCount: 1,
-      weight: formValues.other_subjective_weight || 1,
+      weight: 1,
       minimum_score: 0
     });
   }
@@ -517,7 +517,12 @@ export const useSaveRanking = () => {
             has_case_study_3: formValues.has_case_study_3 === true,
             has_other_subjective: formValues.has_other_subjective === true,
             other_subjective_name: formValues.other_subjective_name || null,
-            other_subjective_weight: formValues.other_subjective_weight || 1,
+            // Notas mínimas para questões subjetivas
+            discursive_minimum_score: formValues.discursive_minimum_score || 0,
+            case_study_1_minimum_score: formValues.case_study_1_minimum_score || 0,
+            case_study_2_minimum_score: formValues.case_study_2_minimum_score || 0,
+            case_study_3_minimum_score: formValues.case_study_3_minimum_score || 0,
+            other_subjective_minimum_score: formValues.other_subjective_minimum_score || 0,
             // Campos de pontuação mínima para cotas
             has_quota_minimum_score: formValues.has_quota_minimum_score === true,
             quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',

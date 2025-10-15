@@ -43,6 +43,14 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Preparando dados para salvamento');
       console.log('[useSaveAnswers] Respostas do usuário:', answers);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+      console.log('[useSaveAnswers] DEBUG - selectedBookletId detalhado:', {
+        value: selectedBookletId,
+        type: typeof selectedBookletId,
+        length: selectedBookletId?.length,
+        trimmed: selectedBookletId?.trim(),
+        isEmpty: selectedBookletId?.trim() === '',
+        isUndefined: selectedBookletId === undefined
+      });
       console.log('[useSaveAnswers] Todos os parâmetros recebidos:', {
         rankingId,
         concursoId: concurso?.id,

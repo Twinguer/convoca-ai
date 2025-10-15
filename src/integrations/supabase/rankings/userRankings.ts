@@ -1,4 +1,3 @@
-
 import { SupabaseClient } from '@supabase/supabase-js';
 
 // Function to get rankings for a concurso with user information
@@ -6,83 +5,104 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
   try {
     // console.log("[userRankings] Buscando rankings para concurso ID:", concursoId);
     
-    const { data, error } = await supabase
-      .from('user_rankings')      
+    // Buscar todos os user_rankings com consolidated_data
+    const { data: allUserRankings, error: rankingError } = await supabase
+      .from('user_rankings')
       .select(`
-        id,
-        score,
-        basic_knowledge_score,
-        specific_knowledge_score,
-        specific_knowledge_1_score,
-        specific_knowledge_2_score,
-        specific_knowledge_3_score,
-        discursive_score,
-        weighted_basic_score,
-        weighted_specific_1_score,
-        weighted_specific_2_score,
-        weighted_specific_3_score,
-        weighted_discursive_score,
-        weighted_case_study_1_score,
-        weighted_case_study_2_score,
-        weighted_case_study_3_score,
         user_id,
-        reservation_type,
-        users_profiles(name, avatar_url)
-      `)
-      .eq('concurso_id', concursoId)
-      .order('score', { ascending: false });
-      
-    if (error) {
-      console.error("[userRankings] Erro ao buscar rankings:", error);
-      throw error;
+        consolidated_data
+      `);
+
+    if (rankingError) {
+      console.error("[userRankings] Erro ao buscar user_rankings:", rankingError);
+      throw rankingError;
     }
-    
-    if (!data || data.length === 0) {
+
+    // Filtrar rankings para o concurso específico
+    const rankingsForConcurso = [];
+    if (allUserRankings) {
+      allUserRankings.forEach(userRanking => {
+        if (userRanking.consolidated_data?.rankings) {
+          Object.entries(userRanking.consolidated_data.rankings).forEach(([rankingId, rankingData]: [string, any]) => {
+            if (rankingData.concurso_id === concursoId) {
+              rankingsForConcurso.push({
+                id: rankingId,
+                user_id: userRanking.user_id,
+                ...rankingData
+              });
+            }
+          });
+        }
+      });
+    }
+
+    if (rankingsForConcurso.length === 0) {
       // console.log("[userRankings] Nenhum ranking encontrado para o concurso");
       return [];
     }
+
+    // Buscar perfis dos usuários
+    const userIds = rankingsForConcurso.map(r => r.user_id);
+    const { data: userProfiles, error: profileError } = await supabase
+      .from('users_profiles')
+      .select('id, name, avatar_url')
+      .in('id', userIds);
+
+    if (profileError) {
+      console.error("[userRankings] Erro ao buscar perfis:", profileError);
+      throw profileError;
+    }
+
+    // Criar mapa de perfis para lookup rápido
+    const profileMap = new Map();
+    if (userProfiles) {
+      userProfiles.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+    }
+
+    // Ordenar por score
+    rankingsForConcurso.sort((a, b) => (b.user_data?.score || 0) - (a.user_data?.score || 0));
     
-    // console.log(`[userRankings] ${data.length} rankings encontrados`);
+    // console.log(`[userRankings] ${rankingsForConcurso.length} rankings encontrados`);
     
     // Format the data with position
-    return data.map((item, index) => {
-      // Corretamente tratar users_profiles que pode ser um objeto ou array
-      const userProfile = Array.isArray(item.users_profiles) 
-        ? item.users_profiles[0] 
-        : item.users_profiles;
-      
-      // Usando acesso seguro com optional chaining
-      const name = userProfile?.name || 'Unknown User';
-      const avatarUrl = userProfile?.avatar_url || null;
+    return rankingsForConcurso.map((item, index) => {
+      const userProfile = profileMap.get(item.user_id) || { name: 'Usuário', avatar_url: null };
       
       return {
-        position: index + 1,
-        name: name,
-        score: item.score || 0,
-        userId: item.user_id,
         id: item.id,
-        avatarUrl: avatarUrl,
-        basicKnowledgeScore: item.basic_knowledge_score || 0,
-        specificKnowledgeScore: item.specific_knowledge_score || 0,
-        specific1Score: item.specific_knowledge_1_score || 0,
-        specific2Score: item.specific_knowledge_2_score || 0,
-        specific3Score: item.specific_knowledge_3_score || 0,
-        discursiveScore: item.discursive_score || 0,
-        weightedBasicScore: item.weighted_basic_score || 0,
-        weightedSpecific1Score: item.weighted_specific_1_score || 0,
-        weightedSpecific2Score: item.weighted_specific_2_score || 0,
-        weightedSpecific3Score: item.weighted_specific_3_score || 0,
-        weightedDiscursiveScore: item.weighted_discursive_score || 0,
-        weightedCaseStudy1Score: item.weighted_case_study_1_score || 0,
-        weightedCaseStudy2Score: item.weighted_case_study_2_score || 0,
-        weightedCaseStudy3Score: item.weighted_case_study_3_score || 0,
-        reservationType: item.reservation_type || 'Ampla Concorrência',
-        displayReservation: item.reservation_type || 'Ampla Concorrência'
+        position: index + 1,
+        name: userProfile.name,
+        score: item.user_data?.score || 0,
+        userId: item.user_id,
+        avatarUrl: userProfile.avatar_url,
+        reservationType: item.user_data?.reservation_type || 'Ampla Concorrência',
+        displayReservation: item.user_data?.reservation_type || 'Ampla Concorrência',
+        // Pontuações subjetivas
+        discursiveScore: item.user_data?.subjective_scores?.discursive_score || 0,
+        caseStudy1Score: item.user_data?.subjective_scores?.case_study_1_score || 0,
+        caseStudy2Score: item.user_data?.subjective_scores?.case_study_2_score || 0,
+        caseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
+        otherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
+        // Pontuações com peso (mesmo valor, pois não há mais pesos)
+        weightedDiscursiveScore: item.user_data?.subjective_scores?.discursive_score || 0,
+        weightedCaseStudy1Score: item.user_data?.subjective_scores?.case_study_1_score || 0,
+        weightedCaseStudy2Score: item.user_data?.subjective_scores?.case_study_2_score || 0,
+        weightedCaseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
+        weightedOtherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
+        // Pontuações de disciplinas customizadas
+        customDisciplineScores: item.user_data?.subject_scores || {},
+        weightedCustomDisciplineScores: item.user_data?.subject_scores || {},
+        // Flags de eliminação (padrão: não eliminado)
+        belowMinimum: false,
+        belowDisciplineMinimums: [],
+        belowBlockMinimums: [],
       };
     });
     
   } catch (error) {
-    console.error('[userRankings] Error fetching rankings with user info:', error);
-    return [];
+    console.error("[userRankings] Error fetching rankings with user info:", error);
+    throw error;
   }
 };

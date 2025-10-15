@@ -99,6 +99,10 @@ const AppContent = () => {
                           <PublicUserProfile />
                         </SecureUserRoute>
                       </>} />
+                     <Route path="/usuario/profile/:id" element={<>
+                        <Menu />
+                        <PublicUserProfile />
+                      </>} />
                      <Route path="/usuario/followers/:token" element={<>
                         <Menu />
                         <SecureUserRoute action="followers">

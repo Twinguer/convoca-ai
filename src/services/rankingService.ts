@@ -72,35 +72,179 @@ export const fetchUserRankings = async (
     // Query usando nova estrutura normalizada
     logger.ranking('Executing ranking query V2', `rankingId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
     
-    const { data: rankingData, error: rankingError } = await supabase
+    // Get all user_rankings and filter by concurso_id in consolidated_data
+    const { data: allUserRankings, error: rankingError } = await supabase
       .from('user_rankings')
       .select(`
-        id,
-        concurso_id,
         user_id,
-        score,
-        reservation_type,
-        created_at,
-        "weightedCustomDisciplineScores",
-        "customDisciplineScores",
-        subject_scores,
-        users_profiles!inner(
-          id,
-          name,
-          avatar_url
-        )
-      `)
-      .eq('concurso_id', concursoId)
-      .order('score', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    logger.ranking('Query result', `data: ${rankingData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
+        consolidated_data
+      `);
 
     if (rankingError) {
       throw new Error(`Ranking query error: ${rankingError.message}`);
     }
 
-    if (!rankingData || rankingData.length === 0) {
+    // Filter and format rankings for the specific concurso
+    const rankingData = [];
+    if (allUserRankings) {
+      console.log('rankingService debug:', {
+        allUserRankingsLength: allUserRankings.length,
+        concursoId,
+        firstUserRanking: allUserRankings[0] ? {
+          userId: allUserRankings[0].user_id,
+          hasConsolidatedData: !!allUserRankings[0].consolidated_data,
+          consolidatedDataKeys: allUserRankings[0].consolidated_data ? Object.keys(allUserRankings[0].consolidated_data) : []
+        } : null
+      });
+      
+      // Get user IDs for profile lookup
+      const userIds = allUserRankings.map(ur => ur.user_id);
+      
+      // Fetch user profiles separately
+      const { data: userProfiles, error: profileError } = await supabase
+        .from('users_profiles')
+        .select('id, name, avatar_url')
+        .in('id', userIds);
+      
+      console.log('rankingService profile debug:', {
+        userIds,
+        userProfiles,
+        profileError,
+        profileCount: userProfiles?.length || 0
+      });
+      
+      // Create a map for quick profile lookup
+      const profileMap = new Map();
+      if (userProfiles && userProfiles.length > 0) {
+        userProfiles.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
+      }
+      
+      // Se não encontrou todos os perfis, buscar individualmente
+      if (profileMap.size < userIds.length) {
+        console.warn(`Found ${profileMap.size} profiles out of ${userIds.length}, searching for missing ones...`);
+        for (const userId of userIds) {
+          if (!profileMap.has(userId)) {
+            try {
+              const { data: individualProfile } = await supabase
+                .from('users_profiles')
+                .select('id, name, avatar_url')
+                .eq('id', userId)
+                .single();
+              
+              if (individualProfile) {
+                profileMap.set(userId, individualProfile);
+                console.log(`Found individual profile for ${userId}:`, individualProfile.name);
+              } else {
+                console.warn(`No profile found for ${userId}`);
+              }
+            } catch (err) {
+              console.warn(`Failed to fetch individual profile for ${userId}:`, err);
+            }
+          }
+        }
+      }
+      
+      console.log('rankingService profileMap debug:', {
+        profileMapSize: profileMap.size,
+        profileMapKeys: Array.from(profileMap.keys()),
+        profileMapValues: Array.from(profileMap.values()),
+        expectedUserIds: userIds
+      });
+      
+      // Process rankings sequentially to handle async operations
+      for (const userRanking of allUserRankings) {
+        if (userRanking.consolidated_data?.rankings) {
+          for (const [rankingId, rankingDataItem] of Object.entries(userRanking.consolidated_data.rankings)) {
+            console.log('rankingService filtering debug:', {
+              rankingId,
+              rankingDataItemConcursoId: rankingDataItem.concurso_id,
+              concursoId,
+              matches: rankingDataItem.concurso_id === concursoId
+            });
+            
+            if (rankingDataItem.concurso_id === concursoId) {
+              const userProfile = profileMap.get(userRanking.user_id);
+              
+              if (!userProfile) {
+                console.error(`CRITICAL: Profile not found for user ${userRanking.user_id}`);
+                console.error('Available profiles:', Array.from(profileMap.keys()));
+                console.error('Looking for:', userRanking.user_id);
+                continue; // Skip this ranking if no profile found
+              }
+              
+              console.log('rankingService userProfile debug:', {
+                userId: userRanking.user_id,
+                userProfile,
+                foundInMap: profileMap.has(userRanking.user_id),
+                profileMapKeys: Array.from(profileMap.keys())
+              });
+              
+              // Debug das notas subjetivas
+              console.log('rankingService subjective scores debug:', {
+                rankingId,
+                userId: userRanking.user_id,
+                subjectiveScores: rankingDataItem.user_data?.subjective_scores,
+                discursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score,
+                caseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score,
+                otherSubjectiveScore: rankingDataItem.user_data?.subjective_scores?.other_subjective_score
+              });
+
+              console.log('rankingService userId debug:', {
+                rankingId,
+                userRankingUserId: userRanking.user_id,
+                userProfileName: userProfile.name
+              });
+
+              rankingData.push({
+                id: rankingId,
+                position: 0, // Will be calculated later
+                name: userProfile.name,
+                score: rankingDataItem.user_data?.score || 0,
+                userId: userRanking.user_id,
+                avatarUrl: userProfile.avatar_url,
+                // Pontuações subjetivas
+                discursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score || 0,
+                caseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score || 0,
+                caseStudy2Score: rankingDataItem.user_data?.subjective_scores?.case_study_2_score || 0,
+                caseStudy3Score: rankingDataItem.user_data?.subjective_scores?.case_study_3_score || 0,
+                otherSubjectiveScore: rankingDataItem.user_data?.subjective_scores?.other_subjective_score || 0,
+                // Pontuações subjetivas com peso (mesmo valor, pois não há mais pesos)
+                weightedDiscursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score || 0,
+                weightedCaseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score || 0,
+                weightedCaseStudy2Score: rankingDataItem.user_data?.subjective_scores?.case_study_2_score || 0,
+                weightedCaseStudy3Score: rankingDataItem.user_data?.subjective_scores?.case_study_3_score || 0,
+                weightedOtherSubjectiveScore: rankingDataItem.user_data?.subjective_scores?.other_subjective_score || 0,
+                // Pontuações de disciplinas customizadas
+                customDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
+                weightedCustomDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
+                // Flags de mínimos não atingidos
+                belowMinimum: false, // Will be calculated later
+                belowDisciplineMinimums: [],
+                belowBlockMinimums: [],
+                // Campos adicionais
+                reservationType: rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência',
+                displayReservation: rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência',
+                quotaPosition: 0 // Will be calculated later
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Sort by score and apply pagination
+    rankingData.sort((a, b) => b.score - a.score);
+    const paginatedData = rankingData.slice(offset, offset + limit);
+
+    logger.ranking('Query result', `data: ${paginatedData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
+
+    if (rankingError) {
+      throw new Error(`Ranking query error: ${rankingError.message}`);
+    }
+
+    if (!paginatedData || paginatedData.length === 0) {
       logger.ranking('No rankings found', `concursoId: ${concursoId}`);
       return [];
     }
@@ -121,9 +265,9 @@ export const fetchUserRankings = async (
     const totalMinimumScore = hasMinimumScoreEnabled ? rankingInfo?.total_minimum_score || 0 : 0;
 
     // Formatar os dados do ranking com posições (nova estrutura normalizada)
-    const formattedRankings = rankingData.map((ranking, index) => {
-      const name = ranking.users_profiles?.name || 'Usuário Anônimo';
-      const avatarUrl = ranking.users_profiles?.avatar_url || null;
+    const formattedRankings = paginatedData.map((ranking, index) => {
+      const name = ranking.name || 'Usuário Anônimo';
+      const avatarUrl = ranking.avatarUrl || null;
 
       // Verificação de mínimos (simplificada para nova estrutura)
       const belowMinimum = ranking.score <= 0 || 
@@ -133,20 +277,20 @@ export const fetchUserRankings = async (
         position: offset + index + 1, // Calcular posição baseada no índice
         name: name,
         score: ranking.score || 0,
-        userId: ranking.user_id,
+        userId: ranking.userId,
         avatarUrl: avatarUrl,
-        // Pontuações subjetivas (do subject_scores)
-        discursiveScore: ranking.subject_scores?.discursive || 0,
-        caseStudy1Score: ranking.subject_scores?.case_study_1 || 0,
-        caseStudy2Score: ranking.subject_scores?.case_study_2 || 0,
-        caseStudy3Score: ranking.subject_scores?.case_study_3 || 0,
-        otherSubjectiveScore: ranking.subject_scores?.other_subjective || 0,
-        // Pontuações subjetivas com peso - calcular a partir do JSONB
-        weightedDiscursiveScore: (ranking.subject_scores?.discursive || 0) * 1, // Peso será calculado dinamicamente
-        weightedCaseStudy1Score: (ranking.subject_scores?.case_study_1 || 0) * 1,
-        weightedCaseStudy2Score: (ranking.subject_scores?.case_study_2 || 0) * 1,
-        weightedCaseStudy3Score: (ranking.subject_scores?.case_study_3 || 0) * 1,
-        weightedOtherSubjectiveScore: (ranking.subject_scores?.other_subjective || 0) * 1,
+        // Pontuações subjetivas (da nova estrutura)
+        discursiveScore: ranking.discursiveScore || 0,
+        caseStudy1Score: ranking.caseStudy1Score || 0,
+        caseStudy2Score: ranking.caseStudy2Score || 0,
+        caseStudy3Score: ranking.caseStudy3Score || 0,
+        otherSubjectiveScore: ranking.otherSubjectiveScore || 0,
+        // Pontuações subjetivas com peso (da nova estrutura)
+        weightedDiscursiveScore: ranking.weightedDiscursiveScore || 0,
+        weightedCaseStudy1Score: ranking.weightedCaseStudy1Score || 0,
+        weightedCaseStudy2Score: ranking.weightedCaseStudy2Score || 0,
+        weightedCaseStudy3Score: ranking.weightedCaseStudy3Score || 0,
+        weightedOtherSubjectiveScore: ranking.weightedOtherSubjectiveScore || 0,
         // Pontuações de disciplinas customizadas
         customDisciplineScores: ranking.customDisciplineScores || {},
         weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores || {},

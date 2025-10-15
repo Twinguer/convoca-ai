@@ -98,7 +98,12 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       has_case_study_3: rankingData.has_case_study_3 || false,
       has_other_subjective: rankingData.has_other_subjective || false,
       other_subjective_name: rankingData.other_subjective_name || null,
-      other_subjective_weight: rankingData.other_subjective_weight || 1,
+      // Notas mínimas para questões subjetivas
+      discursive_minimum_score: rankingData.discursive_minimum_score || 0,
+      case_study_1_minimum_score: rankingData.case_study_1_minimum_score || 0,
+      case_study_2_minimum_score: rankingData.case_study_2_minimum_score || 0,
+      case_study_3_minimum_score: rankingData.case_study_3_minimum_score || 0,
+      other_subjective_minimum_score: rankingData.other_subjective_minimum_score || 0,
       basic_knowledge_questions: 0,
       specific_knowledge_1_questions: 0,
       specific_knowledge_2_questions: 0,
@@ -107,16 +112,15 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       specific_knowledge_1_weight: 0,
       specific_knowledge_2_weight: 0,
       specific_knowledge_3_weight: 0,
-      discursive_weight: rankingData.discursive_weight || 0,
-      case_study_1_weight: rankingData.case_study_1_weight || 0,
-      case_study_2_weight: rankingData.case_study_2_weight || 0,
-      case_study_3_weight: rankingData.case_study_3_weight || 0,
       custom_knowledge_questions: 0,
       custom_knowledge_weight: 0,
       has_minimum_score: rankingData.has_minimum_score,
       minimum_score_type: null,
       minimum_score_unit_type: null,
-      total_minimum_score: rankingData.total_minimum_score
+      total_minimum_score: rankingData.total_minimum_score,
+      has_quota_minimum_score: rankingData.has_quota_minimum_score,
+      quota_minimum_score: rankingData.quota_minimum_score,
+      quota_minimum_score_unit_type: null
     };
 
     // console.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);
