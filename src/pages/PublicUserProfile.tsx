@@ -170,6 +170,12 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           }
         }
 
+        // Buscar dados dos concursos
+        const { data: concursosData } = await supabase
+          .from('concursos')
+          .select('id, titulo, orgao, banca')
+          .in('id', concursoIds);
+
         // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
         const results = await Promise.all(concursoIds.map(async cid => {
           const list = await getRankingsWithUserInfo(supabase, cid);
@@ -218,6 +224,18 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           const idx = classified.findIndex((r: any) => r.id === rid);
           const isClassified = idx >= 0;
           const position = isClassified ? idx + 1 : null; // Ampla Concorrência exibe apenas classificados com posição
+          
+          // Debug log para entender a classificação
+          console.log('PublicUserProfile classification debug:', {
+            concursoId: cid,
+            totalRankings: list.length,
+            classifiedCount: classified.length,
+            userRankingId: rid,
+            userIndex: idx,
+            isClassified,
+            position,
+            userScore: list.find(r => r.id === rid)?.score
+          });
           return {
             cid,
             position,
@@ -232,21 +250,39 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           position: res.position,
           isClassified: res.isClassified
         }));
-        return data.map((item: any) => {
-          const concursoData = item.concursos || {};
-          const titulo = typeof concursoData === 'object' && concursoData !== null && 'titulo' in concursoData ? String((concursoData as any).titulo) : 'Concurso sem título';
-          const info = byConcurso.get(item.concurso_id) || {
-            position: null,
-            isClassified: false
-          };
-          return {
-            concursoId: item.concurso_id,
-            concursoTitle: titulo,
-            position: info.position,
-            score: item.score,
-            isClassified: info.isClassified
-          } as UserRanking;
-        });
+        // Construir dados finais combinando informações dos concursos e rankings
+        const finalData = [];
+        
+        if (data && data.length > 0) {
+          const userRanking = data[0];
+          
+          if (userRanking.consolidated_data?.rankings) {
+            for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
+              const concursoId = rankingData.concurso_id;
+              if (concursoId) {
+                // Buscar dados do concurso
+                const concursoInfo = concursosData?.find(c => c.id === concursoId);
+                const titulo = concursoInfo?.titulo || 'Concurso sem título';
+                
+                // Buscar informações de classificação
+                const info = byConcurso.get(concursoId) || {
+                  position: null,
+                  isClassified: false
+                };
+                
+                finalData.push({
+                  concursoId: concursoId,
+                  concursoTitle: titulo,
+                  position: info.position,
+                  score: rankingData.user_data?.score || 0,
+                  isClassified: info.isClassified
+                } as UserRanking);
+              }
+            }
+          }
+        }
+        
+        return finalData;
       } catch (error) {
         console.error('Error fetching rankings:', error);
         return [];
