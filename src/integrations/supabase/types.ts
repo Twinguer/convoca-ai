@@ -823,43 +823,18 @@ export type Database = {
       }
       user_rankings: {
         Row: {
-          concurso_id: string | null
           consolidated_data: Json | null
-          created_at: string | null
-          reservation_type: string | null
-          score: number | null
-          selected_booklet_id: string | null
-          updated_at: string | null
           user_id: string
         }
         Insert: {
-          concurso_id?: string | null
           consolidated_data?: Json | null
-          created_at?: string | null
-          reservation_type?: string | null
-          score?: number | null
-          selected_booklet_id?: string | null
-          updated_at?: string | null
           user_id: string
         }
         Update: {
-          concurso_id?: string | null
           consolidated_data?: Json | null
-          created_at?: string | null
-          reservation_type?: string | null
-          score?: number | null
-          selected_booklet_id?: string | null
-          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "fk_user_rankings_concurso"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "fk_user_rankings_user_id"
             columns: ["user_id"]
