@@ -42,12 +42,19 @@ export const consolidatedAnswerService = {
     try {
       console.log('[consolidatedAnswerService] Buscando dados consolidados para ranking:', rankingId);
       
-      // Buscar dados consolidados diretamente da tabela user_rankings
+      // Buscar dados do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('[consolidatedAnswerService] Usuário não autenticado');
+        return null;
+      }
+
+      // Buscar dados consolidados usando user_id
       const { data: rankingData, error: rankingError } = await supabase
         .from('user_rankings')
-        .select('consolidated_data, selected_booklet, subject_scores, concurso_id, user_id, edit_count')
-        .eq('id', rankingId)
-        .single();
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (rankingError || !rankingData) {
         console.error('[consolidatedAnswerService] Erro ao buscar ranking:', rankingError);
@@ -61,30 +68,36 @@ export const consolidatedAnswerService = {
       }
 
       const consolidatedData = rankingData.consolidated_data;
-      const selectedBooklet = rankingData.selected_booklet;
-      const userId = rankingData.user_id;
+      const userId = user.id;
 
-      // Extrair dados usando a estrutura de backup: users -> user_id -> booklets
-      const userData = consolidatedData.users?.[userId];
-      if (!userData) {
-        console.log('[consolidatedAnswerService] Dados do usuário não encontrados');
+      // Extrair dados usando a estrutura atual: rankings -> rankingId -> user_data
+      const rankings = consolidatedData.rankings;
+      if (!rankings) {
+        console.log('[consolidatedAnswerService] Nenhum ranking encontrado nos dados consolidados');
         return null;
       }
 
-      // Adaptar para a interface esperada (estrutura de backup)
+      // Encontrar o ranking específico pelo rankingId
+      const specificRankingData = rankings[rankingId];
+      if (!specificRankingData) {
+        console.log('[consolidatedAnswerService] Ranking específico não encontrado:', rankingId);
+        return null;
+      }
+
+      // Adaptar para a interface esperada (estrutura atual)
       const adaptedData: ConsolidatedAnswerData = {
-        booklets: userData.booklets || {},
-        subjective_scores: userData.subjective_scores || {
+        booklets: {}, // Estrutura de booklets não é mais usada
+        subjective_scores: specificRankingData.user_data?.subjective_scores || {
           discursive: 0,
           case_study_1: 0,
           case_study_2: 0,
           case_study_3: 0,
           other_subjective: 0
         },
-        selected_booklet: selectedBooklet || '',
-        total_edit_count: rankingData.edit_count || 0,
+        selected_booklet: specificRankingData.selected_booklet_id || selectedBooklet || '',
+        total_edit_count: specificRankingData.user_data?.edit_count || 0,
         metadata: {
-          last_updated: userData.last_updated || new Date().toISOString(),
+          last_updated: specificRankingData.control_metadata?.last_updated || new Date().toISOString(),
           version: '3.0'
         }
       };
@@ -98,26 +111,30 @@ export const consolidatedAnswerService = {
     }
   },
 
-      // Buscar respostas de um caderno específico (ISOLADO) - Estrutura original
+      // Buscar respostas de um caderno específico (ISOLADO) - Estrutura atual
       async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
         try {
           console.log('[consolidatedAnswerService] Buscando respostas do caderno:', bookletId, 'para ranking:', rankingId);
 
           const consolidatedData = await this.getConsolidatedAnswers(rankingId);
 
-          if (consolidatedData?.booklets?.[bookletId]) {
-            const bookletData = consolidatedData.booklets[bookletId] as BookletData;
-            const answers: { [key: string]: string } = {};
+          // Na nova estrutura, as respostas estão em user_data.answers
+          if (consolidatedData) {
+            // Buscar dados do ranking específico
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return {};
 
-            // Processar estrutura simples (questionNum -> answer)
-            if (bookletData.answers) {
-              Object.entries(bookletData.answers).forEach(([questionNum, answer]) => {
-                answers[questionNum] = answer as string;
-              });
+            const { data: rankingData } = await supabase
+              .from('user_rankings')
+              .select('consolidated_data')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (rankingData?.consolidated_data?.rankings?.[rankingId]?.user_data?.answers) {
+              const answers = rankingData.consolidated_data.rankings[rankingId].user_data.answers;
+              console.log('[consolidatedAnswerService] Respostas do caderno encontradas:', answers);
+              return answers;
             }
-
-            console.log('[consolidatedAnswerService] Respostas do caderno encontradas:', answers);
-            return answers;
           }
 
           console.log('[consolidatedAnswerService] Nenhuma resposta encontrada para o caderno:', bookletId);
@@ -128,30 +145,18 @@ export const consolidatedAnswerService = {
         }
       },
 
-  // Trocar caderno (CORRIGIDO para limpar estado anterior)
+  // Trocar caderno (SIMPLIFICADO - apenas retorna as respostas do caderno)
   async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
     try {
-      // console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
+      console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
       
-      const { data, error } = await supabase.rpc('switch_user_booklet', {
-        p_ranking_id: rankingId,
-        p_booklet_id: bookletId
-      });
-
-      if (error) {
-        console.error('[consolidatedAnswerService] Switch booklet error:', error);
-        return { success: false, error: error.message };
-      }
-
-      console.log('[consolidatedAnswerService] Switch response:', data);
-      
-      // Buscar as respostas específicas do novo caderno
+      // Buscar as respostas específicas do caderno
       const bookletAnswers = await this.getBookletAnswers(rankingId, bookletId);
       
       return {
-        success: data?.success || false,
+        success: true,
         answers: bookletAnswers,
-        error: data?.success ? undefined : 'Falha ao trocar caderno'
+        error: undefined
       };
     } catch (error: any) {
       console.error('[consolidatedAnswerService] Error switching booklet:', error);

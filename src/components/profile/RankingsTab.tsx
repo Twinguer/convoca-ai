@@ -249,7 +249,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           .from('user_rankings')
           .select('user_id, consolidated_data')
           .eq('user_id', currentUserId)
-          .single();
+          .maybeSingle();
 
         if (findError || !userRanking) {
           console.error('Erro ao buscar ranking do usuário:', findError);
@@ -269,7 +269,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           .from('user_rankings')
           .select('consolidated_data')
           .eq('user_id', currentUserId)
-          .single();
+          .maybeSingle();
         
         if (fetchError) {
           console.error('Erro ao buscar dados do usuário:', fetchError);
@@ -313,7 +313,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         const { error: rankingError } = await supabase
           .from('user_rankings')
           .delete()
-          .eq('id', rankingId);
+          .eq('user_id', currentUserId);
         
         if (rankingError) {
           console.error('Erro ao deletar user_ranking:', rankingError);

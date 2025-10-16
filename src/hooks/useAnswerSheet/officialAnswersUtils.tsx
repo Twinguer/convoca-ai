@@ -40,7 +40,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
       .from('concursos')
       .select('official_answers, disciplines')
       .eq('id', concursoId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[getQuestionStructureFromOfficialAnswers] Erro ao buscar respostas oficiais:', error);
@@ -55,6 +55,14 @@ export const getQuestionStructureFromOfficialAnswers = async (
     const bookletData = data.official_answers[bookletId];
     const questions = bookletData.questions || {};
     const disciplines = data.disciplines || [];
+    
+    console.log('[getQuestionStructureFromOfficialAnswers] Estrutura JSONB atual:', {
+      bookletId,
+      hasMetadata: !!bookletData.metadata,
+      totalQuestions: bookletData.metadata?.total_questions,
+      questionsCount: Object.keys(questions).length,
+      disciplinesCount: disciplines.length
+    });
     
     console.log('[getQuestionStructureFromOfficialAnswers] Dados do caderno encontrados:', bookletData);
     console.log('[getQuestionStructureFromOfficialAnswers] Disciplinas do concurso:', disciplines);
@@ -222,7 +230,7 @@ export const getNullifiedQuestionsFromOfficialAnswers = async (
       .from('concursos')
       .select('official_answers')
       .eq('id', concursoId)
-      .single();
+      .maybeSingle();
 
     if (error || !data?.official_answers?.[bookletId]) {
       return [];

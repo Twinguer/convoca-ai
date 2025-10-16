@@ -32,11 +32,12 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
     console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
 
     // Buscar dados consolidados da nova estrutura unificada
+    // Note: rankingId is actually the user_id in the new structure
     const { data, error } = await supabase
       .from('user_rankings')
       .select('consolidated_data, selected_booklet, edit_count')
-      .eq('id', rankingId)
-      .single();
+      .eq('user_id', rankingId)
+      .maybeSingle();
       
     if (error) {
       console.error('[fetchUserAnswers] Error:', error);

@@ -8,3 +8,5 @@ COMMENT ON COLUMN concursos.has_cota IS 'JSONB structure for quota configuration
 -- Create index for better performance on JSONB queries
 CREATE INDEX idx_concursos_has_cota ON concursos USING GIN (has_cota);
 
+
+

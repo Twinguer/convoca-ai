@@ -92,6 +92,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
     console.log('[checkMissingOfficialAnswers] DEBUG - bookletData.questions:', bookletData?.questions);
     console.log('[checkMissingOfficialAnswers] DEBUG - Quantidade de questões:', bookletData?.questions ? Object.keys(bookletData.questions).length : 0);
     
+    
     if (!bookletData || !bookletData.questions) {
       console.log('[checkMissingOfficialAnswers] Gabarito não encontrado para o caderno:', bookletId);
       return true;

@@ -30,6 +30,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
+  console.log('[AnswerSheet] Componente inicializado com:', {
+    concursoId: concurso?.id,
+    rankingId,
+    hasOnSuccess: !!onSuccess
+  });
   
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
@@ -67,27 +72,41 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
+      console.log('[AnswerSheet] Iniciando busca de dados do ranking:', rankingId);
+      
+      // Buscar dados do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('[AnswerSheet] Usuário não autenticado');
+        throw new Error('User not authenticated');
+      }
+
+      console.log('[AnswerSheet] Usuário autenticado:', user.id);
+
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
-      if (error) throw error;
-      return data || {};
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('[AnswerSheet] Erro ao buscar dados do ranking:', error);
+        throw error;
+      }
+      
+      console.log('[AnswerSheet] Dados consolidados encontrados:', data?.consolidated_data);
+      
+      // Extrair dados do ranking específico
+      const rankingData = data?.consolidated_data?.rankings?.[rankingId];
+      console.log('[AnswerSheet] Dados do ranking específico:', rankingData);
+      
+      return rankingData || {};
     },
     staleTime: 1000
   });
 
   // Get selected booklet ID from user ranking data
-  const selectedBookletIdFromData = userRankingData?.selected_booklet || '';
-
-  // Update local state when data changes
-  useEffect(() => {
-    if (selectedBookletIdFromData && selectedBookletIdFromData !== selectedBookletId) {
-      setSelectedBookletId(selectedBookletIdFromData);
-      console.log('[AnswerSheet] selectedBookletId atualizado para:', selectedBookletIdFromData);
-    }
-  }, [selectedBookletIdFromData, selectedBookletId]);
+  const selectedBookletIdFromData = userRankingData?.selected_booklet_id || '';
 
   const {
     answers,
@@ -123,24 +142,57 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     refetchAnswers
   } = useAnswerSheet(concurso, rankingId, selectedBookletIdFromData);
 
-  // Fetch exam booklets for this concurso
+  // Fetch exam booklets for this concurso - MOVED UP to avoid initialization error
   const {
     data: examBooklets,
     isLoading: isLoadingBooklets
   } = useQuery({
     queryKey: ['exam-booklets', concurso.id],
     queryFn: async () => {
+      console.log('[AnswerSheet] Buscando cadernos para concurso:', concurso.id);
+      
       const { data, error } = await supabase
         .from('concursos')
         .select('exam_booklets')
         .eq('id', concurso.id)
         .single();
-      if (error) throw error;
+      
+      if (error) {
+        console.error('[AnswerSheet] Erro ao buscar cadernos:', error);
+        throw error;
+      }
+      
       // Ordenar por display_order e retornar array
       const booklets = data?.exam_booklets || [];
+      console.log('[AnswerSheet] Cadernos encontrados:', booklets);
+      
       return booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
     }
   });
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (selectedBookletIdFromData && selectedBookletIdFromData !== selectedBookletId) {
+      setSelectedBookletId(selectedBookletIdFromData);
+      console.log('[AnswerSheet] selectedBookletId atualizado para:', selectedBookletIdFromData);
+    }
+  }, [selectedBookletIdFromData, selectedBookletId]);
+
+  // Initialize selectedBookletId if not set and examBooklets are available
+  useEffect(() => {
+    if (!selectedBookletId && examBooklets && examBooklets.length > 0) {
+      setSelectedBookletId(examBooklets[0].id);
+      console.log('[AnswerSheet] selectedBookletId inicializado com primeiro caderno:', examBooklets[0].id);
+    }
+  }, [selectedBookletId, examBooklets]);
+
+  // Update selectedBookletIdFromData when examBooklets become available
+  useEffect(() => {
+    if (!selectedBookletIdFromData && examBooklets && examBooklets.length > 0) {
+      setSelectedBookletId(examBooklets[0].id);
+      console.log('[AnswerSheet] selectedBookletId atualizado com primeiro caderno disponível:', examBooklets[0].id);
+    }
+  }, [selectedBookletIdFromData, examBooklets]);
 
   // Set selected booklet from user ranking data
   useEffect(() => {
@@ -186,8 +238,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       setCheckingOfficialAnswers(true);
       try {
         console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
-        // Se não há caderno selecionado, usar o primeiro caderno disponível
-        const bookletToCheck = selectedBookletIdFromData || (examBooklets && examBooklets.length > 0 ? examBooklets[0].id : 'default');
+        
+        // AGUARDAR examBooklets estarem carregados antes de verificar
+        if (!examBooklets || examBooklets.length === 0) {
+          console.log('[AnswerSheet] Aguardando cadernos carregarem...');
+          return;
+        }
+        
+        // Usar selectedBookletIdFromData se disponível, senão usar o primeiro caderno
+        const bookletToCheck = selectedBookletIdFromData || examBooklets[0].id;
+        console.log('[AnswerSheet] Verificando gabarito para caderno:', bookletToCheck);
+        
         const result = await checkMissingOfficialAnswers(concurso.id, bookletToCheck);
 
         if (result) {
@@ -212,7 +273,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     };
 
     checkOfficialAnswerKey();
-  }, [concurso?.id]);
+  }, [concurso?.id, examBooklets, selectedBookletIdFromData]);
 
   // Update section display names with custom disciplines
   useEffect(() => {
@@ -367,14 +428,18 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       refetchRanking();
       // Atualizar o estado do caderno após refetch
       const updateBookletId = async () => {
+        // Buscar dados do usuário atual
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         const { data: updatedRanking } = await supabase
           .from('user_rankings')
-          .select('selected_booklet')
-          .eq('id', rankingId)
-          .single();
+          .select('consolidated_data')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-        if (updatedRanking?.selected_booklet) {
-          setSelectedBookletId(updatedRanking.selected_booklet);
+        if (updatedRanking?.consolidated_data?.rankings?.[rankingId]?.selected_booklet_id) {
+          setSelectedBookletId(updatedRanking.consolidated_data.rankings[rankingId].selected_booklet_id);
         }
       };
       updateBookletId();
@@ -486,8 +551,17 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   // Show warning if no booklet is selected
+  console.log('[AnswerSheet] Verificando condições de renderização:', {
+    selectedBookletIdFromData,
+    isLoadingRanking,
+    isLoadingBooklets,
+    checkingOfficialAnswers,
+    missingOfficialAnswers,
+    examBooklets: examBooklets?.length
+  });
 
   if (!selectedBookletIdFromData && !isLoadingRanking) {
+    console.log('[AnswerSheet] Mostrando aviso: Caderno não selecionado');
     return (
       <Card className="shadow-lg">
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">

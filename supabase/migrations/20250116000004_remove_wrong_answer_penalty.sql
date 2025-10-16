@@ -6,3 +6,5 @@ ALTER TABLE concursos DROP COLUMN IF EXISTS wrong_answer_penalty;
 -- Add comment explaining the change
 COMMENT ON TABLE concursos IS 'Penalty logic can be stored in JSONB fields if needed';
 
+
+

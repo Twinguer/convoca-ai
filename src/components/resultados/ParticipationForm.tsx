@@ -37,6 +37,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [showAnswerSheet, setShowAnswerSheet] = useState(propShowAnswerSheet || true);
   const [showScoreForm, setShowScoreForm] = useState(false);
   const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
+  
+  // Debug log para selectedQuota
+  console.log('[ParticipationForm] selectedQuota:', selectedQuota);
   const [selectedBooklet, setSelectedBooklet] = useState<string>('');
   const [booklets, setBooklets] = useState<ExamBooklet[]>([]);
   const [isLoadingBooklets, setIsLoadingBooklets] = useState(false);
@@ -70,6 +73,36 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     setLocalUserRankingId(userRankingId);
   }, [propShowAnswerSheet, isAlreadyParticipating, userRankingId]);
 
+  // Carregar reservation_type existente quando usuário já está participando
+  useEffect(() => {
+    const loadExistingReservationType = async () => {
+      if (isAlreadyParticipating && user?.id && concurso?.id) {
+        try {
+          const { data: userRankingData } = await supabase
+            .from('user_rankings')
+            .select('consolidated_data')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (userRankingData?.consolidated_data?.rankings) {
+            // Procurar pelo ranking deste concurso
+            for (const [rankingId, rankingData] of Object.entries(userRankingData.consolidated_data.rankings)) {
+              if (rankingData.concurso_id === concurso.id && rankingData.user_data?.reservation_type) {
+                console.log('[ParticipationForm] Carregando reservation_type existente:', rankingData.user_data.reservation_type);
+                setSelectedQuota(rankingData.user_data.reservation_type as QuotaType);
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('[ParticipationForm] Erro ao carregar reservation_type existente:', error);
+        }
+      }
+    };
+
+    loadExistingReservationType();
+  }, [isAlreadyParticipating, user?.id, concurso?.id]);
+
   // Memoize expensive calculations
   const isUserParticipating = React.useMemo(() => {
     return localIsParticipating || isAlreadyParticipating;
@@ -77,14 +110,29 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
   const shouldShowAnswerSheet = React.useMemo(() => {
     const result = (showAnswerSheet || isUserParticipating) && localUserRankingId;
-    console.log('[ParticipationForm] shouldShowAnswerSheet:', {
+    console.log('[ParticipationForm] shouldShowAnswerSheet DEBUG:', {
       showAnswerSheet,
       isUserParticipating,
       localUserRankingId,
+      isAlreadyParticipating,
+      localIsParticipating,
+      propShowAnswerSheet,
       result
     });
     return result;
-  }, [showAnswerSheet, isUserParticipating, localUserRankingId]);
+  }, [showAnswerSheet, isUserParticipating, localUserRankingId, isAlreadyParticipating, localIsParticipating, propShowAnswerSheet]);
+
+  // Debug adicional para entender o estado
+  console.log('[ParticipationForm] Estado atual:', {
+    concursoId: concurso?.id,
+    user: user?.id,
+    isAlreadyParticipating,
+    localIsParticipating,
+    userRankingId,
+    localUserRankingId,
+    showAnswerSheet,
+    shouldShowAnswerSheet
+  });
   const loadBooklets = async () => {
     try {
       console.log('[ParticipationForm] Carregando cadernos para concurso:', concurso.id);
@@ -310,7 +358,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Create the new ranking data structure
       const newRankingData = {
         concurso_id: concurso.id,
-        selected_booklet_id: booklets.length > 0 && selectedBooklet ? selectedBooklet as string : null,
+        selected_booklet_id: booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null,
         user_data: {
           score: 0,
           edit_count: 0,
@@ -333,6 +381,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           created_at: new Date().toISOString()
         }
       };
+
+      console.log('[ParticipationForm] Creating ranking with selectedQuota:', selectedQuota);
+      console.log('[ParticipationForm] newRankingData.user_data.reservation_type:', newRankingData.user_data.reservation_type);
 
       // Check if user already has a user_rankings record
       const { data: existingUserRanking } = await supabase
@@ -360,6 +411,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         };
       }
 
+      console.log('[ParticipationForm] Saving consolidated_data:', JSON.stringify(consolidatedData, null, 2));
+      
       const {
         data,
         error
@@ -435,9 +488,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Debug states log removed to reduce console spam
 
   // Show the answer sheet if selected and we have a ranking ID
-  // console.log('[ParticipationForm] Verificando condição shouldShowAnswerSheet:', shouldShowAnswerSheet);
+  console.log('[ParticipationForm] Verificando condição shouldShowAnswerSheet:', shouldShowAnswerSheet);
   if (shouldShowAnswerSheet) {
-    // console.log('[ParticipationForm] Renderizando AnswerSheet com rankingId:', localUserRankingId);
+    console.log('[ParticipationForm] Renderizando AnswerSheet com rankingId:', localUserRankingId);
     // Rendering AnswerSheet
     return (
       <div className="w-full h-full">

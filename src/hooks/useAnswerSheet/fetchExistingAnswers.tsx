@@ -4,11 +4,18 @@ export const fetchExistingAnswers = async (rankingId: string) => {
   try {
     console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
 
-    // Buscar dados consolidados diretamente da tabela user_rankings
+    // Buscar dados do usuário atual
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('[fetchExistingAnswers] Usuário não autenticado');
+      return {};
+    }
+
+    // Buscar dados consolidados usando user_id
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
-      .select('consolidated_data, selected_booklet, subject_scores, concurso_id, user_id, edit_count')
-      .eq('id', rankingId)
+      .select('consolidated_data')
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (rankingError || !rankingData) {
@@ -28,38 +35,47 @@ export const fetchExistingAnswers = async (rankingId: string) => {
         caseStudy2Score: null,
         caseStudy3Score: null,
         otherSubjectiveScore: null,
-        subjectScores: rankingData.subject_scores || {},
-        selectedBooklet: rankingData.selected_booklet,
-        editCount: rankingData.edit_count || 0
+        subjectScores: {},
+        selectedBooklet: null,
+        editCount: 0
       };
     }
 
     const consolidatedData = rankingData.consolidated_data;
-    const selectedBooklet = rankingData.selected_booklet;
-    const userId = rankingData.user_id;
+    const userId = user.id;
+    
+    // Buscar selected_booklet_id da estrutura atual
+    let selectedBooklet = null;
+    if (consolidatedData?.rankings?.[rankingId]?.selected_booklet_id) {
+      selectedBooklet = consolidatedData.rankings[rankingId].selected_booklet_id;
+    }
 
     console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
 
     let answers: { [key: number]: string } = {};
     let subjectiveScores = {};
 
-        // Extrair dados usando a estrutura de backup: users -> user_id -> booklets -> booklet_id -> answers
-        const userData = consolidatedData.users?.[userId];
-        if (userData?.booklets) {
-          const bookletId = selectedBooklet || Object.keys(userData.booklets)[0];
-          if (bookletId && userData.booklets[bookletId]?.answers) {
-            const bookletAnswers = userData.booklets[bookletId].answers;
-            
-            // Processar estrutura simples (questionNum -> answer)
-            Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
-              answers[parseInt(questionNum)] = answer as string;
-            });
-          }
+    // NOVA ESTRUTURA: consolidated_data.rankings[rankingId].user_data
+    const rankings = consolidatedData.rankings;
+    if (rankings) {
+      // Encontrar o ranking específico pelo rankingId
+      const rankingData = rankings[rankingId];
+      if (rankingData?.user_data) {
+        // Extrair respostas da estrutura atual
+        if (rankingData.user_data.answers) {
+          Object.entries(rankingData.user_data.answers).forEach(([questionNum, answer]) => {
+            const questionNumber = parseInt(questionNum);
+            if (!isNaN(questionNumber)) {
+              answers[questionNumber] = answer as string;
+            }
+          });
         }
 
-    // Extrair pontuações subjetivas usando a estrutura de backup: users -> user_id -> subjective_scores
-    if (userData?.subjective_scores) {
-      subjectiveScores = userData.subjective_scores;
+        // Extrair pontuações subjetivas da estrutura atual
+        if (rankingData.user_data.subjective_scores) {
+          subjectiveScores = rankingData.user_data.subjective_scores;
+        }
+      }
     }
 
     console.log('[fetchExistingAnswers] Respostas finais:', answers);
@@ -75,7 +91,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       otherSubjectiveScore: subjectiveScores?.other || null,
       subjectScores: subjectiveScores || {},
       selectedBooklet: selectedBooklet,
-      editCount: rankingData.edit_count || 0,
+      editCount: consolidatedData?.rankings?.[rankingId]?.user_data?.edit_count || 0,
       consolidatedData: consolidatedData
     };
 

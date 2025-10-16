@@ -43,7 +43,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         .from('user_rankings')
         .select('consolidated_data')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (rankingError) {
         console.log('No user ranking data found, using empty answers');
@@ -79,12 +79,16 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
         }
       }
 
+      // Buscar dados do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       // Fetch user ranking for scores
       const { data: rankingData, error: rankingError } = await supabase
         .from('user_rankings')
-        .select('*')
-        .eq('id', rankingId)
-        .single();
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (rankingError) throw rankingError;
 

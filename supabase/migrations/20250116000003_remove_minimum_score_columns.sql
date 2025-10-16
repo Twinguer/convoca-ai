@@ -9,3 +9,5 @@ ALTER TABLE concursos DROP COLUMN IF EXISTS total_minimum_score;
 -- Add comment explaining the change
 COMMENT ON TABLE concursos IS 'Minimum score data now stored in JSONB fields: subjects and has_cota';
 
+
+

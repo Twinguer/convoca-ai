@@ -26,13 +26,10 @@ export const validateSaveAnswers = (
     };
   }
 
-  // Verificar se um caderno foi selecionado
+  // Verificar se um caderno foi selecionado (permitir string vazia se há cadernos disponíveis)
   if (!selectedBookletId || selectedBookletId.trim() === '') {
-    console.log('[validateSaveAnswers] Falha: caderno não selecionado ou vazio');
-    return {
-      isValid: false,
-      errorMessage: "É necessário selecionar um caderno de prova antes de salvar as respostas."
-    };
+    console.log('[validateSaveAnswers] Aviso: caderno não selecionado, mas permitindo salvamento com caderno padrão');
+    // Não retornar erro aqui, deixar o useSaveAnswers resolver o caderno padrão
   }
 
   console.log('[validateSaveAnswers] Validação passou');

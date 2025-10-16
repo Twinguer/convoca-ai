@@ -63,7 +63,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .from('user_rankings')
       .select('user_id, consolidated_data')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (userRankingError || !userRanking) {
       console.error('Erro ao buscar ranking do usuário:', userRankingError);
@@ -88,7 +88,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .from('user_rankings')
       .select('concurso_id, user_id, selected_booklet')
       .eq('user_id', userRanking.user_id)
-      .single();
+      .maybeSingle();
 
     if (rankingError) {
       console.error('Erro ao buscar dados do ranking:', rankingError);
@@ -103,7 +103,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .from('user_rankings')
       .select('consolidated_data')
       .eq('user_id', rankingData.user_id)
-      .single();
+      .maybeSingle();
 
     if (consolidatedError) {
       console.log('Nenhum dado consolidado encontrado');
@@ -191,7 +191,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .from('user_rankings')
       .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
       .eq('user_id', userRanking.user_id)
-      .single();
+      .maybeSingle();
       
     if (subjectiveScoresError) {
       console.error('Erro ao buscar pontuações subjetivas:', subjectiveScoresError);
@@ -229,44 +229,26 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const weightedOtherSubjectiveScore = otherSubjectiveScore * getWeightFromDisciplines('other_subjective');
 
     // Processar pontuações da disciplina baseadas no JSON de disciplinas
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+    // SEMPRE usar a nova estrutura JSONB disciplines (sempre hierárquica)
     if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      // Verificar se estamos lidando com estrutura hierárquica (blocos -> disciplinas)
-      const hierarchical = isHierarchicalStructure(concurso);
-      
-      console.log(`[recalculateUserScore] Structure type: ${hierarchical ? 'hierarchical' : 'flat'}`);
+      console.log(`[recalculateUserScore] Structure type: hierarchical`);
       
       // Criar um mapeamento de tipo para peso com base no JSON de disciplinas
       const disciplineWeights: Record<string, number> = {};
       const disciplineNames: Record<string, string> = {};
       
-      // Percorrer as disciplinas e extrair os pesos
-      if (hierarchical) {
-        // Estrutura hierárquica (blocos -> disciplinas)
-        for (const block of concurso.disciplines) {
-          if ('disciplines' in block && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.type) {
-                disciplineWeights[discipline.type] = discipline.weight ?? 1;
-                disciplineNames[discipline.type] = discipline.name || discipline.type;
-                
-                // Inicializar pontuações como zero
-                disciplineScores[discipline.type] = 0;
-                weightedDisciplineScores[discipline.type] = 0;
-              }
+      // Percorrer as disciplinas e extrair os pesos - SEMPRE hierárquica
+      for (const block of concurso.disciplines) {
+        if ('disciplines' in block && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.type) {
+              disciplineWeights[discipline.type] = discipline.weight ?? 1;
+              disciplineNames[discipline.type] = discipline.name || discipline.type;
+              
+              // Inicializar pontuações como zero
+              disciplineScores[discipline.type] = 0;
+              weightedDisciplineScores[discipline.type] = 0;
             }
-          }
-        }
-      } else {
-        // Estrutura plana (disciplinas diretamente)
-        for (const discipline of concurso.disciplines) {
-          if ('isEnabled' in discipline && discipline.isEnabled && discipline.type) {
-            disciplineWeights[discipline.type] = discipline.weight ?? 1;
-            disciplineNames[discipline.type] = discipline.name || discipline.type;
-            
-            // Inicializar pontuações como zero
-            disciplineScores[discipline.type] = 0;
-            weightedDisciplineScores[discipline.type] = 0;
           }
         }
       }

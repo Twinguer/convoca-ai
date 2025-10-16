@@ -65,50 +65,120 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Dados formatados para RPC:', preparedData);
       console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(preparedData.answers).length);
 
-      // Garantir que selectedBookletId seja sempre string para a função RPC
+      // Buscar dados do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Usuário não autenticado');
+        return;
+      }
+
+      // Buscar dados consolidados usando user_id
       const { data: currentRanking } = await supabase
         .from('user_rankings')
-        .select('selected_booklet')
-        .eq('id', rankingId)
-        .single();
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      const bookletIdString = currentRanking?.selected_booklet 
-        ? String(currentRanking.selected_booklet) 
-        : (selectedBookletId ? String(selectedBookletId) : 'default');
+      // Extrair selected_booklet_id da estrutura consolidada
+      const consolidatedData = currentRanking?.consolidated_data;
+      const rankingData = consolidatedData?.rankings?.[rankingId];
+      const bookletFromData = rankingData?.selected_booklet_id;
 
-      // Chamar a nova função RPC consolidada por concurso - APENAS JSONB
-      console.log('[useSaveAnswers] Chamando RPC com parâmetros:', {
-        p_ranking_id: rankingId,
-        p_concurso_id: concurso.id,
-        p_booklet_id: bookletIdString,
-        p_answers: preparedData.answers,
-        p_subject_scores: preparedData.subjectScores,
-        p_current_edit_count: editCount
-      });
+      // Garantir que sempre temos um bookletId válido
+      let bookletIdString = 'default';
       
-      console.log('[useSaveAnswers] Pontuações subjetivas sendo enviadas (JSONB):', {
-        subjectScores: preparedData.subjectScores
-      });
-      
-      const { data, error } = await supabase.rpc('save_user_answers_v3', {
-        p_ranking_id: rankingId,
-        p_concurso_id: concurso.id,
-        p_booklet_id: bookletIdString,
-        p_answers: preparedData.answers,
-        p_subjective_scores: preparedData.subjectScores,
-        p_current_edit_count: editCount
-      });
-
-      if (error) {
-        console.error('[useSaveAnswers] Erro na função RPC:', error);
-        throw new Error(error.message || "Erro ao salvar respostas");
+      if (bookletFromData) {
+        bookletIdString = String(bookletFromData);
+      } else if (selectedBookletId && selectedBookletId.trim() !== '') {
+        bookletIdString = String(selectedBookletId);
+      } else {
+        // Se não temos bookletId, tentar buscar o primeiro caderno disponível
+        try {
+          const { data: concursoData } = await supabase
+            .from('concursos')
+            .select('exam_booklets')
+            .eq('id', concurso.id)
+            .maybeSingle();
+          
+          if (concursoData?.exam_booklets && concursoData.exam_booklets.length > 0) {
+            bookletIdString = concursoData.exam_booklets[0].id;
+            console.log('[useSaveAnswers] Usando primeiro caderno do concurso:', bookletIdString);
+          } else {
+            console.log('[useSaveAnswers] Nenhum caderno encontrado no concurso, usando padrão');
+          }
+        } catch (error) {
+          console.error('[useSaveAnswers] Erro ao buscar cadernos do concurso:', error);
+          // Manter 'default' como fallback
+        }
       }
 
-      console.log('[useSaveAnswers] Resposta da função RPC:', data);
+      // Salvar diretamente no consolidated_data sem usar RPC
+      console.log('[useSaveAnswers] Salvando diretamente no consolidated_data:', {
+        rankingId,
+        concursoId: concurso.id,
+        bookletId: bookletIdString,
+        answers: preparedData.answers,
+        subjectScores: preparedData.subjectScores,
+        editCount
+      });
+      
+      // Buscar dados atuais do usuário
+      const { data: currentUserRanking, error: fetchError } = await supabase
+        .from('user_rankings')
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (!data.success) {
-        throw new Error(data.error || "Erro ao salvar respostas");
+      if (fetchError) {
+        console.error('[useSaveAnswers] Erro ao buscar dados do usuário:', fetchError);
+        throw new Error('Erro ao buscar dados do usuário');
       }
+
+      if (!currentUserRanking?.consolidated_data) {
+        throw new Error('Dados de ranking do usuário não encontrados');
+      }
+
+      // Atualizar consolidated_data
+      const updatedConsolidatedData = { ...currentUserRanking.consolidated_data };
+      
+      if (updatedConsolidatedData.rankings && updatedConsolidatedData.rankings[rankingId]) {
+        // Atualizar ranking existente
+        const updatedRankingData = {
+          ...updatedConsolidatedData.rankings[rankingId],
+          user_data: {
+            ...updatedConsolidatedData.rankings[rankingId].user_data,
+            answers: preparedData.answers,
+            subjective_scores: preparedData.subjectScores,
+            edit_count: editCount + 1,
+            all_questions_answered: Object.keys(preparedData.answers).length > 0
+          },
+          selected_booklet_id: bookletIdString,
+          control_metadata: {
+            ...updatedConsolidatedData.rankings[rankingId].control_metadata,
+            last_updated: new Date().toISOString()
+          }
+        };
+
+        updatedConsolidatedData.rankings[rankingId] = updatedRankingData;
+      } else {
+        throw new Error('Ranking não encontrado nos dados consolidados');
+      }
+
+      // Salvar no banco
+      const { error: updateError } = await supabase
+        .from('user_rankings')
+        .update({
+          consolidated_data: updatedConsolidatedData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('[useSaveAnswers] Erro ao atualizar dados:', updateError);
+        throw new Error('Erro ao salvar respostas');
+      }
+
+      console.log('[useSaveAnswers] Dados salvos com sucesso no consolidated_data');
       
       console.log('[useSaveAnswers] Salvamento bem-sucedido, aguardando recálculo de pontuações...');
 
@@ -145,12 +215,16 @@ export const useSaveAnswers = ({
       // Após salvar, buscar o selected_booklet atualizado do banco
       const { data: updatedRanking } = await supabase
         .from('user_rankings')
-        .select('selected_booklet')
-        .eq('id', rankingId)
-        .single();
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (updatedRanking?.selected_booklet) {
-        // console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedRanking.selected_booklet);
+      const updatedConsolidatedData = updatedRanking?.consolidated_data;
+      const updatedRankingData = updatedConsolidatedData?.rankings?.[rankingId];
+      const updatedBooklet = updatedRankingData?.selected_booklet_id;
+
+      if (updatedBooklet) {
+        // console.log('[useSaveAnswers] Estado do caderno atualizado após salvamento:', updatedBooklet);
         // Nota: setSelectedBookletId será chamado pelo componente pai se necessário
       }
 

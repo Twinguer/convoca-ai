@@ -197,6 +197,13 @@ export const fetchUserRankings = async (
                 userProfileName: userProfile.name
               });
 
+              // Debug log para reservation_type
+              console.log('rankingService reservation_type debug:', {
+                rankingId,
+                user_data: rankingDataItem.user_data,
+                reservation_type: rankingDataItem.user_data?.reservation_type
+              });
+
               rankingData.push({
                 id: rankingId,
                 position: 0, // Will be calculated later

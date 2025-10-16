@@ -28,3 +28,5 @@ ALTER TABLE concursos DROP COLUMN IF EXISTS other_subjective_minimum_score;
 -- Add comment explaining the change
 COMMENT ON TABLE concursos IS 'Quota and subjective data now stored in JSONB fields: has_cota and subjects';
 
+
+

@@ -168,7 +168,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       const { error: updateError } = await supabase
         .from('user_rankings')
         .update(scoreData)
-        .eq('id', rankingId);
+        .eq('user_id', userId);
 
       if (updateError) {
         console.error('Erro ao atualizar ranking:', updateError);

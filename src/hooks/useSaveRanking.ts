@@ -22,9 +22,9 @@ const ensureNumeric = (value: any): number => {
   return 0;
 };
 
-// Helper to create disciplines from structure fields
+// Helper to create disciplines from structure fields - SEMPRE hierárquica
 const createDisciplinesFromStructure = (formValues: any): any[] => {
-  // Usar apenas a estrutura JSONB disciplines
+  // Usar apenas a estrutura JSONB disciplines (sempre hierárquica)
   if (formValues.disciplines && Array.isArray(formValues.disciplines)) {
     return formValues.disciplines;
   }
@@ -182,42 +182,23 @@ export const useSaveRanking = () => {
         }
       }
 
-      // Processar os blocos de disciplinas e gerar disciplinas planas para o banco de dados
+      // Processar os blocos de disciplinas - SEMPRE usar estrutura hierárquica
       if (formValues.disciplines && Array.isArray(formValues.disciplines)) {
-        // Verificar se estamos lidando com a nova estrutura de blocos
+        // Verificar se estamos lidando com a estrutura de blocos
         if (formValues.disciplines.length > 0 && 'name' in formValues.disciplines[0] && 'disciplines' in formValues.disciplines[0]) {
-          const flattenedDisciplines: any[] = [];
-          const originalDisciplines = JSON.parse(JSON.stringify(formValues.disciplines)); // Deep clone
-          
-          // Criar uma cópia original para manter a estrutura hierárquica
-          const disciplinesWithHierarchy = JSON.parse(JSON.stringify(formValues.disciplines));
-          
+          // Estrutura hierárquica - processar e adicionar metadados do bloco às disciplinas
           formValues.disciplines.forEach((block: any) => {
             if (block.disciplines && Array.isArray(block.disciplines)) {
               block.disciplines.forEach((discipline: any) => {
-                // Processar cada disciplina e adicionar informações do bloco
-                flattenedDisciplines.push({
-                  ...discipline,
-                  blockId: block.id,
-                  blockName: block.name,
-                  minimum_score: ensureNumeric(discipline.minimum_score),
-                  blockWeight: block.weight || 1,
-                  blockMinimumScore: ensureNumeric(block.minimum_score)
-                });
+                // Adicionar informações do bloco à disciplina
+                discipline.blockId = block.id;
+                discipline.blockName = block.name;
+                discipline.blockWeight = block.weight || 1;
+                discipline.blockMinimumScore = ensureNumeric(block.minimum_score);
+                discipline.minimum_score = ensureNumeric(discipline.minimum_score);
               });
             }
           });
-          
-          // Criar uma cópia da estrutura original para preservar os blocos no frontend
-          // mas enviar a estrutura achatada para o backend
-          
-          // Substituir o campo disciplines pela versão achatada
-          formValues.flattenedDisciplines = flattenedDisciplines;
-          
-          // Preservar a estrutura hierárquica para o banco de dados
-          formValues.hierarchicalDisciplines = disciplinesWithHierarchy;
-          
-          // Logs removidos por segurança
         }
       }
       
@@ -301,8 +282,7 @@ export const useSaveRanking = () => {
       };
 
       // Remove any temporary fields not needed in database
-      delete dataToSubmit.flattenedDisciplines;
-      delete dataToSubmit.hierarchicalDisciplines;
+      // (não há mais campos temporários para remover)
 
       // Add admin flags if provided
       if (formValues.is_admin_created !== undefined) {
@@ -335,8 +315,8 @@ export const useSaveRanking = () => {
           // Campos de configuração de exame
           exam_type: formValues.exam_type || 'Alternativas',
           alternatives_count: ensureNumeric(formValues.alternatives_count),
-          // Campos de disciplinas
-          disciplines: formValues.hierarchicalDisciplines || formValues.disciplines,
+          // Campos de disciplinas - sempre usar estrutura hierárquica
+          disciplines: formValues.disciplines,
           subjects: subjectsStructure,
           has_cota: hasCotaStructure,
           form_config: formValues.form_config || {},

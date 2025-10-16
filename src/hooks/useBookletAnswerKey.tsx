@@ -77,42 +77,24 @@ export const useBookletAnswerKey = (concursoId: string) => {
 
       let expectedQuestions = 0;
       
-      // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+      // SEMPRE usar a nova estrutura JSONB disciplines (sempre hierárquica)
       if (concurso?.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-        // Calcular questões para conhecimentos customizados
+        // Calcular questões para conhecimentos customizados - SEMPRE hierárquica
         const disciplines = Array.isArray(concurso.disciplines) ? concurso.disciplines : [];
         
-        // Verificar se é estrutura hierárquica (blocos -> disciplinas)
-        const isHierarchical = disciplines.length > 0 && 
-                              disciplines[0] && 
-                              typeof disciplines[0] === 'object' && 
-                              'disciplines' in disciplines[0];
-        
-        if (isHierarchical) {
-          // Estrutura hierárquica: blocos contendo disciplinas
-          disciplines.forEach((block: any) => {
-            if (block.disciplines && Array.isArray(block.disciplines)) {
-              block.disciplines.forEach((discipline: any) => {
-                if (discipline.isEnabled) {
-                  const questionCount = typeof discipline.questionCount === 'string' 
-                    ? parseInt(discipline.questionCount) || 0 
-                    : discipline.questionCount || 0;
-                  expectedQuestions += questionCount;
-                }
-              });
-            }
-          });
-        } else {
-          // Estrutura plana: disciplinas diretas
-          disciplines.forEach((discipline: any) => {
-            if (discipline.isEnabled) {
-              const questionCount = typeof discipline.questionCount === 'string' 
-                ? parseInt(discipline.questionCount) || 0 
-                : discipline.questionCount || 0;
-              expectedQuestions += questionCount;
-            }
-          });
-        }
+        // Estrutura hierárquica: blocos contendo disciplinas
+        disciplines.forEach((block: any) => {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            block.disciplines.forEach((discipline: any) => {
+              if (discipline.isEnabled) {
+                const questionCount = typeof discipline.questionCount === 'string' 
+                  ? parseInt(discipline.questionCount) || 0 
+                  : discipline.questionCount || 0;
+                expectedQuestions += questionCount;
+              }
+            });
+          }
+        });
       } else {
         // Estrutura tradicional não suportada mais - usar disciplines JSONB
         console.warn('[useBookletAnswerKey] Estrutura tradicional não suportada, usando disciplines JSONB');

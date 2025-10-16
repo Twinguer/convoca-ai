@@ -54,7 +54,7 @@ export const useDeleteRanking = () => {
             .from('user_rankings')
             .select('consolidated_data')
             .eq('user_id', userId)
-            .single();
+            .maybeSingle();
             
           if (!fetchError && userRankingData?.consolidated_data) {
             const updatedData = { ...userRankingData.consolidated_data };

@@ -181,7 +181,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       quota,
       totalRankings: rankingsWithQuotaPositions.length,
       firstRanking: rankingsWithQuotaPositions[0],
-      reservationTypes: rankingsWithQuotaPositions.map(r => r.reservationType)
+      reservationTypes: rankingsWithQuotaPositions.map(r => r.reservationType),
+      allRankings: rankingsWithQuotaPositions.map(r => ({
+        id: r.id,
+        reservationType: r.reservationType,
+        displayReservation: r.displayReservation
+      }))
     });
     
     // Mapeamento entre abreviações e nomes completos
