@@ -14,26 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_trail: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          operation: string
+          session_id: string | null
+          table_name: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          operation: string
+          session_id?: string | null
+          table_name: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          operation?: string
+          session_id?: string | null
+          table_name?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       concursos: {
         Row: {
           alternatives_count: number | null
           banca: string
+          created_at: string
+          created_by_user_id: string | null
+          custom_banca: string | null
+          custom_job_title: string | null
+          data_publicacao: string | null
+          disciplines: Json | null
+          etapa_atual: string | null
+          exam_booklets: Json | null
+          exam_type: string | null
+          form_config: Json | null
+          has_cota: Json | null
+          id: string
+          inscritos: number | null
+          is_admin_created: boolean | null
+          is_admin_update: boolean | null
+          knowledgeAreas: string[] | null
+          link: string | null
+          localidades: string[] | null
+          metadata: Json | null
+          official_answers: Json | null
+          orgao: string
+          predefined_job_title: string | null
+          status: string
+          subjects: Json | null
+          temp_disciplines_data: Json | null
+          titulo: string
+          total_participants: number | null
+          updated_at: string
+          vagas: number | null
+        }
+        Insert: {
+          alternatives_count?: number | null
+          banca?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          custom_banca?: string | null
+          custom_job_title?: string | null
+          data_publicacao?: string | null
+          disciplines?: Json | null
+          etapa_atual?: string | null
+          exam_booklets?: Json | null
+          exam_type?: string | null
+          form_config?: Json | null
+          has_cota?: Json | null
+          id?: string
+          inscritos?: number | null
+          is_admin_created?: boolean | null
+          is_admin_update?: boolean | null
+          knowledgeAreas?: string[] | null
+          link?: string | null
+          localidades?: string[] | null
+          metadata?: Json | null
+          official_answers?: Json | null
+          orgao: string
+          predefined_job_title?: string | null
+          status?: string
+          subjects?: Json | null
+          temp_disciplines_data?: Json | null
+          titulo: string
+          total_participants?: number | null
+          updated_at?: string
+          vagas?: number | null
+        }
+        Update: {
+          alternatives_count?: number | null
+          banca?: string
+          created_at?: string
+          created_by_user_id?: string | null
+          custom_banca?: string | null
+          custom_job_title?: string | null
+          data_publicacao?: string | null
+          disciplines?: Json | null
+          etapa_atual?: string | null
+          exam_booklets?: Json | null
+          exam_type?: string | null
+          form_config?: Json | null
+          has_cota?: Json | null
+          id?: string
+          inscritos?: number | null
+          is_admin_created?: boolean | null
+          is_admin_update?: boolean | null
+          knowledgeAreas?: string[] | null
+          link?: string | null
+          localidades?: string[] | null
+          metadata?: Json | null
+          official_answers?: Json | null
+          orgao?: string
+          predefined_job_title?: string | null
+          status?: string
+          subjects?: Json | null
+          temp_disciplines_data?: Json | null
+          titulo?: string
+          total_participants?: number | null
+          updated_at?: string
+          vagas?: number | null
+        }
+        Relationships: []
+      }
+      concursos_backup: {
+        Row: {
+          alternatives_count: number | null
+          banca: string | null
           basic_knowledge_minimum_score: number | null
           basic_knowledge_questions: number | null
           basic_knowledge_weight: number | null
           case_study_1_minimum_score: number | null
+          case_study_1_weight: number | null
           case_study_2_minimum_score: number | null
+          case_study_2_weight: number | null
           case_study_3_minimum_score: number | null
-          created_at: string
+          case_study_3_weight: number | null
+          created_at: string | null
           created_by_user_id: string | null
           custom_banca: string | null
           custom_job_title: string | null
           custom_knowledge_questions: number | null
           custom_knowledge_weight: number | null
-          created_at: string | null
+          data_publicacao: string | null
           disciplines: Json | null
           discursive_minimum_score: number | null
-          status: string | null
+          discursive_weight: number | null
+          etapa_atual: string | null
           exam_type: string | null
           has_ampla_concorrencia: boolean | null
           has_basic_knowledge: boolean | null
@@ -52,15 +200,16 @@ export type Database = {
           has_specific_knowledge_2: boolean | null
           has_specific_knowledge_3: boolean | null
           has_transsexuais: boolean | null
-          id: string
+          id: string | null
           inscritos: number | null
           is_admin_created: boolean | null
           is_admin_update: boolean | null
           knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
+          minimum_score_type: string | null
           minimum_score_unit_type: string | null
-          orgao: string
+          orgao: string | null
           predefined_job_title: string | null
           quota_minimum_score: number | null
           quota_minimum_score_unit_type: string | null
@@ -73,17 +222,18 @@ export type Database = {
           specific_knowledge_3_minimum_score: number | null
           specific_knowledge_3_questions: number | null
           specific_knowledge_3_weight: number | null
-          status: string
+          status: string | null
           subjects: Json | null
           temp_disciplines_data: Json | null
-          titulo: string
+          titulo: string | null
           total_minimum_score: number | null
-          updated_at: string
+          updated_at: string | null
           vagas: number | null
+          wrong_answer_penalty: number | null
         }
         Insert: {
           alternatives_count?: number | null
-          banca?: string
+          banca?: string | null
           basic_knowledge_minimum_score?: number | null
           basic_knowledge_questions?: number | null
           basic_knowledge_weight?: number | null
@@ -93,17 +243,17 @@ export type Database = {
           case_study_2_weight?: number | null
           case_study_3_minimum_score?: number | null
           case_study_3_weight?: number | null
-          created_at?: string
+          created_at?: string | null
           created_by_user_id?: string | null
           custom_banca?: string | null
           custom_job_title?: string | null
           custom_knowledge_questions?: number | null
           custom_knowledge_weight?: number | null
-          created_at?: string | null
+          data_publicacao?: string | null
           disciplines?: Json | null
           discursive_minimum_score?: number | null
           discursive_weight?: number | null
-          status?: string | null
+          etapa_atual?: string | null
           exam_type?: string | null
           has_ampla_concorrencia?: boolean | null
           has_basic_knowledge?: boolean | null
@@ -122,15 +272,16 @@ export type Database = {
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
           has_transsexuais?: boolean | null
-          id?: string
+          id?: string | null
           inscritos?: number | null
           is_admin_created?: boolean | null
           is_admin_update?: boolean | null
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
+          minimum_score_type?: string | null
           minimum_score_unit_type?: string | null
-          orgao: string
+          orgao?: string | null
           predefined_job_title?: string | null
           quota_minimum_score?: number | null
           quota_minimum_score_unit_type?: string | null
@@ -143,119 +294,257 @@ export type Database = {
           specific_knowledge_3_minimum_score?: number | null
           specific_knowledge_3_questions?: number | null
           specific_knowledge_3_weight?: number | null
-          status?: string
+          status?: string | null
           subjects?: Json | null
           temp_disciplines_data?: Json | null
+          titulo?: string | null
+          total_minimum_score?: number | null
+          updated_at?: string | null
+          vagas?: number | null
+          wrong_answer_penalty?: number | null
+        }
+        Update: {
+          alternatives_count?: number | null
+          banca?: string | null
+          basic_knowledge_minimum_score?: number | null
+          basic_knowledge_questions?: number | null
+          basic_knowledge_weight?: number | null
+          case_study_1_minimum_score?: number | null
+          case_study_1_weight?: number | null
+          case_study_2_minimum_score?: number | null
+          case_study_2_weight?: number | null
+          case_study_3_minimum_score?: number | null
+          case_study_3_weight?: number | null
+          created_at?: string | null
+          created_by_user_id?: string | null
+          custom_banca?: string | null
+          custom_job_title?: string | null
+          custom_knowledge_questions?: number | null
+          custom_knowledge_weight?: number | null
+          data_publicacao?: string | null
+          disciplines?: Json | null
+          discursive_minimum_score?: number | null
+          discursive_weight?: number | null
+          etapa_atual?: string | null
+          exam_type?: string | null
+          has_ampla_concorrencia?: boolean | null
+          has_basic_knowledge?: boolean | null
+          has_case_study_1?: boolean | null
+          has_case_study_2?: boolean | null
+          has_case_study_3?: boolean | null
+          has_custom_knowledge?: boolean | null
+          has_discursive?: boolean | null
+          has_hipossuficientes?: boolean | null
+          has_indigenas?: boolean | null
+          has_minimum_score?: boolean | null
+          has_pcd?: boolean | null
+          has_ppp?: boolean | null
+          has_quota_minimum_score?: boolean | null
+          has_specific_knowledge_1?: boolean | null
+          has_specific_knowledge_2?: boolean | null
+          has_specific_knowledge_3?: boolean | null
+          has_transsexuais?: boolean | null
+          id?: string | null
+          inscritos?: number | null
+          is_admin_created?: boolean | null
+          is_admin_update?: boolean | null
+          knowledgeAreas?: string[] | null
+          link?: string | null
+          localidades?: string[] | null
+          minimum_score_type?: string | null
+          minimum_score_unit_type?: string | null
+          orgao?: string | null
+          predefined_job_title?: string | null
+          quota_minimum_score?: number | null
+          quota_minimum_score_unit_type?: string | null
+          specific_knowledge_1_minimum_score?: number | null
+          specific_knowledge_1_questions?: number | null
+          specific_knowledge_1_weight?: number | null
+          specific_knowledge_2_minimum_score?: number | null
+          specific_knowledge_2_questions?: number | null
+          specific_knowledge_2_weight?: number | null
+          specific_knowledge_3_minimum_score?: number | null
+          specific_knowledge_3_questions?: number | null
+          specific_knowledge_3_weight?: number | null
+          status?: string | null
+          subjects?: Json | null
+          temp_disciplines_data?: Json | null
+          titulo?: string | null
+          total_minimum_score?: number | null
+          updated_at?: string | null
+          vagas?: number | null
+          wrong_answer_penalty?: number | null
+        }
+        Relationships: []
+      }
+      concursos_test: {
+        Row: {
+          alternatives_count: number | null
+          banca: string
+          created_at: string | null
+          created_by_user_id: string | null
+          disciplines: Json | null
+          exam_booklets: Json | null
+          exam_type: string | null
+          form_config: Json | null
+          has_custom_knowledge: boolean | null
+          has_minimum_score: boolean | null
+          id: string
+          metadata: Json | null
+          official_answers: Json | null
+          orgao: string
+          status: string
+          subjects: Json | null
+          titulo: string
+          total_minimum_score: number | null
+          total_participants: number | null
+          updated_at: string | null
+          wrong_answer_penalty: number | null
+        }
+        Insert: {
+          alternatives_count?: number | null
+          banca: string
+          created_at?: string | null
+          created_by_user_id?: string | null
+          disciplines?: Json | null
+          exam_booklets?: Json | null
+          exam_type?: string | null
+          form_config?: Json | null
+          has_custom_knowledge?: boolean | null
+          has_minimum_score?: boolean | null
+          id?: string
+          metadata?: Json | null
+          official_answers?: Json | null
+          orgao: string
+          status?: string
+          subjects?: Json | null
           titulo: string
           total_minimum_score?: number | null
-          updated_at?: string
-          vagas?: number | null
+          total_participants?: number | null
+          updated_at?: string | null
+          wrong_answer_penalty?: number | null
         }
         Update: {
           alternatives_count?: number | null
           banca?: string
-          basic_knowledge_minimum_score?: number | null
-          basic_knowledge_questions?: number | null
-          basic_knowledge_weight?: number | null
-          case_study_1_minimum_score?: number | null
-          case_study_1_weight?: number | null
-          case_study_2_minimum_score?: number | null
-          case_study_2_weight?: number | null
-          case_study_3_minimum_score?: number | null
-          case_study_3_weight?: number | null
-          created_at?: string
-          created_by_user_id?: string | null
-          custom_banca?: string | null
-          custom_job_title?: string | null
-          custom_knowledge_questions?: number | null
-          custom_knowledge_weight?: number | null
           created_at?: string | null
+          created_by_user_id?: string | null
           disciplines?: Json | null
-          discursive_minimum_score?: number | null
-          discursive_weight?: number | null
-          status?: string | null
+          exam_booklets?: Json | null
           exam_type?: string | null
-          has_ampla_concorrencia?: boolean | null
-          has_basic_knowledge?: boolean | null
-          has_case_study_1?: boolean | null
-          has_case_study_2?: boolean | null
-          has_case_study_3?: boolean | null
+          form_config?: Json | null
           has_custom_knowledge?: boolean | null
-          has_discursive?: boolean | null
-          has_hipossuficientes?: boolean | null
-          has_indigenas?: boolean | null
           has_minimum_score?: boolean | null
-          has_pcd?: boolean | null
-          has_ppp?: boolean | null
-          has_quota_minimum_score?: boolean | null
-          has_specific_knowledge_1?: boolean | null
-          has_specific_knowledge_2?: boolean | null
-          has_specific_knowledge_3?: boolean | null
-          has_transsexuais?: boolean | null
           id?: string
-          inscritos?: number | null
-          is_admin_created?: boolean | null
-          is_admin_update?: boolean | null
-          knowledgeAreas?: string[] | null
-          link?: string | null
-          localidades?: string[] | null
-          minimum_score_unit_type?: string | null
+          metadata?: Json | null
+          official_answers?: Json | null
           orgao?: string
-          predefined_job_title?: string | null
-          quota_minimum_score?: number | null
-          quota_minimum_score_unit_type?: string | null
-          specific_knowledge_1_minimum_score?: number | null
-          specific_knowledge_1_questions?: number | null
-          specific_knowledge_1_weight?: number | null
-          specific_knowledge_2_minimum_score?: number | null
-          specific_knowledge_2_questions?: number | null
-          specific_knowledge_2_weight?: number | null
-          specific_knowledge_3_minimum_score?: number | null
-          specific_knowledge_3_questions?: number | null
-          specific_knowledge_3_weight?: number | null
           status?: string
           subjects?: Json | null
-          temp_disciplines_data?: Json | null
           titulo?: string
           total_minimum_score?: number | null
-          updated_at?: string
-          vagas?: number | null
+          total_participants?: number | null
+          updated_at?: string | null
+          wrong_answer_penalty?: number | null
         }
         Relationships: []
       }
-      consolidated_answers_by_concurso: {
+      consolidated_answers_by_concurso_backup: {
         Row: {
-          concurso_id: string
-          consolidated_data: Json
+          concurso_id: string | null
+          consolidated_data: Json | null
+          created_at: string | null
+          id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          concurso_id?: string | null
+          consolidated_data?: Json | null
+          created_at?: string | null
+          id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          concurso_id?: string | null
+          consolidated_data?: Json | null
+          created_at?: string | null
+          id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      error_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string
+          error_type: string
+          id: string
+          ip_address: unknown | null
+          is_resolved: boolean | null
+          metadata: Json | null
+          query_text: string | null
+          resolved_at: string | null
+          session_id: string | null
+          severity: string
+          stack_trace: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message: string
+          error_type: string
+          id?: string
+          ip_address?: unknown | null
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          query_text?: string | null
+          resolved_at?: string | null
+          session_id?: string | null
+          severity: string
+          stack_trace?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string
+          error_type?: string
+          id?: string
+          ip_address?: unknown | null
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          query_text?: string | null
+          resolved_at?: string | null
+          session_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      migration_config: {
+        Row: {
+          config: Json
           created_at: string | null
           id: string
           updated_at: string | null
         }
         Insert: {
-          concurso_id: string
-          consolidated_data?: Json
+          config?: Json
           created_at?: string | null
           id?: string
           updated_at?: string | null
         }
         Update: {
-          concurso_id?: string
-          consolidated_data?: Json
+          config?: Json
           created_at?: string | null
           id?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "consolidated_answers_by_concurso_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: true
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      // exam_booklets table removed - data now stored in concursos.exam_booklets JSONB
       migration_logs: {
         Row: {
           applied_at: string | null
@@ -313,8 +602,120 @@ export type Database = {
         }
         Relationships: []
       }
-      // official_answer_weights table removed - data now stored in concursos.official_answers JSONB
-      // schedule_templates table removed - functionality not implemented
+      performance_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          current_value: number | null
+          id: string
+          is_resolved: boolean | null
+          message: string
+          metadata: Json | null
+          metric_name: string | null
+          resolved_at: string | null
+          severity: string
+          threshold_value: number | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          is_resolved?: boolean | null
+          message: string
+          metadata?: Json | null
+          metric_name?: string | null
+          resolved_at?: string | null
+          severity: string
+          threshold_value?: number | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          current_value?: number | null
+          id?: string
+          is_resolved?: boolean | null
+          message?: string
+          metadata?: Json | null
+          metric_name?: string | null
+          resolved_at?: string | null
+          severity?: string
+          threshold_value?: number | null
+        }
+        Relationships: []
+      }
+      performance_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          measurement_time: string | null
+          metadata: Json | null
+          metric_name: string
+          metric_unit: string | null
+          metric_value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          measurement_time?: string | null
+          metadata?: Json | null
+          metric_name: string
+          metric_unit?: string | null
+          metric_value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          measurement_time?: string | null
+          metadata?: Json | null
+          metric_name?: string
+          metric_unit?: string | null
+          metric_value?: number
+        }
+        Relationships: []
+      }
+      query_performance_logs: {
+        Row: {
+          created_at: string | null
+          execution_time_ms: number
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          query_text: string
+          query_type: string | null
+          rows_returned: number | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          execution_time_ms: number
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          query_text: string
+          query_type?: string | null
+          rows_returned?: number | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          execution_time_ms?: number
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          query_text?: string
+          query_type?: string | null
+          rows_returned?: number | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       score_calculation_logs: {
         Row: {
           calculation_details: Json | null
@@ -343,29 +744,7 @@ export type Database = {
           previous_score?: number | null
           user_ranking_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
-            columns: ["user_ranking_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_rankings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
-            columns: ["user_ranking_id"]
-            isOneToOne: false
-            referencedRelation: "public_rankings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "score_calculation_logs_user_ranking_id_fkey"
-            columns: ["user_ranking_id"]
-            isOneToOne: false
-            referencedRelation: "user_rankings"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       security_logs: {
         Row: {
@@ -397,640 +776,6 @@ export type Database = {
         }
         Relationships: []
       }
-      spaced_repetition_queue: {
-        Row: {
-          block_name: string | null
-          created_at: string | null
-          difficulty_level: number | null
-          id: string
-          last_reviewed_at: string | null
-          next_review_date: string
-          review_count: number | null
-          subject_name: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          block_name?: string | null
-          created_at?: string | null
-          difficulty_level?: number | null
-          id?: string
-          last_reviewed_at?: string | null
-          next_review_date: string
-          review_count?: number | null
-          subject_name: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          block_name?: string | null
-          created_at?: string | null
-          difficulty_level?: number | null
-          id?: string
-          last_reviewed_at?: string | null
-          next_review_date?: string
-          review_count?: number | null
-          subject_name?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_contests: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          exam_date: string
-          id: string
-          is_active: boolean | null
-          title: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          exam_date: string
-          id?: string
-          is_active?: boolean | null
-          title: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          exam_date?: string
-          id?: string
-          is_active?: boolean | null
-          title?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_cycles: {
-        Row: {
-          blocks: Json
-          created_at: string
-          curso_link: string | null
-          edital_link: string | null
-          exam_date: string
-          id: string
-          is_active: boolean
-          name: string
-          organ: string
-          position: string
-          updated_at: string
-          user_id: string
-          video_link: string | null
-        }
-        Insert: {
-          blocks?: Json
-          created_at?: string
-          curso_link?: string | null
-          edital_link?: string | null
-          exam_date: string
-          id?: string
-          is_active?: boolean
-          name: string
-          organ: string
-          position: string
-          updated_at?: string
-          user_id: string
-          video_link?: string | null
-        }
-        Update: {
-          blocks?: Json
-          created_at?: string
-          curso_link?: string | null
-          edital_link?: string | null
-          exam_date?: string
-          id?: string
-          is_active?: boolean
-          name?: string
-          organ?: string
-          position?: string
-          updated_at?: string
-          user_id?: string
-          video_link?: string | null
-        }
-        Relationships: []
-      }
-      study_cycles_v2: {
-        Row: {
-          created_at: string
-          curso_link: string | null
-          cycle_name: string
-          edital_link: string | null
-          exam_date: string
-          id: string
-          is_active: boolean
-          organ: string | null
-          position: string | null
-          schedule_data: Json
-          updated_at: string
-          user_id: string
-          video_link: string | null
-        }
-        Insert: {
-          created_at?: string
-          curso_link?: string | null
-          cycle_name: string
-          edital_link?: string | null
-          exam_date: string
-          id?: string
-          is_active?: boolean
-          organ?: string | null
-          position?: string | null
-          schedule_data?: Json
-          updated_at?: string
-          user_id: string
-          video_link?: string | null
-        }
-        Update: {
-          created_at?: string
-          curso_link?: string | null
-          cycle_name?: string
-          edital_link?: string | null
-          exam_date?: string
-          id?: string
-          is_active?: boolean
-          organ?: string | null
-          position?: string | null
-          schedule_data?: Json
-          updated_at?: string
-          user_id?: string
-          video_link?: string | null
-        }
-        Relationships: []
-      }
-      study_goals: {
-        Row: {
-          created_at: string | null
-          current_value: number | null
-          description: string | null
-          goal_type: string
-          id: string
-          is_completed: boolean | null
-          target_date: string | null
-          target_value: number
-          unit_type: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          current_value?: number | null
-          description?: string | null
-          goal_type: string
-          id?: string
-          is_completed?: boolean | null
-          target_date?: string | null
-          target_value: number
-          unit_type: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          current_value?: number | null
-          description?: string | null
-          goal_type?: string
-          id?: string
-          is_completed?: boolean | null
-          target_date?: string | null
-          target_value?: number
-          unit_type?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_goals_tracking: {
-        Row: {
-          created_at: string | null
-          current_streak: number | null
-          goal_type: string
-          id: string
-          is_active: boolean | null
-          last_activity_date: string | null
-          longest_streak: number | null
-          target_hours: number
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          current_streak?: number | null
-          goal_type: string
-          id?: string
-          is_active?: boolean | null
-          last_activity_date?: string | null
-          longest_streak?: number | null
-          target_hours?: number
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          current_streak?: number | null
-          goal_type?: string
-          id?: string
-          is_active?: boolean | null
-          last_activity_date?: string | null
-          longest_streak?: number | null
-          target_hours?: number
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_plans: {
-        Row: {
-          created_at: string | null
-          daily_goal_hours: number | null
-          description: string | null
-          end_date: string | null
-          id: string
-          is_active: boolean | null
-          start_date: string
-          title: string
-          updated_at: string | null
-          user_id: string
-          weekly_goal_hours: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          daily_goal_hours?: number | null
-          description?: string | null
-          end_date?: string | null
-          id?: string
-          is_active?: boolean | null
-          start_date: string
-          title: string
-          updated_at?: string | null
-          user_id: string
-          weekly_goal_hours?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          daily_goal_hours?: number | null
-          description?: string | null
-          end_date?: string | null
-          id?: string
-          is_active?: boolean | null
-          start_date?: string
-          title?: string
-          updated_at?: string | null
-          user_id?: string
-          weekly_goal_hours?: number | null
-        }
-        Relationships: []
-      }
-      study_progress: {
-        Row: {
-          created_at: string | null
-          hours_studied: number | null
-          id: string
-          notes: string | null
-          progress_date: string
-          study_contest_id: string | null
-          subject_id: string | null
-          topics_completed: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          hours_studied?: number | null
-          id?: string
-          notes?: string | null
-          progress_date?: string
-          study_contest_id?: string | null
-          subject_id?: string | null
-          topics_completed?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          hours_studied?: number | null
-          id?: string
-          notes?: string | null
-          progress_date?: string
-          study_contest_id?: string | null
-          subject_id?: string | null
-          topics_completed?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_progress_study_contest_id_fkey"
-            columns: ["study_contest_id"]
-            isOneToOne: false
-            referencedRelation: "study_contests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_progress_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "study_subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_reminders: {
-        Row: {
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          is_sent: boolean | null
-          reminder_date: string
-          reminder_time: string
-          title: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_sent?: boolean | null
-          reminder_date: string
-          reminder_time: string
-          title: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          is_sent?: boolean | null
-          reminder_date?: string
-          reminder_time?: string
-          title?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_schedule: {
-        Row: {
-          block_name: string | null
-          created_at: string | null
-          cycle_id: string | null
-          day_of_week: number
-          discipline_name: string | null
-          end_time: string
-          id: string
-          is_active: boolean | null
-          session_link: string | null
-          start_time: string
-          study_plan_id: string | null
-          subject_id: string | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          block_name?: string | null
-          created_at?: string | null
-          cycle_id?: string | null
-          day_of_week: number
-          discipline_name?: string | null
-          end_time: string
-          id?: string
-          is_active?: boolean | null
-          session_link?: string | null
-          start_time: string
-          study_plan_id?: string | null
-          subject_id?: string | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          block_name?: string | null
-          created_at?: string | null
-          cycle_id?: string | null
-          day_of_week?: number
-          discipline_name?: string | null
-          end_time?: string
-          id?: string
-          is_active?: boolean | null
-          session_link?: string | null
-          start_time?: string
-          study_plan_id?: string | null
-          subject_id?: string | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_schedule_study_plan_id_fkey"
-            columns: ["study_plan_id"]
-            isOneToOne: false
-            referencedRelation: "study_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_schedule_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "study_subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_sessions: {
-        Row: {
-          created_at: string | null
-          duration_minutes: number | null
-          end_time: string | null
-          id: string
-          last_session_date: string | null
-          notes: string | null
-          quality_rating: number | null
-          schedule_session_id: string | null
-          session_count: number | null
-          session_date: string
-          session_link: string | null
-          start_time: string
-          study_contest_id: string | null
-          study_plan_id: string | null
-          study_type: string | null
-          subject_id: string | null
-          total_correct_answers: number | null
-          total_duration_minutes: number | null
-          total_questions: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          duration_minutes?: number | null
-          end_time?: string | null
-          id?: string
-          last_session_date?: string | null
-          notes?: string | null
-          quality_rating?: number | null
-          schedule_session_id?: string | null
-          session_count?: number | null
-          session_date?: string
-          session_link?: string | null
-          start_time: string
-          study_contest_id?: string | null
-          study_plan_id?: string | null
-          study_type?: string | null
-          subject_id?: string | null
-          total_correct_answers?: number | null
-          total_duration_minutes?: number | null
-          total_questions?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          duration_minutes?: number | null
-          end_time?: string | null
-          id?: string
-          last_session_date?: string | null
-          notes?: string | null
-          quality_rating?: number | null
-          schedule_session_id?: string | null
-          session_count?: number | null
-          session_date?: string
-          session_link?: string | null
-          start_time?: string
-          study_contest_id?: string | null
-          study_plan_id?: string | null
-          study_type?: string | null
-          subject_id?: string | null
-          total_correct_answers?: number | null
-          total_duration_minutes?: number | null
-          total_questions?: number | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_sessions_schedule_session_id_fkey"
-            columns: ["schedule_session_id"]
-            isOneToOne: false
-            referencedRelation: "study_schedule"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_sessions_study_contest_id_fkey"
-            columns: ["study_contest_id"]
-            isOneToOne: false
-            referencedRelation: "study_contests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_sessions_study_plan_id_fkey"
-            columns: ["study_plan_id"]
-            isOneToOne: false
-            referencedRelation: "study_plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "study_sessions_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "study_subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      study_statistics: {
-        Row: {
-          created_at: string
-          id: string
-          statistics_data: Json
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          statistics_data?: Json
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          statistics_data?: Json
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_subjects: {
-        Row: {
-          block_name: string | null
-          color: string | null
-          completed_hours: number | null
-          created_at: string | null
-          estimated_hours: number | null
-          id: string
-          is_active: boolean | null
-          is_completed: boolean | null
-          name: string
-          priority: number | null
-          study_contest_id: string | null
-          updated_at: string | null
-          user_id: string
-          weekly_hours: number | null
-        }
-        Insert: {
-          block_name?: string | null
-          color?: string | null
-          completed_hours?: number | null
-          created_at?: string | null
-          estimated_hours?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_completed?: boolean | null
-          name: string
-          priority?: number | null
-          study_contest_id?: string | null
-          updated_at?: string | null
-          user_id: string
-          weekly_hours?: number | null
-        }
-        Update: {
-          block_name?: string | null
-          color?: string | null
-          completed_hours?: number | null
-          created_at?: string | null
-          estimated_hours?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_completed?: boolean | null
-          name?: string
-          priority?: number | null
-          study_contest_id?: string | null
-          updated_at?: string | null
-          user_id?: string
-          weekly_hours?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "study_subjects_study_contest_id_fkey"
-            columns: ["study_contest_id"]
-            isOneToOne: false
-            referencedRelation: "study_contests"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       subjects: {
         Row: {
           created_at: string | null
@@ -1055,7 +800,6 @@ export type Database = {
         }
         Relationships: []
       }
-      -- user_answers table removed - data now stored in consolidated_answers_by_concurso
       user_followers: {
         Row: {
           created_at: string
@@ -1079,137 +823,79 @@ export type Database = {
       }
       user_rankings: {
         Row: {
-          all_questions_answered: boolean | null
-          basic_knowledge_score: number | null
-          case_study_1_score: number | null
-          case_study_2_score: number | null
-          case_study_3_score: number | null
-          concurso_id: string
-          created_at: string
-          customDisciplineScores: Json | null
-          discursive_score: number | null
-          edit_count: number | null
-          edit_history: Json | null
-          id: string
-          is_score_recalculated: boolean | null
+          concurso_id: string | null
+          consolidated_data: Json | null
+          created_at: string | null
           reservation_type: string | null
           score: number | null
-          selected_booklet: string | null
-          specific_knowledge_1_score: number | null
-          specific_knowledge_2_score: number | null
-          specific_knowledge_3_score: number | null
-          specific_knowledge_score: number | null
-          subject_scores: Json | null
-          updated_at: string
+          selected_booklet_id: string | null
+          updated_at: string | null
           user_id: string
-          weighted_basic_score: number | null
-          weighted_case_study_1_score: number | null
-          weighted_case_study_2_score: number | null
-          weighted_case_study_3_score: number | null
-          weighted_discursive_score: number | null
-          weighted_specific_1_score: number | null
-          weighted_specific_2_score: number | null
-          weighted_specific_3_score: number | null
-          weightedCustomDisciplineScores: Json | null
         }
         Insert: {
-          all_questions_answered?: boolean | null
-          basic_knowledge_score?: number | null
-          case_study_1_score?: number | null
-          case_study_2_score?: number | null
-          case_study_3_score?: number | null
-          concurso_id: string
-          created_at?: string
-          customDisciplineScores?: Json | null
-          discursive_score?: number | null
-          edit_count?: number | null
-          edit_history?: Json | null
-          id?: string
-          is_score_recalculated?: boolean | null
+          concurso_id?: string | null
+          consolidated_data?: Json | null
+          created_at?: string | null
           reservation_type?: string | null
           score?: number | null
-          selected_booklet?: string | null
-          specific_knowledge_1_score?: number | null
-          specific_knowledge_2_score?: number | null
-          specific_knowledge_3_score?: number | null
-          specific_knowledge_score?: number | null
-          subject_scores?: Json | null
-          updated_at?: string
+          selected_booklet_id?: string | null
+          updated_at?: string | null
           user_id: string
-          weighted_basic_score?: number | null
-          weighted_case_study_1_score?: number | null
-          weighted_case_study_2_score?: number | null
-          weighted_case_study_3_score?: number | null
-          weighted_discursive_score?: number | null
-          weighted_specific_1_score?: number | null
-          weighted_specific_2_score?: number | null
-          weighted_specific_3_score?: number | null
-          weightedCustomDisciplineScores?: Json | null
         }
         Update: {
-          all_questions_answered?: boolean | null
-          basic_knowledge_score?: number | null
-          case_study_1_score?: number | null
-          case_study_2_score?: number | null
-          case_study_3_score?: number | null
-          concurso_id?: string
-          created_at?: string
-          customDisciplineScores?: Json | null
-          discursive_score?: number | null
-          edit_count?: number | null
-          edit_history?: Json | null
-          id?: string
-          is_score_recalculated?: boolean | null
+          concurso_id?: string | null
+          consolidated_data?: Json | null
+          created_at?: string | null
           reservation_type?: string | null
           score?: number | null
-          selected_booklet?: string | null
-          specific_knowledge_1_score?: number | null
-          specific_knowledge_2_score?: number | null
-          specific_knowledge_3_score?: number | null
-          specific_knowledge_score?: number | null
-          subject_scores?: Json | null
-          updated_at?: string
+          selected_booklet_id?: string | null
+          updated_at?: string | null
           user_id?: string
-          weighted_basic_score?: number | null
-          weighted_case_study_1_score?: number | null
-          weighted_case_study_2_score?: number | null
-          weighted_case_study_3_score?: number | null
-          weighted_discursive_score?: number | null
-          weighted_specific_1_score?: number | null
-          weighted_specific_2_score?: number | null
-          weighted_specific_3_score?: number | null
-          weightedCustomDisciplineScores?: Json | null
         }
         Relationships: [
           {
-            foreignKeyName: "fk_user_rankings_profiles"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_user_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_user_rankings_profiles"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_rankings_concurso_id_fkey"
+            foreignKeyName: "fk_user_rankings_concurso"
             columns: ["concurso_id"]
             isOneToOne: false
             referencedRelation: "concursos"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "user_rankings_selected_booklet_fkey"
-            columns: ["selected_booklet"]
-            isOneToOne: false
-            referencedRelation: "exam_booklets"
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profiles"
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_rankings_backup: {
+        Row: {
+          consolidated_data: Json | null
+          customDisciplineScores: Json | null
+          user_id: string | null
+          weightedCustomDisciplineScores: Json | null
+        }
+        Insert: {
+          consolidated_data?: Json | null
+          customDisciplineScores?: Json | null
+          user_id?: string | null
+          weightedCustomDisciplineScores?: Json | null
+        }
+        Update: {
+          consolidated_data?: Json | null
+          customDisciplineScores?: Json | null
+          user_id?: string | null
+          weightedCustomDisciplineScores?: Json | null
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -1269,48 +955,74 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_scores_ranking_id_fkey"
-            columns: ["ranking_id"]
-            isOneToOne: false
-            referencedRelation: "leaderboard_rankings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_scores_ranking_id_fkey"
-            columns: ["ranking_id"]
-            isOneToOne: false
-            referencedRelation: "public_rankings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_scores_ranking_id_fkey"
-            columns: ["ranking_id"]
-            isOneToOne: false
-            referencedRelation: "user_rankings"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
-      user_study_days: {
+      user_study: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
-          study_date: string
+          last_activity_date: string | null
+          spaced_repetition_queue: Json
+          study_contests: Json
+          study_cycles: Json
+          study_goals: Json
+          study_goals_tracking: Json
+          study_plans: Json
+          study_progress: Json
+          study_reminders: Json
+          study_schedule: Json
+          study_sessions: Json
+          study_statistics: Json
+          study_subjects: Json
+          total_schedule_count: number | null
+          total_sessions_count: number | null
+          updated_at: string | null
           user_id: string
+          user_study_days: Json
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          study_date: string
+          last_activity_date?: string | null
+          spaced_repetition_queue?: Json
+          study_contests?: Json
+          study_cycles?: Json
+          study_goals?: Json
+          study_goals_tracking?: Json
+          study_plans?: Json
+          study_progress?: Json
+          study_reminders?: Json
+          study_schedule?: Json
+          study_sessions?: Json
+          study_statistics?: Json
+          study_subjects?: Json
+          total_schedule_count?: number | null
+          total_sessions_count?: number | null
+          updated_at?: string | null
           user_id: string
+          user_study_days?: Json
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
-          study_date?: string
+          last_activity_date?: string | null
+          spaced_repetition_queue?: Json
+          study_contests?: Json
+          study_cycles?: Json
+          study_goals?: Json
+          study_goals_tracking?: Json
+          study_plans?: Json
+          study_progress?: Json
+          study_reminders?: Json
+          study_schedule?: Json
+          study_sessions?: Json
+          study_statistics?: Json
+          study_subjects?: Json
+          total_schedule_count?: number | null
+          total_sessions_count?: number | null
+          updated_at?: string | null
           user_id?: string
+          user_study_days?: Json
         }
         Relationships: []
       }
@@ -1365,6 +1077,7 @@ export type Database = {
           estado: string | null
           formacao: string | null
           id: string
+          is_online: boolean | null
           is_studying: boolean | null
           name: string
           nickname: string | null
@@ -1389,6 +1102,7 @@ export type Database = {
           estado?: string | null
           formacao?: string | null
           id: string
+          is_online?: boolean | null
           is_studying?: boolean | null
           name: string
           nickname?: string | null
@@ -1413,6 +1127,7 @@ export type Database = {
           estado?: string | null
           formacao?: string | null
           id?: string
+          is_online?: boolean | null
           is_studying?: boolean | null
           name?: string
           nickname?: string | null
@@ -1472,33 +1187,6 @@ export type Database = {
       }
     }
     Views: {
-      leaderboard_rankings: {
-        Row: {
-          avatar_url: string | null
-          banca: string | null
-          basic_knowledge_score: string | null
-          concurso_id: string | null
-          concurso_title: string | null
-          customdisciplinescores: string | null
-          discursive_score: string | null
-          id: string | null
-          orgao: string | null
-          reservation_type: string | null
-          score: number | null
-          specific_knowledge_score: string | null
-          user_name: string | null
-          weightedcustomdisciplinescores: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_rankings_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       public_profiles: {
         Row: {
           avatar_url: string | null
@@ -1506,31 +1194,6 @@ export type Database = {
           name: string | null
         }
         Relationships: []
-      }
-      public_rankings: {
-        Row: {
-          avatar_url: string | null
-          banca: string | null
-          basic_knowledge_score: number | null
-          concurso_id: string | null
-          concurso_title: string | null
-          discursive_score: number | null
-          id: string | null
-          orgao: string | null
-          reservation_type: string | null
-          score: number | null
-          specific_knowledge_score: number | null
-          user_name: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_rankings_concurso_id_fkey"
-            columns: ["concurso_id"]
-            isOneToOne: false
-            referencedRelation: "concursos"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       public_user_profiles: {
         Row: {
@@ -1560,6 +1223,10 @@ export type Database = {
         }
         Returns: Json
       }
+      add_study_session: {
+        Args: { session_data: Json; user_uuid: string }
+        Returns: undefined
+      }
       admin_delete_user_from_ranking: {
         Args: { ranking_id_param: string }
         Returns: boolean
@@ -1581,21 +1248,80 @@ export type Database = {
         Args: { voucher_code_param: string }
         Returns: Json
       }
-      calculate_user_score_by_booklet: {
+      calculate_secure_score: {
         Args: {
-          p_booklet_id: string
+          p_discipline_weight?: number
+          p_exam_type?: string
+          p_is_blank?: boolean
+          p_is_correct?: boolean
+          p_is_nullified?: boolean
+          p_question_weight?: number
+          p_wrong_answer_penalty?: number
+        }
+        Returns: Json
+      }
+      calculate_secure_score_with_validation: {
+        Args: {
           p_concurso_id: string
-          p_ranking_id: string
+          p_discipline_weight: number
+          p_exam_type: string
+          p_is_blank: boolean
+          p_is_correct: boolean
+          p_is_nullified: boolean
+          p_question_weight: number
+          p_user_id: string
+          p_wrong_answer_penalty: number
         }
         Returns: Json
       }
       calculate_user_score_realtime: {
-        Args: { p_ranking_id: string }
+        Args:
+          | {
+              p_concurso_id: string
+              p_ranking_id: string
+              p_selected_booklet: string
+              p_user_id: string
+            }
+          | { p_ranking_id: string }
+          | { p_ranking_id: string; p_user_id: string }
         Returns: number
       }
-      consolidate_official_answers: {
-        Args: { p_concurso_id: string }
+      calculate_weighted_scores: {
+        Args: { p_concurso_id: string; p_scores: Json; p_user_id?: string }
         Returns: Json
+      }
+      check_advanced_performance_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          alert_id: string
+          alert_type: string
+          created_at: string
+          current_value: number
+          message: string
+          metric_name: string
+          severity: string
+          threshold_value: number
+        }[]
+      }
+      check_performance_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      check_user_permission: {
+        Args: { p_concurso_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      cleanup_old_alerts: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      cleanup_old_logs: {
+        Args: Record<PropertyKey, never> | { days_to_keep?: number }
+        Returns: Json
+      }
+      collect_performance_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       count_concurso_participants: {
         Args: { concurso_id: string }
@@ -1613,28 +1339,54 @@ export type Database = {
         Args: { user_id: string }
         Returns: number
       }
+      debug_save_user_answers_v3: {
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_concurso_id: string
+          p_current_edit_count?: number
+          p_ranking_id: string
+          p_subjective_scores?: Json
+        }
+        Returns: Json
+      }
       delete_user_profile: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      get_alert_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          alerts_last_24h: number
+          critical_alerts: number
+          high_alerts: number
+          low_alerts: number
+          medium_alerts: number
+          most_common_alert_type: string
+          total_alerts: number
+          unresolved_alerts: number
+        }[]
+      }
+      get_alert_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          alert_type: string
+          count: number
+          latest_alert: string
+          severity: string
+          status: string
+        }[]
       }
       get_booklet_answers: {
         Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
-      get_candidate_subject_scores: {
-        Args: { p_ranking_id: string }
+      get_complete_dashboard: {
+        Args: Record<PropertyKey, never>
         Returns: {
-          is_passing: boolean
-          knowledge_section: string
-          minimum_required: number
-          question_count: number
-          score: number
-          subject_name: string
+          data: Json
+          section: string
         }[]
-      }
-      get_consolidated_answer_key: {
-        Args: { p_concurso_id: string }
-        Returns: Json
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
@@ -1656,9 +1408,50 @@ export type Database = {
           name: string
         }[]
       }
-      get_official_answer_weights: {
-        Args: { p_concurso_id: string }
-        Returns: Json
+      get_jsonb_analysis: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avg_size_bytes: number
+          column_name: string
+          max_size_bytes: number
+          min_size_bytes: number
+          performance_rating: string
+          total_records: number
+          total_size_mb: number
+        }[]
+      }
+      get_log_statistics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avg_execution_time_ms: number
+          error_rate: number
+          log_type: string
+          logs_last_24h: number
+          logs_last_7d: number
+          total_logs: number
+        }[]
+      }
+      get_performance_dashboard: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          current_value: number
+          metric_category: string
+          metric_name: string
+          recommendation: string
+          status: string
+          trend: string
+          unit: string
+        }[]
+      }
+      get_performance_trends: {
+        Args: { hours_back?: number }
+        Returns: {
+          measurement_time: string
+          metric_name: string
+          metric_value: number
+          trend_percentage: number
+          unit: string
+        }[]
       }
       get_public_profiles: {
         Args: Record<PropertyKey, never>
@@ -1666,6 +1459,31 @@ export type Database = {
           avatar_url: string
           id: string
           name: string
+        }[]
+      }
+      get_ranking_classification: {
+        Args: {
+          p_concurso_id: string
+          p_limit?: number
+          p_offset?: number
+          p_selected_booklet?: string
+        }
+        Returns: {
+          accuracy: number
+          basic_knowledge_score: number
+          case_study_1_score: number
+          case_study_2_score: number
+          case_study_3_score: number
+          correct_answers: number
+          discursive_score: number
+          ranking_position: number
+          specific_knowledge_1_score: number
+          specific_knowledge_2_score: number
+          specific_knowledge_3_score: number
+          total_questions: number
+          total_score: number
+          user_id: string
+          user_name: string
         }[]
       }
       get_realtime_rankings: {
@@ -1699,14 +1517,57 @@ export type Database = {
           weightedCustomDisciplineScores: Json
         }[]
       }
-      -- get_user_answers_consolidated and get_user_answers_jsonb removed - use consolidated_answers_by_concurso directly
+      get_system_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          current_value: number
+          last_updated: string
+          metric_name: string
+          status: string
+          trend_direction: string
+          unit: string
+        }[]
+      }
+      get_user_activity_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          description: string
+          metric_name: string
+          metric_value: number
+          unit: string
+        }[]
+      }
+      get_user_answers_consolidated: {
+        Args: { p_ranking_id: string }
+        Returns: Json
+      }
+      get_user_answers_for_booklet: {
+        Args: {
+          p_booklet_id: string
+          p_concurso_id: string
+          p_ranking_id: string
+        }
+        Returns: Json
+      }
+      get_user_answers_jsonb: {
+        Args: { p_booklet_id?: string; p_ranking_id: string }
+        Returns: Json
+      }
       get_user_booklets_with_answers: {
         Args: { p_ranking_id: string }
+        Returns: Json
+      }
+      get_user_consolidated_answers: {
+        Args: { p_concurso_id?: string; p_ranking_id: string }
         Returns: Json
       }
       get_user_display_name: {
         Args: { user_name: string; user_nickname: string }
         Returns: string
+      }
+      get_user_study_data: {
+        Args: { user_uuid: string }
+        Returns: Json
       }
       has_role: {
         Args: {
@@ -1723,32 +1584,112 @@ export type Database = {
         Args: { operation_details?: Json; operation_type: string }
         Returns: undefined
       }
-      manage_exam_booklets: {
-        Args: { p_booklets?: Json; p_concurso_id: string; p_operation: string }
+      log_audit_trail: {
+        Args: {
+          p_ip_address?: unknown
+          p_metadata?: Json
+          p_new_values?: Json
+          p_old_values?: Json
+          p_operation: string
+          p_session_id?: string
+          p_table_name: string
+          p_user_agent?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      log_error: {
+        Args: {
+          p_error_message: string
+          p_error_type: string
+          p_ip_address?: unknown
+          p_metadata?: Json
+          p_query_text?: string
+          p_session_id?: string
+          p_severity?: string
+          p_stack_trace?: string
+          p_user_agent?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      log_query_performance: {
+        Args: {
+          p_execution_time_ms: number
+          p_ip_address?: unknown
+          p_metadata?: Json
+          p_query_text: string
+          p_query_type?: string
+          p_rows_returned?: number
+          p_session_id?: string
+          p_user_agent?: string
+          p_user_id?: string
+        }
+        Returns: string
+      }
+      manage_exam_booklets_v2: {
+        Args: {
+          p_booklet_id?: string
+          p_booklets?: Json
+          p_concurso_id?: string
+          p_display_order?: number
+          p_name?: string
+          p_operation: string
+        }
         Returns: Json
       }
-      migrate_existing_answers_to_jsonb: {
+      migrate_flat_subject_scores_to_consolidated: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      migrate_subjective_scores_to_consolidated: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
-      migrate_official_answers_to_consolidated: {
+      migrate_to_consolidated_structure: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
+        Returns: Json
+      }
+      monitor_database_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          metric_name: string
+          metric_unit: string
+          metric_value: number
+          recommendation: string
+          status: string
+        }[]
+      }
+      monitor_jsonb_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avg_jsonb_size: number
+          column_name: string
+          gin_index_size: number
+          max_jsonb_size: number
+          performance_status: string
+          table_name: string
+          total_records: number
+        }[]
       }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
-        Returns: Json
+        Returns: undefined
       }
       recalculate_all_scores_improved: {
         Args: { p_concurso_id: string }
         Returns: Json
       }
       recalculate_all_scores_with_weights: {
-        Args: { p_concurso_id: string }
+        Args: { p_concurso_id: string } | { p_concurso_id: string }
         Returns: Json
       }
       recalculate_all_users_scores_realtime: {
         Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      recalculate_specific_users_scores: {
+        Args: { p_concurso_id: string; p_user_ids: string[] }
         Returns: Json
       }
       record_completed_session: {
@@ -1760,7 +1701,26 @@ export type Database = {
         }
         Returns: Json
       }
-      -- restructure_user_answers_by_concurso removed - migration completed
+      refresh_public_rankings_cache: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      reorganize_answers_by_blocks_disciplines: {
+        Args: { p_ranking_id: string }
+        Returns: Json
+      }
+      resolve_performance_alert: {
+        Args: { alert_uuid: string }
+        Returns: boolean
+      }
+      restructure_user_answers_by_concurso: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      rollback_optimizations: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       save_consolidated_answer_key: {
         Args: { p_answers: Json; p_booklet_id: string; p_concurso_id: string }
         Returns: Json
@@ -1777,13 +1737,11 @@ export type Database = {
       save_user_answers_and_calculate_scores: {
         Args: {
           p_answers: Json
-          p_case_study_1_score?: number
-          p_case_study_2_score?: number
-          p_case_study_3_score?: number
           p_concurso_id: string
-          p_current_edit_count?: number
-          p_discursive_score?: number
           p_ranking_id: string
+          p_selected_booklet: string
+          p_subjective_scores?: Json
+          p_user_id: string
         }
         Returns: Json
       }
@@ -1798,15 +1756,132 @@ export type Database = {
           p_current_edit_count?: number
           p_discursive_score?: number
           p_ranking_id: string
+          p_subject_scores?: Json
         }
         Returns: Json
       }
-      -- save_user_answers_with_booklet removed - use save_user_answers_consolidated_by_concurso
+      save_user_answers_simple: {
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_concurso_id: string
+          p_ranking_id: string
+          p_subjective_scores?: Json
+        }
+        Returns: Json
+      }
+      save_user_answers_v2: {
+        Args: {
+          p_answers: Json
+          p_case_study_1_score?: number
+          p_case_study_2_score?: number
+          p_case_study_3_score?: number
+          p_discursive_score?: number
+          p_edit_count?: number
+          p_selected_booklet?: string
+          p_user_ranking_id: string
+        }
+        Returns: Json
+      }
+      save_user_answers_v3: {
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_concurso_id: string
+          p_current_edit_count?: number
+          p_ranking_id: string
+          p_subjective_scores?: Json
+        }
+        Returns: Json
+      }
+      save_user_answers_v3_debug: {
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_concurso_id: string
+          p_current_edit_count?: number
+          p_ranking_id: string
+          p_subjective_scores?: Json
+        }
+        Returns: Json
+      }
+      save_user_answers_with_booklet: {
+        Args:
+          | {
+              p_answers: Json
+              p_booklet_id: string
+              p_case_study_1_score?: number
+              p_case_study_2_score?: number
+              p_case_study_3_score?: number
+              p_concurso_id: string
+              p_current_edit_count?: number
+              p_discursive_score?: number
+              p_ranking_id: string
+            }
+          | {
+              p_answers_data: Json
+              p_concurso_id: string
+              p_reservation_type?: string
+              p_selected_booklet?: string
+              p_user_id: string
+            }
+        Returns: Json
+      }
+      start_continuous_monitoring: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       switch_user_booklet: {
         Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
-      // update_answer_with_weight and update_official_answers_and_recalculate removed - use concursos.official_answers JSONB
+      test_disciplines_mapping: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
+      test_save_user_answers_v3: {
+        Args: {
+          p_answers: Json
+          p_booklet_id: string
+          p_concurso_id: string
+          p_current_edit_count?: number
+          p_ranking_id: string
+          p_subjective_scores?: Json
+        }
+        Returns: Json
+      }
+      update_consolidated_data_with_reorganized_answers: {
+        Args: { p_ranking_id: string }
+        Returns: Json
+      }
+      update_study_statistics: {
+        Args: { stats_data: Json; user_uuid: string }
+        Returns: undefined
+      }
+      upsert_user_study_data: {
+        Args: { study_data: Json; user_uuid: string }
+        Returns: undefined
+      }
+      validate_ranking_data: {
+        Args: { p_answers: Json; p_concurso_id: string; p_user_id: string }
+        Returns: Json
+      }
+      validate_score_update_permission: {
+        Args: { p_user_id: string; p_user_ranking_id: string }
+        Returns: boolean
+      }
+      validate_scoring_input: {
+        Args: {
+          p_discipline_weight: number
+          p_exam_type: string
+          p_is_blank: boolean
+          p_is_correct: boolean
+          p_is_nullified: boolean
+          p_question_weight: number
+          p_wrong_answer_penalty: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
