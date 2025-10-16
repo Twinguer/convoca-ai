@@ -11,52 +11,45 @@ export const useLeaveRanking = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Buscar o ranking do usuário
-      const { data: ranking, error: rankingError } = await supabase
-        .from('user_rankings')
-        .select('id')
-        .eq('concurso_id', concursoId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (rankingError) throw rankingError;
-      if (!ranking) throw new Error('Você não está participando deste ranking');
-
-      const rankingId = ranking.id;
-
-      // Remover ranking do JSON consolidado do usuário
-      const { data: userRankingData, error: consolidatedError } = await supabase
+      // Verificar se o usuário está participando do ranking
+      const { data: userRankingData, error: rankingError } = await supabase
         .from('user_rankings')
         .select('consolidated_data')
         .eq('user_id', user.id)
         .single();
 
-      if (consolidatedError && consolidatedError.code !== 'PGRST116') {
-        console.error('Error fetching user ranking data:', consolidatedError);
+      if (rankingError) throw rankingError;
+      if (!userRankingData?.consolidated_data?.rankings) {
+        throw new Error('Você não está participando deste ranking');
       }
 
-      if (userRankingData?.consolidated_data) {
-        const updatedData = { ...userRankingData.consolidated_data };
-        if (updatedData.rankings && updatedData.rankings[rankingId]) {
-          delete updatedData.rankings[rankingId];
+      // Encontrar a chave do ranking que corresponde ao concursoId
+      const rankings = userRankingData.consolidated_data.rankings;
+      const rankingKey = Object.keys(rankings).find(key => 
+        rankings[key].concurso_id === concursoId
+      );
 
-          await supabase
-            .from('user_rankings')
-            .update({ consolidated_data: updatedData })
-            .eq('user_id', user.id);
-        }
+      if (!rankingKey) {
+        throw new Error('Você não está participando deste ranking');
       }
 
-      // Deletar registros relacionados
-      await supabase.from('score_calculation_logs').delete().eq('user_ranking_id', rankingId);
+      // Remover ranking do JSON consolidado do usuário
+      const updatedData = { ...userRankingData.consolidated_data };
+      delete updatedData.rankings[rankingKey];
+
+      const { error: updateError } = await supabase
+        .from('user_rankings')
+        .update({ consolidated_data: updatedData })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Deletar registros relacionados usando a chave do ranking
+      await supabase.from('score_calculation_logs').delete().eq('user_ranking_id', rankingKey);
       // user_answers não é mais usado - dados estão em user_rankings consolidated_data
       
-      const { error: deleteError } = await supabase
-        .from('user_rankings')
-        .delete()
-        .eq('id', rankingId);
-
-      if (deleteError) throw deleteError;
+      // Não precisamos deletar da tabela user_rankings pois ela contém dados consolidados
+      // A remoção do ranking específico já foi feita no consolidated_data
 
       return { success: true };
     },

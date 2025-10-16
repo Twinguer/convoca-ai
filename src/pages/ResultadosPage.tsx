@@ -211,15 +211,6 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
       
       
       {/* Sempre exibindo o ranking, independente do status de autenticação */}
-      {(() => {
-        console.log('ResultadosPage debug:', {
-          userId: user?.id,
-          isAuthenticated,
-          rankingsLength: paginatedRankings?.length || 0,
-          concursoId: concurso?.id
-        });
-        return null;
-      })()}
       <RankingTable 
         rankings={paginatedRankings} 
         concurso={concurso} 
@@ -227,6 +218,11 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         isAuthenticated={isAuthenticated} 
         isRefetching={isRefetching}
       />
+      {console.log('[ResultadosPage] Passing concurso to RankingTable:', {
+        concurso: !!concurso,
+        concursoId: concurso?.id,
+        concursoTitle: concurso?.titulo
+      })}
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">
           <p className="text-center text-muted-foreground">

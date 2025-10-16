@@ -52,7 +52,6 @@ const calculateBackendScore = async (
         p_is_nullified: input.isNullified,
         p_is_blank: input.isBlank,
         p_exam_type: input.examType,
-        p_wrong_answer_penalty: input.wrongAnswerPenalty,
       });
 
       if (error) {
@@ -81,7 +80,6 @@ const calculateBackendScore = async (
         p_is_nullified: input.isNullified,
         p_is_blank: input.isBlank,
         p_exam_type: input.examType,
-        p_wrong_answer_penalty: input.wrongAnswerPenalty,
       });
 
       if (error) {

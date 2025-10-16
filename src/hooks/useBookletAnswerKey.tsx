@@ -68,16 +68,9 @@ export const useBookletAnswerKey = (concursoId: string) => {
       const { data: concurso } = await supabase
         .from('concursos')
         .select(`
-          basic_knowledge_questions,
-          specific_knowledge_1_questions,
-          specific_knowledge_2_questions,
-          specific_knowledge_3_questions,
-          has_basic_knowledge,
-          has_specific_knowledge_1,
-          has_specific_knowledge_2,
-          has_specific_knowledge_3,
-          has_custom_knowledge,
-          disciplines
+          disciplines,
+          official_answers,
+          exam_booklets
         `)
         .eq('id', concursoId)
         .single();
@@ -121,12 +114,9 @@ export const useBookletAnswerKey = (concursoId: string) => {
           });
         }
       } else {
-        // Calcular questões para estrutura tradicional
-        expectedQuestions = 
-          (concurso?.has_basic_knowledge ? (concurso?.basic_knowledge_questions || 0) : 0) +
-          (concurso?.has_specific_knowledge_1 ? (concurso?.specific_knowledge_1_questions || 0) : 0) +
-          (concurso?.has_specific_knowledge_2 ? (concurso?.specific_knowledge_2_questions || 0) : 0) +
-          (concurso?.has_specific_knowledge_3 ? (concurso?.specific_knowledge_3_questions || 0) : 0);
+        // Estrutura tradicional não suportada mais - usar disciplines JSONB
+        console.warn('[useBookletAnswerKey] Estrutura tradicional não suportada, usando disciplines JSONB');
+        expectedQuestions = 0;
       }
 
       // Log removido por segurança

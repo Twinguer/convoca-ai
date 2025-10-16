@@ -247,8 +247,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         // Primeiro buscar o ID do user_ranking
         const { data: userRanking, error: findError } = await supabase
           .from('user_rankings')
-          .select('id')
-          .eq('concurso_id', concursoId)
+          .select('user_id, consolidated_data')
           .eq('user_id', currentUserId)
           .single();
 
@@ -257,7 +256,12 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           throw new Error('Ranking do usuário não encontrado');
         }
 
-        const rankingId = userRanking.id;
+        // Verificar se o concurso existe no consolidated_data
+        if (!userRanking.consolidated_data?.rankings?.[concursoId]) {
+          throw new Error('Usuário não está participando deste concurso');
+        }
+
+        const rankingId = userRanking.user_id;
         // Log removido por segurança
 
         // 1. Buscar dados do usuário

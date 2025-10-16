@@ -309,8 +309,8 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     </Select>
                   </FormItem>} />}
             
-            {/* Penalidade para Erro - somente para Certo ou Errado */}
-            {showPenaltyOptions && <FormField control={form.control} name="wrong_answer_penalty" render={({
+            {/* Penalidade para Erro - REMOVIDO: coluna wrong_answer_penalty foi removida do banco */}
+            {/* {showPenaltyOptions && <FormField control={form.control} name="wrong_answer_penalty" render={({
             field
           }) => <FormItem>
                     <FormLabel>Penalidade para Erro</FormLabel>
@@ -328,7 +328,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                         <SelectItem value="2">2 pontos</SelectItem>
                       </SelectContent>
                     </Select>
-                  </FormItem>} />}
+                  </FormItem>} />} */}
           </div>
         </div>
 

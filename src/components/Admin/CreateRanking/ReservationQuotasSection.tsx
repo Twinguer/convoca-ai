@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -8,6 +8,7 @@ interface ReservationQuotasSectionProps {
 export const ReservationQuotasSection: React.FC<ReservationQuotasSectionProps> = ({
   form
 }) => {
+  
   return <Card>
       <CardContent className="pt-6">
         <h3 className="text-lg font-semibold mb-4">Cotas de Reserva</h3>

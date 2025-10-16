@@ -26,7 +26,6 @@ export const createRanking = async (rankingData: any) => {
         status: rankingData.status,
       exam_type: rankingData.exam_type,
       alternatives_count: rankingData.alternatives_count,
-      wrong_answer_penalty: rankingData.wrong_answer_penalty,
       link: rankingData.link,
       
       // Add user ID if provided
@@ -44,10 +43,6 @@ export const createRanking = async (rankingData: any) => {
       has_specific_knowledge_1: rankingData.has_specific_knowledge_1 === true,
       has_specific_knowledge_2: rankingData.has_specific_knowledge_2 === true,
       has_specific_knowledge_3: rankingData.has_specific_knowledge_3 === true,
-      has_discursive: rankingData.has_discursive === true,
-      has_case_study_1: rankingData.has_case_study_1 === true,
-      has_case_study_2: rankingData.has_case_study_2 === true,
-      has_case_study_3: rankingData.has_case_study_3 === true,
       
       // Add question counts
       basic_knowledge_questions: rankingData.basic_knowledge_questions,
@@ -139,22 +134,8 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         has_specific_knowledge_1,
         has_specific_knowledge_2,
         has_specific_knowledge_3,
-        has_discursive,
-        has_case_study_1,
-        has_case_study_2,
-        has_case_study_3,
         has_minimum_score,
-        minimum_score_type,
-        minimum_score_unit_type,
-        total_minimum_score,
-        has_quota_minimum_score,
-        quota_minimum_score,
-        quota_minimum_score_unit_type,
-        discursive_minimum_score,
-        case_study_1_minimum_score,
-        case_study_2_minimum_score,
-        case_study_3_minimum_score,
-        other_subjective_minimum_score
+        total_minimum_score
       `)
       .eq('id', rankingId)
       .single();
@@ -180,7 +161,6 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
     if (oldData) {
       const structureFields = [
         'exam_type',
-        'wrong_answer_penalty',
         'alternatives_count',
         'basic_knowledge_questions',
         'specific_knowledge_1_questions',
@@ -195,22 +175,8 @@ export const updateRanking = async (rankingId: string, rankingData: any, userId:
         'has_specific_knowledge_1',
         'has_specific_knowledge_2',
         'has_specific_knowledge_3',
-        'has_discursive',
-        'has_case_study_1',
-        'has_case_study_2',
-        'has_case_study_3',
         'has_minimum_score',
-        'minimum_score_type',
-        'minimum_score_unit_type',
-        'total_minimum_score',
-        'has_quota_minimum_score',
-        'quota_minimum_score',
-        'quota_minimum_score_unit_type',
-        'discursive_minimum_score',
-        'case_study_1_minimum_score',
-        'case_study_2_minimum_score',
-        'case_study_3_minimum_score',
-        'other_subjective_minimum_score'
+        'total_minimum_score'
       ];
       
       for (const field of structureFields) {
@@ -262,28 +228,33 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
       throw new Error('Você não tem permissão para excluir este ranking');
     }
     
-    // 1. First, get all user_rankings ids for this concurso
+    // 1. First, get all user_rankings for this concurso
     const { data: userRankings, error: userRankingsError } = await supabase
       .from('user_rankings')
-      .select('id')
-      .eq('concurso_id', rankingId);
+      .select('user_id, consolidated_data')
+      .not('consolidated_data', 'is', null);
       
     if (userRankingsError) {
       console.error('Error fetching user_rankings ids:', userRankingsError);
     }
     
-    const userRankingIds = userRankings?.map(ur => ur.id) || [];
+    // Filter user_rankings that have this concurso in their consolidated_data
+    const relevantUserRankings = userRankings?.filter(ur => 
+      ur.consolidated_data?.rankings?.[rankingId]
+    ) || [];
+    
+    const userIds = relevantUserRankings.map(ur => ur.user_id);
     
     // 2. Delete score_calculation_logs for each user_ranking
-    if (userRankingIds.length > 0) {
-      for (const userRankingId of userRankingIds) {
+    if (userIds.length > 0) {
+      for (const userId of userIds) {
         const { error: scoreLogsError } = await supabase
           .from('score_calculation_logs')
           .delete()
-          .eq('user_ranking_id', userRankingId);
+          .eq('user_ranking_id', userId);
           
         if (scoreLogsError) {
-          console.error(`Error deleting score_calculation_logs for user_ranking ${userRankingId}:`, scoreLogsError);
+          console.error(`Error deleting score_calculation_logs for user ${userId}:`, scoreLogsError);
         }
       }
     }
@@ -292,15 +263,25 @@ export const deleteRanking = async (rankingId: string, userId: string, isAdmin: 
     // A remoção dos dados consolidados é feita automaticamente via CASCADE
     console.log('user_answers removido - usando dados consolidados');
     
-    // 4. Delete all user_rankings for this concurso
-    const { error: rankingsError } = await supabase
-      .from('user_rankings')
-      .delete()
-      .eq('concurso_id', rankingId);
-      
-    if (rankingsError) {
-      console.error('Error deleting user rankings:', rankingsError);
-      throw rankingsError;
+    // 4. Remove concurso from consolidated_data for each user
+    for (const userId of userIds) {
+      const { data: userRankingData, error: fetchError } = await supabase
+        .from('user_rankings')
+        .select('consolidated_data')
+        .eq('user_id', userId)
+        .single();
+        
+      if (!fetchError && userRankingData?.consolidated_data) {
+        const updatedData = { ...userRankingData.consolidated_data };
+        if (updatedData.rankings && updatedData.rankings[rankingId]) {
+          delete updatedData.rankings[rankingId];
+          
+          await supabase
+            .from('user_rankings')
+            .update({ consolidated_data: updatedData })
+            .eq('user_id', userId);
+        }
+      }
     }
     
     const { error } = await supabase.from('concursos').delete().eq('id', rankingId);

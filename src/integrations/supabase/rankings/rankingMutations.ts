@@ -22,7 +22,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('id, disciplines, has_minimum_score, total_minimum_score, exam_type, alternatives_count, wrong_answer_penalty')
+      .select('id, disciplines, subjects, exam_type, alternatives_count')
       .eq('id', concursoId)
       .single();
 
@@ -44,21 +44,25 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     let minimumScoreRequired = 0;
     
     // Verificar se tem score mínimo e buscar o valor corretamente
-    if (concurso?.has_minimum_score === true) {
-      // Usar acesso seguro à propriedade para evitar erro TypeScript
-      minimumScoreRequired = typeof concurso?.total_minimum_score === 'number' 
-        ? concurso.total_minimum_score 
-        : parseInt(String(concurso?.total_minimum_score || '0'), 10);
+    const subjects = concurso?.subjects || {};
+    if (subjects.discr || subjects.case1 || subjects.case2 || subjects.case3 || subjects.other) {
+      // Usar o maior mínimo entre as seções subjetivas
+      minimumScoreRequired = Math.max(
+        subjects.discr_min_score || 0,
+        subjects.case1_min_score || 0,
+        subjects.case2_min_score || 0,
+        subjects.case3_min_score || 0,
+        subjects.other_min_score || 0
+      );
         
       console.log(`[recalculateUserScore] Pontuação mínima requerida: ${minimumScoreRequired}`);
     }
 
-    // Primeiro, busque o ranking_id correspondente ao usuário/concurso
+    // Primeiro, busque o ranking correspondente ao usuário/concurso
     const { data: userRanking, error: userRankingError } = await supabase
       .from('user_rankings')
-      .select('id')
+      .select('user_id, consolidated_data')
       .eq('user_id', userId)
-      .eq('concurso_id', concursoId)
       .single();
 
     if (userRankingError || !userRanking) {
@@ -70,11 +74,20 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
+    // Verificar se o concurso existe no consolidated_data
+    if (!userRanking.consolidated_data?.rankings?.[concursoId]) {
+      console.error('Usuário não está participando deste concurso');
+      return { 
+        success: false, 
+        message: 'Usuário não está participando deste concurso'
+      };
+    }
+
     // Obter as respostas do usuário usando user_rankings consolidated_data
     const { data: rankingData, error: rankingError } = await supabase
       .from('user_rankings')
       .select('concurso_id, user_id, selected_booklet')
-      .eq('id', userRanking.id)
+      .eq('user_id', userRanking.user_id)
       .single();
 
     if (rankingError) {
@@ -177,7 +190,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const { data: subjectiveScores, error: subjectiveScoresError } = await supabase
       .from('user_rankings')
       .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
-      .eq('id', userRanking.id)
+      .eq('user_id', userRanking.user_id)
       .single();
       
     if (subjectiveScoresError) {
@@ -317,7 +330,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           
           console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight} * weight ${disciplineWeight}`);
         } else if (concurso.exam_type === 'Certo ou Errado') {
-          const penalty = (concurso?.wrong_answer_penalty ?? 0);
+          // Penalty logic can be moved to JSONB if needed
+          const penalty = 0; // Default no penalty
           if (penalty > 0) {
             let disciplineWeight = 1;
             // SEMPRE usar a nova estrutura JSONB disciplines
@@ -394,7 +408,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         weighted_case_study_2_score: weightedCaseStudy2Score,
         weighted_case_study_3_score: weightedCaseStudy3Score
       })
-      .eq('id', userRanking.id);
+      .eq('user_id', userRanking.user_id);
 
     if (updateError) {
       console.error('Erro ao atualizar pontuação do usuário:', updateError);
@@ -411,7 +425,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       const { error: updateStatusError } = await supabase
         .from('user_rankings')
         .update({ status: 'eliminado' })
-        .eq('id', userRanking.id);
+        .eq('user_id', userRanking.user_id);
         
       if (updateStatusError) {
         console.error('Erro ao atualizar status do usuário:', updateStatusError);
@@ -426,7 +440,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       const { error: updateStatusError } = await supabase
         .from('user_rankings')
         .update({ status: 'classificado' })
-        .eq('id', userRanking.id);
+        .eq('user_id', userRanking.user_id);
         
       if (updateStatusError) {
         console.error('Erro ao atualizar status do usuário:', updateStatusError);

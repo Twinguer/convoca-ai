@@ -24,140 +24,44 @@ const ensureNumeric = (value: any): number => {
 
 // Helper to create disciplines from structure fields
 const createDisciplinesFromStructure = (formValues: any): any[] => {
-  const disciplines = [];
-
-  // Conhecimentos Básicos
-  if (formValues.has_basic_knowledge) {
-    disciplines.push({
-      id: 'basic-knowledge',
-      name: 'Conhecimentos Básicos',
-      type: 'basic_knowledge',
-      isEnabled: true,
-      questionCount: formValues.basic_knowledge_questions || 0,
-      weight: formValues.basic_knowledge_weight || 1,
-      minimum_score: 0
-    });
+  // Usar apenas a estrutura JSONB disciplines
+  if (formValues.disciplines && Array.isArray(formValues.disciplines)) {
+    return formValues.disciplines;
   }
 
-  // Conhecimentos Específicos 1
-  if (formValues.has_specific_knowledge_1) {
-    disciplines.push({
-      id: 'specific-knowledge-1',
-      name: 'Conhecimentos Específicos 1',
-      type: 'specific_knowledge_1',
-      isEnabled: true,
-      questionCount: formValues.specific_knowledge_1_questions || 0,
-      weight: formValues.specific_knowledge_1_weight || 1,
-      minimum_score: 0
-    });
-  }
+  // Fallback para estrutura vazia se não houver disciplines
+  return [];
+};
 
-  // Conhecimentos Específicos 2
-  if (formValues.has_specific_knowledge_2) {
-    disciplines.push({
-      id: 'specific-knowledge-2',
-      name: 'Conhecimentos Específicos 2',
-      type: 'specific_knowledge_2',
-      isEnabled: true,
-      questionCount: formValues.specific_knowledge_2_questions || 0,
-      weight: formValues.specific_knowledge_2_weight || 1,
-      minimum_score: 0
-    });
-  }
+// Helper to create subjects structure from form values
+const createSubjectsStructure = (formValues: any): any => {
+  // Sempre criar a partir dos valores atuais do formulário
+  return {
+    discr: formValues.has_discursive === true,
+    discr_min_score: formValues.has_discursive ? (formValues.discursive_minimum_score || 0) : 0,
+    case1: formValues.has_case_study_1 === true,
+    case1_min_score: formValues.has_case_study_1 ? (formValues.case_study_1_minimum_score || 0) : 0,
+    case2: formValues.has_case_study_2 === true,
+    case2_min_score: formValues.has_case_study_2 ? (formValues.case_study_2_minimum_score || 0) : 0,
+    case3: formValues.has_case_study_3 === true,
+    case3_min_score: formValues.has_case_study_3 ? (formValues.case_study_3_minimum_score || 0) : 0,
+    other: formValues.has_other_subjective === true,
+    name_other: formValues.has_other_subjective ? (formValues.other_subjective_name || '') : '',
+    other_min_score: formValues.has_other_subjective ? (formValues.other_subjective_minimum_score || 0) : 0
+  };
+};
 
-  // Conhecimentos Específicos 3
-  if (formValues.has_specific_knowledge_3) {
-    disciplines.push({
-      id: 'specific-knowledge-3',
-      name: 'Conhecimentos Específicos 3',
-      type: 'specific_knowledge_3',
-      isEnabled: true,
-      questionCount: formValues.specific_knowledge_3_questions || 0,
-      weight: formValues.specific_knowledge_3_weight || 1,
-      minimum_score: 0
-    });
-  }
-
-  // Discursiva
-  if (formValues.has_discursive) {
-    disciplines.push({
-      id: 'discursive',
-      name: 'Prova Discursiva',
-      type: 'discursive',
-      isEnabled: true,
-      questionCount: 1,
-      weight: 1,
-      minimum_score: 0
-    });
-  }
-
-  // Estudo de Caso 1
-  if (formValues.has_case_study_1) {
-    disciplines.push({
-      id: 'case-study-1',
-      name: 'Estudo de Caso 1',
-      type: 'case_study_1',
-      isEnabled: true,
-      questionCount: 1,
-      weight: 1,
-      minimum_score: 0
-    });
-  }
-
-  // Estudo de Caso 2
-  if (formValues.has_case_study_2) {
-    disciplines.push({
-      id: 'case-study-2',
-      name: 'Estudo de Caso 2',
-      type: 'case_study_2',
-      isEnabled: true,
-      questionCount: 1,
-      weight: 1,
-      minimum_score: 0
-    });
-  }
-
-  // Estudo de Caso 3
-  if (formValues.has_case_study_3) {
-    disciplines.push({
-      id: 'case-study-3',
-      name: 'Estudo de Caso 3',
-      type: 'case_study_3',
-      isEnabled: true,
-      questionCount: 1,
-      weight: 1,
-      minimum_score: 0
-    });
-  }
-
-  // Outro Subjetivo
-  if (formValues.has_other_subjective) {
-    disciplines.push({
-      id: 'other-subjective',
-      name: formValues.other_subjective_name || 'Outro Subjetivo',
-      type: 'other_subjective',
-      isEnabled: true,
-      questionCount: 1,
-      weight: 1,
-      minimum_score: 0
-    });
-  }
-
-  // Conhecimentos Customizados
-  if (formValues.has_custom_knowledge) {
-    disciplines.push({
-      id: 'custom-knowledge',
-      name: 'Conhecimentos Customizados',
-      type: 'custom_knowledge',
-      isEnabled: true,
-      questionCount: formValues.custom_knowledge_questions || 0,
-      weight: formValues.custom_knowledge_weight || 1,
-      minimum_score: 0
-    });
-  }
-
-  // console.log('[useSaveRanking] Disciplinas criadas automaticamente:', disciplines);
-  return disciplines;
+// Helper to create has_cota structure from form values
+const createHasCotaStructure = (formValues: any): any => {
+  // Sempre criar a partir dos valores atuais do formulário
+  return {
+    ppp: formValues.has_ppp === true,
+    pcd: formValues.has_pcd === true,
+    ind: formValues.has_indigenas === true,
+    hip: formValues.has_hipossuficientes === true,
+    tra: formValues.has_transsexuais === true,
+    min_cota: formValues.has_quota_minimum_score ? (formValues.quota_minimum_score || 0) : 0
+  };
 };
 
 export const useSaveRanking = () => {
@@ -205,7 +109,6 @@ export const useSaveRanking = () => {
 
       // Explicitly convert numeric fields to ensure proper types
       formValues.alternatives_count = ensureNumeric(formValues.alternatives_count);
-      formValues.wrong_answer_penalty = ensureNumeric(formValues.wrong_answer_penalty);
       
       // Minimum score fields
       if (formValues.has_minimum_score) {
@@ -357,7 +260,7 @@ export const useSaveRanking = () => {
       }
       
       // Validate that at least one discipline is enabled
-      if (!hasEnabledDiscipline && formValues.has_custom_knowledge) {
+      if (!hasEnabledDiscipline) {
         toast.error("Por favor, selecione ao menos uma disciplina.");
         return { duplicated: false, error: true };
       }
@@ -389,7 +292,12 @@ export const useSaveRanking = () => {
         orgao: orgao,
         banca: formValues.custom_banca || formValues.banca,
         status: formValues.status || 'Ativo',
-        created_by_user_id: userId
+        created_by_user_id: userId,
+        // Campos básicos do concurso
+        vagas: ensureNumeric(formValues.vagas),
+        inscritos: ensureNumeric(formValues.inscritos),
+        etapa_atual: formValues.etapa_atual,
+        link: formValues.link
       };
 
       // Remove any temporary fields not needed in database
@@ -412,37 +320,25 @@ export const useSaveRanking = () => {
 
       if (editId) {
         // Para edição, incluir todos os campos necessários
+        const subjectsStructure = createSubjectsStructure(formValues);
+        const hasCotaStructure = createHasCotaStructure(formValues);
+        
         const editDataToSubmit = {
           ...dataToSubmit,
+          // Campos básicos do concurso
+          vagas: ensureNumeric(formValues.vagas),
+          inscritos: ensureNumeric(formValues.inscritos),
+          etapa_atual: formValues.etapa_atual,
+          link: formValues.link,
           // Campos de localidade e cotas
           localidades: formValues.localidades,
-          has_ampla_concorrencia: formValues.has_ampla_concorrencia === true,
-          has_ppp: formValues.has_ppp === true,
-          has_pcd: formValues.has_pcd === true,
-          has_hipossuficientes: formValues.has_hipossuficientes === true,
-          has_indigenas: formValues.has_indigenas === true,
-          has_transsexuais: formValues.has_transsexuais === true,
-          // Campos de exames subjetivos
-          has_discursive: formValues.has_discursive === true,
-          has_case_study_1: formValues.has_case_study_1 === true,
-          has_case_study_2: formValues.has_case_study_2 === true,
-          has_case_study_3: formValues.has_case_study_3 === true,
           // Campos de configuração de exame
           exam_type: formValues.exam_type || 'Alternativas',
           alternatives_count: ensureNumeric(formValues.alternatives_count),
-          wrong_answer_penalty: ensureNumeric(formValues.wrong_answer_penalty),
-          // Campos de pontuação mínima
-          has_minimum_score: formValues.has_minimum_score === true,
-          minimum_score_unit_type: formValues.minimum_score_unit_type || 'percentage',
-          minimum_score_type: formValues.minimum_score_type || 'knowledge',
-          total_minimum_score: formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0,
-          has_quota_minimum_score: formValues.has_quota_minimum_score === true,
-          quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
-          quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0,
           // Campos de disciplinas
-          has_custom_knowledge: true,
           disciplines: formValues.hierarchicalDisciplines || formValues.disciplines,
-          subjects: formValues.subjects || [],
+          subjects: subjectsStructure,
+          has_cota: hasCotaStructure,
           form_config: formValues.form_config || {},
           official_answers: formValues.official_answers || {},
           exam_booklets: formValues.exam_booklets || [],
@@ -497,39 +393,19 @@ export const useSaveRanking = () => {
           .from('concursos')
           .update({ 
             exam_type: formValues.exam_type || 'Alternativas',
-            has_minimum_score: formValues.has_minimum_score === true,
-            total_minimum_score: formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0,
-            wrong_answer_penalty: ensureNumeric(formValues.wrong_answer_penalty),
-            has_custom_knowledge: hasCustomDisciplines, // Definir baseado nas disciplinas criadas
+            // has_custom_knowledge removido - usando disciplines JSONB
             created_by_user_id: formValues.created_by_user_id || userId,
+            // Campos básicos do concurso
+            vagas: ensureNumeric(formValues.vagas),
+            inscritos: ensureNumeric(formValues.inscritos),
+            etapa_atual: formValues.etapa_atual,
+            link: formValues.link,
             // Campos de localidade e cotas
             localidades: formValues.localidades,
-            has_ampla_concorrencia: formValues.has_ampla_concorrencia === true,
-            has_ppp: formValues.has_ppp === true,
-            has_pcd: formValues.has_pcd === true,
-            has_hipossuficientes: formValues.has_hipossuficientes === true,
-            has_indigenas: formValues.has_indigenas === true,
-            has_transsexuais: formValues.has_transsexuais === true,
-            // Campos de exames subjetivos
-            has_discursive: formValues.has_discursive === true,
-            has_case_study_1: formValues.has_case_study_1 === true,
-            has_case_study_2: formValues.has_case_study_2 === true,
-            has_case_study_3: formValues.has_case_study_3 === true,
-            has_other_subjective: formValues.has_other_subjective === true,
-            other_subjective_name: formValues.other_subjective_name || null,
-            // Notas mínimas para questões subjetivas
-            discursive_minimum_score: formValues.discursive_minimum_score || 0,
-            case_study_1_minimum_score: formValues.case_study_1_minimum_score || 0,
-            case_study_2_minimum_score: formValues.case_study_2_minimum_score || 0,
-            case_study_3_minimum_score: formValues.case_study_3_minimum_score || 0,
-            other_subjective_minimum_score: formValues.other_subjective_minimum_score || 0,
-            // Campos de pontuação mínima para cotas
-            has_quota_minimum_score: formValues.has_quota_minimum_score === true,
-            quota_minimum_score_unit_type: formValues.quota_minimum_score_unit_type || 'percentage',
-            quota_minimum_score: formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0,
             // Campos JSONB sincronizados com convoca-ai
             disciplines: disciplinesData,
-            subjects: formValues.subjects || [],
+            subjects: createSubjectsStructure(formValues),
+            has_cota: createHasCotaStructure(formValues),
             form_config: formValues.form_config || {},
             official_answers: formValues.official_answers || {},
             exam_booklets: formValues.exam_booklets || [],
@@ -691,9 +567,7 @@ export const useSaveRanking = () => {
       // console.log('[useSaveRanking] ✅ Queries invalidadas, dados serão atualizados automaticamente');
       
       if (editId) {
-        toast.success("Ranking atualizado com sucesso!");
       } else {
-        toast.success("Ranking criado com sucesso!");
       }
 
       return { id: concursoIdToUse, duplicated: false };

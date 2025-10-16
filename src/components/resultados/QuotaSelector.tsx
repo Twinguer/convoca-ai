@@ -2,7 +2,6 @@ import React from 'react';
 import { Concurso } from '@/types/concursos';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useQuotaCache } from '@/hooks/useQuotaCache';
 export type QuotaType = 'Ampla Concorrência' | 'PPP' | 'PCD' | 'Hipossuficientes' | 'Indígenas' | 'Pessoas Trans';
 interface QuotaSelectorProps {
   concurso: Concurso;
@@ -14,46 +13,42 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
   selectedQuota,
   onQuotaChange
 }) => {
-  // Usar cache de cotas para otimizar performance
-  const { data: quotaConfig, isLoading } = useQuotaCache(concurso.id);
-  
-  // Usar dados do cache se disponível, senão usar dados do concurso
-  const config = quotaConfig || {
-    has_ampla_concorrencia: concurso.has_ampla_concorrencia,
-    has_ppp: concurso.has_ppp,
-    has_pcd: concurso.has_pcd,
-    has_hipossuficientes: concurso.has_hipossuficientes,
-    has_indigenas: concurso.has_indigenas,
-    has_transsexuais: concurso.has_transsexuais,
+  // Usar dados do concurso diretamente (JSONB has_cota)
+  const config = concurso.has_cota || {
+    ppp: false,
+    pcd: false,
+    ind: false,
+    hip: false,
+    tra: false,
+    min_cota: 0
   };
 
-  // Build available quotas based on cached config
+  // Build available quotas based on JSONB config
   const availableQuotas = [{
     value: 'Ampla Concorrência',
     label: 'Ampla Concorrência',
-    enabled: config.has_ampla_concorrencia !== false
+    enabled: true // Ampla sempre disponível
   },
-  // Ampla is default
   {
     value: 'PPP',
     label: 'Pessoas Pretas e Pardas (PPP)',
-    enabled: config.has_ppp === true
+    enabled: config.ppp === true
   }, {
     value: 'PCD',
     label: 'Pessoas com Deficiência (PCD)',
-    enabled: config.has_pcd === true
+    enabled: config.pcd === true
   }, {
     value: 'Hipossuficientes',
     label: 'Hipossuficientes',
-    enabled: config.has_hipossuficientes === true
+    enabled: config.hip === true
   }, {
     value: 'Indígenas',
     label: 'Indígenas',
-    enabled: config.has_indigenas === true
+    enabled: config.ind === true
   }, {
     value: 'Pessoas Trans',
     label: 'Pessoas Trans',
-    enabled: config.has_transsexuais === true
+    enabled: config.tra === true
   }].filter(quota => quota.enabled);
 
   // Log removido para reduzir overhead em produção

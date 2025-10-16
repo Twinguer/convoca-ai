@@ -54,7 +54,7 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
         
         <div className="flex items-center text-muted-foreground">
           <User className="h-4 w-4 mr-2" />
-          <span className="text-sm">{vagas} vagas</span>
+          <span className="text-sm bg-transparent">{vagas} vagas</span>
         </div>
       </div>
       

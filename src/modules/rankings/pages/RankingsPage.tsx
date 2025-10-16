@@ -204,7 +204,7 @@ const RankingsPage = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Vagas:</span>
-                        <span className="font-medium">{concurso.vagas || 'N/A'}</span>
+                        <span className="font-medium bg-transparent">{concurso.vagas || 'N/A'}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Participantes:</span>

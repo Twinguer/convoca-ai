@@ -72,7 +72,7 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       caseStudy1Score: subjectiveScores?.case_study_1 || null,
       caseStudy2Score: subjectiveScores?.case_study_2 || null,
       caseStudy3Score: subjectiveScores?.case_study_3 || null,
-      otherSubjectiveScore: subjectiveScores?.other_subjective || null,
+      otherSubjectiveScore: subjectiveScores?.other || null,
       subjectScores: subjectiveScores || {},
       selectedBooklet: selectedBooklet,
       editCount: rankingData.edit_count || 0,

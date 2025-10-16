@@ -209,13 +209,13 @@ export const fetchUserRankings = async (
                 caseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score || 0,
                 caseStudy2Score: rankingDataItem.user_data?.subjective_scores?.case_study_2_score || 0,
                 caseStudy3Score: rankingDataItem.user_data?.subjective_scores?.case_study_3_score || 0,
-                otherSubjectiveScore: rankingDataItem.user_data?.subjective_scores?.other_subjective_score || 0,
+                otherSubjectiveScore: rankingDataItem.user_data?.subject_scores?.other || 0,
                 // Pontuações subjetivas com peso (mesmo valor, pois não há mais pesos)
                 weightedDiscursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score || 0,
                 weightedCaseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score || 0,
                 weightedCaseStudy2Score: rankingDataItem.user_data?.subjective_scores?.case_study_2_score || 0,
                 weightedCaseStudy3Score: rankingDataItem.user_data?.subjective_scores?.case_study_3_score || 0,
-                weightedOtherSubjectiveScore: rankingDataItem.user_data?.subjective_scores?.other_subjective_score || 0,
+                weightedOtherSubjectiveScore: rankingDataItem.user_data?.subject_scores?.other || 0,
                 // Pontuações de disciplinas customizadas
                 customDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
                 weightedCustomDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
@@ -252,7 +252,7 @@ export const fetchUserRankings = async (
     // Buscar dados do ranking (nova estrutura)
     const { data: rankingInfo, error: rankingInfoError } = await supabase
       .from('concursos')
-      .select('id, total_minimum_score, has_minimum_score')
+      .select('id, subjects')
       .eq('id', concursoId)
       .single();
 
@@ -261,8 +261,9 @@ export const fetchUserRankings = async (
     }
 
     // Obter dados do ranking
-    const hasMinimumScoreEnabled = rankingInfo?.has_minimum_score === true;
-    const totalMinimumScore = hasMinimumScoreEnabled ? rankingInfo?.total_minimum_score || 0 : 0;
+    const subjects = rankingInfo?.subjects || {};
+    const hasMinimumScoreEnabled = subjects.discr || subjects.case1 || subjects.case2 || subjects.case3 || subjects.other;
+    const totalMinimumScore = hasMinimumScoreEnabled ? (subjects.discr_min_score || subjects.case1_min_score || subjects.case2_min_score || subjects.case3_min_score || subjects.other_min_score || 0) : 0;
 
     // Formatar os dados do ranking com posições (nova estrutura normalizada)
     const formattedRankings = paginatedData.map((ranking, index) => {

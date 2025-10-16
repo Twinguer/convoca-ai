@@ -163,7 +163,14 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         }) => <FormItem>
                 <FormLabel>Data da Prova</FormLabel>
                 <FormControl>
-                  <Input type="date" {...field} />
+                  <Input 
+                    type="date" 
+                    value={field.value || ''} 
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
               </FormItem>} />
           
@@ -172,7 +179,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           field
         }) => <FormItem>
                 <FormLabel>Status do Concurso</FormLabel>
-                <Select defaultValue={field.value} onValueChange={field.onChange}>
+                <Select value={field.value || ''} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o status" />
@@ -192,7 +199,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           field
         }) => <FormItem>
                 <FormLabel>Etapa Atual</FormLabel>
-                <Select defaultValue={field.value} onValueChange={field.onChange}>
+                <Select value={field.value || ''} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a etapa" />

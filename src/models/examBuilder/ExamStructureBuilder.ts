@@ -105,7 +105,6 @@ export class ExamStructureBuilder {
       // Configurações gerais do exame
       exam_type: this.examType,
       alternatives_count: this.alternativesCount,
-      wrong_answer_penalty: this.wrongAnswerPenalty,
       
       // Sempre usar modo customizável
       has_custom_knowledge: true,

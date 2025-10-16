@@ -15,23 +15,28 @@ export const useDeleteRanking = () => {
         // console.log('Buscando user_rankings para deletar dependências...');
         const { data: userRankings, error: fetchError } = await supabase
           .from('user_rankings')
-          .select('id')
-          .eq('concurso_id', concursoId);
+          .select('user_id, consolidated_data')
+          .not('consolidated_data', 'is', null);
         
         if (fetchError) {
           console.error('Erro ao buscar user_rankings:', fetchError);
           throw fetchError;
         }
+        
+        // Filter user_rankings that have this concurso in their consolidated_data
+        const relevantUserRankings = userRankings?.filter(ur => 
+          ur.consolidated_data?.rankings?.[concursoId]
+        ) || [];
 
-        if (userRankings && userRankings.length > 0) {
-          const userRankingIds = userRankings.map(ur => ur.id);
+        if (relevantUserRankings && relevantUserRankings.length > 0) {
+          const userIds = relevantUserRankings.map(ur => ur.user_id);
           
           // 2. Deletar score_calculation_logs primeiro - CORREÇÃO CRUCIAL
           console.log('Deletando score_calculation_logs...');
           const { error: logsError } = await supabase
             .from('score_calculation_logs')
             .delete()
-            .in('user_ranking_id', userRankingIds);
+            .in('user_ranking_id', userIds);
           
           if (logsError) {
             console.error('Erro ao deletar score_calculation_logs:', logsError);
@@ -43,16 +48,25 @@ export const useDeleteRanking = () => {
           console.log('user_answers removido - usando dados consolidados');
         }
 
-        // 4. Deletar todos os user_rankings
-        // console.log('Deletando user_rankings...');
-        const { error: rankingsError } = await supabase
-          .from('user_rankings')
-          .delete()
-          .eq('concurso_id', concursoId);
-        
-        if (rankingsError) {
-          console.error('Erro ao deletar user_rankings:', rankingsError);
-          throw rankingsError;
+        // 4. Remove concurso from consolidated_data for each user
+        for (const userId of userIds) {
+          const { data: userRankingData, error: fetchError } = await supabase
+            .from('user_rankings')
+            .select('consolidated_data')
+            .eq('user_id', userId)
+            .single();
+            
+          if (!fetchError && userRankingData?.consolidated_data) {
+            const updatedData = { ...userRankingData.consolidated_data };
+            if (updatedData.rankings && updatedData.rankings[concursoId]) {
+              delete updatedData.rankings[concursoId];
+              
+              await supabase
+                .from('user_rankings')
+                .update({ consolidated_data: updatedData })
+                .eq('user_id', userId);
+            }
+          }
         }
 
         // 5. official_answer_weights agora são gerenciados via JSONB na tabela concursos

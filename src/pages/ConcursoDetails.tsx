@@ -62,7 +62,7 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
             <dl className="space-y-2">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Número de Vagas</dt>
-                <dd>{concurso.vagas || 'Não informado'}</dd>
+                <dd className="bg-transparent">{concurso.vagas || 'Não informado'}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Inscritos</dt>
@@ -94,12 +94,6 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
                 <dt className="text-sm font-medium text-gray-500">Quantidade de Alternativas</dt>
                 <dd>{concurso.alternatives_count || 5}</dd>
               </div>
-              {concurso.wrong_answer_penalty !== undefined && (
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Penalidade por Erro</dt>
-                  <dd>{concurso.wrong_answer_penalty}</dd>
-                </div>
-              )}
             </dl>
           </CardContent>
         </Card>

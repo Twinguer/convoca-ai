@@ -59,7 +59,6 @@ export type Database = {
           knowledgeAreas: string[] | null
           link: string | null
           localidades: string[] | null
-          minimum_score_type: string | null
           minimum_score_unit_type: string | null
           orgao: string
           predefined_job_title: string | null
@@ -81,7 +80,6 @@ export type Database = {
           total_minimum_score: number | null
           updated_at: string
           vagas: number | null
-          wrong_answer_penalty: number | null
         }
         Insert: {
           alternatives_count?: number | null
@@ -131,7 +129,6 @@ export type Database = {
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
-          minimum_score_type?: string | null
           minimum_score_unit_type?: string | null
           orgao: string
           predefined_job_title?: string | null
@@ -153,7 +150,6 @@ export type Database = {
           total_minimum_score?: number | null
           updated_at?: string
           vagas?: number | null
-          wrong_answer_penalty?: number | null
         }
         Update: {
           alternatives_count?: number | null
@@ -203,7 +199,6 @@ export type Database = {
           knowledgeAreas?: string[] | null
           link?: string | null
           localidades?: string[] | null
-          minimum_score_type?: string | null
           minimum_score_unit_type?: string | null
           orgao?: string
           predefined_job_title?: string | null
@@ -225,7 +220,6 @@ export type Database = {
           total_minimum_score?: number | null
           updated_at?: string
           vagas?: number | null
-          wrong_answer_penalty?: number | null
         }
         Relationships: []
       }

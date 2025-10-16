@@ -55,7 +55,7 @@ export const getBookletAnswers = async (concursoId: string, bookletId: string) =
       return {};
     }
 
-    const answers = consolidatedData.booklets[bookletId].answers || {};
+    const answers = consolidatedData.booklets[bookletId].questions || {};
     console.log('[getBookletAnswers] Found', Object.keys(answers).length, 'answers for booklet:', bookletId);
     return answers;
   } catch (error) {

@@ -2,44 +2,40 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 interface QuotaConfig {
-  has_ampla_concorrencia: boolean;
-  has_ppp: boolean;
-  has_pcd: boolean;
-  has_hipossuficientes: boolean;
-  has_indigenas: boolean;
-  has_transsexuais: boolean;
+  ppp: boolean;
+  pcd: boolean;
+  ind: boolean;
+  hip: boolean;
+  tra: boolean;
+  min_cota: number;
 }
 
 const fetchQuotaConfig = async (concursoId: string): Promise<QuotaConfig> => {
-    // console.log('[useQuotaCache] Fetching quota config for concurso:', concursoId);
-  
   const { data, error } = await supabase
     .from('concursos')
-    .select(`
-      has_ampla_concorrencia,
-      has_ppp,
-      has_pcd,
-      has_hipossuficientes,
-      has_indigenas,
-      has_transsexuais
-    `)
+    .select('has_cota')
     .eq('id', concursoId)
     .single();
     
   if (error) {
-    console.error('[useQuotaCache] Error fetching quota config:', error);
     return {
-      has_ampla_concorrencia: true,
-      has_ppp: false,
-      has_pcd: false,
-      has_hipossuficientes: false,
-      has_indigenas: false,
-      has_transsexuais: false,
+      ppp: false,
+      pcd: false,
+      ind: false,
+      hip: false,
+      tra: false,
+      min_cota: 0,
     };
   }
   
-    // console.log('[useQuotaCache] Quota config fetched:', data);
-  return data;
+  return data?.has_cota || {
+    ppp: false,
+    pcd: false,
+    ind: false,
+    hip: false,
+    tra: false,
+    min_cota: 0,
+  };
 };
 
 export const useQuotaCache = (concursoId: string) => {

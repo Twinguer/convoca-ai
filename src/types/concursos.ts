@@ -20,6 +20,29 @@ export interface DisciplineBlock {
   questionCount?: number; // Para compatibilidade com código que verifica questionCount em qualquer item
 }
 
+export interface HasCota {
+  ppp: boolean;
+  pcd: boolean;
+  ind: boolean;
+  hip: boolean;
+  tra: boolean;
+  min_cota: number;
+}
+
+export interface Subjects {
+  discr: boolean;
+  case1: boolean;
+  case2: boolean;
+  case3: boolean;
+  other: boolean;
+  name_other: string | null;
+  discr_min_score: number;
+  case1_min_score: number;
+  case2_min_score: number;
+  case3_min_score: number;
+  other_min_score: number;
+}
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -45,36 +68,29 @@ export interface Concurso {
   // Configuração de exame
   exam_type?: string;
   alternatives_count?: number;
-  wrong_answer_penalty?: number;
 
   // Informações de trabalho
   predefined_job_title?: string | null;
   custom_job_title?: string | null;
 
-  // Tipos de reserva
-  has_ampla_concorrencia?: boolean;
-  has_ppp?: boolean;
-  has_pcd?: boolean;
-  has_hipossuficientes?: boolean;
-  has_indigenas?: boolean;
-  has_transsexuais?: boolean;
 
   // Flag de administrador
   is_admin_update?: boolean;
 
   // Array de blocos de disciplinas (NOVA ESTRUTURA - RENOMEADA PARA disciplines)
   disciplines?: (DisciplineBlock | NestedDiscipline)[]; // Pode conter tanto blocos quanto disciplinas diretas
+  
+  // Estrutura JSONB para cotas
+  has_cota?: HasCota;
+  
+  // Estrutura JSONB para disciplinas subjetivas
+  subjects?: Subjects;
 
   // Manteremos por retrocompatibilidade, mas não serão mais usados ativamente
   has_basic_knowledge?: boolean;
   has_specific_knowledge_1?: boolean;
   has_specific_knowledge_2?: boolean;
   has_specific_knowledge_3?: boolean;
-  has_discursive?: boolean;
-  has_case_study_1?: boolean;
-  has_case_study_2?: boolean;
-  has_case_study_3?: boolean;
-  has_other_subjective?: boolean;
 
   basic_knowledge_questions?: number;
   specific_knowledge_1_questions?: number;
@@ -85,27 +101,11 @@ export interface Concurso {
   specific_knowledge_1_weight?: number;
   specific_knowledge_2_weight?: number;
   specific_knowledge_3_weight?: number;
-  other_subjective_name?: string;
   custom_knowledge_questions?: number;
   custom_knowledge_weight?: number;
 
-  // Campos relacionados a mínimo total (manter)
-  has_minimum_score?: boolean;
-  minimum_score_type?: string | null; // Pode ser que ainda precise para o mínimo total
-  minimum_score_unit_type?: string | null; // Pode ser que ainda precise para o mínimo total
-  total_minimum_score?: number;
   
-  // Campos relacionados a mínimo para cotas
-  has_quota_minimum_score?: boolean;
-  quota_minimum_score?: number;
-  quota_minimum_score_unit_type?: string | null;
   
-  // Notas mínimas para questões subjetivas
-  discursive_minimum_score?: number;
-  case_study_1_minimum_score?: number;
-  case_study_2_minimum_score?: number;
-  case_study_3_minimum_score?: number;
-  other_subjective_minimum_score?: number;
 }
 
 export interface ConcursoFilter {

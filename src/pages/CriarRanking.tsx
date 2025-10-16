@@ -93,7 +93,6 @@ const CriarRanking = () => {
       inscritos: 0,
       exam_type: 'Alternativas',
       alternatives_count: 5,
-      wrong_answer_penalty: 0,
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
@@ -114,7 +113,6 @@ const CriarRanking = () => {
       other_subjective_name: '',
       // Pontuação mínima geral
       has_minimum_score: false,
-      minimum_score_type: 'knowledge',
       minimum_score_unit_type: 'percentage',
       total_minimum_score: 0,
       // Pontuação mínima para cotas
@@ -181,15 +179,54 @@ const CriarRanking = () => {
             if (data.localidades && Array.isArray(data.localidades)) {
               setSelectedStates(data.localidades);
             }
-            form.reset({
+            // Mapear dados das cotas do JSONB para os campos do formulário
+            const quotaData = data.has_cota || {};
+            const subjectsData = data.subjects || {};
+            
+            
+            
+            
+            
+            // Criar objeto de dados para o formulário
+            const formData = {
               ...data,
               localidades: data.localidades || [],
               predefined_job_title: isOtherTitle ? 'OUTRO' : data.titulo,
               custom_job_title: isOtherTitle ? data.titulo : '',
               banca: isOtherBanca ? 'OUTRO' : data.banca,
               custom_banca: isOtherBanca ? data.banca : '',
-              created_at: data.created_at ? new Date(new Date(data.created_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]
-            });
+              created_at: data.created_at ? new Date(new Date(data.created_at).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0] : new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0],
+              // Campos básicos do concurso
+              vagas: data.vagas || 0,
+              inscritos: data.inscritos || 0,
+              etapa_atual: data.etapa_atual || 'Prova Objetiva',
+              link: data.link || '',
+              // Mapear cotas do JSONB para campos do formulário
+              has_ampla_concorrencia: true, // Sempre true
+              has_ppp: quotaData.ppp === true,
+              has_pcd: quotaData.pcd === true,
+              has_hipossuficientes: quotaData.hip === true,
+              has_indigenas: quotaData.ind === true,
+              has_transsexuais: quotaData.tra === true,
+              
+              
+              // Mapear disciplinas subjetivas do JSONB
+              has_discursive: subjectsData.discr === true,
+              has_case_study_1: subjectsData.case1 === true,
+              has_case_study_2: subjectsData.case2 === true,
+              has_case_study_3: subjectsData.case3 === true,
+              has_other_subjective: subjectsData.other === true,
+              other_subjective_name: subjectsData.name_other || '',
+              discursive_minimum_score: subjectsData.discr_min_score || 0,
+              case_study_1_minimum_score: subjectsData.case1_min_score || 0,
+              case_study_2_minimum_score: subjectsData.case2_min_score || 0,
+              case_study_3_minimum_score: subjectsData.case3_min_score || 0,
+              other_subjective_minimum_score: subjectsData.other_min_score || 0
+            };
+            
+            
+            form.reset(formData);
+            
           }
         } catch (error) {
           console.error('Error loading existing ranking data:', error);

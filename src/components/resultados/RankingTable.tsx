@@ -10,7 +10,6 @@ import { Concurso, isDisciplineBlock } from '@/types/concursos';
 import { UserActions } from '../Admin/UserActions';
 import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '@/integrations/supabase/rankings/examStructure';
 import { Ranking } from '@/services/rankingService';
-import { useQuotaCache } from '@/hooks/useQuotaCache';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadMoreButton } from './LoadMoreButton';
 
@@ -38,6 +37,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   isLoadingMore = false,
   totalLoaded = 0
 }) => {
+  console.log('[RankingTable] Component rendered with:', {
+    concursoId: concurso?.id,
+    hasConcurso: !!concurso,
+    rankingsLength: rankings?.length || 0
+  });
+  
   const navigate = useNavigate();
 
   // Debug: verificar se os rankings estão sendo recebidos
@@ -60,7 +65,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   //   totalLoaded
   // });
   // const { generateSecureUserUrl } = useSecureUserUrls();
-  const [activeTab, setActiveTab] = useState("Ampla Concorrência");
+  const [activeTab, setActiveTab] = useState("ac");
   const [displayNames, setDisplayNames] = useState<Record<string, string>>(sectionDisplayNames);
 
   useEffect(() => {
@@ -142,49 +147,64 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     return [...classifiedWithPositions, ...eliminatedWithoutPositions];
   }, [rankings]);
 
-  // Usar cache de cotas para otimizar performance
-  const { data: quotaConfig } = useQuotaCache(concurso?.id || '');
-  
   const getAvailableQuotas = React.useMemo(() => {
-    if (!concurso) return ["Ampla Concorrência"];
+    if (!concurso) {
+      return ["ac"];
+    }
     
-    // Usar dados do cache se disponível, senão usar dados do concurso
-    const config = quotaConfig || {
-      has_ampla_concorrencia: concurso.has_ampla_concorrencia,
-      has_ppp: concurso.has_ppp,
-      has_pcd: concurso.has_pcd,
-      has_hipossuficientes: concurso.has_hipossuficientes,
-      has_indigenas: concurso.has_indigenas,
-      has_transsexuais: concurso.has_transsexuais,
-    };
+    const quotas = ["ac"];
+    if (concurso.has_cota?.ppp === true) {
+      quotas.push("ppp");
+    }
+    if (concurso.has_cota?.pcd === true) {
+      quotas.push("pcd");
+    }
+    if (concurso.has_cota?.hip === true) {
+      quotas.push("hip");
+    }
+    if (concurso.has_cota?.ind === true) {
+      quotas.push("ind");
+    }
+    if (concurso.has_cota?.tra === true) {
+      quotas.push("tran");
+    }
     
-    const quotas = ["Ampla Concorrência"];
-    if (config.has_ppp === true) {
-      quotas.push("PPP");
-    }
-    if (config.has_pcd === true) {
-      quotas.push("PCD");
-    }
-    if (config.has_hipossuficientes === true) {
-      quotas.push("Hipossuficientes");
-    }
-    if (config.has_indigenas === true) {
-      quotas.push("Indígenas");
-    }
-    if (config.has_transsexuais === true) {
-      quotas.push("Pessoas Trans");
-    }
     return quotas;
-  }, [concurso, quotaConfig]);
+  }, [concurso]);
 
   const availableQuotas = getAvailableQuotas;
 
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
-    if (quota === "Ampla Concorrência") {
+    
+    console.log('[RankingTable] filterRankingsByQuota called with:', {
+      quota,
+      totalRankings: rankingsWithQuotaPositions.length,
+      firstRanking: rankingsWithQuotaPositions[0],
+      reservationTypes: rankingsWithQuotaPositions.map(r => r.reservationType)
+    });
+    
+    // Mapeamento entre abreviações e nomes completos
+    const quotaMapping: Record<string, string> = {
+      "ac": "Ampla Concorrência",
+      "ppp": "PPP", 
+      "pcd": "PCD",
+      "hip": "Hipossuficientes",
+      "ind": "Indígenas",
+      "tran": "Pessoas Trans"
+    };
+    
+    if (quota === "ac") {
+      // Para Ampla Concorrência, mostrar todos os participantes
+      console.log('[RankingTable] Returning all rankings for ac:', rankingsWithQuotaPositions.length);
       return rankingsWithQuotaPositions;
     }
-    return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === quota);
+    
+    // Buscar pelo nome completo correspondente à abreviação
+    const fullQuotaName = quotaMapping[quota];
+    const filtered = rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === fullQuotaName);
+    console.log('[RankingTable] Filtered rankings for', quota, '->', fullQuotaName, ':', filtered.length);
+    return filtered;
   };
 
   const handleUserClick = async (userId: string) => {
@@ -227,9 +247,13 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           </div>}
       </CardHeader>
       <CardContent>
-        {availableQuotas.length > 1 ? <Tabs defaultValue="Ampla Concorrência" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="ac" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4 flex flex-wrap h-auto">
-              {availableQuotas.map(quota => <TabsTrigger key={quota} value={quota} className="text-sm">{quota}</TabsTrigger>)}
+              {availableQuotas.map(quota => (
+                <TabsTrigger key={quota} value={quota} className="text-sm">
+                  {quota}
+                </TabsTrigger>
+              ))}
             </TabsList>
             
             {availableQuotas.map(quota => <TabsContent key={quota} value={quota}>
@@ -238,7 +262,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   currentUserId={currentUserId} 
                   handleUserClick={handleUserClick} 
                   concurso={concurso} 
-                  isAmpla={quota === "Ampla Concorrência"} 
+                  isAmpla={quota === "ac"} 
                   availableQuotas={availableQuotas} 
                   isAuthenticated={isAuthenticated} 
                   isRefetching={isRefetching} 
@@ -250,22 +274,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
                   totalLoaded={totalLoaded}
                 />
               </TabsContent>)}
-          </Tabs> : <RankingTableContent 
-                    rankings={rankingsWithQuotaPositions || []} 
-                    currentUserId={currentUserId} 
-                    handleUserClick={handleUserClick} 
-                    concurso={concurso} 
-                    isAmpla={true} 
-                    availableQuotas={availableQuotas} 
-                    isAuthenticated={isAuthenticated} 
-                    isRefetching={isRefetching} 
-                    activeTab="Ampla Concorrência" 
-                    displayNames={displayNames} // Pass display names
-                    hasMore={hasMore}
-                    onLoadMore={onLoadMore}
-                    isLoadingMore={isLoadingMore}
-                    totalLoaded={totalLoaded}
-                  />}
+          </Tabs>
       </CardContent>
     </Card>;
 };
@@ -435,6 +444,7 @@ const RankingTableContent: React.FC<{
   const customDisciplines = getCustomDisciplines();
   
   if (!concurso) {
+    console.log('[RankingTable] No concurso provided, rendering simplified table');
     // ... keep existing code for the simplified table
     return <Table>
         <TableHeader>
@@ -493,17 +503,32 @@ const RankingTableContent: React.FC<{
           </TableHead>)}
         
         {/* Subjective parts */}
-        {concurso.has_discursive === true && <TableHead className="text-right">dis</TableHead>}
+        {(() => {
+          console.log('[RankingTable] Subjective parts debug:', {
+            concurso: concurso,
+            subjects: concurso.subjects,
+            discr: concurso.subjects?.discr,
+            case1: concurso.subjects?.case1,
+            case2: concurso.subjects?.case2,
+            case3: concurso.subjects?.case3,
+            other: concurso.subjects?.other,
+            has_discursive: concurso.has_discursive,
+            has_case_study_1: concurso.has_case_study_1
+          });
+          return null;
+        })()}
         
-        {concurso.has_case_study_1 === true && <TableHead className="text-right">ec1</TableHead>}
+        {concurso.subjects?.discr === true && <TableHead className="text-right">dis</TableHead>}
         
-        {concurso.has_case_study_2 === true && <TableHead className="text-right">ec2</TableHead>}
+        {concurso.subjects?.case1 === true && <TableHead className="text-right">ec1</TableHead>}
         
-        {concurso.has_case_study_3 === true && <TableHead className="text-right">ec3</TableHead>}
+        {concurso.subjects?.case2 === true && <TableHead className="text-right">ec2</TableHead>}
+        
+        {concurso.subjects?.case3 === true && <TableHead className="text-right">ec3</TableHead>}
         
         {(() => {
           // Verificar se tem seção "Outro" usando sistema híbrido
-          const hasOtherDirect = concurso.has_other_subjective === true;
+          const hasOtherDirect = concurso.subjects?.other === true;
           const hasOtherJsonb = concurso.disciplines?.some(discipline => {
             if ('disciplines' in discipline) {
               return discipline.disciplines?.some(d => 
@@ -605,7 +630,7 @@ const RankingTableContent: React.FC<{
             })}
             
             {/* Subjective part scores */}
-            {concurso.has_discursive === true && <TableCell className="text-right">
+            {concurso.subjects?.discr === true && <TableCell className="text-right">
                 {(() => {
                   console.log('Discursive score debug:', {
                     rankingId: ranking.id,
@@ -616,21 +641,21 @@ const RankingTableContent: React.FC<{
                 })()}
               </TableCell>}
             
-            {concurso.has_case_study_1 === true && <TableCell className="text-right">
+            {concurso.subjects?.case1 === true && <TableCell className="text-right">
                 {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
               </TableCell>}
             
-            {concurso.has_case_study_2 === true && <TableCell className="text-right">
+            {concurso.subjects?.case2 === true && <TableCell className="text-right">
                 {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
               </TableCell>}
             
-            {concurso.has_case_study_3 === true && <TableCell className="text-right">
+            {concurso.subjects?.case3 === true && <TableCell className="text-right">
                 {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
               </TableCell>}
             
             {(() => {
               // Verificar se tem seção "Outro" usando sistema híbrido
-              const hasOtherDirect = concurso.has_other_subjective === true;
+              const hasOtherDirect = concurso.subjects?.other === true;
               const hasOtherJsonb = concurso.disciplines?.some(discipline => {
                 if ('disciplines' in discipline) {
                   return discipline.disciplines?.some(d => 
@@ -657,7 +682,7 @@ const RankingTableContent: React.FC<{
     }) : <TableRow>
           <TableCell colSpan={(() => {
             // Calcular colSpan usando sistema híbrido
-            const hasOtherDirect = concurso.has_other_subjective === true;
+            const hasOtherDirect = concurso.subjects?.other === true;
             const hasOtherJsonb = concurso.disciplines?.some(discipline => {
               if ('disciplines' in discipline) {
                 return discipline.disciplines?.some(d => 
@@ -670,10 +695,10 @@ const RankingTableContent: React.FC<{
             const hasOther = hasOtherDirect || hasOtherJsonb;
             
             return 4 + customDisciplines.length + 
-                   (concurso.has_discursive ? 1 : 0) + 
-                   (concurso.has_case_study_1 ? 1 : 0) + 
-                   (concurso.has_case_study_2 ? 1 : 0) + 
-                   (concurso.has_case_study_3 ? 1 : 0) + 
+                   (concurso.subjects?.discr ? 1 : 0) + 
+                   (concurso.subjects?.case1 ? 1 : 0) + 
+                   (concurso.subjects?.case2 ? 1 : 0) + 
+                   (concurso.subjects?.case3 ? 1 : 0) + 
                    (hasOther ? 1 : 0) + 
                    (isAdminMode && isAuthenticated ? 1 : 0);
           })()} className="text-center py-4">
