@@ -181,14 +181,19 @@ export const fetchUserRankings = async (
                 profileMapKeys: Array.from(profileMap.keys())
               });
               
-              // Debug das notas subjetivas
-              console.log('rankingService subjective scores debug:', {
+              // Debug da nova estrutura
+              console.log('rankingService new structure debug:', {
                 rankingId,
                 userId: userRanking.user_id,
+                score: rankingDataItem.user_data?.score,
+                subjectScoresTot: rankingDataItem.user_data?.subject_scores_tot,
                 subjectiveScores: rankingDataItem.user_data?.subjective_scores,
-                discursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score,
-                caseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score,
-                otherSubjectiveScore: rankingDataItem.user_data?.subjective_scores?.other_subjective_score
+                subjectives: rankingDataItem.user_data?.subjectives,
+                subjectScores: rankingDataItem.user_data?.subject_scores,
+                // Debug completo do user_data
+                userData: rankingDataItem.user_data,
+                // Debug de todas as chaves do user_data
+                userDataKeys: rankingDataItem.user_data ? Object.keys(rankingDataItem.user_data) : 'no user_data'
               });
 
               console.log('rankingService userId debug:', {
@@ -211,21 +216,27 @@ export const fetchUserRankings = async (
                 score: rankingDataItem.user_data?.score || 0,
                 userId: userRanking.user_id,
                 avatarUrl: userProfile.avatar_url,
-                // Pontuações subjetivas
-                discursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score || 0,
-                caseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score || 0,
-                caseStudy2Score: rankingDataItem.user_data?.subjective_scores?.case_study_2_score || 0,
-                caseStudy3Score: rankingDataItem.user_data?.subjective_scores?.case_study_3_score || 0,
-                otherSubjectiveScore: rankingDataItem.user_data?.subject_scores?.other || 0,
+                // Pontuações subjetivas (nova estrutura)
+                discursiveScore: rankingDataItem.user_data?.subjectives?.discursive || 0,
+                caseStudy1Score: rankingDataItem.user_data?.subjectives?.case_study_1 || 0,
+                caseStudy2Score: rankingDataItem.user_data?.subjectives?.case_study_2 || 0,
+                caseStudy3Score: rankingDataItem.user_data?.subjectives?.case_study_3 || 0,
+                otherSubjectiveScore: rankingDataItem.user_data?.subjectives?.other_subjective || 0,
                 // Pontuações subjetivas com peso (mesmo valor, pois não há mais pesos)
-                weightedDiscursiveScore: rankingDataItem.user_data?.subjective_scores?.discursive_score || 0,
-                weightedCaseStudy1Score: rankingDataItem.user_data?.subjective_scores?.case_study_1_score || 0,
-                weightedCaseStudy2Score: rankingDataItem.user_data?.subjective_scores?.case_study_2_score || 0,
-                weightedCaseStudy3Score: rankingDataItem.user_data?.subjective_scores?.case_study_3_score || 0,
-                weightedOtherSubjectiveScore: rankingDataItem.user_data?.subject_scores?.other || 0,
-                // Pontuações de disciplinas customizadas
-                customDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
-                weightedCustomDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
+                weightedDiscursiveScore: rankingDataItem.user_data?.subjectives?.discursive || 0,
+                weightedCaseStudy1Score: rankingDataItem.user_data?.subjectives?.case_study_1 || 0,
+                weightedCaseStudy2Score: rankingDataItem.user_data?.subjectives?.case_study_2 || 0,
+                weightedCaseStudy3Score: rankingDataItem.user_data?.subjectives?.case_study_3 || 0,
+                weightedOtherSubjectiveScore: rankingDataItem.user_data?.subjectives?.other_subjective || 0,
+                // Pontuações de disciplinas customizadas (apenas as que começam com custom_)
+                customDisciplineScores: Object.fromEntries(
+                  Object.entries(rankingDataItem.user_data?.subject_scores || {})
+                    .filter(([key]) => key.startsWith('custom_'))
+                ),
+                weightedCustomDisciplineScores: Object.fromEntries(
+                  Object.entries(rankingDataItem.user_data?.subject_scores || {})
+                    .filter(([key]) => key.startsWith('custom_'))
+                ),
                 // Flags de mínimos não atingidos
                 belowMinimum: false, // Will be calculated later
                 belowDisciplineMinimums: [],

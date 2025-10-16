@@ -142,17 +142,25 @@ export const useSaveAnswers = ({
       const updatedConsolidatedData = { ...currentUserRanking.consolidated_data };
       
       if (updatedConsolidatedData.rankings && updatedConsolidatedData.rankings[rankingId]) {
-        // Atualizar ranking existente
+        // Atualizar ranking existente - SALVAR answers E pontuações subjetivas
         const updatedRankingData = {
           ...updatedConsolidatedData.rankings[rankingId],
           user_data: {
             ...updatedConsolidatedData.rankings[rankingId].user_data,
             answers: preparedData.answers,
-            subjective_scores: preparedData.subjectScores,
-            edit_count: editCount + 1,
-            all_questions_answered: Object.keys(preparedData.answers).length > 0
+            all_questions_answered: Object.keys(preparedData.answers).length > 0,
+            // SALVAR apenas as pontuações subjetivas (remover subjective_scores duplicado)
+            subjectives: {
+              discursive: discursiveScore || 0,
+              case_study_1: caseStudy1Score || 0,
+              case_study_2: caseStudy2Score || 0,
+              case_study_3: caseStudy3Score || 0,
+              other_subjective: subjectScores?.other_subjective || 0
+            }
+            // score, subject_scores, subject_scores_tot serão atualizados pelo recalculateUserScore
           },
           selected_booklet_id: bookletIdString,
+          edit_count: editCount + 1,
           control_metadata: {
             ...updatedConsolidatedData.rankings[rankingId].control_metadata,
             last_updated: new Date().toISOString()
@@ -168,8 +176,7 @@ export const useSaveAnswers = ({
       const { error: updateError } = await supabase
         .from('user_rankings')
         .update({
-          consolidated_data: updatedConsolidatedData,
-          updated_at: new Date().toISOString()
+          consolidated_data: updatedConsolidatedData
         })
         .eq('user_id', user.id);
 
@@ -180,10 +187,34 @@ export const useSaveAnswers = ({
 
       console.log('[useSaveAnswers] Dados salvos com sucesso no consolidated_data');
       
+      // 🔥 ADICIONAR: Recálculo de pontuações
+      console.log('[useSaveAnswers] 🔄 Iniciando recálculo de pontuações...');
+
+      try {
+        const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
+        
+        console.log('[useSaveAnswers] 🔄 Chamando recalculateUserScore com:', {
+          userId: user.id,
+          concursoId: concurso.id
+        });
+        
+        const recalculationResult = await recalculateUserScore(user.id, concurso.id);
+        
+        console.log('[useSaveAnswers] 📊 Resultado do recálculo:', recalculationResult);
+        
+        if (recalculationResult.success) {
+          console.log('[useSaveAnswers] ✅ Pontuações recalculadas com sucesso');
+        } else {
+          console.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
+        }
+      } catch (recalculationError) {
+        console.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
+      }
+      
       console.log('[useSaveAnswers] Salvamento bem-sucedido, aguardando recálculo de pontuações...');
 
-      console.log('[useSaveAnswers] Respostas salvas com sucesso:', data.saved_answers);
-      console.log('[useSaveAnswers] Total de respostas salvas:', data.answers_saved);
+      console.log('[useSaveAnswers] Respostas salvas com sucesso:', Object.keys(preparedData.answers).length);
+      console.log('[useSaveAnswers] Total de respostas salvas:', Object.keys(preparedData.answers).length);
 
       // Limpar cache local para forçar busca de dados frescos
       console.log('[useSaveAnswers] 🗑️ Limpando cache local...');
@@ -206,7 +237,7 @@ export const useSaveAnswers = ({
       setSavedSuccess(true);
       toast({
         title: "Respostas salvas com sucesso",
-        description: `${data.answers_saved} respostas foram salvas para o caderno selecionado.`,
+        description: `${Object.keys(preparedData.answers).length} respostas foram salvas para o caderno selecionado.`,
         duration: 5000
       });
 
@@ -219,8 +250,8 @@ export const useSaveAnswers = ({
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const updatedConsolidatedData = updatedRanking?.consolidated_data;
-      const updatedRankingData = updatedConsolidatedData?.rankings?.[rankingId];
+      const refreshedConsolidatedData = updatedRanking?.consolidated_data;
+      const updatedRankingData = refreshedConsolidatedData?.rankings?.[rankingId];
       const updatedBooklet = updatedRankingData?.selected_booklet_id;
 
       if (updatedBooklet) {

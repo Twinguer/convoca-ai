@@ -20,7 +20,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
     // Chamar a função PostgreSQL que já está corrigida
     console.log('[recalculateAllUserScores] Calling Supabase RPC...');
     const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', {
-      p_concurso_id: concursoId
+      p_concurso_id: concursoId as string
     });
 
     console.log('[recalculateAllUserScores] Supabase RPC response:', { data, error });

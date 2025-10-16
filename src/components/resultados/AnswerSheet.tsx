@@ -359,11 +359,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 
-  // Initialize subject_scores from user ranking data - CONTROLADO PELOS CAMPOS has_X DO CONCURSO
+  // Initialize subject_scores from user ranking data - VERIFICAR ESTRUTURA JSONB + CAMPOS DIRETOS
   useEffect(() => {
     const initialScores: Record<string, number> = {};
     
-    // Se há dados do banco, usar como base (mas filtrar apenas subjetivas ativas)
+    // 1. Se há dados do banco, usar como base (mas filtrar apenas subjetivas ativas)
     if (userRankingData?.subject_scores) {
       // Preservar apenas as chaves subjetivas que estão ativas no concurso
       if (concurso.has_discursive && userRankingData.subject_scores.discursive !== undefined) {
@@ -383,7 +383,26 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
     }
     
-    // SEMPRE aplicar os campos ativos do concurso (fonte primária de verdade)
+    // 2. VERIFICAR ESTRUTURA JSONB DAS DISCIPLINAS (sistema atual)
+    if (concurso.disciplines) {
+      concurso.disciplines.forEach(discipline => {
+        if ('disciplines' in discipline) {
+          // Estrutura hierárquica (blocos)
+          discipline.disciplines?.forEach(d => {
+            if (d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)) {
+              initialScores[d.type] = initialScores[d.type] || 0;
+            }
+          });
+        } else {
+          // Estrutura plana
+          if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+            initialScores[discipline.type] = initialScores[discipline.type] || 0;
+          }
+        }
+      });
+    }
+    
+    // 3. FALLBACK: aplicar os campos diretos (compatibilidade)
     if (concurso.has_discursive) {
       initialScores.discursive = initialScores.discursive || 0;
     }
@@ -397,10 +416,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       initialScores.case_study_3 = initialScores.case_study_3 || 0;
     }
     if (concurso.has_other_subjective) {
-      // Sempre usar 'other_subjective' como chave, independente do nome
       initialScores.other_subjective = initialScores.other_subjective || 0;
     }
     
+    console.log('[AnswerSheet] DEBUG - InitialScores calculados:', initialScores);
     setSubjectScores(initialScores);
   }, [userRankingData, concurso]);
 

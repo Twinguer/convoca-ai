@@ -105,45 +105,37 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
 
   const handleRefresh = async () => {
     logger.info('Manual refresh initiated by user for classification', 'RESULTADOS_PAGE');
-    // console.log('[ResultadosPage] ===== INÍCIO REFRESH MANUAL =====');
-    // console.log('[ResultadosPage] handleRefresh called - updating classification');
-    
     
     try {
       // Limpar cache local para forçar busca de dados frescos
-      // console.log('[ResultadosPage] 🗑️ Limpando cache local...');
       rankingCache.clear();
-      // console.log('[ResultadosPage] ✅ Cache local limpo com sucesso');
       
-      // console.log('[ResultadosPage] Calling refreshData...');
-      // Refresh dados do concurso
-      const result = await refreshData();
-      // console.log('[ResultadosPage] refreshData result:', result);
-      
-      // Forçar atualização adicional dos rankings e contagem
-      // console.log('[ResultadosPage] Forçando atualização de rankings e contagem...');
-      await refetchRankings();
-      await refetchCount();
-      // console.log('[ResultadosPage] ✅ Rankings e contagem atualizados');
-      
-      if (result?.success) {
-        // console.log('[ResultadosPage] Success case - recálculo bem-sucedido');
-      } else if (result?.error) {
-        // console.log('[ResultadosPage] Error case - showing error toast:', result.error);
-        toast({
-          title: "Erro na atualização",
-          description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
-          variant: "destructive",
-          duration: 5000
-        });
-      } else {
-        // console.log('[ResultadosPage] No result case - recálculo concluído');
+      // Se usuário autenticado, fazer recálculo completo
+      if (isAuthenticated) {
+        const result = await refreshData();
+        
+        if (result?.error) {
+          toast({
+            title: "Erro na atualização",
+            description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
+            variant: "destructive",
+            duration: 5000
+          });
+          return;
+        }
       }
       
-      // console.log('[ResultadosPage] ===== FIM REFRESH MANUAL =====');
+      // Para todos os usuários (autenticados ou não), atualizar dados
+      await refetchRankings();
+      await refetchCount();
+      
+      toast({
+        title: "Classificação atualizada",
+        description: "Os dados da classificação foram atualizados com sucesso.",
+        duration: 3000
+      });
+      
     } catch (error) {
-      // console.error('[ResultadosPage] ===== ERRO NO REFRESH MANUAL =====');
-      // console.error('[ResultadosPage] Error during refresh:', error);
       logger.error('Error during refresh', 'RESULTADOS_PAGE', error);
       toast({
         title: "Erro na atualização",

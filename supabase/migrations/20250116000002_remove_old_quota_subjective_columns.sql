@@ -30,3 +30,5 @@ COMMENT ON TABLE concursos IS 'Quota and subjective data now stored in JSONB fie
 
 
 
+
+

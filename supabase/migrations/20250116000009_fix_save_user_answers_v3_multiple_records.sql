@@ -194,3 +194,5 @@ $$;
 COMMENT ON FUNCTION save_user_answers_v3 IS 'Salva respostas na estrutura JSONB consolidada por usuário (v3 - corrigida para lidar com múltiplos registros)';
 
 
+
+

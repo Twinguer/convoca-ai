@@ -244,6 +244,19 @@ export function useResultadosData(concursoId?: string) {
       
     // Recalcular pontuações para todos os usuários apenas se autenticado
     try {
+      // Validar se o ID é um UUID válido antes de chamar recalculateAllUserScores
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const isValidUUID = uuidRegex.test(id);
+
+      if (!isValidUUID) {
+        console.error("[useResultadosData] ID não é um UUID válido:", id);
+        logger.error('ID não é um UUID válido', 'USE_RESULTADOS_DATA', { id });
+        return {
+          success: false,
+          error: "ID do concurso inválido"
+        };
+      }
+
       // console.log("[useResultadosData] ===== INICIANDO RECÁLCULO =====");
       // console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
       logger.info('Chamando recalculateAllUserScores para concurso', 'USE_RESULTADOS_DATA', { concursoId: id });

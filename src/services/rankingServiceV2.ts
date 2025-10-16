@@ -354,18 +354,30 @@ export const fetchRankingDisciplines = async (rankingId: string): Promise<Rankin
 // Buscar tipos de reserva disponíveis para um ranking
 export const getAvailableReservationTypesV2 = async (rankingId: string): Promise<string[]> => {
   try {
+    // Buscar todos os user_rankings e extrair reservation_type do consolidated_data
     const { data, error } = await supabase
       .from('user_rankings')
-      .select('reservation_type')
-      .eq('concurso_id', rankingId);
+      .select('consolidated_data');
 
     if (error) {
       logger.error('Error fetching reservation types V2', 'RANKING_SERVICE_V2', error);
       return ['Ampla Concorrência'];
     }
 
+    const reservationTypes: string[] = [];
+    
+    data?.forEach(userRanking => {
+      if (userRanking.consolidated_data?.rankings) {
+        Object.values(userRanking.consolidated_data.rankings).forEach(ranking => {
+          if (ranking.concurso_id === rankingId && ranking.reservation_type) {
+            reservationTypes.push(ranking.reservation_type);
+          }
+        });
+      }
+    });
+
     // Extrair tipos únicos de reserva
-    const uniqueTypes = [...new Set(data?.map(r => r.reservation_type) || [])];
+    const uniqueTypes = [...new Set(reservationTypes)];
     
     // Garantir que 'Ampla Concorrência' esteja sempre presente
     if (!uniqueTypes.includes('Ampla Concorrência')) {
@@ -383,17 +395,34 @@ export const getAvailableReservationTypesV2 = async (rankingId: string): Promise
 // Buscar estatísticas de um ranking
 export const fetchRankingStats = async (rankingId: string) => {
   try {
+    // Buscar todos os user_rankings e extrair dados do consolidated_data
     const { data, error } = await supabase
       .from('user_rankings')
-      .select('score, reservation_type')
-      .eq('concurso_id', rankingId);
+      .select('consolidated_data');
 
     if (error) {
       logger.error('Error fetching ranking stats', 'RANKING_SERVICE_V2', error);
       return null;
     }
 
-    if (!data || data.length === 0) {
+    const scores: number[] = [];
+    const reservationTypeStats: { [key: string]: number } = {};
+    
+    data?.forEach(userRanking => {
+      if (userRanking.consolidated_data?.rankings) {
+        Object.values(userRanking.consolidated_data.rankings).forEach(ranking => {
+          if (ranking.concurso_id === rankingId) {
+            const score = ranking.user_data?.score || 0;
+            const reservationType = ranking.reservation_type || 'Ampla Concorrência';
+            
+            scores.push(score);
+            reservationTypeStats[reservationType] = (reservationTypeStats[reservationType] || 0) + 1;
+          }
+        });
+      }
+    });
+
+    if (scores.length === 0) {
       return {
         totalParticipants: 0,
         averageScore: 0,
@@ -403,20 +432,12 @@ export const fetchRankingStats = async (rankingId: string) => {
       };
     }
 
-    const scores = data.map(r => r.score).filter(s => s !== null && s !== undefined);
-    const averageScore = scores.length > 0 ? scores.reduce((sum, score) => sum + score, 0) / scores.length : 0;
+    const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
     const highestScore = Math.max(...scores);
     const lowestScore = Math.min(...scores);
 
-    // Estatísticas por tipo de reserva
-    const reservationTypeStats: { [key: string]: number } = {};
-    data.forEach(ranking => {
-      const type = ranking.reservation_type || 'Ampla Concorrência';
-      reservationTypeStats[type] = (reservationTypeStats[type] || 0) + 1;
-    });
-
     return {
-      totalParticipants: data.length,
+      totalParticipants: scores.length,
       averageScore: Math.round(averageScore * 100) / 100,
       highestScore,
       lowestScore,

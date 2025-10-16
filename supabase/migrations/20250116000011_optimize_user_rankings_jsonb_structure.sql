@@ -338,3 +338,5 @@ ANALYZE user_rankings;
 RAISE NOTICE 'User rankings JSONB structure optimization completed successfully!';
 
 
+
+

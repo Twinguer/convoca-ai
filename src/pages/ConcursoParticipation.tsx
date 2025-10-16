@@ -51,8 +51,7 @@ const ConcursoParticipation = () => {
       
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('id, reservation_type')
-        .eq('concurso_id', id)
+        .select('consolidated_data')
         .eq('user_id', user.id)
         .maybeSingle();
       
@@ -61,8 +60,21 @@ const ConcursoParticipation = () => {
         throw error;
       }
       
-      // console.log('[ConcursoParticipation] User ranking data:', data);
-      return data;
+      if (!data?.consolidated_data?.rankings) return null;
+      
+      // Buscar o ranking correto para este concurso
+      for (const key in data.consolidated_data.rankings) {
+        const ranking = data.consolidated_data.rankings[key];
+        if (ranking.concurso_id === id) {
+          return {
+            id: key, // rankingId
+            reservation_type: ranking.reservation_type,
+            ...ranking
+          };
+        }
+      }
+      
+      return null;
     },
     enabled: !!user && !!id
   });

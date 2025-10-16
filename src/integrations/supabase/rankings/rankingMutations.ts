@@ -17,23 +17,25 @@ const isPositionThreshold = (value: string): value is PositionThreshold => {
 
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
-    // console.log(`[recalculateUserScore] Recalculating scores for ranking`);
+    console.log(`[recalculateUserScore] 🚀 INICIANDO recálculo para usuário ${userId} no concurso ${concursoId}`);
     
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('id, disciplines, subjects, exam_type, alternatives_count')
+      .select('id, disciplines, subjects, exam_type, alternatives_count, official_answers')
       .eq('id', concursoId)
       .single();
 
     if (concursoError) {
-      console.error('Erro ao buscar dados do concurso:', concursoError);
+      console.error(`[recalculateUserScore] ❌ ERRO ao buscar concurso ${concursoId}:`, concursoError);
       return { 
         success: false, 
         message: 'Erro ao obter dados do concurso', 
         error: concursoError 
       };
     }
+    
+    console.log(`[recalculateUserScore] ✅ Concurso encontrado: ${concurso.titulo || 'Sem título'}`);
     
     // Log da estrutura de disciplinas do concurso
     console.log(`[recalculateUserScore] Concurso discipline structure:`, 
@@ -59,57 +61,74 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // Primeiro, busque o ranking correspondente ao usuário/concurso
+    console.log(`[recalculateUserScore] 🔍 Buscando ranking para user ${userId} e concurso ${concursoId}`);
+    
     const { data: userRanking, error: userRankingError } = await supabase
       .from('user_rankings')
       .select('user_id, consolidated_data')
       .eq('user_id', userId)
       .maybeSingle();
 
+    console.log(`[recalculateUserScore] 📊 Dados do ranking encontrados:`, {
+      found: !!userRanking,
+      error: userRankingError?.message,
+      consolidatedData: userRanking?.consolidated_data
+    });
+
     if (userRankingError || !userRanking) {
-      console.error('Erro ao buscar ranking do usuário:', userRankingError);
+      console.error(`[recalculateUserScore] ❌ ERRO ao buscar usuário ${userId}:`, userRankingError);
       return { 
         success: false, 
         message: 'Erro ao buscar ranking do usuário', 
         error: userRankingError 
       };
     }
+    
+    console.log(`[recalculateUserScore] ✅ Usuário encontrado`);
 
-    // Verificar se o concurso existe no consolidated_data
-    if (!userRanking.consolidated_data?.rankings?.[concursoId]) {
-      console.error('Usuário não está participando deste concurso');
+    // Buscar o rankingId correto no consolidated_data
+    let rankingId = null;
+    console.log(`[recalculateUserScore] 🔍 Buscando rankingId para concurso ${concursoId}`);
+    console.log(`[recalculateUserScore] 📊 Rankings disponíveis:`, Object.keys(userRanking.consolidated_data?.rankings || {}));
+    
+    if (userRanking.consolidated_data?.rankings) {
+      for (const key in userRanking.consolidated_data.rankings) {
+        const ranking = userRanking.consolidated_data.rankings[key];
+        console.log(`[recalculateUserScore] 🔍 Verificando ranking ${key}:`, {
+          concurso_id: ranking.concurso_id,
+          matches: ranking.concurso_id === concursoId
+        });
+        if (ranking.concurso_id === concursoId) {
+          rankingId = key;
+          console.log(`[recalculateUserScore] ✅ RankingId encontrado: ${rankingId}`);
+          break;
+        }
+      }
+    }
+
+    if (!rankingId) {
+      console.error(`[recalculateUserScore] ❌ Usuário ${userId} não está participando do concurso ${concursoId}`);
+      console.error(`[recalculateUserScore] 📊 Rankings disponíveis:`, Object.keys(userRanking.consolidated_data?.rankings || {}));
       return { 
         success: false, 
         message: 'Usuário não está participando deste concurso'
       };
     }
+    
+    console.log(`[recalculateUserScore] ✅ RankingId encontrado: ${rankingId}`);
 
     // Obter as respostas do usuário usando user_rankings consolidated_data
-    const { data: rankingData, error: rankingError } = await supabase
-      .from('user_rankings')
-      .select('concurso_id, user_id, selected_booklet')
-      .eq('user_id', userRanking.user_id)
-      .maybeSingle();
-
-    if (rankingError) {
-      console.error('Erro ao buscar dados do ranking:', rankingError);
-      return { 
-        success: false, 
-        message: 'Erro ao obter dados do ranking', 
-        error: rankingError 
-      };
-    }
-
     const { data: userRankingData, error: consolidatedError } = await supabase
       .from('user_rankings')
       .select('consolidated_data')
-      .eq('user_id', rankingData.user_id)
+      .eq('user_id', userRanking.user_id)
       .maybeSingle();
 
     if (consolidatedError) {
-      console.log('Nenhum dado consolidado encontrado');
+      console.error('Erro ao buscar dados consolidados:', consolidatedError);
       return { 
         success: false, 
-        message: 'Nenhum dado consolidado encontrado', 
+        message: 'Erro ao obter dados do ranking', 
         error: consolidatedError 
       };
     }
@@ -119,41 +138,69 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const userAnswers: any[] = [];
     
     if (rankingDataFromConsolidated?.user_data?.answers) {
-      const selectedBookletId = rankingDataFromConsolidated.selected_booklet_id;
-      const bookletData = selectedBookletId ? rankingDataFromConsolidated.user_data.answers[selectedBookletId] : null;
-      
-      if (bookletData) {
-        Object.entries(bookletData).forEach(([questionNumber, answer]) => {
-          const questionNum = parseInt(questionNumber);
-          if (!isNaN(questionNum)) {
-            userAnswers.push({
-              question_number: questionNum,
-              answer: answer
-            });
+      const answersData = rankingDataFromConsolidated.user_data.answers;
+
+      // DEBUG: Log para entender a estrutura
+      console.log('[recalculateUserScore] DEBUG - Estrutura de respostas:', {
+        answersStructure: answersData,
+        answersType: typeof answersData,
+        answersKeys: answersData ? Object.keys(answersData) : 'no answers'
+      });
+
+      // DEBUG: Log detalhado da estrutura hierárquica
+      if (answersData && typeof answersData === 'object') {
+        console.log('[recalculateUserScore] DEBUG - Estrutura hierárquica detalhada:');
+        for (const blockId in answersData) {
+          const blockData = answersData[blockId];
+          console.log(`[recalculateUserScore] DEBUG - Bloco ${blockId}:`, blockData);
+          if (typeof blockData === 'object' && blockData !== null) {
+            for (const disciplineType in blockData) {
+              const disciplineData = blockData[disciplineType];
+              console.log(`[recalculateUserScore] DEBUG - Disciplina ${disciplineType}:`, disciplineData);
+              if (typeof disciplineData === 'object' && disciplineData !== null) {
+                const questionNumbers = Object.keys(disciplineData);
+                console.log(`[recalculateUserScore] DEBUG - Questões da disciplina ${disciplineType}:`, questionNumbers);
+              }
+            }
           }
-        });
+        }
+      }
+
+      // Processar estrutura hierárquica diretamente (blocos -> disciplinas -> questões)
+      if (answersData && typeof answersData === 'object') {
+        for (const blockId in answersData) {
+          const blockData = answersData[blockId];
+          if (typeof blockData === 'object' && blockData !== null) {
+            console.log(`[recalculateUserScore] Processando bloco ${blockId}:`, blockData);
+            for (const disciplineType in blockData) { // Mudança: usar disciplineType
+              const disciplineData = blockData[disciplineType];
+              if (typeof disciplineData === 'object' && disciplineData !== null) {
+                console.log(`[recalculateUserScore] Processando disciplina ${disciplineType}:`, disciplineData);
+                for (const questionNumber in disciplineData) {
+                  const questionNum = parseInt(questionNumber);
+                  if (!isNaN(questionNum)) {
+                    userAnswers.push({
+                      question_number: questionNum,
+                      answer: disciplineData[questionNumber],
+                      discipline_type: disciplineType // Adicionar disciplina para mapeamento
+                    });
+                    console.log(`[recalculateUserScore] Adicionada resposta: Q${questionNum} = ${disciplineData[questionNumber]} (disciplina: ${disciplineType})`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else {
+        console.log('[recalculateUserScore] WARNING: Nenhuma resposta encontrada no consolidated_data');
       }
     }
     
     console.log(`[recalculateUserScore] Found ${userAnswers?.length || 0} answers for user`);
+    console.log(`[recalculateUserScore] User answers:`, userAnswers);
 
-    // Obter os pesos das respostas corretas usando a estrutura consolidada
-    const { data: consolidatedAnswers, error: consolidatedAnswersError } = await supabase
-      .from('concursos')
-      .select('official_answers')
-      .eq('id', concursoId)
-      .single();
-
-    if (consolidatedAnswersError) {
-      console.error('Erro ao buscar pesos das respostas corretas:', consolidatedAnswersError);
-      return { 
-        success: false, 
-        message: 'Erro ao obter pesos das respostas corretas', 
-        error: consolidatedAnswersError 
-      };
-    }
-    
-    if (!consolidatedAnswers?.official_answers) {
+    // Usar official_answers já buscado do concurso
+    if (!concurso?.official_answers) {
       console.log('[recalculateUserScore] No official answers found');
       return { 
         success: false, 
@@ -161,22 +208,40 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    const answerData = consolidatedAnswers.official_answers;
-    const booklets = answerData.booklets || {};
+    console.log(`[recalculateUserScore] 🔍 DEBUG - official_answers:`, concurso.official_answers);
     
-    // Usar o primeiro caderno disponível ou 'default'
+    const answerData = concurso.official_answers;
+    console.log(`[recalculateUserScore] 🔍 DEBUG - answerData:`, answerData);
+    
+    if (!answerData) {
+      console.log('[recalculateUserScore] ❌ official_answers está vazio ou undefined');
+      return { 
+        success: false, 
+        message: 'Gabarito oficial não encontrado' 
+      };
+    }
+    
+    // A estrutura real tem os cadernos diretamente no primeiro nível
+    const booklets = answerData || {};
+    console.log(`[recalculateUserScore] 🔍 DEBUG - booklets:`, booklets);
+    
+    // Usar o primeiro caderno disponível
     const bookletIds = Object.keys(booklets);
-    const primaryBooklet = booklets['default'] || booklets[bookletIds[0]];
+    console.log(`[recalculateUserScore] 🔍 DEBUG - bookletIds:`, bookletIds);
     
-    if (!primaryBooklet?.answers) {
-      console.log('[recalculateUserScore] No answers found in consolidated data');
+    const primaryBooklet = booklets[bookletIds[0]];
+    console.log(`[recalculateUserScore] 🔍 DEBUG - primaryBooklet:`, primaryBooklet);
+    
+    if (!primaryBooklet?.questions) {
+      console.log('[recalculateUserScore] ❌ No questions found in primary booklet');
+      console.log('[recalculateUserScore] ❌ primaryBooklet:', primaryBooklet);
       return { 
         success: false, 
         message: 'Nenhuma resposta encontrada no gabarito consolidado' 
       };
     }
 
-    const officialAnswers = primaryBooklet.answers;
+    const officialAnswers = primaryBooklet.questions;
     console.log(`[recalculateUserScore] Found ${Object.keys(officialAnswers).length} official answers`);
 
     let totalScore = 0;
@@ -186,24 +251,46 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const disciplineScores: Record<string, number> = {};
     const weightedDisciplineScores: Record<string, number> = {};
 
-    // Obter as pontuações subjetivas antes de calcular
-    const { data: subjectiveScores, error: subjectiveScoresError } = await supabase
-      .from('user_rankings')
-      .select('discursive_score, case_study_1_score, case_study_2_score, case_study_3_score')
-      .eq('user_id', userRanking.user_id)
-      .maybeSingle();
-      
-    if (subjectiveScoresError) {
-      console.error('Erro ao buscar pontuações subjetivas:', subjectiveScoresError);
+    // Criar mapeamento de section_type para discipline.type
+    const sectionTypeToDisciplineTypeMap: Record<string, string> = {};
+    const disciplineWeights: Record<string, number> = {};
+    const disciplineMinimums: Record<string, number> = {};
+
+    // Percorrer as disciplinas do concurso para criar o mapeamento
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      for (const block of concurso.disciplines) {
+        if ('disciplines' in block && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.type) {
+              // Mapear section_type (do gabarito) para discipline.type (das respostas)
+              // Para disciplinas customizadas, o section_type geralmente é o mesmo que discipline.type
+              sectionTypeToDisciplineTypeMap[discipline.type] = discipline.type;
+              disciplineWeights[discipline.type] = discipline.weight || 1;
+              disciplineMinimums[discipline.type] = discipline.minimum_score || 0;
+            }
+          }
+        }
+      }
     }
+
+    // DEBUG: Log do mapeamento criado
+    console.log('[recalculateUserScore] DEBUG - Mapeamento section_type -> discipline.type:', sectionTypeToDisciplineTypeMap);
+    console.log('[recalculateUserScore] DEBUG - Pesos das disciplinas:', disciplineWeights);
+    console.log('[recalculateUserScore] DEBUG - Mínimos das disciplinas:', disciplineMinimums);
+
+    console.log('[recalculateUserScore] Mapeamento section_type -> discipline.type:', sectionTypeToDisciplineTypeMap);
+    console.log('[recalculateUserScore] Pesos das disciplinas:', disciplineWeights);
+    console.log('[recalculateUserScore] Mínimos das disciplinas:', disciplineMinimums);
+
+    // Obter as pontuações subjetivas do consolidated_data
+    const subjectiveScores = userRanking.consolidated_data?.rankings?.[rankingId]?.user_data?.subjectives || {};
     
-    // Pontuações subjetivas - usar subject_scores JSONB se disponível, senão campos diretos
-    const subjectScores = subjectiveScores?.subject_scores || {};
-    const discursiveScore = subjectScores.discursive || subjectiveScores?.discursive_score || 0;
-    const caseStudy1Score = subjectScores.case_study_1 || subjectiveScores?.case_study_1_score || 0;
-    const caseStudy2Score = subjectScores.case_study_2 || subjectiveScores?.case_study_2_score || 0;
-    const caseStudy3Score = subjectScores.case_study_3 || subjectiveScores?.case_study_3_score || 0;
-    const otherSubjectiveScore = subjectScores.other_subjective || 0;
+    // Pontuações subjetivas do consolidated_data
+    const discursiveScore = subjectiveScores.discursive || 0;
+    const caseStudy1Score = subjectiveScores.case_study_1 || 0;
+    const caseStudy2Score = subjectiveScores.case_study_2 || 0;
+    const caseStudy3Score = subjectiveScores.case_study_3 || 0;
+    const otherSubjectiveScore = subjectiveScores.other_subjective || 0;
     
     // Calcular pesos usando JSONB disciplines (prioridade) ou campos diretos (fallback)
     const getWeightFromDisciplines = (type: string): number => {
@@ -266,51 +353,40 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         const questionWeight = officialAnswer.weight ?? 1;
         const sectionType = officialAnswer.section_type || 'default';
         
+        // Usar a disciplina da resposta em vez do mapeamento
+        const disciplineType = userAnswer.discipline_type || sectionType;
+        
         // Inicializar pontuação da disciplina se ainda não existir
-        if (!disciplineScores[sectionType]) {
-          disciplineScores[sectionType] = 0;
-          weightedDisciplineScores[sectionType] = 0;
+        if (!disciplineScores[disciplineType]) {
+          disciplineScores[disciplineType] = 0;
+          weightedDisciplineScores[disciplineType] = 0;
         }
         
         if (isCorrect) {
-          // Obter o peso para esta disciplina do JSON de disciplines
-          let disciplineWeight = 1;
+          // Obter peso da disciplina do mapeamento
+          const disciplineWeight = disciplineWeights[disciplineType] || 1;
           
-          // SEMPRE usar a nova estrutura JSONB disciplines
-          if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-            const hierarchical = isHierarchicalStructure(concurso);
-            
-            if (hierarchical) {
-              // Procurar em estrutura hierárquica
-              for (const block of concurso.disciplines) {
-                if ('disciplines' in block && Array.isArray(block.disciplines)) {
-                  for (const discipline of block.disciplines) {
-                    if (discipline.type === sectionType) {
-                      disciplineWeight = discipline.weight ?? 1;
-                      break;
-                    }
-                  }
-                }
-              }
-            } else {
-              // Procurar em estrutura plana
-              for (const discipline of concurso.disciplines) {
-                if ('type' in discipline && discipline.type === sectionType) {
-                  disciplineWeight = discipline.weight ?? 1;
-                  break;
-                }
-              }
-            }
-          }
+          // Debug para entender o mapeamento
+          console.log(`[recalculateUserScore] DEBUG - Question ${userAnswer.question_number}:`, {
+            userAnswer: userAnswer.answer,
+            officialAnswer: officialAnswer.correct_answer,
+            sectionType,
+            disciplineType,
+            isCorrect,
+            questionWeight,
+            disciplineWeight,
+            disciplineScoresBefore: disciplineScores[disciplineType] || 0
+          });
           
           // Adicionar à pontuação total
           totalScore += questionWeight;
           
           // Adicionar à pontuação da disciplina específica
-          disciplineScores[sectionType] += 1;
-          weightedDisciplineScores[sectionType] += questionWeight * disciplineWeight;
+          disciplineScores[disciplineType] += questionWeight;
+          weightedDisciplineScores[disciplineType] += questionWeight * disciplineWeight;
           
-          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${sectionType}): +${questionWeight} * weight ${disciplineWeight}`);
+          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${disciplineType}): +${questionWeight} * weight ${disciplineWeight}`);
+          console.log(`[recalculateUserScore] DEBUG - Após cálculo: disciplineScores[${disciplineType}] = ${disciplineScores[disciplineType]}`);
         } else if (concurso.exam_type === 'Certo ou Errado') {
           // Penalty logic can be moved to JSONB if needed
           const penalty = 0; // Default no penalty
@@ -370,69 +446,137 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore;
       
       console.log(`[recalculateUserScore] Recalculated total with custom weights: ${totalScore}`);
+    console.log(`[recalculateUserScore] Discipline scores:`, disciplineScores);
+    console.log(`[recalculateUserScore] Subjective scores:`, {
+      discursiveScore,
+      caseStudy1Score,
+      caseStudy2Score,
+      caseStudy3Score,
+      otherSubjectiveScore
+    });
+    console.log(`[recalculateUserScore] Weighted subjective scores:`, {
+      weightedDiscursiveScore,
+      weightedCaseStudy1Score,
+      weightedCaseStudy2Score,
+      weightedCaseStudy3Score,
+      weightedOtherSubjectiveScore
+    });
     }
 
-    // Atualizar a pontuação do usuário no ranking com as pontuações por disciplina
-    const { error: updateError } = await supabase
-      .from('user_rankings')
-      .update({ 
-        score: totalScore, 
-        customDisciplineScores: disciplineScores,
-        weightedCustomDisciplineScores: weightedDisciplineScores,
-        // Manter as pontuações subjetivas
+    // Calcular totais
+    const subjectScoresTot = Object.values(disciplineScores).reduce((sum, score) => sum + score, 0);
+    const subjectiveScoresTot = discursiveScore + caseStudy1Score + caseStudy2Score + caseStudy3Score + otherSubjectiveScore;
+    
+    // Criar estrutura correta de subject_scores (APENAS objetivas)
+    const correctSubjectScores: Record<string, number> = {};
+
+    // Percorrer as disciplinas do concurso para criar subject_scores dinamicamente
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      for (const block of concurso.disciplines) {
+        if ('disciplines' in block && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.type) {
+              // Incluir todas as disciplinas objetivas (não apenas custom_)
+              const isObjectiveDiscipline = !['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+              
+              if (isObjectiveDiscipline) {
+                const score = weightedDisciplineScores[discipline.type] || 0;
+                const minimum = disciplineMinimums[discipline.type] || 0;
+                
+                // Verificar se atingiu pontuação mínima
+                if (score < minimum) {
+                  console.log(`[recalculateUserScore] WARNING: Discipline ${discipline.type} below minimum: ${score} < ${minimum}`);
+                }
+                
+                correctSubjectScores[discipline.type] = score;
+                console.log(`[recalculateUserScore] DEBUG - Disciplina objetiva ${discipline.type}: score=${score}, minimum=${minimum}`);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    console.log('[recalculateUserScore] DEBUG - correctSubjectScores:', correctSubjectScores);
+    console.log('[recalculateUserScore] DEBUG - disciplineScores calculados:', disciplineScores);
+    
+    // Criar estrutura correta de subjectives (apenas subjetivas)
+    const correctSubjectives = {
+      "case_study_1": caseStudy1Score,
+      "other_subjective": otherSubjectiveScore
+    };
+
+    // Atualizar a pontuação do usuário no consolidated_data
+    const updatedConsolidatedData = {
+      ...userRanking.consolidated_data,
+      rankings: {
+        ...userRanking.consolidated_data.rankings,
+        [rankingId]: { // Usar rankingId correto
+          ...userRanking.consolidated_data.rankings[rankingId],
+          user_data: {
+            score: totalScore, // Total geral (objetivas + subjetivas)
+            answers: userRanking.consolidated_data.rankings[rankingId].user_data.answers, // Manter answers
+            subject_scores_tot: subjectScoresTot, // Total das objetivas - ANTES de subject_scores
+            subject_scores: correctSubjectScores, // Estrutura correta (apenas objetivas)
+            subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
+            subjectives: correctSubjectives, // Pontuações subjetivas individuais
+            all_questions_answered: userRanking.consolidated_data.rankings[rankingId].user_data.all_questions_answered,
+            status: minimumScoreRequired > 0 && totalScore < minimumScoreRequired ? 'eliminado' : 'classificado',
+            last_calculated: new Date().toISOString()
+          }
+        }
+      }
+    };
+
+    console.log(`[recalculateUserScore] 📊 Estrutura final sendo salva:`, {
+      rankingId,
+      totalScore,
+      subjectScoresTot,
+      subjectiveScoresTot,
+      correctSubjectScores,
+      correctSubjectives,
+      updatedConsolidatedData: updatedConsolidatedData.rankings[rankingId].user_data
+    });
+
+    console.log(`[recalculateUserScore] Updating consolidated_data with:`, {
+      rankingId,
+      totalScore,
+      disciplineScores,
+      subjectiveScores: {
         discursive_score: discursiveScore,
         case_study_1_score: caseStudy1Score,
         case_study_2_score: caseStudy2Score,
         case_study_3_score: caseStudy3Score,
-        // Manter as pontuações subjetivas ponderadas
-        weighted_discursive_score: weightedDiscursiveScore,
-        weighted_case_study_1_score: weightedCaseStudy1Score,
-        weighted_case_study_2_score: weightedCaseStudy2Score,
-        weighted_case_study_3_score: weightedCaseStudy3Score
+        other_subjective_score: otherSubjectiveScore
+      },
+      weightedSubjectiveScores: {
+        discursive_score: weightedDiscursiveScore,
+        case_study_1_score: weightedCaseStudy1Score,
+        case_study_2_score: weightedCaseStudy2Score,
+        case_study_3_score: weightedCaseStudy3Score,
+        other_subjective_score: weightedOtherSubjectiveScore
+      }
+    });
+
+    console.log(`[recalculateUserScore] 💾 Salvando no banco de dados...`);
+    
+    const { error: updateError } = await supabase
+      .from('user_rankings')
+      .update({ 
+        consolidated_data: updatedConsolidatedData
       })
       .eq('user_id', userRanking.user_id);
 
     if (updateError) {
-      console.error('Erro ao atualizar pontuação do usuário:', updateError);
+      console.error(`[recalculateUserScore] ❌ Erro ao atualizar pontuação do usuário:`, updateError);
       return { 
         success: false, 
         message: 'Erro ao atualizar pontuação do usuário', 
         error: updateError 
       };
     }
-    
-    // Verificar se o usuário atingiu a pontuação mínima
-    if (minimumScoreRequired > 0 && totalScore < minimumScoreRequired) {
-      // Atualizar o status do usuário para "eliminado"
-      const { error: updateStatusError } = await supabase
-        .from('user_rankings')
-        .update({ status: 'eliminado' })
-        .eq('user_id', userRanking.user_id);
-        
-      if (updateStatusError) {
-        console.error('Erro ao atualizar status do usuário:', updateStatusError);
-        return { 
-          success: false, 
-          message: 'Erro ao atualizar status do usuário', 
-          error: updateStatusError 
-        };
-      }
-    } else {
-      // Se o usuário atingiu a pontuação mínima, atualizar o status para "classificado"
-      const { error: updateStatusError } = await supabase
-        .from('user_rankings')
-        .update({ status: 'classificado' })
-        .eq('user_id', userRanking.user_id);
-        
-      if (updateStatusError) {
-        console.error('Erro ao atualizar status do usuário:', updateStatusError);
-        return { 
-          success: false, 
-          message: 'Erro ao atualizar status do usuário', 
-          error: updateStatusError 
-        };
-      }
-    }
+
+    console.log(`[recalculateUserScore] ✅ Successfully updated consolidated_data for user ${userRanking.user_id}`);
 
     return { 
         success: true, 
@@ -440,10 +584,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         updatedScore: totalScore 
     };
   } catch (error) {
-    console.error('Erro ao recalcular pontuação:', error);
+    console.error(`[recalculateUserScore] ❌ ERRO GERAL para usuário ${userId}:`, error);
+    console.error(`[recalculateUserScore] ❌ Stack trace:`, error.stack);
     return { 
       success: false, 
-      message: 'Erro ao recalcular pontuação', 
+      message: `Erro ao recalcular pontuação: ${error.message}`, 
       error: error 
     };
   }
@@ -455,23 +600,39 @@ export const getUserRankingPosition = async (
   cota?: string
 ): Promise<number | null> => {
   try {
-    let query = supabase
+    // Buscar dados do usuário usando consolidated_data
+    const { data: userRanking, error: userRankingError } = await supabase
       .from('user_rankings')
-      .select('position')
+      .select('consolidated_data')
       .eq('user_id', userId)
-      .eq('concurso_id', concursoId);
+      .maybeSingle();
 
-    if (cota && isPositionThreshold(cota)) {
-      query = query.eq('cota', cota);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Erro ao buscar posição do usuário:', error);
+    if (userRankingError || !userRanking) {
+      console.error('Erro ao buscar ranking do usuário:', userRankingError);
       return null;
     }
 
+    // Buscar o rankingId correto no consolidated_data
+    let rankingId = null;
+    if (userRanking.consolidated_data?.rankings) {
+      for (const key in userRanking.consolidated_data.rankings) {
+        const ranking = userRanking.consolidated_data.rankings[key];
+        if (ranking.concurso_id === concursoId) {
+          rankingId = key;
+          break;
+        }
+      }
+    }
+
+    if (!rankingId) {
+      console.error('Usuário não está participando deste concurso');
+      return null;
+    }
+
+    // Obter posição do consolidated_data
+    const position = userRanking.consolidated_data.rankings[rankingId].user_data?.position || null;
+
+    // Verificar se a posição está dentro das vagas disponíveis
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
       .select('vagas')
@@ -480,21 +641,20 @@ export const getUserRankingPosition = async (
 
     if (concursoError) {
       console.error('Erro ao buscar número de vagas:', concursoError);
-      return null;
+      return position;
     }
 
     const vacanciesCount = concurso?.vagas;
 
-    // Corrigir a expressão com o operador > para verificar as posições
-    // Verificamos valores válidos antes da comparação
+    // Verificar se a posição está dentro das vagas disponíveis
     if (cota && isPositionThreshold(cota) && 
-        typeof data?.[0]?.position === 'number' && 
+        typeof position === 'number' && 
         typeof vacanciesCount === 'number' && 
-        data[0].position > vacanciesCount) {
+        position > vacanciesCount) {
       return null;
     }
 
-    return data?.[0]?.position || null;
+    return position;
   } catch (error) {
     console.error('Erro ao obter posição do usuário:', error);
     return null;

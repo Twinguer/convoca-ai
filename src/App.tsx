@@ -57,6 +57,8 @@ import FAQ from "./pages/FAQ";
 import TermosDeUso from "./pages/TermosDeUso";
 import PoliticaDePrivacidade from "./pages/PoliticaDePrivacidade";
 import EmailPreview from "./pages/EmailPreview";
+import RecalculateScores from "./pages/RecalculateScores";
+import DebugPage from "./pages/DebugPage";
 // Wrapper components for passing URL parameters
 const ConcursoResultadosWrapper = () => {
   const { token } = useParams<{ token: string }>();
@@ -257,6 +259,14 @@ const AppContent = () => {
                     {/* Rotas legadas - redirecionar para versão segura */}
                     <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
                     <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/debug" element={<>
+                        <Menu />
+                        <DebugPage />
+                      </>} />
+                    <Route path="/recalculate" element={<>
+                        <Menu />
+                        <RecalculateScores />
+                      </>} />
                     <Route path="*" element={<>
                         <Menu />
                         <NotFound />

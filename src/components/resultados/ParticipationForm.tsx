@@ -281,10 +281,10 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         
         // 1. Verificar campos diretos (sistema legacy)
         if (concurso.has_discursive) subjectScores.discursive = 0;
-        if (concurso.has_case_study_1) subjectScores.case1 = 0;
-        if (concurso.has_case_study_2) subjectScores.case2 = 0;
-        if (concurso.has_case_study_3) subjectScores.case3 = 0;
-        if (concurso.has_other_subjective) subjectScores.other = 0;
+        if (concurso.has_case_study_1) subjectScores.case_study_1 = 0;
+        if (concurso.has_case_study_2) subjectScores.case_study_2 = 0;
+        if (concurso.has_case_study_3) subjectScores.case_study_3 = 0;
+        if (concurso.has_other_subjective) subjectScores.other_subjective = 0;
         
         // 2. Verificar JSONB disciplines (sistema atual)
         if (concurso.disciplines) {
@@ -298,16 +298,16 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
                       subjectScores.discursive = 0;
                       break;
                     case 'case_study_1':
-                      subjectScores.case1 = 0;
+                      subjectScores.case_study_1 = 0;
                       break;
                     case 'case_study_2':
-                      subjectScores.case2 = 0;
+                      subjectScores.case_study_2 = 0;
                       break;
                     case 'case_study_3':
-                      subjectScores.case3 = 0;
+                      subjectScores.case_study_3 = 0;
                       break;
                     case 'other_subjective':
-                      subjectScores.other = 0;
+                      subjectScores.other_subjective = 0;
                       break;
                     default:
                       // Disciplinas customizadas
@@ -326,16 +326,16 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
                     subjectScores.discursive = 0;
                     break;
                   case 'case_study_1':
-                    subjectScores.case1 = 0;
+                    subjectScores.case_study_1 = 0;
                     break;
                   case 'case_study_2':
-                    subjectScores.case2 = 0;
+                    subjectScores.case_study_2 = 0;
                     break;
                   case 'case_study_3':
-                    subjectScores.case3 = 0;
+                    subjectScores.case_study_3 = 0;
                     break;
                   case 'other_subjective':
-                    subjectScores.other = 0;
+                    subjectScores.other_subjective = 0;
                     break;
                   default:
                     // Disciplinas customizadas
@@ -355,31 +355,46 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Generate a unique ranking ID
       const rankingId = `ranking_${concurso.id}_${user.id}_${Date.now()}`;
       
-      // Create the new ranking data structure
+      // Create the new ranking data structure with correct format and order
       const newRankingData = {
-        concurso_id: concurso.id,
-        selected_booklet_id: booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null,
         user_data: {
-          score: 0,
-          edit_count: 0,
-          all_questions_answered: false,
-          reservation_type: selectedQuota,
-          subject_scores: initializeSubjectScores(concurso),
-          subjective_scores: {
-            discursive_score: 0,
-            case_study_1_score: 0,
-            case_study_2_score: 0,
-            case_study_3_score: 0,
-            other_subjective_score: 0
+          score: 0,  // Total geral (objetivas + subjetivas)
+          answers: {},
+          subject_scores_tot: 0,  // Total das objetivas - ANTES de subject_scores
+          subject_scores: (() => {
+            // Criar subject_scores dinamicamente baseado nas disciplinas do concurso
+            const subjectScores: Record<string, number> = {};
+            if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+              for (const block of concurso.disciplines) {
+                if ('disciplines' in block && Array.isArray(block.disciplines)) {
+                  for (const discipline of block.disciplines) {
+                    if (discipline.isEnabled && discipline.type && discipline.type.startsWith('custom_')) {
+                      subjectScores[discipline.type] = 0;
+                    }
+                  }
+                }
+              }
+            }
+            return subjectScores;
+          })(),
+          subjective_scores: 0,  // Soma das subjetivas - ANTES de subjectives
+          subjectives: {
+            // APENAS disciplinas subjetivas
+            "case_study_1": 0,
+            "other_subjective": 0
           },
-          answers: {}
+          all_questions_answered: false
         },
+        concurso_id: concurso.id,
         control_metadata: {
-          is_score_recalculated: false,
+          created_at: new Date().toISOString(),
           edit_history: [],
           last_updated: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        }
+          is_score_recalculated: false
+        },
+        selected_booklet_id: booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null,
+        edit_count: 0,
+        reservation_type: selectedQuota
       };
 
       console.log('[ParticipationForm] Creating ranking with selectedQuota:', selectedQuota);
@@ -419,7 +434,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       } = await supabase.from('user_rankings').upsert({
         user_id: user.id,
         consolidated_data: consolidatedData
-      }).select('user_id').single();
+      }).select('user_id, consolidated_data').single();
       if (error) throw error;
       // Invalidar todas as queries relacionadas para garantir atualização automática
       console.log('[ParticipationForm] 🔄 Invalidando queries para refresh automático...');
@@ -459,7 +474,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
       // Em vez de recarregar, mostrar o AnswerSheet diretamente
       // Participation successful
-      setLocalUserRankingId(data.id); // ✅ Definir o ID do ranking recém-criado
+      setLocalUserRankingId(rankingId); // ✅ Usar o rankingId gerado, não data.id
       setLocalIsParticipating(true);
       setShowAnswerSheet(true);
       setIsLoading(false);
