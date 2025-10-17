@@ -63,7 +63,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         if (userRanking.consolidated_data?.rankings) {
           // Iterar sobre todos os rankings do usuário
           for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
-            const concursoId = rankingData.concurso_id;
+            const concursoId = (rankingData as any).concurso_id;
             if (!concursoId) {
               console.error('No concurso ID found for ranking');
               continue;
@@ -111,14 +111,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               // Mapear dados da nova estrutura para a estrutura esperada
               const mappedRanking = {
                 id: rankingId,
-                score: rankingData.user_data?.score || 0,
-                subject_scores: rankingData.user_data?.subject_scores || {},
-                weighted_discursive_score: rankingData.user_data?.subjective_scores?.discursive_score || 0,
-                weighted_case_study_1_score: rankingData.user_data?.subjective_scores?.case_study_1_score || 0,
-                weighted_case_study_2_score: rankingData.user_data?.subjective_scores?.case_study_2_score || 0,
-                weighted_case_study_3_score: rankingData.user_data?.subjective_scores?.case_study_3_score || 0,
-                created_at: rankingData.control_metadata?.created_at,
-                reservation_type: rankingData.user_data?.reservation_type || 'Ampla Concorrência',
+                score: (rankingData as any).user_data?.score || 0,
+                subject_scores: (rankingData as any).user_data?.subject_scores || {},
+                weighted_discursive_score: (rankingData as any).user_data?.subjectives?.discursive_score || 0,
+                weighted_case_study_1_score: (rankingData as any).user_data?.subjectives?.case_study_1_score || 0,
+                weighted_case_study_2_score: (rankingData as any).user_data?.subjectives?.case_study_2_score || 0,
+                weighted_case_study_3_score: (rankingData as any).user_data?.subjectives?.case_study_3_score || 0,
+                created_at: (rankingData as any).control_metadata?.created_at,
+                reservation_type: (rankingData as any).user_data?.reservation_type || 'Ampla Concorrência',
                 concurso_id: concursoId,
                 concursos: concursoData,
                 position,
@@ -137,14 +137,14 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
 
               rankingsWithPositions.push({
                 id: rankingId,
-                score: rankingData.user_data?.score || 0,
-                subject_scores: rankingData.user_data?.subject_scores || {},
-                weighted_discursive_score: rankingData.user_data?.subjective_scores?.discursive_score || 0,
-                weighted_case_study_1_score: rankingData.user_data?.subjective_scores?.case_study_1_score || 0,
-                weighted_case_study_2_score: rankingData.user_data?.subjective_scores?.case_study_2_score || 0,
-                weighted_case_study_3_score: rankingData.user_data?.subjective_scores?.case_study_3_score || 0,
-                created_at: rankingData.control_metadata?.created_at,
-                reservation_type: rankingData.user_data?.reservation_type || 'Ampla Concorrência',
+                score: (rankingData as any).user_data?.score || 0,
+                subject_scores: (rankingData as any).user_data?.subject_scores || {},
+                weighted_discursive_score: (rankingData as any).user_data?.subjectives?.discursive_score || 0,
+                weighted_case_study_1_score: (rankingData as any).user_data?.subjectives?.case_study_1_score || 0,
+                weighted_case_study_2_score: (rankingData as any).user_data?.subjectives?.case_study_2_score || 0,
+                weighted_case_study_3_score: (rankingData as any).user_data?.subjectives?.case_study_3_score || 0,
+                created_at: (rankingData as any).control_metadata?.created_at,
+                reservation_type: (rankingData as any).user_data?.reservation_type || 'Ampla Concorrência',
                 concurso_id: concursoId,
                 concursos: concursoData,
                 position: null,
