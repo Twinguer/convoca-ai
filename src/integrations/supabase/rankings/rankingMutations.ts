@@ -225,23 +225,34 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const booklets = answerData || {};
     console.log(`[recalculateUserScore] 🔍 DEBUG - booklets:`, booklets);
     
-    // Usar o primeiro caderno disponível
-    const bookletIds = Object.keys(booklets);
-    console.log(`[recalculateUserScore] 🔍 DEBUG - bookletIds:`, bookletIds);
+    // Buscar o selected_booklet_id do usuário
+    const currentUserRankingData = userRanking.consolidated_data?.rankings?.[rankingId];
+    const selectedBookletId = currentUserRankingData?.selected_booklet_id;
     
-    const primaryBooklet = booklets[bookletIds[0]];
-    console.log(`[recalculateUserScore] 🔍 DEBUG - primaryBooklet:`, primaryBooklet);
+    console.log(`[recalculateUserScore] 🔍 DEBUG - selectedBookletId:`, selectedBookletId);
     
-    if (!primaryBooklet?.questions) {
-      console.log('[recalculateUserScore] ❌ No questions found in primary booklet');
-      console.log('[recalculateUserScore] ❌ primaryBooklet:', primaryBooklet);
+    if (!selectedBookletId) {
+      console.log('[recalculateUserScore] ❌ selected_booklet_id não encontrado');
       return { 
         success: false, 
-        message: 'Nenhuma resposta encontrada no gabarito consolidado' 
+        message: 'Caderno selecionado não encontrado' 
+      };
+    }
+    
+    // Usar o gabarito do caderno selecionado pelo usuário
+    const selectedBooklet = booklets[selectedBookletId];
+    console.log(`[recalculateUserScore] 🔍 DEBUG - selectedBooklet:`, selectedBooklet);
+    
+    if (!selectedBooklet?.questions) {
+      console.log('[recalculateUserScore] ❌ No questions found in selected booklet');
+      console.log('[recalculateUserScore] ❌ selectedBooklet:', selectedBooklet);
+      return { 
+        success: false, 
+        message: `Gabarito não encontrado para o caderno ${selectedBookletId}` 
       };
     }
 
-    const officialAnswers = primaryBooklet.questions;
+    const officialAnswers = selectedBooklet.questions;
     console.log(`[recalculateUserScore] Found ${Object.keys(officialAnswers).length} official answers`);
 
     let totalScore = 0;
@@ -353,8 +364,9 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         const questionWeight = officialAnswer.weight ?? 1;
         const sectionType = officialAnswer.section_type || 'default';
         
-        // Usar a disciplina da resposta em vez do mapeamento
-        const disciplineType = userAnswer.discipline_type || sectionType;
+        // Usar o section_type do gabarito para mapear corretamente para a disciplina
+        // Se o section_type não estiver mapeado, usar o section_type diretamente
+        const disciplineType = sectionTypeToDisciplineTypeMap[sectionType] || sectionType;
         
         // Inicializar pontuação da disciplina se ainda não existir
         if (!disciplineScores[disciplineType]) {
@@ -519,8 +531,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           user_data: {
             ...userRanking.consolidated_data.rankings[rankingId].user_data, // Preservar todos os campos existentes
             score: totalScore, // Total geral (objetivas + subjetivas)
-            subject_scores_tot: subjectScoresTot, // Total das objetivas - ANTES de subject_scores
-            subject_scores: correctSubjectScores, // Estrutura correta (apenas objetivas)
+            subject_scores_tot: subjectScoresTot, // Total das objetivas - ANTES de object_scores
+            object_scores: correctSubjectScores, // Estrutura correta (apenas objetivas)
             subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
             subjectives: correctSubjectives, // Pontuações subjetivas individuais
             status: minimumScoreRequired > 0 && totalScore < minimumScoreRequired ? 'eliminado' : 'classificado',

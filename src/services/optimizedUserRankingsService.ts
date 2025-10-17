@@ -441,7 +441,7 @@ export class OptimizedUserRankingsService {
       edit_count: 0,
       all_questions_answered: false,
       reservation_type: reservationType,
-      subject_scores: {},
+      object_scores: {},
       subjective_scores: {
         discursive_score: 0,
         case_study_1_score: 0,
@@ -475,6 +475,7 @@ export class OptimizedUserRankingsService {
 }
 
 export default OptimizedUserRankingsService;
+
 
 
 

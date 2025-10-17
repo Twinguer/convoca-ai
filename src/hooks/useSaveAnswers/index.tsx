@@ -69,12 +69,9 @@ export const useSaveAnswers = ({
         editCount
       });
 
-      // Preparar dados das respostas
-      const preparedData = prepareAnswersData(answers, concurso, nullifiedQuestions, subjectScores);
-
-      console.log('[useSaveAnswers] Dados formatados para RPC:', preparedData);
-      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(preparedData.answers).length);
-
+      // Garantir que sempre temos um bookletId válido
+      let bookletIdString = 'default';
+      
       // Buscar dados do usuário atual
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -93,9 +90,6 @@ export const useSaveAnswers = ({
       const consolidatedData = currentRanking?.consolidated_data;
       const rankingData = consolidatedData?.rankings?.[rankingId];
       const bookletFromData = rankingData?.selected_booklet_id;
-
-      // Garantir que sempre temos um bookletId válido
-      let bookletIdString = 'default';
       
       if (bookletFromData) {
         bookletIdString = String(bookletFromData);
@@ -117,10 +111,15 @@ export const useSaveAnswers = ({
             console.log('[useSaveAnswers] Nenhum caderno encontrado no concurso, usando padrão');
           }
         } catch (error) {
-          console.error('[useSaveAnswers] Erro ao buscar cadernos do concurso:', error);
-          // Manter 'default' como fallback
+          console.error('[useSaveAnswers] Erro ao buscar cadernos:', error);
         }
       }
+
+      // Preparar dados das respostas
+      const preparedData = prepareAnswersData(answers, concurso, nullifiedQuestions, subjectScores, bookletIdString);
+
+      console.log('[useSaveAnswers] Dados formatados para RPC:', preparedData);
+      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(preparedData.answers).length);
 
       // Salvar diretamente no consolidated_data sem usar RPC
       console.log('[useSaveAnswers] Salvando diretamente no consolidated_data:', {
@@ -158,7 +157,16 @@ export const useSaveAnswers = ({
           user_data: {
             ...updatedConsolidatedData.rankings[rankingId].user_data,
             answers: preparedData.answers,
-            all_questions_answered: Object.keys(preparedData.answers).length > 0,
+            all_questions_answered: (() => {
+              // Contar total de respostas na estrutura {bookletId: {disciplineType: {questionNumber: answer}}}
+              let totalAnswers = 0;
+              Object.values(preparedData.answers).forEach(bookletAnswers => {
+                Object.values(bookletAnswers).forEach(disciplineAnswers => {
+                  totalAnswers += Object.keys(disciplineAnswers).length;
+                });
+              });
+              return totalAnswers > 0;
+            })(),
             // SALVAR apenas as pontuações subjetivas (remover subjective_scores duplicado)
             subjectives: (() => {
               const subjectiveValues = {
@@ -182,7 +190,7 @@ export const useSaveAnswers = ({
             })(),
             // Preservar reservation_type dentro de user_data
             reservation_type: updatedConsolidatedData.rankings[rankingId].user_data?.reservation_type || 'Ampla Concorrência'
-            // score, subject_scores, subject_scores_tot serão atualizados pelo recalculateUserScore
+            // score, object_scores, subject_scores_tot serão atualizados pelo recalculateUserScore
           },
           selected_booklet_id: bookletIdString,
           edit_count: editCount + 1,

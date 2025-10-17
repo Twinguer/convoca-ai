@@ -10,7 +10,7 @@ import { UserRankingDisplay } from '@/types/concursos';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
+import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -70,8 +70,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             }
 
             try {
-              // Usar a mesma função que é usada na página de comunidade
-              const list = await getRankingsWithUserInfo(supabase, concursoId);
+              // Usar a versão V3 otimizada
+              const list = await fetchUserRankingsV3(concursoId);
 
               // Mesma regra de eliminação usada na tabela de rankings
               const isBelowMinimum = (rankingData: any, concursoData: any) => {
@@ -112,7 +112,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               const mappedRanking = {
                 id: rankingId,
                 score: (rankingData as any).user_data?.score || 0,
-                subject_scores: (rankingData as any).user_data?.subject_scores || {},
+                object_scores: (rankingData as any).user_data?.object_scores || {},
                 weighted_discursive_score: (rankingData as any).user_data?.subjectives?.discursive_score || 0,
                 weighted_case_study_1_score: (rankingData as any).user_data?.subjectives?.case_study_1_score || 0,
                 weighted_case_study_2_score: (rankingData as any).user_data?.subjectives?.case_study_2_score || 0,
@@ -138,7 +138,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               rankingsWithPositions.push({
                 id: rankingId,
                 score: (rankingData as any).user_data?.score || 0,
-                subject_scores: (rankingData as any).user_data?.subject_scores || {},
+                object_scores: (rankingData as any).user_data?.object_scores || {},
                 weighted_discursive_score: (rankingData as any).user_data?.subjectives?.discursive_score || 0,
                 weighted_case_study_1_score: (rankingData as any).user_data?.subjectives?.case_study_1_score || 0,
                 weighted_case_study_2_score: (rankingData as any).user_data?.subjectives?.case_study_2_score || 0,

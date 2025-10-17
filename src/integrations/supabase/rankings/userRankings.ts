@@ -83,8 +83,8 @@ export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concurso
               weightedCaseStudy3Score: rankingDataItem.user_data?.subjectives?.case_study_3 || 0,
               weightedOtherSubjectiveScore: rankingDataItem.user_data?.subjectives?.other_subjective || 0,
               // Pontuações de disciplinas customizadas
-              customDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
-              weightedCustomDisciplineScores: rankingDataItem.user_data?.subject_scores || {},
+              customDisciplineScores: rankingDataItem.user_data?.object_scores || {},
+              weightedCustomDisciplineScores: rankingDataItem.user_data?.object_scores || {},
               // Flags de eliminação (padrão: não eliminado)
               belowMinimum: false,
               belowDisciplineMinimums: [],

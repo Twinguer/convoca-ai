@@ -71,23 +71,14 @@ export const fetchUserRankingsV3 = async (
       return localCachedRankings as RankingV3[];
     }
 
-    // Query otimizada com JOIN nativo
-    let query = supabase
+    // Query para buscar todos os user_rankings e filtrar por concurso_id no consolidated_data
+    const { data, error } = await supabase
       .from('user_rankings')
       .select(`
-        *,
+        user_id,
+        consolidated_data,
         users_profiles!inner(id, name, avatar_url)
-      `)
-      .eq('concurso_id', concursoId);
-
-    // Filtro de reserva se especificado
-    if (reservationType && reservationType !== 'Ampla Concorrência') {
-      query = query.eq('reservation_type', reservationType);
-    }
-
-    const { data, error } = await query
-      .order('score', { ascending: false })
-      .range(offset, offset + limit - 1);
+      `);
 
     if (error) {
       logger.error('Error fetching rankings V3', 'RANKING_SERVICE_V3', error);
@@ -98,27 +89,70 @@ export const fetchUserRankingsV3 = async (
       return [];
     }
 
-    // Mapear resultados para o formato esperado
-    const rankings: RankingV3[] = data.map((item: any, index: number) => {
+    // Filtrar rankings que participam deste concurso específico
+    const rankingsForConcurso = [];
+    
+    for (const item of data) {
       const consolidatedData = item.consolidated_data || {};
-      const subjectiveScores = consolidatedData.subjective_scores || {};
-      const subjectScores = consolidatedData.subject_scores || {};
+      
+      if (consolidatedData.rankings) {
+        // Verificar se este usuário participa do concurso
+        for (const [rankingId, ranking] of Object.entries(consolidatedData.rankings)) {
+          if ((ranking as any).concurso_id === concursoId) {
+            rankingsForConcurso.push({
+              ...item,
+              rankingId,
+              rankingData: ranking
+            });
+            break;
+          }
+        }
+      }
+    }
+
+    // Ordenar por score (descendente)
+    rankingsForConcurso.sort((a, b) => {
+      const scoreA = (a.rankingData as any).user_data?.score || 0;
+      const scoreB = (b.rankingData as any).user_data?.score || 0;
+      return scoreB - scoreA;
+    });
+
+    // Aplicar paginação
+    const paginatedData = rankingsForConcurso.slice(offset, offset + limit);
+
+    // Mapear resultados para o formato esperado
+    const rankings: RankingV3[] = paginatedData.map((item: any, index: number) => {
+      const rankingData = item.rankingData;
+      const userData = rankingData?.user_data || {};
+      
+      // Extrair pontuações subjetivas da estrutura correta
+      const subjectiveScores = userData?.subjectives || {};
+      const objectScores = userData?.object_scores || {};
+      
+      console.log('[fetchUserRankingsV3] Debug ranking data:', {
+        userId: item.user_id,
+        concursoId,
+        rankingId: item.rankingId,
+        score: userData?.score,
+        subjectiveScores,
+        objectScores
+      });
 
       return {
-        id: item.id,
+        id: item.rankingId, // Usar o rankingId específico
         position: offset + index + 1,
         name: item.users_profiles.name || 'Usuário',
-        score: item.score || 0,
+        score: userData?.score || 0, // ← CORREÇÃO: extrair do user_data
         userId: item.user_id,
         avatarUrl: item.users_profiles.avatar_url,
-        reservationType: item.reservation_type || 'Ampla Concorrência',
-        displayReservation: item.reservation_type || 'Ampla Concorrência',
-        discursiveScore: subjectiveScores.discursive_score || 0,
-        caseStudy1Score: subjectiveScores.case_study_1_score || 0,
-        caseStudy2Score: subjectiveScores.case_study_2_score || 0,
-        caseStudy3Score: subjectiveScores.case_study_3_score || 0,
-        otherSubjectiveScore: subjectiveScores.other_subjective_score || 0,
-        customDisciplineScores: subjectScores,
+        reservationType: userData?.reservation_type || 'Ampla Concorrência',
+        displayReservation: userData?.reservation_type || 'Ampla Concorrência',
+        discursiveScore: subjectiveScores.discursive || 0,
+        caseStudy1Score: subjectiveScores.case_study_1 || 0,
+        caseStudy2Score: subjectiveScores.case_study_2 || 0,
+        caseStudy3Score: subjectiveScores.case_study_3 || 0,
+        otherSubjectiveScore: subjectiveScores.other_subjective || 0,
+        customDisciplineScores: objectScores,
         belowMinimum: false,
         belowDisciplineMinimums: [],
         belowBlockMinimums: [],

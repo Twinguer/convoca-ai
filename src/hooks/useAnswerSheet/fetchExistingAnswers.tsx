@@ -45,7 +45,7 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
     const consolidatedData = rankingData.consolidated_data;
     const userId = user.id;
     
-    // Buscar selected_booklet_id da estrutura atual
+    // Buscar selected_booklet_id da nova estrutura (nível do ranking)
     let selectedBooklet = null;
     if (consolidatedData?.rankings?.[rankingId]?.selected_booklet_id) {
       selectedBooklet = consolidatedData.rankings[rankingId].selected_booklet_id;
@@ -62,35 +62,37 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
       // Encontrar o ranking específico pelo rankingId
       const rankingData = rankings[rankingId];
       if (rankingData?.user_data) {
-        // Extrair respostas da estrutura atual - CONSIDERAR CADERNO ESPECÍFICO
+        // Extrair respostas da estrutura correta: {bookletId: {disciplineType: {questionNumber: answer}}}
         if (rankingData.user_data.answers) {
           console.log('[fetchExistingAnswers] Estrutura de respostas encontrada:', Object.keys(rankingData.user_data.answers));
-          console.log('[fetchExistingAnswers] selectedBookletId para buscar:', selectedBookletId);
+          console.log('[fetchExistingAnswers] selectedBookletId do ranking:', rankingData.selected_booklet_id);
           
-          // Se há selectedBookletId, buscar respostas desse caderno específico
-          if (selectedBookletId && rankingData.user_data.answers[selectedBookletId]) {
-            console.log('[fetchExistingAnswers] Buscando respostas do caderno específico:', selectedBookletId);
-            const bookletAnswers = rankingData.user_data.answers[selectedBookletId];
-            console.log('[fetchExistingAnswers] Dados do caderno encontrados:', bookletAnswers);
+          // A estrutura correta é: answers[bookletId][disciplineType][questionNumber] = answer
+          const answersData = rankingData.user_data.answers;
+          const selectedBookletId = rankingData.selected_booklet_id;
+          
+          if (selectedBookletId && answersData[selectedBookletId]) {
+            const bookletAnswers = answersData[selectedBookletId];
+            console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
             
-            Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
-              const questionNumber = parseInt(questionNum);
-              if (!isNaN(questionNumber)) {
-                answers[questionNumber] = answer as string;
-              }
+            // Percorrer todas as disciplinas do caderno
+            Object.entries(bookletAnswers).forEach(([disciplineType, disciplineAnswers]) => {
+              console.log(`[fetchExistingAnswers] Disciplina ${disciplineType}:`, disciplineAnswers);
+              
+              // Percorrer todas as questões da disciplina
+              Object.entries(disciplineAnswers as Record<string, string>).forEach(([questionNum, answer]) => {
+                const questionNumber = parseInt(questionNum);
+                if (!isNaN(questionNumber)) {
+                  answers[questionNumber] = answer;
+                }
+              });
             });
-            console.log('[fetchExistingAnswers] Respostas do caderno específico processadas:', selectedBookletId, answers);
           } else {
-            console.log('[fetchExistingAnswers] Fallback: buscando todas as respostas');
-            // Fallback: buscar todas as respostas (comportamento antigo)
-            Object.entries(rankingData.user_data.answers).forEach(([questionNum, answer]) => {
-              const questionNumber = parseInt(questionNum);
-              if (!isNaN(questionNumber)) {
-                answers[questionNumber] = answer as string;
-              }
-            });
-            console.log('[fetchExistingAnswers] Respostas de todos os cadernos:', answers);
+            console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para o caderno selecionado:', selectedBookletId);
           }
+          
+          console.log('[fetchExistingAnswers] Respostas carregadas:', answers);
+          console.log('[fetchExistingAnswers] Número de respostas:', Object.keys(answers).length);
         } else {
           console.log('[fetchExistingAnswers] Nenhuma estrutura de respostas encontrada em user_data');
         }

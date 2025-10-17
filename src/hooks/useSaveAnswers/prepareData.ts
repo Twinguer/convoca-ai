@@ -15,10 +15,18 @@ export const prepareAnswersData = (
   answers: { [key: number]: string },
   concurso: Concurso,
   nullifiedQuestions?: Set<number>,
-  subjectScores?: Record<string, number>
+  subjectScores?: Record<string, number>,
+  selectedBookletId?: string
 ) => {
   console.log('[prepareAnswersData] Input answers:', answers);
   console.log('[prepareAnswersData] Input nullifiedQuestions:', nullifiedQuestions);
+  console.log('[prepareAnswersData] Input selectedBookletId:', selectedBookletId);
+  
+  // Validar que temos um caderno selecionado
+  if (!selectedBookletId) {
+    console.error('[prepareAnswersData] selectedBookletId é obrigatório');
+    return { answers: {}, subjectScores: subjectScores || {} };
+  }
   
   // Verificar se há respostas para processar
   if (!answers || typeof answers !== 'object') {
@@ -26,126 +34,57 @@ export const prepareAnswersData = (
     return { answers: {}, subjectScores: subjectScores || {} };
   }
 
-  // Estrutura hierárquica para respostas organizadas por blocos e disciplinas
-  let organizedAnswers: any = {};
+  // Estrutura correta: {bookletId: {disciplineType: {questionNumber: answer}}}
+  const organizedAnswers: { [bookletId: string]: { [disciplineType: string]: { [questionNumber: string]: string } } } = {};
   
-  // Verificar se é estrutura hierárquica (blocos -> disciplinas)
-  const isHierarchicalStructure = concurso.disciplines && 
-    concurso.disciplines.length > 0 && 
-    concurso.disciplines[0] && 
-    typeof concurso.disciplines[0] === 'object' && 
-    'name' in concurso.disciplines[0] && 
-    'disciplines' in concurso.disciplines[0];
+  // Obter o gabarito oficial para mapear section_type
+  const officialAnswers = concurso.official_answers?.[selectedBookletId]?.questions || {};
+  console.log('[prepareAnswersData] Official answers for mapping:', officialAnswers);
 
-  if (isHierarchicalStructure) {
-    // Estrutura hierárquica (blocos -> disciplinas)
-    // Primeiro, calcular o número da primeira questão de cada bloco para ordenação
-    const blocksWithStartQuestion = concurso.disciplines.map(block => {
-      if ('disciplines' in block) {
-        let startQuestion = 1;
-        let currentQuestion = 1;
-        
-        // Encontrar o bloco anterior para calcular o número inicial
-        const blockIndex = concurso.disciplines.indexOf(block);
-        for (let i = 0; i < blockIndex; i++) {
-          const prevBlock = concurso.disciplines[i];
-          if ('disciplines' in prevBlock) {
-            for (const discipline of prevBlock.disciplines) {
-              if (discipline.isEnabled) {
-                const questionCount = getNumericValue(discipline.questionCount);
-                currentQuestion += questionCount;
-              }
-            }
-          }
-        }
-        startQuestion = currentQuestion;
-        
-        return {
-          block,
-          startQuestion,
-          blockId: block.id || `bloco_${block.name.toLowerCase().replace(/\s+/g, '_')}`
-        };
-      }
-      return null;
-    }).filter(Boolean);
-    
-    // Ordenar blocos por número da primeira questão
-    blocksWithStartQuestion.sort((a, b) => a!.startQuestion - b!.startQuestion);
-    
-    console.log('[prepareAnswersData] Blocks ordered by start question:', blocksWithStartQuestion.map(b => ({
-      blockId: b!.blockId,
-      startQuestion: b!.startQuestion
-    })));
-    
-    // Processar blocos na ordem correta
-    for (const { block, blockId } of blocksWithStartQuestion) {
-      organizedAnswers[blockId] = {};
+  // Inicializar estrutura do caderno
+  organizedAnswers[selectedBookletId] = {};
+
+  // Processar todas as respostas com mapeamento de disciplina
+  Object.entries(answers).forEach(([questionNum, answer]) => {
+    if (answer && answer.trim() !== '') {
+      const questionNumber = parseInt(questionNum);
+      const officialAnswer = officialAnswers[questionNum];
+      const sectionType = officialAnswer?.section_type || 'default';
       
-      for (const discipline of block.disciplines) {
-        if (discipline.isEnabled) {
-          const disciplineId = discipline.type; // SEMPRE usar type, não id
-          organizedAnswers[blockId][disciplineId] = {};
-          
-          const questionCount = getNumericValue(discipline.questionCount);
-          
-          // Calcular número da primeira questão desta disciplina
-          let disciplineStartQuestion = 1;
-          const disciplineIndex = block.disciplines.indexOf(discipline);
-          for (let i = 0; i < disciplineIndex; i++) {
-            const prevDiscipline = block.disciplines[i];
-            if (prevDiscipline.isEnabled) {
-              disciplineStartQuestion += getNumericValue(prevDiscipline.questionCount);
-            }
-          }
-          
-          // Adicionar offset do bloco
-          const blockStartQuestion = blocksWithStartQuestion.find(b => b!.blockId === blockId)!.startQuestion;
-          disciplineStartQuestion += blockStartQuestion - 1;
-          
-          // Organizar questões desta disciplina
-          for (let i = 0; i < questionCount; i++) {
-            const questionNumber = disciplineStartQuestion + i;
-            const answer = answers[questionNumber];
-            
-            if (answer && answer.trim() !== '') {
-              organizedAnswers[blockId][disciplineId][questionNumber.toString()] = answer.trim();
-            } else if (nullifiedQuestions && nullifiedQuestions.has(questionNumber)) {
-              // Questão anulada - usar resposta padrão
-              const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-              organizedAnswers[blockId][disciplineId][questionNumber.toString()] = defaultAnswer;
-            }
-          }
-        }
+      // Inicializar disciplina se não existir
+      if (!organizedAnswers[selectedBookletId][sectionType]) {
+        organizedAnswers[selectedBookletId][sectionType] = {};
       }
+      
+      organizedAnswers[selectedBookletId][sectionType][questionNum] = answer.trim();
     }
-  } else {
-    // Estrutura plana - manter compatibilidade
-    const answersObject: { [key: string]: string } = {};
-    
-    Object.entries(answers).forEach(([questionNumber, answer]) => {
-      if (answer && answer.trim() !== '') {
-        answersObject[questionNumber] = answer.trim();
+  });
+  
+  // Adicionar questões anuladas com resposta padrão
+  if (nullifiedQuestions && nullifiedQuestions.size > 0) {
+    nullifiedQuestions.forEach(questionNumber => {
+      if (!answers[questionNumber]) {
+        const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
+        const officialAnswer = officialAnswers[questionNumber.toString()];
+        const sectionType = officialAnswer?.section_type || 'default';
+        
+        // Inicializar disciplina se não existir
+        if (!organizedAnswers[selectedBookletId][sectionType]) {
+          organizedAnswers[selectedBookletId][sectionType] = {};
+        }
+        
+        organizedAnswers[selectedBookletId][sectionType][questionNumber.toString()] = defaultAnswer;
       }
     });
-    
-    // Adicionar questões anuladas
-    if (nullifiedQuestions && nullifiedQuestions.size > 0) {
-      nullifiedQuestions.forEach(questionNumber => {
-        if (!answers[questionNumber]) {
-          const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-          answersObject[questionNumber.toString()] = defaultAnswer;
-        }
-      });
-    }
-    
-    organizedAnswers = answersObject;
   }
 
   console.log('[prepareAnswersData] Organized answers structure:', organizedAnswers);
   console.log('[prepareAnswersData] Subject scores:', subjectScores);
+  console.log('[prepareAnswersData] BookletId:', selectedBookletId);
   
   return {
     answers: organizedAnswers,
-    subjectScores: subjectScores || {}
+    subjectScores: subjectScores || {},
+    bookletId: selectedBookletId
   };
 };

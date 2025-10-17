@@ -324,7 +324,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         return;
       }
 
-      // Inicializar subject_scores baseado nas seções habilitadas do concurso
+      // Inicializar object_scores baseado nas seções habilitadas do concurso
       // Considera tanto campos diretos quanto JSONB disciplines
       const initializeSubjectScores = (concurso: any) => {
         const subjectScores: Record<string, number> = {};
@@ -410,8 +410,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         user_data: {
           score: 0,  // Total geral (objetivas + subjetivas)
           answers: {},
-          subject_scores_tot: 0,  // Total das objetivas - ANTES de subject_scores
-          subject_scores: (() => {
+          subject_scores_tot: 0,  // Total das objetivas - ANTES de object_scores
+          object_scores: (() => {
             // Criar subject_scores dinamicamente baseado nas disciplinas do concurso
             const subjectScores: Record<string, number> = {};
             if (concurso.disciplines && Array.isArray(concurso.disciplines)) {

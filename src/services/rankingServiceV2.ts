@@ -178,8 +178,8 @@ export const fetchUserRankingsV2 = async (
         weightedCaseStudy3Score: item.user_data?.subjective_scores?.case_study_3_score || 0,
         weightedOtherSubjectiveScore: item.user_data?.subjective_scores?.other_subjective_score || 0,
         // Pontuações de disciplinas customizadas
-        customDisciplineScores: item.user_data?.subject_scores || {},
-        weightedCustomDisciplineScores: item.user_data?.subject_scores || {},
+        customDisciplineScores: item.user_data?.object_scores || {},
+        weightedCustomDisciplineScores: item.user_data?.object_scores || {},
       };
     });
 
@@ -264,7 +264,7 @@ export const fetchUserRankingsV2 = async (
         weightedCaseStudy1Score: ranking.weighted_case_study_1_score || 0,
         weightedCaseStudy2Score: ranking.weighted_case_study_2_score || 0,
         weightedCaseStudy3Score: ranking.weighted_case_study_3_score || 0,
-        subjectScores: ranking.subject_scores || {},
+        objectScores: ranking.object_scores || {},
       };
     });
         

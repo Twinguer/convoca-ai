@@ -13,3 +13,4 @@ COMMENT ON TABLE concursos IS 'Penalty logic can be stored in JSONB fields if ne
 
 
 
+

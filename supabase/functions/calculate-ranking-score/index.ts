@@ -46,8 +46,16 @@ serve(async (req) => {
       );
     }
 
-    const requestData: CalculateScoreRequest = await req.json();
-    const { userId, concursoId, answers, bookletId, reservationType, subjectiveScores } = requestData;
+  const requestData: CalculateScoreRequest = await req.json();
+  const { userId, concursoId, answers, bookletId, reservationType, subjectiveScores } = requestData;
+  
+  // Validar que o bookletId é válido
+  if (!bookletId) {
+    return new Response(
+      JSON.stringify({ error: 'Booklet ID is required' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
     // Validar que o usuário só pode calcular seu próprio score
     if (user.id !== userId) {
@@ -79,7 +87,7 @@ serve(async (req) => {
     if (!officialAnswers) {
       console.error(`[calculate-ranking-score] Official answers not found for booklet ${bookletId}`);
       return new Response(
-        JSON.stringify({ error: 'Official answers not found for this booklet' }),
+        JSON.stringify({ error: `Official answers not found for booklet ${bookletId}` }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

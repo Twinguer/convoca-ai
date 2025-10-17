@@ -200,33 +200,61 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData]);
 
-  // Handle booklet change from BookletSwitcher (CORRIGIDO - Limpa totalmente o estado)
+
+  // Handle booklet change from BookletSwitcher (MANTÉM as marcações)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
     console.log('[AnswerSheet] ===== INÍCIO DA TROCA DE CADERNO =====');
     console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
-    console.log('[AnswerSheet] Novas respostas carregadas:', newAnswers);
-    console.log('[AnswerSheet] Respostas atuais antes de limpar:', answers);
+    console.log('[AnswerSheet] Respostas atuais (mantidas):', answers);
     console.log('[AnswerSheet] selectedBookletId atual:', selectedBookletId);
     
-    // CRÍTICO: Limpar COMPLETAMENTE o estado de respostas ANTES de atualizar
-    clearAllAnswers();
+    // MANTER as respostas atuais - não limpar!
+    // As respostas serão recalculadas com o novo gabarito
     
     // Atualizar o ID do caderno selecionado
     setSelectedBookletId(newBookletId);
     
-    // Carregar as novas respostas do caderno selecionado
-    // Usar setAnswers diretamente para garantir substituição completa
-    const numberedAnswers: { [key: number]: string } = {};
-    Object.entries(newAnswers).forEach(([questionNum, answer]) => {
-      numberedAnswers[parseInt(questionNum)] = answer;
-    });
+    // Salvar o novo selectedBookletId no banco de dados
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Buscar dados atuais
+        const { data: currentData } = await supabase
+          .from('user_rankings')
+          .select('consolidated_data')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (currentData?.consolidated_data) {
+          // Atualizar o selected_booklet_id
+          const updatedData = {
+            ...currentData.consolidated_data,
+            rankings: {
+              ...currentData.consolidated_data.rankings,
+              [rankingId]: {
+                ...currentData.consolidated_data.rankings[rankingId],
+                selected_booklet_id: newBookletId
+              }
+            }
+          };
+          
+          const { error } = await supabase
+            .from('user_rankings')
+            .update({ consolidated_data: updatedData })
+            .eq('user_id', user.id);
+          
+          if (error) {
+            console.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
+          } else {
+            console.log('[AnswerSheet] selectedBookletId salvo com sucesso:', newBookletId);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
+    }
     
-    console.log('[AnswerSheet] Carregando novas respostas (formato numérico):', numberedAnswers);
-    
-    // Forçar re-fetch das respostas do backend para garantir dados corretos
-    await refetchAnswers();
-    
-    toast.success(`Caderno alterado para ${getBookletName(newBookletId)}. Respostas carregadas.`);
+    toast.success(`Caderno alterado para ${getBookletName(newBookletId)}. Marcações mantidas e score recalculado.`);
   };
 
   // Verify if the official answer key exists
@@ -368,7 +396,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [userRankingData, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
 
-  // Initialize subject_scores from user ranking data - VERIFICAR ESTRUTURA JSONB + CAMPOS DIRETOS
+  // Initialize object_scores from user ranking data - VERIFICAR ESTRUTURA JSONB + CAMPOS DIRETOS
   useEffect(() => {
     // Verificar se userRankingData existe antes de prosseguir
     if (!userRankingData) {
@@ -398,22 +426,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
     }
     
-    // Fallback para subject_scores (compatibilidade)
-    if (userRankingData?.subject_scores) {
-      if (userRankingData.subject_scores.discursive !== undefined && initialScores.discursive === 0) {
-        initialScores.discursive = userRankingData.subject_scores.discursive;
+    // Fallback para object_scores (compatibilidade)
+    if (userRankingData?.object_scores) {
+      if (userRankingData.object_scores.discursive !== undefined && initialScores.discursive === 0) {
+        initialScores.discursive = userRankingData.object_scores.discursive;
       }
-      if (userRankingData.subject_scores.case_study_1 !== undefined && initialScores.case_study_1 === 0) {
-        initialScores.case_study_1 = userRankingData.subject_scores.case_study_1;
+      if (userRankingData.object_scores.case_study_1 !== undefined && initialScores.case_study_1 === 0) {
+        initialScores.case_study_1 = userRankingData.object_scores.case_study_1;
       }
-      if (userRankingData.subject_scores.case_study_2 !== undefined && initialScores.case_study_2 === 0) {
-        initialScores.case_study_2 = userRankingData.subject_scores.case_study_2;
+      if (userRankingData.object_scores.case_study_2 !== undefined && initialScores.case_study_2 === 0) {
+        initialScores.case_study_2 = userRankingData.object_scores.case_study_2;
       }
-      if (userRankingData.subject_scores.case_study_3 !== undefined && initialScores.case_study_3 === 0) {
-        initialScores.case_study_3 = userRankingData.subject_scores.case_study_3;
+      if (userRankingData.object_scores.case_study_3 !== undefined && initialScores.case_study_3 === 0) {
+        initialScores.case_study_3 = userRankingData.object_scores.case_study_3;
       }
-      if (userRankingData.subject_scores.other_subjective !== undefined && initialScores.other_subjective === 0) {
-        initialScores.other_subjective = userRankingData.subject_scores.other_subjective;
+      if (userRankingData.object_scores.other_subjective !== undefined && initialScores.other_subjective === 0) {
+        initialScores.other_subjective = userRankingData.object_scores.other_subjective;
       }
     }
     
@@ -444,7 +472,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     });
     
     console.log('[AnswerSheet] DEBUG - InitialScores calculados:', initialScores);
-    console.log('[AnswerSheet] DEBUG - userRankingData.subject_scores:', userRankingData?.subject_scores);
+    console.log('[AnswerSheet] DEBUG - userRankingData.object_scores:', userRankingData?.object_scores);
     console.log('[AnswerSheet] DEBUG - userRankingData.subjectives:', userRankingData?.subjectives);
     setSubjectScores(initialScores);
   }, [userRankingData, concurso]);

@@ -189,7 +189,7 @@ export const fetchUserRankings = async (
                 subjectScoresTot: rankingDataItem.user_data?.subject_scores_tot,
                 subjectiveScores: rankingDataItem.user_data?.subjective_scores,
                 subjectives: rankingDataItem.user_data?.subjectives,
-                subjectScores: rankingDataItem.user_data?.subject_scores,
+                objectScores: rankingDataItem.user_data?.object_scores,
                 // Debug completo do user_data
                 userData: rankingDataItem.user_data,
                 // Debug de todas as chaves do user_data
@@ -231,11 +231,11 @@ export const fetchUserRankings = async (
                 weightedOtherSubjectiveScore: rankingDataItem.user_data?.subjectives?.other_subjective || 0,
                 // Pontuações de disciplinas customizadas (apenas as que começam com custom_)
                 customDisciplineScores: Object.fromEntries(
-                  Object.entries(rankingDataItem.user_data?.subject_scores || {})
+                  Object.entries(rankingDataItem.user_data?.object_scores || {})
                     .filter(([key]) => key.startsWith('custom_'))
                 ),
                 weightedCustomDisciplineScores: Object.fromEntries(
-                  Object.entries(rankingDataItem.user_data?.subject_scores || {})
+                  Object.entries(rankingDataItem.user_data?.object_scores || {})
                     .filter(([key]) => key.startsWith('custom_'))
                 ),
                 // Flags de mínimos não atingidos

@@ -144,7 +144,7 @@ export interface UserRankingData {
   /** Tipo de reserva/cota */
   reservation_type: QuotaType;
   /** Pontuações por disciplina */
-  subject_scores: DisciplineScores;
+  object_scores: DisciplineScores;
   /** Pontuações subjetivas */
   subjective_scores: SubjectiveScores;
   /** Pontuações subjetivas com peso */
@@ -314,6 +314,7 @@ export const validateExamType = (examType: string): examType is ExamType => {
 export const validateRankingStatus = (status: string): status is RankingStatus => {
   return RANKING_STATUSES.includes(status as RankingStatus);
 };
+
 
 
 
