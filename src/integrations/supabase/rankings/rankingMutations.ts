@@ -500,10 +500,13 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log('[recalculateUserScore] DEBUG - correctSubjectScores:', correctSubjectScores);
     console.log('[recalculateUserScore] DEBUG - disciplineScores calculados:', disciplineScores);
     
-    // Criar estrutura correta de subjectives (apenas subjetivas)
+    // Criar estrutura correta de subjectives (TODAS as subjetivas)
     const correctSubjectives = {
-      "case_study_1": caseStudy1Score,
-      "other_subjective": otherSubjectiveScore
+      "discursive": discursiveScore || 0,
+      "case_study_1": caseStudy1Score || 0,
+      "case_study_2": caseStudy2Score || 0,
+      "case_study_3": caseStudy3Score || 0,
+      "other_subjective": otherSubjectiveScore || 0
     };
 
     // Atualizar a pontuação do usuário no consolidated_data

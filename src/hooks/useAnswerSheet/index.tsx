@@ -124,7 +124,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
       }
       
       // console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
-      return fetchExistingAnswers(rankingId);
+      return fetchExistingAnswers(rankingId, selectedBookletId);
     },
     enabled: !!rankingId && !!concurso?.id,
     staleTime: 1000 * 60 * 5, // 5 minutes

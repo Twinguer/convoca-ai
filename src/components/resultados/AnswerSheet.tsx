@@ -44,26 +44,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const [selectedBookletId, setSelectedBookletId] = useState<string>('');
   const [subjectScores, setSubjectScores] = useState<Record<string, number>>({});
 
-  // Check for subjective content using JSONB disciplines + direct fields
-  const hasSubjectiveSections = concurso.disciplines?.some(discipline => {
-    if ('disciplines' in discipline) {
-      // Hierarchical structure (blocks -> disciplines)
-      return discipline.disciplines?.some(d => 
-        d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
-      );
-    } else {
-      // Flat structure
-      return discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
-    }
-  }) || 
-  // Fallback para campos diretos (compatibilidade)
-  concurso.has_discursive || 
-  concurso.has_case_study_1 || 
-  concurso.has_case_study_2 || 
-  concurso.has_case_study_3 || 
-  concurso.has_other_subjective;
-
-
   // Fetch user ranking data first to get selectedBookletId
   const {
     data: userRankingData,
@@ -105,8 +85,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     staleTime: 1000
   });
 
-  // Get selected booklet ID from user ranking data
-  const selectedBookletIdFromData = userRankingData?.selected_booklet_id || '';
+  // Get selected booklet ID from user ranking data (CORRIGIDO: usar estrutura JSONB)
+  const selectedBookletIdFromData = userRankingData?.consolidated_data?.rankings?.[rankingId]?.selected_booklet_id || userRankingData?.selected_booklet_id || '';
 
   const {
     answers,
@@ -141,6 +121,25 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isLoading,
     refetchAnswers
   } = useAnswerSheet(concurso, rankingId, selectedBookletIdFromData);
+
+  // Check for subjective content using JSONB disciplines + direct fields
+  const hasSubjectiveSections = concurso.disciplines?.some(discipline => {
+    if ('disciplines' in discipline) {
+      // Hierarchical structure (blocks -> disciplines)
+      return discipline.disciplines?.some(d => 
+        d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
+      );
+    } else {
+      // Flat structure
+      return discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+    }
+  }) || 
+  // Fallback para campos diretos (compatibilidade) - RESTAURADO
+  (concurso as any).has_discursive || 
+  (concurso as any).has_case_study_1 || 
+  (concurso as any).has_case_study_2 || 
+  (concurso as any).has_case_study_3 || 
+  (concurso as any).has_other_subjective;
 
   // Fetch exam booklets for this concurso - MOVED UP to avoid initialization error
   const {
@@ -196,8 +195,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Set selected booklet from user ranking data
   useEffect(() => {
-    if (userRankingData?.selected_booklet && !selectedBookletId) {
-      setSelectedBookletId(userRankingData.selected_booklet);
+    if (userRankingData?.selected_booklet_id && !selectedBookletId) {
+      setSelectedBookletId(userRankingData.selected_booklet_id);
     }
   }, [userRankingData]);
 
@@ -325,6 +324,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     isUndefined: selectedBookletIdFromData === undefined
   });
 
+  // Debug dos valores subjetivos antes de passar para useSaveAnswers
+  console.log('[AnswerSheet] Valores subjetivos antes de salvar:', {
+    subjectScores,
+    discursiveScore: subjectScores.discursive || 0,
+    caseStudy1Score: subjectScores.case_study_1 || 0,
+    caseStudy2Score: subjectScores.case_study_2 || 0,
+    caseStudy3Score: subjectScores.case_study_3 || 0,
+    otherSubjectiveScore: subjectScores.other_subjective || 0
+  });
+
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
     concurso,
@@ -361,24 +370,49 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Initialize subject_scores from user ranking data - VERIFICAR ESTRUTURA JSONB + CAMPOS DIRETOS
   useEffect(() => {
+    // Verificar se userRankingData existe antes de prosseguir
+    if (!userRankingData) {
+      console.log('[AnswerSheet] userRankingData ainda não carregado, aguardando...');
+      return;
+    }
+    
     const initialScores: Record<string, number> = {};
     
-    // 1. Se há dados do banco, usar como base (mas filtrar apenas subjetivas ativas)
+    // 1. Se há dados do banco, usar como base (CORRIGIDO: usar subjectives em vez de subject_scores)
+    if (userRankingData?.subjectives) {
+      // Preservar apenas as chaves subjetivas que existem nos dados
+      if (userRankingData.subjectives.discursive !== undefined) {
+        initialScores.discursive = userRankingData.subjectives.discursive;
+      }
+      if (userRankingData.subjectives.case_study_1 !== undefined) {
+        initialScores.case_study_1 = userRankingData.subjectives.case_study_1;
+      }
+      if (userRankingData.subjectives.case_study_2 !== undefined) {
+        initialScores.case_study_2 = userRankingData.subjectives.case_study_2;
+      }
+      if (userRankingData.subjectives.case_study_3 !== undefined) {
+        initialScores.case_study_3 = userRankingData.subjectives.case_study_3;
+      }
+      if (userRankingData.subjectives.other_subjective !== undefined) {
+        initialScores.other_subjective = userRankingData.subjectives.other_subjective;
+      }
+    }
+    
+    // Fallback para subject_scores (compatibilidade)
     if (userRankingData?.subject_scores) {
-      // Preservar apenas as chaves subjetivas que estão ativas no concurso
-      if (concurso.has_discursive && userRankingData.subject_scores.discursive !== undefined) {
+      if (userRankingData.subject_scores.discursive !== undefined && initialScores.discursive === 0) {
         initialScores.discursive = userRankingData.subject_scores.discursive;
       }
-      if (concurso.has_case_study_1 && userRankingData.subject_scores.case_study_1 !== undefined) {
+      if (userRankingData.subject_scores.case_study_1 !== undefined && initialScores.case_study_1 === 0) {
         initialScores.case_study_1 = userRankingData.subject_scores.case_study_1;
       }
-      if (concurso.has_case_study_2 && userRankingData.subject_scores.case_study_2 !== undefined) {
+      if (userRankingData.subject_scores.case_study_2 !== undefined && initialScores.case_study_2 === 0) {
         initialScores.case_study_2 = userRankingData.subject_scores.case_study_2;
       }
-      if (concurso.has_case_study_3 && userRankingData.subject_scores.case_study_3 !== undefined) {
+      if (userRankingData.subject_scores.case_study_3 !== undefined && initialScores.case_study_3 === 0) {
         initialScores.case_study_3 = userRankingData.subject_scores.case_study_3;
       }
-      if (concurso.has_other_subjective && userRankingData.subject_scores.other_subjective !== undefined) {
+      if (userRankingData.subject_scores.other_subjective !== undefined && initialScores.other_subjective === 0) {
         initialScores.other_subjective = userRankingData.subject_scores.other_subjective;
       }
     }
@@ -402,24 +436,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       });
     }
     
-    // 3. FALLBACK: aplicar os campos diretos (compatibilidade)
-    if (concurso.has_discursive) {
-      initialScores.discursive = initialScores.discursive || 0;
-    }
-    if (concurso.has_case_study_1) {
-      initialScores.case_study_1 = initialScores.case_study_1 || 0;
-    }
-    if (concurso.has_case_study_2) {
-      initialScores.case_study_2 = initialScores.case_study_2 || 0;
-    }
-    if (concurso.has_case_study_3) {
-      initialScores.case_study_3 = initialScores.case_study_3 || 0;
-    }
-    if (concurso.has_other_subjective) {
-      initialScores.other_subjective = initialScores.other_subjective || 0;
-    }
+    // 3. GARANTIR que todas as disciplinas subjetivas estejam inicializadas
+    ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].forEach(type => {
+      if (initialScores[type] === undefined) {
+        initialScores[type] = 0;
+      }
+    });
     
     console.log('[AnswerSheet] DEBUG - InitialScores calculados:', initialScores);
+    console.log('[AnswerSheet] DEBUG - userRankingData.subject_scores:', userRankingData?.subject_scores);
+    console.log('[AnswerSheet] DEBUG - userRankingData.subjectives:', userRankingData?.subjectives);
     setSubjectScores(initialScores);
   }, [userRankingData, concurso]);
 
@@ -559,7 +585,12 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   const handleSubjectScoreChange = (key: string, value: number) => {
-    setSubjectScores(prev => ({ ...prev, [key]: value }));
+    console.log('[AnswerSheet] handleSubjectScoreChange:', { key, value });
+    setSubjectScores(prev => {
+      const updated = { ...prev, [key]: value };
+      console.log('[AnswerSheet] subjectScores atualizado:', updated);
+      return updated;
+    });
   };
 
   // Get booklet name

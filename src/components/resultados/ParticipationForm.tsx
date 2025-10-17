@@ -200,6 +200,41 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     console.log('[ParticipationForm] ✅ Validação passou');
     return true;
   };
+
+  const validateBookletHasOfficialAnswers = async (bookletId: string): Promise<boolean> => {
+    try {
+      console.log('[ParticipationForm] Verificando gabarito oficial para caderno:', bookletId);
+      
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('official_answers')
+        .eq('id', concurso.id)
+        .single();
+
+      if (error || !data) {
+        console.log('[ParticipationForm] Erro ao buscar gabarito oficial');
+        return false;
+      }
+
+      const bookletData = data?.official_answers?.[bookletId];
+      if (!bookletData || !bookletData.questions) {
+        console.log('[ParticipationForm] Gabarito não encontrado para o caderno:', bookletId);
+        return false;
+      }
+
+      const questionCount = Object.keys(bookletData.questions).length;
+      if (questionCount === 0) {
+        console.log('[ParticipationForm] Gabarito encontrado mas sem questões');
+        return false;
+      }
+
+      console.log('[ParticipationForm] Gabarito oficial encontrado com', questionCount, 'questões');
+      return true;
+    } catch (error) {
+      console.error('[ParticipationForm] Erro ao verificar gabarito oficial:', error);
+      return false;
+    }
+  };
   const handleParticipate = async () => {
     // handleParticipate called
     if (!user) {
@@ -216,6 +251,21 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Validation failed
       return;
     }
+
+    // Validar se o caderno selecionado tem gabarito oficial
+    const bookletToValidate = selectedBooklet || (booklets.length === 1 ? booklets[0].id : null);
+    if (bookletToValidate) {
+      const hasOfficialAnswers = await validateBookletHasOfficialAnswers(bookletToValidate);
+      if (!hasOfficialAnswers) {
+        toast({
+          title: "Caderno sem gabarito",
+          description: "O caderno selecionado não possui gabarito oficial configurado. Entre em contato com o administrador.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     // Starting participation process
     setIsLoading(true);
     try {
@@ -379,8 +429,10 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           })(),
           subjective_scores: 0,  // Soma das subjetivas - ANTES de subjectives
           subjectives: {
-            // APENAS disciplinas subjetivas
+            "discursive": 0,
             "case_study_1": 0,
+            "case_study_2": 0,
+            "case_study_3": 0,
             "other_subjective": 0
           },
           all_questions_answered: false

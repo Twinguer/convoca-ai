@@ -4,8 +4,9 @@ import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
 import { getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './useAnswerSheet/sectionUtils';
+import { fetchExistingAnswers as fetchExistingAnswersFromDB } from './useAnswerSheet/fetchExistingAnswers';
 
-export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
+export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [questionType, setQuestionType] = useState<{ [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string }>({});
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
@@ -55,8 +56,9 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
       // Extract user answers from consolidated data
       const rankingData = userRankingData.consolidated_data?.rankings?.[rankingId];
       if (rankingData?.user_data?.answers) {
-        const selectedBookletId = rankingData.selected_booklet_id;
-        const bookletData = selectedBookletId ? rankingData.user_data.answers[selectedBookletId] : null;
+        // Usar o selectedBookletId passado como parâmetro ou o do banco
+        const bookletIdToUse = selectedBookletId || rankingData.selected_booklet_id;
+        const bookletData = bookletIdToUse ? rankingData.user_data.answers[bookletIdToUse] : null;
         
         if (bookletData) {
           const answersMap: { [key: number]: string } = {};
@@ -219,8 +221,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string) => {
   };
 
   useEffect(() => {
+    // Buscar respostas quando o rankingId muda (troca de ranking)
+    // Mas não quando é apenas um re-render após salvamento
     fetchExistingAnswers();
-  }, [rankingId]);
+  }, [rankingId, selectedBookletId]);
 
   useEffect(() => {
     initializeQuestionTypes();

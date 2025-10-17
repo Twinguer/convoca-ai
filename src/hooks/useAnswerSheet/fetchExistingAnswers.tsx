@@ -1,8 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export const fetchExistingAnswers = async (rankingId: string) => {
+export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?: string) => {
   try {
     console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
+    console.log('[fetchExistingAnswers] selectedBookletId recebido:', selectedBookletId);
 
     // Buscar dados do usuário atual
     const { data: { user } } = await supabase.auth.getUser();
@@ -61,14 +62,37 @@ export const fetchExistingAnswers = async (rankingId: string) => {
       // Encontrar o ranking específico pelo rankingId
       const rankingData = rankings[rankingId];
       if (rankingData?.user_data) {
-        // Extrair respostas da estrutura atual
+        // Extrair respostas da estrutura atual - CONSIDERAR CADERNO ESPECÍFICO
         if (rankingData.user_data.answers) {
-          Object.entries(rankingData.user_data.answers).forEach(([questionNum, answer]) => {
-            const questionNumber = parseInt(questionNum);
-            if (!isNaN(questionNumber)) {
-              answers[questionNumber] = answer as string;
-            }
-          });
+          console.log('[fetchExistingAnswers] Estrutura de respostas encontrada:', Object.keys(rankingData.user_data.answers));
+          console.log('[fetchExistingAnswers] selectedBookletId para buscar:', selectedBookletId);
+          
+          // Se há selectedBookletId, buscar respostas desse caderno específico
+          if (selectedBookletId && rankingData.user_data.answers[selectedBookletId]) {
+            console.log('[fetchExistingAnswers] Buscando respostas do caderno específico:', selectedBookletId);
+            const bookletAnswers = rankingData.user_data.answers[selectedBookletId];
+            console.log('[fetchExistingAnswers] Dados do caderno encontrados:', bookletAnswers);
+            
+            Object.entries(bookletAnswers).forEach(([questionNum, answer]) => {
+              const questionNumber = parseInt(questionNum);
+              if (!isNaN(questionNumber)) {
+                answers[questionNumber] = answer as string;
+              }
+            });
+            console.log('[fetchExistingAnswers] Respostas do caderno específico processadas:', selectedBookletId, answers);
+          } else {
+            console.log('[fetchExistingAnswers] Fallback: buscando todas as respostas');
+            // Fallback: buscar todas as respostas (comportamento antigo)
+            Object.entries(rankingData.user_data.answers).forEach(([questionNum, answer]) => {
+              const questionNumber = parseInt(questionNum);
+              if (!isNaN(questionNumber)) {
+                answers[questionNumber] = answer as string;
+              }
+            });
+            console.log('[fetchExistingAnswers] Respostas de todos os cadernos:', answers);
+          }
+        } else {
+          console.log('[fetchExistingAnswers] Nenhuma estrutura de respostas encontrada em user_data');
         }
 
         // Extrair pontuações subjetivas da estrutura atual

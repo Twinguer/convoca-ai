@@ -265,9 +265,9 @@ const CriarRanking = () => {
     saveRanking
   } = useSaveRanking();
   const handleSaveRanking = async (): Promise<string | null> => {
-    // console.log('[CriarRanking] handleSaveRanking called');
+    console.log('[CriarRanking] handleSaveRanking called');
     const formValues = form.getValues();
-    // console.log('[CriarRanking] Form values:', formValues);
+    console.log('[CriarRanking] Form values:', formValues);
 
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, {

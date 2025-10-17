@@ -62,17 +62,23 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
-    // Log removido por segurança
+    console.log('[GeneralTab] validateBeforeSave called with values:', currentValues);
 
-    // Remover validação de cadernos salvos para permitir salvamento inicial
-    // if (!areBookletsSaved) {
-    //   toast({
-    //     title: "Cadernos não salvos",
-    //     description: "Por favor, configure e salve os cadernos de prova antes de salvar o ranking.",
-    //     variant: "destructive"
-    //   });
-    //   return false;
-    // }
+    // Validação de cadernos criados (não salvos, pois handleFillAnswerKey salva depois)
+    console.log('[GeneralTab] booklets:', booklets);
+    console.log('[GeneralTab] bookletsRef.current:', bookletsRef.current);
+    
+    // Verificar se há cadernos criados (não se já foram salvos)
+    const currentBooklets = booklets.length > 0 ? booklets : bookletsRef.current;
+    if (currentBooklets.length === 0) {
+      console.log('[GeneralTab] Validação falhou: nenhum caderno criado');
+      toast({
+        title: "Cadernos obrigatórios",
+        description: "É necessário criar ao menos 1 caderno de prova antes de salvar o ranking.",
+        variant: "destructive"
+      });
+      return false;
+    }
 
     if (!currentValues.predefined_job_title) {
       toast({
@@ -180,10 +186,16 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   };
 
   const validateBooklets = (): boolean => {
-    const currentBooklets = bookletsRef.current;
+    // Usar o estado booklets em vez de bookletsRef.current
+    const currentBooklets = booklets.length > 0 ? booklets : bookletsRef.current;
+    
+    console.log('[GeneralTab] validateBooklets - booklets state:', booklets);
+    console.log('[GeneralTab] validateBooklets - bookletsRef.current:', bookletsRef.current);
+    console.log('[GeneralTab] validateBooklets - currentBooklets:', currentBooklets);
     
     // Validar se há pelo menos 1 caderno
     if (currentBooklets.length === 0) {
+      console.log('[GeneralTab] Validação falhou: nenhum caderno encontrado');
       toast({
         title: "Cadernos obrigatórios",
         description: "É necessário criar ao menos 1 caderno de prova antes de preencher o gabarito",
@@ -254,6 +266,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       const savedBooklets = processedBooklets;
 
       setBooklets(savedBooklets);
+      console.log('[GeneralTab] Cadernos salvos com sucesso');
       return true;
     } catch (error: any) {
       toast({

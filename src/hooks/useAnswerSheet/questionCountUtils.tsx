@@ -87,12 +87,13 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
     console.log('[checkMissingOfficialAnswers] DEBUG - official_answers encontrado:', data.official_answers);
     console.log('[checkMissingOfficialAnswers] DEBUG - Chaves disponíveis:', Object.keys(data.official_answers || {}));
 
+    // A estrutura real tem os cadernos diretamente no primeiro nível
     const bookletData = data?.official_answers?.[bookletId];
     console.log('[checkMissingOfficialAnswers] DEBUG - Dados do caderno:', bookletData);
     console.log('[checkMissingOfficialAnswers] DEBUG - bookletData.questions:', bookletData?.questions);
     console.log('[checkMissingOfficialAnswers] DEBUG - Quantidade de questões:', bookletData?.questions ? Object.keys(bookletData.questions).length : 0);
     
-    
+    // Verificar se o gabarito existe e tem questões
     if (!bookletData || !bookletData.questions) {
       console.log('[checkMissingOfficialAnswers] Gabarito não encontrado para o caderno:', bookletId);
       return true;

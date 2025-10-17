@@ -396,14 +396,26 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             </div>
             
             <div className="p-4 bg-card flex justify-end gap-2">
-              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}`)}>
+              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/ranking/${ranking.concurso_id || ranking.concursos?.id || ranking.concursoId}`)}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>
               </Button>
               
               {isOwnProfile && (
                 <>
-                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => navigate(`/ranking/${ranking.concursos?.id || ranking.concursoId}/participate?showAnswerSheet=true`)}>
+                  <Button size="sm" className="flex items-center gap-1 bg-primary hover:bg-primary/90" onClick={() => {
+                    const concursoId = ranking.concurso_id || ranking.concursos?.id || ranking.concursoId;
+                    if (concursoId && concursoId !== 'undefined') {
+                      navigate(`/ranking/${concursoId}/participate?showAnswerSheet=true`);
+                    } else {
+                      console.error('ConcursoId não encontrado:', ranking);
+                      toast({
+                        title: "Erro",
+                        description: "ID do concurso não encontrado. Tente novamente.",
+                        variant: "destructive"
+                      });
+                    }
+                  }}>
                     <PencilLine className="h-4 w-4" />
                     <span>Editar</span>
                   </Button>

@@ -43,6 +43,16 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] Preparando dados para salvamento');
       console.log('[useSaveAnswers] Respostas do usuário:', answers);
       console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+      
+      // Debug dos valores subjetivos recebidos
+      console.log('[useSaveAnswers] Valores subjetivos recebidos:', {
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score,
+        subjectScores,
+        otherSubjectiveScore: subjectScores?.other_subjective || 0
+      });
       console.log('[useSaveAnswers] DEBUG - selectedBookletId detalhado:', {
         value: selectedBookletId,
         type: typeof selectedBookletId,
@@ -150,13 +160,26 @@ export const useSaveAnswers = ({
             answers: preparedData.answers,
             all_questions_answered: Object.keys(preparedData.answers).length > 0,
             // SALVAR apenas as pontuações subjetivas (remover subjective_scores duplicado)
-            subjectives: {
-              discursive: discursiveScore || 0,
-              case_study_1: caseStudy1Score || 0,
-              case_study_2: caseStudy2Score || 0,
-              case_study_3: caseStudy3Score || 0,
-              other_subjective: subjectScores?.other_subjective || 0
-            }
+            subjectives: (() => {
+              const subjectiveValues = {
+                discursive: discursiveScore || 0,
+                case_study_1: caseStudy1Score || 0,
+                case_study_2: caseStudy2Score || 0,
+                case_study_3: caseStudy3Score || 0,
+                other_subjective: subjectScores?.other_subjective || 0
+              };
+              
+              console.log('[useSaveAnswers] Construindo subjectives com valores:', subjectiveValues);
+              console.log('[useSaveAnswers] Valores originais:', {
+                discursiveScore,
+                caseStudy1Score,
+                caseStudy2Score,
+                caseStudy3Score,
+                'subjectScores?.other_subjective': subjectScores?.other_subjective
+              });
+              
+              return subjectiveValues;
+            })()
             // score, subject_scores, subject_scores_tot serão atualizados pelo recalculateUserScore
           },
           selected_booklet_id: bookletIdString,
