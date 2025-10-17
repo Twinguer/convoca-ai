@@ -110,24 +110,18 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
       // Limpar cache local para forçar busca de dados frescos
       rankingCache.clear();
       
-      // Se usuário autenticado, fazer recálculo completo
-      if (isAuthenticated) {
-        const result = await refreshData();
-        
-        if (result?.error) {
-          toast({
-            title: "Erro na atualização",
-            description: `Houve um problema ao recalcular as pontuações: ${result.error}`,
-            variant: "destructive",
-            duration: 5000
-          });
-          return;
-        }
-      }
+      // Atualizar dados
+      const result = await refreshData();
       
-      // Para todos os usuários (autenticados ou não), atualizar dados
-      await refetchRankings();
-      await refetchCount();
+      if (result?.error) {
+        toast({
+          title: "Erro na atualização",
+          description: `Houve um problema ao atualizar: ${result.error}`,
+          variant: "destructive",
+          duration: 5000
+        });
+        return;
+      }
       
       toast({
         title: "Classificação atualizada",

@@ -205,11 +205,7 @@ export function useResultadosData(concursoId?: string) {
   
   // Function to manually refresh all data
   const refreshData = async () => {
-    // console.log("[useResultadosData] ===== INÍCIO refreshData =====");
-    // console.log("[useResultadosData] Atualizando rankings manualmente");
-    // console.log("[useResultadosData] ID do concurso:", id);
-    // console.log("[useResultadosData] Usuário autenticado:", isAuthenticated);
-    // console.log("[useResultadosData] Timestamp:", new Date().toISOString());
+    logger.info('Manual refresh initiated', 'USE_RESULTADOS_DATA', { concursoId: id });
     
     if (!id) {
       console.error("[useResultadosData] ID do concurso não fornecido");
@@ -218,97 +214,19 @@ export function useResultadosData(concursoId?: string) {
         error: "ID do concurso não fornecido"
       };
     }
-
-    // Verifica se o usuário está autenticado
-    if (!isAuthenticated) {
-      // console.log("[useResultadosData] Usuário não autenticado, atualizando apenas os dados locais");
-      logger.info('Usuário não autenticado, atualizando apenas os dados locais', 'USE_RESULTADOS_DATA');
-      
-      try {
-        // console.log("[useResultadosData] Chamando refetchRankings...");
-        await refetchRankings();
-        // console.log("[useResultadosData] refetchRankings concluído");
-        
-        // console.log("[useResultadosData] Chamando refetchCount...");
-        await refetchCount();
-        // console.log("[useResultadosData] refetchCount concluído");
-      } catch (error) {
-        console.error("[useResultadosData] Erro ao atualizar dados locais:", error);
-      }
-      
-      return {
-        success: true,
-        message: "Dados atualizados localmente"
-      };
-    }
-      
-    // Recalcular pontuações para todos os usuários apenas se autenticado
+    
     try {
-      // Validar se o ID é um UUID válido antes de chamar recalculateAllUserScores
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      const isValidUUID = uuidRegex.test(id);
-
-      if (!isValidUUID) {
-        console.error("[useResultadosData] ID não é um UUID válido:", id);
-        logger.error('ID não é um UUID válido', 'USE_RESULTADOS_DATA', { id });
-        return {
-          success: false,
-          error: "ID do concurso inválido"
-        };
-      }
-
-      // console.log("[useResultadosData] ===== INICIANDO RECÁLCULO =====");
-      // console.log("[useResultadosData] Chamando recalculateAllUserScores para concurso:", id);
-      logger.info('Chamando recalculateAllUserScores para concurso', 'USE_RESULTADOS_DATA', { concursoId: id });
+      // Limpar cache do React Query forçando busca fresca
+      await Promise.all([
+        refetchRankings(),
+        refetchCount()
+      ]);
       
-      const result = await recalculateAllUserScores(id);
-      // console.log("[useResultadosData] ===== RESULTADO RECÁLCULO =====");
-      // console.log("[useResultadosData] Resultado do recalculateAllUserScores:", result);
-      
-      if (!result.success) {
-        console.error("[useResultadosData] ===== ERRO NO RECÁLCULO =====");
-        console.error("[useResultadosData] Erro ao recalcular pontuações:", result.error);
-        logger.error('Erro ao recalcular pontuações', 'USE_RESULTADOS_DATA', result.error);
-        return { success: false, error: result.error };
-      } else {
-        // console.log("[useResultadosData] ===== RECÁLCULO BEM-SUCEDIDO =====");
-        // console.log("[useResultadosData] Pontuações recalculadas com sucesso:", result);
-        logger.info('Pontuações recalculadas com sucesso', 'USE_RESULTADOS_DATA', result);
-        
-        // Força imediatamente uma atualização dos dados
-        // console.log("[useResultadosData] ===== ATUALIZANDO UI =====");
-        // console.log("[useResultadosData] Atualizando rankings e contagem...");
-        
-        try {
-          // console.log("[useResultadosData] Chamando refetchRankings...");
-          await refetchRankings();
-          // console.log("[useResultadosData] ===== RANKINGS ATUALIZADOS =====");
-          // console.log("[useResultadosData] Rankings atualizados com sucesso");
-        } catch (refetchError) {
-          console.error("[useResultadosData] ===== ERRO AO ATUALIZAR RANKINGS =====");
-          console.error("[useResultadosData] Erro ao atualizar rankings:", refetchError);
-        }
-        
-        try {
-          // console.log("[useResultadosData] Chamando refetchCount...");
-          await refetchCount();
-          // console.log("[useResultadosData] ===== CONTAGEM ATUALIZADA =====");
-          // console.log("[useResultadosData] Contagem atualizada com sucesso");
-        } catch (countError) {
-          console.error("[useResultadosData] ===== ERRO AO ATUALIZAR CONTAGEM =====");
-          console.error("[useResultadosData] Erro ao atualizar contagem:", countError);
-        }
-        
-        // console.log("[useResultadosData] ===== FIM refreshData =====");
-        // console.log("[useResultadosData] Rankings e contagem atualizados");
-        
-        return { success: true, updatedCount: result.updatedCount };
-      }
-    } catch (err) {
-      console.error("[useResultadosData] ===== ERRO INESPERADO =====");
-      console.error("[useResultadosData] Erro inesperado ao recalcular pontuações:", err);
-      logger.error('Erro inesperado ao recalcular pontuações', 'USE_RESULTADOS_DATA', err);
-      return { success: false, error: String(err) };
+      logger.info('Data refreshed successfully', 'USE_RESULTADOS_DATA');
+      return { success: true };
+    } catch (error) {
+      logger.error('Error refreshing data', 'USE_RESULTADOS_DATA', error);
+      return { success: false, error: String(error) };
     }
   };
   
