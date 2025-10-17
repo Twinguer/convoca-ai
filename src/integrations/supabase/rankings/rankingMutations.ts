@@ -517,13 +517,12 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         [rankingId]: { // Usar rankingId correto
           ...userRanking.consolidated_data.rankings[rankingId],
           user_data: {
+            ...userRanking.consolidated_data.rankings[rankingId].user_data, // Preservar todos os campos existentes
             score: totalScore, // Total geral (objetivas + subjetivas)
-            answers: userRanking.consolidated_data.rankings[rankingId].user_data.answers, // Manter answers
             subject_scores_tot: subjectScoresTot, // Total das objetivas - ANTES de subject_scores
             subject_scores: correctSubjectScores, // Estrutura correta (apenas objetivas)
             subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
             subjectives: correctSubjectives, // Pontuações subjetivas individuais
-            all_questions_answered: userRanking.consolidated_data.rankings[rankingId].user_data.all_questions_answered,
             status: minimumScoreRequired > 0 && totalScore < minimumScoreRequired ? 'eliminado' : 'classificado',
             last_calculated: new Date().toISOString()
           }

@@ -179,7 +179,9 @@ export const useSaveAnswers = ({
               });
               
               return subjectiveValues;
-            })()
+            })(),
+            // Preservar reservation_type dentro de user_data
+            reservation_type: updatedConsolidatedData.rankings[rankingId].user_data?.reservation_type || 'Ampla Concorrência'
             // score, subject_scores, subject_scores_tot serão atualizados pelo recalculateUserScore
           },
           selected_booklet_id: bookletIdString,

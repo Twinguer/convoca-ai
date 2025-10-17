@@ -435,7 +435,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             "case_study_3": 0,
             "other_subjective": 0
           },
-          all_questions_answered: false
+          all_questions_answered: false,
+          reservation_type: selectedQuota  // MOVIDO PARA DENTRO DE user_data
         },
         concurso_id: concurso.id,
         control_metadata: {
@@ -445,8 +446,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           is_score_recalculated: false
         },
         selected_booklet_id: booklets.length > 0 ? (selectedBooklet as string || booklets[0].id) : null,
-        edit_count: 0,
-        reservation_type: selectedQuota
+        edit_count: 0
       };
 
       console.log('[ParticipationForm] Creating ranking with selectedQuota:', selectedQuota);
