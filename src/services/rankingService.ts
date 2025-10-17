@@ -57,17 +57,17 @@ export const fetchUserRankings = async (
   try {
     logger.ranking('Fetching rankings', `concursoId: ${concursoId}, page: ${page}, limit: ${limit}`);
 
-    // Verificar cache local primeiro (DESABILITADO TEMPORARIAMENTE PARA DEBUG)
-    // const localCachedRankings = rankingCache.getRankings(concursoId, page, limit);
+    // Verificar cache local primeiro
+    const localCachedRankings = rankingCache.getRankings(concursoId, page, limit);
     
-    // if (localCachedRankings) {
-    //   logger.ranking('Rankings loaded from local cache', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
+    if (localCachedRankings) {
+      logger.ranking('Rankings loaded from local cache', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
       
-    //   const endTime = performance.now();
-    //   logger.performance('fetchUserRankings (local cached)', endTime - startTime, 'RANKING_SERVICE');
+      const endTime = performance.now();
+      logger.performance('fetchUserRankings (local cached)', endTime - startTime, 'RANKING_SERVICE');
       
-    //   return localCachedRankings;
-    // }
+      return localCachedRankings;
+    }
     
     // Query usando nova estrutura normalizada
     logger.ranking('Executing ranking query V2', `rankingId: ${concursoId}, offset: ${offset}, limit: ${limit}`);

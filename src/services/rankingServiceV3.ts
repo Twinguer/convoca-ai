@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { rankingCache } from './rankingCache';
 
 export interface RankingV3 {
   id: string;
@@ -56,6 +57,20 @@ export const fetchUserRankingsV3 = async (
       limit
     });
 
+    const page = Math.floor(offset / limit) + 1;
+
+    // Verificar cache local primeiro
+    const localCachedRankings = rankingCache.getRankings(concursoId, page, limit, reservationType);
+    
+    if (localCachedRankings) {
+      logger.ranking('Rankings loaded from local cache V3', `concursoId: ${concursoId}, page: ${page}, count: ${localCachedRankings.length}`);
+      
+      const endTime = performance.now();
+      logger.performance('fetchUserRankingsV3 (local cached)', endTime - startTime, 'RANKING_SERVICE_V3');
+      
+      return localCachedRankings as RankingV3[];
+    }
+
     // Query otimizada com JOIN nativo
     let query = supabase
       .from('user_rankings')
@@ -109,6 +124,9 @@ export const fetchUserRankingsV3 = async (
         belowBlockMinimums: [],
       };
     });
+
+    // Armazenar no cache local
+    rankingCache.setRankings(concursoId, rankings, page, limit, reservationType);
 
     const duration = performance.now() - startTime;
     logger.performance('fetchUserRankingsV3 completed', duration, 'RANKING_SERVICE_V3', {
