@@ -538,11 +538,9 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
 
       if (unansweredQuestions.length > 0) {
-        console.log('[AnswerSheet.handleSaveAnswers] AVISO - Questões não respondidas:', unansweredQuestions);
-        console.log('[AnswerSheet.handleSaveAnswers] PERMITINDO SALVAMENTO MESMO COM QUESTÕES VAZIAS');
-        // COMENTADO PARA PERMITIR SALVAMENTO EM consolidated_data
-        // setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
-        // return;
+        console.log('[AnswerSheet.handleSaveAnswers] ERRO - Questões não respondidas:', unansweredQuestions);
+        setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
+        return;
       }
     }
 

@@ -192,8 +192,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     // Mapeamento entre abreviações e nomes completos
     const quotaMapping: Record<string, string> = {
       "ac": "Ampla Concorrência",
-      "ppp": "PPP", 
-      "pcd": "PCD",
+      "ppp": "ppp", 
+      "pcd": "pcd",
       "hip": "Hipossuficientes",
       "ind": "Indígenas",
       "tran": "Pessoas Trans"
@@ -287,8 +287,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
-    "PPP": "PPP",
-    "PCD": "PCD",
+    "ppp": "ppp",
+    "pcd": "pcd",
     "Hipossuficientes": "Hip",
     "Indígenas": "Ind",
     "Pessoas Trans": "Tra"
@@ -517,8 +517,8 @@ const RankingTableContent: React.FC<{
             case2: concurso.subjects?.case2,
             case3: concurso.subjects?.case3,
             other: concurso.subjects?.other,
-            has_discursive: concurso.has_discursive,
-            has_case_study_1: concurso.has_case_study_1
+            has_discursive: concurso.subjects?.discr || false,
+            has_case_study_1: concurso.subjects?.case1 || false
           });
           return null;
         })()}
@@ -548,7 +548,7 @@ const RankingTableContent: React.FC<{
           
           return hasOther ? (
             <TableHead className="text-right">
-              {concurso.other_subjective_name || 'Outro'}
+              {concurso.subjects?.name_other || 'Outro'}
             </TableHead>
           ) : null;
         })()}

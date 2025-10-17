@@ -75,7 +75,7 @@ export const StateSelector: React.FC<StateSelectorProps> = ({
 
   return (
     <FormItem>
-      <FormLabel>Localidade</FormLabel>
+      <FormLabel>Localidade <span className="text-red-500">*</span></FormLabel>
       <div className="flex flex-wrap gap-2">
         {selectedStates.map(estado => (
           <div key={estado} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-sm">

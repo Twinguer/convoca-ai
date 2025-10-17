@@ -41,7 +41,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormField control={form.control} name="predefined_job_title" render={({
             field
           }) => <FormItem>
-                  <FormLabel>Cargo</FormLabel>
+                  <FormLabel>Cargo <span className="text-red-500">*</span></FormLabel>
                   <Select value={field.value} onValueChange={value => {
               field.onChange(value);
               handleJobTitleChange(value);
@@ -63,7 +63,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             {isCustomTitle && <FormField control={form.control} name="custom_job_title" render={({
             field
           }) => <FormItem className="mt-2">
-                    <FormLabel>Cargo personalizado</FormLabel>
+                    <FormLabel>Cargo personalizado <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -88,7 +88,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <FormField control={form.control} name="orgao" render={({
           field
         }) => <FormItem>
-                <FormLabel>Órgão</FormLabel>
+                <FormLabel>Órgão <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                   <Input 
                     {...field} 
@@ -118,7 +118,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormField control={form.control} name="banca" render={({
             field
           }) => <FormItem>
-                  <FormLabel>Banca</FormLabel>
+                  <FormLabel>Banca <span className="text-red-500">*</span></FormLabel>
                   <Select value={field.value} onValueChange={value => {
               field.onChange(value);
               handleBancaChange(value);
@@ -142,7 +142,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             {isCustomBanca && <FormField control={form.control} name="custom_banca" render={({
             field
           }) => <FormItem className="mt-2">
-                    <FormLabel>Banca personalizada</FormLabel>
+                    <FormLabel>Banca personalizada <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 

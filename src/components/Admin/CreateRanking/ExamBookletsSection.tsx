@@ -288,7 +288,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <FileText className="h-5 w-5" />
-          Cadernos de Prova
+          Cadernos de Prova <span className="text-red-500">*</span>
           {isBookletsSaved && <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">
               Salvos
             </span>}
