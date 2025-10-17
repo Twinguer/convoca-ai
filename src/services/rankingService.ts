@@ -244,7 +244,7 @@ export const fetchUserRankings = async (
                 belowBlockMinimums: [],
                 // Campos adicionais
                 reservationType: rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência',
-                displayReservation: rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência',
+                displayReservation: getReservationAbbreviation(rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência'),
                 quotaPosition: 0 // Will be calculated later
               });
             }
@@ -319,8 +319,8 @@ export const fetchUserRankings = async (
         belowDisciplineMinimums: [],
         belowBlockMinimums: [],
         // Dados do ranking
-        reservationType: ranking.user_data?.reservation_type || 'Ampla Concorrência',
-        displayReservation: getReservationAbbreviation(ranking.user_data?.reservation_type || 'Ampla Concorrência'),
+        reservationType: ranking.reservationType,
+        displayReservation: getReservationAbbreviation(ranking.reservationType),
         id: ranking.id,
       };
     });
