@@ -114,6 +114,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     setCaseStudy2Score,
     caseStudy3Score,
     setCaseStudy3Score,
+    otherSubjectiveScore,
+    setOtherSubjectiveScore,
     isDiscursiveSection,
     getSectionQuestions,
     sectionQuestions,
@@ -476,6 +478,40 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     console.log('[AnswerSheet] DEBUG - userRankingData.subjectives:', userRankingData?.subjectives);
     setSubjectScores(initialScores);
   }, [userRankingData, concurso]);
+
+  // NOVO: Sincronizar subjectScores com valores do useAnswerSheet hook
+  useEffect(() => {
+    console.log('[AnswerSheet] 🔄 Sincronizando subjectScores com valores do hook:', {
+      discursiveScore,
+      caseStudy1Score,
+      caseStudy2Score,
+      caseStudy3Score,
+      otherSubjectiveScore
+    });
+    
+    setSubjectScores(prev => {
+      const updated = { ...prev };
+      
+      if (discursiveScore !== null && discursiveScore !== undefined) {
+        updated.discursive = discursiveScore;
+      }
+      if (caseStudy1Score !== null && caseStudy1Score !== undefined) {
+        updated.case_study_1 = caseStudy1Score;
+      }
+      if (caseStudy2Score !== null && caseStudy2Score !== undefined) {
+        updated.case_study_2 = caseStudy2Score;
+      }
+      if (caseStudy3Score !== null && caseStudy3Score !== undefined) {
+        updated.case_study_3 = caseStudy3Score;
+      }
+      if (otherSubjectiveScore !== null && otherSubjectiveScore !== undefined) {
+        updated.other_subjective = otherSubjectiveScore;
+      }
+      
+      console.log('[AnswerSheet] ✅ subjectScores atualizados:', updated);
+      return updated;
+    });
+  }, [discursiveScore, caseStudy1Score, caseStudy2Score, caseStudy3Score, otherSubjectiveScore]);
 
   // Update nullified questions set
   useEffect(() => {

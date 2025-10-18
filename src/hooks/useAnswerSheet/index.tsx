@@ -264,6 +264,8 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     setCaseStudy2Score,
     caseStudy3Score,
     setCaseStudy3Score,
+    otherSubjectiveScore,
+    setOtherSubjectiveScore,
     isDiscursiveSection: isDiscursiveSection(),
     getSectionQuestions,
     sectionQuestions,
