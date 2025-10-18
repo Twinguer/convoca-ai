@@ -22,7 +22,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('id, disciplines, subjects, exam_type, alternatives_count, official_answers')
+      .select('id, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_quota_minimum_score, quota_minimum_score')
       .eq('id', concursoId)
       .single();
 
@@ -521,6 +521,78 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       "other_subjective": otherSubjectiveScore || 0
     };
 
+    // ===== NEW: Minimum thresholds evaluation =====
+    const belowDisciplineMinimums: string[] = [];
+    const belowBlockMinimums: string[] = [];
+
+    // 1) Discipline-level minimums (objective disciplines)
+    for (const [discType, score] of Object.entries(weightedDisciplineScores)) {
+      const min = disciplineMinimums[discType] || 0;
+      if (min > 0 && score < min) {
+        belowDisciplineMinimums.push(discType);
+      }
+    }
+
+    // 2) Subjective minimums from concurso.subjects
+    const subj = (concurso as any).subjects || {};
+    if ((subj.discr_min_score || 0) > 0 && (discursiveScore || 0) < (subj.discr_min_score || 0)) {
+      belowDisciplineMinimums.push('discursive');
+    }
+    if ((subj.case1_min_score || 0) > 0 && (caseStudy1Score || 0) < (subj.case1_min_score || 0)) {
+      belowDisciplineMinimums.push('case_study_1');
+    }
+    if ((subj.case2_min_score || 0) > 0 && (caseStudy2Score || 0) < (subj.case2_min_score || 0)) {
+      belowDisciplineMinimums.push('case_study_2');
+    }
+    if ((subj.case3_min_score || 0) > 0 && (caseStudy3Score || 0) < (subj.case3_min_score || 0)) {
+      belowDisciplineMinimums.push('case_study_3');
+    }
+    if ((subj.other_min_score || 0) > 0 && (otherSubjectiveScore || 0) < (subj.other_min_score || 0)) {
+      belowDisciplineMinimums.push('other_subjective');
+    }
+
+    // 3) Block-level minimums using disciplines mapping
+    const blockMinimums: Record<string, number> = {};
+    const blockScores: Record<string, number> = {};
+    const disciplineToBlock: Record<string, string> = {};
+
+    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      for (const block of concurso.disciplines as any[]) {
+        const blockId = block.id || block.name;
+        const blockMin = block.minimum_score || 0;
+        if (blockId) {
+          blockMinimums[blockId] = blockMin;
+          blockScores[blockId] = 0;
+        }
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const d of block.disciplines) {
+            if (d?.type && d.isEnabled) {
+              disciplineToBlock[d.type] = blockId;
+            }
+          }
+        }
+      }
+    }
+
+    for (const [discType, wScore] of Object.entries(weightedDisciplineScores)) {
+      const bId = disciplineToBlock[discType];
+      if (bId) {
+        blockScores[bId] = (blockScores[bId] || 0) + (wScore || 0);
+      }
+    }
+
+    for (const [bId, bMin] of Object.entries(blockMinimums)) {
+      if ((bMin || 0) > 0 && (blockScores[bId] || 0) < (bMin || 0)) {
+        belowBlockMinimums.push(bId);
+      }
+    }
+
+    // 4) Global minimum (only objective total, excluding subjectives)
+    const hasGlobalMin = (concurso as any).has_minimum_score === true && ((concurso as any).total_minimum_score || 0) > 0;
+    const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < ((concurso as any).total_minimum_score || 0)) : false;
+
+    const belowMinimum = isBelowGlobalMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0;
+
     // Atualizar a pontuação do usuário no consolidated_data
     const updatedConsolidatedData = {
       ...userRanking.consolidated_data,
@@ -535,9 +607,14 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             object_scores: correctSubjectScores, // Estrutura correta (apenas objetivas)
             subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
             subjectives: correctSubjectives, // Pontuações subjetivas individuais
-            status: minimumScoreRequired > 0 && totalScore < minimumScoreRequired ? 'eliminado' : 'classificado',
+            status: belowMinimum ? 'eliminado' : 'classificado',
             last_calculated: new Date().toISOString()
-          }
+          },
+          // Persistir informações de mínimos para uso no front
+          belowMinimum: belowMinimum,
+          belowDisciplineMinimums: belowDisciplineMinimums,
+          belowBlockMinimums: belowBlockMinimums,
+          status: belowMinimum ? 'eliminado' : 'classificado'
         }
       }
     };

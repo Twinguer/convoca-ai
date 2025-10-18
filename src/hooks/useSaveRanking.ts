@@ -278,7 +278,12 @@ export const useSaveRanking = () => {
         vagas: ensureNumeric(formValues.vagas),
         inscritos: ensureNumeric(formValues.inscritos),
         etapa_atual: formValues.etapa_atual,
-        link: formValues.link
+        link: formValues.link,
+        // Pontuações mínimas globais/quota
+        has_minimum_score: !!formValues.has_minimum_score,
+        total_minimum_score: ensureNumeric(formValues.total_minimum_score),
+        has_quota_minimum_score: !!formValues.has_quota_minimum_score,
+        quota_minimum_score: ensureNumeric(formValues.quota_minimum_score)
       };
 
       // Remove any temporary fields not needed in database
@@ -319,6 +324,11 @@ export const useSaveRanking = () => {
           disciplines: formValues.disciplines,
           subjects: subjectsStructure,
           has_cota: hasCotaStructure,
+          // Pontuações mínimas globais/quota
+          has_minimum_score: !!formValues.has_minimum_score,
+          total_minimum_score: ensureNumeric(formValues.total_minimum_score),
+          has_quota_minimum_score: !!formValues.has_quota_minimum_score,
+          quota_minimum_score: ensureNumeric(formValues.quota_minimum_score),
           form_config: formValues.form_config || {},
           official_answers: formValues.official_answers || {},
           exam_booklets: formValues.exam_booklets || [],
@@ -386,6 +396,11 @@ export const useSaveRanking = () => {
             disciplines: disciplinesData,
             subjects: createSubjectsStructure(formValues),
             has_cota: createHasCotaStructure(formValues),
+            // Pontuações mínimas globais/quota
+            has_minimum_score: !!formValues.has_minimum_score,
+            total_minimum_score: ensureNumeric(formValues.total_minimum_score),
+            has_quota_minimum_score: !!formValues.has_quota_minimum_score,
+            quota_minimum_score: ensureNumeric(formValues.quota_minimum_score),
             form_config: formValues.form_config || {},
             official_answers: formValues.official_answers || {},
             exam_booklets: formValues.exam_booklets || [],
