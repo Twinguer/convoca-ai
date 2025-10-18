@@ -134,35 +134,43 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   // Handle data loading with useEffect instead of onSuccess
   useEffect(() => {
     if (existingAnswersData) {
-      console.log('[useAnswerSheet] Dados carregados:', existingAnswersData);
-      console.log('[useAnswerSheet] Answers recebidas:', existingAnswersData.answers);
-      console.log('[useAnswerSheet] Número de respostas:', Object.keys(existingAnswersData.answers || {}).length);
+      console.log('[useAnswerSheet] 📊 Dados carregados:', existingAnswersData);
+      console.log('[useAnswerSheet] Pontuações subjetivas recebidas:', {
+        discursiveScore: existingAnswersData.discursiveScore,
+        caseStudy1Score: existingAnswersData.caseStudy1Score,
+        caseStudy2Score: existingAnswersData.caseStudy2Score,
+        caseStudy3Score: existingAnswersData.caseStudy3Score,
+        otherSubjectiveScore: existingAnswersData.otherSubjectiveScore
+      });
       
       if (existingAnswersData.answers) {
-        console.log('[useAnswerSheet] ANTES setAnswers - answers atuais:', answers);
+        console.log('[useAnswerSheet] Carregando', Object.keys(existingAnswersData.answers).length, 'respostas objetivas');
         setAnswers(existingAnswersData.answers);
-        console.log('[useAnswerSheet] DEPOIS setAnswers - answers definidas:', existingAnswersData.answers);
-        
-        // Também definir as pontuações subjetivas
-        if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
-          setDiscursiveScore(existingAnswersData.discursiveScore);
-        }
-        if (existingAnswersData.caseStudy1Score !== undefined && existingAnswersData.caseStudy1Score !== null) {
-          setCaseStudy1Score(existingAnswersData.caseStudy1Score);
-        }
-        if (existingAnswersData.caseStudy2Score !== undefined && existingAnswersData.caseStudy2Score !== null) {
-          setCaseStudy2Score(existingAnswersData.caseStudy2Score);
-        }
-        if (existingAnswersData.caseStudy3Score !== undefined && existingAnswersData.caseStudy3Score !== null) {
-          setCaseStudy3Score(existingAnswersData.caseStudy3Score);
-        }
-      } else {
-        console.log('[useAnswerSheet] ATENÇÃO: Nenhuma resposta encontrada nos dados carregados');
       }
-    } else {
-      console.log('[useAnswerSheet] ATENÇÃO: existingAnswersData está vazio ou undefined');
+      
+      // Definir TODAS as pontuações subjetivas (incluindo otherSubjectiveScore)
+      if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
+        console.log('[useAnswerSheet] ✅ Definindo discursiveScore:', existingAnswersData.discursiveScore);
+        setDiscursiveScore(existingAnswersData.discursiveScore);
+      }
+      if (existingAnswersData.caseStudy1Score !== undefined && existingAnswersData.caseStudy1Score !== null) {
+        console.log('[useAnswerSheet] ✅ Definindo caseStudy1Score:', existingAnswersData.caseStudy1Score);
+        setCaseStudy1Score(existingAnswersData.caseStudy1Score);
+      }
+      if (existingAnswersData.caseStudy2Score !== undefined && existingAnswersData.caseStudy2Score !== null) {
+        console.log('[useAnswerSheet] ✅ Definindo caseStudy2Score:', existingAnswersData.caseStudy2Score);
+        setCaseStudy2Score(existingAnswersData.caseStudy2Score);
+      }
+      if (existingAnswersData.caseStudy3Score !== undefined && existingAnswersData.caseStudy3Score !== null) {
+        console.log('[useAnswerSheet] ✅ Definindo caseStudy3Score:', existingAnswersData.caseStudy3Score);
+        setCaseStudy3Score(existingAnswersData.caseStudy3Score);
+      }
+      if (existingAnswersData.otherSubjectiveScore !== undefined && existingAnswersData.otherSubjectiveScore !== null) {
+        console.log('[useAnswerSheet] ✅ Definindo otherSubjectiveScore:', existingAnswersData.otherSubjectiveScore);
+        setOtherSubjectiveScore(existingAnswersData.otherSubjectiveScore);
+      }
     }
-  }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
+  }, [existingAnswersData, setAnswers, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score, setOtherSubjectiveScore]);
 
   // Handle fetch errors
   useEffect(() => {
