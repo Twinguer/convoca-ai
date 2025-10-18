@@ -167,23 +167,29 @@ export const useSaveAnswers = ({
               });
               return totalAnswers > 0;
             })(),
-            // SALVAR apenas as pontuações subjetivas (remover subjective_scores duplicado)
+            // SALVAR pontuações subjetivas (sempre preservar valores existentes quando não forem editados)
             subjectives: (() => {
+              // Buscar valores existentes para preservá-los se não forem alterados
+              const existingSubjectives = updatedConsolidatedData.rankings[rankingId].user_data?.subjectives || {};
+              
               const subjectiveValues = {
-                discursive: discursiveScore || 0,
-                case_study_1: caseStudy1Score || 0,
-                case_study_2: caseStudy2Score || 0,
-                case_study_3: caseStudy3Score || 0,
-                other_subjective: subjectScores?.other_subjective || 0
+                discursive: discursiveScore ?? existingSubjectives.discursive ?? 0,
+                case_study_1: caseStudy1Score ?? existingSubjectives.case_study_1 ?? 0,
+                case_study_2: caseStudy2Score ?? existingSubjectives.case_study_2 ?? 0,
+                case_study_3: caseStudy3Score ?? existingSubjectives.case_study_3 ?? 0,
+                other_subjective: subjectScores?.other_subjective ?? existingSubjectives.other_subjective ?? 0
               };
               
-              console.log('[useSaveAnswers] Construindo subjectives com valores:', subjectiveValues);
-              console.log('[useSaveAnswers] Valores originais:', {
-                discursiveScore,
-                caseStudy1Score,
-                caseStudy2Score,
-                caseStudy3Score,
-                'subjectScores?.other_subjective': subjectScores?.other_subjective
+              console.log('[useSaveAnswers] 💾 Salvando subjectives:', {
+                valores_recebidos: {
+                  discursiveScore,
+                  caseStudy1Score,
+                  caseStudy2Score,
+                  caseStudy3Score,
+                  'subjectScores?.other_subjective': subjectScores?.other_subjective
+                },
+                valores_existentes: existingSubjectives,
+                valores_finais: subjectiveValues
               });
               
               return subjectiveValues;

@@ -97,9 +97,9 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
           console.log('[fetchExistingAnswers] Nenhuma estrutura de respostas encontrada em user_data');
         }
 
-        // Extrair pontuações subjetivas da estrutura atual
-        if (rankingData.user_data.subjective_scores) {
-          subjectiveScores = rankingData.user_data.subjective_scores;
+        // Extrair pontuações subjetivas da estrutura atual (subjectives, não subjective_scores)
+        if (rankingData.user_data.subjectives) {
+          subjectiveScores = rankingData.user_data.subjectives;
         }
       }
     }
@@ -108,16 +108,24 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
     console.log('[fetchExistingAnswers] Pontuações subjetivas:', subjectiveScores);
     console.log('[fetchExistingAnswers] Número de respostas encontradas:', Object.keys(answers).length);
 
+    console.log('[fetchExistingAnswers] Retornando dados com pontuações subjetivas:', {
+      discursive: subjectiveScores?.discursive,
+      case_study_1: subjectiveScores?.case_study_1,
+      case_study_2: subjectiveScores?.case_study_2,
+      case_study_3: subjectiveScores?.case_study_3,
+      other_subjective: subjectiveScores?.other_subjective
+    });
+
     return {
       answers,
-      discursiveScore: subjectiveScores?.discursive || null,
-      caseStudy1Score: subjectiveScores?.case_study_1 || null,
-      caseStudy2Score: subjectiveScores?.case_study_2 || null,
-      caseStudy3Score: subjectiveScores?.case_study_3 || null,
-      otherSubjectiveScore: subjectiveScores?.other || null,
+      discursiveScore: subjectiveScores?.discursive ?? null,
+      caseStudy1Score: subjectiveScores?.case_study_1 ?? null,
+      caseStudy2Score: subjectiveScores?.case_study_2 ?? null,
+      caseStudy3Score: subjectiveScores?.case_study_3 ?? null,
+      otherSubjectiveScore: subjectiveScores?.other_subjective ?? null,
       subjectScores: subjectiveScores || {},
       selectedBooklet: selectedBooklet,
-      editCount: consolidatedData?.rankings?.[rankingId]?.user_data?.edit_count || 0,
+      editCount: consolidatedData?.rankings?.[rankingId]?.edit_count || 0,
       consolidatedData: consolidatedData
     };
 
