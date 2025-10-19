@@ -60,7 +60,7 @@ const createHasCotaStructure = (formValues: any): any => {
     ind: formValues.has_indigenas === true,
     hip: formValues.has_hipossuficientes === true,
     tra: formValues.has_transsexuais === true,
-    min_cota: formValues.has_quota_minimum_score ? (formValues.quota_minimum_score || 0) : 0
+    min_cota: 0 // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
   };
 };
 
@@ -117,11 +117,8 @@ export const useSaveRanking = () => {
         formValues.total_minimum_score = 0;
       }
       
-      if (formValues.has_quota_minimum_score) {
-        formValues.quota_minimum_score = ensureNumeric(formValues.quota_minimum_score);
-      } else {
-        formValues.quota_minimum_score = 0;
-      }
+      // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
+      formValues.quota_minimum_score = 0;
 
       // Don't force custom knowledge mode - let the form values determine this
       
@@ -187,8 +184,39 @@ export const useSaveRanking = () => {
         // Verificar se estamos lidando com a estrutura de blocos
         if (formValues.disciplines.length > 0 && 'name' in formValues.disciplines[0] && 'disciplines' in formValues.disciplines[0]) {
           // Estrutura hierárquica - processar e adicionar metadados do bloco às disciplinas
-          formValues.disciplines.forEach((block: any) => {
+          formValues.disciplines.forEach((block: any, index: number) => {
+            console.log('[useSaveRanking] DEBUG - Processando bloco:', { index, blockId: block.id, blockName: block.name });
+            
             if (block.disciplines && Array.isArray(block.disciplines)) {
+              // Mapear campos de pontuação mínima global para o primeiro bloco
+              if (index === 0) {
+                const totalScore = formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0;
+                const quotaScore = formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0;
+                
+                console.log('[useSaveRanking] DEBUG - Mapeando campos de pontuação mínima:', {
+                  has_minimum_score: formValues.has_minimum_score,
+                  total_minimum_score: formValues.total_minimum_score,
+                  has_quota_minimum_score: formValues.has_quota_minimum_score,
+                  quota_minimum_score: formValues.quota_minimum_score,
+                  totalScore,
+                  quotaScore,
+                  blockId: block.id,
+                  blockName: block.name
+                });
+                
+                block.minimum_total_score = totalScore;
+                block.minimum_total_score_cotas = quotaScore;
+                
+                console.log('[useSaveRanking] DEBUG - Bloco após mapeamento:', {
+                  blockId: block.id,
+                  blockName: block.name,
+                  minimum_total_score: block.minimum_total_score,
+                  minimum_total_score_cotas: block.minimum_total_score_cotas
+                });
+              } else {
+                console.log('[useSaveRanking] DEBUG - Bloco não é o primeiro, pulando mapeamento:', { index, blockId: block.id });
+              }
+              
               block.disciplines.forEach((discipline: any) => {
                 // Adicionar informações do bloco à disciplina
                 discipline.blockId = block.id;
@@ -282,8 +310,7 @@ export const useSaveRanking = () => {
         // Pontuações mínimas globais/quota
         has_minimum_score: !!formValues.has_minimum_score,
         total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-        has_quota_minimum_score: !!formValues.has_quota_minimum_score,
-        quota_minimum_score: ensureNumeric(formValues.quota_minimum_score)
+        // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
       };
 
       // Remove any temporary fields not needed in database
@@ -327,8 +354,7 @@ export const useSaveRanking = () => {
           // Pontuações mínimas globais/quota
           has_minimum_score: !!formValues.has_minimum_score,
           total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-          has_quota_minimum_score: !!formValues.has_quota_minimum_score,
-          quota_minimum_score: ensureNumeric(formValues.quota_minimum_score),
+          // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
           form_config: formValues.form_config || {},
           official_answers: formValues.official_answers || {},
           exam_booklets: formValues.exam_booklets || [],
@@ -376,8 +402,8 @@ export const useSaveRanking = () => {
         // Determinar se há disciplinas customizadas baseado nas disciplinas criadas
         const hasCustomDisciplines = disciplinesData && disciplinesData.length > 0;
         
-        // console.log('[useSaveRanking] Usando disciplinas:', disciplinesData);
-        // console.log('[useSaveRanking] hasCustomDisciplines:', hasCustomDisciplines);
+        console.log('[useSaveRanking] DEBUG - Dados de disciplinas antes de salvar:', JSON.stringify(disciplinesData, null, 2));
+        console.log('[useSaveRanking] hasCustomDisciplines:', hasCustomDisciplines);
         
         const { error: updateError } = await supabase
           .from('concursos')
@@ -399,8 +425,7 @@ export const useSaveRanking = () => {
             // Pontuações mínimas globais/quota
             has_minimum_score: !!formValues.has_minimum_score,
             total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-            has_quota_minimum_score: !!formValues.has_quota_minimum_score,
-            quota_minimum_score: ensureNumeric(formValues.quota_minimum_score),
+            // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
             form_config: formValues.form_config || {},
             official_answers: formValues.official_answers || {},
             exam_booklets: formValues.exam_booklets || [],

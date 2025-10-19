@@ -230,7 +230,9 @@ export const useSaveAnswers = ({
       console.log('[useSaveAnswers] 🔄 Iniciando recálculo de pontuações...');
 
       try {
+        console.log('[useSaveAnswers] 🔄 Importando recalculateUserScore...');
         const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
+        console.log('[useSaveAnswers] 🔄 recalculateUserScore importado:', typeof recalculateUserScore);
         
         console.log('[useSaveAnswers] 🔄 Chamando recalculateUserScore com:', {
           userId: user.id,
@@ -245,9 +247,13 @@ export const useSaveAnswers = ({
           console.log('[useSaveAnswers] ✅ Pontuações recalculadas com sucesso');
         } else {
           console.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
+          // Não falhar silenciosamente - mostrar erro para o usuário
+          throw new Error(`Falha no recálculo de pontuações: ${recalculationResult.message}`);
         }
       } catch (recalculationError) {
         console.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
+        // Re-throw para interromper o fluxo e mostrar erro
+        throw new Error(`Erro no recálculo de pontuações: ${recalculationError.message}`);
       }
       
       console.log('[useSaveAnswers] Salvamento bem-sucedido, aguardando recálculo de pontuações...');

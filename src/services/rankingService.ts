@@ -239,9 +239,9 @@ export const fetchUserRankings = async (
                     .filter(([key]) => key.startsWith('custom_'))
                 ),
                 // Flags de mínimos não atingidos
-                belowMinimum: false, // Will be calculated later
-                belowDisciplineMinimums: [],
-                belowBlockMinimums: [],
+                belowMinimum: rankingDataItem.belowMinimum || false,
+                belowDisciplineMinimums: rankingDataItem.belowDisciplineMinimums || [],
+                belowBlockMinimums: rankingDataItem.belowBlockMinimums || [],
                 // Campos adicionais
                 reservationType: rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência',
                 displayReservation: getReservationAbbreviation(rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência'),

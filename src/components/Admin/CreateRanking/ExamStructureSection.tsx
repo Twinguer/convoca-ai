@@ -146,6 +146,8 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       id: uuidv4(),
       name: '',
       minimum_score: 0,
+      minimum_total_score: 0,
+      minimum_total_score_cotas: 0,
       disciplines: [{
         id: uuidv4(),
         name: '',

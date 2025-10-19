@@ -14,6 +14,8 @@ export interface DisciplineBlock {
   name: string;
   weight?: number;
   minimum_score?: number;
+  minimum_total_score?: number;
+  minimum_total_score_cotas?: number;
   disciplines: NestedDiscipline[]; 
   isEnabled?: boolean;  // Para compatibilidade com código que verifica isEnabled em qualquer item
   type?: string;       // Para compatibilidade com código que verifica type em qualquer item

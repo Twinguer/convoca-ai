@@ -134,9 +134,9 @@ export const fetchConcursoById = async (id: string): Promise<Concurso | null> =>
       has_minimum_score: rankingData.has_minimum_score,
       minimum_score_unit_type: null,
       total_minimum_score: rankingData.total_minimum_score,
-      has_quota_minimum_score: rankingData.has_quota_minimum_score,
-      quota_minimum_score: rankingData.quota_minimum_score,
-      quota_minimum_score_unit_type: null
+      // has_quota_minimum_score: removida - dados agora em JSONB
+      // quota_minimum_score: removida - dados agora em JSONB
+      // quota_minimum_score_unit_type: removida - dados agora em JSONB
     };
 
     // console.log('[fetchConcursoById] Ranking converted to concurso:', concursoData);

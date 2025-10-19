@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Search, Download, Filter } from 'lucide-react';
+import { formatScore } from '@/lib/utils';
 
 const Resultado: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -137,7 +138,7 @@ const Resultado: React.FC = () => {
                         {resultado.inscricao}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {resultado.nota.toFixed(2)}
+                        {formatScore(resultado.nota)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

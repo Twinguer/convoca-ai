@@ -1,5 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
+import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 
 // Função auxiliar para obter valor numérico
 const getNumericValue = (value: any): number => {
@@ -49,7 +50,11 @@ export const prepareAnswersData = (
     if (answer && answer.trim() !== '') {
       const questionNumber = parseInt(questionNum);
       const officialAnswer = officialAnswers[questionNum];
-      const sectionType = officialAnswer?.section_type || 'default';
+      
+      // CORREÇÃO: Usar a estrutura do concurso para mapear disciplina em vez do section_type do gabarito
+      const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
+      
+      console.log(`[prepareAnswersData] Questão ${questionNumber} mapeada para disciplina: ${sectionType}`);
       
       // Inicializar disciplina se não existir
       if (!organizedAnswers[selectedBookletId][sectionType]) {
@@ -65,8 +70,11 @@ export const prepareAnswersData = (
     nullifiedQuestions.forEach(questionNumber => {
       if (!answers[questionNumber]) {
         const defaultAnswer = concurso.exam_type === 'Certo ou Errado' ? 'C' : 'A';
-        const officialAnswer = officialAnswers[questionNumber.toString()];
-        const sectionType = officialAnswer?.section_type || 'default';
+        
+        // CORREÇÃO: Usar a estrutura do concurso para mapear disciplina em vez do section_type do gabarito
+        const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
+        
+        console.log(`[prepareAnswersData] Questão anulada ${questionNumber} mapeada para disciplina: ${sectionType}`);
         
         // Inicializar disciplina se não existir
         if (!organizedAnswers[selectedBookletId][sectionType]) {

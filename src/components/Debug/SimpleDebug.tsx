@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { formatScore } from '@/lib/utils';
 
 export const SimpleDebug: React.FC = () => {
   const { user } = useAuth();
@@ -234,7 +235,7 @@ export const SimpleDebug: React.FC = () => {
                 <div key={disciplineType} className="flex justify-between items-center p-2 border rounded">
                   <span className="font-medium">{disciplineType}</span>
                   <span className="px-2 py-1 rounded text-xs border border-gray-300">
-                    {score as number} pontos
+                    {formatScore(score as number)} pontos
                   </span>
                 </div>
               ))}
@@ -256,7 +257,7 @@ export const SimpleDebug: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-medium mb-2">Pontuação Total:</h3>
-                <p className="text-lg font-bold">{finalStructure.score || 0}</p>
+                <p className="text-lg font-bold">{formatScore(finalStructure.score || 0)}</p>
               </div>
             </div>
           </CardContent>

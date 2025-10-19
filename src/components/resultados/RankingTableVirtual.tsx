@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LoadMoreButton } from './LoadMoreButton';
 import { logger } from '@/utils/logger';
 import type { Ranking } from '@/services/rankingService';
+import { formatScore } from '@/lib/utils';
 
 interface RankingTableVirtualProps {
   rankings: Ranking[];
@@ -95,7 +96,7 @@ const RankingRow: React.FC<{
       {/* Pontuação Principal */}
       <div className="w-24 text-right flex-shrink-0">
         <p className={`text-lg font-bold ${getScoreColor(ranking.score)}`}>
-          {ranking.score.toFixed(1)}
+          {formatScore(ranking.score)}
         </p>
         {isBelowMinimum && (
           <p className="text-xs text-red-500">Abaixo do mínimo</p>
@@ -108,19 +109,19 @@ const RankingRow: React.FC<{
           {ranking.discursiveScore > 0 && (
             <div className="flex justify-between">
               <span>Discursiva:</span>
-              <span>{ranking.discursiveScore.toFixed(1)}</span>
+              <span>{formatScore(ranking.discursiveScore)}</span>
             </div>
           )}
           {ranking.caseStudy1Score > 0 && (
             <div className="flex justify-between">
               <span>PE1:</span>
-              <span>{ranking.caseStudy1Score.toFixed(1)}</span>
+              <span>{formatScore(ranking.caseStudy1Score)}</span>
             </div>
           )}
           {ranking.caseStudy2Score > 0 && (
             <div className="flex justify-between">
               <span>PE2:</span>
-              <span>{ranking.caseStudy2Score.toFixed(1)}</span>
+              <span>{formatScore(ranking.caseStudy2Score)}</span>
             </div>
           )}
         </div>

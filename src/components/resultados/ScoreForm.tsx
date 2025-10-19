@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso } from '@/types/concursos';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatScore } from '@/lib/utils';
 
 interface ScoreFormProps {
   concurso: Concurso;
@@ -182,7 +183,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
       
       toast({
         title: 'Notas registradas com sucesso!',
-        description: `Pontuação total calculada: ${calculationResult.total_score.toFixed(2)} pontos`,
+        description: `Pontuação total calculada: ${formatScore(calculationResult.total_score)} pontos`,
       });
       
       // Pequeno delay para o toast aparecer antes do redirecionamento

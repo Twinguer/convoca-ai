@@ -32,6 +32,18 @@ export function generateId(): string {
   return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).substr(2, 9);
 }
 
+// Format score with maximum 2 decimal places
+export function formatScore(score: number | null | undefined): string {
+  if (score === null || score === undefined || isNaN(score)) {
+    return '0.00';
+  }
+  
+  // Round to avoid floating point precision issues and format with 2 decimal places
+  const roundedScore = Math.round(score * 100) / 100;
+  
+  return roundedScore.toFixed(2);
+}
+
 // Add this utility function to bypass RLS policies for admin operations
 export async function adminOperation(supabaseClient: any, operation: string, params: any = {}) {
   // This would ideally use a server-side function with proper authentication

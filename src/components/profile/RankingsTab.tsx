@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
+import { formatScore } from '@/lib/utils';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -374,13 +375,13 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                   {ranking.concursos?.titulo || ranking.concursoTitle}
                 </h4>
                 <p className="text-sm text-muted-foreground flex items-center">
-                  🏆 Participando - {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} pts
+                  🏆 Participando - {formatScore(ranking.score)} pts
                 </p>
               </div>
               
               <div className="flex flex-col items-end text-right">
                 <div className="text-2xl font-bold text-card-foreground mb-1">
-                  {typeof ranking.score === 'number' ? Math.round(ranking.score) : '0'} <span className="text-sm font-normal text-muted-foreground">pts</span>
+                  {formatScore(ranking.score)} <span className="text-sm font-normal text-muted-foreground">pts</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   <span className="text-muted-foreground mr-1">Classificação:</span>

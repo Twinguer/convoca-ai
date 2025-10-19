@@ -12,6 +12,7 @@ import { getDisciplines, sectionDisplayNames, updateSectionDisplayNames } from '
 import { Ranking } from '@/services/rankingService';
 import { UserUrlObfuscationService } from '@/services/userUrlObfuscation';
 import { LoadMoreButton } from './LoadMoreButton';
+import { formatScore } from '@/lib/utils';
 
 interface RankingTableProps {
   rankings?: Ranking[];
@@ -123,16 +124,46 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         groupedByQuota[ranking.reservationType] = [];
       }
       groupedByQuota[ranking.reservationType].push(ranking);
+      
+      // Debug específico para PPP e PCD
+      if (ranking.reservationType === 'PPP' || ranking.reservationType === 'PCD') {
+        console.log('[RankingTable] Adding to quota group:', {
+          reservationType: ranking.reservationType,
+          rankingId: ranking.id,
+          rankingName: ranking.name,
+          currentGroupSize: groupedByQuota[ranking.reservationType].length
+        });
+      }
+    });
+
+    // Sort each quota group by score (descending) to calculate correct quota positions
+    Object.keys(groupedByQuota).forEach(quotaType => {
+      groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
+      console.log('[RankingTable] Sorted quota group:', quotaType, 'with', groupedByQuota[quotaType].length, 'rankings');
     });
 
     // Calculate positions for classified users
     const classifiedWithPositions = classifiedRankings.map((ranking, index) => {
       const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
+      
+      // Debug específico para PPP e PCD
+      if (ranking.reservationType === 'PPP' || ranking.reservationType === 'PCD') {
+        console.log('[RankingTable] Debug PPP/PCD position calculation:', {
+          reservationType: ranking.reservationType,
+          rankingId: ranking.id,
+          rankingName: ranking.name,
+          sameQuotaRankings: sameQuotaRankings.length,
+          quotaPosition,
+          sameQuotaRankingsIds: sameQuotaRankings.map(r => r.id),
+          groupedByQuotaKeys: Object.keys(groupedByQuota)
+        });
+      }
+      
       return {
         ...ranking,
         position: index + 1, // Override position based on classification
-        quotaPosition
+        quotaPosition: quotaPosition > 0 ? quotaPosition : 0 // Garantir que seja sempre um número válido
       };
     });
 
@@ -192,8 +223,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     // Mapeamento entre abreviações e nomes completos
     const quotaMapping: Record<string, string> = {
       "ac": "Ampla Concorrência",
-      "ppp": "ppp", 
-      "pcd": "pcd",
+      "ppp": "PPP", 
+      "pcd": "PCD",
       "hip": "Hipossuficientes",
       "ind": "Indígenas",
       "tran": "Pessoas Trans"
@@ -207,6 +238,12 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     
     // Buscar pelo nome completo correspondente à abreviação
     const fullQuotaName = quotaMapping[quota];
+    console.log('[RankingTable] Debug quota filtering:', {
+      quota,
+      fullQuotaName,
+      availableReservationTypes: [...new Set(rankingsWithQuotaPositions.map(r => r.reservationType))],
+      quotaMapping
+    });
     const filtered = rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === fullQuotaName);
     console.log('[RankingTable] Filtered rankings for', quota, '->', fullQuotaName, ':', filtered.length);
     return filtered;
@@ -287,8 +324,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 const getQuotaAbbreviation = (quota: string): string => {
   if (quota === "Ampla Concorrência") return "AC";
   const abbreviations: Record<string, string> = {
-    "ppp": "ppp",
-    "pcd": "pcd",
+    "PPP": "PPP",
+    "PCD": "PCD",
     "Hipossuficientes": "Hip",
     "Indígenas": "Ind",
     "Pessoas Trans": "Tra"
@@ -479,7 +516,7 @@ const RankingTableContent: React.FC<{
                     </span>}
                 </div>
               </TableCell>
-              <TableCell className="text-right font-medium">{ranking.score.toFixed(2)}</TableCell>
+              <TableCell className="text-right font-medium">{formatScore(ranking.score)}</TableCell>
               {isAdminMode && isAuthenticated && <TableCell>
                   <UserActions userId={ranking.userId} userName={ranking.name} rankingId={ranking.id} onSuccess={() => window.location.reload()} showOnlyRankingActions={true} />
                 </TableCell>}
@@ -593,9 +630,28 @@ const RankingTableContent: React.FC<{
             {!isAmpla && <TableCell className="text-center font-bold">
               {belowMinimum 
                 ? <span className="text-red-600 font-bold">E</span>
-                : ranking.quotaPosition > 0
-                  ? `${ranking.quotaPosition}º`
-                  : '-'
+                : (() => {
+                    // Debug específico para PPP e PCD
+                    if (ranking.reservationType === 'PPP' || ranking.reservationType === 'PCD') {
+                      console.log('[RankingTable] Rendering quota position:', {
+                        reservationType: ranking.reservationType,
+                        rankingId: ranking.id,
+                        rankingName: ranking.name,
+                        quotaPosition: ranking.quotaPosition,
+                        belowMinimum,
+                        isAmpla,
+                        hasQuotaPosition: !!ranking.quotaPosition
+                      });
+                    }
+                    
+                    // Exibir posição da cota se existir e for maior que 0
+                    if (ranking.quotaPosition && ranking.quotaPosition > 0) {
+                      return `${ranking.quotaPosition}º`;
+                    }
+                    
+                    // Se não tem posição da cota, mostrar '-'
+                    return '-';
+                  })()
               }
             </TableCell>}
             
@@ -618,7 +674,7 @@ const RankingTableContent: React.FC<{
             </TableCell>
             
             <TableCell className={`text-right font-medium ${scoreChanged && !belowMinimum ? 'text-emerald-600' : ''}`}>
-              {ranking.score.toFixed(2)}
+              {formatScore(ranking.score)}
               {belowMinimum && <span className="ml-2 text-xs text-red-600"></span>}
             </TableCell>
             
@@ -630,32 +686,33 @@ const RankingTableContent: React.FC<{
               const isDisciplineBelowMinimum = ranking.belowDisciplineMinimums?.includes?.(discipline.type) || false;
               
               return <TableCell key={`custom-score-${idx}`} className={`text-right ${isDisciplineBelowMinimum ? 'text-red-600 font-bold' : ''}`}>
-                      {Number(scoreValue).toFixed(2)}
+                      {formatScore(Number(scoreValue))}
                     </TableCell>;
             })}
             
             {/* Subjective part scores */}
-            {concurso.subjects?.discr === true && <TableCell className="text-right">
+            {concurso.subjects?.discr === true && <TableCell className={`text-right ${ranking.belowDisciplineMinimums?.includes('discursive') ? 'text-red-600 font-bold' : ''}`}>
                 {(() => {
                   console.log('Discursive score debug:', {
                     rankingId: ranking.id,
                     weightedDiscursiveScore: ranking.weightedDiscursiveScore,
-                    discursiveScore: ranking.discursiveScore
+                    discursiveScore: ranking.discursiveScore,
+                    belowMinimum: ranking.belowDisciplineMinimums?.includes('discursive')
                   });
-                  return Number(ranking.weightedDiscursiveScore || 0).toFixed(2);
+                  return formatScore(Number(ranking.weightedDiscursiveScore || 0));
                 })()}
               </TableCell>}
             
-            {concurso.subjects?.case1 === true && <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy1Score || 0).toFixed(2)}
+            {concurso.subjects?.case1 === true && <TableCell className={`text-right ${ranking.belowDisciplineMinimums?.includes('case_study_1') ? 'text-red-600 font-bold' : ''}`}>
+                {formatScore(Number(ranking.weightedCaseStudy1Score || 0))}
               </TableCell>}
             
-            {concurso.subjects?.case2 === true && <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy2Score || 0).toFixed(2)}
+            {concurso.subjects?.case2 === true && <TableCell className={`text-right ${ranking.belowDisciplineMinimums?.includes('case_study_2') ? 'text-red-600 font-bold' : ''}`}>
+                {formatScore(Number(ranking.weightedCaseStudy2Score || 0))}
               </TableCell>}
             
-            {concurso.subjects?.case3 === true && <TableCell className="text-right">
-                {Number(ranking.weightedCaseStudy3Score || 0).toFixed(2)}
+            {concurso.subjects?.case3 === true && <TableCell className={`text-right ${ranking.belowDisciplineMinimums?.includes('case_study_3') ? 'text-red-600 font-bold' : ''}`}>
+                {formatScore(Number(ranking.weightedCaseStudy3Score || 0))}
               </TableCell>}
             
             {(() => {
@@ -674,8 +731,8 @@ const RankingTableContent: React.FC<{
               const hasOther = hasOtherDirect || hasOtherJsonb;
               
               return hasOther ? (
-                <TableCell className="text-right">
-                  {Number(ranking.weightedOtherSubjectiveScore || 0).toFixed(2)}
+                <TableCell className={`text-right ${ranking.belowDisciplineMinimums?.includes('other_subjective') ? 'text-red-600 font-bold' : ''}`}>
+                  {formatScore(Number(ranking.weightedOtherSubjectiveScore || 0))}
                 </TableCell>
               ) : null;
             })()}

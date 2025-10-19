@@ -8,6 +8,7 @@ import {
   BarChart3,
   Calendar
 } from 'lucide-react';
+import { formatScore } from '@/lib/utils';
 
 interface MonitoringData {
   totalUsers: number;
@@ -60,7 +61,7 @@ const MonitoringMetrics: React.FC = () => {
 
       const scores = scoreData?.map(r => r.score).filter(s => s !== null) || [];
       const averageScore = scores.length > 0 
-        ? Math.round((scores.reduce((sum, score) => sum + score, 0) / scores.length) * 100) / 100
+        ? scores.reduce((sum, score) => sum + score, 0) / scores.length
         : 0;
       const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
 
@@ -237,11 +238,11 @@ const MonitoringMetrics: React.FC = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Pontuação Média</span>
-              <span className="font-medium">{monitoringData?.averageScore || 0}</span>
+              <span className="font-medium">{formatScore(monitoringData?.averageScore || 0)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Maior Pontuação</span>
-              <span className="font-medium text-blue-600">{monitoringData?.highestScore || 0}</span>
+              <span className="font-medium text-blue-600">{formatScore(monitoringData?.highestScore || 0)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Total de Participações</span>

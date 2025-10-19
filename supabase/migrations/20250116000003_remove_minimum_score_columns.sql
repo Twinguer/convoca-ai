@@ -17,3 +17,5 @@ COMMENT ON TABLE concursos IS 'Minimum score data now stored in JSONB fields: su
 
 
 
+
+

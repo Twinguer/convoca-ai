@@ -344,3 +344,5 @@ RAISE NOTICE 'User rankings JSONB structure optimization completed successfully!
 
 
 
+
+

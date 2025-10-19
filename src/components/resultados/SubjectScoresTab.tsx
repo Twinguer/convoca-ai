@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Concurso, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
+import { formatScore } from '@/lib/utils';
 
 // Função auxiliar para buscar disciplina por ID na nova estrutura JSONB
 const findDisciplineById = (disciplines: (DisciplineBlock | NestedDiscipline)[] | undefined, id: string): NestedDiscipline | undefined => {
@@ -186,7 +187,7 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
           <div className="flex justify-between items-center">
             <span className="font-medium">Total Ponderado:</span>
             <span className="text-lg font-bold">
-              {enabledSections.reduce((total, key) => total + getWeightedScore(key), 0).toFixed(2)}
+              {formatScore(enabledSections.reduce((total, key) => total + getWeightedScore(key), 0))}
             </span>
           </div>
         </div>

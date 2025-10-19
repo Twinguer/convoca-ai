@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { formatScore } from '@/lib/utils';
 
 interface DebugData {
   concurso: any;
@@ -247,7 +248,7 @@ export const ObjectiveScoresDebug: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold">Pontuação Total</h3>
-                  <p className="text-sm text-gray-600">{finalStructure.score}</p>
+                  <p className="text-sm text-gray-600">{formatScore(finalStructure.score)}</p>
                 </div>
               </div>
             </CardContent>

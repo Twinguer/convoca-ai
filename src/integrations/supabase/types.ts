@@ -195,7 +195,7 @@ export type Database = {
           has_minimum_score: boolean | null
           has_pcd: boolean | null
           has_ppp: boolean | null
-          has_quota_minimum_score: boolean | null
+          // has_quota_minimum_score: removida - dados agora em JSONB
           has_specific_knowledge_1: boolean | null
           has_specific_knowledge_2: boolean | null
           has_specific_knowledge_3: boolean | null
@@ -267,7 +267,7 @@ export type Database = {
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
-          has_quota_minimum_score?: boolean | null
+          // has_quota_minimum_score?: removida - dados agora em JSONB
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
@@ -339,7 +339,7 @@ export type Database = {
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
-          has_quota_minimum_score?: boolean | null
+          // has_quota_minimum_score?: removida - dados agora em JSONB
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
