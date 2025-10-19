@@ -227,7 +227,14 @@ export const useSaveRanking = () => {
         });
       } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
         // Check for enabled disciplines in the block structure
-        for (const block of formValues.disciplines) {
+        // Also add minimum_total_score and minimum_total_score_cotas to blocks
+        formValues.disciplines = formValues.disciplines.map((block: any) => {
+          const updatedBlock = {
+            ...block,
+            minimum_total_score: ensureNumeric(formValues.minimum_total_score || 0),
+            minimum_total_score_cotas: ensureNumeric(formValues.minimum_total_score_cotas || 0)
+          };
+          
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled === true) {
@@ -235,9 +242,10 @@ export const useSaveRanking = () => {
                 break;
               }
             }
-            if (hasEnabledDiscipline) break;
           }
-        }
+          
+          return updatedBlock;
+        });
       }
       
       // Validate that at least one discipline is enabled
@@ -278,12 +286,8 @@ export const useSaveRanking = () => {
         vagas: ensureNumeric(formValues.vagas),
         inscritos: ensureNumeric(formValues.inscritos),
         etapa_atual: formValues.etapa_atual,
-        link: formValues.link,
-        // Pontuações mínimas globais/quota
-        has_minimum_score: !!formValues.has_minimum_score,
-        total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-        has_quota_minimum_score: !!formValues.has_quota_minimum_score,
-        quota_minimum_score: ensureNumeric(formValues.quota_minimum_score)
+        link: formValues.link
+        // Pontuações mínimas agora vão dentro da estrutura disciplines
       };
 
       // Remove any temporary fields not needed in database
@@ -324,11 +328,6 @@ export const useSaveRanking = () => {
           disciplines: formValues.disciplines,
           subjects: subjectsStructure,
           has_cota: hasCotaStructure,
-          // Pontuações mínimas globais/quota
-          has_minimum_score: !!formValues.has_minimum_score,
-          total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-          has_quota_minimum_score: !!formValues.has_quota_minimum_score,
-          quota_minimum_score: ensureNumeric(formValues.quota_minimum_score),
           form_config: formValues.form_config || {},
           official_answers: formValues.official_answers || {},
           exam_booklets: formValues.exam_booklets || [],
@@ -396,11 +395,6 @@ export const useSaveRanking = () => {
             disciplines: disciplinesData,
             subjects: createSubjectsStructure(formValues),
             has_cota: createHasCotaStructure(formValues),
-            // Pontuações mínimas globais/quota
-            has_minimum_score: !!formValues.has_minimum_score,
-            total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-            has_quota_minimum_score: !!formValues.has_quota_minimum_score,
-            quota_minimum_score: ensureNumeric(formValues.quota_minimum_score),
             form_config: formValues.form_config || {},
             official_answers: formValues.official_answers || {},
             exam_booklets: formValues.exam_booklets || [],

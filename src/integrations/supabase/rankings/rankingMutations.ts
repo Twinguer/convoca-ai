@@ -588,21 +588,26 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // 4) Global minimum (only objective total, excluding subjectives)
-    // Determine which minimum to use based on reservation type
+    // Read minimum from disciplines JSONB structure
     const reservationType = existingRanking.reservation_type || 'ampla';
     const isQuota = reservationType !== 'ampla' && reservationType !== '';
     
     let globalMinimumToCheck = 0;
     let hasGlobalMin = false;
     
-    if (isQuota && (concurso as any).has_quota_minimum_score === true) {
-      // User is in quota: use quota minimum
-      globalMinimumToCheck = (concurso as any).quota_minimum_score || 0;
-      hasGlobalMin = globalMinimumToCheck > 0;
-    } else if ((concurso as any).has_minimum_score === true) {
-      // User is in ampla or quota minimum not set: use general minimum
-      globalMinimumToCheck = (concurso as any).total_minimum_score || 0;
-      hasGlobalMin = globalMinimumToCheck > 0;
+    // Get minimum from disciplines structure (first block)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+      const firstBlock = concurso.disciplines[0];
+      
+      if (isQuota && firstBlock.minimum_total_score_cotas) {
+        // User is in quota: use quota minimum from block
+        globalMinimumToCheck = Number(firstBlock.minimum_total_score_cotas) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
+      } else if (firstBlock.minimum_total_score) {
+        // User is in ampla or quota minimum not set: use general minimum from block
+        globalMinimumToCheck = Number(firstBlock.minimum_total_score) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
+      }
     }
     
     const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < globalMinimumToCheck) : false;
