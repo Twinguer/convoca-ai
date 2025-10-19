@@ -16,27 +16,47 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
       <CardContent className="pt-6">
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-4">Pontuação Mínima da Prova</h3>
+          <FormDescription className="text-sm mb-4">
+            Estes valores serão salvos na estrutura do bloco de disciplinas
+          </FormDescription>
           
-          <FormField control={form.control} name="has_minimum_score" render={({
-          field
-        }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mb-4">
-                <div className="space-y-0.5">
-                  <FormLabel>Habilitar pontuação mínima</FormLabel>
+          <FormField control={form.control} name="minimum_total_score" render={({
+            field
+          }) => <FormItem className="mb-4">
+                  <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      min="0" 
+                      max="999"
+                      maxLength={3}
+                      {...field} 
+                      value={field.value || 0} 
+                      onChange={e => {
+                        const value = e.target.value;
+                        if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                          field.onChange(parseFloat(value) || 0);
+                        }
+                      }} 
+                      className="w-full md:w-1/3" 
+                    />
+                  </FormControl>
                   <FormDescription className="text-xs">
-                    Ative para definir uma pontuação mínima necessária na prova
+                    Insira o valor mínimo de pontos que o candidato precisa obter (máx. 999)
                   </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
-                </FormControl>
-              </FormItem>} />
+                </FormItem>} />
           
-          {form.watch('has_minimum_score') && (
-            <>
-              <FormField control={form.control} name="total_minimum_score" render={({
+          <Separator className="my-4" />
+          
+          {/* Seção de Pontuação Mínima para Cotas */}
+          <div className="mb-4">
+            <h4 className="text-md font-semibold mb-3">Pontuação Mínima para Cotas</h4>
+            
+            <FormField control={form.control} name="minimum_total_score_cotas" render={({
               field
             }) => <FormItem>
-                    <FormLabel>Pontuação mínima geral da prova objetiva (valor absoluto)</FormLabel>
+                    <FormLabel>Pontuação mínima para cotas (valor absoluto)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -56,72 +76,17 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({
                       />
                     </FormControl>
                     <FormDescription className="text-xs">
-                      Insira o valor mínimo de pontos que o candidato precisa obter (máx. 999)
+                      Insira o valor mínimo de pontos que candidatos de cotas precisam obter (máx. 999)
                     </FormDescription>
                   </FormItem>} />
-              
-              <Separator className="my-4" />
-            </>
-          )}
-          
-          {/* Seção de Pontuação Mínima para Cotas */}
-          <div className="mb-4">
-            <h4 className="text-md font-semibold mb-3">Pontuação Mínima para Cotas</h4>
             
-            <FormField control={form.control} name="has_quota_minimum_score" render={({
-              field
-            }) => <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 mb-4">
-                    <div className="space-y-0.5">
-                      <FormLabel>Habilitar pontuação mínima para cotas</FormLabel>
-                      <FormDescription className="text-xs">
-                        Ative para definir uma pontuação mínima específica para candidatos de cotas (PCD, PPI, etc.)
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>} />
-            
-            {form.watch('has_quota_minimum_score') && (
-              <>
-                <FormField control={form.control} name="quota_minimum_score" render={({
-                field
-              }) => <FormItem>
-                      <FormLabel>Pontuação mínima para cotas (valor absoluto)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          step="0.01" 
-                          min="0" 
-                          max="999"
-                          maxLength={3}
-                          {...field} 
-                          value={field.value || 0} 
-                          onChange={e => {
-                            const value = e.target.value;
-                            if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
-                              field.onChange(parseFloat(value) || 0);
-                            }
-                          }} 
-                          className="w-full md:w-1/3" 
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Insira o valor mínimo de pontos que candidatos de cotas precisam obter (máx. 999)
-                      </FormDescription>
-                    </FormItem>} />
-                
-                <Alert className="mt-3">
-                  <Info className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    <strong>Importante:</strong> Esta pontuação será aplicada apenas para candidatos que não concorrem por Ampla Concorrência. 
-                    Se não habilitada, será usada a pontuação mínima geral da prova.
-                  </AlertDescription>
-                </Alert>
-                
-                <Separator className="my-4" />
-              </>
-            )}
+            <Alert className="mt-3">
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                <strong>Importante:</strong> Esta pontuação será aplicada apenas para candidatos que não concorrem por Ampla Concorrência. 
+                Se deixada em 0, será usada a pontuação mínima geral da prova.
+              </AlertDescription>
+            </Alert>
           </div>
         </div>
       </CardContent>

@@ -118,7 +118,7 @@ export class ExamStructureBuilder {
       // Subjective sections don't have weights
     };
     
-    // Converter seções para disciplinas
+    // Converter seções para disciplinas - criar como bloco único
     const disciplines = this.sections.map(section => {
       // Verificar se é um tipo de seção subjetiva
       if (section.sectionType === 'discursive') {
@@ -146,7 +146,20 @@ export class ExamStructureBuilder {
       };
     }).filter(Boolean); // Remove null entries
     
-    concurso.disciplines = disciplines;
+    // Criar estrutura de bloco único com disciplines
+    // minimum_total_score e minimum_total_score_cotas vão no primeiro bloco
+    if (disciplines.length > 0) {
+      concurso.disciplines = [{
+        id: crypto.randomUUID(),
+        name: 'Gerais',
+        weight: 1,
+        minimum_total_score: 0,
+        minimum_total_score_cotas: 0,
+        disciplines: disciplines
+      }];
+    } else {
+      concurso.disciplines = [];
+    }
     
     return concurso;
   }

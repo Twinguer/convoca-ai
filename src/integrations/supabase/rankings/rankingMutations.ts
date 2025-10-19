@@ -22,7 +22,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('id, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_cota')
+      .select('id, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_quota_minimum_score, quota_minimum_score')
       .eq('id', concursoId)
       .single();
 
@@ -198,21 +198,6 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     
     console.log(`[recalculateUserScore] Found ${userAnswers?.length || 0} answers for user`);
     console.log(`[recalculateUserScore] User answers:`, userAnswers);
-    console.log(`[recalculateUserScore] Total user answers found:`, userAnswers?.length || 0);
-    
-    // DEBUG: Verificar se as respostas têm discipline_type
-    if (userAnswers && userAnswers.length > 0) {
-      const answersWithDisciplineType = userAnswers.filter(answer => answer.discipline_type);
-      const answersWithoutDisciplineType = userAnswers.filter(answer => !answer.discipline_type);
-      console.log(`[recalculateUserScore] DEBUG - Respostas com discipline_type: ${answersWithDisciplineType.length}`);
-      console.log(`[recalculateUserScore] DEBUG - Respostas sem discipline_type: ${answersWithoutDisciplineType.length}`);
-      
-      if (answersWithDisciplineType.length > 0) {
-        console.log(`[recalculateUserScore] DEBUG - Exemplos de discipline_type encontrados:`, 
-          answersWithDisciplineType.slice(0, 3).map(a => ({ q: a.question_number, discipline: a.discipline_type }))
-        );
-      }
-    }
 
     // Usar official_answers já buscado do concurso
     if (!concurso?.official_answers) {
@@ -290,9 +275,6 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             if (discipline.isEnabled && discipline.type) {
               // Mapear section_type (do gabarito) para discipline.type (das respostas)
               // Para disciplinas customizadas, o section_type geralmente é o mesmo que discipline.type
-              // Criar mapeamento bidirecional: section_type -> discipline.type e discipline.type -> discipline.type
-              sectionTypeToDisciplineTypeMap[discipline.type] = discipline.type;
-              // Também mapear o discipline.type para si mesmo (caso o section_type seja igual)
               sectionTypeToDisciplineTypeMap[discipline.type] = discipline.type;
               disciplineWeights[discipline.type] = discipline.weight || 1;
               disciplineMinimums[discipline.type] = discipline.minimum_score || 0;
@@ -307,43 +289,9 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log('[recalculateUserScore] DEBUG - Pesos das disciplinas:', disciplineWeights);
     console.log('[recalculateUserScore] DEBUG - Mínimos das disciplinas:', disciplineMinimums);
 
-    // DEBUG: Verificar se há incompatibilidade entre section_type e discipline.type
-    const allSectionTypes = new Set();
-    const allDisciplineTypes = new Set();
-
-    // Coletar todos os section_types do gabarito
-    for (const userAnswer of userAnswers || []) {
-      const questionNumberStr = userAnswer.question_number.toString();
-      const officialAnswer = officialAnswers[questionNumberStr];
-      if (officialAnswer?.section_type) {
-        allSectionTypes.add(officialAnswer.section_type);
-      }
-    }
-
-    // Coletar todos os discipline.types das disciplinas
-    for (const block of concurso.disciplines || []) {
-      if ('disciplines' in block && Array.isArray(block.disciplines)) {
-        for (const discipline of block.disciplines) {
-          if (discipline.isEnabled && discipline.type) {
-            allDisciplineTypes.add(discipline.type);
-          }
-        }
-      }
-    }
-
-    console.log('[recalculateUserScore] DEBUG - Section types no gabarito:', Array.from(allSectionTypes));
-    console.log('[recalculateUserScore] DEBUG - Discipline types habilitadas:', Array.from(allDisciplineTypes));
-
-    // Verificar incompatibilidades
-    const missingSectionTypes = Array.from(allSectionTypes).filter(st => !allDisciplineTypes.has(st));
-    const missingDisciplineTypes = Array.from(allDisciplineTypes).filter(dt => !allSectionTypes.has(dt));
-
-    if (missingSectionTypes.length > 0) {
-      console.warn('[recalculateUserScore] WARNING - Section types no gabarito que não correspondem a disciplinas:', missingSectionTypes);
-    }
-    if (missingDisciplineTypes.length > 0) {
-      console.warn('[recalculateUserScore] WARNING - Discipline types que não correspondem a section types:', missingDisciplineTypes);
-    }
+    console.log('[recalculateUserScore] Mapeamento section_type -> discipline.type:', sectionTypeToDisciplineTypeMap);
+    console.log('[recalculateUserScore] Pesos das disciplinas:', disciplineWeights);
+    console.log('[recalculateUserScore] Mínimos das disciplinas:', disciplineMinimums);
 
     // Obter as pontuações subjetivas do consolidated_data
     const subjectiveScores = userRanking.consolidated_data?.rankings?.[rankingId]?.user_data?.subjectives || {};
@@ -407,10 +355,6 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // Calcular a pontuação do usuário para cada resposta
-    console.log('[recalculateUserScore] DEBUG - userAnswers recebidas:', userAnswers?.length || 0);
-    console.log('[recalculateUserScore] DEBUG - officialAnswers carregados:', Object.keys(officialAnswers).length);
-    console.log('[recalculateUserScore] DEBUG - disciplineWeights disponíveis:', Object.keys(disciplineWeights));
-    
     for (const userAnswer of userAnswers || []) {
       const questionNumberStr = userAnswer.question_number.toString();
       const officialAnswer = officialAnswers[questionNumberStr];
@@ -420,68 +364,9 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         const questionWeight = officialAnswer.weight ?? 1;
         const sectionType = officialAnswer.section_type || 'default';
         
-        // CORREÇÃO: Usar o section_type do gabarito oficial como fonte única da verdade
-        let disciplineType = officialAnswer.section_type;
-        
-        console.log(`[recalculateUserScore] DEBUG - Questão ${userAnswer.question_number}:`, {
-          userAnswer: userAnswer.answer,
-          officialAnswer: officialAnswer.correct_answer,
-          sectionType: sectionType,
-          disciplineType: disciplineType,
-          isCorrect: isCorrect,
-          questionWeight: questionWeight,
-          disciplineExists: !!disciplineWeights[disciplineType]
-        });
-        
-        // Verificar se a disciplina existe e está habilitada
-        if (!disciplineType || disciplineType === 'default') {
-          // Tratar caso especial: se section_type é "default", mapear para disciplinas customizadas
-          if (sectionType === 'default') {
-            // Encontrar disciplinas customizadas habilitadas
-            const customDisciplines: string[] = [];
-            for (const block of concurso.disciplines || []) {
-              if ('disciplines' in block && Array.isArray(block.disciplines)) {
-                for (const discipline of block.disciplines) {
-                  if (discipline.isEnabled && discipline.type && discipline.type.startsWith('custom_')) {
-                    customDisciplines.push(discipline.type);
-                  }
-                }
-              }
-            }
-            
-            if (customDisciplines.length > 0) {
-              // Distribuir questões entre disciplinas customizadas baseado no número da questão
-              const questionNum = userAnswer.question_number;
-              const disciplineIndex = (questionNum - 1) % customDisciplines.length;
-              disciplineType = customDisciplines[disciplineIndex];
-              console.log(`[recalculateUserScore] DEBUG - Mapeando questão ${questionNum} de 'default' para disciplina customizada: ${disciplineType} (índice: ${disciplineIndex})`);
-            } else {
-              console.warn(`[recalculateUserScore] WARNING: Nenhuma disciplina customizada encontrada para mapear 'default'`);
-            }
-          } else {
-            // Se não encontrar a disciplina, tentar mapear usando o mapeamento
-            if (!disciplineWeights[disciplineType]) {
-              if (sectionTypeToDisciplineTypeMap[sectionType]) {
-                disciplineType = sectionTypeToDisciplineTypeMap[sectionType];
-              } else {
-                // Tentar encontrar uma disciplina que corresponda ao section_type
-                for (const [mappedSectionType, mappedDisciplineType] of Object.entries(sectionTypeToDisciplineTypeMap)) {
-                  if (mappedSectionType === sectionType) {
-                    disciplineType = mappedDisciplineType;
-                    break;
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        // Verificar se a disciplina existe e está habilitada após todas as tentativas
-        if (!disciplineWeights[disciplineType]) {
-          console.warn(`[recalculateUserScore] WARNING: Discipline ${disciplineType} not found or not enabled. sectionType: ${sectionType}`);
-          console.warn(`[recalculateUserScore] Available disciplines:`, Object.keys(disciplineWeights));
-          console.warn(`[recalculateUserScore] Available mappings:`, sectionTypeToDisciplineTypeMap);
-        }
+        // Usar o section_type do gabarito para mapear corretamente para a disciplina
+        // Se o section_type não estiver mapeado, usar o section_type diretamente
+        const disciplineType = sectionTypeToDisciplineTypeMap[sectionType] || sectionType;
         
         // Inicializar pontuação da disciplina se ainda não existir
         if (!disciplineScores[disciplineType]) {
@@ -502,9 +387,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             isCorrect,
             questionWeight,
             disciplineWeight,
-            disciplineScoresBefore: disciplineScores[disciplineType] || 0,
-            mappingFound: sectionTypeToDisciplineTypeMap[sectionType] ? 'YES' : 'NO',
-            disciplineExists: disciplineWeights[disciplineType] ? 'YES' : 'NO'
+            disciplineScoresBefore: disciplineScores[disciplineType] || 0
           });
           
           // Adicionar à pontuação total
@@ -609,7 +492,6 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
               const isObjectiveDiscipline = !['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
               
               if (isObjectiveDiscipline) {
-                // Usar pontuação com peso aplicado para object_scores
                 const score = weightedDisciplineScores[discipline.type] || 0;
                 const minimum = disciplineMinimums[discipline.type] || 0;
                 
@@ -627,27 +509,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    console.log('[recalculateUserScore] DEBUG - correctSubjectScores (object_scores):', correctSubjectScores);
+    console.log('[recalculateUserScore] DEBUG - correctSubjectScores:', correctSubjectScores);
     console.log('[recalculateUserScore] DEBUG - disciplineScores calculados:', disciplineScores);
-    console.log('[recalculateUserScore] DEBUG - weightedDisciplineScores calculados:', weightedDisciplineScores);
-    
-    // DEBUG: Verificar se há disciplinas com score 0 que deveriam ter score > 0
-    const zeroScoreDisciplines = Object.entries(correctSubjectScores).filter(([type, score]) => score === 0);
-    if (zeroScoreDisciplines.length > 0) {
-      console.warn('[recalculateUserScore] WARNING - Disciplinas com score 0:', zeroScoreDisciplines);
-    }
-    
-    // Log específico para disciplinas customizadas
-    const customDisciplines = Object.entries(correctSubjectScores).filter(([type, score]) => type.startsWith('custom_'));
-    console.log('[recalculateUserScore] DEBUG - Disciplinas customizadas calculadas:', customDisciplines);
-    
-    // Verificar se há respostas em "default" que foram processadas
-    const defaultAnswers = userAnswers?.filter(answer => {
-      const questionNumberStr = answer.question_number.toString();
-      const officialAnswer = officialAnswers[questionNumberStr];
-      return officialAnswer?.section_type === 'default' || !officialAnswer?.section_type;
-    });
-    console.log('[recalculateUserScore] DEBUG - Respostas processadas de "default":', defaultAnswers?.length || 0);
     
     // Criar estrutura correta de subjectives (TODAS as subjetivas)
     const correctSubjectives = {
@@ -670,43 +533,22 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    // 2) Subjective minimums from concurso.subjects (JSONB structure)
-    const subj = concurso.subjects || {};
-    
-    // Verificar mínimos subjetivos usando pontuações BRUTAS (sem peso)
-    if (subj.discr && subj.discr_min_score > 0) {
-      if (discursiveScore < subj.discr_min_score) {
-        belowDisciplineMinimums.push('discursive');
-        console.log(`[recalculateUserScore] WARNING: Subjective discursive below minimum: ${discursiveScore} < ${subj.discr_min_score}`);
-      }
+    // 2) Subjective minimums from concurso.subjects
+    const subj = (concurso as any).subjects || {};
+    if ((subj.discr_min_score || 0) > 0 && (discursiveScore || 0) < (subj.discr_min_score || 0)) {
+      belowDisciplineMinimums.push('discursive');
     }
-    
-    if (subj.case1 && subj.case1_min_score > 0) {
-      if (caseStudy1Score < subj.case1_min_score) {
-        belowDisciplineMinimums.push('case_study_1');
-        console.log(`[recalculateUserScore] WARNING: Subjective case_study_1 below minimum: ${caseStudy1Score} < ${subj.case1_min_score}`);
-      }
+    if ((subj.case1_min_score || 0) > 0 && (caseStudy1Score || 0) < (subj.case1_min_score || 0)) {
+      belowDisciplineMinimums.push('case_study_1');
     }
-    
-    if (subj.case2 && subj.case2_min_score > 0) {
-      if (caseStudy2Score < subj.case2_min_score) {
-        belowDisciplineMinimums.push('case_study_2');
-        console.log(`[recalculateUserScore] WARNING: Subjective case_study_2 below minimum: ${caseStudy2Score} < ${subj.case2_min_score}`);
-      }
+    if ((subj.case2_min_score || 0) > 0 && (caseStudy2Score || 0) < (subj.case2_min_score || 0)) {
+      belowDisciplineMinimums.push('case_study_2');
     }
-    
-    if (subj.case3 && subj.case3_min_score > 0) {
-      if (caseStudy3Score < subj.case3_min_score) {
-        belowDisciplineMinimums.push('case_study_3');
-        console.log(`[recalculateUserScore] WARNING: Subjective case_study_3 below minimum: ${caseStudy3Score} < ${subj.case3_min_score}`);
-      }
+    if ((subj.case3_min_score || 0) > 0 && (caseStudy3Score || 0) < (subj.case3_min_score || 0)) {
+      belowDisciplineMinimums.push('case_study_3');
     }
-    
-    if (subj.other && subj.other_min_score > 0) {
-      if (otherSubjectiveScore < subj.other_min_score) {
-        belowDisciplineMinimums.push('other_subjective');
-        console.log(`[recalculateUserScore] WARNING: Subjective other_subjective below minimum: ${otherSubjectiveScore} < ${subj.other_min_score}`);
-      }
+    if ((subj.other_min_score || 0) > 0 && (otherSubjectiveScore || 0) < (subj.other_min_score || 0)) {
+      belowDisciplineMinimums.push('other_subjective');
     }
 
     // 3) Block-level minimums using disciplines mapping
@@ -745,109 +587,36 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    // 4) HIERARQUIA DE VERIFICAÇÃO DE MÍNIMOS
-    // Ordem: Disciplina → Bloco → Global → Subjetivo
+    // 4) Global minimum (only objective total, excluding subjectives)
+    // Read minimum from disciplines JSONB structure
+    const reservationType = existingRanking.reservation_type || 'ampla';
+    const isQuota = reservationType !== 'ampla' && reservationType !== '';
     
-    let isEliminated = false;
-    let eliminationReason = '';
+    let globalMinimumToCheck = 0;
+    let hasGlobalMin = false;
     
-    // 4.1) Verificar mínimos por DISCIPLINA (já calculado acima)
-    if (belowDisciplineMinimums.length > 0) {
-      isEliminated = true;
-      eliminationReason = `Disciplinas abaixo do mínimo: ${belowDisciplineMinimums.join(', ')}`;
-      console.log(`[recalculateUserScore] ❌ ELIMINADO por disciplina: ${eliminationReason}`);
-    }
-    
-    // 4.2) Verificar mínimos por BLOCO (já calculado acima)
-    if (!isEliminated && belowBlockMinimums.length > 0) {
-      isEliminated = true;
-      eliminationReason = `Blocos abaixo do mínimo: ${belowBlockMinimums.join(', ')}`;
-      console.log(`[recalculateUserScore] ❌ ELIMINADO por bloco: ${eliminationReason}`);
-    }
-    
-    // 4.3) Verificar mínimo GLOBAL usando disciplines JSONB
-    if (!isEliminated) {
-      // Calcular soma total das notas objetivas (já considera pesos)
-      const totalObjectiveScore = subjectScoresTot;
+    // Get minimum from disciplines structure (first block)
+    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+      const firstBlock = concurso.disciplines[0];
       
-      // Verificar se há mínimo global configurado nos blocos de disciplinas
-      let minimumTotalScore = 0;
-      let minimumTotalScoreCotas = 0;
-      
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        // Procurar pelo primeiro bloco que tenha os campos de mínimo global
-        for (const block of concurso.disciplines) {
-          if (block.minimum_total_score && block.minimum_total_score > 0) {
-            minimumTotalScore = block.minimum_total_score;
-          }
-          if (block.minimum_total_score_cotas && block.minimum_total_score_cotas > 0) {
-            minimumTotalScoreCotas = block.minimum_total_score_cotas;
-          }
-          // Se encontrou ambos, pode parar
-          if (minimumTotalScore > 0 && minimumTotalScoreCotas > 0) {
-            break;
-          }
-        }
-      }
-      
-      // Determinar qual mínimo usar baseado no tipo de reserva
-      const reservationType = userRankingData?.user_data?.reservation_type || 'Ampla Concorrência';
-      const isQuotaUser = reservationType !== 'Ampla Concorrência';
-      
-      let requiredMinimum = 0;
-      let minimumType = '';
-      
-      if (isQuotaUser && minimumTotalScoreCotas > 0) {
-        requiredMinimum = minimumTotalScoreCotas;
-        minimumType = 'cota';
-      } else if (minimumTotalScore > 0) {
-        requiredMinimum = minimumTotalScore;
-        minimumType = 'geral';
-      }
-      
-      if (requiredMinimum > 0) {
-        const isBelowMinimum = totalObjectiveScore < requiredMinimum;
-        
-        console.log(`[recalculateUserScore] Verificação mínimo ${minimumType}:`, {
-          reservationType,
-          isQuotaUser,
-          requiredMinimum,
-          totalObjectiveScore,
-          isBelowMinimum,
-          minimumTotalScore,
-          minimumTotalScoreCotas
-        });
-        
-        if (isBelowMinimum) {
-          isEliminated = true;
-          eliminationReason = `Mínimo ${minimumType} não atingido: ${totalObjectiveScore} < ${requiredMinimum}`;
-          console.log(`[recalculateUserScore] ❌ ELIMINADO por mínimo ${minimumType}: ${eliminationReason}`);
-        }
+      if (isQuota && firstBlock.minimum_total_score_cotas) {
+        // User is in quota: use quota minimum from block
+        globalMinimumToCheck = Number(firstBlock.minimum_total_score_cotas) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
+      } else if (firstBlock.minimum_total_score) {
+        // User is in ampla or quota minimum not set: use general minimum from block
+        globalMinimumToCheck = Number(firstBlock.minimum_total_score) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
       }
     }
     
-    // 4.4) Verificar mínimos SUBJETIVOS (já calculado acima)
-    if (!isEliminated && belowDisciplineMinimums.length > 0) {
-      // Verificar se há mínimos subjetivos não atingidos
-      const subjectiveMinimums = belowDisciplineMinimums.filter(d => 
-        ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d)
-      );
-      
-      if (subjectiveMinimums.length > 0) {
-        isEliminated = true;
-        eliminationReason = `Mínimos subjetivos não atingidos: ${subjectiveMinimums.join(', ')}`;
-        console.log(`[recalculateUserScore] ❌ ELIMINADO por mínimo subjetivo: ${eliminationReason}`);
-      }
-    }
+    const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < globalMinimumToCheck) : false;
     
-    // 4.5) Resultado final
-    if (!isEliminated) {
-      console.log(`[recalculateUserScore] ✅ CLASSIFICADO - Todos os mínimos atingidos`);
-    } else {
-      console.log(`[recalculateUserScore] ❌ ELIMINADO - ${eliminationReason}`);
-    }
+    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, score=${subjectScoresTot}, below=${isBelowGlobalMinimum}`);
 
-    const belowMinimum = isEliminated;
+    const belowMinimum = isBelowGlobalMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0;
+    
+    console.log(`[recalculateUserScore] Minimum thresholds summary: belowMinimum=${belowMinimum}, isBelowGlobalMinimum=${isBelowGlobalMinimum}, belowDisciplineMinimums=${belowDisciplineMinimums.length}, belowBlockMinimums=${belowBlockMinimums.length}`);
 
     // Atualizar a pontuação do usuário no consolidated_data
     const updatedConsolidatedData = {
@@ -864,6 +633,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
             subjectives: correctSubjectives, // Pontuações subjetivas individuais
             status: belowMinimum ? 'eliminado' : 'classificado',
+            belowMinimum: belowMinimum,
+            belowDisciplineMinimums: belowDisciplineMinimums,
+            belowBlockMinimums: belowBlockMinimums,
+            isBelowGlobalMinimum: isBelowGlobalMinimum,
+            globalMinimumChecked: globalMinimumToCheck,
             last_calculated: new Date().toISOString()
           },
           // Persistir informações de mínimos para uso no front

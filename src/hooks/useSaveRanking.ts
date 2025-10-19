@@ -255,7 +255,16 @@ export const useSaveRanking = () => {
         });
       } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
         // Check for enabled disciplines in the block structure
-        for (const block of formValues.disciplines) {
+        // Add minimum_total_score and minimum_total_score_cotas ONLY to the first block
+        formValues.disciplines = formValues.disciplines.map((block: any, index: number) => {
+          const updatedBlock = { ...block };
+          
+          // Adicionar minimum_total_score e minimum_total_score_cotas apenas no primeiro bloco
+          if (index === 0) {
+            updatedBlock.minimum_total_score = ensureNumeric(formValues.minimumTotalScore || 0);
+            updatedBlock.minimum_total_score_cotas = ensureNumeric(formValues.minimumTotalScoreCotas || 0);
+          }
+          
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled === true) {
@@ -263,9 +272,10 @@ export const useSaveRanking = () => {
                 break;
               }
             }
-            if (hasEnabledDiscipline) break;
           }
-        }
+          
+          return updatedBlock;
+        });
       }
       
       // Validate that at least one discipline is enabled
@@ -306,11 +316,8 @@ export const useSaveRanking = () => {
         vagas: ensureNumeric(formValues.vagas),
         inscritos: ensureNumeric(formValues.inscritos),
         etapa_atual: formValues.etapa_atual,
-        link: formValues.link,
-        // Pontuações mínimas globais/quota
-        has_minimum_score: !!formValues.has_minimum_score,
-        total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-        // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
+        link: formValues.link
+        // Pontuações mínimas agora vão dentro da estrutura disciplines
       };
 
       // Remove any temporary fields not needed in database
@@ -351,10 +358,6 @@ export const useSaveRanking = () => {
           disciplines: formValues.disciplines,
           subjects: subjectsStructure,
           has_cota: hasCotaStructure,
-          // Pontuações mínimas globais/quota
-          has_minimum_score: !!formValues.has_minimum_score,
-          total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-          // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
           form_config: formValues.form_config || {},
           official_answers: formValues.official_answers || {},
           exam_booklets: formValues.exam_booklets || [],
@@ -422,10 +425,6 @@ export const useSaveRanking = () => {
             disciplines: disciplinesData,
             subjects: createSubjectsStructure(formValues),
             has_cota: createHasCotaStructure(formValues),
-            // Pontuações mínimas globais/quota
-            has_minimum_score: !!formValues.has_minimum_score,
-            total_minimum_score: ensureNumeric(formValues.total_minimum_score),
-            // Coluna has_quota_minimum_score foi removida - dados agora em JSONB
             form_config: formValues.form_config || {},
             official_answers: formValues.official_answers || {},
             exam_booklets: formValues.exam_booklets || [],

@@ -183,9 +183,14 @@ const CriarRanking = () => {
             const quotaData = data.has_cota || {};
             const subjectsData = data.subjects || {};
             
-            
-            
-            
+            // Extrair minimum scores do primeiro bloco de disciplines
+            let minimumTotalScore = 0;
+            let minimumTotalScoreCotas = 0;
+            if (data.disciplines && Array.isArray(data.disciplines) && data.disciplines.length > 0) {
+              const firstBlock = data.disciplines[0];
+              minimumTotalScore = firstBlock.minimum_total_score || 0;
+              minimumTotalScoreCotas = firstBlock.minimum_total_score_cotas || 0;
+            }
             
             // Criar objeto de dados para o formulário
             const formData = {
@@ -209,6 +214,9 @@ const CriarRanking = () => {
               has_indigenas: quotaData.ind === true,
               has_transsexuais: quotaData.tra === true,
               
+              // Minimum scores da estrutura disciplines
+              minimum_total_score: minimumTotalScore,
+              minimum_total_score_cotas: minimumTotalScoreCotas,
               
               // Mapear disciplinas subjetivas do JSONB
               has_discursive: subjectsData.discr === true,
