@@ -588,10 +588,30 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // 4) Global minimum (only objective total, excluding subjectives)
-    const hasGlobalMin = (concurso as any).has_minimum_score === true && ((concurso as any).total_minimum_score || 0) > 0;
-    const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < ((concurso as any).total_minimum_score || 0)) : false;
+    // Determine which minimum to use based on reservation type
+    const reservationType = existingRanking.reservation_type || 'ampla';
+    const isQuota = reservationType !== 'ampla' && reservationType !== '';
+    
+    let globalMinimumToCheck = 0;
+    let hasGlobalMin = false;
+    
+    if (isQuota && (concurso as any).has_quota_minimum_score === true) {
+      // User is in quota: use quota minimum
+      globalMinimumToCheck = (concurso as any).quota_minimum_score || 0;
+      hasGlobalMin = globalMinimumToCheck > 0;
+    } else if ((concurso as any).has_minimum_score === true) {
+      // User is in ampla or quota minimum not set: use general minimum
+      globalMinimumToCheck = (concurso as any).total_minimum_score || 0;
+      hasGlobalMin = globalMinimumToCheck > 0;
+    }
+    
+    const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < globalMinimumToCheck) : false;
+    
+    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, score=${subjectScoresTot}, below=${isBelowGlobalMinimum}`);
 
     const belowMinimum = isBelowGlobalMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0;
+    
+    console.log(`[recalculateUserScore] Minimum thresholds summary: belowMinimum=${belowMinimum}, isBelowGlobalMinimum=${isBelowGlobalMinimum}, belowDisciplineMinimums=${belowDisciplineMinimums.length}, belowBlockMinimums=${belowBlockMinimums.length}`);
 
     // Atualizar a pontuação do usuário no consolidated_data
     const updatedConsolidatedData = {
@@ -608,6 +628,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
             subjectives: correctSubjectives, // Pontuações subjetivas individuais
             status: belowMinimum ? 'eliminado' : 'classificado',
+            belowMinimum: belowMinimum,
+            belowDisciplineMinimums: belowDisciplineMinimums,
+            belowBlockMinimums: belowBlockMinimums,
+            isBelowGlobalMinimum: isBelowGlobalMinimum,
+            globalMinimumChecked: globalMinimumToCheck,
             last_calculated: new Date().toISOString()
           },
           // Persistir informações de mínimos para uso no front
