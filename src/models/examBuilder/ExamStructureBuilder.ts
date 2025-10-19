@@ -147,6 +147,7 @@ export class ExamStructureBuilder {
     }).filter(Boolean); // Remove null entries
     
     // Criar estrutura de bloco único com disciplines
+    // minimum_total_score e minimum_total_score_cotas vão no primeiro bloco
     if (disciplines.length > 0) {
       concurso.disciplines = [{
         id: crypto.randomUUID(),

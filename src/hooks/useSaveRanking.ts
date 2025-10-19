@@ -227,13 +227,15 @@ export const useSaveRanking = () => {
         });
       } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
         // Check for enabled disciplines in the block structure
-        // Also add minimum_total_score and minimum_total_score_cotas to blocks
-        formValues.disciplines = formValues.disciplines.map((block: any) => {
-          const updatedBlock = {
-            ...block,
-            minimum_total_score: ensureNumeric(formValues.minimum_total_score || 0),
-            minimum_total_score_cotas: ensureNumeric(formValues.minimum_total_score_cotas || 0)
-          };
+        // Add minimum_total_score and minimum_total_score_cotas ONLY to the first block
+        formValues.disciplines = formValues.disciplines.map((block: any, index: number) => {
+          const updatedBlock = { ...block };
+          
+          // Adicionar minimum_total_score e minimum_total_score_cotas apenas no primeiro bloco
+          if (index === 0) {
+            updatedBlock.minimum_total_score = ensureNumeric(formValues.minimumTotalScore || 0);
+            updatedBlock.minimum_total_score_cotas = ensureNumeric(formValues.minimumTotalScoreCotas || 0);
+          }
           
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
