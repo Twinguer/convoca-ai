@@ -46,11 +46,21 @@ export const sanitizeSectionType = (sectionType: string | undefined): string => 
 
 // Wrapper function to safely convert string/number/any to numeric value
 export const getNumericValue = (value: any): number => {
-  if (typeof value === 'number') return value;
+  console.log('[getNumericValue] Input value:', value, 'type:', typeof value);
+  
+  if (typeof value === 'number') {
+    console.log('[getNumericValue] Returning number:', value);
+    return value;
+  }
+  
   if (typeof value === 'string') {
     const parsed = parseFloat(value);
-    return isNaN(parsed) ? 0 : parsed;
+    const result = isNaN(parsed) ? 0 : parsed;
+    console.log('[getNumericValue] Parsed string:', value, '->', result);
+    return result;
   }
+  
+  console.log('[getNumericValue] Returning 0 for non-numeric value:', value);
   return 0;
 };
 
@@ -264,4 +274,110 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
   
   // console.log('[updateSectionDisplayNames] Nomes de exibição finais:', displayNames);
   return displayNames;
+};
+
+// ==== New helpers to normalize disciplines/blocks across structures ====
+
+// Get discipline weights (type -> weight)
+export const getDisciplineWeights = (concurso: Concurso): Record<string, number> => {
+  const weights: Record<string, number> = {};
+  if (!concurso?.disciplines) return weights;
+
+  // JSONB com blocks
+  if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && (concurso.disciplines as any).blocks) {
+    for (const block of (concurso.disciplines as any).blocks) {
+      if (block?.disciplines && Array.isArray(block.disciplines)) {
+        for (const d of block.disciplines) {
+          if (d?.type && d.isEnabled !== false) {
+            weights[d.type] = Number(d.weight ?? 1);
+          }
+        }
+      }
+    }
+    return weights;
+  }
+
+  // Array (legado): hierárquico ou plano
+  if (Array.isArray(concurso.disciplines)) {
+    for (const item of concurso.disciplines) {
+      if ((item as any)?.disciplines && Array.isArray((item as any).disciplines)) {
+        for (const d of (item as any).disciplines) {
+          if (d?.type && d.isEnabled !== false) weights[d.type] = Number(d.weight ?? 1);
+        }
+      } else if ((item as any)?.type) {
+        const d = item as any;
+        if (d?.type && d.isEnabled !== false) weights[d.type] = Number(d.weight ?? 1);
+      }
+    }
+  }
+  return weights;
+};
+
+// Get discipline minimums (type -> min), respecting quota when requested
+export const getDisciplineMinimums = (concurso: Concurso, isQuota: boolean): Record<string, number> => {
+  const mins: Record<string, number> = {};
+  if (!concurso?.disciplines) return mins;
+
+  if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && (concurso.disciplines as any).blocks) {
+    for (const block of (concurso.disciplines as any).blocks) {
+      if (block?.disciplines && Array.isArray(block.disciplines)) {
+        for (const d of block.disciplines) {
+          if (d?.type && d.isEnabled !== false) {
+            mins[d.type] = Number(isQuota ? (d.minimum_score_cotas ?? 0) : (d.minimum_score ?? 0));
+          }
+        }
+      }
+    }
+    return mins;
+  }
+
+  if (Array.isArray(concurso.disciplines)) {
+    for (const item of concurso.disciplines) {
+      if ((item as any)?.disciplines && Array.isArray((item as any).disciplines)) {
+        for (const d of (item as any).disciplines) {
+          if (d?.type && d.isEnabled !== false) mins[d.type] = Number(isQuota ? (d.minimum_score_cotas ?? 0) : (d.minimum_score ?? 0));
+        }
+      } else if ((item as any)?.type) {
+        const d = item as any;
+        if (d?.type && d.isEnabled !== false) mins[d.type] = Number(isQuota ? (d.minimum_score_cotas ?? 0) : (d.minimum_score ?? 0));
+      }
+    }
+  }
+  return mins;
+};
+
+// Get block minimums and mapping discipline->blockId
+export const getBlockMinimumMaps = (
+  concurso: Concurso,
+  isQuota: boolean
+): { blockMinimums: Record<string, number>; disciplineToBlock: Record<string, string> } => {
+  const blockMinimums: Record<string, number> = {};
+  const disciplineToBlock: Record<string, string> = {};
+  if (!concurso?.disciplines) return { blockMinimums, disciplineToBlock };
+
+  if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && (concurso.disciplines as any).blocks) {
+    for (const block of (concurso.disciplines as any).blocks) {
+      const bId = block.blockId || block.blockName;
+      if (bId) blockMinimums[bId] = Number(isQuota ? (block.blockMinimumCotas || 0) : (block.blockMinimumScore || 0));
+      if (block?.disciplines && Array.isArray(block.disciplines)) {
+        for (const d of block.disciplines) {
+          if (d?.type && d.isEnabled) disciplineToBlock[d.type] = bId;
+        }
+      }
+    }
+    return { blockMinimums, disciplineToBlock };
+  }
+
+  if (Array.isArray(concurso.disciplines)) {
+    for (const block of concurso.disciplines as any[]) {
+      const bId = block.id || block.name;
+      if (bId) blockMinimums[bId] = Number(isQuota ? (block.minimum_score_cotas || 0) : (block.minimum_score || 0));
+      if (block?.disciplines && Array.isArray(block.disciplines)) {
+        for (const d of block.disciplines) {
+          if (d?.type && d.isEnabled) disciplineToBlock[d.type] = bId;
+        }
+      }
+    }
+  }
+  return { blockMinimums, disciplineToBlock };
 };

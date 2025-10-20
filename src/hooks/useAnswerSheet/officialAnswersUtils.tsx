@@ -54,18 +54,26 @@ export const getQuestionStructureFromOfficialAnswers = async (
 
     const bookletData = data.official_answers[bookletId];
     const questions = bookletData.questions || {};
-    const disciplines = data.disciplines || [];
+    const disciplinesData = data.disciplines || null;
+    
+    // Normalizar disciplines para array de blocos (suporta JSONB com blocks e array legado)
+    let blocksArray: any[] = [];
+    if (disciplinesData && typeof disciplinesData === 'object' && !Array.isArray(disciplinesData) && (disciplinesData as any).blocks) {
+      blocksArray = (disciplinesData as any).blocks;
+    } else if (Array.isArray(disciplinesData)) {
+      blocksArray = disciplinesData as any[];
+    }
     
     console.log('[getQuestionStructureFromOfficialAnswers] Estrutura JSONB atual:', {
       bookletId,
       hasMetadata: !!bookletData.metadata,
       totalQuestions: bookletData.metadata?.total_questions,
       questionsCount: Object.keys(questions).length,
-      disciplinesCount: disciplines.length
+      disciplinesBlocksCount: blocksArray.length
     });
     
     console.log('[getQuestionStructureFromOfficialAnswers] Dados do caderno encontrados:', bookletData);
-    console.log('[getQuestionStructureFromOfficialAnswers] Disciplinas do concurso:', disciplines);
+    console.log('[getQuestionStructureFromOfficialAnswers] Blocos de disciplinas normalizados:', blocksArray);
     
     // Extrair números das questões das respostas oficiais
     const questionNumbers = Object.keys(questions)
@@ -80,14 +88,14 @@ export const getQuestionStructureFromOfficialAnswers = async (
     const sectionQuestions: SectionQuestions = {};
     
     // Se temos disciplinas customizadas, usar a estrutura do formulário
-    if (disciplines && disciplines.length > 0) {
+    if (blocksArray && blocksArray.length > 0) {
       console.log('[getQuestionStructureFromOfficialAnswers] Usando estrutura de disciplinas do formulário');
       
       // Mapear disciplinas para seções
       const disciplineToSectionMap: { [key: string]: SectionType } = {};
       
-      disciplines.forEach((block: any) => {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
+      blocksArray.forEach((block: any) => {
+        if (block?.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines.forEach((discipline: any) => {
             if (discipline.isEnabled && discipline.type) {
               // Para disciplinas customizadas, usar o tipo diretamente
@@ -113,8 +121,8 @@ export const getQuestionStructureFromOfficialAnswers = async (
       
       // Distribuir questões baseado na estrutura de disciplinas
       let questionIndex = 0;
-      disciplines.forEach((block: any) => {
-        if (block.disciplines && Array.isArray(block.disciplines)) {
+      blocksArray.forEach((block: any) => {
+        if (block?.disciplines && Array.isArray(block.disciplines)) {
           block.disciplines.forEach((discipline: any) => {
             if (discipline.isEnabled && discipline.questionCount > 0) {
               const sectionType = disciplineToSectionMap[discipline.type] || 'basic';
@@ -123,9 +131,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
               console.log('[getQuestionStructureFromOfficialAnswers] Disciplina:', discipline.name, 'tipo:', discipline.type, 'seção:', sectionType, 'questões:', questionsForThisDiscipline);
               
               // Inicializar array da seção se não existir
-              if (!sectionQuestions[sectionType]) {
-                sectionQuestions[sectionType] = [];
-              }
+              if (!sectionQuestions[sectionType]) sectionQuestions[sectionType] = [];
               
               for (let i = 0; i < questionsForThisDiscipline; i++) {
                 if (questionIndex < questionNumbers.length) {
@@ -140,6 +146,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
       });
       
       // Se sobrou questões, distribuir para básico
+      if (!sectionQuestions.basic) sectionQuestions.basic = [];
       while (questionIndex < questionNumbers.length) {
         sectionQuestions.basic.push(questionNumbers[questionIndex]);
         questionIndex++;

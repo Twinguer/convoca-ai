@@ -170,19 +170,31 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   const getQuestionsCount = (section: string): number => {
     if (!concurso) return 0;
     
+    console.log('[getQuestionsCount] Looking for section:', section);
+    console.log('[getQuestionsCount] Concurso disciplines:', concurso.disciplines);
+    
     // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
       console.log('[getQuestionsCount] Using new hierarchical structure with blocks');
+      console.log('[getQuestionsCount] Blocks count:', concurso.disciplines.blocks.length);
+      
       // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
       for (const block of concurso.disciplines.blocks) {
+        console.log('[getQuestionsCount] Processing block:', block.blockName, 'disciplines:', block.disciplines?.length);
+        
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
+            console.log('[getQuestionsCount] Processing discipline:', discipline.name, 'type:', discipline.type, 'isEnabled:', discipline.isEnabled, 'questionCount:', discipline.questionCount);
+            
             if (discipline.type === section && discipline.isEnabled) {
-              return getNumericValue(discipline.questionCount);
+              const count = getNumericValue(discipline.questionCount);
+              console.log('[getQuestionsCount] Found matching discipline! questionCount:', count);
+              return count;
             }
           }
         }
       }
+      console.log('[getQuestionsCount] No matching discipline found for section:', section);
       return 0;
     }
     // Verificar se estamos usando a estrutura hierárquica antiga (array de blocos)
@@ -606,19 +618,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
               
               {objectiveSections.map(section => <TabsContent key={section.key} value={section.key}>
                   <div className="p-4 bg-muted/30">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {createAnswerMatrix().map((row, rowIndex) => <div key={`row-${rowIndex}`}>
-                          {row.map((questionNumber, colIndex) => questionNumber !== null ? <div key={`${rowIndex}-${colIndex}`} className="border border-border rounded-md p-3 bg-card">
-                                <div className="mb-2 font-medium text-foreground">Questão {questionNumber}</div>
-                                <div className="flex flex-wrap gap-2">
-                                  {getOptionsForQuestion().map(option => <button key={option} className={`w-10 h-10 rounded-full flex items-center justify-center font-medium transition-colors
-                                        ${answers[questionNumber] === option ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
-                                      {option}
-                                    </button>)}
-                                </div>
-                                <NullifyQuestionButton questionNumber={questionNumber} isNullified={nullifiedQuestions.has(questionNumber)} onNullify={handleNullifyQuestion} />
-                              </div> : null)}
-                        </div>)}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {getQuestionsRange().map((questionNumber) => (
+                        <div key={`q-${questionNumber}`} className="border border-border rounded-md p-3 bg-card">
+                          <div className="mb-2 font-medium text-foreground">Questão {questionNumber}</div>
+                          <div className="flex flex-wrap md:flex-nowrap gap-1 md:gap-1 lg:gap-2">
+                            {getOptionsForQuestion().map(option => <button key={option} className={`w-9 h-9 md:w-8 md:h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${answers[questionNumber] === option ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
+                                {option}
+                              </button>)}
+                          </div>
+                          <NullifyQuestionButton questionNumber={questionNumber} isNullified={nullifiedQuestions.has(questionNumber)} onNullify={handleNullifyQuestion} />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </TabsContent>)}

@@ -302,9 +302,13 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
   console.log('[mapFormDataToDisciplinesStructure] Input formValues:', formValues);
   console.log('[mapFormDataToDisciplinesStructure] formValues.disciplines:', formValues.disciplines);
   
-  // Extrair minimum scores do form
-  const totalScore = formValues.minimum_total_score ? Number(formValues.minimum_total_score) : 0;
-  const quotaScore = formValues.minimum_total_score_cotas ? Number(formValues.minimum_total_score_cotas) : 0;
+  // Extrair minimum scores do form (aceita snake_case e camelCase)
+  const totalScore = Number(
+    (formValues.minimum_total_score ?? formValues.minimumTotalScore ?? 0)
+  );
+  const quotaScore = Number(
+    (formValues.minimum_total_score_cotas ?? formValues.minimumTotalScoreCotas ?? 0)
+  );
   
   console.log('[mapFormDataToDisciplinesStructure] totalScore:', totalScore);
   console.log('[mapFormDataToDisciplinesStructure] quotaScore:', quotaScore);
@@ -319,6 +323,14 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
       blockMinimumCotas: Number(block.minimum_score_cotas) || 0,
       disciplines: (block.disciplines || []).map((discipline: any) => {
         console.log('[mapFormDataToDisciplinesStructure] Processing discipline:', discipline);
+        const questionCount = Number(discipline.questionCount) || 0;
+        console.log('[mapFormDataToDisciplinesStructure] Discipline questionCount:', questionCount, 'from:', discipline.questionCount);
+        
+        // Validar se questionCount é válido
+        if (questionCount === 0) {
+          console.warn('[mapFormDataToDisciplinesStructure] WARNING: questionCount is 0 for discipline:', discipline.name, 'type:', discipline.type);
+        }
+        
         return {
           id: discipline.id,
           name: discipline.name,
@@ -327,7 +339,7 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
           isEnabled: discipline.isEnabled !== false,
           minimum_score: Number(discipline.minimum_score) || 0,
           minimum_score_cotas: Number(discipline.minimum_score_cotas) || 0,
-          questionCount: Number(discipline.questionCount) || 0
+          questionCount: questionCount
         };
       })
     };

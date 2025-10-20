@@ -83,7 +83,8 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                 updatedDiscipline.minimum_score_cotas = 0;
               }
               if (updatedDiscipline.questionCount === undefined) {
-                updatedDiscipline.questionCount = 0;
+                updatedDiscipline.questionCount = 10; // Valor padrão 10 em vez de 0
+                console.log('[ExamStructureSection] Set default questionCount to 10 for discipline:', updatedDiscipline.id);
               }
               if (updatedDiscipline.weight === undefined) {
                 updatedDiscipline.weight = 1;
@@ -221,6 +222,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Atualizar campo de disciplina
   const handleDisciplineChange = (blockId: string, disciplineId: string, field: string, value: any) => {
+    console.log('[handleDisciplineChange] Updating field:', field, 'to value:', value, 'type:', typeof value);
     const processedValue = field === 'name' ? value.slice(0, 5) : value;
     const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => {
@@ -229,10 +231,12 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
           ...block,
           disciplines: (block.disciplines || []).map(discipline => {
             if (discipline.id === disciplineId) {
-              return {
+              const updatedDiscipline = {
                 ...discipline,
                 [field]: processedValue
               };
+              console.log('[handleDisciplineChange] Updated discipline:', updatedDiscipline);
+              return updatedDiscipline;
             }
             return discipline;
           })
@@ -240,6 +244,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       }
       return block;
     });
+    console.log('[handleDisciplineChange] Setting form value with updated blocks');
     form.setValue('disciplines', updatedBlocks);
   };
 
@@ -420,10 +425,24 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                           maxLength={3}
                           onChange={e => {
                             const value = e.target.value;
+                            console.log('[ExamStructureSection] questionCount onChange:', value);
                             if (value.length <= 3 && !isNaN(Number(value)) && Number(value) <= 999) {
-                              handleDisciplineChange(block.id, discipline.id, 'questionCount', Number(value));
+                              const numValue = Number(value);
+                              console.log('[ExamStructureSection] Setting questionCount to:', numValue);
+                              handleDisciplineChange(block.id, discipline.id, 'questionCount', numValue);
+                            } else if (value === '') {
+                              // Permitir campo vazio temporariamente
+                              console.log('[ExamStructureSection] Empty value, setting to 0 temporarily');
+                              handleDisciplineChange(block.id, discipline.id, 'questionCount', 0);
                             }
-                          }} 
+                          }}
+                          onBlur={e => {
+                            const value = e.target.value;
+                            if (value === '' || Number(value) === 0) {
+                              console.log('[ExamStructureSection] onBlur: Setting default questionCount to 10');
+                              handleDisciplineChange(block.id, discipline.id, 'questionCount', 10);
+                            }
+                          }}
                         />
                       </div>
                       <div>
@@ -568,9 +587,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('discursive_minimum_score') || ''}
                     onChange={(e) => form.setValue('discursive_minimum_score', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima necessária para aprovação nesta seção
-                  </FormDescription>
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
@@ -583,9 +599,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('discursive_minimum_score_cotas') || ''}
                     onChange={(e) => form.setValue('discursive_minimum_score_cotas', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima para cotas nesta seção
-                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -611,9 +624,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('case_study_1_minimum_score') || ''}
                     onChange={(e) => form.setValue('case_study_1_minimum_score', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima necessária para aprovação nesta seção
-                  </FormDescription>
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
@@ -626,9 +636,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('case_study_1_minimum_score_cotas') || ''}
                     onChange={(e) => form.setValue('case_study_1_minimum_score_cotas', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima para cotas nesta seção
-                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -654,9 +661,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('case_study_2_minimum_score') || ''}
                     onChange={(e) => form.setValue('case_study_2_minimum_score', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima necessária para aprovação nesta seção
-                  </FormDescription>
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
@@ -669,9 +673,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('case_study_2_minimum_score_cotas') || ''}
                     onChange={(e) => form.setValue('case_study_2_minimum_score_cotas', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima para cotas nesta seção
-                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -697,9 +698,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('case_study_3_minimum_score') || ''}
                     onChange={(e) => form.setValue('case_study_3_minimum_score', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima necessária para aprovação nesta seção
-                  </FormDescription>
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
@@ -712,9 +710,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('case_study_3_minimum_score_cotas') || ''}
                     onChange={(e) => form.setValue('case_study_3_minimum_score_cotas', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima para cotas nesta seção
-                  </FormDescription>
                 </div>
               </div>
             </div>}
@@ -731,7 +726,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <FormLabel>Nome da Seção</FormLabel>
                   <Input 
@@ -751,15 +746,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('other_subjective_minimum_score') || ''}
                     onChange={(e) => form.setValue('other_subjective_minimum_score', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima necessária para aprovação nesta seção
-                  </FormDescription>
                 </div>
-              </div>
-              
-              {/* Nota mínima para cotas do outro subjetivo */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                <div></div> {/* Espaço vazio para alinhamento */}
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
                   <Input
@@ -771,9 +758,6 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                     value={form.watch('other_subjective_minimum_score_cotas') || ''}
                     onChange={(e) => form.setValue('other_subjective_minimum_score_cotas', Number(e.target.value))}
                   />
-                  <FormDescription>
-                    Nota mínima para cotas nesta seção
-                  </FormDescription>
                 </div>
               </div>
             </div>}

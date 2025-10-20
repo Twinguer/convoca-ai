@@ -205,7 +205,21 @@ const CriarRanking = () => {
                 minimumTotalScoreCotas = data.disciplines.minimum_total_score_cotas || 0;
               }
               if (data.disciplines.blocks && Array.isArray(data.disciplines.blocks)) {
-                disciplinesBlocks = data.disciplines.blocks;
+                // Converter estrutura JSONB para o formato esperado pelo form
+                disciplinesBlocks = data.disciplines.blocks.map((b: any) => ({
+                  id: b.blockId ?? b.id,
+                  name: b.blockName ?? b.name,
+                  minimum_score: Number(b.blockMinimumScore ?? b.minimum_score ?? 0),
+                  minimum_score_cotas: Number(b.blockMinimumCotas ?? b.minimum_score_cotas ?? 0),
+                  disciplines: (b.disciplines || []).map((d: any) => ({
+                    ...d,
+                    minimum_score: Number(d.minimum_score || 0),
+                    minimum_score_cotas: Number(d.minimum_score_cotas || 0),
+                    weight: Number(d.weight || 1),
+                    questionCount: Number(d.questionCount || 0),
+                    isEnabled: d.isEnabled !== false
+                  }))
+                }));
               }
               
               console.log('[CriarRanking] Estrutura JSONB carregada:', {

@@ -365,7 +365,12 @@ export const useSaveRanking = () => {
       // Segunda etapa: atualizar com campos adicionais (sempre executar)
       if (concursoIdToUse) {
         // ✅ NOVA ESTRUTURA: Mapear dados do formulário para estrutura hierárquica correta
-        const disciplinesStructure = mapFormDataToDisciplinesStructure(formValues);
+        // Normalizar campos de mínimo global (snake_case) para garantir persistência correta
+        const disciplinesStructure = mapFormDataToDisciplinesStructure({
+          ...formValues,
+          minimum_total_score: formValues.minimumTotalScore || 0,
+          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0
+        });
         
         console.log('[useSaveRanking] Disciplines structure to save:', disciplinesStructure);
         console.log('[useSaveRanking] Is disciplines structure an object?', typeof disciplinesStructure === 'object');
@@ -427,6 +432,38 @@ export const useSaveRanking = () => {
           });
           toast.error(`Erro ao atualizar campos adicionais: ${updateError.message}`);
           // Não falhar a operação, apenas logar o erro
+        }
+
+        // Disparar recálculo para todos os participantes após editar mínimos/pesos/blocos
+        try {
+          // Buscar todos os user_rankings e filtrar em memória os que participam deste concurso
+          const { data: allUserRankings } = await supabase
+            .from('user_rankings')
+            .select('user_id, consolidated_data');
+
+          const participants: string[] = [];
+          if (allUserRankings && Array.isArray(allUserRankings)) {
+            for (const ur of allUserRankings) {
+              const rankingsMap = ur?.consolidated_data?.rankings || {};
+              const keys = Object.keys(rankingsMap);
+              const participates = keys.some((k) => rankingsMap[k]?.concurso_id === concursoIdToUse);
+              if (participates) participants.push(ur.user_id);
+            }
+          }
+
+          if (participants.length > 0) {
+            const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
+            // Rodar em background sem bloquear a UI
+            Promise.allSettled(participants.map((uid) => recalculateUserScore(uid, concursoIdToUse!)))
+              .then(() => {
+                // Invalidate para refletir resultados
+                queryClient.invalidateQueries({ queryKey: ['rankings', concursoIdToUse] });
+                queryClient.invalidateQueries({ queryKey: ['user-created-rankings'] });
+              })
+              .catch((e) => console.error('[useSaveRanking] Erro ao executar recálculo em lote:', e));
+          }
+        } catch (batchErr) {
+          console.error('[useSaveRanking] Erro ao preparar recálculo pós-edição:', batchErr);
         }
       }
 

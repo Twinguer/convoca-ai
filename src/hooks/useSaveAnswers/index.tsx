@@ -6,6 +6,7 @@ import { UseSaveAnswersProps, SaveAnswersResponse } from './types';
 import { validateSaveAnswers } from './validation';
 import { prepareAnswersData } from './prepareData';
 import { rankingCache } from '@/services/rankingCache';
+import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
 
 export const useSaveAnswers = ({
   rankingId,
@@ -195,8 +196,19 @@ export const useSaveAnswers = ({
               return subjectiveValues;
             })(),
             // Preservar reservation_type dentro de user_data
-            reservation_type: updatedConsolidatedData.rankings[rankingId].user_data?.reservation_type || 'Ampla Concorrência'
-            // score, object_scores, subject_scores_tot serão atualizados pelo recalculateUserScore
+            reservation_type: updatedConsolidatedData.rankings[rankingId].user_data?.reservation_type || 'Ampla Concorrência',
+            // Atualizar object_scores com a nova estrutura baseada em disciplinas
+            object_scores: (() => {
+              const existingObjectScores = updatedConsolidatedData.rankings[rankingId].user_data?.object_scores || {};
+              console.log('[useSaveAnswers] Existing object_scores:', existingObjectScores);
+              
+              // Migrar object_scores existente para nova estrutura se necessário
+              const migratedObjectScores = migrateObjectScores(existingObjectScores, concurso);
+              console.log('[useSaveAnswers] Migrated object_scores:', migratedObjectScores);
+              
+              return migratedObjectScores;
+            })()
+            // score, subject_scores_tot serão atualizados pelo recalculateUserScore
           },
           selected_booklet_id: bookletIdString,
           edit_count: editCount + 1,

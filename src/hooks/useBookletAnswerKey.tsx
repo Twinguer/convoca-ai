@@ -76,29 +76,43 @@ export const useBookletAnswerKey = (concursoId: string) => {
         .single();
 
       let expectedQuestions = 0;
-      
-      // SEMPRE usar a nova estrutura JSONB disciplines (sempre hierárquica)
-      if (concurso?.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-        // Calcular questões para conhecimentos customizados - SEMPRE hierárquica
-        const disciplines = Array.isArray(concurso.disciplines) ? concurso.disciplines : [];
-        
-        // Estrutura hierárquica: blocos contendo disciplinas
-        disciplines.forEach((block: any) => {
-          if (block.disciplines && Array.isArray(block.disciplines)) {
+
+      // Suporta a nova estrutura JSONB: objeto com blocks
+      if (concurso?.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines)) {
+        const blocks = (concurso.disciplines as any).blocks || [];
+        blocks.forEach((block: any) => {
+          if (block?.disciplines && Array.isArray(block.disciplines)) {
             block.disciplines.forEach((discipline: any) => {
-              if (discipline.isEnabled) {
-                const questionCount = typeof discipline.questionCount === 'string' 
-                  ? parseInt(discipline.questionCount) || 0 
-                  : discipline.questionCount || 0;
+              if (discipline?.isEnabled) {
+                const raw = discipline.questionCount;
+                const questionCount = typeof raw === 'string' ? parseInt(raw) || 0 : (raw || 0);
                 expectedQuestions += questionCount;
               }
             });
           }
         });
-      } else {
-        // Estrutura tradicional não suportada mais - usar disciplines JSONB
-        console.warn('[useBookletAnswerKey] Estrutura tradicional não suportada, usando disciplines JSONB');
-        expectedQuestions = 0;
+      } else if (Array.isArray(concurso?.disciplines)) {
+        // Compat: caso ainda venha como array hierárquico
+        const arr = concurso.disciplines as any[];
+        arr.forEach((block: any) => {
+          if (block?.disciplines && Array.isArray(block.disciplines)) {
+            block.disciplines.forEach((discipline: any) => {
+              if (discipline?.isEnabled) {
+                const raw = discipline.questionCount;
+                const questionCount = typeof raw === 'string' ? parseInt(raw) || 0 : (raw || 0);
+                expectedQuestions += questionCount;
+              }
+            });
+          }
+        });
+      }
+
+      // Fallback: se não encontrou via disciplines, tenta deduzir pelo primeiro caderno em official_answers
+      if (!expectedQuestions || expectedQuestions === 0) {
+        const firstKey = concurso?.official_answers ? Object.keys(concurso.official_answers)[0] : undefined;
+        if (firstKey && concurso?.official_answers?.[firstKey]?.questions) {
+          expectedQuestions = Object.keys(concurso.official_answers[firstKey].questions).length;
+        }
       }
 
       // Log removido por segurança

@@ -12,9 +12,37 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
 
   if (!concurso) return result;
 
-  // Always use disciplines structure (new system)
-  if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    console.log('[getSectionQuestionsDict] Using disciplines structure');
+  // Verificar se é a nova estrutura hierárquica (objeto com blocks)
+  if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+    console.log('[getSectionQuestionsDict] Using new hierarchical structure with blocks');
+    
+    let currentQuestionNumber = 1;
+    
+    // Processar blocos da nova estrutura
+    for (const block of concurso.disciplines.blocks) {
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const discipline of block.disciplines) {
+          if (discipline.isEnabled && discipline.type) {
+            // Create array for this discipline if it doesn't exist
+            if (!result[discipline.type]) {
+              result[discipline.type] = [];
+            }
+
+            // Add question numbers for this discipline
+            const questionCount = parseInt(String(discipline.questionCount), 10) || 0;
+            console.log('[getSectionQuestionsDict] Discipline:', discipline.name, 'questionCount:', questionCount);
+            for (let i = 0; i < questionCount; i++) {
+              result[discipline.type].push(currentQuestionNumber);
+              currentQuestionNumber++;
+            }
+          }
+        }
+      }
+    }
+  }
+  // Verificar se é array (estrutura antiga)
+  else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    console.log('[getSectionQuestionsDict] Using disciplines array structure');
     
     // Check if hierarchical (blocks -> disciplines)
     const isHierarchical = concurso.disciplines.length > 0 && 

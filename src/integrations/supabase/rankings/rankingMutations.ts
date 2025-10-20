@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { isHierarchicalStructure } from './examStructure';
+import { isHierarchicalStructure, getDisciplineWeights, getDisciplineMinimums, getBlockMinimumMaps } from './examStructure';
+import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
 
 interface RecalculationResponse {
   success: boolean;
@@ -262,23 +263,39 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const disciplineScores: Record<string, number> = {};
     const weightedDisciplineScores: Record<string, number> = {};
 
+    // Determinar tipo de reserva (antes para usar em mínimos por cota)
+    const reservationType = (() => {
+      const raw = userRanking.consolidated_data?.rankings?.[rankingId]?.user_data?.reservation_type || '';
+      return raw === 'Ampla Concorrência' ? 'ampla' : (raw || 'ampla');
+    })();
+    const isQuota = reservationType !== 'ampla' && reservationType !== '';
+
     // Criar mapeamento de section_type para discipline.type
     const sectionTypeToDisciplineTypeMap: Record<string, string> = {};
-    const disciplineWeights: Record<string, number> = {};
-    const disciplineMinimums: Record<string, number> = {};
+    const disciplineWeights: Record<string, number> = getDisciplineWeights(concurso);
+    const disciplineMinimums: Record<string, number> = getDisciplineMinimums(concurso, isQuota);
 
     // Percorrer as disciplinas do concurso para criar o mapeamento
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      for (const block of concurso.disciplines) {
-        if ('disciplines' in block && Array.isArray(block.disciplines)) {
-          for (const discipline of block.disciplines) {
-            if (discipline.isEnabled && discipline.type) {
-              // Mapear section_type (do gabarito) para discipline.type (das respostas)
-              // Para disciplinas customizadas, o section_type geralmente é o mesmo que discipline.type
-              sectionTypeToDisciplineTypeMap[discipline.type] = discipline.type;
-              disciplineWeights[discipline.type] = discipline.weight || 1;
-              disciplineMinimums[discipline.type] = discipline.minimum_score || 0;
+    // Nova estrutura JSONB: objeto com blocks
+    // Mapear section_type -> discipline.type para uso com official_answers
+    if (concurso.disciplines) {
+      if (typeof concurso.disciplines === 'object' && (concurso.disciplines as any).blocks) {
+        for (const block of (concurso.disciplines as any).blocks) {
+          if (block?.disciplines && Array.isArray(block.disciplines)) {
+            for (const d of block.disciplines) {
+              if (d?.type && d.isEnabled) sectionTypeToDisciplineTypeMap[d.type] = d.type;
             }
+          }
+        }
+      } else if (Array.isArray(concurso.disciplines)) {
+        for (const item of concurso.disciplines) {
+          if ((item as any)?.disciplines && Array.isArray((item as any).disciplines)) {
+            for (const d of (item as any).disciplines) {
+              if (d?.type && d.isEnabled) sectionTypeToDisciplineTypeMap[d.type] = d.type;
+            }
+          } else if ((item as any)?.type) {
+            const d = item as any;
+            if (d?.type && d.isEnabled) sectionTypeToDisciplineTypeMap[d.type] = d.type;
           }
         }
       }
@@ -303,22 +320,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const caseStudy3Score = subjectiveScores.case_study_3 || 0;
     const otherSubjectiveScore = subjectiveScores.other_subjective || 0;
     
-    // Calcular pesos usando JSONB disciplines (prioridade) ou campos diretos (fallback)
-    const getWeightFromDisciplines = (type: string): number => {
-      if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-        for (const discipline of concurso.disciplines) {
-          if ('disciplines' in discipline) {
-            // Estrutura hierárquica
-            const found = discipline.disciplines?.find(d => d.type === type);
-            if (found) return found.weight || 1;
-          } else {
-            // Estrutura plana
-            if (discipline.type === type) return discipline.weight || 1;
-          }
-        }
-      }
-      return 1; // Fallback
-    };
+    // Usar o mapa de pesos já normalizado
+    const getWeightFromDisciplines = (type: string): number => Number(disciplineWeights[type] ?? 1);
     
     const weightedDiscursiveScore = discursiveScore * getWeightFromDisciplines('discursive');
     const weightedCaseStudy1Score = caseStudy1Score * getWeightFromDisciplines('case_study_1');
@@ -326,33 +329,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const weightedCaseStudy3Score = caseStudy3Score * getWeightFromDisciplines('case_study_3');
     const weightedOtherSubjectiveScore = otherSubjectiveScore * getWeightFromDisciplines('other_subjective');
 
-    // Processar pontuações da disciplina baseadas no JSON de disciplinas
-    // SEMPRE usar a nova estrutura JSONB disciplines (sempre hierárquica)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      console.log(`[recalculateUserScore] Structure type: hierarchical`);
-      
-      // Criar um mapeamento de tipo para peso com base no JSON de disciplinas
-      const disciplineWeights: Record<string, number> = {};
-      const disciplineNames: Record<string, string> = {};
-      
-      // Percorrer as disciplinas e extrair os pesos - SEMPRE hierárquica
-      for (const block of concurso.disciplines) {
-        if ('disciplines' in block && Array.isArray(block.disciplines)) {
-          for (const discipline of block.disciplines) {
-            if (discipline.isEnabled && discipline.type) {
-              disciplineWeights[discipline.type] = discipline.weight ?? 1;
-              disciplineNames[discipline.type] = discipline.name || discipline.type;
-              
-              // Inicializar pontuações como zero
-              disciplineScores[discipline.type] = 0;
-              weightedDisciplineScores[discipline.type] = 0;
-            }
-          }
-        }
-      }
-      
-      console.log("[recalculateUserScore] Discipline weights:", disciplineWeights);
-    }
+    // Inicializar pontuações para todas as disciplinas habilitadas conhecidas
+    Object.keys(disciplineWeights).forEach(type => {
+      disciplineScores[type] = 0;
+      weightedDisciplineScores[type] = 0;
+    });
 
     // Calcular a pontuação do usuário para cada resposta
     for (const userAnswer of userAnswers || []) {
@@ -401,39 +382,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           console.log(`[recalculateUserScore] DEBUG - Após cálculo: disciplineScores[${disciplineType}] = ${disciplineScores[disciplineType]}`);
         } else if (concurso.exam_type === 'Certo ou Errado') {
           // Penalty logic can be moved to JSONB if needed
-          const penalty = 0; // Default no penalty
-          if (penalty > 0) {
-            let disciplineWeight = 1;
-            // SEMPRE usar a nova estrutura JSONB disciplines
-          if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-              const hierarchical = isHierarchicalStructure(concurso);
-              if (hierarchical) {
-                for (const block of concurso.disciplines) {
-                  if ('disciplines' in block && Array.isArray(block.disciplines)) {
-                    for (const discipline of block.disciplines) {
-                      if (discipline.type === sectionType) {
-                        disciplineWeight = discipline.weight ?? 1;
-                        break;
-                      }
-                    }
-                  }
-                }
-              } else {
-                for (const discipline of concurso.disciplines) {
-                  if ('type' in discipline && discipline.type === sectionType) {
-                    disciplineWeight = discipline.weight ?? 1;
-                    break;
-                  }
-                }
-              }
-            }
-            // Aplicar penalidade POR QUESTÃO (não por disciplina)
-            totalScore -= penalty; // Penalidade é valor absoluto, não multiplicado pelo peso da questão
-            // Mantemos disciplineScores como contagem de acertos (não decrementar em erro)
-            weightedDisciplineScores[sectionType] -= penalty * disciplineWeight; // Penalidade multiplicada apenas pelo peso da disciplina
-            
-            console.log(`[recalculateUserScore] Question ${userAnswer.question_number} wrong (${sectionType}): -${penalty} penalty`);
-          }
+          const penalty = 0; // Sem penalidade (feature removida/no-op)
           // Se penalty = 0, não faz nada (resposta errada não impacta)
         }
         
@@ -448,31 +397,34 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
     console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}, other=${weightedOtherSubjectiveScore}`);
 
-    // Se estivermos usando pesos de disciplina customizados, recalcular a pontuação total
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0 && Object.keys(weightedDisciplineScores).length > 0) {
-      // Resetar a pontuação total para incluir apenas as pontuações ponderadas
-      totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + score, 0);
+    // Recalcular total usando pontuações ponderadas sempre que existirem (independente da estrutura)
+    if (Object.keys(weightedDisciplineScores).length > 0) {
+      // Objetivas ponderadas
+      totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
       
       // Adicionar pontuações subjetivas ponderadas
-      totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore;
+      totalScore += (weightedDiscursiveScore || 0)
+                 + (weightedCaseStudy1Score || 0)
+                 + (weightedCaseStudy2Score || 0)
+                 + (weightedCaseStudy3Score || 0)
+                 + (weightedOtherSubjectiveScore || 0);
       
-      console.log(`[recalculateUserScore] Recalculated total with custom weights: ${totalScore}`);
-    console.log(`[recalculateUserScore] Discipline scores:`, disciplineScores);
-    console.log(`[recalculateUserScore] Subjective scores:`, {
-      discursiveScore,
-      caseStudy1Score,
-      caseStudy2Score,
-      caseStudy3Score,
-      otherSubjectiveScore
-    });
-    console.log(`[recalculateUserScore] Weighted subjective scores:`, {
-      weightedDiscursiveScore,
-      weightedCaseStudy1Score,
-      weightedCaseStudy2Score,
-      weightedCaseStudy3Score,
-      weightedOtherSubjectiveScore
-    });
+      console.log(`[recalculateUserScore] Recalculated total with custom weights (any structure): ${totalScore}`);
+      console.log(`[recalculateUserScore] Discipline scores:`, disciplineScores);
+      console.log(`[recalculateUserScore] Subjective scores:`, {
+        discursiveScore,
+        caseStudy1Score,
+        caseStudy2Score,
+        caseStudy3Score,
+        otherSubjectiveScore
+      });
+      console.log(`[recalculateUserScore] Weighted subjective scores:`, {
+        weightedDiscursiveScore,
+        weightedCaseStudy1Score,
+        weightedCaseStudy2Score,
+        weightedCaseStudy3Score,
+        weightedOtherSubjectiveScore
+      });
     }
 
     // Calcular totais
@@ -482,8 +434,39 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Criar estrutura correta de subject_scores (APENAS objetivas)
     const correctSubjectScores: Record<string, number> = {};
 
-    // Percorrer as disciplinas do concurso para criar subject_scores dinamicamente
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    // Percorrer as disciplinas do concurso para criar subject_scores dinamicamente - NOVA ESTRUTURA COMPATÍVEL
+    // Verificar se é a nova estrutura hierárquica (objeto com blocks)
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+      console.log('[recalculateUserScore] Usando nova estrutura hierárquica com blocks');
+      
+      for (const block of concurso.disciplines.blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && discipline.type) {
+              // Incluir todas as disciplinas objetivas (não apenas custom_)
+              const isObjectiveDiscipline = !['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+              
+              if (isObjectiveDiscipline) {
+                const score = weightedDisciplineScores[discipline.type] || 0;
+                const minimum = disciplineMinimums[discipline.type] || 0;
+                
+                // Verificar se atingiu pontuação mínima
+                if (score < minimum) {
+                  console.log(`[recalculateUserScore] WARNING: Discipline ${discipline.type} below minimum: ${score} < ${minimum}`);
+                }
+                
+                correctSubjectScores[discipline.type] = score;
+                console.log(`[recalculateUserScore] DEBUG - Disciplina objetiva ${discipline.type}: score=${score}, minimum=${minimum}`);
+              }
+            }
+          }
+        }
+      }
+    }
+    // Verificar se é array (estrutura antiga)
+    else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      console.log('[recalculateUserScore] Usando estrutura de disciplinas (array)');
+      
       for (const block of concurso.disciplines) {
         if ('disciplines' in block && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
@@ -552,27 +535,9 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // 3) Block-level minimums using disciplines mapping
-    const blockMinimums: Record<string, number> = {};
     const blockScores: Record<string, number> = {};
-    const disciplineToBlock: Record<string, string> = {};
-
-    if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-      for (const block of concurso.disciplines as any[]) {
-        const blockId = block.id || block.name;
-        const blockMin = block.minimum_score || 0;
-        if (blockId) {
-          blockMinimums[blockId] = blockMin;
-          blockScores[blockId] = 0;
-        }
-        if (block.disciplines && Array.isArray(block.disciplines)) {
-          for (const d of block.disciplines) {
-            if (d?.type && d.isEnabled) {
-              disciplineToBlock[d.type] = blockId;
-            }
-          }
-        }
-      }
-    }
+    const { blockMinimums, disciplineToBlock } = getBlockMinimumMaps(concurso, isQuota);
+    Object.keys(blockMinimums).forEach(id => { blockScores[id] = 0; });
 
     for (const [discType, wScore] of Object.entries(weightedDisciplineScores)) {
       const bId = disciplineToBlock[discType];
@@ -588,9 +553,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // 4) Global minimum (only objective total, excluding subjectives)
-    // ✅ Read minimum from nova estrutura JSONB disciplines
-    const reservationType = existingRanking.reservation_type || 'ampla';
-    const isQuota = reservationType !== 'ampla' && reservationType !== '';
+    // ✅ Read minimum from nova estrutura JSONB disciplines (AC vs Cotas)
     
     let globalMinimumToCheck = 0;
     let hasGlobalMin = false;
@@ -625,9 +588,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       console.log('[recalculateUserScore] Estrutura antiga para global minimum (fallback)');
     }
     
-    const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < globalMinimumToCheck) : false;
+    // Usar total objetivo ponderado (sem subjetivas) para o mínimo global
+    const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, v) => sum + (v || 0), 0);
+    const isBelowGlobalMinimum = hasGlobalMin ? (objectiveWeightedTotal < globalMinimumToCheck) : false;
     
-    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, score=${subjectScoresTot}, below=${isBelowGlobalMinimum}`);
+    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, objectiveWeighted=${objectiveWeightedTotal}, below=${isBelowGlobalMinimum}`);
 
     const belowMinimum = isBelowGlobalMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0;
     
@@ -643,7 +608,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           user_data: {
             ...userRanking.consolidated_data.rankings[rankingId].user_data, // Preservar todos os campos existentes
             score: totalScore, // Total geral (objetivas + subjetivas)
-            subject_scores_tot: subjectScoresTot, // Total das objetivas - ANTES de object_scores
+            subject_scores_tot: objectiveWeightedTotal, // Total objetivo ponderado
             object_scores: correctSubjectScores, // Estrutura correta (apenas objetivas)
             subjective_scores: subjectiveScoresTot, // Soma das subjetivas - ANTES de subjectives
             subjectives: correctSubjectives, // Pontuações subjetivas individuais
@@ -652,7 +617,6 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
             belowDisciplineMinimums: belowDisciplineMinimums,
             belowBlockMinimums: belowBlockMinimums,
             isBelowGlobalMinimum: isBelowGlobalMinimum,
-            globalMinimumChecked: globalMinimumToCheck,
             last_calculated: new Date().toISOString()
           },
           // Persistir informações de mínimos para uso no front

@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { rankingCache } from './rankingCache';
+import { buildRankingFromConsolidated } from './rankingFormatting';
 
 // Defining the Ranking interface to fix TypeScript errors
 export interface Ranking {
@@ -210,51 +211,28 @@ export const fetchUserRankings = async (
                 reservation_type_outside: rankingDataItem.reservation_type
               });
 
-              rankingData.push({
-                id: rankingId,
-                position: 0, // Will be calculated later
-                name: userProfile.name,
-                score: rankingDataItem.user_data?.score || 0,
-                userId: userRanking.user_id,
-                avatarUrl: userProfile.avatar_url,
-                // Pontuações subjetivas (nova estrutura)
-                discursiveScore: rankingDataItem.user_data?.subjectives?.discursive || 0,
-                caseStudy1Score: rankingDataItem.user_data?.subjectives?.case_study_1 || 0,
-                caseStudy2Score: rankingDataItem.user_data?.subjectives?.case_study_2 || 0,
-                caseStudy3Score: rankingDataItem.user_data?.subjectives?.case_study_3 || 0,
-                otherSubjectiveScore: rankingDataItem.user_data?.subjectives?.other_subjective || 0,
-                // Pontuações subjetivas com peso (mesmo valor, pois não há mais pesos)
-                weightedDiscursiveScore: rankingDataItem.user_data?.subjectives?.discursive || 0,
-                weightedCaseStudy1Score: rankingDataItem.user_data?.subjectives?.case_study_1 || 0,
-                weightedCaseStudy2Score: rankingDataItem.user_data?.subjectives?.case_study_2 || 0,
-                weightedCaseStudy3Score: rankingDataItem.user_data?.subjectives?.case_study_3 || 0,
-                weightedOtherSubjectiveScore: rankingDataItem.user_data?.subjectives?.other_subjective || 0,
-                // Pontuações de disciplinas customizadas (apenas as que começam com custom_)
-                customDisciplineScores: Object.fromEntries(
-                  Object.entries(rankingDataItem.user_data?.object_scores || {})
-                    .filter(([key]) => key.startsWith('custom_'))
-                ),
-                weightedCustomDisciplineScores: Object.fromEntries(
-                  Object.entries(rankingDataItem.user_data?.object_scores || {})
-                    .filter(([key]) => key.startsWith('custom_'))
-                ),
-                // Flags de mínimos não atingidos
-                belowMinimum: rankingDataItem.belowMinimum || false,
-                belowDisciplineMinimums: rankingDataItem.belowDisciplineMinimums || [],
-                belowBlockMinimums: rankingDataItem.belowBlockMinimums || [],
-                // Campos adicionais
-                reservationType: rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência',
-                displayReservation: getReservationAbbreviation(rankingDataItem.user_data?.reservation_type || 'Ampla Concorrência'),
-                quotaPosition: 0 // Will be calculated later
-              });
+              rankingData.push(
+                buildRankingFromConsolidated(
+                  rankingId,
+                  userRanking.user_id,
+                  rankingDataItem.user_data,
+                  userProfile.name,
+                  userProfile.avatar_url,
+                  getReservationAbbreviation
+                )
+              );
             }
           }
         }
       }
     }
 
-    // Sort by score and apply pagination
-    rankingData.sort((a, b) => b.score - a.score);
+    // Sort: classificados primeiro por score desc; eliminados ao fim
+    rankingData.sort((a, b) => {
+      if (a.belowMinimum && !b.belowMinimum) return 1;
+      if (!a.belowMinimum && b.belowMinimum) return -1;
+      return (b.score || 0) - (a.score || 0);
+    });
     const paginatedData = rankingData.slice(offset, offset + limit);
 
     logger.ranking('Query result', `data: ${paginatedData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
@@ -288,10 +266,11 @@ export const fetchUserRankings = async (
     const formattedRankings = paginatedData.map((ranking, index) => {
       const name = ranking.name || 'Usuário Anônimo';
       const avatarUrl = ranking.avatarUrl || null;
-
-      // Verificação de mínimos (simplificada para nova estrutura)
-      const belowMinimum = ranking.score <= 0 || 
-        (hasMinimumScoreEnabled && totalMinimumScore > 0 && ranking.score < totalMinimumScore);
+      
+      // Usar flags calculados no recálculo (consolidated_data)
+      const belowMinimum = !!ranking.belowMinimum;
+      const belowDisciplineMinimums = ranking.belowDisciplineMinimums || [];
+      const belowBlockMinimums = ranking.belowBlockMinimums || [];
     
       return {
         position: offset + index + 1, // Calcular posição baseada no índice
@@ -314,10 +293,10 @@ export const fetchUserRankings = async (
         // Pontuações de disciplinas customizadas
         customDisciplineScores: ranking.customDisciplineScores || {},
         weightedCustomDisciplineScores: ranking.weightedCustomDisciplineScores || {},
-        // Flags de mínimos não atingidos (valores padrão já que as colunas não existem)
-        belowMinimum: belowMinimum,
-        belowDisciplineMinimums: [],
-        belowBlockMinimums: [],
+        // Flags de mínimos não atingidos (vindo do consolidated_data)
+        belowMinimum,
+        belowDisciplineMinimums,
+        belowBlockMinimums,
         // Dados do ranking
         reservationType: ranking.reservationType,
         displayReservation: getReservationAbbreviation(ranking.reservationType),

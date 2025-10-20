@@ -97,6 +97,17 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     }
   }, [concurso, questionStructure]);
 
+  // Garantir que a seção selecionada exista nas chaves calculadas
+  useEffect(() => {
+    const keys = Object.keys(sectionQuestions || {});
+    if (keys.length === 0) return;
+    // Não sobrescrever se o usuário estiver na aba virtual de subjetivas
+    if (selectedSection === 'subjetivas') return;
+    if (!keys.includes(selectedSection)) {
+      setSelectedSection(keys[0] as SectionType);
+    }
+  }, [sectionQuestions, selectedSection]);
+
   // Initialize with the first available section
   useEffect(() => {
     if (concurso) {

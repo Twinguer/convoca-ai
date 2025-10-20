@@ -5,18 +5,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Concurso, DisciplineBlock, NestedDiscipline } from '@/types/concursos';
 import { formatScore } from '@/lib/utils';
 
-// Função auxiliar para buscar disciplina por ID na nova estrutura JSONB
-const findDisciplineById = (disciplines: (DisciplineBlock | NestedDiscipline)[] | undefined, id: string): NestedDiscipline | undefined => {
+// Função auxiliar para buscar disciplina por ID ou por TYPE na estrutura JSONB
+const findDiscipline = (disciplines: any, keyOrId: string): NestedDiscipline | undefined => {
   if (!disciplines) return undefined;
   
-  for (const discipline of disciplines) {
-    if ('disciplines' in discipline) {
-      // Estrutura hierárquica (blocos)
-      const found = discipline.disciplines?.find(d => d.id === id);
-      if (found) return found;
-    } else {
-      // Estrutura plana
-      if (discipline.id === id) return discipline;
+  // Nova estrutura hierárquica (objeto com blocks)
+  if (typeof disciplines === 'object' && !Array.isArray(disciplines) && disciplines.blocks) {
+    console.log('[findDiscipline] Using new hierarchical structure with blocks');
+    for (const block of disciplines.blocks) {
+      if (block?.disciplines && Array.isArray(block.disciplines)) {
+        const found = block.disciplines.find((d: NestedDiscipline) => d.id === keyOrId || (d as any).type === keyOrId);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
+  
+  // Estrutura antiga (array)
+  if (Array.isArray(disciplines)) {
+    console.log('[findDiscipline] Using array structure');
+    for (const item of disciplines) {
+      if ('disciplines' in item) {
+        // Estrutura hierárquica (blocos)
+        const found = item.disciplines?.find((d: NestedDiscipline) => d.id === keyOrId || (d as any).type === keyOrId);
+        if (found) return found;
+      } else {
+        // Estrutura plana
+        if ((item as any).id === keyOrId || (item as any).type === keyOrId) return item as NestedDiscipline;
+      }
     }
   }
   
@@ -50,14 +66,15 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
   };
 
   const getScoreLabel = (key: string): string => {
-    // Check for other_subjective (campo direto)
-    if (key === 'other_subjective' && concurso.other_subjective_name) {
-      return concurso.other_subjective_name;
+    // Check for other_subjective (preferir JSONB subjects; fallback legacy)
+    if (key === 'other_subjective') {
+      const otherName = concurso.subjects?.name_other || (concurso as any).other_subjective_name;
+      if (otherName) return otherName;
     }
     
     // Check for standard subjective types in JSONB disciplines
     if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
-      const discipline = findDisciplineById(concurso.disciplines, key);
+      const discipline = findDiscipline(concurso.disciplines, key);
       if (discipline?.name) {
         return discipline.name;
       }
@@ -76,7 +93,7 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     // Check for custom disciplines
     if (key.startsWith('custom_')) {
       const disciplineId = key.replace('custom_', '');
-      const discipline = findDisciplineById(concurso.disciplines, disciplineId);
+      const discipline = findDiscipline(concurso.disciplines, disciplineId);
       return discipline?.name || `Disciplina ${disciplineId}`;
     }
     
@@ -86,7 +103,7 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
   const getScoreWeight = (key: string): number => {
     // Check for standard subjective types in JSONB disciplines
     if (['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(key)) {
-      const discipline = findDisciplineById(concurso.disciplines, key);
+      const discipline = findDiscipline(concurso.disciplines, key);
       return discipline?.weight || 1;
     }
     
@@ -98,7 +115,7 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     // Check for custom disciplines
     if (key.startsWith('custom_')) {
       const disciplineId = key.replace('custom_', '');
-      const discipline = findDisciplineById(concurso.disciplines, disciplineId);
+      const discipline = findDiscipline(concurso.disciplines, disciplineId);
       return discipline?.weight || 1;
     }
     
@@ -172,17 +189,28 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
     );
   }
 
-  // Filtrar apenas as seções habilitadas no concurso - CONTROLADO PELOS CAMPOS has_X
-  const enabledSections = Object.keys(localScores).filter(key => {
-    // Verificar se a chave existe no localScores E se o campo correspondente está ativo no concurso
-    if (key === 'discursive' && concurso.has_discursive) return true;
-    if (key === 'case_study_1' && concurso.has_case_study_1) return true;
-    if (key === 'case_study_2' && concurso.has_case_study_2) return true;
-    if (key === 'case_study_3' && concurso.has_case_study_3) return true;
-    if (key === 'other_subjective' && concurso.has_other_subjective) return true;
-    
-    return false;
-  });
+  // Helper: verificar se seção subjetiva está habilitada no JSONB ou pelos flags legados
+  const isSubjectiveEnabled = (key: string): boolean => {
+    // Flags legados (top-level)
+    if (key === 'discursive' && (concurso as any).has_discursive) return true;
+    if (key === 'case_study_1' && (concurso as any).has_case_study_1) return true;
+    if (key === 'case_study_2' && (concurso as any).has_case_study_2) return true;
+    if (key === 'case_study_3' && (concurso as any).has_case_study_3) return true;
+    if (key === 'other_subjective' && (concurso as any).has_other_subjective) return true;
+    // JSONB subjects
+    if (key === 'discursive' && concurso.subjects?.discr === true) return true;
+    if (key === 'case_study_1' && concurso.subjects?.case1 === true) return true;
+    if (key === 'case_study_2' && concurso.subjects?.case2 === true) return true;
+    if (key === 'case_study_3' && concurso.subjects?.case3 === true) return true;
+    if (key === 'other_subjective' && concurso.subjects?.other === true) return true;
+    // JSONB disciplines como fallback
+    const d = findDiscipline(concurso.disciplines, key);
+    return !!(d && d.isEnabled === true);
+  };
+
+  // Seções candidatas subjetivas padrão
+  const candidateKeys = ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'];
+  const enabledSections = candidateKeys.filter(isSubjectiveEnabled);
 
 
   return (

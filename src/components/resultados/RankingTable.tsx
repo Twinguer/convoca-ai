@@ -423,29 +423,20 @@ const RankingTableContent: React.FC<{
     return 0; // Implement if necessary
   };
 
-  // Get enabled custom disciplines from the nested structure (blocks with disciplines)
-  const getCustomDisciplines = (): {
-    type: string;
-    name: string;
-  }[] => {
-    if (!concurso || !concurso.disciplines || !Array.isArray(concurso.disciplines)) {
+  // Get enabled custom disciplines from either JSONB object with blocks or legacy arrays
+  const getCustomDisciplines = (): { type: string; name: string }[] => {
+    if (!concurso || !concurso.disciplines) {
       return [];
     }
 
-    let allEnabledDisciplines: { type: string; name: string }[] = [];
+    const allEnabledDisciplines: { type: string; name: string }[] = [];
 
-    // Check if hierarchical structure
-    const isHierarchical = concurso.disciplines.length > 0 && 
-                          isDisciplineBlock(concurso.disciplines[0]);
-
-    if (isHierarchical) {
-      // Iterate through blocks (first level in the disciplines array)
-      for (const block of concurso.disciplines) {
-        // Check if the block is valid and has a disciplines array
-        if (isDisciplineBlock(block)) {
-          // Iterate through disciplines within the block
+    // New JSONB structure: object with blocks
+    if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && (concurso.disciplines as any).blocks) {
+      const blocks = (concurso.disciplines as any).blocks || [];
+      for (const block of blocks) {
+        if (block?.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
-            // Check if discipline is valid, enabled and has type and name properties
             if (
               discipline &&
               typeof discipline === 'object' &&
@@ -453,34 +444,54 @@ const RankingTableContent: React.FC<{
               typeof discipline.type === 'string' &&
               typeof discipline.name === 'string'
             ) {
-              allEnabledDisciplines.push({
-                type: discipline.type,
-                name: discipline.name,
-              });
+              allEnabledDisciplines.push({ type: discipline.type, name: discipline.name });
             }
           }
         }
       }
-    } else {
-      // Flat structure - handle disciplines directly
-      for (const discipline of concurso.disciplines) {
-        if (
-          discipline &&
-          typeof discipline === 'object' &&
-          'isEnabled' in discipline &&
-          discipline.isEnabled === true &&
-          'type' in discipline &&
-          'name' in discipline
-        ) {
-          allEnabledDisciplines.push({
-            type: discipline.type as string,
-            name: discipline.name as string,
-          });
-        }
-      }
+      return allEnabledDisciplines;
     }
 
-    return allEnabledDisciplines;
+    // Legacy array structure (hierarchical blocks or flat)
+    if (Array.isArray(concurso.disciplines)) {
+      const isHierarchical = concurso.disciplines.length > 0 && isDisciplineBlock(concurso.disciplines[0]);
+      if (isHierarchical) {
+        for (const block of concurso.disciplines) {
+          if (isDisciplineBlock(block)) {
+            for (const discipline of block.disciplines) {
+              if (
+                discipline &&
+                typeof discipline === 'object' &&
+                discipline.isEnabled === true &&
+                typeof discipline.type === 'string' &&
+                typeof discipline.name === 'string'
+              ) {
+                allEnabledDisciplines.push({ type: discipline.type, name: discipline.name });
+              }
+            }
+          }
+        }
+      } else {
+        for (const discipline of concurso.disciplines) {
+          if (
+            discipline &&
+            typeof discipline === 'object' &&
+            'isEnabled' in discipline &&
+            (discipline as any).isEnabled === true &&
+            'type' in discipline &&
+            'name' in discipline
+          ) {
+            allEnabledDisciplines.push({
+              type: (discipline as any).type as string,
+              name: (discipline as any).name as string,
+            });
+          }
+        }
+      }
+      return allEnabledDisciplines;
+    }
+
+    return [];
   };
 
   const customDisciplines = getCustomDisciplines();

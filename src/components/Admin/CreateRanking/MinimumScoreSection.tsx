@@ -15,16 +15,12 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
       <CardContent className="pt-6">
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-4">Pontuações Mínimas Globais da Prova</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Configure as pontuações mínimas globais para toda a prova objetiva. Estes valores são salvos em concursos.disciplines (JSONB).
-          </p>
           
           <FormField
             control={form.control}
             name="minimumTotalScore"
             render={({ field }) => (
               <FormItem className="mb-4">
-                <FormLabel>Pontuação mínima total (Ampla Concorrência)</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -42,9 +38,6 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                     className="w-full md:w-1/3" 
                   />
                 </FormControl>
-                <FormDescription>
-                  Salvo em disciplines.minimum_total_score
-                </FormDescription>
               </FormItem>
             )}
           />
@@ -59,7 +52,6 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
               name="minimumTotalScoreCotas"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Pontuação mínima para cotas</FormLabel>
                   <FormControl>
                     <Input 
                       type="number" 
@@ -77,9 +69,6 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                       className="w-full md:w-1/3" 
                     />
                   </FormControl>
-                  <FormDescription>
-                    Salvo em disciplines.minimum_total_score_cotas
-                  </FormDescription>
                 </FormItem>
               )}
             />

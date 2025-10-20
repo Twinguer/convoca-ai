@@ -33,9 +33,30 @@ export const createQuestionOptions = (concurso: Concurso): Record<number, string
 export const getTotalQuestions = (concurso: Concurso): number => {
   if (!concurso) return 0;
   
-  // Always use disciplines structure (new system)
+  // Verificar se é a nova estrutura hierárquica (objeto com blocks)
+  if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+    console.log('[getTotalQuestions] Usando nova estrutura hierárquica com blocks');
+    let total = 0;
+    
+    for (const block of concurso.disciplines.blocks) {
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const discipline of block.disciplines) {
+          if (discipline.isEnabled && discipline.questionCount) {
+            const count = parseInt(String(discipline.questionCount), 10) || 0;
+            console.log('[getTotalQuestions] Discipline:', discipline.name, 'questionCount:', count);
+            total += count;
+          }
+        }
+      }
+    }
+    
+    console.log(`[getTotalQuestions] Total de questões: ${total}`);
+    return total;
+  }
+  
+  // Verificar se é array (estrutura antiga)
   if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
-    console.log('[getTotalQuestions] Usando estrutura de disciplinas');
+    console.log('[getTotalQuestions] Usando estrutura de disciplinas (array)');
     let total = 0;
     
     // Verificar se temos estrutura hierárquica (blocos -> disciplinas)

@@ -53,28 +53,32 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
       console.log('Fetched user ranking data:', userRankingData.consolidated_data);
 
-      // Extract user answers from consolidated data
+      // Extract user answers from consolidated data (flatten JSONB structure)
       const rankingData = userRankingData.consolidated_data?.rankings?.[rankingId];
       if (rankingData?.user_data?.answers) {
         // Usar o selectedBookletId passado como parâmetro ou o do banco
         const bookletIdToUse = selectedBookletId || rankingData.selected_booklet_id;
         const bookletData = bookletIdToUse ? rankingData.user_data.answers[bookletIdToUse] : null;
         
-        if (bookletData) {
+        if (bookletData && typeof bookletData === 'object') {
           const answersMap: { [key: number]: string } = {};
           const typesMap: { [key: number]: 'basic' | 'specific1' | 'specific2' | 'specific3' | string } = {};
 
-          Object.entries(bookletData.answers).forEach(([questionNumber, answer]) => {
-            const questionNum = parseInt(questionNumber);
-            if (!isNaN(questionNum)) {
-              answersMap[questionNum] = answer as string;
-              // Set default type - this would need to be determined from concurso structure
-              typesMap[questionNum] = 'basic';
+          // Novo formato: { [disciplineType]: { [questionNumber]: answer } }
+          Object.entries(bookletData as Record<string, Record<string, string>>).forEach(([disciplineType, questions]) => {
+            if (questions && typeof questions === 'object') {
+              Object.entries(questions).forEach(([qStr, ans]) => {
+                const qNum = parseInt(qStr, 10);
+                if (!isNaN(qNum)) {
+                  answersMap[qNum] = ans as string;
+                  typesMap[qNum] = disciplineType;
+                }
+              });
             }
           });
 
-          console.log('Parsed answers map:', answersMap);
-          console.log('Parsed question types map:', typesMap);
+          console.log('Parsed answers map (flattened):', answersMap);
+          console.log('Parsed question types map (from disciplines):', typesMap);
 
           setAnswers(answersMap);
           setQuestionType(typesMap);
