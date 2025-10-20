@@ -225,9 +225,8 @@ export const useSaveRanking = () => {
             minimum_score: ensureNumeric(discipline.minimum_score)
           };
         });
-      // Check for enabled disciplines in the block structure
-      // Mapear disciplinas para nova estrutura JSONB com blocks
-      if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
+      } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
+        // Check for enabled disciplines in the block structure
         // Verificar se existem disciplinas habilitadas
         for (const block of formValues.disciplines) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -431,144 +430,7 @@ export const useSaveRanking = () => {
         }
       }
 
-      // REMOVIDO: Logic to synchronize official_answer_weights with the disciplines
-      // Dados agora são salvos no JSONB da tabela concursos
-      /* REMOVIDO - Dados salvos no JSONB
-      if (concursoIdToUse) {
-        // Get the saved ranking to access its disciplines
-        const { data: savedRanking, error: getRankingError } = await supabase
-          .from('concursos')
-          .select('disciplines')
-          .eq('id', concursoIdToUse)
-          .single();
-
-        if (getRankingError) {
-          console.error("Erro ao buscar ranking para sincronização:", getRankingError);
-          // Continue even with error, as the ranking was already saved
-        } else if (savedRanking && savedRanking.disciplines) {
-          try {
-            // 1. Delete existing records for this ranking
-            const { error: deleteError } = await supabase
-              .from('official_answer_weights')
-              .delete()
-              .eq('concurso_id', concursoIdToUse);
-
-            if (deleteError) {
-              console.error("Erro ao excluir official_answer_weights existentes:", deleteError);
-            }
-
-            // 2. Generate data for official_answer_weights
-            const disciplines = savedConcurso.disciplines;
-            const officialAnswerWeightsToInsert: any[] = [];
-            let questionCounter = 1;
-
-            if (disciplines && Array.isArray(disciplines)) {
-              // Log removido por segurança
-              
-              // Verificar se estamos lidando com estrutura hierárquica
-              const isHierarchical = disciplines.length > 0 && 
-                                    typeof disciplines[0] === 'object' && 
-                                    'name' in disciplines[0] && 
-                                    'disciplines' in disciplines[0];
-              
-              if (isHierarchical) {
-                // Processar estrutura hierárquica (blocos -> disciplinas)
-                for (const block of disciplines as any[]) {
-                  // Log removido por segurança
-                  
-                  if (block.disciplines && Array.isArray(block.disciplines)) {
-                    for (const discipline of block.disciplines) {
-                      if (discipline.isEnabled !== true) {
-                        // Log removido por segurança
-                        continue;
-                      }
-                      
-                      const disciplineType = discipline.type || `discipline_${questionCounter}`;
-                      const questionCount = ensureNumeric(discipline.questionCount);
-                      const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
-                      
-                      // Log removido por segurança
-                      
-                      if (disciplineType && questionCount > 0) {
-                        for (let i = 0; i < questionCount; i++) {
-                          officialAnswerWeightsToInsert.push({
-                            concurso_id: concursoIdToUse,
-                            question_number: questionCounter,
-                            correct_answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default initial value
-                            section_type: disciplineType,
-                            weight: disciplineWeight,
-                            is_nullified: false,
-                            question_type: examType === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE'
-                          });
-                          questionCounter++;
-                        }
-                      }
-                    }
-                  }
-                }
-              } else {
-                // Processar estrutura plana (compatibilidade)
-                for (const discipline of disciplines) {
-                  if (discipline.isEnabled !== true) {
-                    // Log removido por segurança
-                    continue;
-                  }
-
-                  const disciplineType = discipline.type || `discipline_${questionCounter}`;
-                  const questionCount = ensureNumeric(discipline.questionCount);
-                  const disciplineWeight = ensureNumeric(discipline.weight || 1.0);
-
-                  // Log removido por segurança
-
-                  if (questionCount > 0) {
-                    for (let i = 0; i < questionCount; i++) {
-                      officialAnswerWeightsToInsert.push({
-                        concurso_id: concursoIdToUse,
-                        question_number: questionCounter,
-                        correct_answer: examType === 'Certo ou Errado' ? 'C' : 'A', // Default initial value
-                        section_type: disciplineType, // CRUCIAL: Use discipline type as section_type
-                        weight: disciplineWeight,
-                        is_nullified: false,
-                        question_type: examType === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE'
-                      });
-                      questionCounter++;
-                    }
-                  } else {
-                    console.warn(`Disciplina com questionCount inválido ignorada:`, discipline);
-                  }
-                }
-              }
-            }
-
-            // 3. Insert new records
-            if (officialAnswerWeightsToInsert.length > 0) {
-              // Log removido por segurança
-              
-              const { error: insertError } = await supabase
-                .from('official_answer_weights')
-                .insert(officialAnswerWeightsToInsert);
-
-              if (insertError) {
-                console.error("Erro ao inserir novos official_answer_weights:", insertError);
-                toast.error("Ranking salvo, mas houve um erro ao configurar os pesos das questões. O cálculo da pontuação pode estar incorreto.");
-              } else {
-                // Log removido por segurança
-              }
-            } else {
-              // Log removido por segurança
-            }
-          } catch (syncError) {
-            console.error("Erro durante a sincronização com official_answer_weights:", syncError);
-          }
-        }
-      }
-      */
-
-      // Show success message after the whole process
-      // console.log('[useSaveRanking] Ranking salvo com sucesso, ID:', concursoIdToUse);
-      
-      // Invalidar queries para refresh automático
-      // console.log('[useSaveRanking] 🔄 Invalidando queries para refresh automático...');
+      // Show success message and invalidate queries
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
       queryClient.invalidateQueries({ queryKey: ['concursos'] });
       queryClient.invalidateQueries({ queryKey: ['concurso', concursoIdToUse] });
