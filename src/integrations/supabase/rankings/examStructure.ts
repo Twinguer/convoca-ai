@@ -58,56 +58,39 @@ export const getNumericValue = (value: any): number => {
 export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: number): string => {
   if (!concurso) return 'basic';
 
-  // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
+  // ✅ NOVA ESTRUTURA JSONB: usar disciplines.blocks
   if (concurso.disciplines) {
-    let disciplinesArray = [];
+    let blocksArray = [];
     
-    // Verificar se é a nova estrutura com campos no nível raiz
-    if (concurso.disciplines.blocks && Array.isArray(concurso.disciplines.blocks)) {
-      // Nova estrutura: campos no nível raiz com blocks
-      disciplinesArray = concurso.disciplines.blocks;
-    } else if (Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      // Estrutura antiga: array direto de blocos
-      disciplinesArray = concurso.disciplines;
+    // Nova estrutura: objeto com blocks no nível raiz
+    if (typeof concurso.disciplines === 'object' && 'blocks' in concurso.disciplines && Array.isArray(concurso.disciplines.blocks)) {
+      blocksArray = concurso.disciplines.blocks;
+      console.log('[getSectionTypeForQuestion] Usando nova estrutura JSONB com blocks');
+    } 
+    // Estrutura antiga: array direto de blocos (fallback)
+    else if (Array.isArray(concurso.disciplines)) {
+      blocksArray = concurso.disciplines;
+      console.log('[getSectionTypeForQuestion] Usando estrutura antiga (array direto)');
     }
     
-    if (disciplinesArray.length > 0) {
-      // Verificar se temos estrutura hierárquica
-      const hierarchical = isHierarchicalStructure({ disciplines: disciplinesArray });
+    if (blocksArray.length > 0) {
       let currentIndex = 1;
 
-      if (hierarchical) {
-        // Processar estrutura hierárquica (blocos -> disciplinas)
-        for (const block of disciplinesArray) {
-          // Verificar se o item é um bloco usando typeguard
-          if ('disciplines' in block && Array.isArray(block.disciplines)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                const questionCount = getNumericValue(discipline.questionCount);
-                
-                // Se a questão está nesta disciplina
-                if (questionNumber >= currentIndex && questionNumber < currentIndex + questionCount) {
-                  return discipline.type;
-                }
-                
-                currentIndex += questionCount;
+      // Processar estrutura hierárquica (blocos -> disciplinas)
+      for (const block of blocksArray) {
+        // Verificar se o item é um bloco com disciplinas
+        if ('disciplines' in block && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled) {
+              const questionCount = getNumericValue(discipline.questionCount);
+              
+              // Se a questão está nesta disciplina
+              if (questionNumber >= currentIndex && questionNumber < currentIndex + questionCount) {
+                return discipline.type;
               }
+              
+              currentIndex += questionCount;
             }
-          }
-        }
-      } else {
-        // Processar estrutura plana
-        for (const discipline of disciplinesArray) {
-          // Verificar se o item é uma disciplina direta usando typeguard
-          if ('isEnabled' in discipline && discipline.isEnabled) {
-            const questionCount = getNumericValue(discipline.questionCount);
-            
-            // Se a questão está nesta disciplina
-            if (questionNumber >= currentIndex && questionNumber < currentIndex + questionCount) {
-              return discipline.type;
-            }
-            
-            currentIndex += questionCount;
           }
         }
       }
@@ -164,20 +147,20 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
 export const isHierarchicalStructure = (concurso: any): boolean => {
   if (!concurso?.disciplines) return false;
   
-  // Verificar se é a nova estrutura com campos no nível raiz
-  if (concurso.disciplines.blocks && Array.isArray(concurso.disciplines.blocks)) {
-    // Nova estrutura: campos no nível raiz com blocks
+  // ✅ Nova estrutura JSONB: objeto com blocks
+  if (typeof concurso.disciplines === 'object' && 'blocks' in concurso.disciplines && Array.isArray(concurso.disciplines.blocks)) {
     const blocks = concurso.disciplines.blocks;
     const result = blocks.length > 0 &&
            blocks[0] &&
            typeof blocks[0] === 'object' &&
-           'name' in blocks[0] &&
+           'blockName' in blocks[0] &&
            'disciplines' in blocks[0];
     
-    console.log('[isHierarchicalStructure] Nova estrutura com blocks:', result);
+    console.log('[isHierarchicalStructure] Nova estrutura JSONB com blocks:', result);
     return result;
-  } else if (Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-    // Estrutura antiga: array direto de blocos
+  } 
+  // Estrutura antiga: array direto de blocos (fallback)
+  else if (Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
     const result = concurso.disciplines[0] &&
            typeof concurso.disciplines[0] === 'object' &&
            'name' in concurso.disciplines[0] &&

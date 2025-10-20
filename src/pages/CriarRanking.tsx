@@ -191,25 +191,28 @@ const CriarRanking = () => {
             const quotaData = data.has_cota || {};
             const subjectsData = data.subjects || {};
             
-            // Extrair minimum scores e blocos da estrutura disciplines
+            // ✅ Extrair minimum scores e blocos da nova estrutura JSONB
             let minimumTotalScore = 0;
             let minimumTotalScoreCotas = 0;
             let disciplinesBlocks = [];
             
             if (data.disciplines) {
-              // Verificar se é a nova estrutura com campos no nível raiz
-              if (data.disciplines.minimum_total_score !== undefined || data.disciplines.minimum_total_score_cotas !== undefined) {
-                // Nova estrutura: campos no nível raiz
+              // Nova estrutura: campos no nível raiz com array blocks
+              if (data.disciplines.minimum_total_score !== undefined) {
                 minimumTotalScore = data.disciplines.minimum_total_score || 0;
-                minimumTotalScoreCotas = data.disciplines.minimum_total_score_cotas || 0;
-                disciplinesBlocks = data.disciplines.blocks || [];
-              } else if (Array.isArray(data.disciplines) && data.disciplines.length > 0) {
-                // Estrutura antiga: campos no primeiro bloco (fallback)
-                const firstBlock = data.disciplines[0];
-                minimumTotalScore = firstBlock.minimum_total_score || 0;
-                minimumTotalScoreCotas = firstBlock.minimum_total_score_cotas || 0;
-                disciplinesBlocks = data.disciplines;
               }
+              if (data.disciplines.minimum_total_score_cotas !== undefined) {
+                minimumTotalScoreCotas = data.disciplines.minimum_total_score_cotas || 0;
+              }
+              if (data.disciplines.blocks && Array.isArray(data.disciplines.blocks)) {
+                disciplinesBlocks = data.disciplines.blocks;
+              }
+              
+              console.log('[CriarRanking] Estrutura JSONB carregada:', {
+                minimumTotalScore,
+                minimumTotalScoreCotas,
+                blocksCount: disciplinesBlocks.length
+              });
             }
             
             // Criar objeto de dados para o formulário
@@ -234,11 +237,11 @@ const CriarRanking = () => {
               has_indigenas: quotaData.ind === true,
               has_transsexuais: quotaData.tra === true,
               
-              // Minimum scores da estrutura disciplines
-              total_minimum_score: minimumTotalScore,
-              quota_minimum_score: minimumTotalScoreCotas,
+              // ✅ Minimum scores globais da nova estrutura JSONB
+              minimumTotalScore: minimumTotalScore,
+              minimumTotalScoreCotas: minimumTotalScoreCotas,
               
-              // Blocos de disciplinas extraídos da estrutura
+              // ✅ Blocos de disciplinas da nova estrutura JSONB
               disciplines: disciplinesBlocks,
               
               // Mapear disciplinas subjetivas do JSONB

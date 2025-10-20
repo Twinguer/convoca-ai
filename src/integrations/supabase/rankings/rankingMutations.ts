@@ -588,36 +588,41 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // 4) Global minimum (only objective total, excluding subjectives)
-    // Read minimum from disciplines JSONB structure
+    // ✅ Read minimum from nova estrutura JSONB disciplines
     const reservationType = existingRanking.reservation_type || 'ampla';
     const isQuota = reservationType !== 'ampla' && reservationType !== '';
     
     let globalMinimumToCheck = 0;
     let hasGlobalMin = false;
     
-    // Get minimum from disciplines structure (root level)
-    if (concurso.disciplines) {
-      // Verificar se é a nova estrutura com campos no nível raiz
-      if (concurso.disciplines.minimum_total_score !== undefined || concurso.disciplines.minimum_total_score_cotas !== undefined) {
-        // Nova estrutura: campos no nível raiz
-        if (isQuota && concurso.disciplines.minimum_total_score_cotas) {
-          globalMinimumToCheck = Number(concurso.disciplines.minimum_total_score_cotas) || 0;
-          hasGlobalMin = globalMinimumToCheck > 0;
-        } else if (concurso.disciplines.minimum_total_score) {
-          globalMinimumToCheck = Number(concurso.disciplines.minimum_total_score) || 0;
-          hasGlobalMin = globalMinimumToCheck > 0;
-        }
-      } else if (Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-        // Estrutura antiga: campos no primeiro bloco (fallback)
-        const firstBlock = concurso.disciplines[0];
-        if (isQuota && firstBlock.minimum_total_score_cotas) {
-          globalMinimumToCheck = Number(firstBlock.minimum_total_score_cotas) || 0;
-          hasGlobalMin = globalMinimumToCheck > 0;
-        } else if (firstBlock.minimum_total_score) {
-          globalMinimumToCheck = Number(firstBlock.minimum_total_score) || 0;
-          hasGlobalMin = globalMinimumToCheck > 0;
-        }
+    // Nova estrutura JSONB: objeto com blocks
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && 'blocks' in concurso.disciplines) {
+      if (isQuota && concurso.disciplines.minimum_total_score_cotas) {
+        globalMinimumToCheck = Number(concurso.disciplines.minimum_total_score_cotas) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
+      } else if (concurso.disciplines.minimum_total_score) {
+        globalMinimumToCheck = Number(concurso.disciplines.minimum_total_score) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
       }
+      
+      console.log('[recalculateUserScore] Nova estrutura JSONB para global minimum:', {
+        isQuota,
+        minimum: globalMinimumToCheck,
+        hasMin: hasGlobalMin
+      });
+    }
+    // Estrutura antiga: array de blocos (fallback)
+    else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+      const firstBlock = concurso.disciplines[0];
+      if (isQuota && firstBlock.minimum_total_score_cotas) {
+        globalMinimumToCheck = Number(firstBlock.minimum_total_score_cotas) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
+      } else if (firstBlock.minimum_total_score) {
+        globalMinimumToCheck = Number(firstBlock.minimum_total_score) || 0;
+        hasGlobalMin = globalMinimumToCheck > 0;
+      }
+      
+      console.log('[recalculateUserScore] Estrutura antiga para global minimum (fallback)');
     }
     
     const isBelowGlobalMinimum = hasGlobalMin ? (subjectScoresTot < globalMinimumToCheck) : false;

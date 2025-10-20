@@ -74,27 +74,24 @@ export const useSaveRanking = () => {
   const queryClient = useQueryClient();
   
   const saveRanking = useCallback(async ({ formValues, userId, editId, jobTitles }: SaveRankingOptions) => {
-    // console.log('[useSaveRanking] saveRanking called with:', { formValues, userId, editId, jobTitles });
     try {
       // Se estivermos editando, buscar dados existentes primeiro para preservar estrutura
       let existingDisciplines: any[] = [];
-      let examType: string = 'Alternativas'; // Default value
+      let examType: string = 'Alternativas';
       
-        if (editId) {
-          // Buscar as disciplinas existentes para preservar IDs
-          const { data: existingRanking, error: fetchError } = await supabase
-            .from('concursos')
-            .select('disciplines, exam_type')
-            .eq('id', editId)
-            .single();
+      if (editId) {
+        // Buscar as disciplinas existentes para preservar IDs
+        const { data: existingRanking, error: fetchError } = await supabase
+          .from('concursos')
+          .select('disciplines, exam_type')
+          .eq('id', editId)
+          .single();
         
         if (!fetchError && existingRanking?.disciplines) {
-          // Log removido por segurança
           existingDisciplines = existingRanking.disciplines;
           examType = existingRanking.exam_type || 'Alternativas';
         }
       } else {
-        // Para novos concursos, usar o exam_type do formulário
         examType = formValues.exam_type || 'Alternativas';
       }
 
@@ -228,18 +225,11 @@ export const useSaveRanking = () => {
             minimum_score: ensureNumeric(discipline.minimum_score)
           };
         });
-      } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
-        // Check for enabled disciplines in the block structure
-        // Add minimum_score and minimum_score_cotas ONLY to the first block
-        formValues.disciplines = formValues.disciplines.map((block: any, index: number) => {
-          const updatedBlock = { ...block };
-          
-          // Adicionar minimum_score e minimum_score_cotas apenas no primeiro bloco
-          if (index === 0) {
-            updatedBlock.minimum_score = ensureNumeric(formValues.minimumTotalScore || 0);
-            updatedBlock.minimum_score_cotas = ensureNumeric(formValues.minimumTotalScoreCotas || 0);
-          }
-          
+      // Check for enabled disciplines in the block structure
+      // Mapear disciplinas para nova estrutura JSONB com blocks
+      if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
+        // Verificar se existem disciplinas habilitadas
+        for (const block of formValues.disciplines) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
               if (discipline.isEnabled === true) {
@@ -248,9 +238,8 @@ export const useSaveRanking = () => {
               }
             }
           }
-          
-          return updatedBlock;
-        });
+          if (hasEnabledDiscipline) break;
+        }
       }
       
       // Validate that at least one discipline is enabled
@@ -317,17 +306,12 @@ export const useSaveRanking = () => {
         const subjectsStructure = createSubjectsStructure(formValues);
         const hasCotaStructure = createHasCotaStructure(formValues);
         
-        // Processar estrutura de disciplinas para edição
-        let disciplinesData = formValues.disciplines || [];
-        const totalScore = formValues.total_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0;
-        const quotaScore = formValues.quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0;
-        
-        // Criar estrutura com campos de pontuação mínima no nível raiz
-        const disciplinesStructure = {
-          minimum_total_score: totalScore,
-          minimum_total_score_cotas: quotaScore,
-          blocks: disciplinesData
-        };
+        // Processar estrutura de disciplinas para edição usando helper
+        const disciplinesStructure = mapFormDataToDisciplinesStructure({
+          disciplines: formValues.disciplines || [],
+          minimum_total_score: formValues.minimumTotalScore || 0,
+          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0
+        });
         
         const editDataToSubmit = {
           ...dataToSubmit,
@@ -591,19 +575,14 @@ export const useSaveRanking = () => {
       queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['user-participation-v2', concursoIdToUse] });
       queryClient.invalidateQueries({ queryKey: ['user-created-rankings', userId] });
-      // console.log('[useSaveRanking] ✅ Queries invalidadas, dados serão atualizados automaticamente');
       
-      if (editId) {
-      } else {
-      }
-
       return { id: concursoIdToUse, duplicated: false };
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar ranking:", error);
-      toast.error("Erro ao salvar ranking: " + (error as Error).message);
+      toast.error("Erro ao salvar ranking: " + (error?.message || 'Erro desconhecido'));
       return { duplicated: false, error: true };
     }
-  }, []);
+  }, [queryClient]);
 
   return { saveRanking };
 };

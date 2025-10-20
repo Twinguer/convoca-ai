@@ -301,16 +301,15 @@ export const debugDisciplinesStructure = (concurso: Concurso) => {
 export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesStructure => {
   console.log('[mapFormDataToDisciplinesStructure] Input formValues:', formValues);
   console.log('[mapFormDataToDisciplinesStructure] formValues.disciplines:', formValues.disciplines);
-  console.log('[mapFormDataToDisciplinesStructure] formValues.disciplines type:', typeof formValues.disciplines);
-  console.log('[mapFormDataToDisciplinesStructure] formValues.disciplines isArray:', Array.isArray(formValues.disciplines));
   
-  // ✅ CORREÇÃO: Usar os nomes corretos dos campos da tabela concursos
-  const totalScore = formValues.total_minimum_score ? Number(formValues.total_minimum_score) : 0;
-  const quotaScore = formValues.quota_minimum_score ? Number(formValues.quota_minimum_score) : 0;
+  // Extrair minimum scores do form
+  const totalScore = formValues.minimum_total_score ? Number(formValues.minimum_total_score) : 0;
+  const quotaScore = formValues.minimum_total_score_cotas ? Number(formValues.minimum_total_score_cotas) : 0;
   
-  console.log('[mapFormDataToDisciplinesStructure] totalScore (total_minimum_score):', totalScore);
-  console.log('[mapFormDataToDisciplinesStructure] quotaScore (quota_minimum_score):', quotaScore);
+  console.log('[mapFormDataToDisciplinesStructure] totalScore:', totalScore);
+  console.log('[mapFormDataToDisciplinesStructure] quotaScore:', quotaScore);
   
+  // Mapear blocos de disciplinas
   const blocks = (formValues.disciplines || []).map((block: any) => {
     console.log('[mapFormDataToDisciplinesStructure] Processing block:', block);
     return {
@@ -340,7 +339,7 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
     blocks
   };
   
-  console.log('[mapFormDataToDisciplinesStructure] Result:', result);
+  console.log('[mapFormDataToDisciplinesStructure] Final result:', JSON.stringify(result, null, 2));
   console.log('[mapFormDataToDisciplinesStructure] Blocks count:', result.blocks.length);
   
   return result;
