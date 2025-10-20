@@ -14,10 +14,11 @@ const viteBranch = getEnvVar('VITE_BRANCH', '');
 const viteDevMode = getEnvVar('VITE_DEV_MODE', 'false');
 const nodeEnv = getEnvVar('NODE_ENV', 'development');
 
+// FORÇAR USO DO CONVOCA-AI (PRODUÇÃO)
 // Detectar se é desenvolvimento baseado em múltiplos indicadores
 export const isDevelopment = viteDevMode === 'true' || 
-                            viteBranch === 'nomeia-ai' || 
-                            nodeEnv === 'development';
+                            viteBranch === 'nomeia-ai';
+                            // Removido: nodeEnv === 'development' para forçar convoca-ai
 
 export const currentDatabase = isDevelopment ? 'development' : 'production';
 

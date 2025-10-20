@@ -14,9 +14,23 @@ function getEnvVar(key: string, defaultValue: string = ''): string {
 }
 
 // Initialize the Supabase client with dynamic configuration
-// PRIORIDADE: 1. Variáveis de ambiente, 2. Configuração hardcoded
-const supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || currentConfig.url;
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || currentConfig.anonKey;
+// PRIORIDADE: 1. Variáveis de ambiente, 2. Convoca-ai direto, 3. Configuração hardcoded
+let supabaseUrl = getEnvVar('VITE_SUPABASE_URL');
+let supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY');
+
+// Se não encontrar variáveis de ambiente, usar convoca-ai diretamente
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.log('[Supabase Client] Variáveis de ambiente não encontradas, usando convoca-ai diretamente');
+  supabaseUrl = 'https://ppsymqrdtjyaguftracc.supabase.co';
+  supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwc3ltcXJkdGp5YWd1ZnRyYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzEwNzIsImV4cCI6MjA1OTQ0NzA3Mn0.7ijkFzxTGirmC0R958v0Tr7p4TghM9A9J4BLI10OMgs';
+} else {
+  // Se encontrar variáveis, verificar se é convoca-ai
+  if (supabaseUrl.includes('ppsymqrdtjyaguftracc')) {
+    console.log('[Supabase Client] Usando convoca-ai via variáveis de ambiente');
+  } else {
+    console.log('[Supabase Client] Usando banco diferente via variáveis de ambiente');
+  }
+}
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
@@ -26,6 +40,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 console.log('[Supabase Client] Configuração:', {
   url: supabaseUrl,
   usingEnvVars: !!(getEnvVar('VITE_SUPABASE_URL') && getEnvVar('VITE_SUPABASE_ANON_KEY')),
+  usingConvocaAiDirect: supabaseUrl.includes('ppsymqrdtjyaguftracc'),
   usingHardcoded: !getEnvVar('VITE_SUPABASE_URL') || !getEnvVar('VITE_SUPABASE_ANON_KEY')
 });
 

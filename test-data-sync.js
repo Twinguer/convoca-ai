@@ -36,14 +36,14 @@ supabase.from('concursos').select('id, titulo, created_at').limit(5)
 
 // Teste 2: Verificar user_rankings
 console.log('\n📊 Teste 2: Verificando user_rankings...');
-supabase.from('user_rankings').select('user_id, updated_at').limit(5)
+supabase.from('user_rankings').select('user_id').limit(5)
   .then(({ data, error }) => {
     if (error) {
       console.log('❌ Erro ao buscar user_rankings:', error.message);
     } else {
       console.log('✅ User rankings encontrados:', data?.length || 0);
       data?.forEach(ranking => {
-        console.log(`  - User: ${ranking.user_id} - Updated: ${ranking.updated_at}`);
+        console.log(`  - User: ${ranking.user_id}`);
       });
     }
   });
