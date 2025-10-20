@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
+import { mapFormDataToDisciplinesStructure } from '@/utils/disciplinesStructure';
 
 interface SaveRankingOptions {
   formValues: any;
@@ -39,15 +40,20 @@ const createSubjectsStructure = (formValues: any): any => {
   return {
     discr: formValues.has_discursive === true,
     discr_min_score: formValues.has_discursive ? (formValues.discursive_minimum_score || 0) : 0,
+    discr_min_score_cotas: formValues.has_discursive ? (formValues.discursive_minimum_score_cotas || 0) : 0,
     case1: formValues.has_case_study_1 === true,
     case1_min_score: formValues.has_case_study_1 ? (formValues.case_study_1_minimum_score || 0) : 0,
+    case1_min_score_cotas: formValues.has_case_study_1 ? (formValues.case_study_1_minimum_score_cotas || 0) : 0,
     case2: formValues.has_case_study_2 === true,
     case2_min_score: formValues.has_case_study_2 ? (formValues.case_study_2_minimum_score || 0) : 0,
+    case2_min_score_cotas: formValues.has_case_study_2 ? (formValues.case_study_2_minimum_score_cotas || 0) : 0,
     case3: formValues.has_case_study_3 === true,
     case3_min_score: formValues.has_case_study_3 ? (formValues.case_study_3_minimum_score || 0) : 0,
+    case3_min_score_cotas: formValues.has_case_study_3 ? (formValues.case_study_3_minimum_score_cotas || 0) : 0,
     other: formValues.has_other_subjective === true,
     name_other: formValues.has_other_subjective ? (formValues.other_subjective_name || '') : '',
-    other_min_score: formValues.has_other_subjective ? (formValues.other_subjective_minimum_score || 0) : 0
+    other_min_score: formValues.has_other_subjective ? (formValues.other_subjective_minimum_score || 0) : 0,
+    other_min_score_cotas: formValues.has_other_subjective ? (formValues.other_subjective_minimum_score_cotas || 0) : 0
   };
 };
 
@@ -185,38 +191,7 @@ export const useSaveRanking = () => {
         if (formValues.disciplines.length > 0 && 'name' in formValues.disciplines[0] && 'disciplines' in formValues.disciplines[0]) {
           // Estrutura hierárquica - processar e adicionar metadados do bloco às disciplinas
           formValues.disciplines.forEach((block: any, index: number) => {
-            console.log('[useSaveRanking] DEBUG - Processando bloco:', { index, blockId: block.id, blockName: block.name });
-            
             if (block.disciplines && Array.isArray(block.disciplines)) {
-              // Mapear campos de pontuação mínima global para o primeiro bloco
-              if (index === 0) {
-                const totalScore = formValues.has_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0;
-                const quotaScore = formValues.has_quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0;
-                
-                console.log('[useSaveRanking] DEBUG - Mapeando campos de pontuação mínima:', {
-                  has_minimum_score: formValues.has_minimum_score,
-                  total_minimum_score: formValues.total_minimum_score,
-                  has_quota_minimum_score: formValues.has_quota_minimum_score,
-                  quota_minimum_score: formValues.quota_minimum_score,
-                  totalScore,
-                  quotaScore,
-                  blockId: block.id,
-                  blockName: block.name
-                });
-                
-                block.minimum_total_score = totalScore;
-                block.minimum_total_score_cotas = quotaScore;
-                
-                console.log('[useSaveRanking] DEBUG - Bloco após mapeamento:', {
-                  blockId: block.id,
-                  blockName: block.name,
-                  minimum_total_score: block.minimum_total_score,
-                  minimum_total_score_cotas: block.minimum_total_score_cotas
-                });
-              } else {
-                console.log('[useSaveRanking] DEBUG - Bloco não é o primeiro, pulando mapeamento:', { index, blockId: block.id });
-              }
-              
               block.disciplines.forEach((discipline: any) => {
                 // Adicionar informações do bloco à disciplina
                 discipline.blockId = block.id;
@@ -255,14 +230,14 @@ export const useSaveRanking = () => {
         });
       } else if (formValues.disciplines.length > 0 && 'disciplines' in formValues.disciplines[0]) {
         // Check for enabled disciplines in the block structure
-        // Add minimum_total_score and minimum_total_score_cotas ONLY to the first block
+        // Add minimum_score and minimum_score_cotas ONLY to the first block
         formValues.disciplines = formValues.disciplines.map((block: any, index: number) => {
           const updatedBlock = { ...block };
           
-          // Adicionar minimum_total_score e minimum_total_score_cotas apenas no primeiro bloco
+          // Adicionar minimum_score e minimum_score_cotas apenas no primeiro bloco
           if (index === 0) {
-            updatedBlock.minimum_total_score = ensureNumeric(formValues.minimumTotalScore || 0);
-            updatedBlock.minimum_total_score_cotas = ensureNumeric(formValues.minimumTotalScoreCotas || 0);
+            updatedBlock.minimum_score = ensureNumeric(formValues.minimumTotalScore || 0);
+            updatedBlock.minimum_score_cotas = ensureNumeric(formValues.minimumTotalScoreCotas || 0);
           }
           
           if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -342,6 +317,18 @@ export const useSaveRanking = () => {
         const subjectsStructure = createSubjectsStructure(formValues);
         const hasCotaStructure = createHasCotaStructure(formValues);
         
+        // Processar estrutura de disciplinas para edição
+        let disciplinesData = formValues.disciplines || [];
+        const totalScore = formValues.total_minimum_score ? ensureNumeric(formValues.total_minimum_score) : 0;
+        const quotaScore = formValues.quota_minimum_score ? ensureNumeric(formValues.quota_minimum_score) : 0;
+        
+        // Criar estrutura com campos de pontuação mínima no nível raiz
+        const disciplinesStructure = {
+          minimum_total_score: totalScore,
+          minimum_total_score_cotas: quotaScore,
+          blocks: disciplinesData
+        };
+        
         const editDataToSubmit = {
           ...dataToSubmit,
           // Campos básicos do concurso
@@ -355,7 +342,7 @@ export const useSaveRanking = () => {
           exam_type: formValues.exam_type || 'Alternativas',
           alternatives_count: ensureNumeric(formValues.alternatives_count),
           // Campos de disciplinas - sempre usar estrutura hierárquica
-          disciplines: formValues.disciplines,
+          disciplines: disciplinesStructure,
           subjects: subjectsStructure,
           has_cota: hasCotaStructure,
           form_config: formValues.form_config || {},
@@ -392,21 +379,35 @@ export const useSaveRanking = () => {
         concursoIdToUse = result?.[0]?.id;
       }
 
-      // Segunda etapa: atualizar com campos adicionais se não for edição
-      if (!editId && concursoIdToUse) {
-        // Usar as disciplinas do formulário se existirem, senão criar automaticamente
-        let disciplinesData = formValues.disciplines || [];
+      // Segunda etapa: atualizar com campos adicionais (sempre executar)
+      if (concursoIdToUse) {
+        // ✅ NOVA ESTRUTURA: Mapear dados do formulário para estrutura hierárquica correta
+        const disciplinesStructure = mapFormDataToDisciplinesStructure(formValues);
         
-        // Se não há disciplinas no formulário, criar baseadas na estrutura de prova
-        if (!disciplinesData || disciplinesData.length === 0) {
-          disciplinesData = createDisciplinesFromStructure(formValues);
+        console.log('[useSaveRanking] Disciplines structure to save:', disciplinesStructure);
+        console.log('[useSaveRanking] Is disciplines structure an object?', typeof disciplinesStructure === 'object');
+        console.log('[useSaveRanking] Is disciplines structure an array?', Array.isArray(disciplinesStructure));
+        console.log('[useSaveRanking] Disciplines structure blocks:', disciplinesStructure.blocks);
+        console.log('[useSaveRanking] Form values disciplines:', formValues.disciplines);
+        console.log('[useSaveRanking] Form values disciplines type:', typeof formValues.disciplines);
+        console.log('[useSaveRanking] Form values disciplines isArray:', Array.isArray(formValues.disciplines));
+        
+        // ✅ VALIDAÇÃO: Verificar se há disciplinas antes de salvar
+        if (!disciplinesStructure.blocks || disciplinesStructure.blocks.length === 0) {
+          console.warn('[useSaveRanking] No disciplines found in form data - continuing anyway for debugging');
+          // toast.error('Por favor, adicione pelo menos uma disciplina na estrutura da prova');
+          // return;
         }
         
-        // Determinar se há disciplinas customizadas baseado nas disciplinas criadas
-        const hasCustomDisciplines = disciplinesData && disciplinesData.length > 0;
+        // Determinar se há disciplinas customizadas baseado na nova estrutura
+        const hasCustomDisciplines = disciplinesStructure.blocks && disciplinesStructure.blocks.length > 0;
         
-        console.log('[useSaveRanking] DEBUG - Dados de disciplinas antes de salvar:', JSON.stringify(disciplinesData, null, 2));
-        console.log('[useSaveRanking] hasCustomDisciplines:', hasCustomDisciplines);
+        console.log('[useSaveRanking] Updating concurso with ID:', concursoIdToUse);
+        console.log('[useSaveRanking] Update data:', {
+          exam_type: formValues.exam_type || 'Alternativas',
+          disciplines: disciplinesStructure,
+          has_custom_knowledge: hasCustomDisciplines
+        });
         
         const { error: updateError } = await supabase
           .from('concursos')
@@ -422,7 +423,7 @@ export const useSaveRanking = () => {
             // Campos de localidade e cotas
             localidades: formValues.localidades,
             // Campos JSONB sincronizados com convoca-ai
-            disciplines: disciplinesData,
+            disciplines: disciplinesStructure,
             subjects: createSubjectsStructure(formValues),
             has_cota: createHasCotaStructure(formValues),
             form_config: formValues.form_config || {},
@@ -435,6 +436,13 @@ export const useSaveRanking = () => {
 
         if (updateError) {
           console.error("Error updating additional fields:", updateError);
+          console.error("Update error details:", {
+            code: updateError.code,
+            message: updateError.message,
+            details: updateError.details,
+            hint: updateError.hint
+          });
+          toast.error(`Erro ao atualizar campos adicionais: ${updateError.message}`);
           // Não falhar a operação, apenas logar o erro
         }
       }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
-import { getNumericValue, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';
+import { getNumericValue, isHierarchicalStructure, getDisciplines } from '@/integrations/supabase/rankings/examStructure';
 import { handleQuestionSectionSelection } from './useAnswerSheet/sectionUtils';
 import { fetchExistingAnswers as fetchExistingAnswersFromDB } from './useAnswerSheet/fetchExistingAnswers';
 
@@ -325,85 +325,44 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
   // Função para obter questões baseadas na seção selecionada
   const getSectionQuestions = () => {
-    if (!concurso) return [];
+    if (!concurso) {
+      console.log('[getSectionQuestions] No concurso available');
+      return [];
+    }
 
     console.log('[getSectionQuestions] Getting questions for section:', selectedSection);
-
-    // Verificar se estamos usando a estrutura customizada
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      const hierarchical = isHierarchicalStructure(concurso);
-      console.log('[getSectionQuestions] Using hierarchical structure:', hierarchical);
+    
+    // ✅ USAR NOVA FUNÇÃO HELPER: Obter disciplinas de qualquer estrutura
+    const disciplines = getDisciplines(concurso);
+    
+    if (disciplines.length > 0) {
+      console.log('[getSectionQuestions] Using helper function, found disciplines:', disciplines.length);
       
       let startIndex = 1;
+      
+      for (const discipline of disciplines) {
+        if (discipline.isEnabled) {
+          const questionCount = getNumericValue(discipline.questionCount);
+          console.log(`[getSectionQuestions] Discipline ${discipline.name} (type: ${discipline.type}) has ${questionCount} questions`);
 
-      if (hierarchical) {
-        // Processar estrutura hierárquica (blocos -> disciplinas)
-        for (const block of concurso.disciplines) {
-          if (isDisciplineBlock(block)) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled) {
-                const questionCount = getNumericValue(discipline.questionCount);
-
-                if (discipline.type === selectedSection) {
-                  // Retornar o range de questões para esta disciplina
-                  const questions = Array.from(
-                    { length: questionCount },
-                    (_, i) => startIndex + i
-                  );
-                  console.log(`[getSectionQuestions] Questions for discipline ${discipline.name} (type: ${discipline.type}):`, questions);
-                  return questions;
-                }
-
-                // Atualizar índice inicial para a próxima disciplina
-                startIndex += questionCount;
-              }
-            }
+          if (discipline.type === selectedSection) {
+            // Retornar o range de questões para esta disciplina
+            const questions = Array.from(
+              { length: questionCount },
+              (_, i) => startIndex + i
+            );
+            console.log(`[getSectionQuestions] Questions for discipline ${discipline.name} (type: ${discipline.type}):`, questions);
+            return questions;
           }
-        }
-      } else {
-        // Processar estrutura plana
-        for (const discipline of concurso.disciplines) {
-          if (!isDisciplineBlock(discipline) && discipline.isEnabled) {
-            const questionCount = getNumericValue(discipline.questionCount);
 
-            if (discipline.type === selectedSection) {
-              // Retornar o range de questões para esta disciplina
-              const questions = Array.from(
-                { length: questionCount },
-                (_, i) => startIndex + i
-              );
-              console.log(`[getSectionQuestions] Questions for flat discipline ${discipline.name} (type: ${discipline.type}):`, questions);
-              return questions;
-            }
-
-            // Atualizar índice inicial para a próxima disciplina
-            startIndex += questionCount;
-          }
+          // Atualizar índice inicial para a próxima disciplina
+          startIndex += questionCount;
         }
       }
-
-      return []; // Se a seção selecionada não foi encontrada
     }
-
-    // Processar estrutura tradicional (legacy)
-    const questions: number[] = [];
-
-    if (concurso && questionType) {
-      Object.entries(questionType).forEach(([num, type]) => {
-        if (
-          (selectedSection === 'basic' && type === 'basic') ||
-          (selectedSection === 'specific1' && type === 'specific1') ||
-          (selectedSection === 'specific2' && type === 'specific2') ||
-          (selectedSection === 'specific3' && type === 'specific3')
-        ) {
-          questions.push(parseInt(num));
-        }
-      });
-    }
-
-    console.log('[getSectionQuestions] Questions for section', selectedSection, ':', questions);
-    return questions.sort((a, b) => a - b);
+    
+    console.log('[getSectionQuestions] No questions found for section:', selectedSection);
+    return [];
   };
 
   const getOptionsForQuestion = (questionNumber: number) => {
@@ -418,9 +377,19 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   };
 
   const createAnswerMatrix = () => {
+    console.log('[createAnswerMatrix] Creating matrix for section:', selectedSection);
+    console.log('[createAnswerMatrix] Concurso disciplines:', concurso?.disciplines);
+    console.log('[createAnswerMatrix] Concurso disciplines type:', typeof concurso?.disciplines);
+    console.log('[createAnswerMatrix] Concurso disciplines keys:', concurso?.disciplines ? Object.keys(concurso.disciplines) : 'N/A');
+    
     const sectionQuestions = getSectionQuestions();
+    console.log('[createAnswerMatrix] Section questions:', sectionQuestions);
+    
     if (sectionQuestions.length === 0) {
       console.log('[createAnswerMatrix] No questions found for section:', selectedSection);
+      console.log('[createAnswerMatrix] Available sections in concurso:', concurso?.disciplines?.blocks?.map(block => 
+        block.disciplines?.map(d => d.type).filter(Boolean)
+      ).flat() || 'N/A');
       return [];
     }
 

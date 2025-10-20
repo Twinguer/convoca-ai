@@ -147,14 +147,14 @@ export class ExamStructureBuilder {
     }).filter(Boolean); // Remove null entries
     
     // Criar estrutura de bloco único com disciplines
-    // minimum_total_score e minimum_total_score_cotas vão no primeiro bloco
+    // minimum_score e minimum_score_cotas vão no primeiro bloco
     if (disciplines.length > 0) {
       concurso.disciplines = [{
         id: crypto.randomUUID(),
         name: 'Gerais',
         weight: 1,
-        minimum_total_score: 0,
-        minimum_total_score_cotas: 0,
+        minimum_score: 0,
+        minimum_score_cotas: 0,
         disciplines: disciplines
       }];
     } else {

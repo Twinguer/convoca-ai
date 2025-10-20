@@ -202,3 +202,4 @@ COMMENT ON FUNCTION save_user_answers_v3 IS 'Salva respostas na estrutura JSONB 
 
 
 
+

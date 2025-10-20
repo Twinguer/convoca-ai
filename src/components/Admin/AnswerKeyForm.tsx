@@ -87,12 +87,32 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     const allQuestions: number[] = [];
     let currentQuestionNumber = 1;
 
-    // Verificar se estamos lidando com a estrutura hierárquica (blocos -> disciplinas)
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    console.log('[getAllQuestionsFromAllSections] Concurso disciplines:', concurso.disciplines);
+    console.log('[getAllQuestionsFromAllSections] Concurso disciplines type:', typeof concurso.disciplines);
+    console.log('[getAllQuestionsFromAllSections] Concurso disciplines isArray:', Array.isArray(concurso.disciplines));
+
+    // Verificar se estamos lidando com a nova estrutura hierárquica (objeto com blocks)
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+      console.log('[getAllQuestionsFromAllSections] Using new hierarchical structure with blocks');
+      // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
+      for (const block of concurso.disciplines.blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled) {
+              const questionCount = getNumericValue(discipline.questionCount);
+              console.log(`[getAllQuestionsFromAllSections] Adding ${questionCount} questions from discipline ${discipline.name}`);
+              for (let i = 0; i < questionCount; i++) {
+                allQuestions.push(currentQuestionNumber++);
+              }
+            }
+          }
+        }
+      }
+    } else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+      console.log('[getAllQuestionsFromAllSections] Using old array structure');
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
-        // Estrutura hierárquica
+        // Estrutura hierárquica antiga
         for (const block of concurso.disciplines as any[]) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
@@ -106,7 +126,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           }
         }
       } else {
-        // Estrutura plana
+        // Estrutura plana antiga
         for (const discipline of concurso.disciplines) {
           if (discipline.isEnabled && discipline.questionCount) {
             const questionCount = getNumericValue(discipline.questionCount);
@@ -139,17 +159,37 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         }
       }
     }
+    
+    console.log('[getAllQuestionsFromAllSections] Total questions found:', allQuestions.length);
+    console.log('[getAllQuestionsFromAllSections] Questions array:', allQuestions);
+    
     return allQuestions;
   };
 
   // Função unificada para obter o número de questões por seção
   const getQuestionsCount = (section: string): number => {
     if (!concurso) return 0;
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    
+    // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+      console.log('[getQuestionsCount] Using new hierarchical structure with blocks');
+      // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
+      for (const block of concurso.disciplines.blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.type === section && discipline.isEnabled) {
+              return getNumericValue(discipline.questionCount);
+            }
+          }
+        }
+      }
+      return 0;
+    }
+    // Verificar se estamos usando a estrutura hierárquica antiga (array de blocos)
+    else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
-        // Estrutura hierárquica
+        // Estrutura hierárquica antiga
         for (const block of concurso.disciplines as any[]) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
@@ -160,7 +200,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           }
         }
       } else {
-        // Estrutura plana
+        // Estrutura plana antiga
         for (const discipline of concurso.disciplines) {
           if (discipline.type === section && discipline.isEnabled) {
             return getNumericValue(discipline.questionCount);
@@ -297,9 +337,25 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     if (!concurso) return [];
     const sections = [];
 
-    // Verificar se estamos usando a estrutura hierárquica (blocos -> disciplinas)
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+      console.log('[getObjectiveSectionList] Using new hierarchical structure with blocks');
+      // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
+      for (const block of concurso.disciplines.blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled) {
+              sections.push({
+                key: discipline.type,
+                label: `${block.blockName} - ${discipline.name}`
+              });
+            }
+          }
+        }
+      }
+    }
+    // Verificar se estamos usando a estrutura hierárquica antiga (array de blocos)
+    else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Processar a estrutura hierárquica para criar as abas
@@ -360,13 +416,40 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   const getQuestionsRange = () => {
     if (!concurso) return [];
 
-    // Verificar se estamos usando a estrutura hierárquica
-    // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+      console.log('[getQuestionsRange] Using new hierarchical structure with blocks');
+      let startQuestion = 1;
+      
+      // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
+      for (const block of concurso.disciplines.blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled) {
+              const questionCount = getNumericValue(discipline.questionCount);
+
+              // Se encontramos a disciplina selecionada, retornar seu intervalo
+              if (discipline.type === selectedSection) {
+                console.log(`[getQuestionsRange] Found discipline ${discipline.name} with ${questionCount} questions`);
+                return Array.from({
+                  length: questionCount
+                }, (_, i) => startQuestion + i);
+              }
+
+              // Atualizar o contador para a próxima disciplina
+              startQuestion += questionCount;
+            }
+          }
+        }
+      }
+      return []; // Retornar vazio se não encontrou a disciplina selecionada
+    }
+    // Verificar se estamos usando a estrutura hierárquica antiga (array de blocos)
+    else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       let startQuestion = 1;
       if (isHierarchical) {
-        // Estrutura hierárquica
+        // Estrutura hierárquica antiga
         for (const block of concurso.disciplines as any[]) {
           if (block.disciplines && Array.isArray(block.disciplines)) {
             for (const discipline of block.disciplines) {
@@ -387,7 +470,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
           }
         }
       } else {
-        // Estrutura plana
+        // Estrutura plana antiga
         for (const discipline of concurso.disciplines) {
           if (discipline.isEnabled) {
             const questionCount = getNumericValue(discipline.questionCount);

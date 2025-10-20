@@ -1,4 +1,31 @@
 
+// Nova estrutura JSONB completa
+export interface DisciplinesStructure {
+  minimum_total_score: number;
+  minimum_total_score_cotas: number;
+  blocks: DisciplineBlockStructure[];
+}
+
+export interface DisciplineBlockStructure {
+  blockId: string;
+  blockName: string;
+  blockMinimumScore: number;
+  blockMinimumCotas: number;
+  disciplines: NestedDisciplineStructure[];
+}
+
+export interface NestedDisciplineStructure {
+  id: string;
+  name: string;
+  type: string;
+  weight: number;
+  isEnabled: boolean;
+  minimum_score: number;
+  minimum_score_cotas: number;
+  questionCount: number;
+}
+
+// Interfaces de compatibilidade (estruturas antigas)
 export interface NestedDiscipline {
   id?: string;
   type: string;
@@ -7,6 +34,13 @@ export interface NestedDiscipline {
   questionCount?: number;
   weight?: number;
   minimum_score?: number;
+  minimum_score_cotas?: number;
+  // Campos adicionais para compatibilidade
+  blockName?: string;
+  blockId?: string;
+  blockWeight?: number;
+  blockMinimumScore?: number;
+  blockMinimumCotas?: number;
 }
 
 export interface DisciplineBlock {
@@ -14,8 +48,7 @@ export interface DisciplineBlock {
   name: string;
   weight?: number;
   minimum_score?: number;
-  minimum_total_score?: number;
-  minimum_total_score_cotas?: number;
+  minimum_score_cotas?: number;
   disciplines: NestedDiscipline[]; 
   isEnabled?: boolean;  // Para compatibilidade com código que verifica isEnabled em qualquer item
   type?: string;       // Para compatibilidade com código que verifica type em qualquer item
@@ -43,6 +76,11 @@ export interface Subjects {
   case2_min_score: number;
   case3_min_score: number;
   other_min_score: number;
+  discr_min_score_cotas: number;
+  case1_min_score_cotas: number;
+  case2_min_score_cotas: number;
+  case3_min_score_cotas: number;
+  other_min_score_cotas: number;
 }
 
 export interface Concurso {
@@ -79,8 +117,8 @@ export interface Concurso {
   // Flag de administrador
   is_admin_update?: boolean;
 
-  // Array de blocos de disciplinas (NOVA ESTRUTURA - RENOMEADA PARA disciplines)
-  disciplines?: (DisciplineBlock | NestedDiscipline)[]; // Pode conter tanto blocos quanto disciplinas diretas
+  // Estrutura JSONB de disciplinas (suporte a nova e antiga estrutura)
+  disciplines?: DisciplinesStructure | (DisciplineBlock | NestedDiscipline)[]; // Nova estrutura ou compatibilidade
   
   // Estrutura JSONB para cotas
   has_cota?: HasCota;

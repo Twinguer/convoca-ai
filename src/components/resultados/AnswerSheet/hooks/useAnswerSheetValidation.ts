@@ -63,17 +63,42 @@ export const useAnswerSheetValidation = (
     const errors: string[] = [];
     
     // Verificar se há seções subjetivas habilitadas - APENAS JSONB
-    const hasSubjectiveSections = concurso.disciplines?.some(discipline => {
-      if ('disciplines' in discipline) {
-        // Estrutura hierárquica (blocos)
-        return discipline.disciplines?.some(d => 
-          d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
-        );
-      } else {
-        // Estrutura plana
-        return discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+    let hasSubjectiveSections = false;
+    
+    // Verificar nova estrutura hierárquica (objeto com blocks)
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+      for (const block of concurso.disciplines.blocks) {
+        if (block.disciplines && Array.isArray(block.disciplines)) {
+          for (const discipline of block.disciplines) {
+            if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+              hasSubjectiveSections = true;
+              break;
+            }
+          }
+        }
+        if (hasSubjectiveSections) break;
       }
-    }) || false;
+    }
+    // Verificar estrutura antiga (array de blocos)
+    else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+      for (const discipline of concurso.disciplines) {
+        if ('disciplines' in discipline) {
+          // Estrutura hierárquica (blocos)
+          if (discipline.disciplines?.some(d => 
+            d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
+          )) {
+            hasSubjectiveSections = true;
+            break;
+          }
+        } else {
+          // Estrutura plana
+          if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+            hasSubjectiveSections = true;
+            break;
+          }
+        }
+      }
+    }
 
     if (!hasSubjectiveSections) {
       return { isValid: true, errors: [] };
@@ -100,27 +125,47 @@ export const useAnswerSheetValidation = (
 
     // Validar disciplinas customizadas da nova estrutura JSONB
     if (concurso.disciplines) {
-      concurso.disciplines.forEach(discipline => {
-        if ('disciplines' in discipline) {
-          // Estrutura hierárquica (blocos)
-          discipline.disciplines?.forEach(d => {
-            if (d.isEnabled && d.type && subjectScores[d.type] !== undefined) {
-              const score = subjectScores[d.type] || 0;
-              if (score < 0 || score > 10) {
-                errors.push(`A pontuação de ${d.name} deve estar entre 0 e 10`);
+      // Verificar nova estrutura hierárquica (objeto com blocks)
+      if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+        for (const block of concurso.disciplines.blocks) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && discipline.type && subjectScores[discipline.type] !== undefined) {
+                const score = subjectScores[discipline.type] || 0;
+                if (score < 0 || score > 10) {
+                  errors.push(`A pontuação de ${discipline.name} deve estar entre 0 e 10`);
+                }
               }
-            }
-          });
-        } else {
-          // Estrutura plana
-          if (discipline.isEnabled && discipline.type && subjectScores[discipline.type] !== undefined) {
-            const score = subjectScores[discipline.type] || 0;
-            if (score < 0 || score > 10) {
-              errors.push(`A pontuação de ${discipline.name} deve estar entre 0 e 10`);
             }
           }
         }
-      });
+      }
+      // Verificar estrutura antiga (array de blocos)
+      else if (Array.isArray(concurso.disciplines)) {
+        for (const discipline of concurso.disciplines) {
+          if ('disciplines' in discipline) {
+            // Estrutura hierárquica (blocos)
+            if (discipline.disciplines && Array.isArray(discipline.disciplines)) {
+              for (const d of discipline.disciplines) {
+                if (d.isEnabled && d.type && subjectScores[d.type] !== undefined) {
+                  const score = subjectScores[d.type] || 0;
+                  if (score < 0 || score > 10) {
+                    errors.push(`A pontuação de ${d.name} deve estar entre 0 e 10`);
+                  }
+                }
+              }
+            }
+          } else {
+            // Estrutura plana
+            if (discipline.isEnabled && discipline.type && subjectScores[discipline.type] !== undefined) {
+              const score = subjectScores[discipline.type] || 0;
+              if (score < 0 || score > 10) {
+                errors.push(`A pontuação de ${discipline.name} deve estar entre 0 e 10`);
+              }
+            }
+          }
+        }
+      }
     }
 
     return {

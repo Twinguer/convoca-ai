@@ -5,6 +5,7 @@ import { Loader2, Save, AlertTriangle, Check, HelpCircle, AlertCircle } from 'lu
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Concurso, SectionType } from '@/types/concursos';
+import { getDisciplines } from '@/integrations/supabase/rankings/examStructure';
 import { AnswerMatrix } from './AnswerMatrix';
 import { AnswerSheetHeader } from './AnswerSheetHeader';
 import { useAnswerSheet } from '@/hooks/useAnswerSheet/index'; // Updated import path
@@ -125,23 +126,50 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   } = useAnswerSheet(concurso, rankingId, selectedBookletIdFromData);
 
   // Check for subjective content using JSONB disciplines + direct fields
-  const hasSubjectiveSections = concurso.disciplines?.some(discipline => {
-    if ('disciplines' in discipline) {
-      // Hierarchical structure (blocks -> disciplines)
-      return discipline.disciplines?.some(d => 
-        d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
-      );
-    } else {
-      // Flat structure
-      return discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+  let hasSubjectiveSections = false;
+  
+  // Verificar nova estrutura hierárquica (objeto com blocks)
+  if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+    for (const block of concurso.disciplines.blocks) {
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const discipline of block.disciplines) {
+          if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+            hasSubjectiveSections = true;
+            break;
+          }
+        }
+      }
+      if (hasSubjectiveSections) break;
     }
-  }) || 
+  }
+  // Verificar estrutura antiga (array de blocos)
+  else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    for (const discipline of concurso.disciplines) {
+      if ('disciplines' in discipline) {
+        // Hierarchical structure (blocks -> disciplines)
+        if (discipline.disciplines?.some(d => 
+          d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
+        )) {
+          hasSubjectiveSections = true;
+          break;
+        }
+      } else {
+        // Flat structure
+        if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+          hasSubjectiveSections = true;
+          break;
+        }
+      }
+    }
+  }
+  
   // Fallback para campos diretos (compatibilidade) - RESTAURADO
-  (concurso as any).has_discursive || 
-  (concurso as any).has_case_study_1 || 
-  (concurso as any).has_case_study_2 || 
-  (concurso as any).has_case_study_3 || 
-  (concurso as any).has_other_subjective;
+  hasSubjectiveSections = hasSubjectiveSections || 
+    (concurso as any).has_discursive || 
+    (concurso as any).has_case_study_1 || 
+    (concurso as any).has_case_study_2 || 
+    (concurso as any).has_case_study_3 || 
+    (concurso as any).has_other_subjective;
 
   // Fetch exam booklets for this concurso - MOVED UP to avoid initialization error
   const {
@@ -449,21 +477,38 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     // 2. VERIFICAR ESTRUTURA JSONB DAS DISCIPLINAS (sistema atual)
     if (concurso.disciplines) {
-      concurso.disciplines.forEach(discipline => {
-        if ('disciplines' in discipline) {
-          // Estrutura hierárquica (blocos)
-          discipline.disciplines?.forEach(d => {
-            if (d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)) {
-              initialScores[d.type] = initialScores[d.type] || 0;
+      // Verificar nova estrutura hierárquica (objeto com blocks)
+      if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+        for (const block of concurso.disciplines.blocks) {
+          if (block.disciplines && Array.isArray(block.disciplines)) {
+            for (const discipline of block.disciplines) {
+              if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+                initialScores[discipline.type] = initialScores[discipline.type] || 0;
+              }
             }
-          });
-        } else {
-          // Estrutura plana
-          if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
-            initialScores[discipline.type] = initialScores[discipline.type] || 0;
           }
         }
-      });
+      }
+      // Verificar estrutura antiga (array de blocos)
+      else if (Array.isArray(concurso.disciplines)) {
+        for (const discipline of concurso.disciplines) {
+          if ('disciplines' in discipline) {
+            // Estrutura hierárquica (blocos)
+            if (discipline.disciplines && Array.isArray(discipline.disciplines)) {
+              for (const d of discipline.disciplines) {
+                if (d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)) {
+                  initialScores[d.type] = initialScores[d.type] || 0;
+                }
+              }
+            }
+          } else {
+            // Estrutura plana
+            if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+              initialScores[discipline.type] = initialScores[discipline.type] || 0;
+            }
+          }
+        }
+      }
     }
     
     // 3. GARANTIR que todas as disciplinas subjetivas estejam inicializadas
@@ -718,51 +763,31 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const getObjectiveSections = (sectionQuestionsData: any) => {
     if (!concurso) return [];
     
+    console.log('[getObjectiveSections] Getting sections for concurso:', concurso.id);
+    
+    // ✅ USAR NOVA FUNÇÃO HELPER: Obter disciplinas de qualquer estrutura
+    const disciplines = getDisciplines(concurso);
+    
     const sections = [];
     
-    // SEMPRE usar a estrutura de disciplinas do concurso (prioridade máxima)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+    if (disciplines.length > 0) {
+      console.log('[getObjectiveSections] Using helper function, found disciplines:', disciplines.length);
       
-      // Check if we're using the hierarchical structure (blocks -> disciplines)
-      const isHierarchicalStructure = concurso.disciplines.length > 0 && 
-                                    concurso.disciplines[0] && 
-                                    typeof concurso.disciplines[0] === 'object' && 
-                                    'name' in concurso.disciplines[0] && 
-                                    'disciplines' in concurso.disciplines[0];
-      
-      
-      if (isHierarchicalStructure) {
-        // Hierarchical structure (blocks -> disciplines)
-        for (const block of concurso.disciplines) {
-          // TypeGuard to check if it's a block with disciplines property
-          if ('disciplines' in block) {
-            for (const discipline of block.disciplines) {
-              if (discipline.isEnabled && discipline.type) {
-                sections.push({
-                  key: discipline.type,
-                  label: `${block.name} - ${discipline.name}`
-                });
-              }
-            }
-          }
-        }
-      } else {
-        // Flat structure
-        for (const discipline of concurso.disciplines) {
-          // TypeGuard to check if it's a discipline
-          if ('isEnabled' in discipline && discipline.isEnabled && discipline.type) {
-            sections.push({
-              key: discipline.type,
-              label: discipline.name || discipline.type
-            });
-          }
+      for (const discipline of disciplines) {
+        if (discipline.isEnabled && discipline.type) {
+          console.log('[getObjectiveSections] Adding section:', discipline.type, discipline.name);
+          sections.push({
+            key: discipline.type,
+            label: discipline.blockName ? `${discipline.blockName} - ${discipline.name}` : discipline.name
+          });
         }
       }
-        } else {
-          console.warn('[getObjectiveSections] No disciplines found, returning empty sections');
-        }
-        
-        return sections;
+    } else {
+      console.warn('[getObjectiveSections] No disciplines found, returning empty sections');
+    }
+    
+    console.log('[getObjectiveSections] Final sections:', sections);
+    return sections;
   };
 
   // Handle section changes

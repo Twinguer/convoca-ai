@@ -595,18 +595,28 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     let globalMinimumToCheck = 0;
     let hasGlobalMin = false;
     
-    // Get minimum from disciplines structure (first block)
-    if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      const firstBlock = concurso.disciplines[0];
-      
-      if (isQuota && firstBlock.minimum_total_score_cotas) {
-        // User is in quota: use quota minimum from block
-        globalMinimumToCheck = Number(firstBlock.minimum_total_score_cotas) || 0;
-        hasGlobalMin = globalMinimumToCheck > 0;
-      } else if (firstBlock.minimum_total_score) {
-        // User is in ampla or quota minimum not set: use general minimum from block
-        globalMinimumToCheck = Number(firstBlock.minimum_total_score) || 0;
-        hasGlobalMin = globalMinimumToCheck > 0;
+    // Get minimum from disciplines structure (root level)
+    if (concurso.disciplines) {
+      // Verificar se é a nova estrutura com campos no nível raiz
+      if (concurso.disciplines.minimum_total_score !== undefined || concurso.disciplines.minimum_total_score_cotas !== undefined) {
+        // Nova estrutura: campos no nível raiz
+        if (isQuota && concurso.disciplines.minimum_total_score_cotas) {
+          globalMinimumToCheck = Number(concurso.disciplines.minimum_total_score_cotas) || 0;
+          hasGlobalMin = globalMinimumToCheck > 0;
+        } else if (concurso.disciplines.minimum_total_score) {
+          globalMinimumToCheck = Number(concurso.disciplines.minimum_total_score) || 0;
+          hasGlobalMin = globalMinimumToCheck > 0;
+        }
+      } else if (Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
+        // Estrutura antiga: campos no primeiro bloco (fallback)
+        const firstBlock = concurso.disciplines[0];
+        if (isQuota && firstBlock.minimum_total_score_cotas) {
+          globalMinimumToCheck = Number(firstBlock.minimum_total_score_cotas) || 0;
+          hasGlobalMin = globalMinimumToCheck > 0;
+        } else if (firstBlock.minimum_total_score) {
+          globalMinimumToCheck = Number(firstBlock.minimum_total_score) || 0;
+          hasGlobalMin = globalMinimumToCheck > 0;
+        }
       }
     }
     

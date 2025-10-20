@@ -125,6 +125,14 @@ const CriarRanking = () => {
       case_study_2_minimum_score: 0,
       case_study_3_minimum_score: 0,
       other_subjective_minimum_score: 0,
+      // Notas mínimas para cotas das questões subjetivas
+      discursive_minimum_score_cotas: 0,
+      case_study_1_minimum_score_cotas: 0,
+      case_study_2_minimum_score_cotas: 0,
+      case_study_3_minimum_score_cotas: 0,
+      other_subjective_minimum_score_cotas: 0,
+      // Estrutura de disciplinas (inicializada vazia)
+      disciplines: [],
       has_ampla_concorrencia: true,
       has_ppp: false,
       has_pcd: false,
@@ -183,13 +191,25 @@ const CriarRanking = () => {
             const quotaData = data.has_cota || {};
             const subjectsData = data.subjects || {};
             
-            // Extrair minimum scores do primeiro bloco de disciplines
+            // Extrair minimum scores e blocos da estrutura disciplines
             let minimumTotalScore = 0;
             let minimumTotalScoreCotas = 0;
-            if (data.disciplines && Array.isArray(data.disciplines) && data.disciplines.length > 0) {
-              const firstBlock = data.disciplines[0];
-              minimumTotalScore = firstBlock.minimum_total_score || 0;
-              minimumTotalScoreCotas = firstBlock.minimum_total_score_cotas || 0;
+            let disciplinesBlocks = [];
+            
+            if (data.disciplines) {
+              // Verificar se é a nova estrutura com campos no nível raiz
+              if (data.disciplines.minimum_total_score !== undefined || data.disciplines.minimum_total_score_cotas !== undefined) {
+                // Nova estrutura: campos no nível raiz
+                minimumTotalScore = data.disciplines.minimum_total_score || 0;
+                minimumTotalScoreCotas = data.disciplines.minimum_total_score_cotas || 0;
+                disciplinesBlocks = data.disciplines.blocks || [];
+              } else if (Array.isArray(data.disciplines) && data.disciplines.length > 0) {
+                // Estrutura antiga: campos no primeiro bloco (fallback)
+                const firstBlock = data.disciplines[0];
+                minimumTotalScore = firstBlock.minimum_total_score || 0;
+                minimumTotalScoreCotas = firstBlock.minimum_total_score_cotas || 0;
+                disciplinesBlocks = data.disciplines;
+              }
             }
             
             // Criar objeto de dados para o formulário
@@ -215,8 +235,11 @@ const CriarRanking = () => {
               has_transsexuais: quotaData.tra === true,
               
               // Minimum scores da estrutura disciplines
-              minimum_total_score: minimumTotalScore,
-              minimum_total_score_cotas: minimumTotalScoreCotas,
+              total_minimum_score: minimumTotalScore,
+              quota_minimum_score: minimumTotalScoreCotas,
+              
+              // Blocos de disciplinas extraídos da estrutura
+              disciplines: disciplinesBlocks,
               
               // Mapear disciplinas subjetivas do JSONB
               has_discursive: subjectsData.discr === true,

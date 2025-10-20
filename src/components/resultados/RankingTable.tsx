@@ -571,15 +571,40 @@ const RankingTableContent: React.FC<{
         {(() => {
           // Verificar se tem seção "Outro" usando sistema híbrido
           const hasOtherDirect = concurso.subjects?.other === true;
-          const hasOtherJsonb = concurso.disciplines?.some(discipline => {
-            if ('disciplines' in discipline) {
-              return discipline.disciplines?.some(d => 
-                d.isEnabled && d.type === 'other_subjective'
-              );
-            } else {
-              return discipline.isEnabled && discipline.type === 'other_subjective';
+          let hasOtherJsonb = false;
+          
+          // Verificar nova estrutura hierárquica (objeto com blocks)
+          if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+            for (const block of concurso.disciplines.blocks) {
+              if (block.disciplines && Array.isArray(block.disciplines)) {
+                for (const discipline of block.disciplines) {
+                  if (discipline.isEnabled && discipline.type === 'other_subjective') {
+                    hasOtherJsonb = true;
+                    break;
+                  }
+                }
+              }
+              if (hasOtherJsonb) break;
             }
-          }) || false;
+          }
+          // Verificar estrutura antiga (array de blocos)
+          else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+            for (const discipline of concurso.disciplines) {
+              if ('disciplines' in discipline) {
+                // Estrutura hierárquica antiga
+                if (discipline.disciplines?.some(d => d.isEnabled && d.type === 'other_subjective')) {
+                  hasOtherJsonb = true;
+                  break;
+                }
+              } else {
+                // Estrutura plana antiga
+                if (discipline.isEnabled && discipline.type === 'other_subjective') {
+                  hasOtherJsonb = true;
+                  break;
+                }
+              }
+            }
+          }
           
           const hasOther = hasOtherDirect || hasOtherJsonb;
           
@@ -718,15 +743,40 @@ const RankingTableContent: React.FC<{
             {(() => {
               // Verificar se tem seção "Outro" usando sistema híbrido
               const hasOtherDirect = concurso.subjects?.other === true;
-              const hasOtherJsonb = concurso.disciplines?.some(discipline => {
-                if ('disciplines' in discipline) {
-                  return discipline.disciplines?.some(d => 
-                    d.isEnabled && d.type === 'other_subjective'
-                  );
-                } else {
-                  return discipline.isEnabled && discipline.type === 'other_subjective';
+              let hasOtherJsonb = false;
+              
+              // Verificar nova estrutura hierárquica (objeto com blocks)
+              if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+                for (const block of concurso.disciplines.blocks) {
+                  if (block.disciplines && Array.isArray(block.disciplines)) {
+                    for (const discipline of block.disciplines) {
+                      if (discipline.isEnabled && discipline.type === 'other_subjective') {
+                        hasOtherJsonb = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (hasOtherJsonb) break;
                 }
-              }) || false;
+              }
+              // Verificar estrutura antiga (array de blocos)
+              else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+                for (const discipline of concurso.disciplines) {
+                  if ('disciplines' in discipline) {
+                    // Estrutura hierárquica antiga
+                    if (discipline.disciplines?.some(d => d.isEnabled && d.type === 'other_subjective')) {
+                      hasOtherJsonb = true;
+                      break;
+                    }
+                  } else {
+                    // Estrutura plana antiga
+                    if (discipline.isEnabled && discipline.type === 'other_subjective') {
+                      hasOtherJsonb = true;
+                      break;
+                    }
+                  }
+                }
+              }
               
               const hasOther = hasOtherDirect || hasOtherJsonb;
               
@@ -745,15 +795,41 @@ const RankingTableContent: React.FC<{
           <TableCell colSpan={(() => {
             // Calcular colSpan usando sistema híbrido
             const hasOtherDirect = concurso.subjects?.other === true;
-            const hasOtherJsonb = concurso.disciplines?.some(discipline => {
-              if ('disciplines' in discipline) {
-                return discipline.disciplines?.some(d => 
-                  d.isEnabled && d.type === 'other_subjective'
-                );
-              } else {
-                return discipline.isEnabled && discipline.type === 'other_subjective';
+            let hasOtherJsonb = false;
+            
+            // Verificar nova estrutura hierárquica (objeto com blocks)
+            if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+              for (const block of concurso.disciplines.blocks) {
+                if (block.disciplines && Array.isArray(block.disciplines)) {
+                  for (const discipline of block.disciplines) {
+                    if (discipline.isEnabled && discipline.type === 'other_subjective') {
+                      hasOtherJsonb = true;
+                      break;
+                    }
+                  }
+                }
+                if (hasOtherJsonb) break;
               }
-            }) || false;
+            }
+            // Verificar estrutura antiga (array de blocos)
+            else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+              for (const discipline of concurso.disciplines) {
+                if ('disciplines' in discipline) {
+                  // Estrutura hierárquica antiga
+                  if (discipline.disciplines?.some(d => d.isEnabled && d.type === 'other_subjective')) {
+                    hasOtherJsonb = true;
+                    break;
+                  }
+                } else {
+                  // Estrutura plana antiga
+                  if (discipline.isEnabled && discipline.type === 'other_subjective') {
+                    hasOtherJsonb = true;
+                    break;
+                  }
+                }
+              }
+            }
+            
             const hasOther = hasOtherDirect || hasOtherJsonb;
             
             return 4 + customDisciplines.length + 

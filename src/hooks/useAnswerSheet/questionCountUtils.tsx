@@ -36,17 +36,19 @@ export const getTotalQuestions = (concurso: Concurso): number => {
         }
       }
     } else {
-      // Process flat structure
-      concurso.disciplines.forEach(discipline => {
-        if (discipline.isEnabled && discipline.questionCount) {
-          const questionCount = typeof discipline.questionCount === 'number'
-            ? discipline.questionCount
-            : Number(String(discipline.questionCount || '0'));
-            
-          console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
-          totalQuestions += questionCount;
+      // Process flat structure - verificar se é array
+      if (Array.isArray(concurso.disciplines)) {
+        for (const discipline of concurso.disciplines) {
+          if (discipline.isEnabled && discipline.questionCount) {
+            const questionCount = typeof discipline.questionCount === 'number'
+              ? discipline.questionCount
+              : Number(String(discipline.questionCount || '0'));
+              
+            console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+            totalQuestions += questionCount;
+          }
         }
-      });
+      }
     }
     
     console.log(`[getTotalQuestions] Total de questões: ${totalQuestions}`);

@@ -320,3 +320,4 @@ $function$;
 COMMENT ON FUNCTION calculate_user_score_realtime IS 'Função atualizada com regras completas de mínimo: global, subjetivo, por disciplina e por cota. Usuários eliminados ficam com status "E" e notas em vermelho.';
 
 
+

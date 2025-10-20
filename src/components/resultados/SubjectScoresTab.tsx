@@ -112,23 +112,50 @@ export const SubjectScoresTab: React.FC<SubjectScoresTabProps> = ({
   };
 
   // Verificar se o concurso tem seções subjetivas habilitadas - JSONB + CAMPOS DIRETOS
-  const hasSubjectiveSections = concurso.disciplines?.some(discipline => {
-    if ('disciplines' in discipline) {
-      // Estrutura hierárquica (blocos)
-      return discipline.disciplines?.some(d => 
-        d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
-      );
-    } else {
-      // Estrutura plana
-      return discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type);
+  let hasSubjectiveSections = false;
+  
+  // Verificar nova estrutura hierárquica (objeto com blocks)
+  if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+    for (const block of concurso.disciplines.blocks) {
+      if (block.disciplines && Array.isArray(block.disciplines)) {
+        for (const discipline of block.disciplines) {
+          if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+            hasSubjectiveSections = true;
+            break;
+          }
+        }
+      }
+      if (hasSubjectiveSections) break;
     }
-  }) || 
+  }
+  // Verificar estrutura antiga (array de blocos)
+  else if (concurso.disciplines && Array.isArray(concurso.disciplines)) {
+    for (const discipline of concurso.disciplines) {
+      if ('disciplines' in discipline) {
+        // Estrutura hierárquica (blocos)
+        if (discipline.disciplines?.some(d => 
+          d.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(d.type)
+        )) {
+          hasSubjectiveSections = true;
+          break;
+        }
+      } else {
+        // Estrutura plana
+        if (discipline.isEnabled && ['discursive', 'case_study_1', 'case_study_2', 'case_study_3', 'other_subjective'].includes(discipline.type)) {
+          hasSubjectiveSections = true;
+          break;
+        }
+      }
+    }
+  }
+  
   // Fallback para campos diretos (compatibilidade)
-  concurso.has_discursive || 
-  concurso.has_case_study_1 || 
-  concurso.has_case_study_2 || 
-  concurso.has_case_study_3 || 
-  concurso.has_other_subjective;
+  hasSubjectiveSections = hasSubjectiveSections || 
+    concurso.has_discursive || 
+    concurso.has_case_study_1 || 
+    concurso.has_case_study_2 || 
+    concurso.has_case_study_3 || 
+    concurso.has_other_subjective;
 
   if (!hasSubjectiveSections) {
     return (

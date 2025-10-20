@@ -338,12 +338,78 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         
         // 2. Verificar JSONB disciplines (sistema atual)
         if (concurso.disciplines) {
-          concurso.disciplines.forEach((discipline: any) => {
-            if ('disciplines' in discipline) {
-              // Estrutura hierárquica (blocos)
-              discipline.disciplines?.forEach((d: any) => {
-                if (d.isEnabled) {
-                  switch (d.type) {
+          // Verificar nova estrutura hierárquica (objeto com blocks)
+          if (typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
+            for (const block of concurso.disciplines.blocks) {
+              if (block.disciplines && Array.isArray(block.disciplines)) {
+                for (const discipline of block.disciplines) {
+                  if (discipline.isEnabled) {
+                    switch (discipline.type) {
+                      case 'discursive':
+                        subjectScores.discursive = 0;
+                        break;
+                      case 'case_study_1':
+                        subjectScores.case_study_1 = 0;
+                        break;
+                      case 'case_study_2':
+                        subjectScores.case_study_2 = 0;
+                        break;
+                      case 'case_study_3':
+                        subjectScores.case_study_3 = 0;
+                        break;
+                      case 'other_subjective':
+                        subjectScores.other_subjective = 0;
+                        break;
+                      default:
+                        // Disciplinas customizadas
+                        if (discipline.id) {
+                          subjectScores[`custom_${discipline.id}`] = 0;
+                        }
+                        break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          // Verificar estrutura antiga (array de blocos)
+          else if (Array.isArray(concurso.disciplines)) {
+            for (const discipline of concurso.disciplines) {
+              if ('disciplines' in discipline) {
+                // Estrutura hierárquica (blocos)
+                if (discipline.disciplines && Array.isArray(discipline.disciplines)) {
+                  for (const d of discipline.disciplines) {
+                    if (d.isEnabled) {
+                      switch (d.type) {
+                        case 'discursive':
+                          subjectScores.discursive = 0;
+                          break;
+                        case 'case_study_1':
+                          subjectScores.case_study_1 = 0;
+                          break;
+                        case 'case_study_2':
+                          subjectScores.case_study_2 = 0;
+                          break;
+                        case 'case_study_3':
+                          subjectScores.case_study_3 = 0;
+                          break;
+                        case 'other_subjective':
+                          subjectScores.other_subjective = 0;
+                          break;
+                        default:
+                          // Disciplinas customizadas
+                          if (d.id) {
+                            subjectScores[`custom_${d.id}`] = 0;
+                          }
+                          break;
+                      }
+                    }
+                  }
+                }
+              } else {
+                // Estrutura plana
+                if (discipline.isEnabled) {
+                  switch (discipline.type) {
                     case 'discursive':
                       subjectScores.discursive = 0;
                       break;
@@ -361,42 +427,15 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
                       break;
                     default:
                       // Disciplinas customizadas
-                      if (d.id) {
-                        subjectScores[`custom_${d.id}`] = 0;
+                      if (discipline.id) {
+                        subjectScores[`custom_${discipline.id}`] = 0;
                       }
                       break;
                   }
                 }
-              });
-            } else {
-              // Estrutura plana
-              if (discipline.isEnabled) {
-                switch (discipline.type) {
-                  case 'discursive':
-                    subjectScores.discursive = 0;
-                    break;
-                  case 'case_study_1':
-                    subjectScores.case_study_1 = 0;
-                    break;
-                  case 'case_study_2':
-                    subjectScores.case_study_2 = 0;
-                    break;
-                  case 'case_study_3':
-                    subjectScores.case_study_3 = 0;
-                    break;
-                  case 'other_subjective':
-                    subjectScores.other_subjective = 0;
-                    break;
-                  default:
-                    // Disciplinas customizadas
-                    if (discipline.id) {
-                      subjectScores[`custom_${discipline.id}`] = 0;
-                    }
-                    break;
-                }
               }
             }
-          });
+          }
         }
         
         return subjectScores;
