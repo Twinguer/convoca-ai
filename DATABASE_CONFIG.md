@@ -5,7 +5,7 @@ Este projeto suporta dois bancos de dados diferentes para desenvolvimento e prod
 ## 📋 Bancos Disponíveis
 
 ### 🧪 **nomeia-ai** (Desenvolvimento)
-- **URL**: `https://xuovcuefnullpmpktrzd.supabase.co`
+- **URL**: `https://lyoltawveamfpsmxclyb.supabase.co`
 - **Uso**: Ambiente de desenvolvimento e testes
 - **Dados**: Replica do banco de produção para testes seguros
 

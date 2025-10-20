@@ -54,8 +54,8 @@ export const useUserAnswersV2 = ({
     queryKey: ['user-answers-v2', rankingId, userId],
     queryFn: () => fetchUserAnswers(rankingId, userId),
     enabled: enabled && !!rankingId && !!userId,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 30 * 1000, // 30 segundos
+    cacheTime: 2 * 60 * 1000, // 2 minutos
     retry: 3,
   });
 
@@ -70,8 +70,8 @@ export const useUserAnswersV2 = ({
     queryKey: ['ranking-answers-v2', rankingId],
     queryFn: () => fetchRankingAnswers(rankingId),
     enabled: enabled && !!rankingId,
-    staleTime: 10 * 60 * 1000, // 10 minutos
-    cacheTime: 30 * 60 * 1000, // 30 minutos
+    staleTime: 1 * 60 * 1000, // 1 minuto
+    cacheTime: 5 * 60 * 1000, // 5 minutos
     retry: 3,
   });
 
@@ -291,6 +291,8 @@ export const useAnswerManagementV2 = (rankingId: string, userId: string) => {
     clearLocalChanges
   };
 };
+
+
 
 
 

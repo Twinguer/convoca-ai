@@ -321,3 +321,5 @@ COMMENT ON FUNCTION calculate_user_score_realtime IS 'Função atualizada com re
 
 
 
+
+

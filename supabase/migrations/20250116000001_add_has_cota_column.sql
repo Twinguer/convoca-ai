@@ -19,3 +19,5 @@ CREATE INDEX idx_concursos_has_cota ON concursos USING GIN (has_cota);
 
 
 
+
+
