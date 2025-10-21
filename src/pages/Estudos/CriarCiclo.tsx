@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X, Edit, BookOpen, Calendar } from 'lucide-react';
+import { Plus, X, Edit, BookOpen, Calendar, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { toast } from 'sonner';
