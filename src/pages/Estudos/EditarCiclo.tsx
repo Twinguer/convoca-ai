@@ -85,8 +85,55 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
           setOrgan(cycle.organ || '');
           setPosition(cycle.position || '');
           setExamDate(cycle.exam_date);
-          // Note: blocks não existe mais em StudyCycleV2, usar schedule_data se necessário
-          setBlocks([]);
+          
+          // Extrair disciplinas do schedule_data e organizá-las em blocos
+          const blocksMap = new Map<string, Block>();
+          
+          cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
+            daySchedule.sessions.forEach(session => {
+              if (session.block_name && session.discipline_name) {
+                // Se o bloco ainda não existe, criar
+                if (!blocksMap.has(session.block_name)) {
+                  blocksMap.set(session.block_name, {
+                    id: generateId(),
+                    name: session.block_name,
+                    disciplines: []
+                  });
+                }
+                
+                const block = blocksMap.get(session.block_name)!;
+                
+                // Verificar se a disciplina já existe no bloco
+                const existingDiscipline = block.disciplines.find(d => d.name === session.discipline_name);
+                
+                if (!existingDiscipline) {
+                  // Adicionar nova disciplina
+                  const discipline: Discipline = {
+                    id: generateId(),
+                    name: session.discipline_name,
+                    status: 'em-andamento',
+                    studyTime: (session.total_stats?.total_duration_minutes || 0) / 60,
+                    questionsResolved: session.total_stats?.questions_answered || 0,
+                    correctAnswers: session.total_stats?.questions_correct || 0,
+                    wrongAnswers: session.total_stats?.questions_wrong || 0,
+                    courseProgress: '',
+                    studyType: 'pdf',
+                    isCompleted: false,
+                    notes: ''
+                  };
+                  block.disciplines.push(discipline);
+                } else {
+                  // Atualizar stats da disciplina existente
+                  existingDiscipline.studyTime += (session.total_stats?.total_duration_minutes || 0) / 60;
+                  existingDiscipline.questionsResolved += session.total_stats?.questions_answered || 0;
+                  existingDiscipline.correctAnswers += session.total_stats?.questions_correct || 0;
+                  existingDiscipline.wrongAnswers += session.total_stats?.questions_wrong || 0;
+                }
+              }
+            });
+          });
+          
+          setBlocks(Array.from(blocksMap.values()));
         } else {
           toast.error('Ciclo não encontrado');
           navigate('/estudos');
