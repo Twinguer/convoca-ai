@@ -387,6 +387,21 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         }
         
         totalWeight += questionWeight;
+      } else if (concurso.exam_type === 'Certo ou Errado') {
+        // Aplicar penalidade para respostas erradas em provas C/E
+        const penalty = concurso.disciplines?.wrong_answer_penalty ?? 0;
+        if (penalty > 0) {
+          const sectionType = officialAnswer.section_type || 'default';
+          const disciplineType = sectionTypeToDisciplineTypeMap[sectionType] || sectionType;
+          const disciplineWeight = disciplineWeights[disciplineType] || 1;
+          
+          // Aplicar penalidade
+          totalScore -= penalty;
+          disciplineScores[disciplineType] = (disciplineScores[disciplineType] || 0);
+          weightedDisciplineScores[disciplineType] = (weightedDisciplineScores[disciplineType] || 0) - (penalty * disciplineWeight);
+          
+          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} incorrect (${disciplineType}): -${penalty} penalty`);
+        }
       }
     }
     
@@ -508,11 +523,19 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const belowDisciplineMinimums: string[] = [];
     const belowBlockMinimums: string[] = [];
 
+    // Determinar se devemos usar pontuação ponderada para mínimos
+    // Para "Certo ou Errado", questões sempre valem 1 ponto (não ponderado)
+    const useWeightedScoring = concurso.exam_type !== 'Certo ou Errado';
+    
+    console.log(`[recalculateUserScore] Minimum scoring mode: exam_type=${concurso.exam_type}, useWeightedScoring=${useWeightedScoring}`);
+
     // 1) Discipline-level minimums (objective disciplines)
-    for (const [discType, score] of Object.entries(weightedDisciplineScores)) {
+    const scoresToCheckForDisciplines = useWeightedScoring ? weightedDisciplineScores : disciplineScores;
+    for (const [discType, score] of Object.entries(scoresToCheckForDisciplines)) {
       const min = disciplineMinimums[discType] || 0;
       if (min > 0 && score < min) {
         belowDisciplineMinimums.push(discType);
+        console.log(`[recalculateUserScore] Disciplina ${discType} abaixo do mínimo: ${score} < ${min} (weighted=${useWeightedScoring})`);
       }
     }
 
@@ -539,16 +562,19 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const { blockMinimums, disciplineToBlock } = getBlockMinimumMaps(concurso, isQuota);
     Object.keys(blockMinimums).forEach(id => { blockScores[id] = 0; });
 
-    for (const [discType, wScore] of Object.entries(weightedDisciplineScores)) {
+    // Usar pontuações apropriadas baseado no tipo de prova
+    const scoresToCheckForBlocks = useWeightedScoring ? weightedDisciplineScores : disciplineScores;
+    for (const [discType, score] of Object.entries(scoresToCheckForBlocks)) {
       const bId = disciplineToBlock[discType];
       if (bId) {
-        blockScores[bId] = (blockScores[bId] || 0) + (wScore || 0);
+        blockScores[bId] = (blockScores[bId] || 0) + (score || 0);
       }
     }
 
     for (const [bId, bMin] of Object.entries(blockMinimums)) {
       if ((bMin || 0) > 0 && (blockScores[bId] || 0) < (bMin || 0)) {
         belowBlockMinimums.push(bId);
+        console.log(`[recalculateUserScore] Bloco ${bId} abaixo do mínimo: ${blockScores[bId]} < ${bMin} (weighted=${useWeightedScoring})`);
       }
     }
 
@@ -588,11 +614,14 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       console.log('[recalculateUserScore] Estrutura antiga para global minimum (fallback)');
     }
     
-    // Usar total objetivo ponderado (sem subjetivas) para o mínimo global
+    // Usar total objetivo apropriado (ponderado ou não) para o mínimo global
     const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, v) => sum + (v || 0), 0);
-    const isBelowGlobalMinimum = hasGlobalMin ? (objectiveWeightedTotal < globalMinimumToCheck) : false;
+    const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, v) => sum + (v || 0), 0);
+    const scoreToCheckForGlobal = useWeightedScoring ? objectiveWeightedTotal : objectiveSimpleTotal;
     
-    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, objectiveWeighted=${objectiveWeightedTotal}, below=${isBelowGlobalMinimum}`);
+    const isBelowGlobalMinimum = hasGlobalMin ? (scoreToCheckForGlobal < globalMinimumToCheck) : false;
+    
+    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, objectiveWeighted=${objectiveWeightedTotal}, objectiveSimple=${objectiveSimpleTotal}, scoreUsed=${scoreToCheckForGlobal}, useWeighted=${useWeightedScoring}, below=${isBelowGlobalMinimum}`);
 
     const belowMinimum = isBelowGlobalMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0;
     

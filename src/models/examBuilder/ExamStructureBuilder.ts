@@ -153,6 +153,7 @@ export class ExamStructureBuilder {
       concurso.disciplines = {
         minimum_total_score: 0,
         minimum_total_score_cotas: 0,
+        wrong_answer_penalty: this.wrongAnswerPenalty,
         blocks: [{
           blockId: crypto.randomUUID(),
           blockName: 'Gerais',
@@ -165,6 +166,7 @@ export class ExamStructureBuilder {
       concurso.disciplines = {
         minimum_total_score: 0,
         minimum_total_score_cotas: 0,
+        wrong_answer_penalty: this.wrongAnswerPenalty,
         blocks: []
       };
     }

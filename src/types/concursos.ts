@@ -3,6 +3,7 @@
 export interface DisciplinesStructure {
   minimum_total_score: number;
   minimum_total_score_cotas: number;
+  wrong_answer_penalty?: number; // Penalidade para respostas erradas (provas C/E)
   blocks: DisciplineBlockStructure[];
 }
 

@@ -309,7 +309,8 @@ export const useSaveRanking = () => {
         const disciplinesStructure = mapFormDataToDisciplinesStructure({
           disciplines: formValues.disciplines || [],
           minimum_total_score: formValues.minimumTotalScore || 0,
-          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0
+          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0,
+          wrong_answer_penalty: formValues.wrong_answer_penalty || 0
         });
         
         const editDataToSubmit = {
@@ -369,7 +370,8 @@ export const useSaveRanking = () => {
         const disciplinesStructure = mapFormDataToDisciplinesStructure({
           ...formValues,
           minimum_total_score: formValues.minimumTotalScore || 0,
-          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0
+          minimum_total_score_cotas: formValues.minimumTotalScoreCotas || 0,
+          wrong_answer_penalty: formValues.wrong_answer_penalty || 0
         });
         
         console.log('[useSaveRanking] Disciplines structure to save:', disciplinesStructure);

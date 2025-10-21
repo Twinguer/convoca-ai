@@ -93,6 +93,7 @@ const CriarRanking = () => {
       inscritos: 0,
       exam_type: 'Alternativas',
       alternatives_count: 5,
+      wrong_answer_penalty: 0,
       has_basic_knowledge: true,
       basic_knowledge_questions: 0,
       basic_knowledge_weight: 1,
@@ -194,6 +195,7 @@ const CriarRanking = () => {
             // ✅ Extrair minimum scores e blocos da nova estrutura JSONB
             let minimumTotalScore = 0;
             let minimumTotalScoreCotas = 0;
+            let wrongAnswerPenalty = 0;
             let disciplinesBlocks = [];
             
             if (data.disciplines) {
@@ -203,6 +205,9 @@ const CriarRanking = () => {
               }
               if (data.disciplines.minimum_total_score_cotas !== undefined) {
                 minimumTotalScoreCotas = data.disciplines.minimum_total_score_cotas || 0;
+              }
+              if (data.disciplines.wrong_answer_penalty !== undefined) {
+                wrongAnswerPenalty = data.disciplines.wrong_answer_penalty || 0;
               }
               if (data.disciplines.blocks && Array.isArray(data.disciplines.blocks)) {
                 // Converter estrutura JSONB para o formato esperado pelo form
@@ -254,6 +259,7 @@ const CriarRanking = () => {
               // ✅ Minimum scores globais da nova estrutura JSONB
               minimumTotalScore: minimumTotalScore,
               minimumTotalScoreCotas: minimumTotalScoreCotas,
+              wrong_answer_penalty: wrongAnswerPenalty,
               
               // ✅ Blocos de disciplinas da nova estrutura JSONB
               disciplines: disciplinesBlocks,

@@ -310,8 +310,12 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
     (formValues.minimum_total_score_cotas ?? formValues.minimumTotalScoreCotas ?? 0)
   );
   
+  // Extrair penalidade para respostas erradas (apenas para provas C/E)
+  const wrongAnswerPenalty = Number(formValues.wrong_answer_penalty ?? 0);
+  
   console.log('[mapFormDataToDisciplinesStructure] totalScore:', totalScore);
   console.log('[mapFormDataToDisciplinesStructure] quotaScore:', quotaScore);
+  console.log('[mapFormDataToDisciplinesStructure] wrongAnswerPenalty:', wrongAnswerPenalty);
   
   // Mapear blocos de disciplinas
   const blocks = (formValues.disciplines || []).map((block: any) => {
@@ -348,6 +352,7 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
   const result = {
     minimum_total_score: totalScore,
     minimum_total_score_cotas: quotaScore,
+    wrong_answer_penalty: wrongAnswerPenalty,
     blocks
   };
   
