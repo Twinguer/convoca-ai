@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { isHierarchicalStructure, getDisciplineWeights, getDisciplineMinimums, getBlockMinimumMaps } from './examStructure';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
+import { scoreObjectiveAnswer, type ExamType } from '@/services/scoring';
 
 interface RecalculationResponse {
   success: boolean;
@@ -341,12 +342,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       const officialAnswer = officialAnswers[questionNumberStr];
 
       if (officialAnswer) {
-        const isCorrect = officialAnswer.is_nullified === true || userAnswer.answer === officialAnswer.correct_answer;
         const questionWeight = officialAnswer.weight ?? 1;
+        const isNullified = officialAnswer.is_nullified === true;
         const sectionType = officialAnswer.section_type || 'default';
         
         // Usar o section_type do gabarito para mapear corretamente para a disciplina
-        // Se o section_type não estiver mapeado, usar o section_type diretamente
         const disciplineType = sectionTypeToDisciplineTypeMap[sectionType] || sectionType;
         
         // Inicializar pontuação da disciplina se ainda não existir
@@ -355,53 +355,61 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           weightedDisciplineScores[disciplineType] = 0;
         }
         
-        if (isCorrect) {
-          // Obter peso da disciplina do mapeamento
-          const disciplineWeight = disciplineWeights[disciplineType] || 1;
-          
-          // Debug para entender o mapeamento
-          console.log(`[recalculateUserScore] DEBUG - Question ${userAnswer.question_number}:`, {
-            userAnswer: userAnswer.answer,
-            officialAnswer: officialAnswer.correct_answer,
-            sectionType,
-            disciplineType,
-            isCorrect,
-            questionWeight,
-            disciplineWeight,
-            disciplineScoresBefore: disciplineScores[disciplineType] || 0
-          });
-          
-          // Adicionar à pontuação total
-          totalScore += questionWeight;
-          
-          // Adicionar à pontuação da disciplina específica
-          disciplineScores[disciplineType] += questionWeight;
-          weightedDisciplineScores[disciplineType] += questionWeight * disciplineWeight;
-          
-          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} correct (${disciplineType}): +${questionWeight} * weight ${disciplineWeight}`);
-          console.log(`[recalculateUserScore] DEBUG - Após cálculo: disciplineScores[${disciplineType}] = ${disciplineScores[disciplineType]}`);
-        } else if (concurso.exam_type === 'Certo ou Errado') {
-          // Penalty logic can be moved to JSONB if needed
-          const penalty = 0; // Sem penalidade (feature removida/no-op)
-          // Se penalty = 0, não faz nada (resposta errada não impacta)
-        }
+        // Obter peso da disciplina do mapeamento
+        const disciplineWeight = disciplineWeights[disciplineType] || 1;
+        
+        // Determinar se resposta está em branco
+        const isBlank = !userAnswer.answer || userAnswer.answer.trim() === '';
+        
+        // Determinar se resposta está correta (ignorando anuladas)
+        const isCorrect = !isNullified && userAnswer.answer === officialAnswer.correct_answer;
+        
+        // Obter penalidade para C/E (se aplicável)
+        const wrongAnswerPenalty = concurso.exam_type === 'Certo ou Errado' 
+          ? (concurso.disciplines?.wrong_answer_penalty ?? 0)
+          : 0;
+        
+        // Debug para entender o estado da questão
+        console.log(`[recalculateUserScore] DEBUG - Question ${userAnswer.question_number}:`, {
+          userAnswer: userAnswer.answer,
+          officialAnswer: officialAnswer.correct_answer,
+          sectionType,
+          disciplineType,
+          isCorrect,
+          isNullified,
+          isBlank,
+          questionWeight,
+          disciplineWeight,
+          wrongAnswerPenalty,
+          examType: concurso.exam_type
+        });
+        
+        // Usar a função scoreObjectiveAnswer para calcular o delta
+        const scoringResult = scoreObjectiveAnswer({
+          examType: concurso.exam_type as ExamType,
+          wrongAnswerPenalty: wrongAnswerPenalty,
+          questionWeight: questionWeight,
+          disciplineWeight: disciplineWeight,
+          isCorrect: isCorrect,
+          isNullified: isNullified,
+          isBlank: isBlank
+        });
+        
+        // Aplicar os deltas calculados
+        totalScore += scoringResult.totalDelta;
+        disciplineScores[disciplineType] += scoringResult.disciplineDelta;
+        weightedDisciplineScores[disciplineType] += scoringResult.weightedDisciplineDelta;
+        
+        console.log(`[recalculateUserScore] Question ${userAnswer.question_number} scoring result:`, {
+          totalDelta: scoringResult.totalDelta,
+          disciplineDelta: scoringResult.disciplineDelta,
+          weightedDisciplineDelta: scoringResult.weightedDisciplineDelta,
+          newTotalScore: totalScore,
+          newDisciplineScore: disciplineScores[disciplineType],
+          newWeightedDisciplineScore: weightedDisciplineScores[disciplineType]
+        });
         
         totalWeight += questionWeight;
-      } else if (concurso.exam_type === 'Certo ou Errado') {
-        // Aplicar penalidade para respostas erradas em provas C/E
-        const penalty = concurso.disciplines?.wrong_answer_penalty ?? 0;
-        if (penalty > 0) {
-          const sectionType = officialAnswer.section_type || 'default';
-          const disciplineType = sectionTypeToDisciplineTypeMap[sectionType] || sectionType;
-          const disciplineWeight = disciplineWeights[disciplineType] || 1;
-          
-          // Aplicar penalidade
-          totalScore -= penalty;
-          disciplineScores[disciplineType] = (disciplineScores[disciplineType] || 0);
-          weightedDisciplineScores[disciplineType] = (weightedDisciplineScores[disciplineType] || 0) - (penalty * disciplineWeight);
-          
-          console.log(`[recalculateUserScore] Question ${userAnswer.question_number} incorrect (${disciplineType}): -${penalty} penalty`);
-        }
       }
     }
     
