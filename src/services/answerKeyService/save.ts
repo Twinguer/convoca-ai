@@ -13,6 +13,21 @@ export const saveBookletAnswerKey = async (
     console.log('[answerKeyService] Booklet ID (input):', bookletId, 'Type:', typeof bookletId);
     console.log('[answerKeyService] Input answers structure:', Object.keys(answers));
 
+    // Buscar exam_type do concurso para definir question_type corretamente
+    const { data: concursoData, error: concursoError } = await supabase
+      .from('concursos')
+      .select('exam_type')
+      .eq('id', concursoId)
+      .single();
+
+    if (concursoError || !concursoData) {
+      console.error('[answerKeyService] Error fetching concurso exam_type:', concursoError);
+      return { success: false, error: 'Erro ao buscar tipo de exame do concurso' };
+    }
+
+    const questionType = concursoData.exam_type === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE';
+    console.log('[answerKeyService] Detected exam_type:', concursoData.exam_type, '-> question_type:', questionType);
+
     // Garantir que bookletId seja sempre string
     const bookletIdString = String(bookletId);
     console.log('[answerKeyService] Booklet ID (converted to string):', bookletIdString);
@@ -29,7 +44,7 @@ export const saveBookletAnswerKey = async (
         section_type: answerData.sectionType,
         is_nullified: answerData.isNullified,
         answer_format: 'OBJECTIVE',
-        question_type: 'MULTIPLE_CHOICE'
+        question_type: questionType // Usar o tipo detectado
       };
     });
 
@@ -77,6 +92,20 @@ export const updateSingleAnswer = async (
     console.log('[answerKeyService] Updating single answer');
     console.log('[answerKeyService] Question:', questionNumber, 'Answer:', answerData);
 
+    // Buscar exam_type do concurso para definir question_type corretamente
+    const { data: concursoData, error: concursoError } = await supabase
+      .from('concursos')
+      .select('exam_type')
+      .eq('id', concursoId)
+      .single();
+
+    if (concursoError || !concursoData) {
+      console.error('[answerKeyService] Error fetching concurso exam_type:', concursoError);
+      return { success: false, error: 'Erro ao buscar tipo de exame do concurso' };
+    }
+
+    const questionType = concursoData.exam_type === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE';
+
     // Como não temos mais a função update_answer_with_weight que usava booklet_id,
     // vamos usar a função consolidada para atualizar uma única resposta
     const singleAnswerData = {
@@ -86,7 +115,7 @@ export const updateSingleAnswer = async (
         section_type: answerData.sectionType,
         is_nullified: answerData.isNullified,
         answer_format: 'OBJECTIVE',
-        question_type: 'MULTIPLE_CHOICE'
+        question_type: questionType // Usar o tipo detectado
       }
     };
 

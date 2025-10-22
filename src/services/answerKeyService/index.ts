@@ -71,6 +71,7 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
     console.log('[saveBookletAnswerKeyLegacy] Answers to save:', answersArray.length);
 
     // Converter array para o formato Record<string, AnswerKeyData> esperado
+    // Não definir answerFormat e questionType aqui - deixar para saveBookletAnswerKey resolver
     const formattedAnswers: Record<string, any> = {};
     answersArray.forEach((answer) => {
       const questionKey = answer.question_number.toString();
@@ -78,9 +79,7 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
         correctAnswer: answer.correct_answer,
         weight: answer.weight || 1.0,
         sectionType: answer.section_type || 'basic',
-        isNullified: answer.is_nullified || false,
-        answerFormat: 'OBJECTIVE',
-        questionType: 'MULTIPLE_CHOICE'
+        isNullified: answer.is_nullified || false
       };
     });
 

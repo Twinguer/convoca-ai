@@ -18,14 +18,16 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
       // Se um bookletId específico foi fornecido, retornar apenas seus dados
       if (bookletId && consolidatedData.booklets?.[bookletId]) {
         const bookletData = consolidatedData.booklets[bookletId];
-        const answers = Object.entries(bookletData.answers || {}).map(([questionNum, answerData]: [string, any]) => ({
+        // Usar .questions com fallback para .answers (compatibilidade)
+        const questionsData = bookletData.questions || bookletData.answers || {};
+        const answers = Object.entries(questionsData).map(([questionNum, answerData]: [string, any]) => ({
           question_number: parseInt(questionNum),
           correct_answer: answerData.correct_answer,
           weight: answerData.weight || 1.0,
           section_type: answerData.section_type,
           is_nullified: answerData.is_nullified || false,
           answer_format: answerData.answer_format || 'OBJECTIVE',
-          question_type: answerData.question_type || 'MULTIPLE_CHOICE'
+          question_type: answerData.question_type
         }));
         
         console.log('[useOfficialAnswerWeights] Found', answers.length, 'answers for booklet:', bookletId);
@@ -35,7 +37,9 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
       // Se nenhum bookletId foi fornecido, retornar dados de todos os cadernos
       const allAnswers: any[] = [];
       Object.entries(consolidatedData.booklets || {}).forEach(([bookletKey, bookletData]: [string, any]) => {
-        Object.entries(bookletData.answers || {}).forEach(([questionNum, answerData]: [string, any]) => {
+        // Usar .questions com fallback para .answers (compatibilidade)
+        const questionsData = bookletData.questions || bookletData.answers || {};
+        Object.entries(questionsData).forEach(([questionNum, answerData]: [string, any]) => {
           allAnswers.push({
             question_number: parseInt(questionNum),
             correct_answer: answerData.correct_answer,
@@ -43,7 +47,7 @@ export const useOfficialAnswerWeights = (concursoId: string, bookletId?: string)
             section_type: answerData.section_type,
             is_nullified: answerData.is_nullified || false,
             answer_format: answerData.answer_format || 'OBJECTIVE',
-            question_type: answerData.question_type || 'MULTIPLE_CHOICE',
+            question_type: answerData.question_type,
             booklet_id: bookletKey
           });
         });

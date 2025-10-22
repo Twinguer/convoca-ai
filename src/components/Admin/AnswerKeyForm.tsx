@@ -316,10 +316,71 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
       // Atualizar dados
       refetchAnswers();
+      
       toast({
         title: "Gabarito salvo com sucesso",
         description: `O gabarito oficial foi salvo para o caderno ${bookletId}.`
       });
+
+      // Disparar recálculo dos participantes deste ranking
+      console.log('[AnswerKeyForm] Buscando participantes para recálculo...');
+      
+      try {
+        // Buscar todos os participantes deste concurso
+        const { data: participants, error: participantsError } = await supabase
+          .from('user_rankings')
+          .select('user_id, consolidated_data');
+
+        if (participantsError) {
+          console.error('[AnswerKeyForm] Erro ao buscar participantes:', participantsError);
+        } else if (participants && participants.length > 0) {
+          // Filtrar participantes que têm este concurso
+          const participantsInThisRanking = participants.filter(p => {
+            if (p.consolidated_data?.rankings) {
+              return Object.values(p.consolidated_data.rankings).some((r: any) => r.concurso_id === concursoId);
+            }
+            return false;
+          });
+
+          console.log('[AnswerKeyForm] Encontrados', participantsInThisRanking.length, 'participantes para recalcular');
+
+          // Import dinâmico para evitar circular dependencies
+          const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
+
+          // Recalcular pontuação de cada participante
+          const recalculations = participantsInThisRanking.map(p => 
+            recalculateUserScore(p.user_id, concursoId).catch(err => {
+              console.error(`[AnswerKeyForm] Erro ao recalcular usuário ${p.user_id}:`, err);
+              return { success: false, error: err };
+            })
+          );
+
+          await Promise.allSettled(recalculations);
+          console.log('[AnswerKeyForm] Recálculo concluído para todos os participantes');
+
+          // Invalidar queries relacionadas ao ranking
+          const { useQueryClient } = await import('@tanstack/react-query');
+          const queryClient = useQueryClient();
+          queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+          queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoId] });
+          queryClient.invalidateQueries({ queryKey: ['user-participation-v2'] });
+
+          toast({
+            title: "Recálculo concluído",
+            description: `${participantsInThisRanking.length} participantes tiveram suas pontuações recalculadas.`,
+            duration: 5000
+          });
+        }
+      } catch (recalcError) {
+        console.error('[AnswerKeyForm] Erro ao recalcular participantes:', recalcError);
+        toast({
+          title: "Aviso",
+          description: "O gabarito foi salvo, mas houve um erro ao recalcular as pontuações dos participantes.",
+          variant: "default",
+          duration: 5000
+        });
+      }
+
       setTimeout(() => {
         setSavedSuccess(false);
       }, 3000);

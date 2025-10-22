@@ -26,6 +26,7 @@ import {
 
 interface ResultadosPageProps {
   rankingId?: string;
+  secureToken?: string; // Prop opcional para evitar erro de tipo
 }
 
 const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {

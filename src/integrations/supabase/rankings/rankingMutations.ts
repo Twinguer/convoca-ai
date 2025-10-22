@@ -420,35 +420,34 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
     console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}, other=${weightedOtherSubjectiveScore}`);
 
-    // Recalcular total usando pontuações ponderadas sempre que existirem (independente da estrutura)
-    if (Object.keys(weightedDisciplineScores).length > 0) {
-      // Objetivas ponderadas
-      totalScore = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
-      
-      // Adicionar pontuações subjetivas ponderadas
-      totalScore += (weightedDiscursiveScore || 0)
-                 + (weightedCaseStudy1Score || 0)
-                 + (weightedCaseStudy2Score || 0)
-                 + (weightedCaseStudy3Score || 0)
-                 + (weightedOtherSubjectiveScore || 0);
-      
-      console.log(`[recalculateUserScore] Recalculated total with custom weights (any structure): ${totalScore}`);
-      console.log(`[recalculateUserScore] Discipline scores:`, disciplineScores);
-      console.log(`[recalculateUserScore] Subjective scores:`, {
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score,
-        otherSubjectiveScore
-      });
-      console.log(`[recalculateUserScore] Weighted subjective scores:`, {
-        weightedDiscursiveScore,
-        weightedCaseStudy1Score,
-        weightedCaseStudy2Score,
-        weightedCaseStudy3Score,
-        weightedOtherSubjectiveScore
-      });
+    // Calcular totais objetivos (simples e ponderado)
+    const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, score) => sum + (score || 0), 0);
+    const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
+
+    // Somar subjetivas ponderadas
+    const subjectiveWeightedTotal = (weightedDiscursiveScore || 0)
+                                  + (weightedCaseStudy1Score || 0)
+                                  + (weightedCaseStudy2Score || 0)
+                                  + (weightedCaseStudy3Score || 0)
+                                  + (weightedOtherSubjectiveScore || 0);
+
+    // Para Certo ou Errado: usar soma simples (não ponderada)
+    // Para Alternativas: usar soma ponderada
+    if (concurso.exam_type === 'Certo ou Errado') {
+      totalScore = objectiveSimpleTotal + subjectiveWeightedTotal;
+      console.log(`[recalculateUserScore] Certo ou Errado: totalScore = ${totalScore} (objective simple: ${objectiveSimpleTotal} + subjective weighted: ${subjectiveWeightedTotal})`);
+    } else {
+      totalScore = objectiveWeightedTotal + subjectiveWeightedTotal;
+      console.log(`[recalculateUserScore] Alternativas: totalScore = ${totalScore} (objective weighted: ${objectiveWeightedTotal} + subjective weighted: ${subjectiveWeightedTotal})`);
     }
+
+    console.log(`[recalculateUserScore] Final totals:`, {
+      objectiveSimpleTotal,
+      objectiveWeightedTotal,
+      subjectiveWeightedTotal,
+      totalScore,
+      examType: concurso.exam_type
+    });
 
     // Calcular totais
     const subjectScoresTot = Object.values(disciplineScores).reduce((sum, score) => sum + score, 0);
