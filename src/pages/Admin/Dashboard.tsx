@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationManager } from '@/components/Admin/NotificationManager';
 import MonitoringMetrics from '@/components/Admin/MonitoringMetrics';
+import { SubjectiveCleanup } from '@/components/Admin/SubjectiveCleanup';
 
 const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
@@ -96,6 +97,11 @@ const AdminDashboard: React.FC = () => {
       {/* Gerenciador de Notificações */}
       <div className="mb-8">
         <NotificationManager />
+      </div>
+
+      {/* Limpeza de Subjetivas Removidas */}
+      <div className="mb-8">
+        <SubjectiveCleanup />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2">

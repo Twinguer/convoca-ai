@@ -168,23 +168,45 @@ export const useSaveAnswers = ({
               });
               return totalAnswers > 0;
             })(),
-            // SALVAR pontuações subjetivas (sempre preservar valores existentes quando não forem editados)
+            // SALVAR pontuações subjetivas (limpar subjetivas removidas)
             subjectives: (() => {
               // Buscar valores existentes para preservá-los se não forem alterados
               const existingSubjectives = updatedConsolidatedData.rankings[rankingId].user_data?.subjectives || {};
               
-              // ✅ CORREÇÃO: Usar subjectScores (objeto completo) em vez de valores individuais desatualizados
-              const subjectiveValues = {
-                discursive: subjectScores?.discursive ?? existingSubjectives.discursive ?? 0,
-                case_study_1: subjectScores?.case_study_1 ?? existingSubjectives.case_study_1 ?? 0,
-                case_study_2: subjectScores?.case_study_2 ?? existingSubjectives.case_study_2 ?? 0,
-                case_study_3: subjectScores?.case_study_3 ?? existingSubjectives.case_study_3 ?? 0,
-                other_subjective: subjectScores?.other_subjective ?? existingSubjectives.other_subjective ?? 0
+              // ✅ NOVA LÓGICA: Identificar quais subjetivas estão ativas no concurso atual
+              const activeSubjectives = {
+                discursive: concurso.subjects?.discr === true,
+                case_study_1: concurso.subjects?.case1 === true,
+                case_study_2: concurso.subjects?.case2 === true,
+                case_study_3: concurso.subjects?.case3 === true,
+                other_subjective: concurso.subjects?.other === true
               };
               
-              console.log('[useSaveAnswers] 💾 Salvando subjectives:', {
+              console.log('[useSaveAnswers] 🔍 Subjetivas ativas no concurso:', activeSubjectives);
+              
+              // ✅ CORREÇÃO: Só preservar valores de subjetivas que ainda estão ativas
+              const subjectiveValues = {
+                discursive: activeSubjectives.discursive 
+                  ? (subjectScores?.discursive ?? existingSubjectives.discursive ?? 0)
+                  : 0,
+                case_study_1: activeSubjectives.case_study_1 
+                  ? (subjectScores?.case_study_1 ?? existingSubjectives.case_study_1 ?? 0)
+                  : 0,
+                case_study_2: activeSubjectives.case_study_2 
+                  ? (subjectScores?.case_study_2 ?? existingSubjectives.case_study_2 ?? 0)
+                  : 0,
+                case_study_3: activeSubjectives.case_study_3 
+                  ? (subjectScores?.case_study_3 ?? existingSubjectives.case_study_3 ?? 0)
+                  : 0,
+                other_subjective: activeSubjectives.other_subjective 
+                  ? (subjectScores?.other_subjective ?? existingSubjectives.other_subjective ?? 0)
+                  : 0
+              };
+              
+              console.log('[useSaveAnswers] 💾 Salvando subjectives (com limpeza de removidas):', {
                 subjectScores_recebido: subjectScores,
                 valores_existentes: existingSubjectives,
+                subjetivas_ativas: activeSubjectives,
                 valores_finais: subjectiveValues
               });
               

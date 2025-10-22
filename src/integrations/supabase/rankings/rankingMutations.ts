@@ -327,12 +327,31 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Obter as pontuações subjetivas do consolidated_data
     const subjectiveScores = userRanking.consolidated_data?.rankings?.[rankingId]?.user_data?.subjectives || {};
     
-    // Pontuações subjetivas do consolidated_data
-    const discursiveScore = subjectiveScores.discursive || 0;
-    const caseStudy1Score = subjectiveScores.case_study_1 || 0;
-    const caseStudy2Score = subjectiveScores.case_study_2 || 0;
-    const caseStudy3Score = subjectiveScores.case_study_3 || 0;
-    const otherSubjectiveScore = subjectiveScores.other_subjective || 0;
+    // ✅ VALIDAÇÃO: Verificar quais subjetivas estão ativas no concurso
+    const activeSubjectives = {
+      discursive: concurso.subjects?.discr === true,
+      case_study_1: concurso.subjects?.case1 === true,
+      case_study_2: concurso.subjects?.case2 === true,
+      case_study_3: concurso.subjects?.case3 === true,
+      other_subjective: concurso.subjects?.other === true
+    };
+    
+    console.log('[recalculateUserScore] 🔍 Subjetivas ativas no concurso:', activeSubjectives);
+    
+    // Pontuações subjetivas do consolidated_data (apenas as ativas)
+    const discursiveScore = activeSubjectives.discursive ? (subjectiveScores.discursive || 0) : 0;
+    const caseStudy1Score = activeSubjectives.case_study_1 ? (subjectiveScores.case_study_1 || 0) : 0;
+    const caseStudy2Score = activeSubjectives.case_study_2 ? (subjectiveScores.case_study_2 || 0) : 0;
+    const caseStudy3Score = activeSubjectives.case_study_3 ? (subjectiveScores.case_study_3 || 0) : 0;
+    const otherSubjectiveScore = activeSubjectives.other_subjective ? (subjectiveScores.other_subjective || 0) : 0;
+    
+    console.log('[recalculateUserScore] 📊 Pontuações subjetivas (apenas ativas):', {
+      discursive: discursiveScore,
+      case_study_1: caseStudy1Score,
+      case_study_2: caseStudy2Score,
+      case_study_3: caseStudy3Score,
+      other_subjective: otherSubjectiveScore
+    });
     
     // Usar o mapa de pesos já normalizado
     const getWeightFromDisciplines = (type: string): number => Number(disciplineWeights[type] ?? 1);
