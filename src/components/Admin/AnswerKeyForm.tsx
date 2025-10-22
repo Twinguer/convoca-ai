@@ -319,67 +319,25 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       
       toast({
         title: "Gabarito salvo com sucesso",
-        description: `O gabarito oficial foi salvo para o caderno ${bookletId}.`
+        description: `O gabarito oficial foi salvo para o caderno ${bookletId}. Para atualizar as pontuações dos participantes, vá até a página de Resultados e clique em "Atualizar Classificação".`
       });
 
-      // Disparar recálculo dos participantes deste ranking
-      console.log('[AnswerKeyForm] Buscando participantes para recálculo...');
+      // ℹ️ Recálculo automático está desativado (função SQL comentada)
+      // Admin deve clicar em "Atualizar Classificação" na página de resultados
+      console.log('[AnswerKeyForm] Gabarito salvo. Recálculo deve ser feito manualmente via botão "Atualizar Classificação".');
       
-      try {
-        // Buscar todos os participantes deste concurso
-        const { data: participants, error: participantsError } = await supabase
-          .from('user_rankings')
-          .select('user_id, consolidated_data');
-
-        if (participantsError) {
-          console.error('[AnswerKeyForm] Erro ao buscar participantes:', participantsError);
-        } else if (participants && participants.length > 0) {
-          // Filtrar participantes que têm este concurso
-          const participantsInThisRanking = participants.filter(p => {
-            if (p.consolidated_data?.rankings) {
-              return Object.values(p.consolidated_data.rankings).some((r: any) => r.concurso_id === concursoId);
-            }
-            return false;
-          });
-
-          console.log('[AnswerKeyForm] Encontrados', participantsInThisRanking.length, 'participantes para recalcular');
-
-          // Import dinâmico para evitar circular dependencies
-          const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
-
-          // Recalcular pontuação de cada participante
-          const recalculations = participantsInThisRanking.map(p => 
-            recalculateUserScore(p.user_id, concursoId).catch(err => {
-              console.error(`[AnswerKeyForm] Erro ao recalcular usuário ${p.user_id}:`, err);
-              return { success: false, error: err };
-            })
-          );
-
-          await Promise.allSettled(recalculations);
-          console.log('[AnswerKeyForm] Recálculo concluído para todos os participantes');
-
-          // Invalidar queries relacionadas ao ranking
-          const { useQueryClient } = await import('@tanstack/react-query');
-          const queryClient = useQueryClient();
-          queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
-          queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoId] });
-          queryClient.invalidateQueries({ queryKey: ['user-participation-v2'] });
-
-          toast({
-            title: "Recálculo concluído",
-            description: `${participantsInThisRanking.length} participantes tiveram suas pontuações recalculadas.`,
-            duration: 5000
-          });
-        }
-      } catch (recalcError) {
-        console.error('[AnswerKeyForm] Erro ao recalcular participantes:', recalcError);
-        toast({
-          title: "Aviso",
-          description: "O gabarito foi salvo, mas houve um erro ao recalcular as pontuações dos participantes.",
-          variant: "default",
-          duration: 5000
-        });
-      }
+      // Invalidar cache imediatamente para mostrar gabarito atualizado
+      setTimeout(async () => {
+        console.log('[AnswerKeyForm] Invalidando queries para atualizar UI...');
+        const { useQueryClient } = await import('@tanstack/react-query');
+        const queryClient = useQueryClient();
+        queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
+        queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoId] });
+        queryClient.invalidateQueries({ queryKey: ['user-participation-v2'] });
+        queryClient.invalidateQueries({ queryKey: ['concurso', concursoId] });
+        queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
+        console.log('[AnswerKeyForm] Queries invalidadas. UI será atualizada.');
+      }, 500); // Aguardar 500ms apenas para garantir que o salvamento foi concluído
 
       setTimeout(() => {
         setSavedSuccess(false);

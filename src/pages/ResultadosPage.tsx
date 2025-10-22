@@ -9,7 +9,7 @@ import { LoadingState } from '@/components/resultados/LoadingState';
 import { useResultadosData } from '@/hooks/useResultadosData';
 import { useLeaveRanking } from '@/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, UserPlus, LogIn, UserMinus } from 'lucide-react';
+import { RefreshCw, UserPlus, LogIn, UserMinus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { rankingCache } from '@/services/rankingCache';
@@ -51,7 +51,9 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
     refetchCount,
     creatorName,
     inscritos,
-    isParticipating
+    isParticipating,
+    isRecalculating,
+    recalculationProgress
   } = useResultadosData(finalRankingId);
   
   // Usar rankings do hook principal
@@ -111,7 +113,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
       // Limpar cache local para forçar busca de dados frescos
       rankingCache.clear();
       
-      // Atualizar dados
+      // Atualizar dados (agora com recálculo de scores)
       const result = await refreshData();
       
       if (result?.error) {
@@ -124,9 +126,14 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         return;
       }
       
+      // Mensagem de sucesso com informação de participantes recalculados
+      const participantsInfo = result?.participantsRecalculated 
+        ? ` (${result.participantsRecalculated} participantes recalculados)`
+        : '';
+      
       toast({
         title: "Classificação atualizada",
-        description: "Os dados da classificação foram atualizados com sucesso.",
+        description: `Os dados da classificação foram atualizados com sucesso${participantsInfo}.`,
         duration: 3000
       });
       
@@ -164,11 +171,25 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
             onClick={handleRefresh} 
             className="flex items-center gap-2 text-xs sm:text-sm" 
             size="sm" 
-            disabled={isRefetching}
+            disabled={isRefetching || isRecalculating}
             variant="outline"
           >
-            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${isRefetching ? 'animate-spin' : ''}`} />
-            {isRefetching ? 'Atualizando...' : 'Atualizar Classificação'}
+            {isRecalculating ? (
+              <>
+                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                Recalculando... {recalculationProgress?.current}/{recalculationProgress?.total}
+              </>
+            ) : isRefetching ? (
+              <>
+                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                Atualizando...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-3 w-3 sm:h-4 sm:w-4" />
+                Atualizar Classificação
+              </>
+            )}
           </Button>
           
           

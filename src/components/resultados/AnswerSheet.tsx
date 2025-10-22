@@ -88,7 +88,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   });
 
   // Get selected booklet ID from user ranking data (CORRIGIDO: usar estrutura JSONB)
-  const selectedBookletIdFromData = userRankingData?.consolidated_data?.rankings?.[rankingId]?.selected_booklet_id || userRankingData?.selected_booklet_id || '';
+  const selectedBookletIdFromData = userRankingData?.selected_booklet_id || '';
 
   const {
     answers,
@@ -416,22 +416,6 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     selectedBookletId: selectedBookletIdFromData // CRÍTICO: Reage a mudanças no caderno selecionado
   });
 
-  // Set initial subjective scores from user ranking data
-  useEffect(() => {
-    if (userRankingData?.discursive_score !== undefined && userRankingData?.discursive_score !== null) {
-      setDiscursiveScore(userRankingData.discursive_score);
-    }
-    if (userRankingData?.case_study_1_score !== undefined && userRankingData?.case_study_1_score !== null) {
-      setCaseStudy1Score(userRankingData.case_study_1_score);
-    }
-    if (userRankingData?.case_study_2_score !== undefined && userRankingData?.case_study_2_score !== null) {
-      setCaseStudy2Score(userRankingData.case_study_2_score);
-    }
-    if (userRankingData?.case_study_3_score !== undefined && userRankingData?.case_study_3_score !== null) {
-      setCaseStudy3Score(userRankingData.case_study_3_score);
-    }
-  }, [userRankingData, setDiscursiveScore, setCaseStudy1Score, setCaseStudy2Score, setCaseStudy3Score]);
-
   // Initialize object_scores from user ranking data - NOVA ESTRUTURA COMPATÍVEL
   useEffect(() => {
     // Verificar se userRankingData existe antes de prosseguir
@@ -444,52 +428,39 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     let initialScores: Record<string, number> = {};
     
+    // ✅ CORREÇÃO: Acessar user_data corretamente
+    const userData = userRankingData.user_data || {};
+    
     // 1. Se existir object_scores, migrar para a nova estrutura
-    if (userRankingData.object_scores) {
+    if (userData.object_scores) {
       console.log('[AnswerSheet] Migrando object_scores existente para nova estrutura');
-      initialScores = migrateObjectScores(userRankingData.object_scores, concurso);
+      initialScores = migrateObjectScores(userData.object_scores, concurso);
     } else {
       console.log('[AnswerSheet] Criando object_scores inicial baseado na estrutura do concurso');
       initialScores = createInitialObjectScores(concurso);
     }
     
-    // 2. Fallback para campos diretos (sistema legacy) - apenas se não existir na nova estrutura
-    const legacyFields = {
-      'discursive': userRankingData.discursive_score,
-      'case_study_1': userRankingData.case_study_1_score,
-      'case_study_2': userRankingData.case_study_2_score,
-      'case_study_3': userRankingData.case_study_3_score,
-      'other_subjective': userRankingData.other_subjective_score
-    };
-    
-    for (const [field, value] of Object.entries(legacyFields)) {
-      if (value !== undefined && value !== null && initialScores[field] === 0) {
-        initialScores[field] = value;
-        console.log(`[AnswerSheet] Usando valor legacy para ${field}: ${value}`);
-      }
-    }
-    
-    // 3. Fallback para subjectives (compatibilidade) - apenas se não existir na nova estrutura
-    if (userRankingData.subjectives) {
+    // 2. Buscar valores das notas subjetivas de user_data.subjectives
+    if (userData.subjectives) {
       const subjectiveFields = {
-        'discursive': userRankingData.subjectives.discursive,
-        'case_study_1': userRankingData.subjectives.case_study_1,
-        'case_study_2': userRankingData.subjectives.case_study_2,
-        'case_study_3': userRankingData.subjectives.case_study_3,
-        'other_subjective': userRankingData.subjectives.other_subjective
+        'discursive': userData.subjectives.discursive,
+        'case_study_1': userData.subjectives.case_study_1,
+        'case_study_2': userData.subjectives.case_study_2,
+        'case_study_3': userData.subjectives.case_study_3,
+        'other_subjective': userData.subjectives.other_subjective
       };
       
       for (const [field, value] of Object.entries(subjectiveFields)) {
-        if (value !== undefined && value !== null && initialScores[field] === 0) {
+        if (value !== undefined && value !== null) {
           initialScores[field] = value;
-          console.log(`[AnswerSheet] Usando valor de subjectives para ${field}: ${value}`);
+          console.log(`[AnswerSheet] ✅ Carregando ${field}: ${value} de userData.subjectives`);
         }
       }
     }
     
     console.log('[AnswerSheet] DEBUG - InitialScores finais:', initialScores);
-    console.log('[AnswerSheet] DEBUG - userRankingData.object_scores:', userRankingData?.object_scores);
-    console.log('[AnswerSheet] DEBUG - userRankingData.subjectives:', userRankingData?.subjectives);
+    console.log('[AnswerSheet] DEBUG - userData.object_scores:', userData.object_scores);
+    console.log('[AnswerSheet] DEBUG - userData.subjectives:', userData.subjectives);
     setSubjectScores(initialScores);
   }, [userRankingData, concurso]);
 

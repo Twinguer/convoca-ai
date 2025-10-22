@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
 import { useEffect, useState } from 'react';
 import { logger } from '@/utils/logger';
+import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
 
 export function useResultadosData(concursoId?: string) {
   const { id: urlId } = useParams() as { id: string };
@@ -17,6 +18,13 @@ export function useResultadosData(concursoId?: string) {
   
   // Usar concursoId passado como prop ou do URL
   const id = concursoId || urlId;
+  
+  // Estados para controle de recálculo
+  const [isRecalculating, setIsRecalculating] = useState(false);
+  const [recalculationProgress, setRecalculationProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
   
   // Debug logs
   console.log('useResultadosData debug:', {
@@ -203,7 +211,7 @@ export function useResultadosData(concursoId?: string) {
   
   const isLoading = isLoadingConcurso || isLoadingCount || isLoadingCreator || isCheckingParticipation;
   
-  // Function to manually refresh all data
+  // Function to manually refresh all data with recalculation
   const refreshData = async () => {
     logger.info('Manual refresh initiated', 'USE_RESULTADOS_DATA', { concursoId: id });
     
@@ -215,18 +223,100 @@ export function useResultadosData(concursoId?: string) {
       };
     }
     
+    // 🔒 VERIFICAR LOCK: Evitar recálculo simultâneo
+    if (isRecalculating) {
+      logger.warn('Recalculation already in progress', 'USE_RESULTADOS_DATA');
+      return {
+        success: false,
+        error: "Recálculo já em andamento. Aguarde a conclusão."
+      };
+    }
+    
     try {
-      // Limpar cache do React Query forçando busca fresca
+      // 🔒 ATIVAR LOCK
+      setIsRecalculating(true);
+      setRecalculationProgress({ current: 0, total: 0 });
+      
+      // ✅ NOVO: Recalcular scores de todos os participantes ANTES do refetch
+      console.log('[useResultadosData] 🔄 Iniciando recálculo de scores...');
+      
+      // 1. Buscar todos os participantes do concurso
+      const { data: allUserRankings, error: fetchError } = await supabase
+        .from('user_rankings')
+        .select('user_id, consolidated_data');
+      
+      if (fetchError) {
+        throw new Error(`Erro ao buscar participantes: ${fetchError.message}`);
+      }
+      
+      // Filtrar apenas participantes deste concurso
+      const participants: string[] = [];
+      
+      allUserRankings?.forEach(ur => {
+        const rankings = ur.consolidated_data?.rankings || {};
+        for (const rankingData of Object.values(rankings)) {
+          if ((rankingData as any).concurso_id === id) {
+            participants.push(ur.user_id);
+            break;
+          }
+        }
+      });
+      
+      console.log(`[useResultadosData] Encontrados ${participants.length} participantes`);
+      setRecalculationProgress({ current: 0, total: participants.length });
+      
+      // 2. Recalcular cada participante em lotes
+      if (participants.length > 0) {
+        const batchSize = 50; // Processar 50 por vez
+        let processedCount = 0;
+        
+        for (let i = 0; i < participants.length; i += batchSize) {
+          const batch = participants.slice(i, i + batchSize);
+          
+          // Executar lote em paralelo
+          const results = await Promise.allSettled(
+            batch.map(userId => recalculateUserScore(userId, id))
+          );
+          
+          // Contar sucessos
+          const successful = results.filter(r => r.status === 'fulfilled').length;
+          processedCount += successful;
+          
+          // Atualizar progresso
+          setRecalculationProgress({ current: processedCount, total: participants.length });
+          
+          console.log(`[useResultadosData] Lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(participants.length/batchSize)} concluído (${successful}/${batch.length} sucesso)`);
+        }
+        
+        console.log(`[useResultadosData] ✅ Recálculo concluído: ${processedCount}/${participants.length} participantes`);
+      }
+      
+      // 3. AGORA SIM fazer refetch (que buscará scores ATUALIZADOS)
+      console.log('[useResultadosData] 🔄 Buscando dados atualizados...');
       await Promise.all([
         refetchRankings(),
         refetchCount()
       ]);
       
-      logger.info('Data refreshed successfully', 'USE_RESULTADOS_DATA');
-      return { success: true };
-    } catch (error) {
+      logger.info('Data refreshed successfully', 'USE_RESULTADOS_DATA', {
+        participantsRecalculated: participants.length
+      });
+      
+      return { 
+        success: true,
+        participantsRecalculated: participants.length
+      };
+      
+    } catch (error: any) {
       logger.error('Error refreshing data', 'USE_RESULTADOS_DATA', error);
-      return { success: false, error: String(error) };
+      return { 
+        success: false, 
+        error: error.message || String(error) 
+      };
+    } finally {
+      // 🔒 LIBERAR LOCK (sempre, mesmo em erro)
+      setIsRecalculating(false);
+      setRecalculationProgress(null);
     }
   };
   
@@ -261,6 +351,9 @@ export function useResultadosData(concursoId?: string) {
     inscritos: concurso?.inscritos || 0,
     // Adiciona informação sobre participação do usuário
     isParticipating: userParticipationStatus?.isParticipating || false,
-    userRankingId: userParticipationStatus?.rankingId
+    userRankingId: userParticipationStatus?.rankingId,
+    // Estados de recálculo
+    isRecalculating,
+    recalculationProgress
   };
 }

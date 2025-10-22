@@ -17,6 +17,19 @@ const isPositionThreshold = (value: string): value is PositionThreshold => {
   return ['ampla', 'cota_racial', 'pcd'].includes(value);
 };
 
+// Helper function to safely extract wrong_answer_penalty from disciplines
+const getWrongAnswerPenalty = (disciplines: any): number => {
+  if (!disciplines) return 0;
+  
+  // Nova estrutura (objeto com wrong_answer_penalty diretamente)
+  if (typeof disciplines === 'object' && !Array.isArray(disciplines) && 'wrong_answer_penalty' in disciplines) {
+    return Number(disciplines.wrong_answer_penalty) || 0;
+  }
+  
+  // Estrutura antiga (array) - não tem penalidade
+  return 0;
+};
+
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
     console.log(`[recalculateUserScore] 🚀 INICIANDO recálculo para usuário ${userId} no concurso ${concursoId}`);
@@ -349,8 +362,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         // Usar o section_type do gabarito para mapear corretamente para a disciplina
         const disciplineType = sectionTypeToDisciplineTypeMap[sectionType] || sectionType;
         
-        // Inicializar pontuação da disciplina se ainda não existir
-        if (!disciplineScores[disciplineType]) {
+        // Inicializar pontuação da disciplina se ainda não existir (apenas para tipos não mapeados)
+        if (disciplineScores[disciplineType] === undefined) {
           disciplineScores[disciplineType] = 0;
           weightedDisciplineScores[disciplineType] = 0;
         }
@@ -366,7 +379,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         
         // Obter penalidade para C/E (se aplicável)
         const wrongAnswerPenalty = concurso.exam_type === 'Certo ou Errado' 
-          ? (concurso.disciplines?.wrong_answer_penalty ?? 0)
+          ? getWrongAnswerPenalty(concurso.disciplines)
           : 0;
         
         // Debug para entender o estado da questão
@@ -420,32 +433,20 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
     console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}, other=${weightedOtherSubjectiveScore}`);
 
-    // Calcular totais objetivos (simples e ponderado)
+    // ✅ TOTAIS CALCULADOS CORRETAMENTE ACIMA (com penalidades para C/E)
+    // Calcular totais objetivos apenas para logs/debug e verificação de mínimos
     const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, score) => sum + (score || 0), 0);
     const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
 
-    // Somar subjetivas ponderadas
-    const subjectiveWeightedTotal = (weightedDiscursiveScore || 0)
-                                  + (weightedCaseStudy1Score || 0)
-                                  + (weightedCaseStudy2Score || 0)
-                                  + (weightedCaseStudy3Score || 0)
-                                  + (weightedOtherSubjectiveScore || 0);
+    // ⚠️ NÃO sobrescrever totalScore! Ele já foi calculado corretamente no loop acima
+    // disciplineScores = contagem de acertos (não inclui penalidades)
+    // weightedDisciplineScores = pontuação com penalidades aplicadas (para C/E)
+    // totalScore já inclui TUDO: acertos + penalidades + subjetivas
 
-    // Para Certo ou Errado: usar soma simples (não ponderada)
-    // Para Alternativas: usar soma ponderada
-    if (concurso.exam_type === 'Certo ou Errado') {
-      totalScore = objectiveSimpleTotal + subjectiveWeightedTotal;
-      console.log(`[recalculateUserScore] Certo ou Errado: totalScore = ${totalScore} (objective simple: ${objectiveSimpleTotal} + subjective weighted: ${subjectiveWeightedTotal})`);
-    } else {
-      totalScore = objectiveWeightedTotal + subjectiveWeightedTotal;
-      console.log(`[recalculateUserScore] Alternativas: totalScore = ${totalScore} (objective weighted: ${objectiveWeightedTotal} + subjective weighted: ${subjectiveWeightedTotal})`);
-    }
-
-    console.log(`[recalculateUserScore] Final totals:`, {
-      objectiveSimpleTotal,
-      objectiveWeightedTotal,
-      subjectiveWeightedTotal,
-      totalScore,
+    console.log(`[recalculateUserScore] ✅ Final totals (already calculated correctly):`, {
+      totalScore, // JÁ INCLUI penalidades + subjetivas
+      objectiveSimpleTotal, // Contagem de acertos (sem penalidades)
+      objectiveWeightedTotal, // Com penalidades (para C/E) ou pesos (para Alternativas)
       examType: concurso.exam_type
     });
 
@@ -622,8 +623,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
     
     // Usar total objetivo apropriado (ponderado ou não) para o mínimo global
-    const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, v) => sum + (v || 0), 0);
-    const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, v) => sum + (v || 0), 0);
+    // objectiveWeightedTotal e objectiveSimpleTotal já foram declarados acima (linhas 424-425)
     const scoreToCheckForGlobal = useWeightedScoring ? objectiveWeightedTotal : objectiveSimpleTotal;
     
     const isBelowGlobalMinimum = hasGlobalMin ? (scoreToCheckForGlobal < globalMinimumToCheck) : false;

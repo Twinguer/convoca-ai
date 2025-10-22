@@ -70,7 +70,7 @@ serve(async (req) => {
     // Buscar dados do concurso
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('official_answers, disciplines, exam_type, wrong_answer_penalty')
+      .select('official_answers, disciplines, exam_type')
       .eq('id', concursoId)
       .single();
 
@@ -96,7 +96,12 @@ serve(async (req) => {
     let totalScore = 0;
     const subjectScores: Record<string, number> = {};
     const examType = concurso.exam_type || 'Múltipla Escolha';
-    const wrongAnswerPenalty = concurso.wrong_answer_penalty || 0;
+    
+    // Extrair penalidade da estrutura disciplines (JSONB)
+    let wrongAnswerPenalty = 0;
+    if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines)) {
+      wrongAnswerPenalty = Number(concurso.disciplines.wrong_answer_penalty) || 0;
+    }
 
     console.log(`[calculate-ranking-score] Calculating score for ${Object.keys(answers).length} answers`);
 

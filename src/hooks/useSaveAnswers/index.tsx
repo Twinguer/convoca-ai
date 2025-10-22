@@ -173,22 +173,17 @@ export const useSaveAnswers = ({
               // Buscar valores existentes para preservá-los se não forem alterados
               const existingSubjectives = updatedConsolidatedData.rankings[rankingId].user_data?.subjectives || {};
               
+              // ✅ CORREÇÃO: Usar subjectScores (objeto completo) em vez de valores individuais desatualizados
               const subjectiveValues = {
-                discursive: discursiveScore ?? existingSubjectives.discursive ?? 0,
-                case_study_1: caseStudy1Score ?? existingSubjectives.case_study_1 ?? 0,
-                case_study_2: caseStudy2Score ?? existingSubjectives.case_study_2 ?? 0,
-                case_study_3: caseStudy3Score ?? existingSubjectives.case_study_3 ?? 0,
+                discursive: subjectScores?.discursive ?? existingSubjectives.discursive ?? 0,
+                case_study_1: subjectScores?.case_study_1 ?? existingSubjectives.case_study_1 ?? 0,
+                case_study_2: subjectScores?.case_study_2 ?? existingSubjectives.case_study_2 ?? 0,
+                case_study_3: subjectScores?.case_study_3 ?? existingSubjectives.case_study_3 ?? 0,
                 other_subjective: subjectScores?.other_subjective ?? existingSubjectives.other_subjective ?? 0
               };
               
               console.log('[useSaveAnswers] 💾 Salvando subjectives:', {
-                valores_recebidos: {
-                  discursiveScore,
-                  caseStudy1Score,
-                  caseStudy2Score,
-                  caseStudy3Score,
-                  'subjectScores?.other_subjective': subjectScores?.other_subjective
-                },
+                subjectScores_recebido: subjectScores,
                 valores_existentes: existingSubjectives,
                 valores_finais: subjectiveValues
               });
@@ -262,7 +257,7 @@ export const useSaveAnswers = ({
           // Não falhar silenciosamente - mostrar erro para o usuário
           throw new Error(`Falha no recálculo de pontuações: ${recalculationResult.message}`);
         }
-      } catch (recalculationError) {
+      } catch (recalculationError: any) {
         console.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
         // Re-throw para interromper o fluxo e mostrar erro
         throw new Error(`Erro no recálculo de pontuações: ${recalculationError.message}`);
