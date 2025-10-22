@@ -275,7 +275,13 @@ const CriarRanking = () => {
               case_study_1_minimum_score: subjectsData.case1_min_score || 0,
               case_study_2_minimum_score: subjectsData.case2_min_score || 0,
               case_study_3_minimum_score: subjectsData.case3_min_score || 0,
-              other_subjective_minimum_score: subjectsData.other_min_score || 0
+              other_subjective_minimum_score: subjectsData.other_min_score || 0,
+              // ✅ Mapear valores das cotas das subjetivas do JSONB
+              discursive_minimum_score_cotas: subjectsData.discr_min_score_cotas || 0,
+              case_study_1_minimum_score_cotas: subjectsData.case1_min_score_cotas || 0,
+              case_study_2_minimum_score_cotas: subjectsData.case2_min_score_cotas || 0,
+              case_study_3_minimum_score_cotas: subjectsData.case3_min_score_cotas || 0,
+              other_subjective_minimum_score_cotas: subjectsData.other_min_score_cotas || 0
             };
             
             

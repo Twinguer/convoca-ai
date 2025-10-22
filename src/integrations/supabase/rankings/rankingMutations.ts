@@ -547,22 +547,43 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    // 2) Subjective minimums from concurso.subjects
+    // 2) Subjective minimums from concurso.subjects (considering quota type)
     const subj = (concurso as any).subjects || {};
-    if ((subj.discr_min_score || 0) > 0 && (discursiveScore || 0) < (subj.discr_min_score || 0)) {
+    
+    // ✅ Aplicar mínimos corretos baseado no tipo de cota do usuário
+    const discursiveMin = isQuota ? (subj.discr_min_score_cotas || 0) : (subj.discr_min_score || 0);
+    const case1Min = isQuota ? (subj.case1_min_score_cotas || 0) : (subj.case1_min_score || 0);
+    const case2Min = isQuota ? (subj.case2_min_score_cotas || 0) : (subj.case2_min_score || 0);
+    const case3Min = isQuota ? (subj.case3_min_score_cotas || 0) : (subj.case3_min_score || 0);
+    const otherMin = isQuota ? (subj.other_min_score_cotas || 0) : (subj.other_min_score || 0);
+    
+    console.log(`[recalculateUserScore] Subjective minimums for ${isQuota ? 'quota' : 'ampla'}:`, {
+      discursive: discursiveMin,
+      case1: case1Min,
+      case2: case2Min,
+      case3: case3Min,
+      other: otherMin
+    });
+    
+    if (discursiveMin > 0 && (discursiveScore || 0) < discursiveMin) {
       belowDisciplineMinimums.push('discursive');
+      console.log(`[recalculateUserScore] Discursive abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${discursiveScore} < ${discursiveMin}`);
     }
-    if ((subj.case1_min_score || 0) > 0 && (caseStudy1Score || 0) < (subj.case1_min_score || 0)) {
+    if (case1Min > 0 && (caseStudy1Score || 0) < case1Min) {
       belowDisciplineMinimums.push('case_study_1');
+      console.log(`[recalculateUserScore] Case Study 1 abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${caseStudy1Score} < ${case1Min}`);
     }
-    if ((subj.case2_min_score || 0) > 0 && (caseStudy2Score || 0) < (subj.case2_min_score || 0)) {
+    if (case2Min > 0 && (caseStudy2Score || 0) < case2Min) {
       belowDisciplineMinimums.push('case_study_2');
+      console.log(`[recalculateUserScore] Case Study 2 abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${caseStudy2Score} < ${case2Min}`);
     }
-    if ((subj.case3_min_score || 0) > 0 && (caseStudy3Score || 0) < (subj.case3_min_score || 0)) {
+    if (case3Min > 0 && (caseStudy3Score || 0) < case3Min) {
       belowDisciplineMinimums.push('case_study_3');
+      console.log(`[recalculateUserScore] Case Study 3 abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${caseStudy3Score} < ${case3Min}`);
     }
-    if ((subj.other_min_score || 0) > 0 && (otherSubjectiveScore || 0) < (subj.other_min_score || 0)) {
+    if (otherMin > 0 && (otherSubjectiveScore || 0) < otherMin) {
       belowDisciplineMinimums.push('other_subjective');
+      console.log(`[recalculateUserScore] Other Subjective abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${otherSubjectiveScore} < ${otherMin}`);
     }
 
     // 3) Block-level minimums using disciplines mapping
