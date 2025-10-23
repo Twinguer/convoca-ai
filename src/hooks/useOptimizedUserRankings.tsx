@@ -53,7 +53,7 @@ export const useUserRankings = (userId?: string) => {
     queryFn: () => OptimizedUserRankingsService.getUserRankings(targetUserId!),
     enabled: !!targetUserId,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 };
 
@@ -69,7 +69,7 @@ export const useUserRankingByConcurso = (concursoId: string, userId?: string) =>
     queryFn: () => OptimizedUserRankingsService.getUserRankingByConcurso(targetUserId!, concursoId),
     enabled: !!targetUserId && !!concursoId,
     staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 
@@ -82,7 +82,7 @@ export const useConcursoRankings = (concursoId: string) => {
     queryFn: () => OptimizedUserRankingsService.getConcursoRankings(concursoId),
     enabled: !!concursoId,
     staleTime: 1 * 60 * 1000, // 1 minuto
-    cacheTime: 3 * 60 * 1000, // 3 minutos
+    gcTime: 3 * 60 * 1000, // 3 minutos
   });
 };
 
@@ -98,7 +98,7 @@ export const useUserRankingSummaries = (userId?: string) => {
     queryFn: () => OptimizedUserRankingsService.getUserRankingSummaries(targetUserId!),
     enabled: !!targetUserId,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 };
 
@@ -111,7 +111,7 @@ export const useConcursoPositions = (concursoId: string) => {
     queryFn: () => OptimizedUserRankingsService.calculateConcursoPositions(concursoId),
     enabled: !!concursoId,
     staleTime: 30 * 1000, // 30 segundos
-    cacheTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 2 * 60 * 1000, // 2 minutos
   });
 };
 

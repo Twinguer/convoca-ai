@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Concurso, SectionType, isDisciplineBlock } from '@/types/concursos';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,7 +36,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
   const fetchExistingAnswers = async () => {
     try {
-      // console.log('Fetching existing answers for ranking ID:', rankingId);
+      // Buscar dados do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('User not authenticated');
+        return;
+      }
 
       // Fetch answers from user_rankings consolidated_data
       const { data: userRankingData, error: rankingError } = await supabase
@@ -51,14 +55,14 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
         return;
       }
 
-      console.log('Fetched user ranking data:', userRankingData.consolidated_data);
+      console.log('Fetched user ranking data:', userRankingData?.consolidated_data);
 
       // Extract user answers from consolidated data (flatten JSONB structure)
-      const rankingData = userRankingData.consolidated_data?.rankings?.[rankingId];
-      if (rankingData?.user_data?.answers) {
+      const currentRankingData = userRankingData?.consolidated_data?.rankings?.[rankingId];
+      if (currentRankingData?.user_data?.answers) {
         // Usar o selectedBookletId passado como parâmetro ou o do banco
-        const bookletIdToUse = selectedBookletId || rankingData.selected_booklet_id;
-        const bookletData = bookletIdToUse ? rankingData.user_data.answers[bookletIdToUse] : null;
+        const bookletIdToUse = selectedBookletId || currentRankingData.selected_booklet_id;
+        const bookletData = bookletIdToUse ? currentRankingData.user_data.answers[bookletIdToUse] : null;
         
         if (bookletData && typeof bookletData === 'object') {
           const answersMap: { [key: number]: string } = {};
@@ -85,43 +89,29 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
         }
       }
 
-      // Buscar dados do usuário atual
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Fetch user ranking for scores
-      const { data: rankingData, error: rankingError } = await supabase
-        .from('user_rankings')
-        .select('consolidated_data')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (rankingError) throw rankingError;
-
-      // console.log('Fetched ranking data:', rankingData);
-
-      if (rankingData) {
-        setDiscursiveScore(
-          rankingData.discursive_score !== null && rankingData.discursive_score !== undefined
-            ? rankingData.discursive_score
-            : null
-        );
-        setCaseStudy1Score(
-          rankingData.case_study_1_score !== null && rankingData.case_study_1_score !== undefined
-            ? rankingData.case_study_1_score
-            : null
-        );
-        setCaseStudy2Score(
-          rankingData.case_study_2_score !== null && rankingData.case_study_2_score !== undefined
-            ? rankingData.case_study_2_score
-            : null
-        );
-        setCaseStudy3Score(
-          rankingData.case_study_3_score !== null && rankingData.case_study_3_score !== undefined
-            ? rankingData.case_study_3_score
-            : null
-        );
-      }
+      // Buscar scores do ranking consolidado
+      const rankingScoresData = currentRankingData?.scores || {};
+      
+      setDiscursiveScore(
+        rankingScoresData.discursive !== null && rankingScoresData.discursive !== undefined
+          ? rankingScoresData.discursive
+          : null
+      );
+      setCaseStudy1Score(
+        rankingScoresData.case_study_1 !== null && rankingScoresData.case_study_1 !== undefined
+          ? rankingScoresData.case_study_1
+          : null
+      );
+      setCaseStudy2Score(
+        rankingScoresData.case_study_2 !== null && rankingScoresData.case_study_2 !== undefined
+          ? rankingScoresData.case_study_2
+          : null
+      );
+      setCaseStudy3Score(
+        rankingScoresData.case_study_3 !== null && rankingScoresData.case_study_3 !== undefined
+          ? rankingScoresData.case_study_3
+          : null
+      );
     } catch (error) {
       console.error('Error fetching answers:', error);
     }
@@ -382,18 +372,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
   const createAnswerMatrix = () => {
     console.log('[createAnswerMatrix] Creating matrix for section:', selectedSection);
-    console.log('[createAnswerMatrix] Concurso disciplines:', concurso?.disciplines);
-    console.log('[createAnswerMatrix] Concurso disciplines type:', typeof concurso?.disciplines);
-    console.log('[createAnswerMatrix] Concurso disciplines keys:', concurso?.disciplines ? Object.keys(concurso.disciplines) : 'N/A');
     
     const sectionQuestions = getSectionQuestions();
     console.log('[createAnswerMatrix] Section questions:', sectionQuestions);
     
     if (sectionQuestions.length === 0) {
       console.log('[createAnswerMatrix] No questions found for section:', selectedSection);
-      console.log('[createAnswerMatrix] Available sections in concurso:', concurso?.disciplines?.blocks?.map(block => 
-        block.disciplines?.map(d => d.type).filter(Boolean)
-      ).flat() || 'N/A');
       return [];
     }
 
@@ -445,7 +429,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     caseStudy3Score,
     setCaseStudy3Score,
     isDiscursiveSection,
-    getSectionQuestions,
-    isHierarchical
+    isHierarchical,
+    fetchExistingAnswers
   };
 };

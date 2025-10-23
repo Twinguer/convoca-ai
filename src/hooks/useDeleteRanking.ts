@@ -46,25 +46,25 @@ export const useDeleteRanking = () => {
           // 3. user_answers não é mais usado - dados estão em user_rankings consolidated_data
           // A remoção dos dados consolidados é feita automaticamente via CASCADE
           console.log('user_answers removido - usando dados consolidados');
-        }
-
-        // 4. Remove concurso from consolidated_data for each user
-        for (const userId of userIds) {
-          const { data: userRankingData, error: fetchError } = await supabase
-            .from('user_rankings')
-            .select('consolidated_data')
-            .eq('user_id', userId)
-            .maybeSingle();
-            
-          if (!fetchError && userRankingData?.consolidated_data) {
-            const updatedData = { ...userRankingData.consolidated_data };
-            if (updatedData.rankings && updatedData.rankings[concursoId]) {
-              delete updatedData.rankings[concursoId];
+          
+          // 4. Remove concurso from consolidated_data for each user
+          for (const userId of userIds) {
+            const { data: userRankingData, error: fetchUserError } = await supabase
+              .from('user_rankings')
+              .select('consolidated_data')
+              .eq('user_id', userId)
+              .maybeSingle();
               
-              await supabase
-                .from('user_rankings')
-                .update({ consolidated_data: updatedData })
-                .eq('user_id', userId);
+            if (!fetchUserError && userRankingData?.consolidated_data) {
+              const updatedData = { ...userRankingData.consolidated_data };
+              if (updatedData.rankings && updatedData.rankings[concursoId]) {
+                delete updatedData.rankings[concursoId];
+                
+                await supabase
+                  .from('user_rankings')
+                  .update({ consolidated_data: updatedData })
+                  .eq('user_id', userId);
+              }
             }
           }
         }

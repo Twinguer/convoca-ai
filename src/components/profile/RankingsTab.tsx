@@ -170,7 +170,8 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           return { ...ranking, position: null, isEliminated: false };
         }
         try {
-          const communityList = await getRankingsWithUserInfo(supabase, concursoId);
+          // Fetch community list from service
+          const communityList = await fetchUserRankingsV3(concursoId);
           
           // Buscar dados do concurso para verificar o tipo de exame
           const { data: concursoData } = await supabase
