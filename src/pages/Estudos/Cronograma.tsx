@@ -104,6 +104,9 @@ const Cronograma = () => {
 
   // Usar hook otimizado para dados de sessão
   const { sessionData, loading: sessionDataLoading, error: sessionDataError, refreshData } = useOptimizedSessionData();
+  
+  // Armazenar userStudy completo para acessar study_sessions
+  const [userStudy, setUserStudy] = useState<any>(null);
 
   // Timer helper functions
   const formatTime = (mins: number, secs: number) => {
@@ -148,6 +151,7 @@ const Cronograma = () => {
     try {
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
       if (userStudyData) {
+        setUserStudy(userStudyData); // Armazenar dados completos incluindo study_sessions
         const activeCycles = userStudyData.study_cycles.filter(cycle => cycle.is_active);
         setCycles(activeCycles);
       }
@@ -346,35 +350,55 @@ const Cronograma = () => {
     const dateString = date.toISOString().split('T')[0];
     const allSessions: any[] = [];
     
-    cycles.forEach(cycle => {
-      cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
-        daySchedule.sessions.forEach(session => {
-          if (session.completed_sessions) {
-            session.completed_sessions.forEach(completedSession => {
-              if (completedSession.date === dateString) {
-                allSessions.push({
-                  cycle: {
+    // Verificar se temos dados de estudo
+    if (!userStudy?.study_sessions || !Array.isArray(userStudy.study_sessions)) {
+      return [];
+    }
+    
+    // Buscar todas as study_sessions que correspondem à data
+    userStudy.study_sessions.forEach((completedSession: any) => {
+      if (completedSession.date === dateString) {
+        // Encontrar o ciclo e sessão correspondentes pelo schedule_session_id
+        let cycleInfo = null;
+        let scheduleSession = null;
+        
+        cycles.forEach(cycle => {
+          if (cycle.schedule_data?.weekly_schedule) {
+            cycle.schedule_data.weekly_schedule.forEach((daySchedule: any) => {
+              daySchedule.sessions.forEach((session: any) => {
+                if (session.id === completedSession.schedule_session_id) {
+                  cycleInfo = {
                     name: cycle.cycle_name,
                     organ: cycle.organ,
                     position: cycle.position
-                  },
-                  session: {
-                    discipline: session.discipline_name,
-                    topic: session.block_name,
-                    startTime: session.start_time,
-                    endTime: session.end_time,
-                    duration: completedSession.duration_minutes,
-                    questions: completedSession.questions,
-                    correct: completedSession.correct_answers,
-                    notes: completedSession.notes,
-                    link: session.session_link
-                  }
-                });
-              }
+                  };
+                  scheduleSession = session;
+                }
+              });
             });
           }
         });
-      });
+        
+        // Se encontrou o ciclo correspondente, adicionar à lista
+        if (cycleInfo && scheduleSession) {
+          allSessions.push({
+            cycle: cycleInfo,
+            session: {
+              discipline: completedSession.discipline_name || scheduleSession.discipline_name,
+              topic: scheduleSession.block_name,
+              startTime: scheduleSession.start_time,
+              endTime: scheduleSession.end_time,
+              duration: completedSession.duration_minutes,
+              questions: completedSession.questions,
+              correct: completedSession.correct_answers,
+              notes: completedSession.notes,
+              link: completedSession.session_link || scheduleSession.session_link,
+              studyType: completedSession.study_type,
+              courseName: completedSession.course_name
+            }
+          });
+        }
+      }
     });
     
     return allSessions;
