@@ -55,7 +55,7 @@ export class UserStudyService {
       });
       
       const { data, error } = await supabase
-        .from('user_study')
+        .from('user_study_v2')
         .select('*')
         .eq('user_id', userId)
         .single();
@@ -74,7 +74,22 @@ export class UserStudyService {
         cyclesCount: data?.study_cycles?.length || 0 
       });
       
-      const userData = data as UserStudy;
+      // Mapear dados da estrutura v2 para a estrutura esperada
+      const userData: UserStudy = {
+        ...data,
+        // Expandir study_metadata para os campos esperados pela interface
+        study_plans: data.study_metadata?.study_plans || [],
+        study_subjects: data.study_metadata?.study_subjects || [],
+        study_goals: data.study_metadata?.study_goals || [],
+        study_goals_tracking: data.study_metadata?.study_goals_tracking || {},
+        study_progress: data.study_metadata?.study_progress || [],
+        study_reminders: data.study_metadata?.study_reminders || [],
+        spaced_repetition_queue: data.study_metadata?.spaced_repetition_queue || [],
+        user_study_days: data.study_metadata?.user_study_days || [],
+        study_contests: data.study_metadata?.study_contests || [],
+        total_sessions_count: data.study_sessions?.length || 0,
+        total_schedule_count: data.study_schedule?.length || 0
+      };
       
       // Armazenar no cache
       this.cache.set(userId, { data: userData, timestamp: Date.now() });
