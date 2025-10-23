@@ -20,7 +20,9 @@ const CommunityPage = () => {
     user
   } = useAuth();
   const navigate = useNavigate();
-  const { generateSecureUserUrl } = useSecureUserUrls();
+  const {
+    generateSecureUserUrl
+  } = useSecureUserUrls();
   const {
     users,
     isLoading,
@@ -65,7 +67,7 @@ const CommunityPage = () => {
 
       {/* Members Section */}
       <div className="mb-8">
-        <CommunitySectionHeader title="👥 Membros da Comunidade" description="Usuários online aparecem no topo" icon={<Users className="h-5 w-5" />} />
+        
         {sortedUsers.length > 0 ? <UserGrid users={sortedUsers} onClick={handleUserClick} /> : <CommunityEmptyState />}
       </div>
       <Footer />
