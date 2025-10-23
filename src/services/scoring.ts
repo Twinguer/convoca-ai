@@ -25,7 +25,7 @@ export function scoreObjectiveAnswer(input: ScoringInput): ScoringOutput {
   // Questão anulada: sempre soma o peso bruto
   if (input.isNullified) {
     return {
-      totalDelta: fixNegZero(questionWeight),
+      totalDelta: fixNegZero(questionWeight * disciplineWeight),
       disciplineDelta: 1,
       weightedDisciplineDelta: fixNegZero(questionWeight * disciplineWeight),
     };
@@ -38,7 +38,7 @@ export function scoreObjectiveAnswer(input: ScoringInput): ScoringOutput {
 
   if (input.isCorrect) {
     return {
-      totalDelta: fixNegZero(questionWeight),
+      totalDelta: fixNegZero(questionWeight * disciplineWeight),
       disciplineDelta: 1,
       weightedDisciplineDelta: fixNegZero(questionWeight * disciplineWeight),
     };

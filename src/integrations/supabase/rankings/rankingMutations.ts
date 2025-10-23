@@ -445,33 +445,62 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
     
-    // Adicionar pontuações subjetivas ao total
+    // ✅ CORREÇÃO: Adicionar pontuações subjetivas ao total (sem duplicação)
+    // As pontuações objetivas já foram somadas no loop acima (linha 431)
+    // Agora adicionamos as pontuações subjetivas
     totalScore += weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore;
     
-    console.log(`[recalculateUserScore] Calculated total score: ${totalScore}, discipline scores:`, disciplineScores);
+    // ✅ CORREÇÃO: Calcular totais objetivos ANTES de usar nas logs
+    const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, score) => sum + (score || 0), 0);
+    const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
+    
+    console.log(`[recalculateUserScore] 📊 Cálculo do total score:`, {
+      objectiveTotal: objectiveWeightedTotal,
+      subjectiveTotal: weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore,
+      finalTotal: totalScore
+    });
+    console.log(`[recalculateUserScore] Discipline scores:`, disciplineScores);
     console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
     console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}, other=${weightedOtherSubjectiveScore}`);
 
     // ✅ TOTAIS CALCULADOS CORRETAMENTE ACIMA (com penalidades para C/E)
-    // Calcular totais objetivos apenas para logs/debug e verificação de mínimos
-    const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, score) => sum + (score || 0), 0);
-    const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
 
     // ⚠️ NÃO sobrescrever totalScore! Ele já foi calculado corretamente no loop acima
     // disciplineScores = contagem de acertos (não inclui penalidades)
     // weightedDisciplineScores = pontuação com penalidades aplicadas (para C/E)
     // totalScore já inclui TUDO: acertos + penalidades + subjetivas
 
+    // ✅ VALIDAÇÃO: Verificar se pontuação está correta
+    const subjectiveWeightedTotal = weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore;
+    const expectedTotal = objectiveWeightedTotal + subjectiveWeightedTotal;
+    const scoreDifference = Math.abs(totalScore - expectedTotal);
+    
+    if (scoreDifference > 0.01) {
+      console.warn(`[recalculateUserScore] ⚠️ DISCREPÂNCIA DETECTADA:`, {
+        totalScore,
+        expectedTotal,
+        difference: scoreDifference,
+        objectiveTotal: objectiveWeightedTotal,
+        subjectiveTotal: subjectiveWeightedTotal,
+        examType: concurso.exam_type
+      });
+    } else {
+      console.log(`[recalculateUserScore] ✅ Pontuação validada com sucesso`);
+    }
+
     console.log(`[recalculateUserScore] ✅ Final totals (already calculated correctly):`, {
       totalScore, // JÁ INCLUI penalidades + subjetivas
       objectiveSimpleTotal, // Contagem de acertos (sem penalidades)
       objectiveWeightedTotal, // Com penalidades (para C/E) ou pesos (para Alternativas)
+      subjectiveWeightedTotal, // Total das subjetivas weighted
+      expectedTotal, // Soma esperada
+      scoreDifference, // Diferença detectada
       examType: concurso.exam_type
     });
 
-    // Calcular totais
+    // ✅ CORREÇÃO: Usar apenas pontuações weighted para consistência
     const subjectScoresTot = Object.values(disciplineScores).reduce((sum, score) => sum + score, 0);
-    const subjectiveScoresTot = discursiveScore + caseStudy1Score + caseStudy2Score + caseStudy3Score + otherSubjectiveScore;
+    const subjectiveScoresTot = subjectiveWeightedTotal; // Usar total weighted em vez de não weighted
     
     // Criar estrutura correta de subject_scores (APENAS objetivas)
     const correctSubjectScores: Record<string, number> = {};
@@ -537,13 +566,13 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     console.log('[recalculateUserScore] DEBUG - correctSubjectScores:', correctSubjectScores);
     console.log('[recalculateUserScore] DEBUG - disciplineScores calculados:', disciplineScores);
     
-    // Criar estrutura correta de subjectives (TODAS as subjetivas)
+    // ✅ CORREÇÃO: Usar pontuações weighted para consistência
     const correctSubjectives = {
-      "discursive": discursiveScore || 0,
-      "case_study_1": caseStudy1Score || 0,
-      "case_study_2": caseStudy2Score || 0,
-      "case_study_3": caseStudy3Score || 0,
-      "other_subjective": otherSubjectiveScore || 0
+      "discursive": weightedDiscursiveScore || 0,
+      "case_study_1": weightedCaseStudy1Score || 0,
+      "case_study_2": weightedCaseStudy2Score || 0,
+      "case_study_3": weightedCaseStudy3Score || 0,
+      "other_subjective": weightedOtherSubjectiveScore || 0
     };
 
     // ===== NEW: Minimum thresholds evaluation =====

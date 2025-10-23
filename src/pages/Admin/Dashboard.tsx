@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { NotificationManager } from '@/components/Admin/NotificationManager';
 import MonitoringMetrics from '@/components/Admin/MonitoringMetrics';
 import { SubjectiveCleanup } from '@/components/Admin/SubjectiveCleanup';
+import { ScoreFix } from '@/components/Admin/ScoreFix';
 
 const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
@@ -102,6 +103,11 @@ const AdminDashboard: React.FC = () => {
       {/* Limpeza de Subjetivas Removidas */}
       <div className="mb-8">
         <SubjectiveCleanup />
+      </div>
+
+      {/* Correção de Pontuações */}
+      <div className="mb-8">
+        <ScoreFix />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2">
