@@ -21,24 +21,20 @@ export const useStudyStatistics = () => {
     }
 
     try {
-      // Buscar dados consolidados do user_study
+      // Buscar dados consolidados do user_study_v2
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       
       if (userStudyData) {
-        // Calcular estatísticas baseadas nas sessões
-        const calculatedStats = calculateStudyStatistics(userStudyData.study_sessions);
-        
-        // Mesclar com estatísticas existentes
-        const mergedStats = {
-          ...userStudyData.study_statistics,
-          ...calculatedStats,
-          lastUpdated: new Date().toISOString()
-        };
-        
-        setStatistics(mergedStats);
-        
-        // Salvar estatísticas atualizadas
-        await UserStudyService.updateStatistics(user.id, mergedStats);
+        // Usar estatísticas já calculadas pela função RPC
+        // ou calcular do zero se não existirem
+        if (userStudyData.study_statistics && Object.keys(userStudyData.study_statistics).length > 0) {
+          setStatistics(userStudyData.study_statistics as StudyStatistics);
+        } else {
+          // Calcular pela primeira vez
+          const calculatedStats = calculateStudyStatistics(userStudyData.study_sessions);
+          setStatistics(calculatedStats);
+          await UserStudyService.updateStatistics(user.id, calculatedStats);
+        }
       } else {
         // Inicializar dados do usuário
         await UserStudyService.initializeUserStudyData(user.id);

@@ -194,7 +194,7 @@ export const useStudyCyclesV2 = () => {
     }
   };
 
-  // Registrar sessão completada
+  // Registrar sessão completada (agora salva em study_sessions separado)
   const recordCompletedSession = async (
     cycleId: string,
     dayOfWeek: number,
@@ -218,24 +218,48 @@ export const useStudyCyclesV2 = () => {
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       if (!userStudyData) return false;
 
-      // Encontrar o ciclo e atualizar
-      const updatedCycles = userStudyData.study_cycles.map(cycle => {
-        if (cycle.id === cycleId) {
-          const updatedSchedule = { ...cycle.schedule_data };
-          const daySchedule = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
+      // Encontrar informações da sessão no ciclo
+      const cycle = userStudyData.study_cycles.find(c => c.id === cycleId);
+      if (!cycle) return false;
+
+      const daySchedule = cycle.schedule_data.weekly_schedule.find(d => d.day === dayOfWeek);
+      const session = daySchedule?.sessions.find(s => s.id === sessionId);
+      if (!session) return false;
+
+      // Salvar sessão completada em study_sessions usando função RPC
+      const { error: sessionError } = await supabase.rpc('add_completed_study_session', {
+        user_uuid: user.id,
+        session_data: {
+          session_date: localDate,
+          duration_minutes: completedSession.duration_minutes,
+          total_questions: completedSession.questions,
+          total_correct_answers: completedSession.correct_answers,
+          notes: completedSession.notes,
+          discipline_name: session.discipline_name,
+          block_name: session.block_name,
+          schedule_session_id: sessionId,
+          cycle_id: cycleId,
+          study_type: 'timer'
+        }
+      });
+
+      if (sessionError) {
+        console.error('Error saving completed session:', sessionError);
+        toast.error('Erro ao registrar sessão');
+        return false;
+      }
+
+      // Atualizar total_stats no ciclo (para exibição no cronograma)
+      const updatedCycles = userStudyData.study_cycles.map(c => {
+        if (c.id === cycleId) {
+          const updatedSchedule = { ...c.schedule_data };
+          const day = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
           
-          if (daySchedule) {
-            const session = daySchedule.sessions.find(s => s.id === sessionId);
-            if (session) {
-              // Adicionar sessão completada
-              if (!session.completed_sessions) {
-                session.completed_sessions = [];
-              }
-              session.completed_sessions.push(completedSession);
-              
-              // Atualizar estatísticas totais
-              if (!session.total_stats) {
-                session.total_stats = {
+          if (day) {
+            const sess = day.sessions.find(s => s.id === sessionId);
+            if (sess) {
+              if (!sess.total_stats) {
+                sess.total_stats = {
                   total_duration_minutes: 0,
                   total_questions: 0,
                   total_correct: 0,
@@ -243,49 +267,30 @@ export const useStudyCyclesV2 = () => {
                 };
               }
               
-              session.total_stats.total_duration_minutes += completedSession.duration_minutes;
-              session.total_stats.total_questions += completedSession.questions;
-              session.total_stats.total_correct += completedSession.correct_answers;
-              session.total_stats.session_count += 1;
-              session.total_stats.last_session_date = localDate;
+              sess.total_stats.total_duration_minutes += completedSession.duration_minutes;
+              sess.total_stats.total_questions += completedSession.questions;
+              sess.total_stats.total_correct += completedSession.correct_answers;
+              sess.total_stats.session_count += 1;
+              sess.total_stats.last_session_date = localDate;
             }
           }
           
-          return {
-            ...cycle,
-            schedule_data: updatedSchedule
-          };
+          return { ...c, schedule_data: updatedSchedule };
         }
-        return cycle;
+        return c;
       });
 
-      // Debug: Verificar dados antes de salvar
-      logger.debug('Dados antes de salvar sessão', { updatedCycles, completedSession });
-
-      // Salvar no banco
+      // Atualizar apenas total_stats nos ciclos
       const success = await UserStudyService.upsertUserStudyData(user.id, {
         study_cycles: updatedCycles
       });
 
-      logger.debug('Resultado do salvamento', { success });
-
       if (success) {
-        // Atualizar estado local
-        setCycles(prev => prev.map(cycle => {
-          if (cycle.id === cycleId) {
-            const updatedCycle = updatedCycles.find(c => c.id === cycleId);
-            return updatedCycle || cycle;
-          }
-          return cycle;
-        }));
-
-        // Recarregar dados do banco para garantir sincronização
         await fetchCycles();
-
         toast.success('Sessão registrada com sucesso!');
         return true;
       } else {
-        toast.error('Erro ao registrar sessão');
+        toast.error('Erro ao atualizar estatísticas');
         return false;
       }
     } catch (error) {
