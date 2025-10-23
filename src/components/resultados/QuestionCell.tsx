@@ -66,7 +66,7 @@ export const QuestionCell: React.FC<QuestionCellProps> = ({
         )}
       </div>
       
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-nowrap gap-1 justify-center">
         {options.map((option) => (
           <AnswerOption
             key={option}

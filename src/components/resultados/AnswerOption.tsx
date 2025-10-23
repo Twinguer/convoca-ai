@@ -22,8 +22,8 @@ export const AnswerOption: React.FC<AnswerOptionProps> = ({
     <div 
       className={`
         ${isCertoErrado 
-          ? 'w-12 h-12 text-base font-medium'
-          : 'w-10 h-10 text-base font-medium'
+          ? 'w-10 h-10 text-sm font-medium'
+          : 'w-8 h-8 text-sm font-medium'
         }
         flex items-center justify-center rounded-full cursor-pointer shadow-sm
         ${isSelected 

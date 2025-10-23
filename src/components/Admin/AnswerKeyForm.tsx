@@ -641,8 +641,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
                       {getQuestionsRange().map((questionNumber) => (
                         <div key={`q-${questionNumber}`} className="border border-border rounded-md p-3 bg-card">
                           <div className="mb-2 font-medium text-foreground">Questão {questionNumber}</div>
-                          <div className="flex flex-wrap md:flex-nowrap gap-1 md:gap-1 lg:gap-2">
-                            {getOptionsForQuestion().map(option => <button key={option} className={`w-9 h-9 md:w-8 md:h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${answers[questionNumber] === option ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
+                          <div className="flex flex-nowrap gap-1 justify-center">
+                            {getOptionsForQuestion().map(option => <button key={option} className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${answers[questionNumber] === option ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`} onClick={() => handleAnswerChange(questionNumber, option)} disabled={nullifiedQuestions.has(questionNumber)} type="button">
                                 {option}
                               </button>)}
                           </div>
