@@ -25,15 +25,20 @@ export const useStudyStatistics = () => {
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       
       if (userStudyData) {
-        // Usar estatísticas já calculadas pela função RPC
-        // ou calcular do zero se não existirem
-        if (userStudyData.study_statistics && Object.keys(userStudyData.study_statistics).length > 0) {
-          setStatistics(userStudyData.study_statistics as StudyStatistics);
-        } else {
-          // Calcular pela primeira vez
+        // SEMPRE recalcular estatísticas com base nas sessões atuais
+        // Isso garante que os dados estejam sempre corretos e atualizados
+        if (userStudyData.study_sessions && userStudyData.study_sessions.length > 0) {
           const calculatedStats = calculateStudyStatistics(userStudyData.study_sessions);
           setStatistics(calculatedStats);
-          await UserStudyService.updateStatistics(user.id, calculatedStats);
+          
+          // Salvar estatísticas recalculadas no banco em background
+          // (não bloqueia a UI)
+          UserStudyService.updateStatistics(user.id, calculatedStats).catch(err => {
+            console.error('Error updating statistics in background:', err);
+          });
+        } else {
+          // Sem sessões, usar estatísticas vazias
+          setStatistics(defaultUserStudy.study_statistics as StudyStatistics);
         }
       } else {
         // Inicializar dados do usuário

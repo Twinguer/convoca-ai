@@ -4,23 +4,37 @@ export interface StudySession {
   id: string;
   schedule_session_id?: string;
   session_link?: string;
-  total_duration_minutes: number;
-  total_questions: number;
-  total_correct_answers: number;
+  
+  // Aceitar ambos os formatos (antigo e novo)
+  total_duration_minutes?: number;  // Formato antigo
+  duration_minutes?: number;         // Formato novo (banco)
+  
+  total_questions?: number;          // Formato antigo
+  questions?: number;                // Formato novo (banco)
+  
+  total_correct_answers?: number;    // Formato antigo
+  correct_answers?: number;          // Formato novo (banco)
+  
   session_count: number;
-  last_session_date: string;
-  session_date: string;
+  
+  last_session_date?: string;        // Formato antigo
+  session_date?: string;             // Formato antigo
+  date?: string;                     // Formato novo (banco)
+  
   start_time: string;
   end_time?: string;
-  duration_minutes: number;
   notes?: string;
   study_type?: string;
   quality_rating?: number;
+  
+  discipline_name?: string;          // Campo crítico para disciplinas
+  course_name?: string;
+  
   study_plan_id?: string;
   subject_id?: string;
   study_contest_id?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface StudySchedule {

@@ -155,16 +155,34 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
   const now = new Date();
   const today = now.toISOString().split('T')[0];
   
-  // Basic calculations
-  const totalHours = sessions.reduce((sum, session) => sum + (session.total_duration_minutes / 60), 0);
-  const totalSessions = sessions.length;
-  const questionsAnswered = sessions.reduce((sum, session) => sum + session.total_questions, 0);
-  const correctAnswers = sessions.reduce((sum, session) => sum + session.total_correct_answers, 0);
+  // Normalizar dados - aceitar ambos os formatos (novo e antigo)
+  const normalizedSessions = sessions.map(session => {
+    const duration = session.total_duration_minutes ?? session.duration_minutes ?? 0;
+    const questions = session.total_questions ?? session.questions ?? 0;
+    const correctAnswers = session.total_correct_answers ?? session.correct_answers ?? 0;
+    const sessionDate = session.last_session_date ?? session.session_date ?? session.date ?? today;
+    const disciplineName = session.discipline_name ?? 'Sem Disciplina';
+    
+    return {
+      ...session,
+      duration,
+      questions,
+      correctAnswers,
+      sessionDate,
+      disciplineName
+    };
+  });
+  
+  // Basic calculations (usar dados normalizados)
+  const totalHours = normalizedSessions.reduce((sum, s) => sum + (s.duration / 60), 0);
+  const totalSessions = normalizedSessions.length;
+  const questionsAnswered = normalizedSessions.reduce((sum, s) => sum + s.questions, 0);
+  const correctAnswers = normalizedSessions.reduce((sum, s) => sum + s.correctAnswers, 0);
   const wrongAnswers = questionsAnswered - correctAnswers;
 
-  // Calculate streaks
-  const sortedSessions = sessions
-    .sort((a, b) => new Date(b.last_session_date).getTime() - new Date(a.last_session_date).getTime());
+  // Calculate streaks (usar sessionDate normalizado)
+  const sortedSessions = normalizedSessions
+    .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime());
   
   let currentStreak = 0;
   let longestStreak = 0;
@@ -172,13 +190,13 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
   let lastDate: Date | null = null;
 
   for (const session of sortedSessions) {
-    const sessionDate = new Date(session.last_session_date);
+    const sessionDateObj = new Date(session.sessionDate);
     
     if (lastDate === null) {
-      lastDate = sessionDate;
+      lastDate = sessionDateObj;
       tempStreak = 1;
     } else {
-      const daysDiff = Math.floor((lastDate.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor((lastDate.getTime() - sessionDateObj.getTime()) / (1000 * 60 * 60 * 24));
       
       if (daysDiff === 1) {
         tempStreak++;
@@ -189,24 +207,24 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
       }
     }
     
-    lastDate = sessionDate;
+    lastDate = sessionDateObj;
   }
 
   longestStreak = Math.max(longestStreak, tempStreak);
   if (currentStreak === 0) currentStreak = tempStreak;
 
-  // Calculate daily, weekly, and monthly stats
+  // Calculate daily, weekly, and monthly stats (usar dados normalizados)
   const dailyStats: Record<string, { hours: number; sessions: number }> = {};
   const weeklyStats: Record<string, { hours: number; sessions: number }> = {};
   const monthlyStats: Record<string, { hours: number; sessions: number }> = {};
 
-  sessions.forEach(session => {
-    const sessionDate = new Date(session.last_session_date);
-    const dateStr = session.last_session_date;
-    const weekStr = getWeekString(sessionDate);
-    const monthStr = sessionDate.toISOString().substring(0, 7);
+  normalizedSessions.forEach(session => {
+    const sessionDateObj = new Date(session.sessionDate);
+    const dateStr = session.sessionDate;
+    const weekStr = getWeekString(sessionDateObj);
+    const monthStr = sessionDateObj.toISOString().substring(0, 7);
 
-    const hours = session.total_duration_minutes / 60;
+    const hours = session.duration / 60;
 
     // Daily stats
     if (!dailyStats[dateStr]) {
@@ -245,15 +263,15 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
     ? monthlyEntries.reduce((sum, month) => sum + month.hours, 0) / monthlyEntries.length 
     : 0;
 
-  // Create session history
-  const sessionHistory = sessions.map(session => ({
-    date: session.last_session_date,
-    duration: session.total_duration_minutes / 60,
-    type: 'timer' as const,
-    subject: session.discipline_name
+  // Create session history (usar dados normalizados)
+  const sessionHistory = normalizedSessions.map(session => ({
+    date: session.sessionDate,
+    duration: session.duration,
+    type: (session.study_type || 'timer') as 'timer' | 'manual',
+    subject: session.disciplineName
   }));
 
-  // Calculate subject stats
+  // Calculate subject stats (usar dados normalizados)
   const subjectStats: Record<string, {
     totalHours: number;
     totalSessions: number;
@@ -262,8 +280,9 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
     wrongAnswers: number;
   }> = {};
 
-  sessions.forEach(session => {
-    const subject = session.discipline_name || 'Unknown';
+  normalizedSessions.forEach(session => {
+    const subject = session.disciplineName;
+    
     if (!subjectStats[subject]) {
       subjectStats[subject] = {
         totalHours: 0,
@@ -274,12 +293,12 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
       };
     }
 
-    const hours = session.total_duration_minutes / 60;
+    const hours = session.duration / 60;
     subjectStats[subject].totalHours += hours;
     subjectStats[subject].totalSessions += 1;
-    subjectStats[subject].questionsAnswered += session.total_questions;
-    subjectStats[subject].correctAnswers += session.total_correct_answers;
-    subjectStats[subject].wrongAnswers += (session.total_questions - session.total_correct_answers);
+    subjectStats[subject].questionsAnswered += session.questions;
+    subjectStats[subject].correctAnswers += session.correctAnswers;
+    subjectStats[subject].wrongAnswers += (session.questions - session.correctAnswers);
   });
 
   return {
@@ -290,7 +309,7 @@ export function calculateStudyStatistics(sessions: StudySession[]): StudyStatist
     wrongAnswers,
     currentStreak,
     longestStreak,
-    lastStudyDate: sessions.length > 0 ? sortedSessions[0].last_session_date : null,
+    lastStudyDate: sortedSessions.length > 0 ? sortedSessions[0].sessionDate : null,
     dailyStats,
     weeklyStats,
     monthlyStats,
