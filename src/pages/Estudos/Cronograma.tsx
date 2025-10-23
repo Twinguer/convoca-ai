@@ -51,7 +51,7 @@ const Cronograma = () => {
     stopTimer,
     setInitialTime
   } = useTimer();
-  const { addScheduleSession } = useStudyCyclesV2();
+  const { addScheduleSession, recordCompletedSession, fetchCycles: refetchCycles } = useStudyCyclesV2();
 
   // Clock state
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -395,7 +395,7 @@ const Cronograma = () => {
     return sessions.length > 0;
   };
 
-  // Função para atualizar total_stats e completed_sessions no cronograma
+  // Função para registrar sessão completada (usando RPC para separar em study_sessions)
   const updateScheduleSessionStats = async (sessionId: string, stats: {
     duration: number;
     questions: number;
@@ -406,76 +406,44 @@ const Cronograma = () => {
     studyType?: string;
   }) => {
     try {
-      // Buscar dados atuais do usuário
-      const userStudyData = await UserStudyService.getUserStudyData(user?.id);
-      if (!userStudyData) {
+      // Encontrar a sessão no cronograma para obter cycleId e dayOfWeek
+      let cycleId = '';
+      let dayOfWeek = 0;
+      
+      for (const session of sessions) {
+        if (session.id === sessionId) {
+          cycleId = session.cycleId;
+          dayOfWeek = session.day;
+          break;
+        }
+      }
+      
+      if (!cycleId) {
+        toast.error('Sessão não encontrada');
         return;
       }
 
-      const currentDate = new Date().toISOString().split('T')[0];
+      // Usar recordCompletedSession do hook para registrar via RPC
+      const success = await recordCompletedSession(
+        cycleId,
+        dayOfWeek,
+        sessionId,
+        {
+          duration_minutes: stats.duration,
+          questions: stats.questions,
+          correct_answers: stats.correctAnswers,
+          notes: stats.notes || ''
+        }
+      );
 
-      // Encontrar e atualizar a sessão no cronograma
-      const updatedCycles = userStudyData.study_cycles.map(cycle => {
-        const updatedSchedule = { ...cycle.schedule_data };
-        
-        updatedSchedule.weekly_schedule = updatedSchedule.weekly_schedule.map(daySchedule => ({
-          ...daySchedule,
-          sessions: daySchedule.sessions.map(session => {
-            if (session.id === sessionId) {
-              const currentStats = session.total_stats || {
-                session_count: 0,
-                total_correct: 0,
-                total_questions: 0,
-                total_duration_minutes: 0
-              };
-
-              // Criar nova sessão completada
-              const newCompletedSession = {
-                id: generateId(),
-                date: currentDate,
-                duration_minutes: stats.duration,
-                questions: stats.questions,
-                correct_answers: stats.correctAnswers,
-                notes: stats.notes || '',
-                course_name: stats.courseName || '',
-                study_type: stats.studyType || 'manual',
-                created_at: new Date().toISOString()
-              };
-
-              // Adicionar à lista de completed_sessions
-              const completedSessions = session.completed_sessions || [];
-              completedSessions.push(newCompletedSession);
-
-              return {
-                ...session,
-                session_link: stats.sessionLink || session.session_link,
-                completed_sessions: completedSessions,
-                total_stats: {
-                  ...currentStats,
-                  session_count: currentStats.session_count + 1,
-                  total_correct: currentStats.total_correct + stats.correctAnswers,
-                  total_questions: currentStats.total_questions + stats.questions,
-                  total_duration_minutes: currentStats.total_duration_minutes + stats.duration,
-                  last_session_date: currentDate
-                }
-              };
-            }
-            return session;
-          })
-        }));
-
-        return {
-          ...cycle,
-          schedule_data: updatedSchedule
-        };
-      });
-
-      // Salvar no banco
-      await UserStudyService.upsertUserStudyData(user.id, {
-        study_cycles: updatedCycles
-      });
+      if (success) {
+        // Recarregar ciclos para atualizar total_stats
+        await refetchCycles();
+        await fetchSessions();
+      }
     } catch (error) {
-      // Silently handle error
+      console.error('Error recording session:', error);
+      toast.error('Erro ao registrar sessão');
     }
   };
   const openEditModal = (session: StudySession) => {
