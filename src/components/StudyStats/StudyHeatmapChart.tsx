@@ -14,71 +14,118 @@ interface HeatmapData {
   intensity: 'none' | 'low' | 'medium' | 'high' | 'very-high';
   isToday: boolean;
   isFuture: boolean;
+  monthIndex: number;
+  monthName: string;
 }
 
 const StudyHeatmapChart: React.FC<StudyHeatmapChartProps> = ({ statistics }) => {
-  // Preparar dados para o heatmap (últimos 6 meses = ~180 dias)
+  // Preparar dados para o heatmap (mês anterior, atual e seguinte)
   const prepareHeatmapData = (): HeatmapData[] => {
     const data: HeatmapData[] = [];
+    // Data atual real
     const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - 179); // Últimos 180 dias (6 meses)
-
-    // Criar array de todos os dias
-    for (let i = 0; i < 180; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      const dateString = date.toISOString().split('T')[0];
-      
-      const isToday = dateString === today.toISOString().split('T')[0];
-      const isFuture = date > today;
-      
-      // Buscar dados do dia
-      const dayStats = statistics.dailyStats[dateString] || { hours: 0, sessions: 0 };
-      
-      // Calcular intensidade baseada nas horas
-      let intensity: 'none' | 'low' | 'medium' | 'high' | 'very-high' = 'none';
-      if (dayStats.hours > 0) {
-        if (dayStats.hours >= 6) intensity = 'very-high';
-        else if (dayStats.hours >= 4) intensity = 'high';
-        else if (dayStats.hours >= 2) intensity = 'medium';
-        else intensity = 'low';
+    
+    // Mês anterior
+    const prevMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    // Mês atual
+    const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Mês seguinte
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    
+    // Obter nomes dos meses
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    
+    // Obter número de dias em cada mês
+    const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    
+    // Criar array com todos os dias dos 3 meses
+    const months = [
+      { 
+        start: prevMonth, 
+        days: getDaysInMonth(prevMonth), 
+        name: monthNames[prevMonth.getMonth()], 
+        monthIndex: prevMonth.getMonth() 
+      },
+      { 
+        start: currentMonth, 
+        days: getDaysInMonth(currentMonth), 
+        name: monthNames[currentMonth.getMonth()], 
+        monthIndex: currentMonth.getMonth() 
+      },
+      { 
+        start: nextMonth, 
+        days: getDaysInMonth(nextMonth), 
+        name: monthNames[nextMonth.getMonth()], 
+        monthIndex: nextMonth.getMonth() 
       }
-      
-      data.push({
-        date: dateString,
-        hours: dayStats.hours,
-        sessions: dayStats.sessions,
-        intensity,
-        isToday,
-        isFuture
-      });
-    }
+    ];
+    
+    months.forEach(month => {
+      for (let i = 0; i < month.days; i++) {
+        const date = new Date(month.start);
+        date.setDate(month.start.getDate() + i);
+        const dateString = date.toISOString().split('T')[0];
+        
+        const isToday = dateString === today.toISOString().split('T')[0];
+        const isFuture = date > today;
+        
+        // Buscar dados do dia
+        const dayStats = statistics.dailyStats[dateString] || { hours: 0, sessions: 0 };
+        
+        // Calcular intensidade baseada nas horas
+        let intensity: 'none' | 'low' | 'medium' | 'high' | 'very-high' = 'none';
+        if (dayStats.hours > 0) {
+          if (dayStats.hours >= 6) intensity = 'very-high';
+          else if (dayStats.hours >= 4) intensity = 'high';
+          else if (dayStats.hours >= 2) intensity = 'medium';
+          else intensity = 'low';
+        } else if (!isFuture && !isToday) {
+          // Dias passados sem estudo = vermelho
+          intensity = 'none';
+        }
+        
+        data.push({
+          date: dateString,
+          hours: dayStats.hours,
+          sessions: dayStats.sessions,
+          intensity,
+          isToday,
+          isFuture,
+          monthIndex: month.monthIndex,
+          monthName: month.name
+        });
+      }
+    });
 
     return data;
   };
 
   const heatmapData = prepareHeatmapData();
 
-  // Agrupar dados por semanas
-  const groupByWeeks = (data: HeatmapData[]) => {
-    const weeks: { [key: string]: HeatmapData[] } = {};
+  // Agrupar dados por mês
+  const groupByMonth = (data: HeatmapData[]) => {
+    const months: { [key: string]: HeatmapData[] } = {};
     
-    data.forEach((day, index) => {
-      const weekNumber = Math.floor(index / 7);
-      const weekKey = `week${weekNumber}`;
-      
-      if (!weeks[weekKey]) {
-        weeks[weekKey] = [];
+    data.forEach(day => {
+      const monthKey = `${day.monthIndex}-${day.monthName}`;
+      if (!months[monthKey]) {
+        months[monthKey] = [];
       }
-      weeks[weekKey].push(day);
+      months[monthKey].push(day);
     });
     
-    return weeks;
+    return months;
   };
 
-  const weeksData = groupByWeeks(heatmapData);
-  const weekNumbers = Object.keys(weeksData).sort();
+  const monthsData = groupByMonth(heatmapData);
+  const monthKeys = Object.keys(monthsData).sort((a, b) => {
+    const aIndex = parseInt(a.split('-')[0]);
+    const bIndex = parseInt(b.split('-')[0]);
+    return aIndex - bIndex;
+  });
 
   // Calcular estatísticas
   const totalDays = heatmapData.length;
@@ -89,10 +136,19 @@ const StudyHeatmapChart: React.FC<StudyHeatmapChartProps> = ({ statistics }) => 
   const longestStreak = statistics.longestStreak;
 
   // Obter cor baseada na intensidade
-  const getIntensityColor = (intensity: string, isToday: boolean, isFuture: boolean) => {
-    if (isFuture) return 'bg-muted/30';
-    if (isToday) return 'ring-2 ring-primary';
+  const getIntensityColor = (intensity: string, isToday: boolean, isFuture: boolean, hours: number) => {
+    // Dia atual: fundo azul com borda
+    if (isToday) return 'bg-primary text-primary-foreground ring-2 ring-primary';
     
+    // Dias futuros: cinza mais escuro para melhor visibilidade
+    if (isFuture) return 'bg-muted';
+    
+    // Dias passados sem estudo: vermelho
+    if (!isFuture && !isToday && hours === 0) {
+      return 'bg-destructive';
+    }
+    
+    // Dias com estudo: verde (intensidade baseada nas horas)
     switch (intensity) {
       case 'very-high': return 'bg-success';
       case 'high': return 'bg-success/80';
@@ -126,8 +182,7 @@ const StudyHeatmapChart: React.FC<StudyHeatmapChartProps> = ({ statistics }) => 
     const date = new Date(dateString);
     return date.toLocaleDateString('pt-BR', { 
       day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
+      month: 'short'
     });
   };
 
@@ -214,59 +269,68 @@ const StudyHeatmapChart: React.FC<StudyHeatmapChartProps> = ({ statistics }) => 
           </div>
         </div>
 
-        {/* Heatmap com altura reduzida em 10% */}
-        <div className="space-y-1.5">
-          {/* Cabeçalho com dias da semana */}
-          <div className="grid grid-cols-7 gap-0.5 text-xs text-muted-foreground text-center">
-            <div>D</div>
-            <div>S</div>
-            <div>T</div>
-            <div>Q</div>
-            <div>Q</div>
-            <div>S</div>
-            <div>S</div>
-          </div>
-
-          {/* Grid do heatmap com altura reduzida */}
-          <div className="grid grid-cols-7 gap-0.5">
-            {weekNumbers.map(weekKey => (
-              <React.Fragment key={weekKey}>
-                {weeksData[weekKey].map((day, dayIndex) => (
-                  <div
-                    key={`${weekKey}-${dayIndex}`}
-                    className={`
-                      w-2.5 h-2.5 rounded-sm cursor-pointer transition-all duration-200 hover:scale-125
-                      ${getIntensityColor(day.intensity, day.isToday, day.isFuture)}
-                    `}
-                    title={`${formatDate(day.date)}: ${day.hours > 0 ? formatHours(day.hours) : 'Sem estudo'}`}
-                  />
-                ))}
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Legenda com altura reduzida em 10% */}
-          <div className="flex items-center justify-between mt-2 p-1.5 bg-muted/20 rounded-lg">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Menos</span>
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-muted/50 rounded-sm"></div>
-                <div className="w-2 h-2 bg-success/40 rounded-sm"></div>
-                <div className="w-2 h-2 bg-success/60 rounded-sm"></div>
-                <div className="w-2 h-2 bg-success/80 rounded-sm"></div>
-                <div className="w-2 h-2 bg-success rounded-sm"></div>
-              </div>
-              <span>Mais</span>
-            </div>
+        {/* Heatmap agrupado por mês */}
+        <div className="space-y-4">
+          {monthKeys.map(monthKey => {
+            const monthDays = monthsData[monthKey];
+            const monthName = monthKey.split('-')[1];
             
-            <div className="flex items-center gap-2 text-xs">
-              <Badge variant="outline" className="text-xs px-2 py-1">
-                Atual: {currentStreak}
-              </Badge>
-              <Badge variant="outline" className="text-xs px-2 py-1">
-                Melhor: {longestStreak}
-              </Badge>
+            return (
+              <div key={monthKey} className="space-y-1.5">
+                <h4 className="text-sm font-semibold text-foreground text-center mb-1">
+                  {monthName} {new Date().getFullYear()}
+                </h4>
+                
+                {/* Cabeçalho com dias da semana */}
+                <div className="grid grid-cols-7 gap-0.5 text-xs text-muted-foreground text-center mb-1">
+                  <div>Dom</div>
+                  <div>Seg</div>
+                  <div>Ter</div>
+                  <div>Qua</div>
+                  <div>Qui</div>
+                  <div>Sex</div>
+                  <div>Sáb</div>
+                </div>
+                
+                {/* Grid do heatmap para o mês */}
+                <div className="grid grid-cols-7 gap-0.5">
+                  {monthDays.map((day, dayIndex) => (
+                    <div
+                      key={`${monthKey}-${dayIndex}`}
+                      className={`
+                        w-2.5 h-2.5 rounded-sm cursor-pointer transition-all duration-200 hover:scale-125
+                        ${getIntensityColor(day.intensity, day.isToday, day.isFuture, day.hours)}
+                      `}
+                      title={`${formatDate(day.date)}: ${day.hours > 0 ? formatHours(day.hours) : 'Sem estudo'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legenda com altura reduzida em 10% */}
+        <div className="flex items-center justify-between mt-2 p-1.5 bg-muted/20 rounded-lg">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-destructive rounded-sm" title="Dias passados sem estudo"></div>
+              <div className="w-2 h-2 bg-muted rounded-sm" title="Dias futuros"></div>
+              <div className="w-2 h-2 bg-primary rounded-sm" title="Dia atual"></div>
+              <div className="w-2 h-2 bg-success/40 rounded-sm" title="Pouco estudo"></div>
+              <div className="w-2 h-2 bg-success/60 rounded-sm" title="Estudo moderado"></div>
+              <div className="w-2 h-2 bg-success/80 rounded-sm" title="Muito estudo"></div>
+              <div className="w-2 h-2 bg-success rounded-sm" title="Estudo intenso"></div>
             </div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs">
+            <Badge variant="outline" className="text-xs px-2 py-1">
+              Atual: {currentStreak}
+            </Badge>
+            <Badge variant="outline" className="text-xs px-2 py-1">
+              Melhor: {longestStreak}
+            </Badge>
           </div>
         </div>
       </CardContent>
