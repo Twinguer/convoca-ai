@@ -493,7 +493,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                   <CardTitle>Rotina de estudos</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="whitespace-pre-line text-sm text-muted-foreground break-words">
+                  <p className="whitespace-pre-line text-sm text-muted-foreground break-words overflow-wrap-anywhere">
                     {profile.rotina_estudos}
                   </p>
                 </CardContent>

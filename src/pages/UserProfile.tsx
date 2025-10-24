@@ -376,7 +376,7 @@ const UserProfile = () => {
                     <h3 className="text-lg font-semibold">Rotina de estudos</h3>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <p className="text-sm whitespace-pre-line">{rotinaEstudos}</p>
+                    <p className="text-sm whitespace-pre-line break-words overflow-wrap-anywhere">{rotinaEstudos}</p>
                   </CardContent>
                 </Card>
               </CardContent>

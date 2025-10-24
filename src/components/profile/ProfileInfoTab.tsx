@@ -101,7 +101,21 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Nome de usuário</Label>
-          <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" />
+          <Input 
+            id="name" 
+            value={name} 
+            onChange={e => {
+              const value = e.target.value;
+              if (value.length <= 15) {
+                setName(value);
+              }
+            }} 
+            placeholder="Seu nome completo" 
+            maxLength={15}
+          />
+          <p className="text-xs text-muted-foreground">
+            {name.length}/15 caracteres
+          </p>
         </div>
         
         <div className="space-y-2">
@@ -113,7 +127,13 @@ const ProfileInfoTab: React.FC<ProfileInfoTabProps> = ({
 
         <div className="space-y-2">
           <Label htmlFor="rotinaEstudos">Rotina de estudos</Label>
-          <Textarea id="rotinaEstudos" value={rotinaEstudos} onChange={handleRotinaEstudosChange} placeholder="Rotina de estudos, próximo concursos, dicas... algo que ajude e incentive quem também está na jornada!" className="min-h-[150px]" />
+          <Textarea 
+            id="rotinaEstudos" 
+            value={rotinaEstudos} 
+            onChange={handleRotinaEstudosChange} 
+            placeholder="Rotina de estudos, próximo concursos, dicas... algo que ajude e incentive quem também está na jornada!" 
+            className="min-h-[150px] break-words whitespace-pre-wrap overflow-wrap-anywhere" 
+          />
           <p className="text-xs text-gray-500 text-right">{rotinaEstudos.length}/1500 caracteres</p>
         </div>
         
