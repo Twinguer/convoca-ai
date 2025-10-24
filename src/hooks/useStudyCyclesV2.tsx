@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { UserStudyService } from '@/services/userStudyService';
-import { StudyCycleV2 } from '@/types/userStudy';
+import { StudyCycleV2, StudySchedule } from '@/types/userStudy';
 import { createStudyCycleV2 } from '@/utils/userStudyHelpers';
 import { generateId } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,7 +131,7 @@ export const useStudyCyclesV2 = () => {
   const addScheduleSession = async (
     cycleId: string,
     dayOfWeek: number,
-    sessionData: Omit<SessionData, 'id' | 'completed_sessions' | 'total_stats'>
+    sessionData: Omit<StudySchedule, 'id' | 'cycle_id' | 'day_of_week' | 'total_stats' | 'created_at' | 'updated_at'>
   ) => {
     if (!user) return false;
 
