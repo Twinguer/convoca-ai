@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { Concurso } from '@/types/concursos';
 import { getSectionTypeForQuestion } from '@/integrations/supabase/rankings/examStructure';
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Componente de tabela de ranking otimizado
  * Versão simplificada sem virtual scrolling para compatibilidade

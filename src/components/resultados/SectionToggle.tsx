@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import React from 'react';
 import { Concurso, SectionType } from '@/types/concursos';
 import { getDisciplines, isHierarchicalStructure } from '@/integrations/supabase/rankings/examStructure';

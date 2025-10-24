@@ -163,10 +163,12 @@ const Cronograma = () => {
     try {
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
       if (!userStudyData) {
+        setUserStudy(null);
         setSessions([]);
         return;
       }
 
+      setUserStudy(userStudyData);
       const allSessions: StudySession[] = [];
       
       // ✅ Buscar de study_schedule primeiro
@@ -363,12 +365,13 @@ const Cronograma = () => {
     return completedSessions.find((s: any) => s.sessionId === sessionId);
   };
   const getCycleName = (cycleId: string) => {
-    return cycles.find(c => c.id === cycleId)?.name || 'Ciclo não encontrado';
+    return cycles.find(c => c.id === cycleId)?.cycle_name || 'Ciclo não encontrado';
   };
 
   // Função para verificar se um dia tem sessões estudadas
   const getSessionsForDate = (date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
+    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    const dateString = localDate.toISOString().split('T')[0];
     const allSessions: any[] = [];
     
     // Verificar se temos dados de estudo
@@ -379,26 +382,45 @@ const Cronograma = () => {
     // Buscar todas as study_sessions que correspondem à data
     userStudy.study_sessions.forEach((completedSession: any) => {
       if (completedSession.date === dateString) {
-        // Encontrar o ciclo e sessão correspondentes pelo schedule_session_id
-        let cycleInfo = null;
-        let scheduleSession = null;
-        
-        cycles.forEach(cycle => {
-          if (cycle.schedule_data?.weekly_schedule) {
-            cycle.schedule_data.weekly_schedule.forEach((daySchedule: any) => {
-              daySchedule.sessions.forEach((session: any) => {
-                if (session.id === completedSession.schedule_session_id) {
-                  cycleInfo = {
-                    name: cycle.cycle_name,
-                    organ: cycle.organ,
-                    position: cycle.position
-                  };
-                  scheduleSession = session;
-                }
-              });
-            });
+        // Primeiro: procurar a sessão no novo study_schedule
+        let cycleInfo: any = null;
+        let scheduleSession: any = null;
+
+        const newScheduleSession = userStudy?.study_schedule?.find(
+          (s: any) => s.id === completedSession.schedule_session_id
+        );
+
+        if (newScheduleSession) {
+          scheduleSession = newScheduleSession;
+          const cycle = (userStudy.study_cycles || []).find((c: any) => c.id === newScheduleSession.cycle_id);
+          if (cycle) {
+            cycleInfo = {
+              name: cycle.cycle_name,
+              organ: cycle.organ,
+              position: cycle.position
+            };
           }
-        });
+        }
+
+        // Fallback: procurar no weekly_schedule legado se não encontrado no novo
+        if (!scheduleSession) {
+          cycles.forEach(cycle => {
+            if (cycle.schedule_data?.weekly_schedule) {
+              cycle.schedule_data.weekly_schedule.forEach((daySchedule: any) => {
+                daySchedule.sessions.forEach((session: any) => {
+                  if (session.id === completedSession.schedule_session_id) {
+                    cycleInfo = {
+                      name: cycle.cycle_name,
+                      organ: cycle.organ,
+                      position: cycle.position
+                    };
+                    scheduleSession = session;
+                  }
+                });
+              });
+            }
+          });
+        }
         
         // Se encontrou o ciclo correspondente, adicionar à lista
         if (cycleInfo && scheduleSession) {
@@ -413,7 +435,7 @@ const Cronograma = () => {
               questions: completedSession.questions,
               correct: completedSession.correct_answers,
               notes: completedSession.notes,
-              link: completedSession.session_link || scheduleSession.session_link,
+              link: scheduleSession.session_link,
               studyType: completedSession.study_type,
               courseName: completedSession.course_name
             }

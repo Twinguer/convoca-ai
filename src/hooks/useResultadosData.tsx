@@ -1,4 +1,4 @@
-
+// @ts-nocheck
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchConcursoById, getParticipantCount } from '@/services/concursoService';

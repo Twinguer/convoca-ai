@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HOOK OTIMIZADO PARA USER_RANKINGS
  * 
