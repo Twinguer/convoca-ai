@@ -77,7 +77,53 @@ const CommunityPage = () => {
   if (isError) return <CommunityErrorState />;
   return <div className="min-h-screen p-6 bg-page-background">
       <div className="mb-8 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-        <div>
+        {/* Community Stats - moved to the left */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2" style={{ width: '48%' }}>
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
+              <CardTitle className="text-xs font-semibold">Total</CardTitle>
+              <UserCircle className="h-4 w-4" />
+            </CardHeader>
+            <CardContent className="pt-0 text-left px-3">
+              <div className="text-lg font-black">{users.length}</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
+              <CardTitle className="text-xs font-semibold">Online</CardTitle>
+              <UserCheck className="h-4 w-4" />
+            </CardHeader>
+            <CardContent className="pt-0 text-left px-3">
+              <div className="text-lg font-black">
+                {users.filter(u => isOnline(u.id)).length}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
+              <CardTitle className="text-xs font-semibold">Estudando</CardTitle>
+              <GraduationCap className="h-4 w-4" />
+            </CardHeader>
+            <CardContent className="pt-0 text-left px-3">
+              <div className="text-lg font-black">
+                {users.filter(u => u.is_studying).length}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
+              <CardTitle className="text-xs font-semibold">Aprovados</CardTitle>
+              <Award className="h-4 w-4" />
+            </CardHeader>
+            <CardContent className="pt-0 text-left px-3">
+              <div className="text-lg font-black">
+                {users.filter(u => u.approvalCount > 0).length}
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
         {/* Search Filter - moved to the right */}
@@ -85,55 +131,6 @@ const CommunityPage = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input type="text" placeholder="Buscar usuários por nome..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
-      </div>
- 
-      {/* Community Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200/50 dark:border-blue-800/30 shadow-lg hover:shadow-xl transition-all duration-300 h-20 flex flex-col justify-center">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-4">
-            <CardTitle className="text-sm font-semibold text-blue-800 dark:text-blue-200 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>Total de Membros</CardTitle>
-            <UserCircle className="h-5 w-5 text-blue-700 dark:text-blue-300 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))' }} />
-          </CardHeader>
-          <CardContent className="pt-0 text-center px-4">
-            <div className="text-2xl font-black text-blue-900 dark:text-blue-100 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.4)' }}>{users.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 border-green-200/50 dark:border-green-800/30 shadow-lg hover:shadow-xl transition-all duration-300 h-20 flex flex-col justify-center">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-4">
-            <CardTitle className="text-sm font-semibold text-green-800 dark:text-green-200 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>Online Agora</CardTitle>
-            <UserCheck className="h-5 w-5 text-green-700 dark:text-green-300 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))' }} />
-          </CardHeader>
-          <CardContent className="pt-0 text-center px-4">
-            <div className="text-2xl font-black text-green-900 dark:text-green-100 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.4)' }}>
-              {users.filter(u => isOnline(u.id)).length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200/50 dark:border-purple-800/30 shadow-lg hover:shadow-xl transition-all duration-300 h-20 flex flex-col justify-center">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-4">
-            <CardTitle className="text-sm font-semibold text-purple-800 dark:text-purple-200 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>Estudando</CardTitle>
-            <GraduationCap className="h-5 w-5 text-purple-700 dark:text-purple-300 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))' }} />
-          </CardHeader>
-          <CardContent className="pt-0 text-center px-4">
-            <div className="text-2xl font-black text-purple-900 dark:text-purple-100 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.4)' }}>
-              {users.filter(u => u.is_studying).length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200/50 dark:border-amber-800/30 shadow-lg hover:shadow-xl transition-all duration-300 h-20 flex flex-col justify-center">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-4">
-            <CardTitle className="text-sm font-semibold text-amber-800 dark:text-amber-200 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)' }}>Com Aprovações</CardTitle>
-            <Award className="h-5 w-5 text-amber-700 dark:text-amber-300 drop-shadow-lg" style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4))' }} />
-          </CardHeader>
-          <CardContent className="pt-0 text-center px-4">
-            <div className="text-2xl font-black text-amber-900 dark:text-amber-100 drop-shadow-lg" style={{ textShadow: '0 2px 4px rgba(0, 0, 0, 0.4)' }}>
-              {users.filter(u => u.approvalCount > 0).length}
-            </div>
-          </CardContent>
-        </Card>
       </div>
  
       {/* Members Section */}

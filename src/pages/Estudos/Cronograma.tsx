@@ -86,11 +86,23 @@ const Cronograma = () => {
   const [studyNotes, setStudyNotes] = useState<string>('');
   const [questionsTotal, setQuestionsTotal] = useState<number>(0);
   const [questionsCorrect, setQuestionsCorrect] = useState<number>(0);
+  const [questionsError, setQuestionsError] = useState<string>('');
   const [courseName, setCourseName] = useState<string>('');
   const [courseProgress, setCourseProgress] = useState<string>('');
   const [studyType, setStudyType] = useState<'pdf' | 'video'>('pdf');
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [currentVideo, setCurrentVideo] = useState<string>('');
+
+  // Função de validação das questões
+  const validateQuestions = (total: number, correct: number) => {
+    if (correct > total) {
+      setQuestionsError('Questões corretas não podem ser maiores que o total');
+      return false;
+    }
+    setQuestionsError('');
+    return true;
+  };
+
   const {
     addStudySession
   } = useStudyStatistics();
@@ -541,6 +553,12 @@ const Cronograma = () => {
       toast.error('Preencha pelo menos a duração do estudo');
       return;
     }
+
+    // Validar questões antes de salvar
+    if (questionsTotal > 0 && !validateQuestions(questionsTotal, questionsCorrect)) {
+      toast.error('Corrija os valores das questões antes de salvar');
+      return;
+    }
     try {
 
       // Salvar APENAS no cronograma (fonte única de verdade)
@@ -925,12 +943,43 @@ const Cronograma = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="questions-total">Total de questões</Label>
-                  <Input id="questions-total" type="number" min="0" value={questionsTotal} onChange={e => setQuestionsTotal(Number(e.target.value))} placeholder="Questões resolvidas" />
+                  <Input 
+                    id="questions-total" 
+                    type="number" 
+                    min="0" 
+                    value={questionsTotal} 
+                    onChange={e => {
+                      const value = Number(e.target.value);
+                      setQuestionsTotal(value);
+                      // Validar se as questões corretas não ficaram maiores que o novo total
+                      if (questionsCorrect > value) {
+                        setQuestionsCorrect(value);
+                        setQuestionsError('');
+                      }
+                    }} 
+                    placeholder="Questões resolvidas" 
+                  />
                 </div>
 
                 {questionsTotal > 0 && <div>
                     <Label htmlFor="questions-correct">Questões corretas</Label>
-                    <Input id="questions-correct" type="number" min="0" max={questionsTotal} value={questionsCorrect} onChange={e => setQuestionsCorrect(Number(e.target.value))} placeholder="Acertos" />
+                    <Input 
+                      id="questions-correct" 
+                      type="number" 
+                      min="0" 
+                      max={questionsTotal} 
+                      value={questionsCorrect} 
+                      onChange={e => {
+                        const value = Number(e.target.value);
+                        setQuestionsCorrect(value);
+                        validateQuestions(questionsTotal, value);
+                      }} 
+                      placeholder="Acertos"
+                      className={questionsError ? 'border-red-500' : ''}
+                    />
+                    {questionsError && (
+                      <p className="text-sm text-red-500 mt-1">{questionsError}</p>
+                    )}
                   </div>}
               </div>
 
