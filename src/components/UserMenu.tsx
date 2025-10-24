@@ -85,7 +85,11 @@ const UserMenu: React.FC = () => {
   return (
     <div className="flex items-center gap-2">
       {isStudying && isRunning && (
-        <Badge variant="secondary" className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20">
+        <Badge 
+          variant="secondary" 
+          className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+          onClick={() => navigate('/estudos/cronograma')}
+        >
           <Clock className="h-3 w-3" />
           <span className="font-mono text-xs">{formatTime(minutes, seconds)}</span>
           <span className="text-xs">• Estudando</span>

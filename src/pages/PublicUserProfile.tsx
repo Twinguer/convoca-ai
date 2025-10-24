@@ -414,11 +414,11 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
       <div className="grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-2">
         {/* Coluna Esquerda - Perfil do Usuário */}
         <div className="lg:col-span-3 space-y-4">
-          <Card>
+          <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
-                  <Avatar className="h-32 w-32">
+                  <Avatar className="h-32 w-32" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
                     {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt={profile.name} /> : <AvatarFallback className="text-3xl">
                         {getInitials(profile?.name || '')}
                       </AvatarFallback>}
@@ -447,7 +447,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           </Card>
           
           {/* Sobre mim */}
-          {hasAboutInfo && <Card>
+          {hasAboutInfo && <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Sobre mim</CardTitle>
               </CardHeader>
@@ -488,7 +488,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
             
             
             {/* Rotina de estudos */}
-            {profile.rotina_estudos && <Card className="mb-6">
+            {profile.rotina_estudos && <Card className="mb-6 rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
                 <CardHeader className="pb-3">
                   <CardTitle>Rotina de estudos</CardTitle>
                 </CardHeader>
@@ -500,7 +500,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               </Card>}
             
             {/* Aprovações */}
-            <Card className="mb-6">
+            <Card className="mb-6 rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
               <CardHeader className="pb-3">
                 <CardTitle>Aprovações</CardTitle>
               </CardHeader>
@@ -521,7 +521,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
             </Card>
             
             {/* Rankings */}
-            <Card className="mb-6">
+            <Card className="mb-6 rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
               <CardHeader className="pb-3">
                 <CardTitle>Rankings</CardTitle>
               </CardHeader>
@@ -574,7 +574,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         {/* Coluna Direita - Seguidores */}
         <div className="lg:col-span-3 space-y-4">
           {/* Seguidores */}
-          <Card>
+          <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -585,7 +585,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               {followers.length > 0 ? <div className="space-y-3">
                   <div className="grid grid-cols-3 gap-2">
                     {followers.slice(0, 6).map(follower => <div key={follower.id} className="text-center">
-                        <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" onClick={() => handleViewProfile(follower.id)}>
+                        <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }} onClick={() => handleViewProfile(follower.id)}>
                           <AvatarImage src={follower.avatar_url || ''} alt={follower.name} />
                           <AvatarFallback className="text-xs">
                             {getInitials(follower.name)}
@@ -614,7 +614,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           </Card>
           
           {/* Seguindo */}
-          <Card>
+          <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="h-4 w-4" />
@@ -625,7 +625,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
               {following.length > 0 ? <div className="space-y-3">
                   <div className="grid grid-cols-3 gap-2">
                     {following.slice(0, 6).map(followedUser => <div key={followedUser.id} className="text-center">
-                        <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" onClick={() => handleViewProfile(followedUser.id)}>
+                        <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }} onClick={() => handleViewProfile(followedUser.id)}>
                           <AvatarImage src={followedUser.avatar_url || ''} alt={followedUser.name} />
                           <AvatarFallback className="text-xs">
                             {getInitials(followedUser.name)}

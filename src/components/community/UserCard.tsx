@@ -75,18 +75,22 @@ export const UserCard: React.FC<UserCardProps> = ({
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card text-card-foreground shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-      <div className="relative p-2.5 md:p-3.5">
-        <div className="flex flex-col items-center mb-2.5">
-          <div className="relative inline-block mb-3">
-            <Avatar className="h-14 w-14 md:h-[72px] md:w-[72px]">
+    <div 
+      className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer" 
+      style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}
+      onClick={handleCardClick}
+    >
+      <div className="relative p-4 md:p-5">
+        <div className="flex flex-col items-center mb-4">
+          <div className="relative inline-block mb-4 flex justify-center">
+            <Avatar className="h-16 w-16 md:h-20 md:w-20" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
               <AvatarImage src={avatarUrl} alt={userProfile.name} onError={() => setAvatarError(true)} />
-              <AvatarFallback className="text-lg">{getInitials(userProfile.name)}</AvatarFallback>
+              <AvatarFallback className="text-xl">{getInitials(userProfile.name)}</AvatarFallback>
             </Avatar>
             <OnlineIndicator userId={userProfile.id} />
           </div>
           
-          <h3 className="font-medium text-center truncate max-w-full px-2">
+          <h3 className="font-medium text-center truncate max-w-full px-2 text-base flex justify-center">
             {userProfile.name ? 
               userProfile.name.split(' ').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
@@ -96,25 +100,21 @@ export const UserCard: React.FC<UserCardProps> = ({
           </h3>
         </div>
         
-        <div className="hidden sm:grid grid-cols-3 gap-x-4 text-center border-t border-b divide-x divide-border py-2 mb-2.5">
+        <div className="hidden sm:grid grid-cols-3 gap-x-4 text-center border-t border-b divide-x divide-border py-3 mb-3">
           <div className="flex flex-col items-center px-2">
-            <span className="text-sm font-semibold">{userProfile.postCount}</span>
-            <span className="text-[11px] text-muted-foreground leading-[1.1] whitespace-nowrap">Rankings</span>
+            <span className="text-base font-semibold">{userProfile.postCount}</span>
+            <span className="text-xs text-muted-foreground leading-[1.1] whitespace-nowrap">Rankings</span>
           </div>
           <div className="flex flex-col items-center px-2">
-            <span className="text-sm font-semibold">{userProfile.followerCount}</span>
-            <span className="text-[11px] text-muted-foreground leading-[1.1] whitespace-nowrap">Seguidores</span>
+            <span className="text-base font-semibold">{userProfile.followerCount}</span>
+            <span className="text-xs text-muted-foreground leading-[1.1] whitespace-nowrap">Seguidores</span>
           </div>
           <div className="flex flex-col items-center px-2">
-            <span className="text-sm font-semibold">{userProfile.approvalCount || 0}</span>
-            <span className="text-[11px] text-muted-foreground leading-[1.1] whitespace-nowrap">Aprovações</span>
+            <span className="text-base font-semibold">{userProfile.approvalCount || 0}</span>
+            <span className="text-xs text-muted-foreground leading-[1.1] whitespace-nowrap">Aprovações</span>
           </div>
         </div>
         
-        <Button onClick={handleCardClick} variant="ghost" size="sm" className="w-full">
-          <User className="h-4 w-4 mr-2" />
-          Ver Perfil
-        </Button>
       </div>
     </div>
   );

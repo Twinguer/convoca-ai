@@ -40,7 +40,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <Avatar className="h-32 w-32">
+      <Avatar className="h-32 w-32" style={{ boxShadow: '0 8px 20px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' }}>
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={name} />
         ) : (

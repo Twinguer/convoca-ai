@@ -610,7 +610,7 @@ const Cronograma = () => {
       {/* Clock, Timer, and Calendar Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-[5px]">
         {/* Clock Card */}
-        <Card>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -632,7 +632,7 @@ const Cronograma = () => {
         </Card>
 
         {/* Timer Card */}
-        <Card>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Timer className="h-5 w-5" />
@@ -692,7 +692,7 @@ const Cronograma = () => {
         </Card>
 
         {/* Calendar Card */}
-        <Card>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
@@ -969,7 +969,7 @@ const Cronograma = () => {
         </DialogContent>
       </Dialog>
 
-      {cycles.length === 0 ? <Card>
+      {cycles.length === 0 ? <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
           <CardContent className="text-center p-8">
             <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum ciclo de estudo encontrado</h3>
@@ -977,7 +977,7 @@ const Cronograma = () => {
               Crie um ciclo de estudos primeiro para poder organizar seu cronograma
             </p>
           </CardContent>
-        </Card> : <Card>
+        </Card> : <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -1121,7 +1121,7 @@ const Cronograma = () => {
                         
 
                         return (
-                          <div key={session.id} className={`p-3 rounded-lg border relative cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md min-h-[180px] ${hasData ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-muted bg-muted/30 hover:bg-muted/50'}`} onClick={(e) => {
+                          <div key={session.id} className={`p-3 rounded-lg border relative cursor-pointer transition-all duration-300 min-h-[180px] ${hasData ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-muted bg-muted/30 hover:bg-muted/50'} rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden`} style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }} onClick={(e) => {
                             openEditModal(session);
                           }}>
                             <div className="space-y-3 h-full flex flex-col">
