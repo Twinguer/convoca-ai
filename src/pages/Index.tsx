@@ -98,7 +98,7 @@ const Index = () => {
                       loading="eager"
                       decoding="sync"
                       style={{
-                        imageRendering: 'auto'
+                        imageRendering: "auto",
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -126,7 +126,7 @@ const Index = () => {
                       loading="eager"
                       decoding="sync"
                       style={{
-                        imageRendering: 'auto'
+                        imageRendering: "auto",
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -137,7 +137,7 @@ const Index = () => {
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">Cabeça fria.</h3>
                     <p className="text-muted-foreground">
-                      Com o Nomeia Aí vamos para a prova sabendo quem são os nossos concorrentes que em que nível eles
+                      Com o Nomeia Aí vamos para a prova sabendo quem são os nossos concorrentes e em que nível eles
                       estão.{" "}
                     </p>
                   </div>
@@ -154,7 +154,7 @@ const Index = () => {
                       loading="eager"
                       decoding="sync"
                       style={{
-                        imageRendering: 'auto'
+                        imageRendering: "auto",
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
