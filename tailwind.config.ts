@@ -105,6 +105,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				notification: {
+					info: 'hsl(var(--notification-info))',
+					success: 'hsl(var(--notification-success))',
+					warning: 'hsl(var(--notification-warning))',
+					error: 'hsl(var(--notification-error))',
+					muted: 'hsl(var(--notification-muted))',
+					'info-bg': 'hsl(var(--notification-info-bg))',
+					'success-bg': 'hsl(var(--notification-success-bg))',
+					'warning-bg': 'hsl(var(--notification-warning-bg))',
+					'error-bg': 'hsl(var(--notification-error-bg))'
 				}
 			},
 			borderRadius: {

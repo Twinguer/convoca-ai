@@ -170,9 +170,6 @@ const PerformanceChart: React.FC<PerformanceChartProps> = ({
               <BarChart3 className="h-5 w-5" />
               Gráfico de Desempenho
             </CardTitle>
-            <CardDescription>
-              Acompanhe sua evolução ao longo do tempo
-            </CardDescription>
           </div>
           <Select value={timeFilter} onValueChange={(value: 'day' | 'week' | 'month') => onTimeFilterChange(value)}>
             <SelectTrigger className="w-32">

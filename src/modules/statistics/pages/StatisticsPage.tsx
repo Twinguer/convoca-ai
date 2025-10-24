@@ -9,6 +9,9 @@ import { BarChart3, TrendingUp, Clock, Target, RotateCcw, CheckCircle, XCircle }
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
 import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
+import SubjectTimeDistributionChart from '@/components/StudyStats/SubjectTimeDistributionChart';
+import AccuracyEvolutionChart from '@/components/StudyStats/AccuracyEvolutionChart';
+import StudyHeatmapChart from '@/components/StudyStats/StudyHeatmapChart';
 import Footer from '@/components/Footer';
 const StatisticsPage = () => {
   const {
@@ -56,7 +59,6 @@ const StatisticsPage = () => {
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:justify-between md:items-start">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Estatísticas de Estudo</h1>
-          <p className="text-muted-foreground">Acompanhe seu desempenho e evolução nos estudos</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <Select value={timeFilter} onValueChange={(value: 'day' | 'week' | 'month') => setTimeFilter(value)}>
@@ -136,18 +138,26 @@ const StatisticsPage = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+      {/* Gráfico de Desempenho - linha separada */}
+      <div className="mb-6">
         <PerformanceChart statistics={statistics} timeFilter={timeFilter} onTimeFilterChange={setTimeFilter} />
-        
+      </div>
+
+      {/* Outros 3 gráficos em uma linha para telas grandes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+        <SubjectTimeDistributionChart statistics={statistics} />
+        <StudyHeatmapChart statistics={statistics} />
+        <AccuracyEvolutionChart statistics={statistics} />
+      </div>
+
+      {/* Desempenho em Questões */}
+      <div className="mb-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-success" />
               Desempenho em Questões
             </CardTitle>
-            <CardDescription>
-              Estatísticas de acertos e erros
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="geral" className="w-full">

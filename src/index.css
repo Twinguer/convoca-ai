@@ -63,6 +63,19 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 32.6% 17.5%;
     --radius: 0.5rem;
+    
+    /* Tokens semânticos para notificações */
+    --notification-info: var(--primary);
+    --notification-success: var(--success);
+    --notification-warning: 38 92% 50%;
+    --notification-error: var(--destructive);
+    --notification-muted: var(--muted-foreground);
+    
+    /* Backgrounds semânticos para notificações */
+    --notification-info-bg: var(--primary-50);
+    --notification-success-bg: 142 76% 36% / 0.1;
+    --notification-warning-bg: 38 92% 50% / 0.1;
+    --notification-error-bg: var(--destructive) / 0.1;
   }
 
   .theme-rose {
@@ -163,6 +176,19 @@
 
     --border: 180 25% 20%;
     --input: 180 25% 15%;
+    
+    /* Tokens semânticos para notificações no modo escuro */
+    --notification-info: var(--primary);
+    --notification-success: var(--success);
+    --notification-warning: 38 92% 60%;
+    --notification-error: var(--destructive);
+    --notification-muted: var(--muted-foreground);
+    
+    /* Backgrounds semânticos para notificações no modo escuro */
+    --notification-info-bg: var(--primary) / 0.1;
+    --notification-success-bg: var(--success) / 0.1;
+    --notification-warning-bg: 38 92% 50% / 0.1;
+    --notification-error-bg: var(--destructive) / 0.1;
     --ring: 158 64% 39%;
     
     /* Custom page background for dark mode */
@@ -336,6 +362,22 @@
     font-size: 10px;
     color: hsl(var(--primary-foreground));
     font-weight: bold;
+  }
+
+  /* Remover preenchimento do cursor do tooltip do Recharts */
+  .recharts-tooltip-cursor {
+    fill: transparent !important;
+  }
+  
+  .recharts-curve.recharts-tooltip-cursor {
+    stroke: hsl(var(--border)) !important;
+    stroke-width: 2px !important;
+  }
+  
+  .recharts-rectangle.recharts-tooltip-cursor {
+    fill: transparent !important;
+    stroke: hsl(var(--border)) !important;
+    stroke-width: 2px !important;
   }
 }
 

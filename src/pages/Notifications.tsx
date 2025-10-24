@@ -10,15 +10,15 @@ import { ptBR } from 'date-fns/locale';
 const NotificationIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'new_participant':
-      return <User className="h-5 w-5 text-blue-600" />;
+      return <User className="h-5 w-5 text-notification-info" />;
     case 'admin_broadcast':
-      return <Users className="h-5 w-5 text-purple-600" />;
+      return <Users className="h-5 w-5 text-notification-info" />;
     case 'admin_ranking':
-      return <Trophy className="h-5 w-5 text-green-600" />;
+      return <Trophy className="h-5 w-5 text-notification-success" />;
     case 'admin_direct':
-      return <Bell className="h-5 w-5 text-orange-600" />;
+      return <Bell className="h-5 w-5 text-notification-warning" />;
     default:
-      return <Bell className="h-5 w-5 text-gray-600" />;
+      return <Bell className="h-5 w-5 text-notification-muted" />;
   }
 };
 
@@ -38,7 +38,7 @@ const NotificationCard = ({
     <Card className={`transition-all duration-200 ${
       notification.is_read 
         ? 'bg-background border-border' 
-        : 'bg-primary-50 border-primary-200 shadow-sm'
+        : 'bg-primary/5 border-primary/20 shadow-sm'
     }`}>
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
@@ -52,7 +52,7 @@ const NotificationCard = ({
                 {notification.title}
               </h3>
               {!notification.is_read && (
-                <Badge variant="secondary" className="ml-2 bg-primary text-primary-foreground">
+                <Badge variant="default" className="ml-2">
                   Nova
                 </Badge>
               )}
