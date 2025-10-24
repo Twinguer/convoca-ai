@@ -69,13 +69,7 @@ const CommunityPage = () => {
         {/* Search Filter */}
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Buscar usuários por nome..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+          <Input type="text" placeholder="Buscar usuários por nome..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10" />
         </div>
       </div>
  
@@ -130,10 +124,7 @@ const CommunityPage = () => {
  
       {/* Members Section */}
       <div className="mb-8">
-        <CommunitySectionHeader 
-          title="Membros da Comunidade"
-          subtitle={`${sortedUsers.length} concurseiros conectados`}
-        />
+        
         {sortedUsers.length > 0 ? <UserGrid users={sortedUsers} onClick={handleUserClick} /> : <CommunityEmptyState />}
       </div>
       <Footer />

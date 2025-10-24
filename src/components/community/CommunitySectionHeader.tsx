@@ -14,7 +14,7 @@ export const CommunitySectionHeader: React.FC<CommunitySectionHeaderProps> = ({
   return <div className="mb-6">
       <div className="flex items-center gap-2 mb-2">
         {icon}
-        <h2 className="text-xl font-semibold">{title}</h2>
+        
       </div>
       {description}
     </div>;
