@@ -227,41 +227,79 @@ export const useStudyCyclesV2 = () => {
       const cycle = userStudyData.study_cycles.find(c => c.id === cycleId);
       if (!cycle) return false;
 
-      const daySchedule = cycle.schedule_data.weekly_schedule.find(d => d.day === dayOfWeek);
-      const session = daySchedule?.sessions.find(s => s.id === sessionId);
-      if (!session) return false;
-
-      // Salvar sessão completada em study_sessions usando função RPC
-      const { error: sessionError } = await supabase.rpc('add_completed_study_session', {
-        user_uuid: user.id,
-        session_data: {
-          session_date: localDate,
-          duration_minutes: completedSession.duration_minutes,
-          total_questions: completedSession.questions,
-          total_correct_answers: completedSession.correct_answers,
-          notes: completedSession.notes,
-          discipline_name: session.discipline_name,
-          block_name: session.block_name,
-          schedule_session_id: sessionId,
-          cycle_id: cycleId,
-          study_type: 'timer'
-        }
-      });
-
-      if (sessionError) {
-        console.error('Error saving completed session:', sessionError);
-        toast.error('Erro ao registrar sessão');
+      // ✅ Buscar sessão em study_schedule primeiro (novo)
+      let session = userStudyData.study_schedule?.find((s: any) => s.id === sessionId);
+      let disciplineName = session?.discipline_name;
+      let blockName = session?.block_name;
+      
+      // Fallback: buscar em weekly_schedule (legado)
+      if (!session) {
+        const daySchedule = cycle.schedule_data.weekly_schedule?.find((d: any) => d.day === dayOfWeek);
+        session = daySchedule?.sessions.find((s: any) => s.id === sessionId);
+        disciplineName = session?.discipline_name;
+        blockName = session?.block_name;
+      }
+      
+      if (!session) {
+        toast.error('Sessão não encontrada');
         return false;
       }
 
-      // Atualizar total_stats no ciclo (para exibição no cronograma)
+      // Salvar sessão completada em study_sessions
+      const newCompletedSession = {
+        id: generateId(),
+        schedule_session_id: sessionId,
+        cycle_id: cycleId,
+        date: localDate,
+        duration_minutes: completedSession.duration_minutes,
+        questions: completedSession.questions,
+        correct_answers: completedSession.correct_answers,
+        notes: completedSession.notes,
+        discipline_name: disciplineName,
+        block_name: blockName,
+        study_type: 'manual',
+        session_date: localDate,
+        start_time: session.start_time,
+        end_time: session.end_time,
+        session_count: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const updatedStudySessions = [...(userStudyData.study_sessions || []), newCompletedSession];
+
+      // Atualizar total_stats em study_schedule (novo)
+      const updatedSchedule = (userStudyData.study_schedule || []).map((s: any) => {
+        if (s.id === sessionId) {
+          const currentStats = s.total_stats || {
+            total_duration_minutes: 0,
+            total_questions: 0,
+            total_correct: 0,
+            session_count: 0
+          };
+          
+          return {
+            ...s,
+            total_stats: {
+              total_duration_minutes: currentStats.total_duration_minutes + completedSession.duration_minutes,
+              total_questions: currentStats.total_questions + completedSession.questions,
+              total_correct: currentStats.total_correct + completedSession.correct_answers,
+              session_count: currentStats.session_count + 1,
+              last_session_date: localDate
+            }
+          };
+        }
+        return s;
+      });
+
+      // Atualizar total_stats no ciclo (para exibição no cronograma) - fallback legado
       const updatedCycles = userStudyData.study_cycles.map(c => {
         if (c.id === cycleId) {
           const updatedSchedule = { ...c.schedule_data };
-          const day = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
+          const day = updatedSchedule.weekly_schedule?.find((d: any) => d.day === dayOfWeek);
           
           if (day) {
-            const sess = day.sessions.find(s => s.id === sessionId);
+            const sess = day.sessions.find((s: any) => s.id === sessionId);
             if (sess) {
               if (!sess.total_stats) {
                 sess.total_stats = {
@@ -285,8 +323,10 @@ export const useStudyCyclesV2 = () => {
         return c;
       });
 
-      // Atualizar apenas total_stats nos ciclos
+      // Salvar tudo: study_sessions, study_schedule e cycles
       const success = await UserStudyService.upsertUserStudyData(user.id, {
+        study_sessions: updatedStudySessions,
+        study_schedule: updatedSchedule,
         study_cycles: updatedCycles
       });
 

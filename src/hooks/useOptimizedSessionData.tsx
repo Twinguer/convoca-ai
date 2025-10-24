@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { UserStudyService } from '@/services/userStudyService';
-import { logger } from '@/utils/logger';
 
 interface SessionData {
   id: string;
@@ -43,25 +42,13 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
   const processAllSessions = useCallback((userStudyData: any): Record<string, SessionData> => {
     const allSessionData: Record<string, SessionData> = {};
     
-    logger.debug('Processando todas as sessões de uma vez');
-    logger.debug('Dados recebidos:', userStudyData);
-    
-    for (const cycle of userStudyData.study_cycles) {
-      logger.debug('Processando ciclo:', cycle.cycle_name);
+    // ✅ Prioridade 1: Buscar de study_schedule (estrutura nova)
+    if (userStudyData.study_schedule && Array.isArray(userStudyData.study_schedule)) {
       
-      for (const daySchedule of cycle.schedule_data.weekly_schedule) {
-        logger.debug('Processando dia:', daySchedule.day);
+      for (const session of userStudyData.study_schedule) {
+        const cycle = userStudyData.study_cycles.find((c: any) => c.id === session.cycle_id);
         
-        for (const session of daySchedule.sessions) {
-          logger.debug('Processando sessão:', {
-            id: session.id,
-            discipline: session.discipline_name,
-            total_stats: session.total_stats,
-            hasStats: !!session.total_stats,
-            duration: session.total_stats?.total_duration_minutes,
-            questions: session.total_stats?.total_questions
-          });
-          
+        if (cycle) {
           allSessionData[session.id] = {
             id: session.id,
             cycle_name: cycle.cycle_name,
@@ -75,8 +62,29 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       }
     }
     
-    logger.debug(`Processadas ${Object.keys(allSessionData).length} sessões`);
-    logger.debug('Dados processados:', allSessionData);
+    // ✅ Fallback: Buscar de weekly_schedule (estrutura antiga)
+    if (Object.keys(allSessionData).length === 0) {
+      
+      for (const cycle of userStudyData.study_cycles) {
+        if (cycle.schedule_data?.weekly_schedule) {
+          for (const daySchedule of cycle.schedule_data.weekly_schedule) {
+            for (const session of daySchedule.sessions) {
+              allSessionData[session.id] = {
+                id: session.id,
+                cycle_name: cycle.cycle_name,
+                duration_minutes: session.total_stats?.total_duration_minutes || 0,
+                questions: session.total_stats?.total_questions || 0,
+                correct_answers: session.total_stats?.total_correct || 0,
+                session_count: session.total_stats?.session_count || 1,
+                session_link: session.session_link
+              };
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ Processadas ${Object.keys(allSessionData).length} sessões`);
     return allSessionData;
   }, []);
 
@@ -91,12 +99,12 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
     const isCacheValid = !forceRefresh && (now - lastFetch) < CACHE_DURATION && Object.keys(sessionData).length > 0;
 
     if (isCacheValid) {
-      logger.debug('Usando dados em cache');
+      console.log('📦 Usando dados em cache');
       setLoading(false);
       return;
     }
 
-    logger.debug('Carregando dados de sessão do banco');
+    console.log('🔄 Carregando dados de sessão do banco');
     setLoading(true);
     setError(null);
 
@@ -104,7 +112,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       
       if (!userStudyData) {
-        logger.warn('Nenhum dado do usuário encontrado');
+        console.warn('⚠️ Nenhum dado do usuário encontrado');
         setSessionData({});
         return;
       }
@@ -113,10 +121,10 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       setSessionData(processedData);
       setLastFetch(now);
       
-      logger.info(`Dados de sessão carregados: ${Object.keys(processedData).length} sessões`);
+      console.log(`✅ Dados de sessão carregados: ${Object.keys(processedData).length} sessões`);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
-      logger.error('Erro ao carregar dados de sessão', err);
+      console.error('❌ Erro ao carregar dados de sessão', err);
       setError(errorMessage);
       setSessionData({});
     } finally {
