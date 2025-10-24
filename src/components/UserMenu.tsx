@@ -1,15 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, LogOut, Users, Clock, Palette, Moon, Sun, Bell } from 'lucide-react';
+import { User, LogOut, Users, Clock, Moon, Sun, Bell } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTimer } from '@/contexts/TimerContext';
 import { useToast } from '@/components/ui/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useTheme as useColorTheme, Theme as ColorTheme } from '@/contexts/ThemeContext';
 import { useTheme as useDarkTheme } from 'next-themes';
 import { useNotifications } from '@/hooks/useNotifications';
 import { UserAvatar } from '@/components/profile/UserAvatar';
@@ -17,7 +16,6 @@ import { UserAvatar } from '@/components/profile/UserAvatar';
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isStudying, minutes, seconds, isRunning } = useTimer();
-  const { theme: colorTheme, setTheme: setColorTheme } = useColorTheme();
   const { theme: darkTheme, setTheme: setDarkTheme } = useDarkTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -62,13 +60,6 @@ const UserMenu: React.FC = () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const themeOptions: { value: ColorTheme; label: string; color: string }[] = [
-    { value: 'emerald', label: 'Verde Esmeralda', color: 'bg-primary-500' },
-    { value: 'rose', label: 'Rosa', color: 'bg-rose-500' },
-    { value: 'blue', label: 'Azul', color: 'bg-blue-500' },
-    { value: 'slate', label: 'Preto', color: 'bg-slate-700' },
-    { value: 'purple', label: 'Lilás', color: 'bg-purple-500' },
-  ];
 
   if (!user) {
     return (
@@ -168,30 +159,6 @@ const UserMenu: React.FC = () => {
               <span className="sr-only">Alternar modo escuro</span>
             </Button>
           </div>
-          
-          <DropdownMenuSeparator />
-          
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="flex w-full cursor-pointer items-center">
-              <Palette className="mr-2 h-4 w-4" />
-              <span>Cores do Tema</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              {themeOptions.map((themeOption) => (
-                <DropdownMenuItem
-                  key={themeOption.value}
-                  onClick={() => setColorTheme(themeOption.value)}
-                  className="flex items-center gap-2"
-                >
-                  <div className={`w-4 h-4 rounded-full ${themeOption.color}`} />
-                  <span>{themeOption.label}</span>
-                  {colorTheme === themeOption.value && (
-                    <span className="ml-auto text-xs">✓</span>
-                  )}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
           
           <DropdownMenuSeparator />
           
