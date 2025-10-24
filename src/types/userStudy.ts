@@ -39,18 +39,29 @@ export interface StudySession {
 
 export interface StudySchedule {
   id: string;
+  schedule_session_id?: string;
+  cycle_id?: string; // ✅ Referência ao ciclo
   day_of_week: number;
   start_time: string;
   end_time: string;
-  is_active: boolean;
+  is_active?: boolean;
   discipline_name?: string;
   block_name?: string;
-  cycle_id?: string;
   session_link?: string;
   study_plan_id?: string;
   subject_id?: string;
+  
+  // Stats consolidados da sessão
+  total_stats?: {
+    session_count: number;
+    total_duration_minutes: number;
+    total_questions: number;
+    total_correct: number;
+    last_session_date?: string;
+  };
+  
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface StudyStatistics {
@@ -99,7 +110,11 @@ export interface StudyCycleV2 {
   video_link?: string;
   is_active: boolean;
   schedule_data: {
-    weekly_schedule: Array<{
+    metadata: {
+      total_sessions: number;
+      total_hours: number;
+    };
+    weekly_schedule?: Array<{ // ⚠️ DEPRECATED: Usar study_schedule table
       day: number;
       sessions: Array<{
         id: string;
@@ -108,6 +123,8 @@ export interface StudyCycleV2 {
         discipline_name: string;
         block_name: string;
         session_link?: string;
+        study_plan_id?: string;
+        subject_id?: string;
         completed_sessions?: Array<{
           date: string;
           duration_minutes: number;
@@ -122,13 +139,11 @@ export interface StudyCycleV2 {
           session_count: number;
           last_session_date?: string;
         };
+        created_at?: string;
+        updated_at?: string;
       }>;
     }>;
-    metadata: {
-      total_sessions: number;
-      total_hours: number;
-    };
-    available_blocks?: Array<{
+    available_blocks: Array<{
       id: string;
       name: string;
       disciplines: Array<{
@@ -136,14 +151,14 @@ export interface StudyCycleV2 {
         name: string;
       }>;
     }>;
-    available_disciplines?: Array<{
+    available_disciplines: Array<{
       id: string;
       name: string;
       block_name: string;
     }>;
   };
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface StudyPlan {

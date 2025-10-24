@@ -161,8 +161,6 @@ const Cronograma = () => {
   };
   const fetchSessions = async () => {
     try {
-      
-      // Buscar sessões de todos os ciclos ativos
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
       if (!userStudyData) {
         setSessions([]);
@@ -171,28 +169,51 @@ const Cronograma = () => {
 
       const allSessions: StudySession[] = [];
       
-      // Percorrer todos os ciclos e extrair sessões do weekly_schedule
-      userStudyData.study_cycles.forEach(cycle => {
-        if (cycle.is_active && cycle.schedule_data?.weekly_schedule) {
-          cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
-            daySchedule.sessions.forEach(session => {
-              allSessions.push({
-                id: session.id,
-                day: daySchedule.day,
-                startTime: session.start_time,
-                endTime: session.end_time,
-                disciplineName: session.discipline_name || 'Disciplina',
-                blockName: session.block_name || 'Bloco',
-                cycleId: cycle.id,
-                sessionLink: session.session_link || ''
+      // ✅ Buscar de study_schedule primeiro
+      if (userStudyData.study_schedule && userStudyData.study_schedule.length > 0) {
+        userStudyData.study_schedule.forEach(session => {
+          // Verificar se o ciclo está ativo
+          const cycle = userStudyData.study_cycles.find(c => c.id === session.cycle_id);
+          if (cycle && cycle.is_active) {
+            allSessions.push({
+              id: session.id,
+              day: session.day_of_week,
+              startTime: session.start_time,
+              endTime: session.end_time,
+              disciplineName: session.discipline_name || 'Disciplina',
+              blockName: session.block_name || 'Bloco',
+              cycleId: session.cycle_id!,
+              sessionLink: session.session_link || ''
+            });
+          }
+        });
+      }
+      
+      // ✅ Fallback: buscar de weekly_schedule (legado)
+      if (allSessions.length === 0) {
+        userStudyData.study_cycles.forEach(cycle => {
+          if (cycle.is_active && cycle.schedule_data?.weekly_schedule) {
+            cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
+              daySchedule.sessions.forEach(session => {
+                allSessions.push({
+                  id: session.id,
+                  day: daySchedule.day,
+                  startTime: session.start_time,
+                  endTime: session.end_time,
+                  disciplineName: session.discipline_name || 'Disciplina',
+                  blockName: session.block_name || 'Bloco',
+                  cycleId: cycle.id,
+                  sessionLink: session.session_link || ''
+                });
               });
             });
-          });
-        }
-      });
+          }
+        });
+      }
 
       setSessions(allSessions);
     } catch (error) {
+      console.error('Error fetching sessions:', error);
     } finally {
       setLoading(false);
     }

@@ -313,7 +313,7 @@ export class UserStudyService {
   }
 
   /**
-   * Remove schedule session from study cycles
+   * Remove schedule session (from study_schedule or legacy structure)
    */
   static async removeScheduleSession(userId: string, sessionId: string): Promise<boolean> {
     try {
@@ -325,39 +325,67 @@ export class UserStudyService {
         return false;
       }
 
-      // Atualizar ciclos removendo a sessão
-      const updatedCycles = data.study_cycles.map(cycle => {
-        const updatedSchedule = { ...cycle.schedule_data };
-        
-        updatedSchedule.weekly_schedule = updatedSchedule.weekly_schedule.map(daySchedule => ({
-          ...daySchedule,
-          sessions: daySchedule.sessions.filter(session => session.id !== sessionId)
-        }));
+      // ✅ Remover de study_schedule
+      const updatedSchedule = (data.study_schedule || []).filter(s => s.id !== sessionId);
 
-        // Recalcular metadados
-        const totalSessions = updatedSchedule.weekly_schedule.reduce(
-          (total, day) => total + day.sessions.length, 
-          0
-        );
-
-        return {
-          ...cycle,
-          schedule_data: {
-            ...updatedSchedule,
-            metadata: {
-              ...updatedSchedule.metadata,
-              total_sessions: totalSessions
-            }
+      // Encontrar cycle_id da sessão removida para atualizar metadata
+      const removedSession = (data.study_schedule || []).find(s => s.id === sessionId);
+      
+      let updatedCycles = data.study_cycles;
+      
+      if (removedSession) {
+        // Atualizar metadata do ciclo
+        updatedCycles = data.study_cycles.map(cycle => {
+          if (cycle.id === removedSession.cycle_id) {
+            return {
+              ...cycle,
+              schedule_data: {
+                ...cycle.schedule_data,
+                metadata: {
+                  ...cycle.schedule_data.metadata,
+                  total_sessions: Math.max(0, (cycle.schedule_data.metadata.total_sessions || 1) - 1)
+                }
+              }
+            };
           }
-        };
-      });
+          return cycle;
+        });
+      } else {
+        // Fallback: remover de weekly_schedule (legado)
+        updatedCycles = data.study_cycles.map(cycle => {
+          const updatedScheduleData = { ...cycle.schedule_data };
+          
+          if (updatedScheduleData.weekly_schedule) {
+            updatedScheduleData.weekly_schedule = updatedScheduleData.weekly_schedule.map(daySchedule => ({
+              ...daySchedule,
+              sessions: daySchedule.sessions.filter(session => session.id !== sessionId)
+            }));
 
-      logger.debug('Ciclos atualizados após remoção', { 
-        totalCycles: updatedCycles.length,
+            const totalSessions = updatedScheduleData.weekly_schedule.reduce(
+              (total, day) => total + day.sessions.length, 
+              0
+            );
+
+            updatedScheduleData.metadata = {
+              ...updatedScheduleData.metadata,
+              total_sessions: totalSessions
+            };
+          }
+
+          return {
+            ...cycle,
+            schedule_data: updatedScheduleData
+          };
+        });
+      }
+
+      logger.debug('Dados atualizados após remoção', { 
+        scheduleSessions: updatedSchedule.length,
         sessionRemoved: sessionId 
       });
 
       return await this.upsertUserStudyData(userId, {
+        study_schedule: updatedSchedule,
         study_cycles: updatedCycles
       });
     } catch (error) {

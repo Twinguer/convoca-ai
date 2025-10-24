@@ -127,7 +127,7 @@ export const useStudyCyclesV2 = () => {
     }
   };
 
-  // Adicionar sessão ao cronograma
+  // Adicionar sessão ao cronograma (agora salva em study_schedule)
   const addScheduleSession = async (
     cycleId: string,
     dayOfWeek: number,
@@ -136,51 +136,56 @@ export const useStudyCyclesV2 = () => {
     if (!user) return false;
 
     try {
-      const newSession = {
-        id: generateId(),
-        ...sessionData,
-        completed_sessions: [],
-        total_stats: {
-          total_duration_minutes: 0,
-          total_questions: 0,
-          total_correct: 0,
-          session_count: 0
-        }
-      };
-
-      // Buscar dados atuais do usuário
       const userStudyData = await UserStudyService.getUserStudyData(user.id);
       if (!userStudyData) return false;
 
-      // Encontrar o ciclo e atualizar
+      // ✅ Criar nova sessão com cycle_id
+      const newSession = {
+        id: generateId(),
+        cycle_id: cycleId,
+        day_of_week: dayOfWeek,
+        start_time: sessionData.start_time,
+        end_time: sessionData.end_time,
+        discipline_name: sessionData.discipline_name,
+        block_name: sessionData.block_name,
+        session_link: sessionData.session_link,
+        total_stats: {
+          session_count: 0,
+          total_duration_minutes: 0,
+          total_questions: 0,
+          total_correct: 0
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // ✅ Adicionar a study_schedule
+      const updatedSchedule = [...(userStudyData.study_schedule || []), newSession];
+
+      // Atualizar metadata do ciclo
       const updatedCycles = userStudyData.study_cycles.map(cycle => {
         if (cycle.id === cycleId) {
-          const updatedSchedule = { ...cycle.schedule_data };
-          let daySchedule = updatedSchedule.weekly_schedule.find(d => d.day === dayOfWeek);
-          
-          if (!daySchedule) {
-            daySchedule = { day: dayOfWeek, sessions: [] };
-            updatedSchedule.weekly_schedule.push(daySchedule);
-          }
-          
-          daySchedule.sessions.push(newSession);
-          updatedSchedule.metadata.total_sessions += 1;
-          
           return {
             ...cycle,
-            schedule_data: updatedSchedule
+            schedule_data: {
+              ...cycle.schedule_data,
+              metadata: {
+                ...cycle.schedule_data.metadata,
+                total_sessions: (cycle.schedule_data.metadata.total_sessions || 0) + 1
+              }
+            }
           };
         }
         return cycle;
       });
 
-      // Salvar no banco
       const success = await UserStudyService.upsertUserStudyData(user.id, {
+        study_schedule: updatedSchedule,
         study_cycles: updatedCycles
       });
 
       if (success) {
-        await fetchCycles(); // Recarregar ciclos
+        await fetchCycles();
         toast.success('Sessão adicionada ao cronograma!');
         return true;
       } else {
@@ -371,18 +376,53 @@ export const useStudyCyclesV2 = () => {
     return updateCycle(cycleId, { is_active: false });
   };
 
-  // Obter sessões para um dia específico
-  const getSessionsForDay = (cycleId: string, dayOfWeek: number): SessionData[] => {
-    const cycle = cycles.find(c => c.id === cycleId);
-    if (!cycle) return [];
+  // Obter sessões para um dia específico (compatível com ambas estruturas)
+  const getSessionsForDay = async (cycleId: string, dayOfWeek: number): Promise<SessionData[]> => {
+    try {
+      const userStudyData = await UserStudyService.getUserStudyData(user!.id);
+      if (!userStudyData) return [];
 
-    const daySchedule = cycle.schedule_data.weekly_schedule.find(d => d.day === dayOfWeek);
-    return daySchedule?.sessions || [];
+      // Buscar de study_schedule primeiro
+      const scheduleSessions = (userStudyData.study_schedule || [])
+        .filter(s => s.cycle_id === cycleId && s.day_of_week === dayOfWeek)
+        .map(s => ({
+          id: s.id,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          discipline_name: s.discipline_name || '',
+          block_name: s.block_name || '',
+          session_link: s.session_link,
+          total_stats: s.total_stats,
+          completed_sessions: []
+        }));
+
+      if (scheduleSessions.length > 0) return scheduleSessions;
+
+      // Fallback: buscar de weekly_schedule (legado)
+      const cycle = cycles.find(c => c.id === cycleId);
+      if (!cycle) return [];
+
+      const daySchedule = cycle.schedule_data.weekly_schedule?.find(d => d.day === dayOfWeek);
+      return daySchedule?.sessions || [];
+    } catch (error) {
+      console.error('Error getting sessions for day:', error);
+      return [];
+    }
   };
 
   // Obter todas as sessões de todos os ciclos para um dia
-  const getAllSessionsForDay = (dayOfWeek: number): SessionData[] => {
-    return cycles.flatMap(cycle => getSessionsForDay(cycle.id, dayOfWeek));
+  const getAllSessionsForDay = async (dayOfWeek: number): Promise<SessionData[]> => {
+    try {
+      const allSessions: SessionData[] = [];
+      for (const cycle of cycles) {
+        const sessions = await getSessionsForDay(cycle.id, dayOfWeek);
+        allSessions.push(...sessions);
+      }
+      return allSessions;
+    } catch (error) {
+      console.error('Error getting all sessions for day:', error);
+      return [];
+    }
   };
 
   // Remover ciclo
