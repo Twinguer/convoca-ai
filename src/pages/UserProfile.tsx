@@ -312,7 +312,7 @@ const UserProfile = () => {
               <h3 className="text-lg font-semibold">Sobre mim</h3>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-xs">
                 {estado && (
                   <div className="flex justify-between">
                     <span className="font-medium">Estado:</span>

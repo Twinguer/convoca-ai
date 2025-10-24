@@ -452,7 +452,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                 <CardTitle className="text-lg">Sobre mim</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="space-y-3 text-sm">
+                <div className="space-y-3 text-xs">
                   {profile.estado && <div className="flex justify-between">
                       <span className="font-medium">Estado:</span>
                       <span className="text-muted-foreground">{profile.estado}</span>

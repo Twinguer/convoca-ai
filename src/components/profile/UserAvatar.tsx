@@ -37,7 +37,10 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
   return (
     <div className="relative inline-block">
-      <Avatar className={sizeClass}>
+      <Avatar 
+        className={sizeClass}
+        style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }}
+      >
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={displayName} />
         ) : (
