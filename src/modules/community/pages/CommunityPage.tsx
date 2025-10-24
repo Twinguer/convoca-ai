@@ -78,24 +78,24 @@ const CommunityPage = () => {
   return <div className="min-h-screen p-6 bg-page-background">
       <div className="mb-8 flex flex-col md:flex-row md:justify-between md:items-start gap-4">
         {/* Community Stats - moved to the left */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2" style={{ width: '48%' }}>
+        <div className="hidden md:grid grid-cols-4 gap-2" style={{ width: '48%' }}>
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
-              <CardTitle className="text-xs font-semibold">Total</CardTitle>
+              <CardTitle className="text-sm font-semibold">Total</CardTitle>
               <UserCircle className="h-4 w-4" />
             </CardHeader>
             <CardContent className="pt-0 text-left px-3">
-              <div className="text-lg font-black">{users.length}</div>
+              <div className="text-xl font-black">{users.length}</div>
             </CardContent>
           </Card>
           
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
-              <CardTitle className="text-xs font-semibold">Online</CardTitle>
+              <CardTitle className="text-sm font-semibold">Online</CardTitle>
               <UserCheck className="h-4 w-4" />
             </CardHeader>
             <CardContent className="pt-0 text-left px-3">
-              <div className="text-lg font-black">
+              <div className="text-xl font-black">
                 {users.filter(u => isOnline(u.id)).length}
               </div>
             </CardContent>
@@ -103,11 +103,11 @@ const CommunityPage = () => {
           
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
-              <CardTitle className="text-xs font-semibold">Estudando</CardTitle>
+              <CardTitle className="text-sm font-semibold">Estudando</CardTitle>
               <GraduationCap className="h-4 w-4" />
             </CardHeader>
             <CardContent className="pt-0 text-left px-3">
-              <div className="text-lg font-black">
+              <div className="text-xl font-black">
                 {users.filter(u => u.is_studying).length}
               </div>
             </CardContent>
@@ -115,11 +115,11 @@ const CommunityPage = () => {
           
           <Card className="shadow-lg hover:shadow-xl transition-all duration-300 h-13 flex flex-col justify-center">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0 px-3">
-              <CardTitle className="text-xs font-semibold">Aprovados</CardTitle>
+              <CardTitle className="text-sm font-semibold">Aprovados</CardTitle>
               <Award className="h-4 w-4" />
             </CardHeader>
             <CardContent className="pt-0 text-left px-3">
-              <div className="text-lg font-black">
+              <div className="text-xl font-black">
                 {users.filter(u => u.approvalCount > 0).length}
               </div>
             </CardContent>

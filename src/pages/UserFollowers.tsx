@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Users, UserPlus, User, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 
 interface FollowerUser {
   id: string;
@@ -24,6 +25,7 @@ const UserFollowers = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { generateSecureUserUrl } = useSecureUserUrls();
   const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   
   // Determine whose lists to show: route param or current user
@@ -166,6 +168,17 @@ const UserFollowers = () => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
+  // Handle view profile navigation
+  const handleViewProfile = async (userId: string) => {
+    try {
+      const secureUrl = await generateSecureUserUrl(userId, 'profile');
+      navigate(secureUrl);
+    } catch (error) {
+      console.error('Erro ao gerar URL segura de usuário:', error);
+      navigate('/comunidade');
+    }
+  };
   
   const renderUserList = (users: FollowerUser[] | undefined, isLoading: boolean, emptyMessage: string) => {
     if (isLoading) {
@@ -206,9 +219,9 @@ const UserFollowers = () => {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    asChild
+                    onClick={() => handleViewProfile(userProfile.id)}
                   >
-                    <a href={`/usuario/${userProfile.id}`}>Ver perfil</a>
+                    Ver perfil
                   </Button>
 
                   <Button 
