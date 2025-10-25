@@ -122,29 +122,27 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       sessionStorage.setItem('previous_user_id', currentUserId);
     } else if (previousUserId && !currentUserId) {
       // User logged out - stop timer and update database
-      if (isRunning || isPaused) {
-        // Clear interval if running
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-        
-        // Update database to mark user as not studying
-        const updateStatus = async () => {
-          try {
-            await supabase
-              .from('users_profiles')
-              .update({
-                is_studying: false,
-                study_started_at: null
-              })
-              .eq('id', previousUserId);
-          } catch (error) {
-            console.error('Error updating studying status on logout:', error);
-          }
-        };
-        updateStatus();
+      // Clear interval if running
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
+      
+      // Update database to mark user as not studying
+      const updateStatus = async () => {
+        try {
+          await supabase
+            .from('users_profiles')
+            .update({
+              is_studying: false,
+              study_started_at: null
+            })
+            .eq('id', previousUserId);
+        } catch (error) {
+          console.error('Error updating studying status on logout:', error);
+        }
+      };
+      updateStatus();
       
       // Clear all timer state
       setIsRunning(false);
@@ -158,7 +156,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       // Clear session storage
       sessionStorage.removeItem('previous_user_id');
     }
-  }, [user, isRunning, isPaused]);
+  }, [user]);
 
   // Save timer state to localStorage whenever it changes (user-specific)
   useEffect(() => {
