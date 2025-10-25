@@ -96,13 +96,12 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <NavigationMenuLink 
-                  href="/planos" 
-                  className={navigationMenuTriggerStyle()}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Planos
-                </NavigationMenuLink>
+                <Link to="/planos">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Planos
+                  </NavigationMenuLink>
+                </Link>
               </NavigationMenuItem>
               
               {isAdmin() && <NavigationMenuItem>
