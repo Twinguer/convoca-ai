@@ -51,7 +51,11 @@ const Cronograma = () => {
     stopTimer,
     setInitialTime
   } = useTimer();
-  const { addScheduleSession, recordCompletedSession, fetchCycles: refetchCycles } = useStudyCyclesV2();
+  const {
+    addScheduleSession,
+    recordCompletedSession,
+    fetchCycles: refetchCycles
+  } = useStudyCyclesV2();
 
   // Clock state
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -77,7 +81,6 @@ const Cronograma = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSessionDetailsModal, setShowSessionDetailsModal] = useState(false);
   const [selectedDateSessions, setSelectedDateSessions] = useState<any[]>([]);
-  
   const [editingSession, setEditingSession] = useState<StudySession | null>(null);
   const [sessionLink, setSessionLink] = useState<string>('');
 
@@ -102,7 +105,6 @@ const Cronograma = () => {
     setQuestionsError('');
     return true;
   };
-
   const {
     addStudySession
   } = useStudyStatistics();
@@ -115,8 +117,13 @@ const Cronograma = () => {
   } = useStudySessions();
 
   // Usar hook otimizado para dados de sessão
-  const { sessionData, loading: sessionDataLoading, error: sessionDataError, refreshData } = useOptimizedSessionData();
-  
+  const {
+    sessionData,
+    loading: sessionDataLoading,
+    error: sessionDataError,
+    refreshData
+  } = useOptimizedSessionData();
+
   // Armazenar userStudy completo para acessar study_sessions
   const [userStudy, setUserStudy] = useState<any>(null);
 
@@ -179,10 +186,9 @@ const Cronograma = () => {
         setSessions([]);
         return;
       }
-
       setUserStudy(userStudyData);
       const allSessions: StudySession[] = [];
-      
+
       // ✅ Buscar de study_schedule primeiro
       if (userStudyData.study_schedule && userStudyData.study_schedule.length > 0) {
         userStudyData.study_schedule.forEach(session => {
@@ -202,7 +208,7 @@ const Cronograma = () => {
           }
         });
       }
-      
+
       // ✅ Fallback: buscar de weekly_schedule (legado)
       if (allSessions.length === 0) {
         userStudyData.study_cycles.forEach(cycle => {
@@ -224,7 +230,6 @@ const Cronograma = () => {
           }
         });
       }
-
       setSessions(allSessions);
     } catch (error) {
       console.error('Error fetching sessions:', error);
@@ -260,15 +265,17 @@ const Cronograma = () => {
   const getAvailableBlocks = () => {
     const selectedCycleData = cycles.find(c => c.id === selectedCycle);
     if (!selectedCycleData) return [];
-    
+
     // Buscar blocos salvos no ciclo (available_blocks)
     const savedBlocks = selectedCycleData.schedule_data.available_blocks || [];
-    
+
     // Se não há blocos salvos, mostrar opção customizada
     if (savedBlocks.length === 0) {
-      return [{ name: '+ Adicionar novo bloco', id: '__custom__' }];
+      return [{
+        name: '+ Adicionar novo bloco',
+        id: '__custom__'
+      }];
     }
-    
     return savedBlocks.map(block => ({
       name: block.name,
       id: block.name
@@ -279,16 +286,18 @@ const Cronograma = () => {
   const getAvailableDisciplines = () => {
     const selectedCycleData = cycles.find(c => c.id === selectedCycle);
     if (!selectedCycleData || !selectedBlock) return [];
-    
+
     // Buscar disciplinas salvas no ciclo (available_disciplines) para o bloco selecionado
     const savedDisciplines = selectedCycleData.schedule_data.available_disciplines || [];
     const blockDisciplines = savedDisciplines.filter(d => d.block_name === selectedBlock);
-    
+
     // Se não há disciplinas salvas para este bloco, mostrar opção customizada
     if (blockDisciplines.length === 0) {
-      return [{ name: '+ Adicionar nova disciplina', id: '__custom__' }];
+      return [{
+        name: '+ Adicionar nova disciplina',
+        id: '__custom__'
+      }];
     }
-    
     return blockDisciplines.map(discipline => ({
       name: discipline.name,
       id: discipline.name
@@ -298,33 +307,26 @@ const Cronograma = () => {
     // Usar valores customizados se selecionados
     const finalBlock = selectedBlock === '__custom__' ? customBlock : selectedBlock;
     const finalDiscipline = selectedDiscipline === '__custom__' ? customDiscipline : selectedDiscipline;
-
     if (!selectedCycle || !finalBlock || !finalDiscipline) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-
     try {
       // Adicionar sessão ao cronograma usando o hook useStudyCyclesV2
-      const success = await addScheduleSession(
-        selectedCycle,
-        selectedDay,
-        {
-          start_time: startTime,
-          end_time: endTime,
-          discipline_name: finalDiscipline,
-          block_name: finalBlock,
-          session_link: sessionLink
-        }
-      );
-
+      const success = await addScheduleSession(selectedCycle, selectedDay, {
+        start_time: startTime,
+        end_time: endTime,
+        discipline_name: finalDiscipline,
+        block_name: finalBlock,
+        session_link: sessionLink
+      });
       if (success) {
         // Recarregar ciclos para atualizar a lista de blocos e disciplinas
         await fetchCycles();
-        
+
         // Recarregar sessões para mostrar a nova sessão imediatamente
         await fetchSessions();
-        
+
         // Limpar campos
         setSelectedBlock('');
         setSelectedDiscipline('');
@@ -334,7 +336,6 @@ const Cronograma = () => {
         setEndTime('09:00');
         setSessionLink('');
         setShowAddModal(false);
-        
         toast.success('Sessão adicionada ao cronograma!');
       } else {
         toast.error('Erro ao adicionar sessão');
@@ -344,12 +345,10 @@ const Cronograma = () => {
       toast.error('Erro ao adicionar sessão');
     }
   };
-
   const removeSession = async (sessionId: string) => {
     try {
       // Remove session from schedule
       const success = await UserStudyService.removeScheduleSession(user?.id, sessionId);
-      
       if (success) {
         // Recarregar sessões do banco
         await fetchSessions();
@@ -382,26 +381,22 @@ const Cronograma = () => {
 
   // Função para verificar se um dia tem sessões estudadas
   const getSessionsForDate = (date: Date) => {
-    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
     const dateString = localDate.toISOString().split('T')[0];
     const allSessions: any[] = [];
-    
+
     // Verificar se temos dados de estudo
     if (!userStudy?.study_sessions || !Array.isArray(userStudy.study_sessions)) {
       return [];
     }
-    
+
     // Buscar todas as study_sessions que correspondem à data
     userStudy.study_sessions.forEach((completedSession: any) => {
       if (completedSession.date === dateString) {
         // Primeiro: procurar a sessão no novo study_schedule
         let cycleInfo: any = null;
         let scheduleSession: any = null;
-
-        const newScheduleSession = userStudy?.study_schedule?.find(
-          (s: any) => s.id === completedSession.schedule_session_id
-        );
-
+        const newScheduleSession = userStudy?.study_schedule?.find((s: any) => s.id === completedSession.schedule_session_id);
         if (newScheduleSession) {
           scheduleSession = newScheduleSession;
           const cycle = (userStudy.study_cycles || []).find((c: any) => c.id === newScheduleSession.cycle_id);
@@ -433,7 +428,7 @@ const Cronograma = () => {
             }
           });
         }
-        
+
         // Se encontrou o ciclo correspondente, adicionar à lista
         if (cycleInfo && scheduleSession) {
           allSessions.push({
@@ -455,14 +450,12 @@ const Cronograma = () => {
         }
       }
     });
-    
     return allSessions;
   };
 
   // Função para abrir modal de detalhes das sessões
   const openSessionDetailsModal = (date: Date) => {
     const sessions = getSessionsForDate(date);
-    
     setSelectedDate(date);
     setSelectedDateSessions(sessions);
     setShowSessionDetailsModal(true);
@@ -488,7 +481,6 @@ const Cronograma = () => {
       // Encontrar a sessão no cronograma para obter cycleId e dayOfWeek
       let cycleId = '';
       let dayOfWeek = 0;
-      
       for (const session of sessions) {
         if (session.id === sessionId) {
           cycleId = session.cycleId;
@@ -496,25 +488,18 @@ const Cronograma = () => {
           break;
         }
       }
-      
       if (!cycleId) {
         toast.error('Sessão não encontrada');
         return;
       }
 
       // Usar recordCompletedSession do hook para registrar via RPC
-      const success = await recordCompletedSession(
-        cycleId,
-        dayOfWeek,
-        sessionId,
-        {
-          duration_minutes: stats.duration,
-          questions: stats.questions,
-          correct_answers: stats.correctAnswers,
-          notes: stats.notes || ''
-        }
-      );
-
+      const success = await recordCompletedSession(cycleId, dayOfWeek, sessionId, {
+        duration_minutes: stats.duration,
+        questions: stats.questions,
+        correct_answers: stats.correctAnswers,
+        notes: stats.notes || ''
+      });
       if (success) {
         // Recarregar ciclos para atualizar total_stats
         await refetchCycles();
@@ -560,7 +545,6 @@ const Cronograma = () => {
       return;
     }
     try {
-
       // Salvar APENAS no cronograma (fonte única de verdade)
       await updateScheduleSessionStats(editingSession.id, {
         duration: studyDuration,
@@ -591,7 +575,6 @@ const Cronograma = () => {
           await trackAnswer('A', 'B'); // Simular erro
         }
       }
-
       setShowEditModal(false);
       setEditingSession(null);
 
@@ -628,7 +611,9 @@ const Cronograma = () => {
       {/* Clock, Timer, and Calendar Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-[5px]">
         {/* Clock Card */}
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
+        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
+      }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -650,7 +635,9 @@ const Cronograma = () => {
         </Card>
 
         {/* Timer Card */}
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
+        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
+      }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Timer className="h-5 w-5" />
@@ -710,65 +697,50 @@ const Cronograma = () => {
         </Card>
 
         {/* Calendar Card */}
-        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+        <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
+        boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
+      }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
               Calendário de Estudos
             </CardTitle>
-            <CardDescription>
-              Clique nos dias verdes para ver detalhes das sessões estudadas
-            </CardDescription>
+            
           </CardHeader>
           <CardContent>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !selectedDate && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : "Selecionar data"}
+                  {selectedDate ? format(selectedDate, 'dd/MM/yyyy', {
+                  locale: ptBR
+                }) : "Selecionar data"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent 
-                  mode="single" 
-                  selected={selectedDate} 
-                  onSelect={(date) => {
-                    if (date) {
-                      setSelectedDate(date);
-                      if (hasSessionsOnDate(date)) {
-                        openSessionDetailsModal(date);
-                      }
+                <CalendarComponent mode="single" selected={selectedDate} onSelect={date => {
+                if (date) {
+                  setSelectedDate(date);
+                  if (hasSessionsOnDate(date)) {
+                    openSessionDetailsModal(date);
+                  }
+                }
+              }} initialFocus className={cn("p-3")} components={{
+                Day: ({
+                  date,
+                  ...props
+                }) => {
+                  const hasSessions = hasSessionsOnDate(date);
+                  return <div {...props} className={cn("relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20", hasSessions && "bg-primary/10 text-primary hover:bg-primary/20", hasSessions && "cursor-pointer")} onClick={() => {
+                    if (hasSessions) {
+                      openSessionDetailsModal(date);
                     }
-                  }}
-                  initialFocus 
-                  className={cn("p-3")}
-                  components={{
-                    Day: ({ date, ...props }) => {
-                      const hasSessions = hasSessionsOnDate(date);
-                      
-                      return (
-                        <div
-                          {...props}
-                          className={cn(
-                            "relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                            hasSessions && "bg-primary/10 text-primary hover:bg-primary/20",
-                            hasSessions && "cursor-pointer"
-                          )}
-                          onClick={() => {
-                            if (hasSessions) {
-                              openSessionDetailsModal(date);
-                            }
-                          }}
-                        >
+                  }}>
                           {date.getDate()}
-                          {hasSessions && (
-                            <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>
-                          )}
-                        </div>
-                      );
-                    }
-                  }}
-                />
+                          {hasSessions && <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></div>}
+                        </div>;
+                }
+              }} />
               </PopoverContent>
             </Popover>
           </CardContent>
@@ -816,14 +788,7 @@ const Cronograma = () => {
                       <SelectItem value="__custom__">+ Adicionar novo bloco</SelectItem>
                     </SelectContent>
                   </Select>
-                  {selectedBlock === '__custom__' && (
-                    <Input
-                      placeholder="Digite o nome do bloco"
-                      value={customBlock}
-                      onChange={(e) => setCustomBlock(e.target.value)}
-                      className="mt-2"
-                    />
-                  )}
+                  {selectedBlock === '__custom__' && <Input placeholder="Digite o nome do bloco" value={customBlock} onChange={e => setCustomBlock(e.target.value)} className="mt-2" />}
                 </div>
 
                 <div>
@@ -839,14 +804,7 @@ const Cronograma = () => {
                       <SelectItem value="__custom__">+ Adicionar nova disciplina</SelectItem>
                     </SelectContent>
                   </Select>
-                  {selectedDiscipline === '__custom__' && (
-                    <Input
-                      placeholder="Digite o nome da disciplina"
-                      value={customDiscipline}
-                      onChange={(e) => setCustomDiscipline(e.target.value)}
-                      className="mt-2"
-                    />
-                  )}
+                  {selectedDiscipline === '__custom__' && <Input placeholder="Digite o nome da disciplina" value={customDiscipline} onChange={e => setCustomDiscipline(e.target.value)} className="mt-2" />}
                 </div>
 
                 <div>
@@ -943,43 +901,25 @@ const Cronograma = () => {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="questions-total">Total de questões</Label>
-                  <Input 
-                    id="questions-total" 
-                    type="number" 
-                    min="0" 
-                    value={questionsTotal} 
-                    onChange={e => {
-                      const value = Number(e.target.value);
-                      setQuestionsTotal(value);
-                      // Validar se as questões corretas não ficaram maiores que o novo total
-                      if (questionsCorrect > value) {
-                        setQuestionsCorrect(value);
-                        setQuestionsError('');
-                      }
-                    }} 
-                    placeholder="Questões resolvidas" 
-                  />
+                  <Input id="questions-total" type="number" min="0" value={questionsTotal} onChange={e => {
+                const value = Number(e.target.value);
+                setQuestionsTotal(value);
+                // Validar se as questões corretas não ficaram maiores que o novo total
+                if (questionsCorrect > value) {
+                  setQuestionsCorrect(value);
+                  setQuestionsError('');
+                }
+              }} placeholder="Questões resolvidas" />
                 </div>
 
                 {questionsTotal > 0 && <div>
                     <Label htmlFor="questions-correct">Questões corretas</Label>
-                    <Input 
-                      id="questions-correct" 
-                      type="number" 
-                      min="0" 
-                      max={questionsTotal} 
-                      value={questionsCorrect} 
-                      onChange={e => {
-                        const value = Number(e.target.value);
-                        setQuestionsCorrect(value);
-                        validateQuestions(questionsTotal, value);
-                      }} 
-                      placeholder="Acertos"
-                      className={questionsError ? 'border-red-500' : ''}
-                    />
-                    {questionsError && (
-                      <p className="text-sm text-red-500 mt-1">{questionsError}</p>
-                    )}
+                    <Input id="questions-correct" type="number" min="0" max={questionsTotal} value={questionsCorrect} onChange={e => {
+                const value = Number(e.target.value);
+                setQuestionsCorrect(value);
+                validateQuestions(questionsTotal, value);
+              }} placeholder="Acertos" className={questionsError ? 'border-red-500' : ''} />
+                    {questionsError && <p className="text-sm text-red-500 mt-1">{questionsError}</p>}
                   </div>}
               </div>
 
@@ -1018,7 +958,9 @@ const Cronograma = () => {
         </DialogContent>
       </Dialog>
 
-      {cycles.length === 0 ? <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+      {cycles.length === 0 ? <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
+      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
+    }}>
           <CardContent className="text-center p-8">
             <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum ciclo de estudo encontrado</h3>
@@ -1026,16 +968,16 @@ const Cronograma = () => {
               Crie um ciclo de estudos primeiro para poder organizar seu cronograma
             </p>
           </CardContent>
-        </Card> : <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
+        </Card> : <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{
+      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
+    }}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5" />
                 Cronograma Semanal
               </CardTitle>
-              <CardDescription>
-                Seu cronograma de estudos organizado por dias da semana
-              </CardDescription>
+              
             </div>
             <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
               <DialogTrigger asChild>
@@ -1143,36 +1085,23 @@ const Cronograma = () => {
                     {day}
                   </h3>
                   <div className="space-y-2 min-h-[250px]">
-                      {sessionDataLoading ? (
-                        <div className="flex items-center justify-center h-32">
+                      {sessionDataLoading ? <div className="flex items-center justify-center h-32">
                           <div className="text-sm text-muted-foreground">Carregando dados...</div>
-                        </div>
-                      ) : sessionDataError ? (
-                        <div className="flex flex-col items-center justify-center h-32 space-y-2">
+                        </div> : sessionDataError ? <div className="flex flex-col items-center justify-center h-32 space-y-2">
                           <div className="text-sm text-destructive">Erro ao carregar dados</div>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={refreshData}
-                            className="text-xs"
-                          >
+                          <Button variant="outline" size="sm" onClick={refreshData} className="text-xs">
                             Tentar novamente
                           </Button>
-                        </div>
-                      ) : (
-                        getSessionsForDay(index).map(session => {
-                        const cumulativeSession = sessionData[session.id];
-                        
-                        const hasData = cumulativeSession && (cumulativeSession.duration_minutes > 0 || cumulativeSession.questions > 0);
-                        const accuracy = cumulativeSession && cumulativeSession.questions > 0 ? 
-                          Math.round((cumulativeSession.correct_answers / cumulativeSession.questions) * 100) : 0;
-                        const sessionCount = cumulativeSession?.session_count || 1;
-                        
-
-                        return (
-                          <div key={session.id} className={`p-3 rounded-lg border relative cursor-pointer transition-all duration-300 min-h-[180px] ${hasData ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-muted bg-muted/30 hover:bg-muted/50'} rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden`} style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }} onClick={(e) => {
-                            openEditModal(session);
-                          }}>
+                        </div> : getSessionsForDay(index).map(session => {
+                const cumulativeSession = sessionData[session.id];
+                const hasData = cumulativeSession && (cumulativeSession.duration_minutes > 0 || cumulativeSession.questions > 0);
+                const accuracy = cumulativeSession && cumulativeSession.questions > 0 ? Math.round(cumulativeSession.correct_answers / cumulativeSession.questions * 100) : 0;
+                const sessionCount = cumulativeSession?.session_count || 1;
+                return <div key={session.id} className={`p-3 rounded-lg border relative cursor-pointer transition-all duration-300 min-h-[180px] ${hasData ? 'border-primary/20 bg-primary/5 hover:bg-primary/10' : 'border-muted bg-muted/30 hover:bg-muted/50'} rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden`} style={{
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)'
+                }} onClick={e => {
+                  openEditModal(session);
+                }}>
                             <div className="space-y-3 h-full flex flex-col">
                               {/* Header com horário e botão de deletar */}
                               <div className="flex justify-between items-center">
@@ -1180,9 +1109,9 @@ const Cronograma = () => {
                                   {session.startTime.substring(0, 5)} - {session.endTime.substring(0, 5)}
                                 </div>
                                 <div className="cursor-pointer transition-colors p-1 rounded hover:bg-destructive/10" onClick={e => {
-                                  e.stopPropagation();
-                                  removeSession(session.id);
-                                }} title="Remover sessão">
+                        e.stopPropagation();
+                        removeSession(session.id);
+                      }} title="Remover sessão">
                                   <Trash2 className="h-4 w-4 text-destructive/70 hover:text-destructive transition-colors" />
                                 </div>
                               </div>
@@ -1191,12 +1120,8 @@ const Cronograma = () => {
                               <div className="space-y-1 flex-1">
                                 <h4 className="font-medium text-sm text-foreground leading-tight">{session.disciplineName}</h4>
                                 <p className="text-xs text-muted-foreground">{session.blockName}</p>
-                                {cumulativeSession?.cycle_name && (
-                                  <p className="text-xs text-primary font-medium">Ciclo: {cumulativeSession.cycle_name}</p>
-                                )}
-                                {!cumulativeSession?.cycle_name && (
-                                  <p className="text-xs text-red-500">⚠️ Nome do ciclo não encontrado</p>
-                                )}
+                                {cumulativeSession?.cycle_name && <p className="text-xs text-primary font-medium">Ciclo: {cumulativeSession.cycle_name}</p>}
+                                {!cumulativeSession?.cycle_name && <p className="text-xs text-red-500">⚠️ Nome do ciclo não encontrado</p>}
                               </div>
                               
                               {/* Estatísticas detalhadas */}
@@ -1223,25 +1148,18 @@ const Cronograma = () => {
                               
                               {/* Botão para ir à aula */}
                               {(session.sessionLink || cumulativeSession?.session_link) && <div className="pt-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    const linkToOpen = cumulativeSession?.session_link || session.sessionLink;
-                                    window.open(linkToOpen, '_blank');
-                                  }} 
-                                  className="w-full text-xs"
-                                >
+                                <Button variant="outline" size="sm" onClick={e => {
+                        e.stopPropagation();
+                        const linkToOpen = cumulativeSession?.session_link || session.sessionLink;
+                        window.open(linkToOpen, '_blank');
+                      }} className="w-full text-xs">
                                   <ExternalLink className="h-3 w-3 mr-1" />
                                   Ir à aula
                                 </Button>
                               </div>}
                             </div>
-                          </div>
-                        );
-                        })
-                      )}
+                          </div>;
+              })}
                   </div>
                 </div>)}
             </div>
@@ -1254,7 +1172,9 @@ const Cronograma = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Sessões do dia {selectedDate && format(selectedDate, 'dd/MM/yyyy', { locale: ptBR })}
+              Sessões do dia {selectedDate && format(selectedDate, 'dd/MM/yyyy', {
+              locale: ptBR
+            })}
             </DialogTitle>
             <DialogDescription>
               Detalhes das sessões de estudo realizadas neste dia
@@ -1262,15 +1182,11 @@ const Cronograma = () => {
           </DialogHeader>
           
           <div className="space-y-4">
-            {selectedDateSessions.length === 0 ? (
-              <div className="text-center py-8">
+            {selectedDateSessions.length === 0 ? <div className="text-center py-8">
                 <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h4 className="text-lg font-medium text-foreground mb-2">Nenhuma sessão registrada</h4>
                 <p className="text-muted-foreground">Este dia não possui sessões de estudo registradas.</p>
-              </div>
-            ) : (
-              selectedDateSessions.map((sessionData, index) => (
-                <div key={index} className="border border-border rounded-lg p-4 bg-card">
+              </div> : selectedDateSessions.map((sessionData, index) => <div key={index} className="border border-border rounded-lg p-4 bg-card">
                   {/* Header do Ciclo */}
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -1314,15 +1230,14 @@ const Cronograma = () => {
                     </div>
                     <div className="bg-muted rounded-lg p-3 text-center">
                       <div className="text-lg font-semibold text-foreground">
-                        {Math.round((sessionData.session.correct / sessionData.session.questions) * 100)}%
+                        {Math.round(sessionData.session.correct / sessionData.session.questions * 100)}%
                       </div>
                       <div className="text-xs text-muted-foreground">Taxa</div>
                     </div>
                   </div>
                   
                   {/* Observações */}
-                  {sessionData.session.notes && (
-                    <div className="mb-3">
+                  {sessionData.session.notes && <div className="mb-3">
                       <h5 className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -1332,25 +1247,16 @@ const Cronograma = () => {
                       <p className="text-sm text-muted-foreground bg-muted rounded p-3">
                         {sessionData.session.notes}
                       </p>
-                    </div>
-                  )}
+                    </div>}
                   
                   {/* Botão Ir à Aula */}
-                  {sessionData.session.link && (
-                    <div className="flex justify-end">
-                      <Button 
-                        onClick={() => window.open(sessionData.session.link, '_blank')}
-                        className="flex items-center gap-2"
-                        size="sm"
-                      >
+                  {sessionData.session.link && <div className="flex justify-end">
+                      <Button onClick={() => window.open(sessionData.session.link, '_blank')} className="flex items-center gap-2" size="sm">
                         <ExternalLink className="w-4 h-4" />
                         Ir à Aula
                       </Button>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+                    </div>}
+                </div>)}
           </div>
         </DialogContent>
       </Dialog>
