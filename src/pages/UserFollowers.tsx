@@ -176,7 +176,8 @@ const UserFollowers = () => {
       navigate(secureUrl);
     } catch (error) {
       console.error('Erro ao gerar URL segura de usuário:', error);
-      navigate('/comunidade');
+      // Fallback para URL não ofuscada em caso de erro
+      navigate(`/usuario/profile/${userId}`);
     }
   };
   

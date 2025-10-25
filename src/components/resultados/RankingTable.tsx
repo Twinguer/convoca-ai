@@ -206,6 +206,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
       const secureUrl = await UserUrlObfuscationService.generateSecureProfileUrl(userId);
       navigate(secureUrl);
     } catch (error) {
+      // Fallback para URL não ofuscada em caso de erro
       navigate(`/usuario/profile/${userId}`);
     }
   };
@@ -628,7 +629,7 @@ const RankingTableContent: React.FC<{
             
             <TableCell>
               <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => {
-                console.log('User click debug:', { userId: ranking.userId, name: ranking.name });
+                console.log('User click debug:', { name: ranking.name });
                 handleUserClick(ranking.userId);
               }}>
                 <Avatar className="h-8 w-8">

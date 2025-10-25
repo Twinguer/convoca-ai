@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { recalculateAllUserScores, recalculateSpecificUserScore } from '@/utils/recalculateUserScores';
-import { testRecalculate } from '@/utils/testRecalculate';
+// import { testRecalculate } from '@/utils/testRecalculate'; // Removido - arquivo deletado
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 const RecalculateScores: React.FC = () => {
@@ -35,7 +35,7 @@ const RecalculateScores: React.FC = () => {
     try {
       console.log('🔍 [RecalculateScores] Chamando recalculateSpecificUserScore...');
       const result = await recalculateSpecificUserScore(userId, concursoId);
-      console.log('🔍 [RecalculateScores] Resultado recebido:', result);
+      console.log('🔍 [RecalculateScores] Resultado recebido');
       
       setResults(prev => [...prev, { 
         type: result.success ? 'success' : 'error', 
@@ -49,27 +49,9 @@ const RecalculateScores: React.FC = () => {
     }
   };
 
-  const handleTestRecalculate = async () => {
-    setIsRecalculating(true);
-    setResults([]);
-    
-    try {
-      const result = await testRecalculate();
-      if (result) {
-        setResults(prev => [...prev, { 
-          type: 'success', 
-          message: `Teste concluído: ${result.userAnswers.length} respostas, ${result.officialAnswers} gabaritos, score: ${result.totalScore}` 
-        }]);
-        console.log('Resultado do teste:', result);
-      } else {
-        setResults(prev => [...prev, { type: 'error', message: 'Teste falhou' }]);
-      }
-    } catch (error) {
-      setResults(prev => [...prev, { type: 'error', message: `Erro no teste: ${error.message}` }]);
-    } finally {
-      setIsRecalculating(false);
-    }
-  };
+  // const handleTestRecalculate = async () => {
+  //   // Função removida - arquivo testRecalculate.ts foi deletado
+  // };
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -146,28 +128,7 @@ const RecalculateScores: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Teste de Diagnóstico</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={handleTestRecalculate} 
-            disabled={isRecalculating}
-            className="w-full"
-            variant="outline"
-          >
-            {isRecalculating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Testando...
-              </>
-            ) : (
-              'Testar Diagnóstico (Ver Console)'
-            )}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Card de teste removido - arquivo testRecalculate.ts foi deletado */}
 
       {results.length > 0 && (
         <Card>

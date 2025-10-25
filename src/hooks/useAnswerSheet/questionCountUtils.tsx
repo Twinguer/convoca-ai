@@ -79,7 +79,7 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
       .eq('id', concursoId)
       .maybeSingle();
 
-    console.log('[checkMissingOfficialAnswers] DEBUG - Resposta do Supabase:', { data, error });
+    console.log('[checkMissingOfficialAnswers] DEBUG - Resposta do Supabase recebida');
 
     if (error || !data) {
       console.log('[checkMissingOfficialAnswers] Erro ao buscar gabarito oficial ou gabarito não encontrado');

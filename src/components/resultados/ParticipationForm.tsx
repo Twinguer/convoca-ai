@@ -151,7 +151,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       const sortedBooklets = booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
       
       console.log('[ParticipationForm] Cadernos encontrados:', sortedBooklets.length);
-      console.log('[ParticipationForm] Cadernos:', sortedBooklets.map(b => ({ id: b.id, name: b.name })));
+      console.log('[ParticipationForm] Cadernos:', sortedBooklets.map(b => ({ name: b.name })));
       
       if (sortedBooklets && sortedBooklets.length > 0) {
         setBooklets(sortedBooklets);

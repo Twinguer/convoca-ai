@@ -8,6 +8,7 @@ import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, Messa
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
+import AdminMenu from './AdminMenu';
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
@@ -106,32 +107,9 @@ const Menu = () => {
               {isAdmin() && <NavigationMenuItem>
                 <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="grid gap-3 p-4 w-[220px]">
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/project/admin/man/dashboard" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <LayoutDashboard className="mr-2 h-4 w-4" />
-                          <div className="text-sm font-medium leading-none">Dashboard</div>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/project/admin/man/concursos" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <FileText className="mr-2 h-4 w-4" />
-                          <div className="text-sm font-medium leading-none">Concursos</div>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                    <li>
-                      <NavigationMenuLink asChild>
-                        <Link to="/project/admin/man/usuarios" className="flex items-center select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                          <Users className="mr-2 h-4 w-4" />
-                          <div className="text-sm font-medium leading-none">Usuários</div>
-                        </Link>
-                      </NavigationMenuLink>
-                    </li>
-                  </ul>
+                  <div className="p-4">
+                    <AdminMenu />
+                  </div>
                 </NavigationMenuContent>
               </NavigationMenuItem>}
             </NavigationMenuList>

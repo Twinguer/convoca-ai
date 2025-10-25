@@ -3,6 +3,7 @@ import React, { useState, useEffect, createContext, useContext, ReactNode } from
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { onlineStatusService } from '@/services/onlineStatusService';
+import { TokenCleanupService } from '@/services/tokenCleanupService';
 
 interface AuthContextType {
   user: User | null;
@@ -35,11 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         return;
       }
-      console.log('Auth refresh debug:', {
-        hasSession: !!newSession,
-        userId: newSession?.user?.id,
-        userEmail: newSession?.user?.email
-      });
+      console.log('Auth refresh debug: session updated');
       setSession(newSession);
       setUser(newSession?.user ?? null);
     } catch (error) {
@@ -130,6 +127,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clear local state
       setUser(null);
       setSession(null);
+      
+      // Clear all obfuscation tokens
+      TokenCleanupService.clearAllTokens();
       
       // Clear any cached authentication data
       localStorage.removeItem('auth_lockout_end');

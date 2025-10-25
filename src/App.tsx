@@ -49,6 +49,7 @@ import RankingsPage from "./modules/rankings/pages/RankingsPage";
 import RankingParticipationWrapper from "./components/resultados/RankingParticipationWrapper";
 import SecureStudyCycleRoute from "./components/Security/SecureStudyCycleRoute";
 import { useParams } from 'react-router-dom';
+import { useTokenCleanup } from './hooks/useTokenCleanup';
 // Páginas de teste removidas após migração completa
 // import TestRankingsV2 from "./pages/TestRankingsV2";
 // import DebugRanking from "./pages/DebugRanking";
@@ -70,6 +71,10 @@ const AppContent = () => {
     showFloatingTimer,
     hideTimer
   } = useTimer();
+  
+  // Inicializar limpeza automática de tokens
+  useTokenCleanup();
+  
   return <>
       <div className="min-h-screen h-full w-full text-foreground bg-page-background">
       <Toaster />
@@ -83,9 +88,13 @@ const AppContent = () => {
                         <AdminLayout />
                       </AdminProtectedRoute>}>
                       <Route path="dashboard" element={<AdminDashboard />} />
+                      <Route path="dashboard/:token" element={<AdminDashboard />} />
                       <Route path="concursos" element={<ListarConcursos />} />
+                      <Route path="concursos/:token" element={<ListarConcursos />} />
                       <Route path="usuarios" element={<ListarUsuarios />} />
+                      <Route path="usuarios/:token" element={<ListarUsuarios />} />
                       <Route path="vouchers" element={<VouchersManager />} />
+                      <Route path="vouchers/:token" element={<VouchersManager />} />
                     </Route>
                     <Route path="/admin/login" element={<Navigate to="/project/admin/man/login" replace />} />
                     <Route path="/admin/*" element={<Navigate to="/project/admin/man" replace />} />
@@ -219,6 +228,30 @@ const AppContent = () => {
                           </SecureStudyCycleRoute>
                         </ProtectedRoute>
                       </>} />
+                     <Route path="/estudos/cronograma/:token" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <SecureStudyCycleRoute action="cronograma">
+                            <Cronograma />
+                          </SecureStudyCycleRoute>
+                        </ProtectedRoute>
+                      </>} />
+                     <Route path="/estudos/timer/:token" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <SecureStudyCycleRoute action="timer">
+                            <Timer />
+                          </SecureStudyCycleRoute>
+                        </ProtectedRoute>
+                      </>} />
+                     <Route path="/estudos/estatisticas/:token" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <SecureStudyCycleRoute action="estatisticas">
+                            <StatisticsPage />
+                          </SecureStudyCycleRoute>
+                        </ProtectedRoute>
+                      </>} />
                      <Route path="/pre-classificacao" element={<>
                           <Menu />
                           <RankingsPage />
@@ -240,10 +273,41 @@ const AppContent = () => {
                         <Menu />
                         <RankingParticipationWrapper />
                       </>} />
-                    {/* Rotas legadas - redirecionar para pre-classificacao */}
+                    {/* Rotas seguras para concursos */}
+                    <Route path="/concurso/resultados/:token" element={<>
+                        <Menu />
+                        <SecureConcursoRoute action="resultados">
+                          <ConcursoResultadosWrapper />
+                        </SecureConcursoRoute>
+                      </>} />
+                    <Route path="/concurso/participar/:token" element={<>
+                        <Menu />
+                        <SecureConcursoRoute action="participar">
+                          <ConcursoParticipation />
+                        </SecureConcursoRoute>
+                      </>} />
+                    <Route path="/concurso/ranking/:token" element={<>
+                        <Menu />
+                        <SecureConcursoRoute action="ranking">
+                          <ResultadosPage />
+                        </SecureConcursoRoute>
+                      </>} />
+                    <Route path="/concurso/estatisticas/:token" element={<>
+                        <Menu />
+                        <SecureConcursoRoute action="estatisticas">
+                          <StatisticsPage />
+                        </SecureConcursoRoute>
+                      </>} />
+                    <Route path="/concurso/historico/:token" element={<>
+                        <Menu />
+                        <SecureConcursoRoute action="historico">
+                          <ResultadosPage />
+                        </SecureConcursoRoute>
+                      </>} />
+                    {/* Rotas legadas - redirecionar para versão segura */}
                     <Route path="/concurso/:id" element={<Navigate to="/pre-classificacao" replace />} />
-                    <Route path="/concurso/view/:token" element={<Navigate to="/pre-classificacao" replace />} />
-                    <Route path="/concurso/resultados/:token" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/:id/resultados" element={<Navigate to="/pre-classificacao" replace />} />
+                    <Route path="/concurso/:id/participar" element={<Navigate to="/pre-classificacao" replace />} />
                     {/* Rotas de teste removidas após migração completa */}
                     {/* <Route path="/test-rankings-v2" element={<>
                         <Menu />

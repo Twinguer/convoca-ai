@@ -1,0 +1,137 @@
+import { logInfo, logWarn } from '@/utils/secureLogger';
+
+// Serviço para limpeza automática de tokens expirados
+export class TokenCleanupService {
+  private static cleanupInterval: NodeJS.Timeout | null = null;
+  private static readonly CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hora
+  private static readonly TOKEN_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 horas
+
+  // Iniciar limpeza automática
+  static startAutomaticCleanup(): void {
+    if (this.cleanupInterval) {
+      logWarn('Token cleanup already running', {}, 'TOKEN_CLEANUP');
+      return;
+    }
+
+    logInfo('Starting automatic token cleanup', { interval: this.CLEANUP_INTERVAL }, 'TOKEN_CLEANUP');
+    
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupExpiredTokens();
+    }, this.CLEANUP_INTERVAL);
+
+    // Executar limpeza imediatamente
+    this.cleanupExpiredTokens();
+  }
+
+  // Parar limpeza automática
+  static stopAutomaticCleanup(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+      logInfo('Stopped automatic token cleanup', {}, 'TOKEN_CLEANUP');
+    }
+  }
+
+  // Limpar tokens expirados
+  static cleanupExpiredTokens(): void {
+    try {
+      const now = Date.now();
+      let cleanedCount = 0;
+
+      // Limpar tokens do localStorage
+      const keysToRemove: string[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && this.isTokenKey(key)) {
+          try {
+            const tokenData = JSON.parse(localStorage.getItem(key) || '{}');
+            if (tokenData.expiresAt && now > tokenData.expiresAt) {
+              keysToRemove.push(key);
+            }
+          } catch (error) {
+            // Token inválido, remover
+            keysToRemove.push(key);
+          }
+        }
+      }
+
+      // Remover tokens expirados
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        cleanedCount++;
+      });
+
+      if (cleanedCount > 0) {
+        logInfo('Cleaned expired tokens', { count: cleanedCount }, 'TOKEN_CLEANUP');
+      }
+
+    } catch (error) {
+      logWarn('Error during token cleanup', { error: error instanceof Error ? error.message : 'Unknown error' }, 'TOKEN_CLEANUP');
+    }
+  }
+
+  // Verificar se uma chave é de token
+  private static isTokenKey(key: string): boolean {
+    return key.includes('_token_') || 
+           key.includes('user_token_') || 
+           key.includes('concurso_token_') || 
+           key.includes('study_cycle_token_') || 
+           key.includes('admin_token_') || 
+           key.includes('community_token_');
+  }
+
+  // Limpar todos os tokens (para logout)
+  static clearAllTokens(): void {
+    try {
+      const keysToRemove: string[] = [];
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && this.isTokenKey(key)) {
+          keysToRemove.push(key);
+        }
+      }
+
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      logInfo('Cleared all tokens', { count: keysToRemove.length }, 'TOKEN_CLEANUP');
+    } catch (error) {
+      logWarn('Error clearing all tokens', { error: error instanceof Error ? error.message : 'Unknown error' }, 'TOKEN_CLEANUP');
+    }
+  }
+
+  // Obter estatísticas de tokens
+  static getTokenStats(): { total: number; expired: number; valid: number } {
+    const now = Date.now();
+    let total = 0;
+    let expired = 0;
+    let valid = 0;
+
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && this.isTokenKey(key)) {
+        total++;
+        try {
+          const tokenData = JSON.parse(localStorage.getItem(key) || '{}');
+          if (tokenData.expiresAt && now > tokenData.expiresAt) {
+            expired++;
+          } else {
+            valid++;
+          }
+        } catch (error) {
+          expired++; // Token inválido conta como expirado
+        }
+      }
+    }
+
+    return { total, expired, valid };
+  }
+}
+
+// Inicializar limpeza automática quando o módulo for carregado
+if (typeof window !== 'undefined') {
+  TokenCleanupService.startAutomaticCleanup();
+}

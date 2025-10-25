@@ -97,7 +97,7 @@ export class UrlObfuscationService {
   }
   
   // Gerar URL segura para concurso
-  static async generateSecureConcursoUrl(concursoId: string, action: 'resultados' | 'participar' = 'resultados'): Promise<string> {
+  static async generateSecureConcursoUrl(concursoId: string, action: 'resultados' | 'participar' | 'ranking' | 'estatisticas' | 'historico' = 'resultados'): Promise<string> {
     const token = await this.generateConcursoToken(concursoId);
     return `/concurso/${action}/${token}`;
   }
@@ -111,11 +111,26 @@ export class UrlObfuscationService {
   static async generateSecureParticiparUrl(concursoId: string): Promise<string> {
     return this.generateSecureConcursoUrl(concursoId, 'participar');
   }
+  
+  // Gerar URL segura para ranking
+  static async generateSecureRankingUrl(concursoId: string): Promise<string> {
+    return this.generateSecureConcursoUrl(concursoId, 'ranking');
+  }
+  
+  // Gerar URL segura para estatísticas
+  static async generateSecureEstatisticasUrl(concursoId: string): Promise<string> {
+    return this.generateSecureConcursoUrl(concursoId, 'estatisticas');
+  }
+  
+  // Gerar URL segura para histórico
+  static async generateSecureHistoricoUrl(concursoId: string): Promise<string> {
+    return this.generateSecureConcursoUrl(concursoId, 'historico');
+  }
 }
 
 // Hook para usar o serviço de ofuscação
 export const useSecureUrls = () => {
-  const generateSecureUrl = async (concursoId: string, action: 'resultados' | 'participar' = 'resultados') => {
+  const generateSecureUrl = async (concursoId: string, action: 'resultados' | 'participar' | 'ranking' | 'estatisticas' | 'historico' = 'resultados') => {
     return await UrlObfuscationService.generateSecureConcursoUrl(concursoId, action);
   };
   
@@ -123,8 +138,33 @@ export const useSecureUrls = () => {
     return await UrlObfuscationService.validateConcursoToken(token);
   };
   
+  const generateResultadosUrl = async (concursoId: string) => {
+    return await UrlObfuscationService.generateSecureResultadosUrl(concursoId);
+  };
+  
+  const generateParticiparUrl = async (concursoId: string) => {
+    return await UrlObfuscationService.generateSecureParticiparUrl(concursoId);
+  };
+  
+  const generateRankingUrl = async (concursoId: string) => {
+    return await UrlObfuscationService.generateSecureRankingUrl(concursoId);
+  };
+  
+  const generateEstatisticasUrl = async (concursoId: string) => {
+    return await UrlObfuscationService.generateSecureEstatisticasUrl(concursoId);
+  };
+  
+  const generateHistoricoUrl = async (concursoId: string) => {
+    return await UrlObfuscationService.generateSecureHistoricoUrl(concursoId);
+  };
+  
   return {
     generateSecureUrl,
-    validateToken
+    validateToken,
+    generateResultadosUrl,
+    generateParticiparUrl,
+    generateRankingUrl,
+    generateEstatisticasUrl,
+    generateHistoricoUrl
   };
 };

@@ -1,15 +1,16 @@
 
 import { createClient } from '@supabase/supabase-js';
-import { currentConfig } from '@/config/database';
 
-// Initialize the Supabase client with dynamic configuration
-// CRITICAL: Never hardcode credentials in production code
-const supabaseUrl = currentConfig.url;
-const supabaseAnonKey = currentConfig.anonKey;
+// Initialize the Supabase client with environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
 }
+
+// Debug removido para segurança
 
 export const supabase = createClient(
   supabaseUrl,
@@ -19,6 +20,7 @@ export const supabase = createClient(
       persistSession: true,
       storage: localStorage,
       autoRefreshToken: true,
+      detectSessionInUrl: false
     },
     // Disable schema cache completely to prevent issues with missing or new columns
     global: {
@@ -39,8 +41,8 @@ export const supabase = createClient(
 
 // Cliente para operações administrativas
 export const supabaseAdmin = createClient(
-  currentConfig.url,
-  currentConfig.serviceRoleKey,
+  supabaseUrl,
+  supabaseServiceRoleKey,
   {
     auth: {
       autoRefreshToken: false,

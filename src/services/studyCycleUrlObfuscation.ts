@@ -118,7 +118,7 @@ export class StudyCycleUrlObfuscationService {
   }
   
   // Gerar URL segura para ciclo de estudo
-  static async generateSecureStudyCycleUrl(cycleId: string, userId: string, action: 'view' | 'edit' | 'session' = 'view'): Promise<string> {
+  static async generateSecureStudyCycleUrl(cycleId: string, userId: string, action: 'view' | 'edit' | 'session' | 'cronograma' | 'timer' | 'estatisticas' = 'view'): Promise<string> {
     try {
       const token = await this.generateStudyCycleToken(cycleId, userId);
       const secureUrl = `/estudos/${action}/${token}`;
@@ -127,6 +127,26 @@ export class StudyCycleUrlObfuscationService {
       logError('Failed to generate secure study cycle URL', { cycleId, userId, action }, 'STUDY_CYCLE_URL_OBFUSCATION');
       return `/error?message=Failed to generate secure URL`;
     }
+  }
+  
+  // Gerar URL segura para cronograma
+  static async generateSecureCronogramaUrl(cycleId: string, userId: string): Promise<string> {
+    return this.generateSecureStudyCycleUrl(cycleId, userId, 'cronograma');
+  }
+  
+  // Gerar URL segura para timer
+  static async generateSecureTimerUrl(cycleId: string, userId: string): Promise<string> {
+    return this.generateSecureStudyCycleUrl(cycleId, userId, 'timer');
+  }
+  
+  // Gerar URL segura para estatísticas
+  static async generateSecureEstatisticasUrl(cycleId: string, userId: string): Promise<string> {
+    return this.generateSecureStudyCycleUrl(cycleId, userId, 'estatisticas');
+  }
+  
+  // Gerar URL segura para sessão de estudo
+  static async generateSecureSessaoUrl(cycleId: string, userId: string): Promise<string> {
+    return this.generateSecureStudyCycleUrl(cycleId, userId, 'session');
   }
   
   // Validar URL segura e retornar ID do ciclo
@@ -142,7 +162,7 @@ export class StudyCycleUrlObfuscationService {
 
 // Hook para usar o serviço de ofuscação de ciclos de estudo
 export const useSecureStudyCycleUrls = () => {
-  const generateSecureUrl = async (cycleId: string, userId: string, action: 'view' | 'edit' | 'session' = 'view') => {
+  const generateSecureUrl = async (cycleId: string, userId: string, action: 'view' | 'edit' | 'session' | 'cronograma' | 'timer' | 'estatisticas' = 'view') => {
     return await StudyCycleUrlObfuscationService.generateSecureStudyCycleUrl(cycleId, userId, action);
   };
   
@@ -150,8 +170,28 @@ export const useSecureStudyCycleUrls = () => {
     return await StudyCycleUrlObfuscationService.validateStudyCycleToken(token, userId);
   };
   
+  const generateCronogramaUrl = async (cycleId: string, userId: string) => {
+    return await StudyCycleUrlObfuscationService.generateSecureCronogramaUrl(cycleId, userId);
+  };
+  
+  const generateTimerUrl = async (cycleId: string, userId: string) => {
+    return await StudyCycleUrlObfuscationService.generateSecureTimerUrl(cycleId, userId);
+  };
+  
+  const generateEstatisticasUrl = async (cycleId: string, userId: string) => {
+    return await StudyCycleUrlObfuscationService.generateSecureEstatisticasUrl(cycleId, userId);
+  };
+  
+  const generateSessaoUrl = async (cycleId: string, userId: string) => {
+    return await StudyCycleUrlObfuscationService.generateSecureSessaoUrl(cycleId, userId);
+  };
+  
   return {
     generateSecureUrl,
-    validateToken
+    validateToken,
+    generateCronogramaUrl,
+    generateTimerUrl,
+    generateEstatisticasUrl,
+    generateSessaoUrl
   };
 };

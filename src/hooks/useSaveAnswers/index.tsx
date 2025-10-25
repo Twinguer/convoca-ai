@@ -62,9 +62,7 @@ export const useSaveAnswers = ({
         isEmpty: selectedBookletId?.trim() === '',
         isUndefined: selectedBookletId === undefined
       });
-      console.log('[useSaveAnswers] Todos os parâmetros recebidos:', {
-        rankingId,
-        concursoId: concurso?.id,
+      console.log('[useSaveAnswers] Parâmetros recebidos:', {
         selectedBookletId,
         answersCount: Object.keys(answers).length,
         editCount
@@ -270,7 +268,7 @@ export const useSaveAnswers = ({
         
         const recalculationResult = await recalculateUserScore(user.id, concurso.id);
         
-        console.log('[useSaveAnswers] 📊 Resultado do recálculo:', recalculationResult);
+        console.log('[useSaveAnswers] 📊 Resultado do recálculo processado');
         
         if (recalculationResult.success) {
           console.log('[useSaveAnswers] ✅ Pontuações recalculadas com sucesso');

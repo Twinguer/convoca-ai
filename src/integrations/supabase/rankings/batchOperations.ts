@@ -23,7 +23,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       p_concurso_id: concursoId as string
     });
 
-    console.log('[recalculateAllUserScores] Supabase RPC response:', { data, error });
+    console.log('[recalculateAllUserScores] Supabase RPC response recebida');
 
     if (error) {
       console.error('[recalculateAllUserScores] Error calling PostgreSQL function:', error);

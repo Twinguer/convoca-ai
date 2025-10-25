@@ -32,7 +32,7 @@ const getWrongAnswerPenalty = (disciplines: any): number => {
 
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
-    console.log(`[recalculateUserScore] 🚀 INICIANDO recálculo para usuário ${userId} no concurso ${concursoId}`);
+    console.log(`[recalculateUserScore] 🚀 INICIANDO recálculo`);
     
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
@@ -42,7 +42,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .single();
 
     if (concursoError) {
-      console.error(`[recalculateUserScore] ❌ ERRO ao buscar concurso ${concursoId}:`, concursoError);
+      console.error(`[recalculateUserScore] ❌ ERRO ao buscar concurso:`, concursoError);
       return { 
         success: false, 
         message: 'Erro ao obter dados do concurso', 
@@ -76,7 +76,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     // Primeiro, busque o ranking correspondente ao usuário/concurso
-    console.log(`[recalculateUserScore] 🔍 Buscando ranking para user ${userId} e concurso ${concursoId}`);
+    console.log(`[recalculateUserScore] 🔍 Buscando ranking`);
     
     const { data: userRanking, error: userRankingError } = await supabase
       .from('user_rankings')
@@ -103,19 +103,16 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
     // Buscar o rankingId correto no consolidated_data
     let rankingId = null;
-    console.log(`[recalculateUserScore] 🔍 Buscando rankingId para concurso ${concursoId}`);
+    console.log(`[recalculateUserScore] 🔍 Buscando rankingId`);
     console.log(`[recalculateUserScore] 📊 Rankings disponíveis:`, Object.keys(userRanking.consolidated_data?.rankings || {}));
     
     if (userRanking.consolidated_data?.rankings) {
       for (const key in userRanking.consolidated_data.rankings) {
         const ranking = userRanking.consolidated_data.rankings[key];
-        console.log(`[recalculateUserScore] 🔍 Verificando ranking ${key}:`, {
-          concurso_id: ranking.concurso_id,
-          matches: ranking.concurso_id === concursoId
-        });
+        console.log(`[recalculateUserScore] 🔍 Verificando ranking`);
         if (ranking.concurso_id === concursoId) {
           rankingId = key;
-          console.log(`[recalculateUserScore] ✅ RankingId encontrado: ${rankingId}`);
+          console.log(`[recalculateUserScore] ✅ RankingId encontrado`);
           break;
         }
       }
@@ -130,7 +127,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
     
-    console.log(`[recalculateUserScore] ✅ RankingId encontrado: ${rankingId}`);
+    console.log(`[recalculateUserScore] ✅ RankingId encontrado`);
 
     // Obter as respostas do usuário usando user_rankings consolidated_data
     const { data: userRankingData, error: consolidatedError } = await supabase
@@ -167,7 +164,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         console.log('[recalculateUserScore] DEBUG - Estrutura hierárquica detalhada:');
         for (const blockId in answersData) {
           const blockData = answersData[blockId];
-          console.log(`[recalculateUserScore] DEBUG - Bloco ${blockId}:`, blockData);
+          console.log(`[recalculateUserScore] DEBUG - Bloco processado`);
           if (typeof blockData === 'object' && blockData !== null) {
             for (const disciplineType in blockData) {
               const disciplineData = blockData[disciplineType];
@@ -432,14 +429,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         disciplineScores[disciplineType] += scoringResult.disciplineDelta;
         weightedDisciplineScores[disciplineType] += scoringResult.weightedDisciplineDelta;
         
-        console.log(`[recalculateUserScore] Question ${userAnswer.question_number} scoring result:`, {
-          totalDelta: scoringResult.totalDelta,
-          disciplineDelta: scoringResult.disciplineDelta,
-          weightedDisciplineDelta: scoringResult.weightedDisciplineDelta,
-          newTotalScore: totalScore,
-          newDisciplineScore: disciplineScores[disciplineType],
-          newWeightedDisciplineScore: weightedDisciplineScores[disciplineType]
-        });
+        console.log(`[recalculateUserScore] Question ${userAnswer.question_number} scoring result processado`);
         
         totalWeight += questionWeight;
       }
@@ -781,7 +771,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    console.log(`[recalculateUserScore] ✅ Successfully updated consolidated_data for user ${userRanking.user_id}`);
+    console.log(`[recalculateUserScore] ✅ Successfully updated consolidated_data`);
 
     return { 
         success: true, 

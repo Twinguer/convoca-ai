@@ -22,7 +22,7 @@ interface FetchedAnswersData {
 }
 
 export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBookletId?: string) => {
-  // console.log('[useAnswerSheet] Initialized with:', { concursoId: concurso?.id, rankingId, selectedBookletId });
+  // console.log('[useAnswerSheet] Initialized with:', { selectedBookletId });
   
   const [selectedSection, setSelectedSection] = useState<SectionType>('basic');
   const [isSaving, setIsSaving] = useState(false);
@@ -60,7 +60,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      console.log(`[useAnswerSheet] Concurso ${concurso.id} uses hierarchical structure: ${hierarchical}`);
+      console.log(`[useAnswerSheet] Concurso usa estrutura hierárquica: ${hierarchical}`);
     }
   }, [concurso]);
 
@@ -194,7 +194,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
   // Function to create the answer matrix for rendering
   const createAnswerMatrix = useCallback(() => {
-    console.log('[createAnswerMatrix] Chamada com:', { concurso: concurso?.id, selectedSection, sectionQuestions });
+    console.log('[createAnswerMatrix] Chamada com:', { selectedSection, sectionQuestions });
     
     if (!concurso || !selectedSection) {
       console.log('[createAnswerMatrix] Parâmetros inválidos, retornando matriz vazia');
