@@ -14,11 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error_message: string | null
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          new_data: Json | null
+          old_data: Json | null
+          resource_id: string | null
+          resource_type: string
+          severity: string
+          status: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          severity: string
+          status: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          new_data?: Json | null
+          old_data?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          severity?: string
+          status?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_trail: {
         Row: {
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           new_values: Json | null
           old_values: Json | null
@@ -31,7 +82,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           new_values?: Json | null
           old_values?: Json | null
@@ -44,7 +95,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           new_values?: Json | null
           old_values?: Json | null
@@ -71,6 +122,8 @@ export type Database = {
           exam_type: string | null
           form_config: Json | null
           has_cota: Json | null
+          has_minimum_score: boolean | null
+          has_quota_minimum_score: boolean | null
           id: string
           inscritos: number | null
           is_admin_created: boolean | null
@@ -82,10 +135,12 @@ export type Database = {
           official_answers: Json | null
           orgao: string
           predefined_job_title: string | null
+          quota_minimum_score: number | null
           status: string
           subjects: Json | null
           temp_disciplines_data: Json | null
           titulo: string
+          total_minimum_score: number | null
           total_participants: number | null
           updated_at: string
           vagas: number | null
@@ -104,6 +159,8 @@ export type Database = {
           exam_type?: string | null
           form_config?: Json | null
           has_cota?: Json | null
+          has_minimum_score?: boolean | null
+          has_quota_minimum_score?: boolean | null
           id?: string
           inscritos?: number | null
           is_admin_created?: boolean | null
@@ -115,10 +172,12 @@ export type Database = {
           official_answers?: Json | null
           orgao: string
           predefined_job_title?: string | null
+          quota_minimum_score?: number | null
           status?: string
           subjects?: Json | null
           temp_disciplines_data?: Json | null
           titulo: string
+          total_minimum_score?: number | null
           total_participants?: number | null
           updated_at?: string
           vagas?: number | null
@@ -137,6 +196,8 @@ export type Database = {
           exam_type?: string | null
           form_config?: Json | null
           has_cota?: Json | null
+          has_minimum_score?: boolean | null
+          has_quota_minimum_score?: boolean | null
           id?: string
           inscritos?: number | null
           is_admin_created?: boolean | null
@@ -148,10 +209,12 @@ export type Database = {
           official_answers?: Json | null
           orgao?: string
           predefined_job_title?: string | null
+          quota_minimum_score?: number | null
           status?: string
           subjects?: Json | null
           temp_disciplines_data?: Json | null
           titulo?: string
+          total_minimum_score?: number | null
           total_participants?: number | null
           updated_at?: string
           vagas?: number | null
@@ -195,7 +258,7 @@ export type Database = {
           has_minimum_score: boolean | null
           has_pcd: boolean | null
           has_ppp: boolean | null
-          // has_quota_minimum_score: removida - dados agora em JSONB
+          has_quota_minimum_score: boolean | null
           has_specific_knowledge_1: boolean | null
           has_specific_knowledge_2: boolean | null
           has_specific_knowledge_3: boolean | null
@@ -267,7 +330,7 @@ export type Database = {
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
-          // has_quota_minimum_score?: removida - dados agora em JSONB
+          has_quota_minimum_score?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
@@ -339,7 +402,7 @@ export type Database = {
           has_minimum_score?: boolean | null
           has_pcd?: boolean | null
           has_ppp?: boolean | null
-          // has_quota_minimum_score?: removida - dados agora em JSONB
+          has_quota_minimum_score?: boolean | null
           has_specific_knowledge_1?: boolean | null
           has_specific_knowledge_2?: boolean | null
           has_specific_knowledge_3?: boolean | null
@@ -377,78 +440,6 @@ export type Database = {
         }
         Relationships: []
       }
-      concursos_test: {
-        Row: {
-          alternatives_count: number | null
-          banca: string
-          created_at: string | null
-          created_by_user_id: string | null
-          disciplines: Json | null
-          exam_booklets: Json | null
-          exam_type: string | null
-          form_config: Json | null
-          has_custom_knowledge: boolean | null
-          has_minimum_score: boolean | null
-          id: string
-          metadata: Json | null
-          official_answers: Json | null
-          orgao: string
-          status: string
-          subjects: Json | null
-          titulo: string
-          total_minimum_score: number | null
-          total_participants: number | null
-          updated_at: string | null
-          wrong_answer_penalty: number | null
-        }
-        Insert: {
-          alternatives_count?: number | null
-          banca: string
-          created_at?: string | null
-          created_by_user_id?: string | null
-          disciplines?: Json | null
-          exam_booklets?: Json | null
-          exam_type?: string | null
-          form_config?: Json | null
-          has_custom_knowledge?: boolean | null
-          has_minimum_score?: boolean | null
-          id?: string
-          metadata?: Json | null
-          official_answers?: Json | null
-          orgao: string
-          status?: string
-          subjects?: Json | null
-          titulo: string
-          total_minimum_score?: number | null
-          total_participants?: number | null
-          updated_at?: string | null
-          wrong_answer_penalty?: number | null
-        }
-        Update: {
-          alternatives_count?: number | null
-          banca?: string
-          created_at?: string | null
-          created_by_user_id?: string | null
-          disciplines?: Json | null
-          exam_booklets?: Json | null
-          exam_type?: string | null
-          form_config?: Json | null
-          has_custom_knowledge?: boolean | null
-          has_minimum_score?: boolean | null
-          id?: string
-          metadata?: Json | null
-          official_answers?: Json | null
-          orgao?: string
-          status?: string
-          subjects?: Json | null
-          titulo?: string
-          total_minimum_score?: number | null
-          total_participants?: number | null
-          updated_at?: string | null
-          wrong_answer_penalty?: number | null
-        }
-        Relationships: []
-      }
       consolidated_answers_by_concurso_backup: {
         Row: {
           concurso_id: string | null
@@ -479,7 +470,7 @@ export type Database = {
           error_message: string
           error_type: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           is_resolved: boolean | null
           metadata: Json | null
           query_text: string | null
@@ -495,7 +486,7 @@ export type Database = {
           error_message: string
           error_type: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_resolved?: boolean | null
           metadata?: Json | null
           query_text?: string | null
@@ -511,7 +502,7 @@ export type Database = {
           error_message?: string
           error_type?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           is_resolved?: boolean | null
           metadata?: Json | null
           query_text?: string | null
@@ -679,7 +670,7 @@ export type Database = {
           created_at: string | null
           execution_time_ms: number
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           query_text: string
           query_type: string | null
@@ -692,7 +683,7 @@ export type Database = {
           created_at?: string | null
           execution_time_ms: number
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           query_text: string
           query_type?: string | null
@@ -705,7 +696,7 @@ export type Database = {
           created_at?: string | null
           execution_time_ms?: number
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           query_text?: string
           query_type?: string | null
@@ -743,6 +734,51 @@ export type Database = {
           new_score?: number | null
           previous_score?: number | null
           user_ranking_id?: string | null
+        }
+        Relationships: []
+      }
+      secure_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: unknown
+          last_used_at: string | null
+          metadata: Json | null
+          revoked_at: string | null
+          token_hash: string
+          token_type: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address?: unknown
+          last_used_at?: string | null
+          metadata?: Json | null
+          revoked_at?: string | null
+          token_hash: string
+          token_type: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: unknown
+          last_used_at?: string | null
+          metadata?: Json | null
+          revoked_at?: string | null
+          token_hash?: string
+          token_type?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -872,6 +908,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_rankings_structure_backup: {
+        Row: {
+          backup_created_at: string | null
+          consolidated_data: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          backup_created_at?: string | null
+          consolidated_data?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          backup_created_at?: string | null
+          consolidated_data?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -932,72 +986,42 @@ export type Database = {
         }
         Relationships: []
       }
-      user_study: {
+      user_study_v2: {
         Row: {
           created_at: string | null
           id: string
           last_activity_date: string | null
-          spaced_repetition_queue: Json
-          study_contests: Json
-          study_cycles: Json
-          study_goals: Json
-          study_goals_tracking: Json
-          study_plans: Json
-          study_progress: Json
-          study_reminders: Json
-          study_schedule: Json
-          study_sessions: Json
-          study_statistics: Json
-          study_subjects: Json
-          total_schedule_count: number | null
-          total_sessions_count: number | null
+          study_cycles: Json | null
+          study_metadata: Json | null
+          study_schedule: Json | null
+          study_sessions: Json | null
+          study_statistics: Json | null
           updated_at: string | null
           user_id: string
-          user_study_days: Json
         }
         Insert: {
           created_at?: string | null
           id?: string
           last_activity_date?: string | null
-          spaced_repetition_queue?: Json
-          study_contests?: Json
-          study_cycles?: Json
-          study_goals?: Json
-          study_goals_tracking?: Json
-          study_plans?: Json
-          study_progress?: Json
-          study_reminders?: Json
-          study_schedule?: Json
-          study_sessions?: Json
-          study_statistics?: Json
-          study_subjects?: Json
-          total_schedule_count?: number | null
-          total_sessions_count?: number | null
+          study_cycles?: Json | null
+          study_metadata?: Json | null
+          study_schedule?: Json | null
+          study_sessions?: Json | null
+          study_statistics?: Json | null
           updated_at?: string | null
           user_id: string
-          user_study_days?: Json
         }
         Update: {
           created_at?: string | null
           id?: string
           last_activity_date?: string | null
-          spaced_repetition_queue?: Json
-          study_contests?: Json
-          study_cycles?: Json
-          study_goals?: Json
-          study_goals_tracking?: Json
-          study_plans?: Json
-          study_progress?: Json
-          study_reminders?: Json
-          study_schedule?: Json
-          study_sessions?: Json
-          study_statistics?: Json
-          study_subjects?: Json
-          total_schedule_count?: number | null
-          total_sessions_count?: number | null
+          study_cycles?: Json | null
+          study_metadata?: Json | null
+          study_schedule?: Json | null
+          study_sessions?: Json | null
+          study_statistics?: Json | null
           updated_at?: string | null
           user_id?: string
-          user_study_days?: Json
         }
         Relationships: []
       }
@@ -1188,8 +1212,54 @@ export type Database = {
         }
         Relationships: []
       }
+      v_concurso_statistics: {
+        Row: {
+          average_score: number | null
+          classified_count: number | null
+          concurso_id: string | null
+          eliminated_count: number | null
+          max_score: number | null
+          min_score: number | null
+          total_participants: number | null
+        }
+        Relationships: []
+      }
+      v_user_rankings_with_profiles: {
+        Row: {
+          avatar_url: string | null
+          concurso_id: string | null
+          edit_count: number | null
+          last_updated: string | null
+          ranking_id: string | null
+          reservation_type: string | null
+          score: number | null
+          status: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      add_completed_study_session: {
+        Args: { session_data: Json; user_uuid: string }
+        Returns: Json
+      }
       add_schedule_session: {
         Args: {
           p_cycle_id: string
@@ -1219,10 +1289,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      apply_voucher: {
-        Args: { voucher_code_param: string }
-        Returns: Json
-      }
+      apply_voucher: { Args: { voucher_code_param: string }; Returns: Json }
       calculate_secure_score: {
         Args: {
           p_discipline_weight?: number
@@ -1249,24 +1316,28 @@ export type Database = {
         }
         Returns: Json
       }
-      calculate_user_score_realtime: {
-        Args:
-          | {
+      calculate_study_statistics: { Args: { user_uuid: string }; Returns: Json }
+      calculate_study_statistics_from_sessions: {
+        Args: { v_sessions: Json }
+        Returns: Json
+      }
+      calculate_user_score_realtime:
+        | {
+            Args: {
               p_concurso_id: string
               p_ranking_id: string
               p_selected_booklet: string
               p_user_id: string
             }
-          | { p_ranking_id: string }
-          | { p_ranking_id: string; p_user_id: string }
-        Returns: number
-      }
+            Returns: number
+          }
+        | { Args: { p_ranking_id: string }; Returns: number }
       calculate_weighted_scores: {
         Args: { p_concurso_id: string; p_scores: Json; p_user_id?: string }
         Returns: Json
       }
       check_advanced_performance_alerts: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           alert_id: string
           alert_type: string
@@ -1278,26 +1349,39 @@ export type Database = {
           threshold_value: number
         }[]
       }
-      check_performance_alerts: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      check_performance_alerts: { Args: never; Returns: undefined }
+      check_rate_limit: {
+        Args: {
+          p_action: string
+          p_max_requests?: number
+          p_time_window_seconds?: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      check_resource_permission: {
+        Args: {
+          p_action: string
+          p_resource_id: string
+          p_resource_type: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
       check_user_permission: {
         Args: { p_concurso_id: string; p_user_id: string }
         Returns: boolean
       }
-      cleanup_old_alerts: {
-        Args: Record<PropertyKey, never>
+      cleanup_expired_tokens: { Args: never; Returns: number }
+      cleanup_old_alerts: { Args: never; Returns: number }
+      cleanup_old_audit_logs: {
+        Args: { p_retention_days?: number }
         Returns: number
       }
-      cleanup_old_logs: {
-        Args: Record<PropertyKey, never> | { days_to_keep?: number }
-        Returns: Json
-      }
-      collect_performance_metrics: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_logs:
+        | { Args: { days_to_keep?: number }; Returns: Json }
+        | { Args: never; Returns: undefined }
+      collect_performance_metrics: { Args: never; Returns: undefined }
       count_concurso_participants: {
         Args: { concurso_id: string }
         Returns: number
@@ -1306,14 +1390,8 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
-      count_user_followers: {
-        Args: { user_id: string }
-        Returns: number
-      }
-      count_user_posts: {
-        Args: { user_id: string }
-        Returns: number
-      }
+      count_user_followers: { Args: { user_id: string }; Returns: number }
+      count_user_posts: { Args: { user_id: string }; Returns: number }
       debug_save_user_answers_v3: {
         Args: {
           p_answers: Json
@@ -1325,12 +1403,17 @@ export type Database = {
         }
         Returns: Json
       }
-      delete_user_profile: {
-        Args: { user_id_param: string }
-        Returns: boolean
+      delete_user_profile: { Args: { user_id_param: string }; Returns: boolean }
+      extract_sessions_to_schedule: {
+        Args: never
+        Returns: {
+          errors_count: number
+          total_sessions_extracted: number
+          users_migrated: number
+        }[]
       }
       get_alert_statistics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           alerts_last_24h: number
           critical_alerts: number
@@ -1343,7 +1426,7 @@ export type Database = {
         }[]
       }
       get_alert_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           alert_type: string
           count: number
@@ -1352,19 +1435,28 @@ export type Database = {
           status: string
         }[]
       }
+      get_audit_trail_stats: { Args: never; Returns: Json }
       get_booklet_answers: {
         Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
       }
       get_complete_dashboard: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           data: Json
           section: string
         }[]
       }
+      get_concurso_rankings: {
+        Args: { p_concurso_id: string }
+        Returns: {
+          ranking_data: Json
+          ranking_id: string
+          user_id: string
+        }[]
+      }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_followers_list: {
@@ -1384,7 +1476,7 @@ export type Database = {
         }[]
       }
       get_jsonb_analysis: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avg_size_bytes: number
           column_name: string
@@ -1396,7 +1488,7 @@ export type Database = {
         }[]
       }
       get_log_statistics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avg_execution_time_ms: number
           error_rate: number
@@ -1407,7 +1499,7 @@ export type Database = {
         }[]
       }
       get_performance_dashboard: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           current_value: number
           metric_category: string
@@ -1429,7 +1521,7 @@ export type Database = {
         }[]
       }
       get_public_profiles: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           id: string
@@ -1493,7 +1585,7 @@ export type Database = {
         }[]
       }
       get_system_overview: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           current_value: number
           last_updated: string
@@ -1504,7 +1596,7 @@ export type Database = {
         }[]
       }
       get_user_activity_summary: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           description: string
           metric_name: string
@@ -1540,10 +1632,11 @@ export type Database = {
         Args: { user_name: string; user_nickname: string }
         Returns: string
       }
-      get_user_study_data: {
-        Args: { user_uuid: string }
+      get_user_ranking_by_concurso: {
+        Args: { p_concurso_id: string; p_user_id: string }
         Returns: Json
       }
+      get_user_study_data: { Args: { user_uuid: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1613,20 +1706,26 @@ export type Database = {
         }
         Returns: Json
       }
+      migrate_completed_sessions_to_study_sessions: {
+        Args: never
+        Returns: {
+          cycles_count: number
+          sessions_extracted: number
+          user_id: string
+        }[]
+      }
       migrate_flat_subject_scores_to_consolidated: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Json
       }
       migrate_subjective_scores_to_consolidated: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: undefined
       }
-      migrate_to_consolidated_structure: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      migrate_to_consolidated_structure: { Args: never; Returns: Json }
+      migrate_user_study_to_v2: { Args: never; Returns: undefined }
       monitor_database_performance: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           metric_name: string
           metric_unit: string
@@ -1636,7 +1735,7 @@ export type Database = {
         }[]
       }
       monitor_jsonb_performance: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avg_jsonb_size: number
           column_name: string
@@ -1655,10 +1754,19 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
-      recalculate_all_scores_with_weights: {
-        Args: { p_concurso_id: string } | { p_concurso_id: string }
-        Returns: Json
-      }
+      recalculate_all_scores_with_weights:
+        | {
+            Args: { p_concurso_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.recalculate_all_scores_with_weights(p_concurso_id => text), public.recalculate_all_scores_with_weights(p_concurso_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { p_concurso_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.recalculate_all_scores_with_weights(p_concurso_id => text), public.recalculate_all_scores_with_weights(p_concurso_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       recalculate_all_users_scores_realtime: {
         Args: { p_concurso_id: string }
         Returns: Json
@@ -1676,9 +1784,10 @@ export type Database = {
         }
         Returns: Json
       }
-      refresh_public_rankings_cache: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      refresh_public_rankings_cache: { Args: never; Returns: undefined }
+      remove_study_cycle: {
+        Args: { cycle_id: string; user_uuid: string }
+        Returns: Json
       }
       reorganize_answers_by_blocks_disciplines: {
         Args: { p_ranking_id: string }
@@ -1688,13 +1797,11 @@ export type Database = {
         Args: { alert_uuid: string }
         Returns: boolean
       }
-      restructure_user_answers_by_concurso: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      rollback_optimizations: {
-        Args: Record<PropertyKey, never>
-        Returns: string
+      restructure_user_answers_by_concurso: { Args: never; Returns: undefined }
+      rollback_optimizations: { Args: never; Returns: string }
+      safe_upsert_user_study_data: {
+        Args: { study_data: Json; user_uuid: string }
+        Returns: Json
       }
       save_consolidated_answer_key: {
         Args: { p_answers: Json; p_booklet_id: string; p_concurso_id: string }
@@ -1780,9 +1887,19 @@ export type Database = {
         }
         Returns: Json
       }
-      save_user_answers_with_booklet: {
-        Args:
-          | {
+      save_user_answers_with_booklet:
+        | {
+            Args: {
+              p_answers_data: Json
+              p_concurso_id: string
+              p_reservation_type?: string
+              p_selected_booklet?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
               p_answers: Json
               p_booklet_id: string
               p_case_study_1_score?: number
@@ -1793,22 +1910,27 @@ export type Database = {
               p_discursive_score?: number
               p_ranking_id: string
             }
-          | {
-              p_answers_data: Json
-              p_concurso_id: string
-              p_reservation_type?: string
-              p_selected_booklet?: string
-              p_user_id: string
-            }
-        Returns: Json
-      }
-      start_continuous_monitoring: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+            Returns: Json
+          }
+      start_continuous_monitoring: { Args: never; Returns: undefined }
       switch_user_booklet: {
         Args: { p_booklet_id: string; p_ranking_id: string }
         Returns: Json
+      }
+      sync_user_study_v2_data: {
+        Args: {
+          cycles_data?: Json
+          metadata_data?: Json
+          schedule_data?: Json
+          sessions_data?: Json
+          statistics_data?: Json
+          user_uuid: string
+        }
+        Returns: Json
+      }
+      test_calculate_user_score_realtime: {
+        Args: { p_ranking_id: string; p_user_id: string }
+        Returns: number
       }
       test_disciplines_mapping: {
         Args: { p_concurso_id: string }
@@ -1833,9 +1955,21 @@ export type Database = {
         Args: { stats_data: Json; user_uuid: string }
         Returns: undefined
       }
+      update_user_ranking: {
+        Args: { p_ranking_data: Json; p_ranking_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      upsert_study_cycle: {
+        Args: { cycle_data: Json; user_uuid: string }
+        Returns: Json
+      }
       upsert_user_study_data: {
         Args: { study_data: Json; user_uuid: string }
-        Returns: undefined
+        Returns: Json
+      }
+      validate_input_security: {
+        Args: { p_input: string; p_max_length?: number }
+        Returns: Json
       }
       validate_ranking_data: {
         Args: { p_answers: Json; p_concurso_id: string; p_user_id: string }
