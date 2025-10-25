@@ -240,6 +240,11 @@ export const useStudyCyclesV2 = () => {
         blockName = session?.block_name;
       }
       
+      // Adicionar day_of_week se não existir
+      if (session && !session.day_of_week) {
+        session = { ...session, day_of_week: dayOfWeek };
+      }
+      
       if (!session) {
         toast.error('Sessão não encontrada');
         return false;

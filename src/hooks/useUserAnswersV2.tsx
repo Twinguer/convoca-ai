@@ -52,10 +52,10 @@ export const useUserAnswersV2 = ({
     refetch: refetchUserAnswers
   } = useQuery({
     queryKey: ['user-answers-v2', rankingId, userId],
-    queryFn: () => fetchUserAnswers(rankingId, userId),
+    queryFn: () => fetchUserAnswers(userId, rankingId),
     enabled: enabled && !!rankingId && !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutos
-    cacheTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos (cacheTime foi substituído por gcTime)
     retry: 3,
   });
 
@@ -71,7 +71,7 @@ export const useUserAnswersV2 = ({
     queryFn: () => fetchRankingAnswers(rankingId),
     enabled: enabled && !!rankingId,
     staleTime: 10 * 60 * 1000, // 10 minutos
-    cacheTime: 30 * 60 * 1000, // 30 minutos
+    gcTime: 30 * 60 * 1000, // 30 minutos (cacheTime foi substituído por gcTime)
     retry: 3,
   });
 
@@ -84,22 +84,22 @@ export const useUserAnswersV2 = ({
     refetch: refetchStats
   } = useQuery({
     queryKey: ['answer-stats-v2', rankingId, userId],
-    queryFn: () => calculateAnswerStats(rankingId, userId),
+    queryFn: () => {
+      const userAnswers = {} as Record<number, string>;
+      const officialAnswers = {} as Record<number, string>;
+      return calculateAnswerStats(userAnswers, officialAnswers);
+    },
     enabled: enabled && !!rankingId && !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    cacheTime: 15 * 60 * 1000, // 15 minutos
+    gcTime: 15 * 60 * 1000, // 15 minutos (cacheTime foi substituído por gcTime)
     retry: 3,
   });
 
   // Mutation para salvar respostas
   const saveAnswersMutation = useMutation({
-    mutationFn: (answers: Array<{
-      booklet_id: string;
-      question_number: number;
-      user_answer: string | null;
-    }>) => saveUserAnswers(rankingId, userId, answers),
-    onSuccess: (data) => {
-      logger.ranking('Answers saved successfully V2', `count: ${data.length}`);
+    mutationFn: (answers: Record<number, string>) => saveUserAnswers(userId, rankingId, answers),
+    onSuccess: () => {
+      logger.ranking('Answers saved successfully V2', 'success');
       
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ['user-answers-v2', rankingId, userId] });

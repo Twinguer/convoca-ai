@@ -8,7 +8,6 @@ import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, Messa
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
-import { ThemeSelector } from '@/components/ThemeSelector';
 const Menu = () => {
   const location = useLocation();
   const pathname = location.pathname;
