@@ -176,15 +176,15 @@ export const useUserAnswersV2 = ({
 export const useRankingAnswersV2 = (rankingId: string, bookletId?: string) => {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['ranking-answers-v2', rankingId, bookletId],
-    queryFn: () => fetchRankingAnswers(rankingId, bookletId),
+    queryFn: () => fetchRankingAnswers(rankingId),
     enabled: !!rankingId,
     staleTime: 10 * 60 * 1000, // 10 minutos
-    cacheTime: 30 * 60 * 1000, // 30 minutos
+    gcTime: 30 * 60 * 1000, // 30 minutos (cacheTime foi substituído por gcTime)
     retry: 3,
   });
 
   return {
-    rankingAnswers: data || [],
+    rankingAnswers: data || null,
     isLoading,
     isError,
     error,
