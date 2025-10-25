@@ -333,6 +333,12 @@ const BlockCard: React.FC<BlockCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [nameValue, setNameValue] = useState(block.name);
+  
+  // Sincronizar nameValue com block.name quando mudar
+  React.useEffect(() => {
+    setNameValue(block.name);
+  }, [block.name]);
+  
   const handleSaveName = () => {
     onUpdateName(nameValue);
     setIsEditing(false);
