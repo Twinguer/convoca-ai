@@ -9,23 +9,15 @@ export class UserUrlObfuscationService {
   // Gerar um token ofuscado para um usuário
   static async generateUserToken(userId: string): Promise<string> {
     try {
-      // Verificar se o usuário existe e tem perfil público
+      // Verificar se o usuário existe (verificação básica)
       const { data: userProfile, error } = await supabase
         .from('users_profiles')
-        .select('id, name, privacy_settings')
+        .select('id, name')
         .eq('id', userId)
         .single();
       
       if (error || !userProfile) {
         throw new Error('Perfil de usuário não encontrado');
-      }
-      
-      // Verificar se o perfil é público (por padrão, todos os perfis são públicos)
-      const privacySettings = userProfile.privacy_settings || {};
-      const isPublic = privacySettings.is_public !== false; // Padrão: público
-      
-      if (!isPublic) {
-        throw new Error('Perfil privado - acesso negado');
       }
       
       // Criar um token único baseado no ID + timestamp + chave
@@ -65,23 +57,15 @@ export class UserUrlObfuscationService {
         throw new Error('Token expirado');
       }
       
-      // Verificar se o usuário ainda existe e tem perfil público
+      // Verificar se o usuário ainda existe (verificação básica)
       const { data: userProfile, error } = await supabase
         .from('users_profiles')
-        .select('id, privacy_settings')
+        .select('id')
         .eq('id', userId)
         .single();
       
       if (error || !userProfile) {
         throw new Error('Perfil de usuário não encontrado');
-      }
-      
-      // Verificar se o perfil ainda é público (por padrão, todos os perfis são públicos)
-      const privacySettings = userProfile.privacy_settings || {};
-      const isPublic = privacySettings.is_public !== false; // Padrão: público
-      
-      if (!isPublic) {
-        throw new Error('Perfil privado - acesso negado');
       }
       
       return userId;
