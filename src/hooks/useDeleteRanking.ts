@@ -45,7 +45,7 @@ export const useDeleteRanking = () => {
 
           // 3. user_answers não é mais usado - dados estão em user_rankings consolidated_data
           // A remoção dos dados consolidados é feita automaticamente via CASCADE
-          console.log('user_answers removido - usando dados consolidados');
+          // Debug logs removed for security
           
           // 4. Remove concurso from consolidated_data for each user
           for (const userId of userIds) {

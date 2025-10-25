@@ -84,7 +84,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       }
     }
     
-    console.log(`✅ Processadas ${Object.keys(allSessionData).length} sessões`);
+    // Debug logs removed for security
     return allSessionData;
   }, []);
 
@@ -104,7 +104,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       return;
     }
 
-    console.log('🔄 Carregando dados de sessão do banco');
+    // Debug logs removed for security
     setLoading(true);
     setError(null);
 
@@ -121,7 +121,7 @@ export const useOptimizedSessionData = (options: UseOptimizedSessionDataOptions 
       setSessionData(processedData);
       setLastFetch(now);
       
-      console.log(`✅ Dados de sessão carregados: ${Object.keys(processedData).length} sessões`);
+      // Debug logs removed for security
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
       console.error('❌ Erro ao carregar dados de sessão', err);

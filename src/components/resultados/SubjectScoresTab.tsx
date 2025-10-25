@@ -12,7 +12,7 @@ const findDiscipline = (disciplines: any, keyOrId: string): NestedDiscipline | u
   
   // Nova estrutura hierárquica (objeto com blocks)
   if (typeof disciplines === 'object' && !Array.isArray(disciplines) && disciplines.blocks) {
-    console.log('[findDiscipline] Using new hierarchical structure with blocks');
+    // Debug logs removed for security
     for (const block of disciplines.blocks) {
       if (block?.disciplines && Array.isArray(block.disciplines)) {
         const found = block.disciplines.find((d: NestedDiscipline) => d.id === keyOrId || (d as any).type === keyOrId);
@@ -24,7 +24,7 @@ const findDiscipline = (disciplines: any, keyOrId: string): NestedDiscipline | u
   
   // Estrutura antiga (array)
   if (Array.isArray(disciplines)) {
-    console.log('[findDiscipline] Using array structure');
+    // Debug logs removed for security
     for (const item of disciplines) {
       if ('disciplines' in item) {
         // Estrutura hierárquica (blocos)

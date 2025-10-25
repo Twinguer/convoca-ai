@@ -19,9 +19,9 @@ export const prepareAnswersData = (
   subjectScores?: Record<string, number>,
   selectedBookletId?: string
 ) => {
-  console.log('[prepareAnswersData] Input answers:', answers);
-  console.log('[prepareAnswersData] Input nullifiedQuestions:', nullifiedQuestions);
-  console.log('[prepareAnswersData] Input selectedBookletId:', selectedBookletId);
+  // Debug logs removed for security
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   // Validar que temos um caderno selecionado
   if (!selectedBookletId) {
@@ -31,7 +31,7 @@ export const prepareAnswersData = (
   
   // Verificar se há respostas para processar
   if (!answers || typeof answers !== 'object') {
-    console.log('[prepareAnswersData] No answers provided or invalid format');
+    // Debug logs removed for security
     return { answers: {}, subjectScores: subjectScores || {} };
   }
 
@@ -40,7 +40,7 @@ export const prepareAnswersData = (
   
   // Obter o gabarito oficial para mapear section_type
   const officialAnswers = concurso.official_answers?.[selectedBookletId]?.questions || {};
-  console.log('[prepareAnswersData] Official answers for mapping:', officialAnswers);
+  // Debug logs removed for security
 
   // Inicializar estrutura do caderno
   organizedAnswers[selectedBookletId] = {};
@@ -54,7 +54,7 @@ export const prepareAnswersData = (
       // CORREÇÃO: Usar a estrutura do concurso para mapear disciplina em vez do section_type do gabarito
       const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
       
-      console.log(`[prepareAnswersData] Questão ${questionNumber} mapeada para disciplina: ${sectionType}`);
+      // Debug logs removed for security
       
       // Inicializar disciplina se não existir
       if (!organizedAnswers[selectedBookletId][sectionType]) {
@@ -74,7 +74,7 @@ export const prepareAnswersData = (
         // CORREÇÃO: Usar a estrutura do concurso para mapear disciplina em vez do section_type do gabarito
         const sectionType = getSectionTypeForQuestion(concurso, questionNumber);
         
-        console.log(`[prepareAnswersData] Questão anulada ${questionNumber} mapeada para disciplina: ${sectionType}`);
+        // Debug logs removed for security
         
         // Inicializar disciplina se não existir
         if (!organizedAnswers[selectedBookletId][sectionType]) {
@@ -86,9 +86,9 @@ export const prepareAnswersData = (
     });
   }
 
-  console.log('[prepareAnswersData] Organized answers structure:', organizedAnswers);
-  console.log('[prepareAnswersData] Subject scores:', subjectScores);
-  console.log('[prepareAnswersData] BookletId:', selectedBookletId);
+  // Debug logs removed for security
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   return {
     answers: organizedAnswers,

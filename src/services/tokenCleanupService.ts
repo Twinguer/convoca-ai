@@ -9,11 +9,11 @@ export class TokenCleanupService {
   // Iniciar limpeza automática
   static startAutomaticCleanup(): void {
     if (this.cleanupInterval) {
-      logWarn('Token cleanup already running', {}, 'TOKEN_CLEANUP');
+      // Debug logs removed for security
       return;
     }
 
-    logInfo('Starting automatic token cleanup', { interval: this.CLEANUP_INTERVAL }, 'TOKEN_CLEANUP');
+    // Debug logs removed for security
     
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredTokens();
@@ -28,7 +28,7 @@ export class TokenCleanupService {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
-      logInfo('Stopped automatic token cleanup', {}, 'TOKEN_CLEANUP');
+      // Debug logs removed for security
     }
   }
 

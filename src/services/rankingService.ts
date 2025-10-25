@@ -88,15 +88,7 @@ export const fetchUserRankings = async (
     // Filter and format rankings for the specific concurso
     const rankingData = [];
     if (allUserRankings) {
-      console.log('rankingService debug:', {
-        allUserRankingsLength: allUserRankings.length,
-        concursoId,
-        firstUserRanking: allUserRankings[0] ? {
-          userId: allUserRankings[0].user_id,
-          hasConsolidatedData: !!allUserRankings[0].consolidated_data,
-          consolidatedDataKeys: allUserRankings[0].consolidated_data ? Object.keys(allUserRankings[0].consolidated_data) : []
-        } : null
-      });
+      // Debug logs removed for security
       
       // Get user IDs for profile lookup
       const userIds = allUserRankings.map(ur => ur.user_id);
@@ -107,12 +99,7 @@ export const fetchUserRankings = async (
         .select('id, name, avatar_url')
         .in('id', userIds);
       
-      console.log('rankingService profile debug:', {
-        userIds,
-        userProfiles,
-        profileError,
-        profileCount: userProfiles?.length || 0
-      });
+      // Debug logs removed for security
       
       // Create a map for quick profile lookup
       const profileMap = new Map();
@@ -136,7 +123,7 @@ export const fetchUserRankings = async (
               
               if (individualProfile) {
                 profileMap.set(userId, individualProfile);
-                console.log(`Found individual profile for ${userId}:`, individualProfile.name);
+                // Debug logs removed for security
               } else {
                 console.warn(`No profile found for ${userId}`);
               }
@@ -147,23 +134,13 @@ export const fetchUserRankings = async (
         }
       }
       
-      console.log('rankingService profileMap debug:', {
-        profileMapSize: profileMap.size,
-        profileMapKeys: Array.from(profileMap.keys()),
-        profileMapValues: Array.from(profileMap.values()),
-        expectedUserIds: userIds
-      });
+      // Debug logs removed for security
       
       // Process rankings sequentially to handle async operations
       for (const userRanking of allUserRankings) {
         if (userRanking.consolidated_data?.rankings) {
           for (const [rankingId, rankingDataItem] of Object.entries(userRanking.consolidated_data.rankings)) {
-            console.log('rankingService filtering debug:', {
-              rankingId,
-              rankingDataItemConcursoId: rankingDataItem.concurso_id,
-              concursoId,
-              matches: rankingDataItem.concurso_id === concursoId
-            });
+            // Debug logs removed for security
             
             if (rankingDataItem.concurso_id === concursoId) {
               const userProfile = profileMap.get(userRanking.user_id);
@@ -175,41 +152,13 @@ export const fetchUserRankings = async (
                 continue; // Skip this ranking if no profile found
               }
               
-              console.log('rankingService userProfile debug:', {
-                userId: userRanking.user_id,
-                userProfile,
-                foundInMap: profileMap.has(userRanking.user_id),
-                profileMapKeys: Array.from(profileMap.keys())
-              });
+              // Debug logs removed for security
               
-              // Debug da nova estrutura
-              console.log('rankingService new structure debug:', {
-                rankingId,
-                userId: userRanking.user_id,
-                score: rankingDataItem.user_data?.score,
-                subjectScoresTot: rankingDataItem.user_data?.subject_scores_tot,
-                subjectiveScores: rankingDataItem.user_data?.subjective_scores,
-                subjectives: rankingDataItem.user_data?.subjectives,
-                objectScores: rankingDataItem.user_data?.object_scores,
-                // Debug completo do user_data
-                userData: rankingDataItem.user_data,
-                // Debug de todas as chaves do user_data
-                userDataKeys: rankingDataItem.user_data ? Object.keys(rankingDataItem.user_data) : 'no user_data'
-              });
+              // Debug logs removed for security
 
-              console.log('rankingService userId debug:', {
-                rankingId,
-                userRankingUserId: userRanking.user_id,
-                userProfileName: userProfile.name
-              });
+              // Debug logs removed for security
 
-              // Debug log para reservation_type
-              console.log('rankingService reservation_type debug:', {
-                rankingId,
-                user_data: rankingDataItem.user_data,
-                reservation_type: rankingDataItem.user_data?.reservation_type,
-                reservation_type_outside: rankingDataItem.reservation_type
-              });
+              // Debug logs removed for security
 
               rankingData.push(
                 buildRankingFromConsolidated(

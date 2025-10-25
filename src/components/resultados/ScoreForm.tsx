@@ -125,7 +125,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
   const onSubmit = async (values: FormValues) => {
     setIsSubmitting(true);
     try {
-      console.log('Enviando pontuações para cálculo no backend:', values);
+      // Debug logs removed for security
       
       // Chamar função RPC do backend para calcular pontuações com pesos
       const { data: calculationResult, error: calculationError } = await supabase.rpc(
@@ -146,7 +146,7 @@ export const ScoreForm: React.FC<ScoreFormProps> = ({ concurso, rankingId, userI
         throw new Error(calculationResult.error);
       }
 
-      console.log('Resultado do cálculo backend:', calculationResult);
+      // Debug logs removed for security
       
       // Preparar dados para atualização usando resultado do backend
       const scoreData = {

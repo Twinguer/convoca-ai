@@ -728,10 +728,11 @@ const Cronograma = () => {
               }} initialFocus className={cn("p-3")} components={{
                 Day: ({
                   date,
+                  displayMonth,
                   ...props
                 }) => {
                   const hasSessions = hasSessionsOnDate(date);
-                  return <div {...props} className={cn("relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20", hasSessions && "bg-primary/10 text-primary hover:bg-primary/20", hasSessions && "cursor-pointer")} onClick={() => {
+                  return <div className={cn("relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20", hasSessions && "bg-primary/10 text-primary hover:bg-primary/20", hasSessions && "cursor-pointer")} onClick={() => {
                     if (hasSessions) {
                       openSessionDetailsModal(date);
                     }

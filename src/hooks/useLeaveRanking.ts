@@ -44,8 +44,8 @@ export const useLeaveRanking = () => {
 
       if (updateError) throw updateError;
 
-      // Deletar registros relacionados usando a chave do ranking
-      await supabase.from('score_calculation_logs').delete().eq('user_ranking_id', rankingKey);
+      // Deletar registros relacionados usando o user_id (formato correto para score_calculation_logs)
+      await supabase.from('score_calculation_logs').delete().eq('user_ranking_id', user.id);
       // user_answers não é mais usado - dados estão em user_rankings consolidated_data
       
       // Não precisamos deletar da tabela user_rankings pois ela contém dados consolidados

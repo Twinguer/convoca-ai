@@ -13,15 +13,7 @@ export const isNewDisciplinesStructure = (disciplines: any): disciplines is Disc
          'blocks' in disciplines &&
          Array.isArray(disciplines.blocks);
   
-  console.log('[isNewDisciplinesStructure] Checking structure:', {
-    hasDisciplines: !!disciplines,
-    isObject: typeof disciplines === 'object',
-    hasMinTotalScore: 'minimum_total_score' in disciplines,
-    hasMinTotalScoreCotas: 'minimum_total_score_cotas' in disciplines,
-    hasBlocks: 'blocks' in disciplines,
-    isBlocksArray: Array.isArray(disciplines?.blocks),
-    result
-  });
+  // Debug logs removed for security
   
   return result;
 };
@@ -32,12 +24,7 @@ export const isOldBlocksStructure = (disciplines: any): disciplines is Disciplin
          disciplines.length > 0 &&
          'disciplines' in disciplines[0];
   
-  console.log('[isOldBlocksStructure] Checking structure:', {
-    isArray: Array.isArray(disciplines),
-    hasLength: disciplines?.length > 0,
-    hasDisciplinesInFirst: disciplines?.[0] && 'disciplines' in disciplines[0],
-    result
-  });
+  // Debug logs removed for security
   
   return result;
 };
@@ -49,13 +36,7 @@ export const isFlatStructure = (disciplines: any): disciplines is NestedDiscipli
          'isEnabled' in disciplines[0] &&
          !('disciplines' in disciplines[0]);
   
-  console.log('[isFlatStructure] Checking structure:', {
-    isArray: Array.isArray(disciplines),
-    hasLength: disciplines?.length > 0,
-    hasIsEnabled: disciplines?.[0] && 'isEnabled' in disciplines[0],
-    notHasDisciplines: disciplines?.[0] && !('disciplines' in disciplines[0]),
-    result
-  });
+  // Debug logs removed for security
   
   return result;
 };
@@ -68,13 +49,13 @@ export const migrateDisciplinesStructure = (concurso: Concurso): Concurso => {
   
   // Se já é a nova estrutura, retornar como está
   if (isNewDisciplinesStructure(concurso.disciplines)) {
-    console.log('[migrateDisciplinesStructure] Already using new structure');
+    // Debug logs removed for security
     return concurso;
   }
   
   // Migrar estrutura antiga de blocos para nova
   if (isOldBlocksStructure(concurso.disciplines)) {
-    console.log('[migrateDisciplinesStructure] Migrating old blocks structure to new structure');
+    // Debug logs removed for security
     
     const newStructure: DisciplinesStructure = {
       minimum_total_score: 0, // Valor padrão - pode ser configurado posteriormente
@@ -105,7 +86,7 @@ export const migrateDisciplinesStructure = (concurso: Concurso): Concurso => {
   
   // Estrutura plana - converter para nova estrutura com um bloco único
   if (isFlatStructure(concurso.disciplines)) {
-    console.log('[migrateDisciplinesStructure] Migrating flat structure to new structure');
+    // Debug logs removed for security
     
     const newStructure: DisciplinesStructure = {
       minimum_total_score: 0,
@@ -143,23 +124,21 @@ export const migrateDisciplinesStructure = (concurso: Concurso): Concurso => {
  */
 export const extractDisciplines = (concurso: Concurso): NestedDiscipline[] => {
   if (!concurso.disciplines) {
-    console.log('[extractDisciplines] No disciplines found in concurso');
+    // Debug logs removed for security
     return [];
   }
   
-  console.log('[extractDisciplines] Concurso disciplines type:', typeof concurso.disciplines);
-  console.log('[extractDisciplines] Concurso disciplines keys:', Object.keys(concurso.disciplines));
-  console.log('[extractDisciplines] Concurso disciplines value:', concurso.disciplines);
+  // Debug logs removed for security
   
   // ✅ CORREÇÃO: Verificar se é array vazio primeiro
   if (Array.isArray(concurso.disciplines) && concurso.disciplines.length === 0) {
-    console.log('[extractDisciplines] Empty array detected, returning empty array');
+    // Debug logs removed for security
     return [];
   }
   
   // Nova estrutura hierárquica completa
   if (isNewDisciplinesStructure(concurso.disciplines)) {
-    console.log('[extractDisciplines] Using new hierarchical structure');
+    // Debug logs removed for security
     const disciplines: NestedDiscipline[] = [];
     
     for (const block of concurso.disciplines.blocks) {
@@ -182,7 +161,7 @@ export const extractDisciplines = (concurso: Concurso): NestedDiscipline[] => {
   
   // Estrutura antiga de blocos (compatibilidade)
   if (isOldBlocksStructure(concurso.disciplines)) {
-    console.log('[extractDisciplines] Using old blocks structure');
+    // Debug logs removed for security
     const disciplines: NestedDiscipline[] = [];
     
     for (const block of concurso.disciplines) {
@@ -205,13 +184,13 @@ export const extractDisciplines = (concurso: Concurso): NestedDiscipline[] => {
   
   // Estrutura plana (compatibilidade)
   if (isFlatStructure(concurso.disciplines)) {
-    console.log('[extractDisciplines] Using flat structure');
+    // Debug logs removed for security
     return concurso.disciplines.filter(d => d.isEnabled);
   }
   
   // Tentar detectar estrutura com campos diferentes
   if (Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-    console.log('[extractDisciplines] Attempting to process as array with first item:', concurso.disciplines[0]);
+    // Debug logs removed for security
     
     // Verificar se é um array de blocos com estrutura diferente
     if (concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object') {
@@ -219,7 +198,7 @@ export const extractDisciplines = (concurso: Concurso): NestedDiscipline[] => {
       
       // Se tem 'disciplines' mas não tem 'blockId', pode ser estrutura antiga
       if ('disciplines' in firstItem && !('blockId' in firstItem)) {
-        console.log('[extractDisciplines] Detected old block structure without blockId');
+        // Debug logs removed for security
         const disciplines: NestedDiscipline[] = [];
         
         for (const block of concurso.disciplines) {
@@ -287,8 +266,8 @@ export const debugDisciplinesStructure = (concurso: Concurso) => {
     if (Array.isArray(concurso.disciplines)) {
       console.log('Array length:', concurso.disciplines.length);
       if (concurso.disciplines.length > 0) {
-        console.log('First item:', concurso.disciplines[0]);
-        console.log('First item keys:', Object.keys(concurso.disciplines[0]));
+        // Debug logs removed for security
+        // Debug logs removed for security
       }
     }
   }
@@ -299,8 +278,8 @@ export const debugDisciplinesStructure = (concurso: Concurso) => {
  * Função para mapear dados do formulário para nova estrutura
  */
 export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesStructure => {
-  console.log('[mapFormDataToDisciplinesStructure] Input formValues:', formValues);
-  console.log('[mapFormDataToDisciplinesStructure] formValues.disciplines:', formValues.disciplines);
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   // Extrair minimum scores do form (aceita snake_case e camelCase)
   const totalScore = Number(
@@ -313,26 +292,26 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
   // Extrair penalidade para respostas erradas (apenas para provas C/E)
   const wrongAnswerPenalty = Number(formValues.wrong_answer_penalty ?? 0);
   
-  console.log('[mapFormDataToDisciplinesStructure] totalScore:', totalScore);
-  console.log('[mapFormDataToDisciplinesStructure] quotaScore:', quotaScore);
-  console.log('[mapFormDataToDisciplinesStructure] wrongAnswerPenalty:', wrongAnswerPenalty);
+  // Debug logs removed for security
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   // Mapear blocos de disciplinas
   const blocks = (formValues.disciplines || []).map((block: any) => {
-    console.log('[mapFormDataToDisciplinesStructure] Processing block:', block);
+    // Debug logs removed for security
     return {
       blockId: block.id,
       blockName: block.name,
       blockMinimumScore: Number(block.minimum_score) || 0,
       blockMinimumCotas: Number(block.minimum_score_cotas) || 0,
       disciplines: (block.disciplines || []).map((discipline: any) => {
-        console.log('[mapFormDataToDisciplinesStructure] Processing discipline:', discipline);
+        // Debug logs removed for security
         const questionCount = Number(discipline.questionCount) || 0;
-        console.log('[mapFormDataToDisciplinesStructure] Discipline questionCount:', questionCount, 'from:', discipline.questionCount);
+        // Debug logs removed for security
         
         // Validar se questionCount é válido
         if (questionCount === 0) {
-          console.warn('[mapFormDataToDisciplinesStructure] WARNING: questionCount is 0 for discipline:', discipline.name, 'type:', discipline.type);
+          // Debug logs removed for security
         }
         
         return {
@@ -356,8 +335,8 @@ export const mapFormDataToDisciplinesStructure = (formValues: any): DisciplinesS
     blocks
   };
   
-  console.log('[mapFormDataToDisciplinesStructure] Final result:', JSON.stringify(result, null, 2));
-  console.log('[mapFormDataToDisciplinesStructure] Blocks count:', result.blocks.length);
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   return result;
 };

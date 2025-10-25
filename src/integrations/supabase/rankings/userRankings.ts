@@ -44,7 +44,7 @@ interface UserRankingData {
  * Use fetchUserRankingsV3 de rankingServiceV3.ts para queries otimizadas
  */
 export const getRankingsWithUserInfo = async (supabase: SupabaseClient, concursoId: string) => {
-  console.warn('[userRankings] DEPRECATED: Use fetchUserRankingsV3 from rankingServiceV3.ts');
+  // Deprecated function - use fetchUserRankingsV3 from rankingServiceV3.ts
   
   try {
     // Get all user_rankings and filter by concurso_id in consolidated_data

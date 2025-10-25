@@ -40,7 +40,7 @@ export const consolidatedAnswerService = {
   // Buscar dados consolidados de um usuário específico dentro do concurso
   async getConsolidatedAnswers(rankingId: string): Promise<ConsolidatedAnswerData | null> {
     try {
-      console.log('[consolidatedAnswerService] Buscando dados consolidados para ranking:', rankingId);
+      // Debug logs removed for security
       
       // Buscar dados do usuário atual
       const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +63,7 @@ export const consolidatedAnswerService = {
 
       // Verificar se há dados consolidados
       if (!rankingData.consolidated_data || rankingData.consolidated_data === '{}') {
-        console.log('[consolidatedAnswerService] Nenhum dado consolidado encontrado');
+        // Debug logs removed for security
         return null;
       }
 
@@ -73,14 +73,14 @@ export const consolidatedAnswerService = {
       // Extrair dados usando a estrutura atual: rankings -> rankingId -> user_data
       const rankings = consolidatedData.rankings;
       if (!rankings) {
-        console.log('[consolidatedAnswerService] Nenhum ranking encontrado nos dados consolidados');
+        // Debug logs removed for security
         return null;
       }
 
       // Encontrar o ranking específico pelo rankingId
       const specificRankingData = rankings[rankingId];
       if (!specificRankingData) {
-        console.log('[consolidatedAnswerService] Ranking específico não encontrado:', rankingId);
+        // Debug logs removed for security
         return null;
       }
 
@@ -102,7 +102,7 @@ export const consolidatedAnswerService = {
         }
       };
       
-      console.log('[consolidatedAnswerService] Dados consolidados encontrados:', adaptedData);
+      // Debug logs removed for security
       
       return adaptedData;
     } catch (error) {
@@ -114,7 +114,7 @@ export const consolidatedAnswerService = {
       // Buscar respostas de um caderno específico (ISOLADO) - Estrutura atual
       async getBookletAnswers(rankingId: string, bookletId: string): Promise<{ [key: string]: string }> {
         try {
-          console.log('[consolidatedAnswerService] Buscando respostas do caderno:', bookletId, 'para ranking:', rankingId);
+          // Debug logs removed for security
 
           const consolidatedData = await this.getConsolidatedAnswers(rankingId);
 
@@ -132,7 +132,7 @@ export const consolidatedAnswerService = {
 
             if (rankingData?.consolidated_data?.rankings?.[rankingId]?.user_data?.answers) {
               const answers = rankingData.consolidated_data.rankings[rankingId].user_data.answers;
-              console.log('[consolidatedAnswerService] Respostas do caderno encontradas:', answers);
+              // Debug logs removed for security
               return answers;
             }
           }
@@ -148,7 +148,7 @@ export const consolidatedAnswerService = {
   // Trocar caderno (SIMPLIFICADO - apenas retorna as respostas do caderno)
   async switchBooklet(rankingId: string, bookletId: string): Promise<{ success: boolean; answers?: Record<string, string>; error?: string }> {
     try {
-      console.log('[consolidatedAnswerService] Trocando para caderno:', bookletId, 'ranking:', rankingId);
+      // Debug logs removed for security
       
       // Buscar as respostas específicas do caderno
       const bookletAnswers = await this.getBookletAnswers(rankingId, bookletId);

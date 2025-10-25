@@ -13,7 +13,7 @@ import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
 import { Link } from 'react-router-dom';
-import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
+import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 interface UserProfile {
@@ -80,8 +80,9 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const {
           data: profileData,
           error: profileError
-        } = await supabase.from('users_profiles').select('id, name, avatar_url').eq('id', id).single();
+        } = await supabase.from('users_profiles').select('id, name, avatar_url').eq('id', id).maybeSingle();
         if (profileError) throw profileError;
+        if (!profileData) throw new Error('User profile not found');
 
         // Get follower count
         const {
@@ -105,7 +106,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         // Try to get extended profile data from users_profiles table
         const {
           data: extendedData
-        } = await supabase.from('users_profiles').select('*').eq('id', id).single();
+        } = await supabase.from('users_profiles').select('*').eq('id', id).maybeSingle();
         return {
           ...profileData,
           followerCount: followerCount || 0,
@@ -179,14 +180,32 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
 
         // Para cada concurso, pegar a lista que já usamos na página de resultados (Ampla Concorrência)
         const results = await Promise.all(concursoIds.map(async cid => {
-          const list = await getRankingsWithUserInfo(supabase, cid);
+          const list = await fetchUserRankingsV3(cid);
 
           // Buscar dados do ranking para verificar o tipo de exame
-          const { data: rankingData } = await supabase
-            .from('concursos')
-            .select('exam_type')
-            .eq('id', cid)
-            .single();
+          let rankingData = null;
+          try {
+            const { data, error } = await supabase
+              .from('concursos')
+              .select('exam_type')
+              .eq('id', cid)
+              .maybeSingle();
+            
+            if (error) {
+              console.error('Error fetching concurso exam_type:', error);
+              // Use default exam_type if we can't fetch it
+              rankingData = { exam_type: 'Alternativas' };
+            } else if (!data) {
+              // Concurso não existe, usar tipo padrão (não é um erro)
+              rankingData = { exam_type: 'Alternativas' };
+            } else {
+              rankingData = data;
+            }
+          } catch (err) {
+            console.error('Exception fetching concurso exam_type:', err);
+            // Use default exam_type if we can't fetch it
+            rankingData = { exam_type: 'Alternativas' };
+          }
 
           // Mesma regra de eliminação usada na tabela de rankings
           const isBelowMinimum = (ranking: any, concursoData: any) => {

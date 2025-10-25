@@ -129,14 +129,7 @@ export const fetchUserRankingsV3 = async (
       const subjectiveScores = userData?.subjectives || {};
       const objectScores = userData?.object_scores || {};
       
-      console.log('[fetchUserRankingsV3] Debug ranking data:', {
-        userId: item.user_id,
-        concursoId,
-        rankingId: item.rankingId,
-        score: userData?.score,
-        subjectiveScores,
-        objectScores
-      });
+      // Debug logs removed for security
 
       return {
         id: item.rankingId, // Usar o rankingId específico

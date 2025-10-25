@@ -29,7 +29,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
                 ? discipline.questionCount
                 : Number(String(discipline.questionCount || '0'));
                 
-              console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+              // Debug logs removed for security
               totalQuestions += questionCount;
             }
           }
@@ -44,7 +44,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
               ? discipline.questionCount
               : Number(String(discipline.questionCount || '0'));
               
-            console.log(`[getTotalQuestions] Disciplina ${discipline.name}: ${questionCount} questões`);
+            // Debug logs removed for security
             totalQuestions += questionCount;
           }
         }
@@ -55,7 +55,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
     return totalQuestions;
   }
   
-  console.warn('[getTotalQuestions] No disciplines found, returning 0');
+  // Debug logs removed for security
   return 0;
 };
 
@@ -69,7 +69,7 @@ export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): n
 // Check if official answers are missing for a given concurso and booklet
 export const checkMissingOfficialAnswers = async (concursoId: string, bookletId: string): Promise<boolean> => {
   try {
-    console.log('[checkMissingOfficialAnswers] DEBUG - Parâmetros recebidos:', { concursoId, bookletId });
+    // Debug logs removed for security
     
     const { supabase } = await import('@/integrations/supabase/client');
     
@@ -79,36 +79,36 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
       .eq('id', concursoId)
       .maybeSingle();
 
-    console.log('[checkMissingOfficialAnswers] DEBUG - Resposta do Supabase recebida');
+    // Debug logs removed for security
 
     if (error || !data) {
       console.log('[checkMissingOfficialAnswers] Erro ao buscar gabarito oficial ou gabarito não encontrado');
       return true;
     }
 
-    console.log('[checkMissingOfficialAnswers] DEBUG - official_answers encontrado:', data.official_answers);
-    console.log('[checkMissingOfficialAnswers] DEBUG - Chaves disponíveis:', Object.keys(data.official_answers || {}));
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // A estrutura real tem os cadernos diretamente no primeiro nível
     const bookletData = data?.official_answers?.[bookletId];
-    console.log('[checkMissingOfficialAnswers] DEBUG - Dados do caderno:', bookletData);
-    console.log('[checkMissingOfficialAnswers] DEBUG - bookletData.questions:', bookletData?.questions);
-    console.log('[checkMissingOfficialAnswers] DEBUG - Quantidade de questões:', bookletData?.questions ? Object.keys(bookletData.questions).length : 0);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     // Verificar se o gabarito existe e tem questões
     if (!bookletData || !bookletData.questions) {
-      console.log('[checkMissingOfficialAnswers] Gabarito não encontrado para o caderno:', bookletId);
+      // Debug logs removed for security
       return true;
     }
 
     // Verificar se há pelo menos uma questão
     const questionCount = Object.keys(bookletData.questions).length;
     if (questionCount === 0) {
-      console.log('[checkMissingOfficialAnswers] Gabarito encontrado mas sem questões');
+      // Debug logs removed for security
       return true;
     }
 
-    console.log('[checkMissingOfficialAnswers] Gabarito oficial encontrado com', questionCount, 'questões');
+    // Debug logs removed for security
     return false;
   } catch (error) {
     console.error('[checkMissingOfficialAnswers] Erro ao verificar gabarito oficial:', error);

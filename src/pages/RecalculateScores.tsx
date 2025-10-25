@@ -28,7 +28,7 @@ const RecalculateScores: React.FC = () => {
   };
 
   const handleRecalculateSpecific = async () => {
-    console.log('🔍 [RecalculateScores] Iniciando recálculo específico...');
+    // Debug logs removed for security
     setIsRecalculating(true);
     setResults([]);
     

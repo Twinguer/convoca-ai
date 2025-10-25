@@ -62,16 +62,15 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
 
   const validateBeforeSave = () => {
     const currentValues = form.getValues();
-    console.log('[GeneralTab] validateBeforeSave called with values:', currentValues);
+    // Debug logs removed for security
 
     // Validação de cadernos criados (não salvos, pois handleFillAnswerKey salva depois)
-    console.log('[GeneralTab] booklets:', booklets);
-    console.log('[GeneralTab] bookletsRef.current:', bookletsRef.current);
+    // Debug logs removed for security
     
     // Verificar se há cadernos criados (não se já foram salvos)
     const currentBooklets = booklets.length > 0 ? booklets : bookletsRef.current;
     if (currentBooklets.length === 0) {
-      console.log('[GeneralTab] Validação falhou: nenhum caderno criado');
+      // Debug logs removed for security
       toast({
         title: "Cadernos obrigatórios",
         description: "É necessário criar ao menos 1 caderno de prova antes de salvar o ranking.",
@@ -189,13 +188,13 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     // Usar o estado booklets em vez de bookletsRef.current
     const currentBooklets = booklets.length > 0 ? booklets : bookletsRef.current;
     
-    console.log('[GeneralTab] validateBooklets - booklets state:', booklets);
-    console.log('[GeneralTab] validateBooklets - bookletsRef.current:', bookletsRef.current);
-    console.log('[GeneralTab] validateBooklets - currentBooklets:', currentBooklets);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     // Validar se há pelo menos 1 caderno
     if (currentBooklets.length === 0) {
-      console.log('[GeneralTab] Validação falhou: nenhum caderno encontrado');
+      // Debug logs removed for security
       toast({
         title: "Cadernos obrigatórios",
         description: "É necessário criar ao menos 1 caderno de prova antes de preencher o gabarito",
@@ -266,7 +265,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       const savedBooklets = processedBooklets;
 
       setBooklets(savedBooklets);
-      console.log('[GeneralTab] Cadernos salvos com sucesso');
+      // Debug logs removed for security
       return true;
     } catch (error: any) {
       toast({

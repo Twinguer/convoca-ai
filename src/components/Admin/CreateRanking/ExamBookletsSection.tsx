@@ -186,10 +186,10 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     onBookletsSaved?.(false);
   };
   const validateBooklets = () => {
-    console.log('Validando cadernos:', booklets);
+    // Debug logs removed for security
     
     if (booklets.length === 0) {
-      console.log('Validação falhou: sem cadernos');
+      // Debug logs removed for security
       return "Adicione pelo menos um caderno de prova";
     }
 
@@ -197,19 +197,18 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     const names = booklets.map(b => b.name.trim()).filter(n => n);
     const uniqueNames = new Set(names);
     
-    console.log('Names:', names, 'Unique names:', Array.from(uniqueNames));
-    console.log('Names length:', names.length, 'Booklets length:', booklets.length);
+    // Debug logs removed for security
     
     if (names.length !== booklets.length) {
-      console.log('Validação falhou: nomes vazios');
+      // Debug logs removed for security
       return "Todos os cadernos devem ter um nome preenchido";
     }
     if (names.length !== uniqueNames.size) {
-      console.log('Validação falhou: nomes duplicados');
+      // Debug logs removed for security
       return "Nomes dos cadernos devem ser únicos";
     }
     
-    console.log('Validação passou');
+    // Debug logs removed for security
     return null;
   };
   // Export this function to be callable from parent components
@@ -261,7 +260,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       }
 
       const savedBooklets = processedBooklets;
-      console.log('Todos os cadernos salvos:', savedBooklets);
+      // Debug logs removed for security
       setBooklets(savedBooklets);
       setHasUnsavedChanges(false);
       setIsBookletsSaved(true);

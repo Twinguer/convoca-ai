@@ -35,7 +35,7 @@ export const getTotalQuestions = (concurso: Concurso): number => {
   
   // Verificar se é a nova estrutura hierárquica (objeto com blocks)
   if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-    console.log('[getTotalQuestions] Usando nova estrutura hierárquica com blocks');
+    // Debug logs removed for security
     let total = 0;
     
     for (const block of concurso.disciplines.blocks) {
@@ -43,14 +43,14 @@ export const getTotalQuestions = (concurso: Concurso): number => {
         for (const discipline of block.disciplines) {
           if (discipline.isEnabled && discipline.questionCount) {
             const count = parseInt(String(discipline.questionCount), 10) || 0;
-            console.log('[getTotalQuestions] Discipline:', discipline.name, 'questionCount:', count);
+            // Debug logs removed for security
             total += count;
           }
         }
       }
     }
     
-    console.log(`[getTotalQuestions] Total de questões: ${total}`);
+    // Debug logs removed for security
     return total;
   }
   
@@ -83,10 +83,10 @@ export const getTotalQuestions = (concurso: Concurso): number => {
       }
     }
     
-    console.log(`[getTotalQuestions] Total de questões: ${total}`);
+    // Debug logs removed for security
     return total;
   }
   
-  console.warn('[getTotalQuestions] No disciplines found, returning 0');
+  // Debug logs removed for security
   return 0;
 };

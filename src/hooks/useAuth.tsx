@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         return;
       }
-      console.log('Auth refresh debug: session updated');
+      // Debug logs removed for security
       setSession(newSession);
       setUser(newSession?.user ?? null);
     } catch (error) {

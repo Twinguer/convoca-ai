@@ -84,7 +84,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               }
               if (updatedDiscipline.questionCount === undefined) {
                 updatedDiscipline.questionCount = 10; // Valor padrão 10 em vez de 0
-                console.log('[ExamStructureSection] Set default questionCount to 10 for discipline:', updatedDiscipline.id);
+                // Debug logs removed for security
               }
               if (updatedDiscipline.weight === undefined) {
                 updatedDiscipline.weight = 1;
@@ -222,7 +222,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
 
   // Atualizar campo de disciplina
   const handleDisciplineChange = (blockId: string, disciplineId: string, field: string, value: any) => {
-    console.log('[handleDisciplineChange] Updating field:', field, 'to value:', value, 'type:', typeof value);
+    // Debug logs removed for security
     const processedValue = field === 'name' ? value.slice(0, 5) : value;
     const currentBlocks = form.watch('disciplines') || [];
     const updatedBlocks = currentBlocks.map(block => {
@@ -235,7 +235,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                 ...discipline,
                 [field]: processedValue
               };
-              console.log('[handleDisciplineChange] Updated discipline:', updatedDiscipline);
+              // Debug logs removed for security
               return updatedDiscipline;
             }
             return discipline;
@@ -244,7 +244,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
       }
       return block;
     });
-    console.log('[handleDisciplineChange] Setting form value with updated blocks');
+    // Debug logs removed for security
     form.setValue('disciplines', updatedBlocks);
   };
 
@@ -428,21 +428,21 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                           maxLength={3}
                           onChange={e => {
                             const value = e.target.value;
-                            console.log('[ExamStructureSection] questionCount onChange:', value);
+                            // Debug logs removed for security
                             if (value.length <= 3 && !isNaN(Number(value)) && Number(value) <= 999) {
                               const numValue = Number(value);
-                              console.log('[ExamStructureSection] Setting questionCount to:', numValue);
+                              // Debug logs removed for security
                               handleDisciplineChange(block.id, discipline.id, 'questionCount', numValue);
                             } else if (value === '') {
                               // Permitir campo vazio temporariamente
-                              console.log('[ExamStructureSection] Empty value, setting to 0 temporarily');
+                              // Debug logs removed for security
                               handleDisciplineChange(block.id, discipline.id, 'questionCount', 0);
                             }
                           }}
                           onBlur={e => {
                             const value = e.target.value;
                             if (value === '' || Number(value) === 0) {
-                              console.log('[ExamStructureSection] onBlur: Setting default questionCount to 10');
+                              // Debug logs removed for security
                               handleDisciplineChange(block.id, discipline.id, 'questionCount', 10);
                             }
                           }}
@@ -540,7 +540,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
               <DropdownMenuContent>
                 {!form.watch('has_discursive') && (
                   <DropdownMenuItem onClick={() => {
-                    console.log('Adding discursive section');
+                    // Debug logs removed for security
                     form.setValue('has_discursive', true);
                     form.setValue('discursive_minimum_score', 0);
                   }}>

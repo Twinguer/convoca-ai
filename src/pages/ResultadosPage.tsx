@@ -26,16 +26,17 @@ import {
 
 interface ResultadosPageProps {
   rankingId?: string;
+  concursoId?: string;
   secureToken?: string; // Prop opcional para evitar erro de tipo
 }
 
-const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
+const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   
   // Usar ID da URL ou prop
-  const finalRankingId = rankingId || id;
+  const finalRankingId = rankingId || concursoId || id;
   
   // Hook principal para dados do concurso e informações básicas
   const {
@@ -106,7 +107,28 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
     });
   }, [concurso, paginatedRankings, isAuthenticated, isParticipating, userRanking]);
 
+  // Estado para controlar debounce
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(0);
+  
   const handleRefresh = async () => {
+    const now = Date.now();
+    const timeSinceLastRefresh = now - lastRefreshTime;
+    
+    // Debounce: evitar múltiplas execuções em menos de 3 segundos
+    if (isRefreshing || timeSinceLastRefresh < 3000) {
+      toast({
+        title: "Aguarde",
+        description: "Recálculo já em andamento. Aguarde alguns segundos.",
+        variant: "destructive",
+        duration: 2000
+      });
+      return;
+    }
+    
+    setIsRefreshing(true);
+    setLastRefreshTime(now);
+    
     logger.info('Manual refresh initiated by user for classification', 'RESULTADOS_PAGE');
     
     try {
@@ -145,6 +167,8 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         variant: "destructive",
         duration: 5000
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -171,7 +195,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
             onClick={handleRefresh} 
             className="flex items-center gap-2 text-xs sm:text-sm" 
             size="sm" 
-            disabled={isRefetching || isRecalculating}
+            disabled={isRefetching || isRecalculating || isRefreshing}
             variant="outline"
           >
             {isRecalculating ? (
@@ -179,7 +203,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
                 <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                 Recalculando... {recalculationProgress?.current}/{recalculationProgress?.total}
               </>
-            ) : isRefetching ? (
+            ) : isRefetching || isRefreshing ? (
               <>
                 <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                 Atualizando...
@@ -226,11 +250,7 @@ const ResultadosPage = ({ rankingId }: ResultadosPageProps = {}) => {
         isAuthenticated={isAuthenticated} 
         isRefetching={isRefetching}
       />
-      {console.log('[ResultadosPage] Passing concurso to RankingTable:', {
-        concurso: !!concurso,
-        concursoId: concurso?.id,
-        concursoTitle: concurso?.titulo
-      })}
+      {/* Debug logs removed for security */}
       
       {!isAuthenticated && <div className="mt-1 sm:mt-2 bg-secondary/50 p-3 rounded-lg border border-border text-sm">
           <p className="text-center text-muted-foreground">

@@ -374,17 +374,17 @@ export const useSaveRanking = () => {
           wrong_answer_penalty: formValues.wrong_answer_penalty || 0
         });
         
-        console.log('[useSaveRanking] Disciplines structure to save:', disciplinesStructure);
-        console.log('[useSaveRanking] Is disciplines structure an object?', typeof disciplinesStructure === 'object');
-        console.log('[useSaveRanking] Is disciplines structure an array?', Array.isArray(disciplinesStructure));
-        console.log('[useSaveRanking] Disciplines structure blocks:', disciplinesStructure.blocks);
-        console.log('[useSaveRanking] Form values disciplines:', formValues.disciplines);
-        console.log('[useSaveRanking] Form values disciplines type:', typeof formValues.disciplines);
-        console.log('[useSaveRanking] Form values disciplines isArray:', Array.isArray(formValues.disciplines));
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
         
         // ✅ VALIDAÇÃO: Verificar se há disciplinas antes de salvar
         if (!disciplinesStructure.blocks || disciplinesStructure.blocks.length === 0) {
-          console.warn('[useSaveRanking] No disciplines found in form data - continuing anyway for debugging');
+          // Debug logs removed for security
           // toast.error('Por favor, adicione pelo menos uma disciplina na estrutura da prova');
           // return;
         }
@@ -392,12 +392,8 @@ export const useSaveRanking = () => {
         // Determinar se há disciplinas customizadas baseado na nova estrutura
         const hasCustomDisciplines = disciplinesStructure.blocks && disciplinesStructure.blocks.length > 0;
         
-        console.log('[useSaveRanking] Updating concurso with ID:', concursoIdToUse);
-        console.log('[useSaveRanking] Update data:', {
-          exam_type: formValues.exam_type || 'Alternativas',
-          disciplines: disciplinesStructure,
-          has_custom_knowledge: hasCustomDisciplines
-        });
+        // Debug logs removed for security
+        // Debug logs removed for security
         
         const { error: updateError } = await supabase
           .from('concursos')

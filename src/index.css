@@ -410,3 +410,19 @@
   transition: box-shadow 0.3s ease;
 }
 
+/* Focus trap para dialogs - sem outline visual */
+.focus-trap {
+  outline: none;
+}
+
+/* Remove outline do focus-trap para evitar bordas verdes */
+.focus-trap:focus-within {
+  outline: none;
+}
+
+/* Remove outline de campos URL em modais para evitar borda verde */
+.focus-trap input[type="url"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+

@@ -433,7 +433,7 @@ const RankingTableContent: React.FC<{
   const customDisciplines = getCustomDisciplines();
   
   if (!concurso) {
-    console.log('[RankingTable] No concurso provided, rendering simplified table');
+    // Debug logs removed for security
     // ... keep existing code for the simplified table
     return <Table>
         <TableHeader>
@@ -493,17 +493,7 @@ const RankingTableContent: React.FC<{
         
         {/* Subjective parts */}
         {(() => {
-          console.log('[RankingTable] Subjective parts debug:', {
-            concurso: concurso,
-            subjects: concurso.subjects,
-            discr: concurso.subjects?.discr,
-            case1: concurso.subjects?.case1,
-            case2: concurso.subjects?.case2,
-            case3: concurso.subjects?.case3,
-            other: concurso.subjects?.other,
-            has_discursive: concurso.subjects?.discr || false,
-            has_case_study_1: concurso.subjects?.case1 || false
-          });
+          // Debug logs removed for security
           return null;
         })()}
         
@@ -568,12 +558,7 @@ const RankingTableContent: React.FC<{
 
   // Render each ranking row
   const renderRankingRows = () => {
-    console.log('[RankingTable] renderRankingRows debug:', {
-      rankingsLength: rankings?.length || 0,
-      currentUserId,
-      isAuthenticated,
-      customDisciplinesLength: customDisciplines?.length || 0
-    });
+    // Debug logs removed for security
     
     return <TableBody className="space-y-0.5">
       {rankings.length > 0 ? rankings.map(ranking => {
@@ -605,15 +590,7 @@ const RankingTableContent: React.FC<{
                 : (() => {
                     // Debug específico para PPP e PCD
                     if (ranking.reservationType === 'PPP' || ranking.reservationType === 'PCD') {
-                      console.log('[RankingTable] Rendering quota position:', {
-                        reservationType: ranking.reservationType,
-                        rankingId: ranking.id,
-                        rankingName: ranking.name,
-                        quotaPosition: ranking.quotaPosition,
-                        belowMinimum,
-                        isAmpla,
-                        hasQuotaPosition: !!ranking.quotaPosition
-                      });
+                      // Debug logs removed for security
                     }
                     
                     // Exibir posição da cota se existir e for maior que 0
@@ -629,7 +606,7 @@ const RankingTableContent: React.FC<{
             
             <TableCell>
               <div className="flex items-center gap-2 cursor-pointer hover:text-emerald-600 transition-colors" onClick={() => {
-                console.log('User click debug:', { name: ranking.name });
+                // Debug logs removed for security
                 handleUserClick(ranking.userId);
               }}>
                 <Avatar className="h-8 w-8">
@@ -665,12 +642,7 @@ const RankingTableContent: React.FC<{
             {/* Subjective part scores */}
             {concurso.subjects?.discr === true && <TableCell className={`text-right ${ranking.belowDisciplineMinimums?.includes('discursive') ? 'text-red-600 font-bold' : ''}`}>
                 {(() => {
-                  console.log('Discursive score debug:', {
-                    rankingId: ranking.id,
-                    weightedDiscursiveScore: ranking.weightedDiscursiveScore,
-                    discursiveScore: ranking.discursiveScore,
-                    belowMinimum: ranking.belowDisciplineMinimums?.includes('discursive')
-                  });
+                  // Debug logs removed for security
                   return formatScore(Number(ranking.weightedDiscursiveScore || 0));
                 })()}
               </TableCell>}

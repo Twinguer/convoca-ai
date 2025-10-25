@@ -41,32 +41,14 @@ export const useSaveAnswers = ({
         return;
       }
 
-      console.log('[useSaveAnswers] Preparando dados para salvamento');
-      console.log('[useSaveAnswers] Respostas do usuário:', answers);
-      console.log('[useSaveAnswers] Caderno selecionado:', selectedBookletId);
+      // Debug logs removed for security
+      // Debug logs removed for security
+      // Debug logs removed for security
       
       // Debug dos valores subjetivos recebidos
-      console.log('[useSaveAnswers] Valores subjetivos recebidos:', {
-        discursiveScore,
-        caseStudy1Score,
-        caseStudy2Score,
-        caseStudy3Score,
-        subjectScores,
-        otherSubjectiveScore: subjectScores?.other_subjective || 0
-      });
-      console.log('[useSaveAnswers] DEBUG - selectedBookletId detalhado:', {
-        value: selectedBookletId,
-        type: typeof selectedBookletId,
-        length: selectedBookletId?.length,
-        trimmed: selectedBookletId?.trim(),
-        isEmpty: selectedBookletId?.trim() === '',
-        isUndefined: selectedBookletId === undefined
-      });
-      console.log('[useSaveAnswers] Parâmetros recebidos:', {
-        selectedBookletId,
-        answersCount: Object.keys(answers).length,
-        editCount
-      });
+      // Debug logs removed for security
+      // Debug logs removed for security
+      // Debug logs removed for security
 
       // Garantir que sempre temos um bookletId válido
       let bookletIdString = 'default';
@@ -105,9 +87,9 @@ export const useSaveAnswers = ({
           
           if (concursoData?.exam_booklets && concursoData.exam_booklets.length > 0) {
             bookletIdString = concursoData.exam_booklets[0].id;
-            console.log('[useSaveAnswers] Usando primeiro caderno do concurso:', bookletIdString);
+            // Debug logs removed for security
           } else {
-            console.log('[useSaveAnswers] Nenhum caderno encontrado no concurso, usando padrão');
+            // Debug logs removed for security
           }
         } catch (error) {
           console.error('[useSaveAnswers] Erro ao buscar cadernos:', error);
@@ -117,18 +99,12 @@ export const useSaveAnswers = ({
       // Preparar dados das respostas
       const preparedData = prepareAnswersData(answers, concurso, nullifiedQuestions, subjectScores, bookletIdString);
 
-      console.log('[useSaveAnswers] Dados formatados para RPC:', preparedData);
-      console.log('[useSaveAnswers] Total de respostas a salvar:', Object.keys(preparedData.answers).length);
+      // Debug logs removed for security
+      // Debug logs removed for security
 
       // Salvar diretamente no consolidated_data sem usar RPC
-      console.log('[useSaveAnswers] Salvando diretamente no consolidated_data:', {
-        rankingId,
-        concursoId: concurso.id,
-        bookletId: bookletIdString,
-        answers: preparedData.answers,
-        subjectScores: preparedData.subjectScores,
-        editCount
-      });
+      // Debug logs removed for security
+        // Debug logs removed for security
       
       // Buscar dados atuais do usuário
       const { data: currentUserRanking, error: fetchError } = await supabase
@@ -180,7 +156,7 @@ export const useSaveAnswers = ({
                 other_subjective: concurso.subjects?.other === true
               };
               
-              console.log('[useSaveAnswers] 🔍 Subjetivas ativas no concurso:', activeSubjectives);
+              // Debug logs removed for security
               
               // ✅ CORREÇÃO: Só preservar valores de subjetivas que ainda estão ativas
               const subjectiveValues = {
@@ -201,12 +177,7 @@ export const useSaveAnswers = ({
                   : 0
               };
               
-              console.log('[useSaveAnswers] 💾 Salvando subjectives (com limpeza de removidas):', {
-                subjectScores_recebido: subjectScores,
-                valores_existentes: existingSubjectives,
-                subjetivas_ativas: activeSubjectives,
-                valores_finais: subjectiveValues
-              });
+              // Debug logs removed for security
               
               return subjectiveValues;
             })(),
@@ -215,11 +186,11 @@ export const useSaveAnswers = ({
             // Atualizar object_scores com a nova estrutura baseada em disciplinas
             object_scores: (() => {
               const existingObjectScores = updatedConsolidatedData.rankings[rankingId].user_data?.object_scores || {};
-              console.log('[useSaveAnswers] Existing object_scores:', existingObjectScores);
+              // Debug logs removed for security
               
               // Migrar object_scores existente para nova estrutura se necessário
               const migratedObjectScores = migrateObjectScores(existingObjectScores, concurso);
-              console.log('[useSaveAnswers] Migrated object_scores:', migratedObjectScores);
+              // Debug logs removed for security
               
               return migratedObjectScores;
             })()
@@ -251,27 +222,24 @@ export const useSaveAnswers = ({
         throw new Error('Erro ao salvar respostas');
       }
 
-      console.log('[useSaveAnswers] Dados salvos com sucesso no consolidated_data');
+      // Debug logs removed for security
       
       // 🔥 ADICIONAR: Recálculo de pontuações
-      console.log('[useSaveAnswers] 🔄 Iniciando recálculo de pontuações...');
+      // Debug logs removed for security
 
       try {
-        console.log('[useSaveAnswers] 🔄 Importando recalculateUserScore...');
+        // Debug logs removed for security
         const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
-        console.log('[useSaveAnswers] 🔄 recalculateUserScore importado:', typeof recalculateUserScore);
+        // Debug logs removed for security
         
-        console.log('[useSaveAnswers] 🔄 Chamando recalculateUserScore com:', {
-          userId: user.id,
-          concursoId: concurso.id
-        });
+        // Debug logs removed for security
         
         const recalculationResult = await recalculateUserScore(user.id, concurso.id);
         
-        console.log('[useSaveAnswers] 📊 Resultado do recálculo processado');
+        // Debug logs removed for security
         
         if (recalculationResult.success) {
-          console.log('[useSaveAnswers] ✅ Pontuações recalculadas com sucesso');
+          // Debug logs removed for security
         } else {
           console.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
           // Não falhar silenciosamente - mostrar erro para o usuário
@@ -283,17 +251,17 @@ export const useSaveAnswers = ({
         throw new Error(`Erro no recálculo de pontuações: ${recalculationError.message}`);
       }
       
-      console.log('[useSaveAnswers] Salvamento bem-sucedido, aguardando recálculo de pontuações...');
+      // Debug logs removed for security
 
-      console.log('[useSaveAnswers] Respostas salvas com sucesso:', Object.keys(preparedData.answers).length);
-      console.log('[useSaveAnswers] Total de respostas salvas:', Object.keys(preparedData.answers).length);
+      // Debug logs removed for security
+      // Debug logs removed for security
 
       // Limpar cache local para forçar busca de dados frescos
-      console.log('[useSaveAnswers] 🗑️ Limpando cache local...');
+      // Debug logs removed for security
       rankingCache.clear();
       
       // Invalidar queries para refresh automático
-      console.log('[useSaveAnswers] 🔄 Invalidando queries para refresh automático...');
+      // Debug logs removed for security
       queryClient.invalidateQueries({ queryKey: ['rankings', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['rankings-v2', concurso.id] });
       queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concurso.id] });
@@ -304,7 +272,7 @@ export const useSaveAnswers = ({
       queryClient.invalidateQueries({ queryKey: ['user-ranking-detail', rankingId] });
       // Invalidar todas as queries de rankings para garantir atualização
       queryClient.invalidateQueries({ queryKey: ['rankings'] });
-      console.log('[useSaveAnswers] ✅ Cache limpo e queries invalidadas, dados serão atualizados automaticamente');
+      // Debug logs removed for security
 
       setSavedSuccess(true);
       toast({

@@ -44,7 +44,7 @@ export const SectionToggle: React.FC<SectionToggleProps> = ({
         return getDisciplines(concurso).filter(d => d.isEnabled);
       }
     } else {
-      console.warn('[SectionToggle] No disciplines found');
+      // Debug logs removed for security
     }
     
     return result;

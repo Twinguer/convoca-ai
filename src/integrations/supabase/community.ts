@@ -113,7 +113,7 @@ export const generateSpecificUsers = async () => {
     return { success: true, message: `Criados ${testUsers.length} usuários específicos` };
     
   } catch (error) {
-    console.error('Error generating specific users:', error);
+    console.error('Error generating specific users: Database operation failed');
     return { success: false, message: 'Erro ao gerar usuários específicos' };
   }
 };
@@ -209,7 +209,7 @@ export const generateTestUsers = async (count: number = 30) => {
     return { success: true, message: `Criados ${testUsers.length} usuários de teste` };
     
   } catch (error) {
-    console.error('Error generating test users:', error);
+    console.error('Error generating test users: Database operation failed');
     return { success: false, message: 'Erro ao gerar usuários de teste' };
   }
 };

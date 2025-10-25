@@ -46,21 +46,21 @@ export const sanitizeSectionType = (sectionType: string | undefined): string => 
 
 // Wrapper function to safely convert string/number/any to numeric value
 export const getNumericValue = (value: any): number => {
-  console.log('[getNumericValue] Input value:', value, 'type:', typeof value);
+  // Debug logs removed for security
   
   if (typeof value === 'number') {
-    console.log('[getNumericValue] Returning number:', value);
+    // Debug logs removed for security
     return value;
   }
   
   if (typeof value === 'string') {
     const parsed = parseFloat(value);
     const result = isNaN(parsed) ? 0 : parsed;
-    console.log('[getNumericValue] Parsed string:', value, '->', result);
+    // Debug logs removed for security
     return result;
   }
   
-  console.log('[getNumericValue] Returning 0 for non-numeric value:', value);
+  // Debug logs removed for security
   return 0;
 };
 
@@ -75,12 +75,12 @@ export const getSectionTypeForQuestion = (concurso: Concurso, questionNumber: nu
     // Nova estrutura: objeto com blocks no nível raiz
     if (typeof concurso.disciplines === 'object' && 'blocks' in concurso.disciplines && Array.isArray(concurso.disciplines.blocks)) {
       blocksArray = concurso.disciplines.blocks;
-      console.log('[getSectionTypeForQuestion] Usando nova estrutura JSONB com blocks');
+      // Debug logs removed for security
     } 
     // Estrutura antiga: array direto de blocos (fallback)
     else if (Array.isArray(concurso.disciplines)) {
       blocksArray = concurso.disciplines;
-      console.log('[getSectionTypeForQuestion] Usando estrutura antiga (array direto)');
+      // Debug logs removed for security
     }
     
     if (blocksArray.length > 0) {
@@ -166,7 +166,7 @@ export const isHierarchicalStructure = (concurso: any): boolean => {
            'blockName' in blocks[0] &&
            'disciplines' in blocks[0];
     
-    console.log('[isHierarchicalStructure] Nova estrutura JSONB com blocks:', result);
+    // Debug logs removed for security
     return result;
   } 
   // Estrutura antiga: array direto de blocos (fallback)
@@ -176,7 +176,7 @@ export const isHierarchicalStructure = (concurso: any): boolean => {
            'name' in concurso.disciplines[0] &&
            'disciplines' in concurso.disciplines[0];
     
-    console.log('[isHierarchicalStructure] Estrutura antiga (array direto):', result);
+    // Debug logs removed for security
     return result;
   }
   
@@ -194,7 +194,7 @@ export const getDisciplines = (concurso: Concurso) => {
   const disciplines = extractDisciplines(concurso);
   
   if (disciplines.length > 0) {
-    console.log('[getDisciplines] Disciplinas extraídas:', disciplines.length);
+    // Debug logs removed for security
     return disciplines;
   }
   
@@ -261,12 +261,12 @@ export const updateSectionDisplayNames = (concurso: Concurso) => {
   
   // SEMPRE usar a nova estrutura JSONB disciplines (prioridade máxima)
   if (concurso.disciplines) {
-    console.log('[updateSectionDisplayNames] Atualizando nomes de exibição para disciplinas customizadas');
+    // Debug logs removed for security
     const disciplines = getDisciplines(concurso);
     
     disciplines.forEach(discipline => {
       if (discipline.isEnabled && discipline.type && discipline.name) {
-        console.log('[updateSectionDisplayNames] Atualizando:', discipline.type, '->', discipline.name);
+        // Debug logs removed for security
         displayNames[discipline.type] = discipline.name;
       }
     });

@@ -96,11 +96,12 @@ const Menu = () => {
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link to="/planos" className={navigationMenuTriggerStyle()}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Planos
-                  </Link>
+                <NavigationMenuLink 
+                  href="/planos" 
+                  className={navigationMenuTriggerStyle()}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Planos
                 </NavigationMenuLink>
               </NavigationMenuItem>
               

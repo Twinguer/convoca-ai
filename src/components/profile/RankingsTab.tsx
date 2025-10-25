@@ -99,10 +99,10 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 .from('concursos')
                 .select('exam_type, titulo, orgao, banca')
                 .eq('id', concursoId)
-                .single();
+                .maybeSingle();
 
               // Filtrar classificados e ordenar por pontuação
-              const classified = list.filter((r: any) => !isBelowMinimum(r, concursoData)).sort((a: any, b: any) => b.score - a.score);
+              const classified = list.filter((r: any) => !isBelowMinimum(r, concursoData || {})).sort((a: any, b: any) => b.score - a.score);
               
               // Encontrar a posição do usuário
               const idx = classified.findIndex((r: any) => r.id === rankingId);
@@ -134,7 +134,7 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
                 .from('concursos')
                 .select('exam_type, titulo, orgao, banca')
                 .eq('id', concursoId)
-                .single();
+                .maybeSingle();
 
               rankingsWithPositions.push({
                 id: rankingId,
@@ -174,11 +174,26 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
           const communityList = await fetchUserRankingsV3(concursoId);
           
           // Buscar dados do concurso para verificar o tipo de exame
-          const { data: concursoData } = await supabase
-            .from('concursos')
-            .select('exam_type')
-            .eq('id', concursoId)
-            .single();
+          let concursoData = null;
+          try {
+            const { data, error } = await supabase
+              .from('concursos')
+              .select('exam_type')
+              .eq('id', concursoId)
+              .maybeSingle();
+            
+            if (error || !data) {
+              console.error('Error fetching concurso exam_type:', error);
+              // Use default exam_type if we can't fetch it
+              concursoData = { exam_type: 'Alternativas' };
+            } else {
+              concursoData = data;
+            }
+          } catch (err) {
+            console.error('Exception fetching concurso exam_type:', err);
+            // Use default exam_type if we can't fetch it
+            concursoData = { exam_type: 'Alternativas' };
+          }
           
           const isBelowMinimum = (r: any) => {
             // Verificação existente para mínimos por disciplina/bloco
@@ -298,11 +313,11 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         // 3. Deletar das tabelas relacionadas
         // Log removido por segurança
         
-        // Deletar score_calculation_logs
+        // Deletar score_calculation_logs usando user_id (formato correto)
         const { error: logsError } = await supabase
           .from('score_calculation_logs')
           .delete()
-          .eq('user_ranking_id', rankingId);
+          .eq('user_ranking_id', currentUserId);
         
         if (logsError) {
           console.error('Erro ao deletar score_calculation_logs:', logsError);
@@ -398,7 +413,10 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             </div>
             
             <div className="p-4 bg-card flex justify-end gap-2">
-              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => navigate(`/ranking/${ranking.concurso_id || ranking.concursos?.id || ranking.concursoId}`)}>
+              <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={() => {
+                const concursoId = ranking.concurso_id || ranking.concursos?.id || ranking.concursoId;
+                navigate(`/ranking/${concursoId}`);
+              }}>
                 <Trophy className="h-4 w-4" />
                 <span>Ranking</span>
               </Button>

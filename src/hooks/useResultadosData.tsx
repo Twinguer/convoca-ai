@@ -26,13 +26,7 @@ export function useResultadosData(concursoId?: string) {
     total: number;
   } | null>(null);
   
-  // Debug logs
-  console.log('useResultadosData debug:', {
-    userId: user?.id,
-    isAuthenticated,
-    concursoId: id,
-    hasUser: !!user
-  });
+  // Debug logs removed for security
   
   // Fetch concurso details
   const { data: concurso, isLoading: isLoadingConcurso } = useQuery({
@@ -46,32 +40,32 @@ export function useResultadosData(concursoId?: string) {
   const { data: creatorInfo, isLoading: isLoadingCreator } = useQuery({
     queryKey: ['creator', concurso?.created_by_user_id],
     queryFn: async () => {
-    // console.log('[useResultadosData] ===== BUSCANDO CRIADOR =====');
-    // console.log('[useResultadosData] Concurso completo:', concurso);
-    // console.log('[useResultadosData] created_by_user_id:', concurso?.created_by_user_id);
-    // console.log('[useResultadosData] is_admin_created:', concurso?.is_admin_created);
+    // // Debug logs removed for security
+    // // Debug logs removed for security
+    // // Debug logs removed for security
+    // // Debug logs removed for security
       
       if (!concurso?.created_by_user_id) {
-        // console.log('[useResultadosData] ❌ created_by_user_id não disponível');
+        // // Debug logs removed for security
         return null;
       }
       
-      // console.log('[useResultadosData] 🔍 Executando query para buscar criador...');
+      // // Debug logs removed for security
       const { data, error } = await supabase
         .from('users_profiles')
         .select('name')
         .eq('id', concurso.created_by_user_id)
         .single();
         
-      // console.log('[useResultadosData] 📊 Resultado da query de criador:', { data, error });
+      // // Debug logs removed for security
         
       if (error) {
-        // console.log('[useResultadosData] ❌ Erro na query:', error);
+        // // Debug logs removed for security
         logger.error('Error fetching creator info', 'USE_RESULTADOS_DATA', error);
         return null;
       }
       
-      // console.log('[useResultadosData] ✅ Criador encontrado:', data);
+      // // Debug logs removed for security
       return data;
     },
     enabled: !!concurso?.created_by_user_id && !!concurso,
@@ -128,10 +122,10 @@ export function useResultadosData(concursoId?: string) {
   const { data: userParticipationStatus, isLoading: isCheckingParticipation } = useQuery({
     queryKey: ['user-participation-v2', id, user?.id],
     queryFn: async () => {
-      // console.log('[useResultadosData] Verificando participação do usuário:', { userId: user?.id, concursoId: id });
+      // // Debug logs removed for security
       
       if (!user || !id) {
-        // console.log('[useResultadosData] Usuário ou ID não disponível');
+        // // Debug logs removed for security
         return { isParticipating: false };
       }
       
@@ -141,7 +135,7 @@ export function useResultadosData(concursoId?: string) {
         .eq('user_id', user.id)
         .maybeSingle();
         
-      // console.log('[useResultadosData] Resultado da query de participação:', { data, error });
+      // // Debug logs removed for security
         
       if (error) {
         logger.error('Error checking participation', 'USE_RESULTADOS_DATA', error);
@@ -166,7 +160,7 @@ export function useResultadosData(concursoId?: string) {
         rankingId 
       };
       
-      // console.log('[useResultadosData] Status de participação:', result);
+      // // Debug logs removed for security
       return result;
     },
     enabled: !!user && !!id,
@@ -177,7 +171,7 @@ export function useResultadosData(concursoId?: string) {
   useEffect(() => {
     if (!id) return;
 
-    // console.log('[useResultadosData] Configurando real-time para concurso:', id);
+    // // Debug logs removed for security
 
     // Configura um canal para escutar atualizações na tabela user_rankings
     const channel = supabase
@@ -191,7 +185,7 @@ export function useResultadosData(concursoId?: string) {
           filter: `concurso_id=eq.${id}`
         },
         (payload) => {
-          // console.log('[useResultadosData] 🔄 Detected change in user_rankings:', payload);
+          // // Debug logs removed for security
           // Força atualização dos rankings quando houver mudanças
           refetchRankings();
           refetchCount();
@@ -201,7 +195,7 @@ export function useResultadosData(concursoId?: string) {
 
     // Cleanup: remover inscrição quando o componente for desmontado
     return () => {
-      // console.log('[useResultadosData] Limpando real-time channel');
+      // // Debug logs removed for security
       supabase.removeChannel(channel);
     };
   }, [id, refetchRankings, refetchCount]);
@@ -238,7 +232,7 @@ export function useResultadosData(concursoId?: string) {
       setRecalculationProgress({ current: 0, total: 0 });
       
       // ✅ NOVO: Recalcular scores de todos os participantes ANTES do refetch
-      console.log('[useResultadosData] 🔄 Iniciando recálculo de scores...');
+      // Debug logs removed for security
       
       // 1. Buscar todos os participantes do concurso
       const { data: allUserRankings, error: fetchError } = await supabase
@@ -262,7 +256,7 @@ export function useResultadosData(concursoId?: string) {
         }
       });
       
-      console.log(`[useResultadosData] Encontrados ${participants.length} participantes`);
+      // Debug logs removed for security
       setRecalculationProgress({ current: 0, total: participants.length });
       
       // 2. Recalcular cada participante em lotes
@@ -285,14 +279,14 @@ export function useResultadosData(concursoId?: string) {
           // Atualizar progresso
           setRecalculationProgress({ current: processedCount, total: participants.length });
           
-          console.log(`[useResultadosData] Lote ${Math.floor(i/batchSize) + 1}/${Math.ceil(participants.length/batchSize)} concluído (${successful}/${batch.length} sucesso)`);
+          // Debug logs removed for security
         }
         
-        console.log(`[useResultadosData] ✅ Recálculo concluído: ${processedCount}/${participants.length} participantes`);
+        // Debug logs removed for security
       }
       
       // 3. AGORA SIM fazer refetch (que buscará scores ATUALIZADOS)
-      console.log('[useResultadosData] 🔄 Buscando dados atualizados...');
+      // Debug logs removed for security
       await Promise.all([
         refetchRankings(),
         refetchCount()

@@ -8,14 +8,14 @@ export const mapObjectScoresToNewStructure = (
   oldObjectScores: Record<string, number>,
   concurso: Concurso
 ): Record<string, number> => {
-  console.log('[mapObjectScoresToNewStructure] Input oldObjectScores:', oldObjectScores);
-  console.log('[mapObjectScoresToNewStructure] Concurso disciplines:', concurso.disciplines);
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   const newObjectScores: Record<string, number> = {};
   
   // Obter disciplinas da nova estrutura
   const disciplines = getDisciplines(concurso);
-  console.log('[mapObjectScoresToNewStructure] Disciplines from getDisciplines:', disciplines);
+  // Debug logs removed for security
   
   // Mapear pontuações existentes para os novos tipos
   for (const discipline of disciplines) {
@@ -24,16 +24,16 @@ export const mapObjectScoresToNewStructure = (
       const oldScore = oldObjectScores[discipline.type];
       if (oldScore !== undefined) {
         newObjectScores[discipline.type] = oldScore;
-        console.log(`[mapObjectScoresToNewStructure] Mapped ${discipline.type}: ${oldScore}`);
+        // Debug logs removed for security
       } else {
         // Inicializar com 0 se não existir
         newObjectScores[discipline.type] = 0;
-        console.log(`[mapObjectScoresToNewStructure] Initialized ${discipline.type}: 0`);
+        // Debug logs removed for security
       }
     }
   }
   
-  console.log('[mapObjectScoresToNewStructure] Final newObjectScores:', newObjectScores);
+  // Debug logs removed for security
   return newObjectScores;
 };
 
@@ -114,9 +114,9 @@ export const needsObjectScoresMigration = (
   // Verificar se há tipos de disciplina que não existem no object_scores
   const missingTypes = disciplineTypes.filter(type => !(type in objectScores));
   
-  console.log('[needsObjectScoresMigration] Discipline types:', disciplineTypes);
-  console.log('[needsObjectScoresMigration] Object scores keys:', Object.keys(objectScores));
-  console.log('[needsObjectScoresMigration] Missing types:', missingTypes);
+  // Debug logs removed for security
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   return missingTypes.length > 0;
 };
@@ -128,14 +128,14 @@ export const migrateObjectScores = (
   objectScores: Record<string, number>,
   concurso: Concurso
 ): Record<string, number> => {
-  console.log('[migrateObjectScores] Starting migration for concurso:', concurso.id);
+  // Debug logs removed for security
   
   if (!needsObjectScoresMigration(objectScores, concurso)) {
-    console.log('[migrateObjectScores] No migration needed');
+    // Debug logs removed for security
     return objectScores;
   }
   
-  console.log('[migrateObjectScores] Migration needed, creating new structure');
+  // Debug logs removed for security
   return mapObjectScoresToNewStructure(objectScores, concurso);
 };
 

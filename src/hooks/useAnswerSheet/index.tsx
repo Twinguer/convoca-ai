@@ -60,7 +60,7 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     if (concurso) {
       const hierarchical = isHierarchicalStructure(concurso);
       setIsHierarchical(hierarchical);
-      console.log(`[useAnswerSheet] Concurso usa estrutura hierárquica: ${hierarchical}`);
+      // Debug logs removed for security
     }
   }, [concurso]);
 
@@ -89,10 +89,10 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   // Update section questions based on official answers or fallback to concurso structure
   useEffect(() => {
     if (questionStructure?.hasOfficialAnswers) {
-      console.log('[useAnswerSheet] Usando estrutura das respostas oficiais:', questionStructure);
+      // Debug logs removed for security
       setSectionQuestions(questionStructure.sectionQuestions);
     } else if (concurso) {
-      console.log('[useAnswerSheet] Usando estrutura do concurso (fallback)');
+      // Debug logs removed for security
       const questions = getSectionQuestionsDict(concurso);
       setSectionQuestions(questions);
     }
@@ -126,16 +126,16 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     queryKey: ['user-answers', rankingId],
     queryFn: async (): Promise<FetchedAnswersData> => {
       if (!rankingId) {
-        console.warn('[useAnswerSheet] No ranking ID provided');
+        // Debug logs removed for security
         return {};
       }
       
       if (!concurso?.id) {
-        console.warn('[useAnswerSheet] No concurso ID provided');
+        // Debug logs removed for security
         return {};
       }
       
-      // console.log('[useAnswerSheet] Fetching answers for ranking:', rankingId);
+      // Debug logs removed for security
       return fetchExistingAnswers(rankingId, selectedBookletId);
     },
     enabled: !!rankingId && !!concurso?.id,
@@ -146,39 +146,33 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   // Handle data loading with useEffect instead of onSuccess
   useEffect(() => {
     if (existingAnswersData) {
-      console.log('[useAnswerSheet] 📊 Dados carregados:', existingAnswersData);
-      console.log('[useAnswerSheet] Pontuações subjetivas recebidas:', {
-        discursiveScore: existingAnswersData.discursiveScore,
-        caseStudy1Score: existingAnswersData.caseStudy1Score,
-        caseStudy2Score: existingAnswersData.caseStudy2Score,
-        caseStudy3Score: existingAnswersData.caseStudy3Score,
-        otherSubjectiveScore: existingAnswersData.otherSubjectiveScore
-      });
+      // Debug logs removed for security
+      // Debug logs removed for security
       
       if (existingAnswersData.answers) {
-        console.log('[useAnswerSheet] Carregando', Object.keys(existingAnswersData.answers).length, 'respostas objetivas');
+        // Debug logs removed for security
         setAnswers(existingAnswersData.answers);
       }
       
       // Definir TODAS as pontuações subjetivas (incluindo otherSubjectiveScore)
       if (existingAnswersData.discursiveScore !== undefined && existingAnswersData.discursiveScore !== null) {
-        console.log('[useAnswerSheet] ✅ Definindo discursiveScore:', existingAnswersData.discursiveScore);
+        // Debug logs removed for security
         setDiscursiveScore(existingAnswersData.discursiveScore);
       }
       if (existingAnswersData.caseStudy1Score !== undefined && existingAnswersData.caseStudy1Score !== null) {
-        console.log('[useAnswerSheet] ✅ Definindo caseStudy1Score:', existingAnswersData.caseStudy1Score);
+        // Debug logs removed for security
         setCaseStudy1Score(existingAnswersData.caseStudy1Score);
       }
       if (existingAnswersData.caseStudy2Score !== undefined && existingAnswersData.caseStudy2Score !== null) {
-        console.log('[useAnswerSheet] ✅ Definindo caseStudy2Score:', existingAnswersData.caseStudy2Score);
+        // Debug logs removed for security
         setCaseStudy2Score(existingAnswersData.caseStudy2Score);
       }
       if (existingAnswersData.caseStudy3Score !== undefined && existingAnswersData.caseStudy3Score !== null) {
-        console.log('[useAnswerSheet] ✅ Definindo caseStudy3Score:', existingAnswersData.caseStudy3Score);
+        // Debug logs removed for security
         setCaseStudy3Score(existingAnswersData.caseStudy3Score);
       }
       if (existingAnswersData.otherSubjectiveScore !== undefined && existingAnswersData.otherSubjectiveScore !== null) {
-        console.log('[useAnswerSheet] ✅ Definindo otherSubjectiveScore:', existingAnswersData.otherSubjectiveScore);
+        // Debug logs removed for security
         setOtherSubjectiveScore(existingAnswersData.otherSubjectiveScore);
       }
     }
@@ -194,15 +188,15 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
 
   // Function to create the answer matrix for rendering
   const createAnswerMatrix = useCallback(() => {
-    console.log('[createAnswerMatrix] Chamada com:', { selectedSection, sectionQuestions });
+    // Debug logs removed for security
     
     if (!concurso || !selectedSection) {
-      console.log('[createAnswerMatrix] Parâmetros inválidos, retornando matriz vazia');
+      // Debug logs removed for security
       return [[]];
     }
 
     const matrix = getQuestionMatrixForSection(concurso, selectedSection, sectionQuestions);
-    console.log('[createAnswerMatrix] Matriz retornada:', matrix);
+    // Debug logs removed for security
     
     return matrix;
   }, [concurso, selectedSection, sectionQuestions]);
@@ -221,12 +215,12 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
     
     // Use official answers structure if available
     if (questionStructure?.hasOfficialAnswers) {
-      console.log('[useAnswerSheet] Usando total de questões das respostas oficiais:', questionStructure.totalQuestions);
+      // Debug logs removed for security
       return questionStructure.totalQuestions;
     }
     
     // Fallback to concurso structure
-    console.log('[useAnswerSheet] Usando total de questões do concurso (fallback)');
+    // Debug logs removed for security
     return getTotalQuestions(concurso);
   }, [concurso, questionStructure]);
 

@@ -32,11 +32,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   rankingId,
   onSuccess
 }) => {
-  console.log('[AnswerSheet] Componente inicializado com:', {
-    concursoId: concurso?.id,
-    rankingId,
-    hasOnSuccess: !!onSuccess
-  });
+  // Debug logs removed for security
   
   const [nullifiedQuestions, setNullifiedQuestions] = useState<Set<number>>(new Set());
   const [lastCheckedNullifiedCount, setLastCheckedNullifiedCount] = useState<number>(0);
@@ -54,16 +50,16 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   } = useQuery({
     queryKey: ['user-ranking-detail', rankingId],
     queryFn: async () => {
-      console.log('[AnswerSheet] Iniciando busca de dados do ranking:', rankingId);
+      // Debug logs removed for security
       
       // Buscar dados do usuário atual
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.error('[AnswerSheet] Usuário não autenticado');
+        // Debug logs removed for security
         throw new Error('User not authenticated');
       }
 
-      console.log('[AnswerSheet] Usuário autenticado:', user.id);
+      // Debug logs removed for security
 
       const { data, error } = await supabase
         .from('user_rankings')
@@ -76,11 +72,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         throw error;
       }
       
-      console.log('[AnswerSheet] Dados consolidados encontrados:', data?.consolidated_data);
+      // Debug logs removed for security
       
       // Extrair dados do ranking específico
       const rankingData = data?.consolidated_data?.rankings?.[rankingId];
-      console.log('[AnswerSheet] Dados do ranking específico:', rankingData);
+      // Debug logs removed for security
       
       return rankingData || {};
     },
@@ -184,7 +180,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   } = useQuery({
     queryKey: ['exam-booklets', concurso.id],
     queryFn: async () => {
-      console.log('[AnswerSheet] Buscando cadernos para concurso:', concurso.id);
+      // Debug logs removed for security
       
       const { data, error } = await supabase
         .from('concursos')
@@ -199,7 +195,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       
       // Ordenar por display_order e retornar array
       const booklets = data?.exam_booklets || [];
-      console.log('[AnswerSheet] Cadernos encontrados:', booklets);
+      // Debug logs removed for security
       
       return booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
     }
@@ -209,7 +205,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   useEffect(() => {
     if (selectedBookletIdFromData && selectedBookletIdFromData !== selectedBookletId) {
       setSelectedBookletId(selectedBookletIdFromData);
-      console.log('[AnswerSheet] selectedBookletId atualizado para:', selectedBookletIdFromData);
+      // Debug logs removed for security
     }
   }, [selectedBookletIdFromData, selectedBookletId]);
 
@@ -217,7 +213,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   useEffect(() => {
     if (!selectedBookletId && examBooklets && examBooklets.length > 0) {
       setSelectedBookletId(examBooklets[0].id);
-      console.log('[AnswerSheet] selectedBookletId inicializado com primeiro caderno:', examBooklets[0].id);
+      // Debug logs removed for security
     }
   }, [selectedBookletId, examBooklets]);
 
@@ -225,7 +221,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   useEffect(() => {
     if (!selectedBookletIdFromData && examBooklets && examBooklets.length > 0) {
       setSelectedBookletId(examBooklets[0].id);
-      console.log('[AnswerSheet] selectedBookletId atualizado com primeiro caderno disponível:', examBooklets[0].id);
+      // Debug logs removed for security
     }
   }, [selectedBookletIdFromData, examBooklets]);
 
@@ -239,10 +235,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
   // Handle booklet change from BookletSwitcher (MANTÉM as marcações)
   const handleBookletChanged = async (newBookletId: string, newAnswers: Record<number, string>) => {
-    console.log('[AnswerSheet] ===== INÍCIO DA TROCA DE CADERNO =====');
-    console.log('[AnswerSheet] Caderno alterado para:', newBookletId);
-    console.log('[AnswerSheet] Respostas atuais (mantidas):', answers);
-    console.log('[AnswerSheet] selectedBookletId atual:', selectedBookletId);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     // MANTER as respostas atuais - não limpar!
     // As respostas serão recalculadas com o novo gabarito
@@ -282,7 +278,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
           if (error) {
             console.error('[AnswerSheet] Erro ao salvar selectedBookletId:', error);
           } else {
-            console.log('[AnswerSheet] selectedBookletId salvo com sucesso:', newBookletId);
+            // Debug logs removed for security
           }
         }
       }
@@ -300,22 +296,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
 
       setCheckingOfficialAnswers(true);
       try {
-        console.log(`[AnswerSheet] Verificando gabarito oficial para concurso ${concurso.id}`);
+        // Debug logs removed for security
         
         // AGUARDAR examBooklets estarem carregados antes de verificar
         if (!examBooklets || examBooklets.length === 0) {
-          console.log('[AnswerSheet] Aguardando cadernos carregarem...');
+          // Debug logs removed for security
           return;
         }
         
         // Usar selectedBookletIdFromData se disponível, senão usar o primeiro caderno
         const bookletToCheck = selectedBookletIdFromData || examBooklets[0].id;
-        console.log('[AnswerSheet] Verificando gabarito para caderno:', bookletToCheck);
+        // Debug logs removed for security
         
         const result = await checkMissingOfficialAnswers(concurso.id, bookletToCheck);
 
         if (result) {
-          console.warn(`[AnswerSheet] Gabarito oficial incompleto ou não encontrado!`, result);
+          // Debug logs removed for security
           setMissingOfficialAnswers(true);
 
           // Show toast only once
@@ -325,7 +321,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
             { duration: 8000 }
           );
         } else {
-          console.log(`[AnswerSheet] Gabarito oficial verificado e completo!`);
+          // Debug logs removed for security
           setMissingOfficialAnswers(false);
         }
       } catch (err) {
@@ -343,7 +339,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
       setSectionLabels(updatedNames);
-      console.log('[AnswerSheet] Updated section labels:', updatedNames);
+      // Debug logs removed for security
     }
   }, [concurso]);
 
@@ -361,7 +357,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       queryFn: async () => {
           if (!selectedBookletIdFromData) return [];
           
-          console.log('[AnswerSheet] Fetching nullified questions using official answers');
+          // Debug logs removed for security
           return await getNullifiedQuestionsFromOfficialAnswers(concurso.id, selectedBookletIdFromData);
       },
       enabled: !!selectedBookletIdFromData,
@@ -371,32 +367,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   });
 
   // Import saveAnswers hook with booklet support (CORRIGIDO para reagir a mudanças no selectedBookletId)
-  console.log('[AnswerSheet] Parâmetros para useSaveAnswers:', {
-    rankingId,
-    concursoId: concurso?.id,
-    selectedBookletIdFromData,
-    editCount: userRankingData?.edit_count || 0,
-    answersCount: Object.keys(answers).length
-  });
+  // Debug logs removed for security
 
-  console.log('[AnswerSheet] DEBUG - Parâmetros para useSaveAnswers:', {
-    selectedBookletIdFromData,
-    selectedBookletIdFromDataType: typeof selectedBookletIdFromData,
-    selectedBookletIdFromDataLength: selectedBookletIdFromData?.length,
-    selectedBookletIdFromDataTrimmed: selectedBookletIdFromData?.trim(),
-    isEmpty: selectedBookletIdFromData?.trim() === '',
-    isUndefined: selectedBookletIdFromData === undefined
-  });
+  // Debug logs removed for security
 
-  // Debug dos valores subjetivos antes de passar para useSaveAnswers
-  console.log('[AnswerSheet] Valores subjetivos antes de salvar:', {
-    subjectScores,
-    discursiveScore: subjectScores.discursive || 0,
-    caseStudy1Score: subjectScores.case_study_1 || 0,
-    caseStudy2Score: subjectScores.case_study_2 || 0,
-    caseStudy3Score: subjectScores.case_study_3 || 0,
-    otherSubjectiveScore: subjectScores.other_subjective || 0
-  });
+  // Debug logs removed for security
 
   const { handleSaveAnswers: saveAnswersService } = useSaveAnswers({
     rankingId,
@@ -420,11 +395,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   useEffect(() => {
     // Verificar se userRankingData existe antes de prosseguir
     if (!userRankingData) {
-      console.log('[AnswerSheet] userRankingData ainda não carregado, aguardando...');
+      // Debug logs removed for security
       return;
     }
 
-    console.log('[AnswerSheet] Inicializando subjectScores com userRankingData:', userRankingData);
+    // Debug logs removed for security
     
     let initialScores: Record<string, number> = {};
     
@@ -433,10 +408,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     
     // 1. Se existir object_scores, migrar para a nova estrutura
     if (userData.object_scores) {
-      console.log('[AnswerSheet] Migrando object_scores existente para nova estrutura');
+      // Debug logs removed for security
       initialScores = migrateObjectScores(userData.object_scores, concurso);
     } else {
-      console.log('[AnswerSheet] Criando object_scores inicial baseado na estrutura do concurso');
+      // Debug logs removed for security
       initialScores = createInitialObjectScores(concurso);
     }
     
@@ -453,26 +428,20 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       for (const [field, value] of Object.entries(subjectiveFields)) {
         if (value !== undefined && value !== null) {
           initialScores[field] = value;
-          console.log(`[AnswerSheet] ✅ Carregando ${field}: ${value} de userData.subjectives`);
+          // Debug logs removed for security
         }
       }
     }
     
-    console.log('[AnswerSheet] DEBUG - InitialScores finais:', initialScores);
-    console.log('[AnswerSheet] DEBUG - userData.object_scores:', userData.object_scores);
-    console.log('[AnswerSheet] DEBUG - userData.subjectives:', userData.subjectives);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
     setSubjectScores(initialScores);
   }, [userRankingData, concurso]);
 
   // NOVO: Sincronizar subjectScores com valores do useAnswerSheet hook
   useEffect(() => {
-    console.log('[AnswerSheet] 🔄 Sincronizando subjectScores com valores do hook:', {
-      discursiveScore,
-      caseStudy1Score,
-      caseStudy2Score,
-      caseStudy3Score,
-      otherSubjectiveScore
-    });
+    // Debug logs removed for security
     
     setSubjectScores(prev => {
       const updated = { ...prev };
@@ -493,7 +462,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         updated.other_subjective = otherSubjectiveScore;
       }
       
-      console.log('[AnswerSheet] ✅ subjectScores atualizados:', updated);
+      // Debug logs removed for security
       return updated;
     });
   }, [discursiveScore, caseStudy1Score, caseStudy2Score, caseStudy3Score, otherSubjectiveScore]);
@@ -503,12 +472,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     if (nullifiedData && nullifiedData.length > 0) {
       const nullifiedSet = new Set(nullifiedData.map(item => item.question_number));
       setNullifiedQuestions(nullifiedSet);
-      console.log('[AnswerSheet] Questões anuladas atualizadas:', Array.from(nullifiedSet).join(', '));
+      // Debug logs removed for security
 
       // Check if there was a change in the number of nullified questions
       if (nullifiedSet.size !== lastCheckedNullifiedCount) {
-        console.log('[AnswerSheet] Alteração detectada nas questões anuladas:',
-          `Anterior: ${lastCheckedNullifiedCount}, Atual: ${nullifiedSet.size}`);
+        // Debug logs removed for security
 
         setLastCheckedNullifiedCount(nullifiedSet.size);
       }
@@ -518,7 +486,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   // Certifique-se de que setSelectedBookletId é usado corretamente após salvar as respostas
   useEffect(() => {
     if (savedSuccess) {
-      console.log('[AnswerSheet] Respostas salvas com sucesso. Atualizando estado do caderno.');
+      // Debug logs removed for security
       refetchRanking();
       // Atualizar o estado do caderno após refetch
       const updateBookletId = async () => {
@@ -551,8 +519,8 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       return;
     }
 
-    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Caderno selecionado no momento do salvamento:', selectedBookletIdFromData);
-    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Respostas atuais:', answers);
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     const totalQuestions = getTotalQuestions();
     const answeredQuestions = getAnsweredQuestionsCount();
@@ -561,14 +529,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const effectivelyAnsweredQuestions = answeredQuestions +
       Array.from(nullifiedQuestions).filter(qNum => !answers[qNum]).length;
 
-    console.log('[AnswerSheet.handleSaveAnswers] DEBUG - Validação de questões:', {
-      totalQuestions,
-      answeredQuestions,
-      nullifiedQuestions: Array.from(nullifiedQuestions),
-      effectivelyAnsweredQuestions,
-      examType: concurso.exam_type,
-      answers: Object.keys(answers).length
-    });
+    // Debug logs removed for security
 
     // Para provas "Certo ou Errado", permitir questões em branco
     // Para provas de múltipla escolha, exigir todas as respostas
@@ -587,22 +548,22 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
       }
 
       if (unansweredQuestions.length > 0) {
-        console.log('[AnswerSheet.handleSaveAnswers] ERRO - Questões não respondidas:', unansweredQuestions);
+        // Debug logs removed for security
         setError(`Existem questões que precisam ser respondidas: ${unansweredQuestions.sort((a, b) => a - b).join(', ')}`);
         return;
       }
     }
 
     try {
-      console.log("[AnswerSheet] Iniciando processo de salvamento");
-      console.log("[AnswerSheet] Chamando saveAnswersService para salvar em consolidated_data");
+      // Debug logs removed for security
+      // Debug logs removed for security
       setIsSaving(true);
       setError(null);
 
       // Call the saveAnswersService
       await saveAnswersService();
       await refetchNullified();
-      console.log("[AnswerSheet] Salvamento concluído com sucesso");
+      // Debug logs removed for security
     } catch (error: any) {
       console.error("[AnswerSheet] Erro durante o salvamento:", error);
       setIsSaving(false);
@@ -632,10 +593,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   const handleSubjectScoreChange = (key: string, value: number) => {
-    console.log('[AnswerSheet] handleSubjectScoreChange:', { key, value });
+    // Debug logs removed for security
     setSubjectScores(prev => {
       const updated = { ...prev, [key]: value };
-      console.log('[AnswerSheet] subjectScores atualizado:', updated);
+      // Debug logs removed for security
       return updated;
     });
   };
@@ -648,17 +609,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   };
 
   // Show warning if no booklet is selected
-  console.log('[AnswerSheet] Verificando condições de renderização:', {
-    selectedBookletIdFromData,
-    isLoadingRanking,
-    isLoadingBooklets,
-    checkingOfficialAnswers,
-    missingOfficialAnswers,
-    examBooklets: examBooklets?.length
-  });
+  // Debug logs removed for security
 
   if (!selectedBookletIdFromData && !isLoadingRanking) {
-    console.log('[AnswerSheet] Mostrando aviso: Caderno não selecionado');
+    // Debug logs removed for security
     return (
       <Card className="shadow-lg">
         <CardContent className="flex flex-col items-center justify-center p-12 space-y-4">
@@ -703,7 +657,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
   const getObjectiveSections = (sectionQuestionsData: any) => {
     if (!concurso) return [];
     
-    console.log('[getObjectiveSections] Getting sections for concurso:', concurso.id);
+    // Debug logs removed for security
     
     // ✅ USAR NOVA FUNÇÃO HELPER: Obter disciplinas de qualquer estrutura
     const disciplines = getDisciplines(concurso);
@@ -711,11 +665,11 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     const sections = [];
     
     if (disciplines.length > 0) {
-      console.log('[getObjectiveSections] Using helper function, found disciplines:', disciplines.length);
+      // Debug logs removed for security
       
       for (const discipline of disciplines) {
         if (discipline.isEnabled && discipline.type) {
-          console.log('[getObjectiveSections] Adding section:', discipline.type, discipline.name);
+          // Debug logs removed for security
           sections.push({
             key: discipline.type,
             label: discipline.blockName ? `${discipline.blockName} - ${discipline.name}` : discipline.name
@@ -723,10 +677,10 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
         }
       }
     } else {
-      console.warn('[getObjectiveSections] No disciplines found, returning empty sections');
+      // Debug logs removed for security
     }
     
-    console.log('[getObjectiveSections] Final sections:', sections);
+    // Debug logs removed for security
     return sections;
   };
 

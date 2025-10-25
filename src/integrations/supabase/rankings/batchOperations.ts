@@ -9,11 +9,11 @@ interface BatchRecalculationResult {
 
 export const recalculateAllUserScores = async (concursoId: string): Promise<BatchRecalculationResult> => {
   try {
-    console.log(`[recalculateAllUserScores] Starting batch recalculation for concurso: ${concursoId}`);
+    console.log(`[recalculateAllUserScores] Starting batch recalculation for concurso`);
 
     // Verificar se o concursoId é válido
     if (!concursoId) {
-      console.error('[recalculateAllUserScores] Invalid concursoId:', concursoId);
+      console.error('[recalculateAllUserScores] Invalid concursoId: Database operation failed');
       return { success: false, error: 'ID do concurso inválido' };
     }
 
@@ -26,11 +26,11 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
     console.log('[recalculateAllUserScores] Supabase RPC response recebida');
 
     if (error) {
-      console.error('[recalculateAllUserScores] Error calling PostgreSQL function:', error);
+      console.error('[recalculateAllUserScores] Error calling PostgreSQL function: Database operation failed');
       return { success: false, error: `Erro ao recalcular pontuações: ${error.message}` };
     }
 
-    console.log('[recalculateAllUserScores] PostgreSQL function result:', data);
+    console.log('[recalculateAllUserScores] PostgreSQL function result: Data received');
 
     if (!data) {
       console.error('[recalculateAllUserScores] No data returned from PostgreSQL function');
@@ -39,16 +39,16 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
 
     // Verificar se data é um objeto válido
     if (typeof data !== 'object') {
-      console.error('[recalculateAllUserScores] Invalid data type returned:', typeof data, data);
+      console.error('[recalculateAllUserScores] Invalid data type returned: Database operation failed');
       return { success: false, error: 'Tipo de dados inválido retornado da função PostgreSQL' };
     }
 
     if (!data.success) {
-      console.error('[recalculateAllUserScores] PostgreSQL function returned error:', data?.error);
+      console.error('[recalculateAllUserScores] PostgreSQL function returned error: Database operation failed');
       return { success: false, error: data?.error || 'Erro desconhecido na função PostgreSQL' };
     }
 
-    console.log(`[recalculateAllUserScores] Successfully recalculated ${data.updatedCount} scores in ${data.executionTimeMs}ms`);
+    console.log(`[recalculateAllUserScores] Successfully recalculated scores`);
 
     return {
       success: true,
@@ -60,7 +60,7 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
     };
 
   } catch (error) {
-    console.error('[recalculateAllUserScores] Unexpected error:', error);
+    console.error('[recalculateAllUserScores] Unexpected error: Database operation failed');
     return { 
       success: false, 
       error: String(error)

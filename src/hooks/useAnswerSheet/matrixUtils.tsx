@@ -14,7 +14,7 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
 
   // Verificar se é a nova estrutura hierárquica (objeto com blocks)
   if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-    console.log('[getSectionQuestionsDict] Using new hierarchical structure with blocks');
+    // Debug logs removed for security
     
     let currentQuestionNumber = 1;
     
@@ -30,7 +30,7 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
 
             // Add question numbers for this discipline
             const questionCount = parseInt(String(discipline.questionCount), 10) || 0;
-            console.log('[getSectionQuestionsDict] Discipline:', discipline.name, 'questionCount:', questionCount);
+            // Debug logs removed for security
             for (let i = 0; i < questionCount; i++) {
               result[discipline.type].push(currentQuestionNumber);
               currentQuestionNumber++;
@@ -91,7 +91,7 @@ export const getSectionQuestionsDict = (concurso: Concurso): SectionQuestions =>
       }
     }
   } else {
-    console.warn('[getSectionQuestionsDict] No disciplines found, returning empty result');
+    // Debug logs removed for security
   }
 
   return result;
@@ -128,18 +128,18 @@ export const getQuestionMatrixForSection = (
   section: SectionType,
   sectionQuestions: SectionQuestions
 ): (number | null)[][] => {
-  console.log('[getQuestionMatrixForSection] Parâmetros:', { concurso: concurso?.id, section, sectionQuestions });
+  // Debug logs removed for security
   
   if (!concurso || !section || !sectionQuestions) {
-    console.log('[getQuestionMatrixForSection] Parâmetros inválidos, retornando matriz vazia');
+    // Debug logs removed for security
     return [[null]];
   }
 
   const questionNumbers = sectionQuestions[section] || [];
-  console.log('[getQuestionMatrixForSection] Números das questões para seção', section, ':', questionNumbers);
+  // Debug logs removed for security
   
   const matrix = createQuestionMatrix(questionNumbers);
-  console.log('[getQuestionMatrixForSection] Matriz criada:', matrix);
+  // Debug logs removed for security
   
   return matrix;
 };

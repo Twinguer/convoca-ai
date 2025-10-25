@@ -22,12 +22,12 @@ const fetchRankingData = async rankingId => {
       error
     } = await supabase.from('concursos').select('*').eq('id', rankingId).single();
     if (error) {
-      console.error('Error fetching ranking data:', error);
+      // Debug logs removed for security
       throw error;
     }
     return data;
   } catch (error) {
-    console.error('Error in fetchRankingData:', error);
+    // Debug logs removed for security
     return null;
   }
 };
@@ -227,11 +227,7 @@ const CriarRanking = () => {
                 }));
               }
               
-              console.log('[CriarRanking] Estrutura JSONB carregada:', {
-                minimumTotalScore,
-                minimumTotalScoreCotas,
-                blocksCount: disciplinesBlocks.length
-              });
+              // Debug logs removed for security
             }
             
             // Criar objeto de dados para o formulário
@@ -325,9 +321,9 @@ const CriarRanking = () => {
     saveRanking
   } = useSaveRanking();
   const handleSaveRanking = async (): Promise<string | null> => {
-    console.log('[CriarRanking] handleSaveRanking called');
+    // Debug logs removed for security
     const formValues = form.getValues();
-    console.log('[CriarRanking] Form values:', formValues);
+    // Debug logs removed for security
 
     // Sincronizar os estados selecionados com o formulário
     form.setValue('localidades', selectedStates, {

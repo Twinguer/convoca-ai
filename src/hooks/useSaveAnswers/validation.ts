@@ -5,17 +5,7 @@ export const validateSaveAnswers = (
   editCount: number,
   selectedBookletId?: string
 ): { isValid: boolean; errorMessage?: string } => {
-  console.log('[validateSaveAnswers] Validando:', { 
-    editCount, 
-    selectedBookletId,
-    editCountType: typeof editCount,
-    selectedBookletIdType: typeof selectedBookletId,
-    selectedBookletIdLength: selectedBookletId?.length,
-    selectedBookletIdTrimmed: selectedBookletId?.trim(),
-    isEmpty: selectedBookletId?.trim() === '',
-    isUndefined: selectedBookletId === undefined,
-    isNull: selectedBookletId === null
-  });
+  // Debug logs removed for security
   
   // Verificar se o usuário já atingiu o limite de edições (5)
   if (editCount >= 5) {
@@ -32,6 +22,6 @@ export const validateSaveAnswers = (
     // Não retornar erro aqui, deixar o useSaveAnswers resolver o caderno padrão
   }
 
-  console.log('[validateSaveAnswers] Validação passou');
+  // Debug logs removed for security
   return { isValid: true };
 };

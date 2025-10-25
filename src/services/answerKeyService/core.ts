@@ -4,7 +4,7 @@ import { ConsolidatedAnswerKey } from './types';
 
 export const getConsolidatedAnswerKey = async (concursoId: string): Promise<ConsolidatedAnswerKey | null> => {
   try {
-    console.log('[getConsolidatedAnswerKey] Fetching consolidated answer key for concurso:', concursoId);
+    // Debug logs removed for security
     
     const { data, error } = await supabase
       .from('concursos')
@@ -36,7 +36,7 @@ export const getConsolidatedAnswerKey = async (concursoId: string): Promise<Cons
       };
     }
 
-    console.log('[getConsolidatedAnswerKey] Found official answers with booklets:', Object.keys(officialAnswers));
+    // Debug logs removed for security
     return { booklets: officialAnswers } as ConsolidatedAnswerKey;
   } catch (error) {
     console.error('[getConsolidatedAnswerKey] Exception:', error);

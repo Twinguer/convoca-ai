@@ -46,6 +46,6 @@ export const handleQuestionSectionSelection = (
       console.warn('[handleQuestionSectionSelection] No enabled disciplines found');
     }
   } else {
-    console.warn('[handleQuestionSectionSelection] No disciplines found');
+    // Debug logs removed for security
   }
 };

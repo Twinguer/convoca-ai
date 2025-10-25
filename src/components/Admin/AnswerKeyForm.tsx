@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -29,6 +29,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   const {
     toast
   } = useToast();
+  const queryClient = useQueryClient();
   const {
     data: concurso,
     isLoading: isLoadingConcurso
@@ -87,20 +88,20 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
     const allQuestions: number[] = [];
     let currentQuestionNumber = 1;
 
-    console.log('[getAllQuestionsFromAllSections] Concurso disciplines:', concurso.disciplines);
-    console.log('[getAllQuestionsFromAllSections] Concurso disciplines type:', typeof concurso.disciplines);
-    console.log('[getAllQuestionsFromAllSections] Concurso disciplines isArray:', Array.isArray(concurso.disciplines));
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Verificar se estamos lidando com a nova estrutura hierárquica (objeto com blocks)
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-      console.log('[getAllQuestionsFromAllSections] Using new hierarchical structure with blocks');
+      // Debug logs removed for security
       // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
       for (const block of concurso.disciplines.blocks) {
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
             if (discipline.isEnabled) {
               const questionCount = getNumericValue(discipline.questionCount);
-              console.log(`[getAllQuestionsFromAllSections] Adding ${questionCount} questions from discipline ${discipline.name}`);
+              // Debug logs removed for security
               for (let i = 0; i < questionCount; i++) {
                 allQuestions.push(currentQuestionNumber++);
               }
@@ -109,7 +110,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         }
       }
     } else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
-      console.log('[getAllQuestionsFromAllSections] Using old array structure');
+      // Debug logs removed for security
       const isHierarchical = concurso.disciplines[0] && typeof concurso.disciplines[0] === 'object' && 'name' in concurso.disciplines[0] && 'disciplines' in concurso.disciplines[0];
       if (isHierarchical) {
         // Estrutura hierárquica antiga
@@ -160,8 +161,8 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
       }
     }
     
-    console.log('[getAllQuestionsFromAllSections] Total questions found:', allQuestions.length);
-    console.log('[getAllQuestionsFromAllSections] Questions array:', allQuestions);
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     return allQuestions;
   };
@@ -170,31 +171,31 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
   const getQuestionsCount = (section: string): number => {
     if (!concurso) return 0;
     
-    console.log('[getQuestionsCount] Looking for section:', section);
-    console.log('[getQuestionsCount] Concurso disciplines:', concurso.disciplines);
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-      console.log('[getQuestionsCount] Using new hierarchical structure with blocks');
-      console.log('[getQuestionsCount] Blocks count:', concurso.disciplines.blocks.length);
+      // Debug logs removed for security
+      // Debug logs removed for security
       
       // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
       for (const block of concurso.disciplines.blocks) {
-        console.log('[getQuestionsCount] Processing block:', block.blockName, 'disciplines:', block.disciplines?.length);
+        // Debug logs removed for security
         
         if (block.disciplines && Array.isArray(block.disciplines)) {
           for (const discipline of block.disciplines) {
-            console.log('[getQuestionsCount] Processing discipline:', discipline.name, 'type:', discipline.type, 'isEnabled:', discipline.isEnabled, 'questionCount:', discipline.questionCount);
+            // Debug logs removed for security
             
             if (discipline.type === section && discipline.isEnabled) {
               const count = getNumericValue(discipline.questionCount);
-              console.log('[getQuestionsCount] Found matching discipline! questionCount:', count);
+              // Debug logs removed for security
               return count;
             }
           }
         }
       }
-      console.log('[getQuestionsCount] No matching discipline found for section:', section);
+      // Debug logs removed for security
       return 0;
     }
     // Verificar se estamos usando a estrutura hierárquica antiga (array de blocos)
@@ -324,19 +325,18 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
       // ℹ️ Recálculo automático está desativado (função SQL comentada)
       // Admin deve clicar em "Atualizar Classificação" na página de resultados
-      console.log('[AnswerKeyForm] Gabarito salvo. Recálculo deve ser feito manualmente via botão "Atualizar Classificação".');
+      // Debug logs removed for security
       
       // Invalidar cache imediatamente para mostrar gabarito atualizado
-      setTimeout(async () => {
-        console.log('[AnswerKeyForm] Invalidando queries para atualizar UI...');
-        const { useQueryClient } = await import('@tanstack/react-query');
-        const queryClient = useQueryClient();
+      setTimeout(() => {
+        // Debug logs removed for security
+        // Usar queryClient diretamente do hook em vez de importar dentro do setTimeout
         queryClient.invalidateQueries({ queryKey: ['rankings', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['participant-count-v2', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['user-participation-v2'] });
         queryClient.invalidateQueries({ queryKey: ['concurso', concursoId] });
         queryClient.invalidateQueries({ queryKey: ['official-answers-weights', concursoId] });
-        console.log('[AnswerKeyForm] Queries invalidadas. UI será atualizada.');
+        // Debug logs removed for security
       }, 500); // Aguardar 500ms apenas para garantir que o salvamento foi concluído
 
       setTimeout(() => {
@@ -370,7 +370,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
     // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-      console.log('[getObjectiveSectionList] Using new hierarchical structure with blocks');
+      // Debug logs removed for security
       // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
       for (const block of concurso.disciplines.blocks) {
         if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -449,7 +449,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
     // Verificar se estamos usando a nova estrutura hierárquica (objeto com blocks)
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-      console.log('[getQuestionsRange] Using new hierarchical structure with blocks');
+      // Debug logs removed for security
       let startQuestion = 1;
       
       // Nova estrutura: {minimum_total_score, minimum_total_score_cotas, blocks: [...]}
@@ -461,7 +461,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
 
               // Se encontramos a disciplina selecionada, retornar seu intervalo
               if (discipline.type === selectedSection) {
-                console.log(`[getQuestionsRange] Found discipline ${discipline.name} with ${questionCount} questions`);
+                // Debug logs removed for security
                 return Array.from({
                   length: questionCount
                 }, (_, i) => startQuestion + i);

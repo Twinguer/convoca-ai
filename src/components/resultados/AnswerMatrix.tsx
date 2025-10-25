@@ -28,12 +28,12 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
   onNullifyQuestion,
   isAdminView = false
 }) => {
-  console.log('[AnswerMatrix] Rendering with matrix:', matrix);
-  console.log('[AnswerMatrix] Matrix length:', matrix?.length);
-  console.log('[AnswerMatrix] Matrix content:', JSON.stringify(matrix, null, 2));
+  // Debug logs removed for security
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   if (!matrix || matrix.length === 0) {
-    console.log('[AnswerMatrix] No matrix or empty matrix, showing no questions message');
+    // Debug logs removed for security
     return (
       <div className="p-6 text-center text-muted-foreground">
         Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.
@@ -43,11 +43,11 @@ export const AnswerMatrix: React.FC<AnswerMatrixProps> = ({
 
   // Check if there are any non-null question numbers in the matrix
   const hasQuestions = matrix.some(row => row.some(cell => cell !== null));
-  console.log('[AnswerMatrix] Has questions:', hasQuestions);
-  console.log('[AnswerMatrix] Matrix rows:', matrix.map((row, i) => `Row ${i}: [${row.join(', ')}]`));
+  // Debug logs removed for security
+  // Debug logs removed for security
   
   if (!hasQuestions) {
-    console.log('[AnswerMatrix] No questions found in matrix, showing no questions message');
+    // Debug logs removed for security
     return (
       <div className="p-6 text-center text-muted-foreground">
         Nenhuma questão disponível para esta seção. Por favor, selecione outra seção.

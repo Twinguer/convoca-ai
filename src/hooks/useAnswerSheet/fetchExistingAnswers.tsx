@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?: string) => {
   try {
-    console.log('[fetchExistingAnswers] Buscando respostas para ranking:', rankingId);
-    console.log('[fetchExistingAnswers] selectedBookletId recebido:', selectedBookletId);
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Buscar dados do usuário atual
     const { data: { user } } = await supabase.auth.getUser();
@@ -25,11 +25,11 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
       return {};
     }
 
-    console.log('[fetchExistingAnswers] Dados do ranking encontrados:', rankingData);
+    // Debug logs removed for security
 
     // Verificar se há dados consolidados
     if (!rankingData.consolidated_data || rankingData.consolidated_data === '{}') {
-      console.log('[fetchExistingAnswers] Nenhum dado consolidado encontrado');
+      // Debug logs removed for security
       return {
         answers: {},
         discursiveScore: null,
@@ -52,7 +52,7 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
       selectedBooklet = consolidatedData.rankings[rankingId].selected_booklet_id;
     }
 
-    console.log('[fetchExistingAnswers] Dados consolidados encontrados:', consolidatedData);
+    // Debug logs removed for security
 
     let answers: { [key: number]: string } = {};
     let subjectiveScores = {};
@@ -65,8 +65,8 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
       if (rankingData?.user_data) {
         // Extrair respostas da estrutura correta: {bookletId: {disciplineType: {questionNumber: answer}}}
         if (rankingData.user_data.answers) {
-          console.log('[fetchExistingAnswers] Estrutura de respostas encontrada:', Object.keys(rankingData.user_data.answers));
-          console.log('[fetchExistingAnswers] selectedBookletId do ranking:', rankingData.selected_booklet_id);
+          // Debug logs removed for security
+          // Debug logs removed for security
           
           // A estrutura correta é: answers[bookletId][disciplineType][questionNumber] = answer
           const answersData = rankingData.user_data.answers;
@@ -74,11 +74,11 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
           
           if (selectedBookletId && answersData[selectedBookletId]) {
             const bookletAnswers = answersData[selectedBookletId];
-            console.log('[fetchExistingAnswers] Respostas do caderno selecionado:', bookletAnswers);
+            // Debug logs removed for security
             
             // Percorrer todas as disciplinas do caderno
             Object.entries(bookletAnswers).forEach(([disciplineType, disciplineAnswers]) => {
-              console.log(`[fetchExistingAnswers] Disciplina ${disciplineType}:`, disciplineAnswers);
+              // Debug logs removed for security
               
               // Percorrer todas as questões da disciplina
               Object.entries(disciplineAnswers as Record<string, string>).forEach(([questionNum, answer]) => {
@@ -89,13 +89,13 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
               });
             });
           } else {
-            console.log('[fetchExistingAnswers] Nenhuma resposta encontrada para o caderno selecionado:', selectedBookletId);
+            // Debug logs removed for security
           }
           
-          console.log('[fetchExistingAnswers] Respostas carregadas:', answers);
-          console.log('[fetchExistingAnswers] Número de respostas:', Object.keys(answers).length);
+          // Debug logs removed for security
+          // Debug logs removed for security
         } else {
-          console.log('[fetchExistingAnswers] Nenhuma estrutura de respostas encontrada em user_data');
+          // Debug logs removed for security
         }
 
         // Extrair pontuações subjetivas da estrutura atual (subjectives, não subjective_scores)
@@ -105,17 +105,11 @@ export const fetchExistingAnswers = async (rankingId: string, selectedBookletId?
       }
     }
 
-    console.log('[fetchExistingAnswers] Respostas finais:', answers);
-    console.log('[fetchExistingAnswers] Pontuações subjetivas:', subjectiveScores);
-    console.log('[fetchExistingAnswers] Número de respostas encontradas:', Object.keys(answers).length);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
 
-    console.log('[fetchExistingAnswers] Retornando dados com pontuações subjetivas:', {
-      discursive: subjectiveScores?.discursive,
-      case_study_1: subjectiveScores?.case_study_1,
-      case_study_2: subjectiveScores?.case_study_2,
-      case_study_3: subjectiveScores?.case_study_3,
-      other_subjective: subjectiveScores?.other_subjective
-    });
+    // Debug logs removed for security
 
     return {
       answers,

@@ -104,7 +104,7 @@ export interface Concurso {
   created_by_user_id?: string | null;
 
   // Estrutura de conhecimentos customizados (agora único modo)
-  has_custom_knowledge: boolean; // Mantemos por compatibilidade, mas sempre será true
+  has_custom_knowledge?: boolean; // Mantemos por compatibilidade, mas sempre será true
 
   // Configuração de exame
   exam_type?: string;

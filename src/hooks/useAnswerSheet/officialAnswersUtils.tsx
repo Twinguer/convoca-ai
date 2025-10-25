@@ -34,7 +34,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
   hasOfficialAnswers: boolean;
 }> => {
   try {
-    console.log('[getQuestionStructureFromOfficialAnswers] Buscando estrutura para:', { concursoId, bookletId });
+    // Debug logs removed for security
     
     const { data, error } = await supabase
       .from('concursos')
@@ -64,16 +64,10 @@ export const getQuestionStructureFromOfficialAnswers = async (
       blocksArray = disciplinesData as any[];
     }
     
-    console.log('[getQuestionStructureFromOfficialAnswers] Estrutura JSONB atual:', {
-      bookletId,
-      hasMetadata: !!bookletData.metadata,
-      totalQuestions: bookletData.metadata?.total_questions,
-      questionsCount: Object.keys(questions).length,
-      disciplinesBlocksCount: blocksArray.length
-    });
+    // Debug logs removed for security
     
-    console.log('[getQuestionStructureFromOfficialAnswers] Dados do caderno encontrados:', bookletData);
-    console.log('[getQuestionStructureFromOfficialAnswers] Blocos de disciplinas normalizados:', blocksArray);
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     // Extrair números das questões das respostas oficiais
     const questionNumbers = Object.keys(questions)
@@ -82,14 +76,14 @@ export const getQuestionStructureFromOfficialAnswers = async (
       .sort((a, b) => a - b);
     
     const totalQuestions = questionNumbers.length;
-    console.log('[getQuestionStructureFromOfficialAnswers] Total de questões encontradas:', totalQuestions);
+    // Debug logs removed for security
     
     // Agrupar questões por seção baseado nas respostas oficiais
     const sectionQuestions: SectionQuestions = {};
     
     // Se temos disciplinas customizadas, usar a estrutura do formulário
     if (blocksArray && blocksArray.length > 0) {
-      console.log('[getQuestionStructureFromOfficialAnswers] Usando estrutura de disciplinas do formulário');
+      // Debug logs removed for security
       
       // Mapear disciplinas para seções
       const disciplineToSectionMap: { [key: string]: SectionType } = {};
@@ -113,7 +107,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
                 sectionType = typeMap[discipline.type] || 'basic';
               }
               disciplineToSectionMap[discipline.type] = sectionType;
-              console.log('[getQuestionStructureFromOfficialAnswers] Disciplina', discipline.name, 'mapeada para seção:', sectionType);
+              // Debug logs removed for security
             }
           });
         }
@@ -128,7 +122,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
               const sectionType = disciplineToSectionMap[discipline.type] || 'basic';
               const questionsForThisDiscipline = Math.min(discipline.questionCount, questionNumbers.length - questionIndex);
               
-              console.log('[getQuestionStructureFromOfficialAnswers] Disciplina:', discipline.name, 'tipo:', discipline.type, 'seção:', sectionType, 'questões:', questionsForThisDiscipline);
+              // Debug logs removed for security
               
               // Inicializar array da seção se não existir
               if (!sectionQuestions[sectionType]) sectionQuestions[sectionType] = [];
@@ -136,7 +130,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
               for (let i = 0; i < questionsForThisDiscipline; i++) {
                 if (questionIndex < questionNumbers.length) {
                   sectionQuestions[sectionType].push(questionNumbers[questionIndex]);
-                  console.log('[getQuestionStructureFromOfficialAnswers] Adicionando questão', questionNumbers[questionIndex], 'para seção', sectionType);
+                  // Debug logs removed for security
                   questionIndex++;
                 }
               }
@@ -193,7 +187,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
       });
     }
     
-    console.log('[getQuestionStructureFromOfficialAnswers] Questões agrupadas por seção:', sectionQuestions);
+    // Debug logs removed for security
     
     // Criar matriz de questões (simplificada por enquanto)
     const questionMatrix: (number | null)[][] = [];
@@ -212,7 +206,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
       questionMatrix.push(row);
     }
     
-    console.log('[getQuestionStructureFromOfficialAnswers] Matriz de questões criada:', questionMatrix);
+    // Debug logs removed for security
     
     return {
       totalQuestions,

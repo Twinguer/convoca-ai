@@ -142,7 +142,7 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
               <div className="flex items-center gap-2 self-end">
                 <Button size="sm" variant="outline" className="flex items-center gap-1 border-0" onClick={async () => {
                   try {
-                    const secureUrl = await generateSecureUrl(ranking.id, 'resultados');
+                    const secureUrl = await generateSecureUrl(ranking.id, 'ranking');
                     navigate(secureUrl);
                   } catch (error) {
                     console.error('Erro ao gerar URL segura:', error);

@@ -3,7 +3,7 @@ import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMu
 
 export const recalculateAllUserScores = async (concursoId: string) => {
   try {
-    console.log(`[recalculateAllUserScores] Iniciando recálculo para concurso: ${concursoId}`);
+    // Debug logs removed for security
     
     // Buscar todos os usuários que participam deste concurso
     const { data: userRankings, error: userRankingsError } = await supabase
@@ -51,14 +51,14 @@ export const recalculateAllUserScores = async (concursoId: string) => {
 
 export const recalculateSpecificUserScore = async (userId: string, concursoId: string) => {
   try {
-    console.log(`[recalculateSpecificUserScore] 🚀 INICIANDO recálculo específico para usuário ${userId} no concurso ${concursoId}`);
+    // Debug logs removed for security
     
-    console.log(`[recalculateSpecificUserScore] 🔍 Chamando recalculateUserScore...`);
+    // Debug logs removed for security
     const result = await recalculateUserScore(userId, concursoId);
     console.log(`[recalculateSpecificUserScore] 📊 Resultado do recalculateUserScore:`, result);
     
     if (result.success) {
-      console.log(`[recalculateSpecificUserScore] ✅ Sucesso para usuário ${userId}`);
+      // Debug logs removed for security
       return result;
     } else {
       console.error(`[recalculateSpecificUserScore] ❌ Erro para usuário ${userId}:`, result.message);

@@ -40,7 +40,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const [selectedQuota, setSelectedQuota] = useState<QuotaType>('Ampla Concorrência');
   
   // Debug log para selectedQuota
-  console.log('[ParticipationForm] selectedQuota:', selectedQuota);
+  // Debug logs removed for security
   const [selectedBooklet, setSelectedBooklet] = useState<string>('');
   const [booklets, setBooklets] = useState<ExamBooklet[]>([]);
   const [isLoadingBooklets, setIsLoadingBooklets] = useState(false);
@@ -89,7 +89,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
             // Procurar pelo ranking deste concurso
             for (const [rankingId, rankingData] of Object.entries(userRankingData.consolidated_data.rankings)) {
               if (rankingData.concurso_id === concurso.id && rankingData.user_data?.reservation_type) {
-                console.log('[ParticipationForm] Carregando reservation_type existente:', rankingData.user_data.reservation_type);
+                // Debug logs removed for security
                 setSelectedQuota(rankingData.user_data.reservation_type as QuotaType);
                 break;
               }
@@ -111,32 +111,14 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
   const shouldShowAnswerSheet = React.useMemo(() => {
     const result = (showAnswerSheet || isUserParticipating) && localUserRankingId;
-    console.log('[ParticipationForm] shouldShowAnswerSheet DEBUG:', {
-      showAnswerSheet,
-      isUserParticipating,
-      localUserRankingId,
-      isAlreadyParticipating,
-      localIsParticipating,
-      propShowAnswerSheet,
-      result
-    });
+    // Debug logs removed for security
     return result;
   }, [showAnswerSheet, isUserParticipating, localUserRankingId, isAlreadyParticipating, localIsParticipating, propShowAnswerSheet]);
 
-  // Debug adicional para entender o estado
-  console.log('[ParticipationForm] Estado atual:', {
-    concursoId: concurso?.id,
-    user: user?.id,
-    isAlreadyParticipating,
-    localIsParticipating,
-    userRankingId,
-    localUserRankingId,
-    showAnswerSheet,
-    shouldShowAnswerSheet
-  });
+  // Debug logs removed for security
   const loadBooklets = async () => {
     try {
-      console.log('[ParticipationForm] Carregando cadernos para concurso:', concurso.id);
+      // Debug logs removed for security
       setIsLoadingBooklets(true);
       const { data: concursoData, error } = await supabase
         .from('concursos')
@@ -150,18 +132,18 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       // Ordenar por display_order
       const sortedBooklets = booklets.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
       
-      console.log('[ParticipationForm] Cadernos encontrados:', sortedBooklets.length);
-      console.log('[ParticipationForm] Cadernos:', sortedBooklets.map(b => ({ name: b.name })));
+      // Debug logs removed for security
+      // Debug logs removed for security
       
       if (sortedBooklets && sortedBooklets.length > 0) {
         setBooklets(sortedBooklets);
         // Se há apenas um caderno, seleciona automaticamente
         if (sortedBooklets.length === 1) {
-          console.log('[ParticipationForm] Selecionando automaticamente o caderno único:', sortedBooklets[0].name);
+          // Debug logs removed for security
           setSelectedBooklet(sortedBooklets[0].id);
         }
       } else {
-        console.log('[ParticipationForm] Nenhum caderno encontrado');
+        // Debug logs removed for security
         setBooklets([]);
       }
     } catch (error) {
@@ -172,13 +154,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
     }
   };
   const validateParticipation = () => {
-    console.log('[ParticipationForm] Validando participação...');
-    console.log('[ParticipationForm] selectedQuota:', selectedQuota);
-    console.log('[ParticipationForm] booklets.length:', booklets.length);
-    console.log('[ParticipationForm] selectedBooklet:', selectedBooklet);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     if (!selectedQuota) {
-      console.log('[ParticipationForm] ❌ Validação falhou: cota não selecionada');
+      // Debug logs removed for security
       toast({
         title: "Cota obrigatória",
         description: "Por favor, selecione uma cota de reserva",
@@ -189,7 +171,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
     // Se há múltiplos cadernos, a seleção é obrigatória
     if (booklets.length > 1 && !selectedBooklet) {
-      console.log('[ParticipationForm] ❌ Validação falhou: caderno não selecionado (múltiplos cadernos)');
+      // Debug logs removed for security
       toast({
         title: "Caderno obrigatório",
         description: "Por favor, selecione o caderno da sua prova",
@@ -198,13 +180,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       return false;
     }
     
-    console.log('[ParticipationForm] ✅ Validação passou');
+    // Debug logs removed for security
     return true;
   };
 
   const validateBookletHasOfficialAnswers = async (bookletId: string): Promise<boolean> => {
     try {
-      console.log('[ParticipationForm] Verificando gabarito oficial para caderno:', bookletId);
+      // Debug logs removed for security
       
       const { data, error } = await supabase
         .from('concursos')
@@ -213,23 +195,23 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         .single();
 
       if (error || !data) {
-        console.log('[ParticipationForm] Erro ao buscar gabarito oficial');
+        // Debug logs removed for security
         return false;
       }
 
       const bookletData = data?.official_answers?.[bookletId];
       if (!bookletData || !bookletData.questions) {
-        console.log('[ParticipationForm] Gabarito não encontrado para o caderno:', bookletId);
+        // Debug logs removed for security
         return false;
       }
 
       const questionCount = Object.keys(bookletData.questions).length;
       if (questionCount === 0) {
-        console.log('[ParticipationForm] Gabarito encontrado mas sem questões');
+        // Debug logs removed for security
         return false;
       }
 
-      console.log('[ParticipationForm] Gabarito oficial encontrado com', questionCount, 'questões');
+      // Debug logs removed for security
       return true;
     } catch (error) {
       console.error('[ParticipationForm] Erro ao verificar gabarito oficial:', error);
@@ -489,8 +471,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         edit_count: 0
       };
 
-      console.log('[ParticipationForm] Creating ranking with selectedQuota:', selectedQuota);
-      console.log('[ParticipationForm] newRankingData.user_data.reservation_type:', newRankingData.user_data.reservation_type);
+      // Debug logs removed for security
+      // Debug logs removed for security
 
       // Check if user already has a user_rankings record
       const { data: existingUserRanking } = await supabase
@@ -518,7 +500,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
         };
       }
 
-      console.log('[ParticipationForm] Saving consolidated_data:', JSON.stringify(consolidatedData, null, 2));
+      // Debug logs removed for security
       
       const {
         data,
@@ -529,7 +511,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       }).select('user_id, consolidated_data').single();
       if (error) throw error;
       // Invalidar todas as queries relacionadas para garantir atualização automática
-      console.log('[ParticipationForm] 🔄 Invalidando queries para refresh automático...');
+      // Debug logs removed for security
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ['participating', concurso.id, user.id]
@@ -558,7 +540,7 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           queryKey: ['rankings']
         })
       ]);
-      console.log('[ParticipationForm] ✅ Queries invalidadas, dados serão atualizados automaticamente');
+      // Debug logs removed for security
       toast({
         title: "Inscrição iniciada!",
         description: "Preencha o cartão de respostas para participar oficialmente do ranking."
@@ -595,9 +577,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   // Debug states log removed to reduce console spam
 
   // Show the answer sheet if selected and we have a ranking ID
-  console.log('[ParticipationForm] Verificando condição shouldShowAnswerSheet:', shouldShowAnswerSheet);
+  // Debug logs removed for security
   if (shouldShowAnswerSheet) {
-    console.log('[ParticipationForm] Renderizando AnswerSheet com rankingId:', localUserRankingId);
+    // Debug logs removed for security
     // Rendering AnswerSheet
     return (
       <div className="w-full h-full">

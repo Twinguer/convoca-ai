@@ -32,17 +32,18 @@ const getWrongAnswerPenalty = (disciplines: any): number => {
 
 export const recalculateUserScore = async (userId: string, concursoId: string): Promise<RecalculationResponse> => {
   try {
-    console.log(`[recalculateUserScore] 🚀 INICIANDO recálculo`);
+    // Log sanitizado - sem exposição de dados sensíveis
+    // Debug logs removed for security
     
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
-    const { data: concurso, error: concursoError } = await supabase
-      .from('concursos')
-      .select('id, titulo, orgao, banca, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_quota_minimum_score, quota_minimum_score, created_at, updated_at, has_custom_knowledge')
-      .eq('id', concursoId)
-      .single();
+           const { data: concurso, error: concursoError } = await supabase
+             .from('concursos')
+             .select('id, titulo, orgao, banca, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_quota_minimum_score, quota_minimum_score, created_at, updated_at')
+             .eq('id', concursoId)
+             .single();
 
     if (concursoError) {
-      console.error(`[recalculateUserScore] ❌ ERRO ao buscar concurso:`, concursoError);
+      console.error(`[recalculateUserScore] ❌ ERRO ao buscar concurso: Database operation failed`);
       return { 
         success: false, 
         message: 'Erro ao obter dados do concurso', 
@@ -50,12 +51,10 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
     
-    console.log(`[recalculateUserScore] ✅ Concurso encontrado: ${concurso.titulo || 'Sem título'}`);
+    // Debug logs removed for security
     
-    // Log da estrutura de disciplinas do concurso
-    console.log(`[recalculateUserScore] Concurso discipline structure:`, 
-               concurso.disciplines && concurso.disciplines.length > 0 ? 
-               `${concurso.disciplines.length} disciplines/blocks` : 'No custom disciplines');
+    // Log sanitizado - sem exposição de dados sensíveis
+    // Debug logs removed for security
 
     // Se o concurso exige pontuação mínima verificamos isso
     let minimumScoreRequired = 0;
@@ -72,11 +71,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         subjects.other_min_score || 0
       );
         
-      console.log(`[recalculateUserScore] Pontuação mínima requerida: ${minimumScoreRequired}`);
+        // Debug logs removed for security
     }
 
     // Primeiro, busque o ranking correspondente ao usuário/concurso
-    console.log(`[recalculateUserScore] 🔍 Buscando ranking`);
+    // Debug logs removed for security
     
     const { data: userRanking, error: userRankingError } = await supabase
       .from('user_rankings')
@@ -84,14 +83,10 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .eq('user_id', userId)
       .maybeSingle();
 
-    console.log(`[recalculateUserScore] 📊 Dados do ranking encontrados:`, {
-      found: !!userRanking,
-      error: userRankingError?.message,
-      consolidatedData: userRanking?.consolidated_data
-    });
+    // Debug logs removed for security
 
     if (userRankingError || !userRanking) {
-      console.error(`[recalculateUserScore] ❌ ERRO ao buscar usuário ${userId}:`, userRankingError);
+      console.error(`[recalculateUserScore] ❌ ERRO ao buscar usuário: Database operation failed`);
       return { 
         success: false, 
         message: 'Erro ao buscar ranking do usuário', 
@@ -99,35 +94,35 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
     
-    console.log(`[recalculateUserScore] ✅ Usuário encontrado`);
+    // Debug logs removed for security
 
     // Buscar o rankingId correto no consolidated_data
     let rankingId = null;
-    console.log(`[recalculateUserScore] 🔍 Buscando rankingId`);
-    console.log(`[recalculateUserScore] 📊 Rankings disponíveis:`, Object.keys(userRanking.consolidated_data?.rankings || {}));
+    // Debug logs removed for security
+    // Debug logs removed for security
     
     if (userRanking.consolidated_data?.rankings) {
       for (const key in userRanking.consolidated_data.rankings) {
         const ranking = userRanking.consolidated_data.rankings[key];
-        console.log(`[recalculateUserScore] 🔍 Verificando ranking`);
+        // Debug logs removed for security
         if (ranking.concurso_id === concursoId) {
           rankingId = key;
-          console.log(`[recalculateUserScore] ✅ RankingId encontrado`);
+          // Debug logs removed for security
           break;
         }
       }
     }
 
     if (!rankingId) {
-      console.error(`[recalculateUserScore] ❌ Usuário ${userId} não está participando do concurso ${concursoId}`);
-      console.error(`[recalculateUserScore] 📊 Rankings disponíveis:`, Object.keys(userRanking.consolidated_data?.rankings || {}));
+      console.error(`[recalculateUserScore] ❌ Usuário não está participando do concurso`);
+      // Debug logs removed for security
       return { 
         success: false, 
         message: 'Usuário não está participando deste concurso'
       };
     }
     
-    console.log(`[recalculateUserScore] ✅ RankingId encontrado`);
+    // Debug logs removed for security
 
     // Obter as respostas do usuário usando user_rankings consolidated_data
     const { data: userRankingData, error: consolidatedError } = await supabase
@@ -137,7 +132,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       .maybeSingle();
 
     if (consolidatedError) {
-      console.error('Erro ao buscar dados consolidados:', consolidatedError);
+      console.error('Erro ao buscar dados consolidados: Database operation failed');
       return { 
         success: false, 
         message: 'Erro ao obter dados do ranking', 
@@ -152,26 +147,22 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     if (rankingDataFromConsolidated?.user_data?.answers) {
       const answersData = rankingDataFromConsolidated.user_data.answers;
 
-      // DEBUG: Log para entender a estrutura
-      console.log('[recalculateUserScore] DEBUG - Estrutura de respostas:', {
-        answersStructure: answersData,
-        answersType: typeof answersData,
-        answersKeys: answersData ? Object.keys(answersData) : 'no answers'
-      });
+      // Log sanitizado - sem exposição de dados sensíveis
+      // Debug logs removed for security
 
       // DEBUG: Log detalhado da estrutura hierárquica
       if (answersData && typeof answersData === 'object') {
-        console.log('[recalculateUserScore] DEBUG - Estrutura hierárquica detalhada:');
+        // Debug logs removed for security
         for (const blockId in answersData) {
           const blockData = answersData[blockId];
-          console.log(`[recalculateUserScore] DEBUG - Bloco processado`);
+          // Debug logs removed for security
           if (typeof blockData === 'object' && blockData !== null) {
             for (const disciplineType in blockData) {
               const disciplineData = blockData[disciplineType];
-              console.log(`[recalculateUserScore] DEBUG - Disciplina ${disciplineType}:`, disciplineData);
+              // Debug logs removed for security
               if (typeof disciplineData === 'object' && disciplineData !== null) {
                 const questionNumbers = Object.keys(disciplineData);
-                console.log(`[recalculateUserScore] DEBUG - Questões da disciplina ${disciplineType}:`, questionNumbers);
+                // Debug logs removed for security
               }
             }
           }
@@ -183,11 +174,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         for (const blockId in answersData) {
           const blockData = answersData[blockId];
           if (typeof blockData === 'object' && blockData !== null) {
-            console.log(`[recalculateUserScore] Processando bloco ${blockId}:`, blockData);
+            // Debug logs removed for security
             for (const disciplineType in blockData) { // Mudança: usar disciplineType
               const disciplineData = blockData[disciplineType];
               if (typeof disciplineData === 'object' && disciplineData !== null) {
-                console.log(`[recalculateUserScore] Processando disciplina ${disciplineType}:`, disciplineData);
+                // Debug logs removed for security
                 for (const questionNumber in disciplineData) {
                   const questionNum = parseInt(questionNumber);
                   if (!isNaN(questionNum)) {
@@ -196,7 +187,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
                       answer: disciplineData[questionNumber],
                       discipline_type: disciplineType // Adicionar disciplina para mapeamento
                     });
-                    console.log(`[recalculateUserScore] Adicionada resposta: Q${questionNum} = ${disciplineData[questionNumber]} (disciplina: ${disciplineType})`);
+                     // Debug logs removed for security
                   }
                 }
               }
@@ -204,29 +195,29 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           }
         }
       } else {
-        console.log('[recalculateUserScore] WARNING: Nenhuma resposta encontrada no consolidated_data');
+        // Debug logs removed for security
       }
     }
     
-    console.log(`[recalculateUserScore] Found ${userAnswers?.length || 0} answers for user`);
-    console.log(`[recalculateUserScore] User answers:`, userAnswers);
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Usar official_answers já buscado do concurso
     if (!concurso?.official_answers) {
-      console.log('[recalculateUserScore] No official answers found');
+      // Debug logs removed for security
       return { 
         success: false, 
         message: 'Gabarito não encontrado para este concurso' 
       };
     }
 
-    console.log(`[recalculateUserScore] 🔍 DEBUG - official_answers:`, concurso.official_answers);
+    // Debug logs removed for security
     
     const answerData = concurso.official_answers;
-    console.log(`[recalculateUserScore] 🔍 DEBUG - answerData:`, answerData);
+    // Debug logs removed for security
     
     if (!answerData) {
-      console.log('[recalculateUserScore] ❌ official_answers está vazio ou undefined');
+      // Debug logs removed for security
       return { 
         success: false, 
         message: 'Gabarito oficial não encontrado' 
@@ -235,16 +226,16 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     
     // A estrutura real tem os cadernos diretamente no primeiro nível
     const booklets = answerData || {};
-    console.log(`[recalculateUserScore] 🔍 DEBUG - booklets:`, booklets);
+    // Debug logs removed for security
     
     // Buscar o selected_booklet_id do usuário
     const currentUserRankingData = userRanking.consolidated_data?.rankings?.[rankingId];
     const selectedBookletId = currentUserRankingData?.selected_booklet_id;
     
-    console.log(`[recalculateUserScore] 🔍 DEBUG - selectedBookletId:`, selectedBookletId);
+    // Debug logs removed for security
     
     if (!selectedBookletId) {
-      console.log('[recalculateUserScore] ❌ selected_booklet_id não encontrado');
+      // Debug logs removed for security
       return { 
         success: false, 
         message: 'Caderno selecionado não encontrado' 
@@ -253,11 +244,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     
     // Usar o gabarito do caderno selecionado pelo usuário
     const selectedBooklet = booklets[selectedBookletId];
-    console.log(`[recalculateUserScore] 🔍 DEBUG - selectedBooklet:`, selectedBooklet);
+    // Debug logs removed for security
     
     if (!selectedBooklet?.questions) {
-      console.log('[recalculateUserScore] ❌ No questions found in selected booklet');
-      console.log('[recalculateUserScore] ❌ selectedBooklet:', selectedBooklet);
+      // Debug logs removed for security
+      // Debug logs removed for security
       return { 
         success: false, 
         message: `Gabarito não encontrado para o caderno ${selectedBookletId}` 
@@ -265,7 +256,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     }
 
     const officialAnswers = selectedBooklet.questions;
-    console.log(`[recalculateUserScore] Found ${Object.keys(officialAnswers).length} official answers`);
+     // Debug logs removed for security
 
     let totalScore = 0;
     let totalWeight = 0;
@@ -283,8 +274,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
 
     // Criar mapeamento de section_type para discipline.type
     const sectionTypeToDisciplineTypeMap: Record<string, string> = {};
-    const disciplineWeights: Record<string, number> = getDisciplineWeights(concurso);
-    const disciplineMinimums: Record<string, number> = getDisciplineMinimums(concurso, isQuota);
+    const disciplineWeights: Record<string, number> = getDisciplineWeights({...concurso, has_custom_knowledge: true});
+    const disciplineMinimums: Record<string, number> = getDisciplineMinimums({...concurso, has_custom_knowledge: true}, isQuota);
 
     // Percorrer as disciplinas do concurso para criar o mapeamento
     // Nova estrutura JSONB: objeto com blocks
@@ -312,14 +303,14 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    // DEBUG: Log do mapeamento criado
-    console.log('[recalculateUserScore] DEBUG - Mapeamento section_type -> discipline.type:', sectionTypeToDisciplineTypeMap);
-    console.log('[recalculateUserScore] DEBUG - Pesos das disciplinas:', disciplineWeights);
-    console.log('[recalculateUserScore] DEBUG - Mínimos das disciplinas:', disciplineMinimums);
+    // Log sanitizado - sem exposição de dados sensíveis
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
 
-    console.log('[recalculateUserScore] Mapeamento section_type -> discipline.type:', sectionTypeToDisciplineTypeMap);
-    console.log('[recalculateUserScore] Pesos das disciplinas:', disciplineWeights);
-    console.log('[recalculateUserScore] Mínimos das disciplinas:', disciplineMinimums);
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Obter as pontuações subjetivas do consolidated_data
     const subjectiveScores = userRanking.consolidated_data?.rankings?.[rankingId]?.user_data?.subjectives || {};
@@ -333,7 +324,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       other_subjective: concurso.subjects?.other === true
     };
     
-    console.log('[recalculateUserScore] 🔍 Subjetivas ativas no concurso:', activeSubjectives);
+     // Debug logs removed for security
     
     // Pontuações subjetivas do consolidated_data (apenas as ativas)
     const discursiveScore = activeSubjectives.discursive ? (subjectiveScores.discursive || 0) : 0;
@@ -342,13 +333,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const caseStudy3Score = activeSubjectives.case_study_3 ? (subjectiveScores.case_study_3 || 0) : 0;
     const otherSubjectiveScore = activeSubjectives.other_subjective ? (subjectiveScores.other_subjective || 0) : 0;
     
-    console.log('[recalculateUserScore] 📊 Pontuações subjetivas (apenas ativas):', {
-      discursive: discursiveScore,
-      case_study_1: caseStudy1Score,
-      case_study_2: caseStudy2Score,
-      case_study_3: caseStudy3Score,
-      other_subjective: otherSubjectiveScore
-    });
+     // Debug logs removed for security
     
     // Usar o mapa de pesos já normalizado
     const getWeightFromDisciplines = (type: string): number => Number(disciplineWeights[type] ?? 1);
@@ -398,20 +383,8 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           ? getWrongAnswerPenalty(concurso.disciplines)
           : 0;
         
-        // Debug para entender o estado da questão
-        console.log(`[recalculateUserScore] DEBUG - Question ${userAnswer.question_number}:`, {
-          userAnswer: userAnswer.answer,
-          officialAnswer: officialAnswer.correct_answer,
-          sectionType,
-          disciplineType,
-          isCorrect,
-          isNullified,
-          isBlank,
-          questionWeight,
-          disciplineWeight,
-          wrongAnswerPenalty,
-          examType: concurso.exam_type
-        });
+        // Log sanitizado - sem exposição de dados sensíveis
+        // Debug logs removed for security
         
         // Usar a função scoreObjectiveAnswer para calcular o delta
         const scoringResult = scoreObjectiveAnswer({
@@ -429,7 +402,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         disciplineScores[disciplineType] += scoringResult.disciplineDelta;
         weightedDisciplineScores[disciplineType] += scoringResult.weightedDisciplineDelta;
         
-        console.log(`[recalculateUserScore] Question ${userAnswer.question_number} scoring result processado`);
+        // Debug logs removed for security
         
         totalWeight += questionWeight;
       }
@@ -444,14 +417,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const objectiveSimpleTotal = Object.values(disciplineScores).reduce((sum, score) => sum + (score || 0), 0);
     const objectiveWeightedTotal = Object.values(weightedDisciplineScores).reduce((sum, score) => sum + (score || 0), 0);
     
-    console.log(`[recalculateUserScore] 📊 Cálculo do total score:`, {
-      objectiveTotal: objectiveWeightedTotal,
-      subjectiveTotal: weightedDiscursiveScore + weightedCaseStudy1Score + weightedCaseStudy2Score + weightedCaseStudy3Score + weightedOtherSubjectiveScore,
-      finalTotal: totalScore
-    });
-    console.log(`[recalculateUserScore] Discipline scores:`, disciplineScores);
-    console.log(`[recalculateUserScore] Weighted discipline scores:`, weightedDisciplineScores);
-    console.log(`[recalculateUserScore] Subjective scores: discursive=${weightedDiscursiveScore}, caseStudy1=${weightedCaseStudy1Score}, caseStudy2=${weightedCaseStudy2Score}, caseStudy3=${weightedCaseStudy3Score}, other=${weightedOtherSubjectiveScore}`);
+     // Debug logs removed for security
 
     // ✅ TOTAIS CALCULADOS CORRETAMENTE ACIMA (com penalidades para C/E)
 
@@ -475,18 +441,10 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         examType: concurso.exam_type
       });
     } else {
-      console.log(`[recalculateUserScore] ✅ Pontuação validada com sucesso`);
+      // Debug logs removed for security
     }
 
-    console.log(`[recalculateUserScore] ✅ Final totals (already calculated correctly):`, {
-      totalScore, // JÁ INCLUI penalidades + subjetivas
-      objectiveSimpleTotal, // Contagem de acertos (sem penalidades)
-      objectiveWeightedTotal, // Com penalidades (para C/E) ou pesos (para Alternativas)
-      subjectiveWeightedTotal, // Total das subjetivas weighted
-      expectedTotal, // Soma esperada
-      scoreDifference, // Diferença detectada
-      examType: concurso.exam_type
-    });
+     // Debug logs removed for security
 
     // ✅ CORREÇÃO: Usar apenas pontuações weighted para consistência
     const subjectScoresTot = Object.values(disciplineScores).reduce((sum, score) => sum + score, 0);
@@ -498,7 +456,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Percorrer as disciplinas do concurso para criar subject_scores dinamicamente - NOVA ESTRUTURA COMPATÍVEL
     // Verificar se é a nova estrutura hierárquica (objeto com blocks)
     if (concurso.disciplines && typeof concurso.disciplines === 'object' && !Array.isArray(concurso.disciplines) && concurso.disciplines.blocks) {
-      console.log('[recalculateUserScore] Usando nova estrutura hierárquica com blocks');
+      // Debug logs removed for security
       
       for (const block of concurso.disciplines.blocks) {
         if (block.disciplines && Array.isArray(block.disciplines)) {
@@ -513,11 +471,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
                 
                 // Verificar se atingiu pontuação mínima
                 if (score < minimum) {
-                  console.log(`[recalculateUserScore] WARNING: Discipline ${discipline.type} below minimum: ${score} < ${minimum}`);
+                  // Debug logs removed for security
                 }
                 
                 correctSubjectScores[discipline.type] = score;
-                console.log(`[recalculateUserScore] DEBUG - Disciplina objetiva ${discipline.type}: score=${score}, minimum=${minimum}`);
+                // Debug logs removed for security
               }
             }
           }
@@ -541,11 +499,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
                 
                 // Verificar se atingiu pontuação mínima
                 if (score < minimum) {
-                  console.log(`[recalculateUserScore] WARNING: Discipline ${discipline.type} below minimum: ${score} < ${minimum}`);
+                  // Debug logs removed for security
                 }
                 
                 correctSubjectScores[discipline.type] = score;
-                console.log(`[recalculateUserScore] DEBUG - Disciplina objetiva ${discipline.type}: score=${score}, minimum=${minimum}`);
+                // Debug logs removed for security
               }
             }
           }
@@ -553,8 +511,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     }
 
-    console.log('[recalculateUserScore] DEBUG - correctSubjectScores:', correctSubjectScores);
-    console.log('[recalculateUserScore] DEBUG - disciplineScores calculados:', disciplineScores);
+     // Debug logs removed for security
     
     // ✅ CORREÇÃO: Usar pontuações weighted para consistência
     const correctSubjectives = {
@@ -573,7 +530,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Para "Certo ou Errado", questões sempre valem 1 ponto (não ponderado)
     const useWeightedScoring = concurso.exam_type !== 'Certo ou Errado';
     
-    console.log(`[recalculateUserScore] Minimum scoring mode: exam_type=${concurso.exam_type}, useWeightedScoring=${useWeightedScoring}`);
+    // Debug logs removed for security
 
     // 1) Discipline-level minimums (objective disciplines)
     const scoresToCheckForDisciplines = useWeightedScoring ? weightedDisciplineScores : disciplineScores;
@@ -581,7 +538,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       const min = disciplineMinimums[discType] || 0;
       if (min > 0 && score < min) {
         belowDisciplineMinimums.push(discType);
-        console.log(`[recalculateUserScore] Disciplina ${discType} abaixo do mínimo: ${score} < ${min} (weighted=${useWeightedScoring})`);
+        // Debug logs removed for security
       }
     }
 
@@ -595,38 +552,32 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const case3Min = isQuota ? (subj.case3_min_score_cotas || 0) : (subj.case3_min_score || 0);
     const otherMin = isQuota ? (subj.other_min_score_cotas || 0) : (subj.other_min_score || 0);
     
-    console.log(`[recalculateUserScore] Subjective minimums for ${isQuota ? 'quota' : 'ampla'}:`, {
-      discursive: discursiveMin,
-      case1: case1Min,
-      case2: case2Min,
-      case3: case3Min,
-      other: otherMin
-    });
+     // Debug logs removed for security
     
     if (discursiveMin > 0 && (discursiveScore || 0) < discursiveMin) {
       belowDisciplineMinimums.push('discursive');
-      console.log(`[recalculateUserScore] Discursive abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${discursiveScore} < ${discursiveMin}`);
+      // Debug logs removed for security
     }
     if (case1Min > 0 && (caseStudy1Score || 0) < case1Min) {
       belowDisciplineMinimums.push('case_study_1');
-      console.log(`[recalculateUserScore] Case Study 1 abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${caseStudy1Score} < ${case1Min}`);
+      // Debug logs removed for security
     }
     if (case2Min > 0 && (caseStudy2Score || 0) < case2Min) {
       belowDisciplineMinimums.push('case_study_2');
-      console.log(`[recalculateUserScore] Case Study 2 abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${caseStudy2Score} < ${case2Min}`);
+      // Debug logs removed for security
     }
     if (case3Min > 0 && (caseStudy3Score || 0) < case3Min) {
       belowDisciplineMinimums.push('case_study_3');
-      console.log(`[recalculateUserScore] Case Study 3 abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${caseStudy3Score} < ${case3Min}`);
+      // Debug logs removed for security
     }
     if (otherMin > 0 && (otherSubjectiveScore || 0) < otherMin) {
       belowDisciplineMinimums.push('other_subjective');
-      console.log(`[recalculateUserScore] Other Subjective abaixo do mínimo ${isQuota ? 'cota' : 'ampla'}: ${otherSubjectiveScore} < ${otherMin}`);
+      // Debug logs removed for security
     }
 
     // 3) Block-level minimums using disciplines mapping
     const blockScores: Record<string, number> = {};
-    const { blockMinimums, disciplineToBlock } = getBlockMinimumMaps(concurso, isQuota);
+    const { blockMinimums, disciplineToBlock } = getBlockMinimumMaps({...concurso, has_custom_knowledge: true}, isQuota);
     Object.keys(blockMinimums).forEach(id => { blockScores[id] = 0; });
 
     // Usar pontuações apropriadas baseado no tipo de prova
@@ -661,11 +612,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
         hasGlobalMin = globalMinimumToCheck > 0;
       }
       
-      console.log('[recalculateUserScore] Nova estrutura JSONB para global minimum:', {
-        isQuota,
-        minimum: globalMinimumToCheck,
-        hasMin: hasGlobalMin
-      });
+       // Debug logs removed for security
     }
     // Estrutura antiga: array de blocos (fallback)
     else if (concurso.disciplines && Array.isArray(concurso.disciplines) && concurso.disciplines.length > 0) {
@@ -687,11 +634,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     
     const isBelowGlobalMinimum = hasGlobalMin ? (scoreToCheckForGlobal < globalMinimumToCheck) : false;
     
-    console.log(`[recalculateUserScore] Global minimum check: reservationType=${reservationType}, isQuota=${isQuota}, minimum=${globalMinimumToCheck}, objectiveWeighted=${objectiveWeightedTotal}, objectiveSimple=${objectiveSimpleTotal}, scoreUsed=${scoreToCheckForGlobal}, useWeighted=${useWeightedScoring}, below=${isBelowGlobalMinimum}`);
+    // Debug logs removed for security
 
     const belowMinimum = isBelowGlobalMinimum || belowDisciplineMinimums.length > 0 || belowBlockMinimums.length > 0;
     
-    console.log(`[recalculateUserScore] Minimum thresholds summary: belowMinimum=${belowMinimum}, isBelowGlobalMinimum=${isBelowGlobalMinimum}, belowDisciplineMinimums=${belowDisciplineMinimums.length}, belowBlockMinimums=${belowBlockMinimums.length}`);
+    // Debug logs removed for security
 
     // Atualizar a pontuação do usuário no consolidated_data
     const updatedConsolidatedData = {
@@ -723,37 +670,11 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       }
     };
 
-    console.log(`[recalculateUserScore] 📊 Estrutura final sendo salva:`, {
-      rankingId,
-      totalScore,
-      subjectScoresTot,
-      subjectiveScoresTot,
-      correctSubjectScores,
-      correctSubjectives,
-      updatedConsolidatedData: updatedConsolidatedData.rankings[rankingId].user_data
-    });
+     // Debug logs removed for security
 
-    console.log(`[recalculateUserScore] Updating consolidated_data with:`, {
-      rankingId,
-      totalScore,
-      disciplineScores,
-      subjectiveScores: {
-        discursive_score: discursiveScore,
-        case_study_1_score: caseStudy1Score,
-        case_study_2_score: caseStudy2Score,
-        case_study_3_score: caseStudy3Score,
-        other_subjective_score: otherSubjectiveScore
-      },
-      weightedSubjectiveScores: {
-        discursive_score: weightedDiscursiveScore,
-        case_study_1_score: weightedCaseStudy1Score,
-        case_study_2_score: weightedCaseStudy2Score,
-        case_study_3_score: weightedCaseStudy3Score,
-        other_subjective_score: weightedOtherSubjectiveScore
-      }
-    });
+     // Debug logs removed for security
 
-    console.log(`[recalculateUserScore] 💾 Salvando no banco de dados...`);
+    // Debug logs removed for security
     
     const { error: updateError } = await supabase
       .from('user_rankings')
@@ -771,7 +692,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    console.log(`[recalculateUserScore] ✅ Successfully updated consolidated_data`);
+    // Debug logs removed for security
 
     return { 
         success: true, 

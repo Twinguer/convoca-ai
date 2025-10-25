@@ -8,10 +8,10 @@ export const saveBookletAnswerKey = async (
   answers: Record<string, AnswerKeyData>
 ) => {
   try {
-    console.log('[answerKeyService] Starting saveBookletAnswerKey');
-    console.log('[answerKeyService] Concurso ID:', concursoId);
-    console.log('[answerKeyService] Booklet ID (input):', bookletId, 'Type:', typeof bookletId);
-    console.log('[answerKeyService] Input answers structure:', Object.keys(answers));
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Buscar exam_type do concurso para definir question_type corretamente
     const { data: concursoData, error: concursoError } = await supabase
@@ -26,17 +26,17 @@ export const saveBookletAnswerKey = async (
     }
 
     const questionType = concursoData.exam_type === 'Certo ou Errado' ? 'TRUE_FALSE' : 'MULTIPLE_CHOICE';
-    console.log('[answerKeyService] Detected exam_type:', concursoData.exam_type, '-> question_type:', questionType);
+    // Debug logs removed for security
 
     // Garantir que bookletId seja sempre string
     const bookletIdString = String(bookletId);
-    console.log('[answerKeyService] Booklet ID (converted to string):', bookletIdString);
+    // Debug logs removed for security
 
     // Converter o formato de answers para o formato esperado pela função RPC
     const formattedAnswers: Record<string, any> = {};
     
     Object.entries(answers).forEach(([questionNumber, answerData]) => {
-      console.log(`[answerKeyService] Processing question ${questionNumber}:`, answerData);
+      // Debug logs removed for security
       
       formattedAnswers[questionNumber] = {
         correct_answer: answerData.correctAnswer,
@@ -48,8 +48,8 @@ export const saveBookletAnswerKey = async (
       };
     });
 
-    console.log('[answerKeyService] Formatted answers for RPC:', formattedAnswers);
-    console.log('[answerKeyService] Total questions to save:', Object.keys(formattedAnswers).length);
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Usar a função RPC que agora deve funcionar sem trigger problems
     const { data, error } = await supabase.rpc('save_consolidated_answer_key', {
@@ -68,7 +68,7 @@ export const saveBookletAnswerKey = async (
       return { success: false, error: error.message };
     }
 
-    console.log('[answerKeyService] RPC Success response:', data);
+    // Debug logs removed for security
     
     // Verificar se a resposta indica sucesso
     if (data && typeof data === 'object' && 'success' in data && !data.success) {

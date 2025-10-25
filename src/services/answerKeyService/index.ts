@@ -17,12 +17,12 @@ const answerKeyService = {
 // Funções auxiliares exportadas individualmente (para compatibilidade)
 export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: string) => {
   try {
-    console.log('[getAnswerKeyForBooklet] Fetching answer key for concurso:', concursoId, 'booklet:', bookletId);
+    // Debug logs removed for security
     
     const consolidatedData = await getConsolidatedAnswerKey(concursoId);
     
     if (!consolidatedData?.booklets?.[bookletId]) {
-      console.log('[getAnswerKeyForBooklet] No data found for booklet:', bookletId);
+      // Debug logs removed for security
       return { success: true, data: [] };
     }
 
@@ -37,7 +37,7 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
       question_type: answerData.question_type || 'MULTIPLE_CHOICE'
     }));
 
-    console.log('[getAnswerKeyForBooklet] Found', answers.length, 'answers for booklet:', bookletId);
+    // Debug logs removed for security
     return { success: true, data: answers };
   } catch (error: any) {
     console.error('[getAnswerKeyForBooklet] Error:', error);
@@ -67,8 +67,8 @@ export const getAllBookletsAnswerKeys = async (concursoId: string) => {
 // Função para salvar gabarito usando nova estrutura consolidada
 export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: string, answersArray: any[]) => {
   try {
-    console.log('[saveBookletAnswerKeyLegacy] Using consolidated structure - Saving for concurso:', concursoId, 'booklet:', bookletId);
-    console.log('[saveBookletAnswerKeyLegacy] Answers to save:', answersArray.length);
+    // Debug logs removed for security
+    // Debug logs removed for security
 
     // Converter array para o formato Record<string, AnswerKeyData> esperado
     // Não definir answerFormat e questionType aqui - deixar para saveBookletAnswerKey resolver
@@ -91,7 +91,7 @@ export const saveBookletAnswerKeyLegacy = async (concursoId: string, bookletId: 
       return { success: false, error: result.error };
     }
 
-    console.log('[saveBookletAnswerKeyLegacy] Successfully saved using consolidated structure');
+    // Debug logs removed for security
     return { success: true, data: result.data };
 
   } catch (error: any) {

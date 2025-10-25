@@ -63,7 +63,7 @@ export const QuotaSelector: React.FC<QuotaSelectorProps> = ({
       
       
       <RadioGroup value={selectedQuota} onValueChange={value => {
-      console.log('[QuotaSelector] Quota changed from', selectedQuota, 'to', value);
+      // Debug logs removed for security
       onQuotaChange(value as QuotaType);
     }} className="flex flex-col space-y-2">
         {availableQuotas.map(quota => <div key={quota.value} className="flex items-center space-x-2 border border-border p-3 rounded-md hover:bg-muted/50 bg-card">
