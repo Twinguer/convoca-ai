@@ -442,7 +442,7 @@ const CriarRanking = () => {
       // Buscar dados do concurso (cadernos e gabarito)
       const { data: concursoData, error: concursoError } = await supabase
         .from('concursos')
-        .select('exam_booklets, official_answers')
+        .select('*')
         .eq('id', createdConcursoId)
         .single();
       

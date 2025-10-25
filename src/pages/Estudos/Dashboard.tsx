@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit, FileText } from 'lucide-react';
+import { Calendar, Clock, Target, BookOpen, TrendingUp, Plus, Play, CheckCircle, AlertCircle, Trash2, Edit, FileText, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { UserStudyService } from '@/services/userStudyService';
 import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
 import { StudyCycleV2 } from '@/types/userStudy';
+import { logger } from '@/utils/logger';
 interface StudyCycleProgress {
   cycle: StudyCycleV2;
   totalDisciplines: number;
@@ -38,12 +39,12 @@ const EstudosDashboard = () => {
   const fetchStudyCycles = async () => {
     try {
       const startTime = performance.now();
-      logger.debug('Buscando ciclos ativos', { userId: user?.id });
+      logger.debug('Buscando ciclos ativos', 'Dashboard', { userId: user?.id });
       
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
       
       const cycles = userStudyData?.study_cycles.filter(cycle => cycle.is_active) || [];
-      logger.debug('Ciclos ativos encontrados', { 
+      logger.debug('Ciclos ativos encontrados', 'Dashboard', { 
         count: cycles.length,
         cycles: cycles.map(c => ({ id: c.id, name: c.cycle_name }))
       });
@@ -94,7 +95,7 @@ const EstudosDashboard = () => {
       const endTime = performance.now();
       const loadTime = endTime - startTime;
       
-      logger.info('Ciclos ativos carregados', { 
+      logger.info('Ciclos ativos carregados', 'Dashboard', { 
         count: cycleProgressData.length,
         loadTime: `${loadTime.toFixed(2)}ms`,
         fromCache: loadTime < 50 // Se carregou em menos de 50ms, provavelmente veio do cache
@@ -263,6 +264,15 @@ const EstudosDashboard = () => {
                 } catch (error) {
                   console.error('Erro ao gerar URL segura:', error);
                   navigate('/estudos');
+                }
+              }} onDelete={async () => {
+                try {
+                  await UserStudyService.updateCycle(user?.id, data.cycle.id, { is_active: false });
+                  toast({ title: 'Ciclo excluído com sucesso!' });
+                  fetchStudyCycles();
+                } catch (error) {
+                  console.error('Erro ao excluir ciclo:', error);
+                  toast({ title: 'Erro ao excluir ciclo', variant: 'destructive' });
                 }
               }} />)}
             </div>

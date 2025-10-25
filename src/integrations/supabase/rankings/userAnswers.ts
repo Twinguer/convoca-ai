@@ -1,6 +1,27 @@
 
 import { supabase } from '../client';
 
+/**
+ * Interface for subjective scores
+ */
+interface SubjectiveScores {
+  discursive?: number | null;
+  case_study_1?: number | null;
+  case_study_2?: number | null;
+  case_study_3?: number | null;
+  other_subjective?: number | null;
+}
+
+/**
+ * Interface for concurso answer data in consolidated structure
+ */
+interface ConcursoAnswerData {
+  answers?: {
+    [bookletId: string]: { [questionNumber: string]: string };
+  };
+  subjective_scores?: SubjectiveScores;
+}
+
 // Interface para a nova estrutura JSON consolidada
 interface ConsolidatedAnswers {
   booklets: {
@@ -57,11 +78,11 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
 
     // Se especificou concurso, buscar apenas dados desse concurso
     let answers: { [key: number]: string } = {};
-    let subjectiveScoresForConcurso = {};
+    let subjectiveScoresForConcurso: SubjectiveScores = {};
 
     if (concursoId) {
       const concursoKey = concursoId;
-      const concursoData = consolidatedData[concursoKey];
+      const concursoData = consolidatedData[concursoKey] as ConcursoAnswerData | undefined;
       
       if (concursoData?.answers) {
         // Buscar respostas do caderno selecionado ou primeiro disponível
@@ -96,11 +117,11 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
 
     return {
       answers,
-      discursiveScore: subjectiveScoresForConcurso?.discursive || null,
-      caseStudy1Score: subjectiveScoresForConcurso?.case_study_1 || null,
-      caseStudy2Score: subjectiveScoresForConcurso?.case_study_2 || null,
-      caseStudy3Score: subjectiveScoresForConcurso?.case_study_3 || null,
-      otherSubjectiveScore: subjectiveScoresForConcurso?.other_subjective || null,
+      discursiveScore: subjectiveScoresForConcurso.discursive || null,
+      caseStudy1Score: subjectiveScoresForConcurso.case_study_1 || null,
+      caseStudy2Score: subjectiveScoresForConcurso.case_study_2 || null,
+      caseStudy3Score: subjectiveScoresForConcurso.case_study_3 || null,
+      otherSubjectiveScore: subjectiveScoresForConcurso.other_subjective || null,
       selectedBooklet: selectedBooklet,
       editCount: editCount,
       consolidatedData, // Retornar dados completos para uso avançado
@@ -120,15 +141,16 @@ export const fetchUserAnswersForBooklet = async (rankingId: string, bookletId: s
     if (result.consolidatedData) {
       // Buscar em todos os concursos se não especificado
       if (concursoId) {
-        const concursoData = result.consolidatedData[concursoId];
+        const concursoData = result.consolidatedData[concursoId] as ConcursoAnswerData | undefined;
         if (concursoData?.answers?.[bookletId]) {
           return concursoData.answers[bookletId];
         }
       } else {
         // Buscar em todos os concursos
         for (const concursoData of Object.values(result.consolidatedData)) {
-          if (concursoData?.answers?.[bookletId]) {
-            return concursoData.answers[bookletId];
+          const typedConcursoData = concursoData as ConcursoAnswerData;
+          if (typedConcursoData?.answers?.[bookletId]) {
+            return typedConcursoData.answers[bookletId];
           }
         }
       }

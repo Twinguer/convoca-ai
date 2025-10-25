@@ -103,20 +103,22 @@ const CriarConcurso = () => {
     try {
       // Create study contest
       const newContest: Omit<StudyContest, 'id' | 'created_at' | 'updated_at'> = {
-        concurso_id: crypto.randomUUID(), // Usar como ID temporário
-        is_active: true,
-        registration_date: new Date().toISOString(),
-        exam_date: examDate,
-        notes: description
+        title: title,
+        description: description,
+        start_date: new Date().toISOString(),
+        end_date: examDate,
+        is_active: true
       };
 
       // Create disciplines for each block
       const newSubjects: Omit<StudySubject, 'id' | 'created_at' | 'updated_at'>[] = blocks.flatMap(block => 
         block.disciplines.map(discipline => ({
           name: discipline.name,
-          parent_id: undefined,
-          total_hours_studied: discipline.estimatedHours || 0,
-          last_studied_date: null
+          color: '#3b82f6',
+          priority: 5,
+          weekly_hours: discipline.estimatedHours || 0,
+          is_active: true,
+          block_name: block.name
         }))
       );
 
@@ -128,8 +130,8 @@ const CriarConcurso = () => {
 
       // Add new contest and subjects
       const success = await UserStudyService.upsertUserStudyData(user.id, {
-        study_contests: [...(userStudyData?.study_contests || []), newContest],
-        study_subjects: [...(userStudyData?.study_subjects || []), ...newSubjects]
+        study_contests: [...(userStudyData?.study_contests || []), newContest as StudyContest],
+        study_subjects: [...(userStudyData?.study_subjects || []), ...(newSubjects as StudySubject[])]
       });
 
       if (success) {

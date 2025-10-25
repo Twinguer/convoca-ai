@@ -37,7 +37,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     // Obter dados do concurso para aplicar regras específicas - apenas campos necessários
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')
-      .select('id, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_quota_minimum_score, quota_minimum_score')
+      .select('id, titulo, orgao, banca, disciplines, subjects, exam_type, alternatives_count, official_answers, has_minimum_score, total_minimum_score, has_quota_minimum_score, quota_minimum_score, created_at, updated_at, has_custom_knowledge')
       .eq('id', concursoId)
       .single();
 

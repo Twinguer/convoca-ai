@@ -128,7 +128,7 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
                   <dd>{concurso.specific_knowledge_3_weight || 1}</dd>
                 </div>
               )}
-              {concurso.has_discursive && (
+              {concurso.subjects?.discr && (
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Discursiva</dt>
                   <dd>1</dd>

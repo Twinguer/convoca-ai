@@ -75,16 +75,6 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken }) =
     }
   };
 
-  const toggleDisciplineCompletion = (blockIndex: number, disciplineIndex: number) => {
-    if (!cycle) return;
-
-    const updatedCycle = { ...cycle };
-    const discipline = updatedCycle.schedule_data.available_blocks[blockIndex].disciplines[disciplineIndex];
-    discipline.isCompleted = !discipline.isCompleted;
-
-    updateCycle(updatedCycle);
-  };
-
   const handleToggleDiscipline = (blockId: string, disciplineId: string) => {
     if (!cycle) return;
 
@@ -93,7 +83,8 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken }) =
     if (block) {
       const discipline = block.disciplines.find(d => d.id === disciplineId);
       if (discipline) {
-        discipline.isCompleted = !discipline.isCompleted;
+        // Toggle completion status (property may not exist in type, but we add it dynamically)
+        (discipline as any).isCompleted = !(discipline as any).isCompleted;
         updateCycle(updatedCycle);
       }
     }
@@ -109,59 +100,6 @@ const CicloDetalhes: React.FC<CicloDetalhesProps> = ({ cycleId, secureToken }) =
     setExpandedBlocks(newExpanded);
   };
 
-  const updateStudyTime = (blockIndex: number, disciplineIndex: number, newTime: number) => {
-    if (!cycle) return;
-
-    const updatedCycle = { ...cycle };
-    updatedCycle.blocks[blockIndex].disciplines[disciplineIndex].studyTime = newTime;
-
-    updateCycle(updatedCycle);
-    setEditingDiscipline(null);
-  };
-
-  const deleteBlock = (blockIndex: number) => {
-    if (!cycle) return;
-
-    toastHook({
-      title: 'Confirmar exclusão',
-      description: 'Tem certeza que deseja excluir este bloco e todas as suas disciplinas?',
-      action: (
-        <Button
-          onClick={() => {
-            const updatedCycle = { ...cycle };
-            updatedCycle.blocks.splice(blockIndex, 1);
-            updateCycle(updatedCycle);
-          }}
-          variant="destructive"
-          size="sm"
-        >
-          Excluir
-        </Button>
-      ),
-    });
-  };
-
-  const deleteDiscipline = (blockIndex: number, disciplineIndex: number) => {
-    if (!cycle) return;
-
-    toastHook({
-      title: 'Confirmar exclusão',
-      description: 'Tem certeza que deseja excluir esta disciplina?',
-      action: (
-        <Button
-          onClick={() => {
-            const updatedCycle = { ...cycle };
-            updatedCycle.blocks[blockIndex].disciplines.splice(disciplineIndex, 1);
-            updateCycle(updatedCycle);
-          }}
-          variant="destructive"
-          size="sm"
-        >
-          Excluir
-        </Button>
-      ),
-    });
-  };
 
 
   if (loading) {

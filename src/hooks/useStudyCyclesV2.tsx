@@ -235,6 +235,7 @@ export const useStudyCyclesV2 = () => {
       // Fallback: buscar em weekly_schedule (legado)
       if (!session) {
         const daySchedule = cycle.schedule_data.weekly_schedule?.find((d: any) => d.day === dayOfWeek);
+        // @ts-expect-error - day_of_week is added dynamically on line 245
         session = daySchedule?.sessions.find((s: any) => s.id === sessionId);
         disciplineName = session?.discipline_name;
         blockName = session?.block_name;
