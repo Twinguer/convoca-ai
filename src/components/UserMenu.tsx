@@ -57,7 +57,10 @@ const UserMenu: React.FC = () => {
 
 
   const formatTime = (mins: number, secs: number) => {
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    // Validate and fix NaN values
+    const validMins = isNaN(mins) ? 0 : Math.max(0, mins);
+    const validSecs = isNaN(secs) ? 0 : Math.max(0, secs);
+    return `${validMins.toString().padStart(2, '0')}:${validSecs.toString().padStart(2, '0')}`;
   };
 
 

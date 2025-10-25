@@ -6,7 +6,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Menu from "./components/Menu";
-import FloatingTimer from "./components/FloatingTimer";
 import { TimerProvider } from "./contexts/TimerContext";
 import { useTimer } from "./contexts/TimerContext";
 import Index from "./pages/Index";
@@ -67,10 +66,6 @@ const ConcursoResultadosWrapper = () => {
 };
 
 const AppContent = () => {
-  const {
-    showFloatingTimer,
-    hideTimer
-  } = useTimer();
   
   // Inicializar limpeza automática de tokens
   useTokenCleanup();
@@ -336,7 +331,6 @@ const AppContent = () => {
                         <NotFound />
                       </>} />
                   </Routes>
-        <FloatingTimer isOpen={showFloatingTimer} onClose={hideTimer} />
       </BrowserRouter>
       </div>
     </>;

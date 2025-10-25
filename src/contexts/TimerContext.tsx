@@ -10,14 +10,11 @@ interface TimerContextType {
   isPaused: boolean;
   initialMinutes: number;
   isStudying: boolean;
-  showFloatingTimer: boolean;
   startTimer: (minutes?: number) => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
   stopTimer: () => void;
   setInitialTime: (minutes: number) => void;
-  showTimer: () => void;
-  hideTimer: () => void;
 }
 
 const TimerContext = createContext<TimerContextType | undefined>(undefined);
@@ -42,25 +39,83 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   if (!addStudySession) {
     console.warn('addStudySession not available in TimerProvider');
   }
-  const [minutes, setMinutes] = useState(60);
-  const [seconds, setSeconds] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [initialMinutes, setInitialMinutes] = useState(60);
-  const [showFloatingTimer, setShowFloatingTimer] = useState(false);
-  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  // Load timer state from localStorage on mount with validation
+  const [minutes, setMinutes] = useState(() => {
+    const saved = localStorage.getItem('timer-minutes');
+    const parsed = saved ? parseInt(saved) : 60;
+    return isNaN(parsed) ? 60 : parsed;
+  });
+  const [seconds, setSeconds] = useState(() => {
+    const saved = localStorage.getItem('timer-seconds');
+    const parsed = saved ? parseInt(saved) : 0;
+    return isNaN(parsed) ? 0 : parsed;
+  });
+  const [isRunning, setIsRunning] = useState(() => {
+    const saved = localStorage.getItem('timer-isRunning');
+    return saved === 'true';
+  });
+  const [isPaused, setIsPaused] = useState(() => {
+    const saved = localStorage.getItem('timer-isPaused');
+    return saved === 'true';
+  });
+  const [initialMinutes, setInitialMinutes] = useState(() => {
+    const saved = localStorage.getItem('timer-initialMinutes');
+    const parsed = saved ? parseInt(saved) : 60;
+    return isNaN(parsed) ? 60 : parsed;
+  });
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(() => {
+    const saved = localStorage.getItem('timer-sessionStartTime');
+    if (!saved) return null;
+    const date = new Date(saved);
+    return isNaN(date.getTime()) ? null : date;
+  });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const endTimeRef = useRef<number | null>(null);
   const remainingSecondsRef = useRef<number>(initialMinutes * 60);
 
   const isStudying = isRunning && !isPaused;
 
-  // Only show floating timer if explicitly requested
+  // Save timer state to localStorage whenever it changes
   useEffect(() => {
-    if (!isRunning) {
-      setShowFloatingTimer(false);
+    if (!isNaN(minutes) && minutes >= 0) {
+      localStorage.setItem('timer-minutes', minutes.toString());
     }
+  }, [minutes]);
+
+  useEffect(() => {
+    if (!isNaN(seconds) && seconds >= 0) {
+      localStorage.setItem('timer-seconds', seconds.toString());
+    }
+  }, [seconds]);
+
+  useEffect(() => {
+    localStorage.setItem('timer-isRunning', isRunning.toString());
   }, [isRunning]);
+
+  useEffect(() => {
+    localStorage.setItem('timer-isPaused', isPaused.toString());
+  }, [isPaused]);
+
+  useEffect(() => {
+    localStorage.setItem('timer-initialMinutes', initialMinutes.toString());
+  }, [initialMinutes]);
+
+  useEffect(() => {
+    if (sessionStartTime) {
+      localStorage.setItem('timer-sessionStartTime', sessionStartTime.toISOString());
+    } else {
+      localStorage.removeItem('timer-sessionStartTime');
+    }
+  }, [sessionStartTime]);
+
+  useEffect(() => {
+    if (endTimeRef.current) {
+      localStorage.setItem('timer-endTime', endTimeRef.current.toString());
+    } else {
+      localStorage.removeItem('timer-endTime');
+    }
+  }, [endTimeRef.current]);
+
 
   // Timer countdown logic using absolute end time (robust across tab switches)
   useEffect(() => {
@@ -75,8 +130,12 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
         const nextMinutes = Math.floor(remaining / 60);
         const nextSeconds = remaining % 60;
-        setMinutes(nextMinutes);
-        setSeconds(nextSeconds);
+        
+        // Validate values before setting
+        if (!isNaN(nextMinutes) && !isNaN(nextSeconds)) {
+          setMinutes(nextMinutes);
+          setSeconds(nextSeconds);
+        }
 
         if (remaining <= 0) {
           // Stop ticking
@@ -186,8 +245,6 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
     setIsRunning(true);
     setIsPaused(false);
-    // Don't automatically show floating timer
-    setShowFloatingTimer(false);
     setSessionStartTime(new Date());
   };
 
@@ -225,8 +282,15 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     setIsPaused(false);
     setMinutes(initialMinutes);
     setSeconds(0);
-    setShowFloatingTimer(false);
     setSessionStartTime(null);
+
+    // Clear localStorage when timer is stopped
+    localStorage.removeItem('timer-minutes');
+    localStorage.removeItem('timer-seconds');
+    localStorage.removeItem('timer-isRunning');
+    localStorage.removeItem('timer-isPaused');
+    localStorage.removeItem('timer-sessionStartTime');
+    localStorage.removeItem('timer-endTime');
   };
 
   const setInitialTime = (mins: number) => {
@@ -237,13 +301,6 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     }
   };
 
-  const showTimer = () => {
-    setShowFloatingTimer(true);
-  };
-
-  const hideTimer = () => {
-    setShowFloatingTimer(false);
-  };
 
   return (
     <TimerContext.Provider
@@ -254,14 +311,11 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         isPaused,
         initialMinutes,
         isStudying,
-        showFloatingTimer,
         startTimer,
         pauseTimer,
         resumeTimer,
         stopTimer,
         setInitialTime,
-        showTimer,
-        hideTimer,
       }}
     >
       {children}
