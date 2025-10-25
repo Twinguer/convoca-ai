@@ -12,6 +12,26 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - CRÍTICO PARA SEGURANÇA
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+*.env
+*.env.*
+.env.local.backup*
+.env.*.backup*
+env.nomeia-ai
+env.convoca-ai
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
