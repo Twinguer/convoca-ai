@@ -812,30 +812,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subjects: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_predefined: boolean | null
-          name: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_predefined?: boolean | null
-          name: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_predefined?: boolean | null
-          name?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       user_followers: {
         Row: {
           created_at: string
@@ -887,45 +863,6 @@ export type Database = {
           },
         ]
       }
-      user_rankings_backup: {
-        Row: {
-          consolidated_data: Json | null
-          customDisciplineScores: Json | null
-          user_id: string | null
-          weightedCustomDisciplineScores: Json | null
-        }
-        Insert: {
-          consolidated_data?: Json | null
-          customDisciplineScores?: Json | null
-          user_id?: string | null
-          weightedCustomDisciplineScores?: Json | null
-        }
-        Update: {
-          consolidated_data?: Json | null
-          customDisciplineScores?: Json | null
-          user_id?: string | null
-          weightedCustomDisciplineScores?: Json | null
-        }
-        Relationships: []
-      }
-      user_rankings_structure_backup: {
-        Row: {
-          backup_created_at: string | null
-          consolidated_data: Json | null
-          user_id: string | null
-        }
-        Insert: {
-          backup_created_at?: string | null
-          consolidated_data?: Json | null
-          user_id?: string | null
-        }
-        Update: {
-          backup_created_at?: string | null
-          consolidated_data?: Json | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -945,42 +882,6 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_scores: {
-        Row: {
-          basic_knowledge_score: number | null
-          created_at: string | null
-          discursive_score: number | null
-          id: string
-          ranking_id: string
-          specific_knowledge_score: number | null
-          total_score: number | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          basic_knowledge_score?: number | null
-          created_at?: string | null
-          discursive_score?: number | null
-          id?: string
-          ranking_id: string
-          specific_knowledge_score?: number | null
-          total_score?: number | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          basic_knowledge_score?: number | null
-          created_at?: string | null
-          discursive_score?: number | null
-          id?: string
-          ranking_id?: string
-          specific_knowledge_score?: number | null
-          total_score?: number | null
           updated_at?: string | null
           user_id?: string
         }
