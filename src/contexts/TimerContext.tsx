@@ -45,6 +45,11 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     return user ? `timer-${user.id}-${key}` : `timer-guest-${key}`;
   };
 
+  // Helper to build storage keys for a specific user (used on logout cleanup)
+  const getUserStorageKey = (userId: string, key: string) => {
+    return `timer-${userId}-${key}`;
+  };
+
   // Load timer state from localStorage on mount with validation (user-specific)
   const [minutes, setMinutes] = useState(() => {
     const saved = localStorage.getItem(getStorageKey('minutes'));
@@ -118,6 +123,12 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         if (!isNaN(date.getTime())) setSessionStartTime(date);
       }
       
+      // Always ensure no active timer after login
+      setIsRunning(false);
+      setIsPaused(false);
+      setEndTime(null);
+      setSessionStartTime(null);
+      
       // Update session storage with current user
       sessionStorage.setItem('previous_user_id', currentUserId);
     } else if (previousUserId && !currentUserId) {
@@ -152,6 +163,12 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       setInitialMinutes(60);
       setSessionStartTime(null);
       setEndTime(null);
+      
+      // Clear user-specific timer data from localStorage
+      if (previousUserId) {
+        const keys = ['minutes','seconds','isRunning','isPaused','sessionStartTime','endTime','initialMinutes'];
+        keys.forEach((k) => localStorage.removeItem(getUserStorageKey(previousUserId, k)));
+      }
       
       // Clear session storage
       sessionStorage.removeItem('previous_user_id');
