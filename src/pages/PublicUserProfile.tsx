@@ -15,6 +15,7 @@ import { getFollowers, getFollowing } from '@/components/profile/FollowersServic
 import { Link } from 'react-router-dom';
 import { getRankingsWithUserInfo } from '@/integrations/supabase/rankings/userRankings';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
+import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 interface UserProfile {
   id: string;
   name: string;
@@ -111,7 +112,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           postCount: postCount || 0,
           // Merge extended data if available
           bio: extendedData?.bio || 'Informações privadas',
-          email: extendedData?.email || '',
+          email: extendedData?.email ? maskEmail(extendedData.email) : '',
           concursos_aprovados: extendedData?.concursos_aprovados || null,
           status_concurseiro: extendedData?.status_concurseiro || 'Privado',
           profile_text: extendedData?.profile_text || null,
@@ -161,7 +162,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           if (userRanking.consolidated_data?.rankings) {
             // Iterar sobre todos os rankings do usuário
             for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
-              const concursoId = rankingData.concurso_id;
+              const concursoId = (rankingData as any)?.concurso_id;
               if (concursoId) {
                 concursoIds.push(concursoId);
                 userRankingIdByConcurso.set(concursoId, rankingId);
@@ -203,18 +204,6 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
             const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
               ranking.score <= 0;
             
-            // Debug log
-            console.log('PublicUserProfile isBelowMinimum debug:', {
-              userId: ranking.userId,
-              name: ranking.name,
-              score: ranking.score,
-              belowMinimum: ranking.belowMinimum,
-              hasDisciplineMinimums,
-              hasBlockMinimums,
-              isCertoErradoEliminated,
-              isAlternativasEliminated,
-              examType: concursoData?.exam_type
-            });
             
             return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
                    isCertoErradoEliminated || isAlternativasEliminated;
@@ -223,19 +212,8 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           const rid = userRankingIdByConcurso.get(cid);
           const idx = classified.findIndex((r: any) => r.id === rid);
           const isClassified = idx >= 0;
-          const position = isClassified ? idx + 1 : null; // Ampla Concorrência exibe apenas classificados com posição
+          const position = isClassified ? idx + 1 : null;
           
-          // Debug log para entender a classificação
-          console.log('PublicUserProfile classification debug:', {
-            concursoId: cid,
-            totalRankings: list.length,
-            classifiedCount: classified.length,
-            userRankingId: rid,
-            userIndex: idx,
-            isClassified,
-            position,
-            userScore: list.find(r => r.id === rid)?.score
-          });
           return {
             cid,
             position,
@@ -258,7 +236,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           
           if (userRanking.consolidated_data?.rankings) {
             for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
-              const concursoId = rankingData.concurso_id;
+              const concursoId = (rankingData as any)?.concurso_id;
               if (concursoId) {
                 // Buscar dados do concurso
                 const concursoInfo = concursosData?.find(c => c.id === concursoId);
@@ -274,7 +252,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                   concursoId: concursoId,
                   concursoTitle: titulo,
                   position: info.position,
-                  score: rankingData.user_data?.score || 0,
+                  score: (rankingData as any)?.user_data?.score || 0,
                   isClassified: info.isClassified
                 } as UserRanking);
               }
@@ -381,7 +359,6 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
       const secureUrl = await generateSecureUserUrl(userId, 'profile');
       navigate(secureUrl);
     } catch (error) {
-      console.error('Erro ao gerar URL segura de usuário:', error);
       navigate('/comunidade');
     }
   };

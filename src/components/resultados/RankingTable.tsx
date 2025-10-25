@@ -38,11 +38,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   isLoadingMore = false,
   totalLoaded = 0
 }) => {
-  console.log('[RankingTable] Component rendered with:', {
-    concursoId: concurso?.id,
-    hasConcurso: !!concurso,
-    rankingsLength: rankings?.length || 0
-  });
+  // Component render tracking removed for security
   
   const navigate = useNavigate();
 
@@ -74,14 +70,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     if (concurso) {
       const updatedNames = updateSectionDisplayNames(concurso);
       setDisplayNames(updatedNames);
-      // Log removido por segurança
     }
   }, [concurso]);
-
-  // Logs removidos para reduzir overhead em produção
-  useEffect(() => {
-    // Efeito mantido para compatibilidade, mas sem logs
-  }, [concurso, rankings]);
 
   // Helper function to determine if a ranking is below the required minimum
   const isBelowMinimum = (ranking: Ranking): boolean => {
@@ -124,41 +114,17 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         groupedByQuota[ranking.reservationType] = [];
       }
       groupedByQuota[ranking.reservationType].push(ranking);
-      
-      // Debug específico para PPP e PCD
-      if (ranking.reservationType === 'PPP' || ranking.reservationType === 'PCD') {
-        console.log('[RankingTable] Adding to quota group:', {
-          reservationType: ranking.reservationType,
-          rankingId: ranking.id,
-          rankingName: ranking.name,
-          currentGroupSize: groupedByQuota[ranking.reservationType].length
-        });
-      }
     });
 
     // Sort each quota group by score (descending) to calculate correct quota positions
     Object.keys(groupedByQuota).forEach(quotaType => {
       groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
-      console.log('[RankingTable] Sorted quota group:', quotaType, 'with', groupedByQuota[quotaType].length, 'rankings');
     });
 
     // Calculate positions for classified users
     const classifiedWithPositions = classifiedRankings.map((ranking, index) => {
       const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
       const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
-      
-      // Debug específico para PPP e PCD
-      if (ranking.reservationType === 'PPP' || ranking.reservationType === 'PCD') {
-        console.log('[RankingTable] Debug PPP/PCD position calculation:', {
-          reservationType: ranking.reservationType,
-          rankingId: ranking.id,
-          rankingName: ranking.name,
-          sameQuotaRankings: sameQuotaRankings.length,
-          quotaPosition,
-          sameQuotaRankingsIds: sameQuotaRankings.map(r => r.id),
-          groupedByQuotaKeys: Object.keys(groupedByQuota)
-        });
-      }
       
       return {
         ...ranking,
@@ -208,18 +174,6 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   const filterRankingsByQuota = (quota: string) => {
     if (!rankingsWithQuotaPositions) return [];
     
-    console.log('[RankingTable] filterRankingsByQuota called with:', {
-      quota,
-      totalRankings: rankingsWithQuotaPositions.length,
-      firstRanking: rankingsWithQuotaPositions[0],
-      reservationTypes: rankingsWithQuotaPositions.map(r => r.reservationType),
-      allRankings: rankingsWithQuotaPositions.map(r => ({
-        id: r.id,
-        reservationType: r.reservationType,
-        displayReservation: r.displayReservation
-      }))
-    });
-    
     // Mapeamento entre abreviações e nomes completos
     const quotaMapping: Record<string, string> = {
       "ac": "Ampla Concorrência",
@@ -231,29 +185,15 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     };
     
     if (quota === "ac") {
-      // Para Ampla Concorrência, mostrar todos os participantes
-      console.log('[RankingTable] Returning all rankings for ac:', rankingsWithQuotaPositions.length);
       return rankingsWithQuotaPositions;
     }
     
-    // Buscar pelo nome completo correspondente à abreviação
     const fullQuotaName = quotaMapping[quota];
-    console.log('[RankingTable] Debug quota filtering:', {
-      quota,
-      fullQuotaName,
-      availableReservationTypes: [...new Set(rankingsWithQuotaPositions.map(r => r.reservationType))],
-      quotaMapping
-    });
-    const filtered = rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === fullQuotaName);
-    console.log('[RankingTable] Filtered rankings for', quota, '->', fullQuotaName, ':', filtered.length);
-    return filtered;
+    return rankingsWithQuotaPositions.filter(ranking => ranking.reservationType === fullQuotaName);
   };
 
   const handleUserClick = async (userId: string) => {
-    console.log('handleUserClick called with userId:', userId);
-    
     if (!userId || userId === 'undefined') {
-      console.error('Invalid userId:', userId);
       return;
     }
     
@@ -263,14 +203,9 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
     
     try {
-      // Usar o sistema de ofuscação de URLs para navegar para o perfil
       const secureUrl = await UserUrlObfuscationService.generateSecureProfileUrl(userId);
-      console.log('Generated secure URL:', secureUrl);
       navigate(secureUrl);
     } catch (error) {
-      console.error('Erro ao gerar URL segura de usuário:', error);
-      // Fallback: usar a rota correta do sistema
-      console.log('Using fallback URL:', `/usuario/profile/${userId}`);
       navigate(`/usuario/profile/${userId}`);
     }
   };
