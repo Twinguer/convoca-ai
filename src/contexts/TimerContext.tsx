@@ -75,9 +75,21 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     const date = new Date(saved);
     return isNaN(date.getTime()) ? null : date;
   });
+  
+  // endTime state for localStorage persistence
+  const [endTime, setEndTime] = useState<number | null>(() => {
+    const saved = localStorage.getItem(getStorageKey('endTime'));
+    return saved ? parseInt(saved) : null;
+  });
+  
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const endTimeRef = useRef<number | null>(null);
+  const endTimeRef = useRef<number | null>(endTime);
   const remainingSecondsRef = useRef<number>(initialMinutes * 60);
+
+  // Sync ref with state
+  useEffect(() => {
+    endTimeRef.current = endTime;
+  }, [endTime]);
 
   const isStudying = isRunning && !isPaused;
 
@@ -145,13 +157,14 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     }
   }, [sessionStartTime, user]);
 
+  // Save endTime to localStorage when it changes
   useEffect(() => {
-    if (endTimeRef.current) {
-      localStorage.setItem(getStorageKey('endTime'), endTimeRef.current.toString());
+    if (endTime) {
+      localStorage.setItem(getStorageKey('endTime'), endTime.toString());
     } else {
       localStorage.removeItem(getStorageKey('endTime'));
     }
-  }, [endTimeRef.current, user]);
+  }, [endTime, user]);
 
 
   // Timer countdown logic using absolute end time (robust across tab switches)
@@ -192,9 +205,8 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           // Reset state
           setIsRunning(false);
           setIsPaused(false);
-          setShowFloatingTimer(false);
           setSessionStartTime(null);
-          endTimeRef.current = null;
+          setEndTime(null);
 
           // Notification
           if (Notification.permission === 'granted') {
@@ -277,7 +289,8 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     setSeconds(0);
 
     // Configure end time based on absolute clock
-    endTimeRef.current = Date.now() + startMins * 60 * 1000;
+    const newEndTime = Date.now() + startMins * 60 * 1000;
+    setEndTime(newEndTime);
     remainingSecondsRef.current = startMins * 60;
 
     setIsRunning(true);
@@ -288,14 +301,15 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const pauseTimer = () => {
     // Capture remaining time when pausing
     remainingSecondsRef.current = minutes * 60 + seconds;
-    endTimeRef.current = null;
+    setEndTime(null);
     setIsPaused(true);
   };
 
   const resumeTimer = () => {
     // Restore end time from remaining seconds
     const remaining = remainingSecondsRef.current ?? minutes * 60 + seconds;
-    endTimeRef.current = Date.now() + remaining * 1000;
+    const newEndTime = Date.now() + remaining * 1000;
+    setEndTime(newEndTime);
     setIsPaused(false);
   };
 
@@ -313,7 +327,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    endTimeRef.current = null;
+    setEndTime(null);
 
     setIsRunning(false);
     setIsPaused(false);

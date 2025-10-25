@@ -46,8 +46,7 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
     pauseTimer,
     resumeTimer,
     stopTimer,
-    setInitialTime,
-    hideTimer
+    setInitialTime
   } = useTimer();
   const [cycle, setCycle] = useState<StudyCycleV2 | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,11 +61,6 @@ const SessaoEstudos: React.FC<SessaoEstudosProps> = ({ cycleId, secureToken }) =
       fetchCycle();
     }
   }, [user, id]);
-
-  // Hide floating timer when on session page
-  useEffect(() => {
-    hideTimer();
-  }, [hideTimer]);
   const fetchCycle = async () => {
     try {
       const userStudyData = await UserStudyService.getUserStudyData(user?.id);
