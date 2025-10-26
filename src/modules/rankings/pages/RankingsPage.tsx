@@ -181,9 +181,9 @@ const RankingsPage = () => {
         </TabsList>
         
         <TabsContent value="all" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {filteredConcursos.map(concurso => <Link to={`/concurso/${concurso.id}/resultados`} key={concurso.id} className="block group" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
+                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -192,12 +192,8 @@ const RankingsPage = () => {
                         </CardTitle>
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="secondary">{concurso.orgao}</Badge>
-                          <Badge variant="outline">{concurso.banca}</Badge>
                         </div>
                       </div>
-                      <Badge variant={concurso.status === 'Em andamento' ? 'default' : 'secondary'}>
-                        {concurso.status}
-                      </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
@@ -213,9 +209,14 @@ const RankingsPage = () => {
                           {concurso.participant_count || 0}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 pt-2 text-sm font-medium text-primary">
-                        <Trophy className="h-4 w-4" />
-                        Ver Ranking
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                          <Trophy className="h-4 w-4" />
+                          Ver Ranking
+                        </div>
+                        <span className="font-mono text-base font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+                          {concurso.banca}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -236,9 +237,9 @@ const RankingsPage = () => {
         </TabsContent>
 
         <TabsContent value="popular" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {topConcursos.map((concurso, index) => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
+                <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
@@ -252,13 +253,17 @@ const RankingsPage = () => {
                     <CardTitle className="text-lg line-clamp-2">{concurso.titulo}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">{concurso.orgao}</Badge>
-                      <Badge variant="outline">{concurso.banca}</Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                      <Trophy className="h-4 w-4" />
-                      Ver Ranking
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                        <Trophy className="h-4 w-4" />
+                        Ver Ranking
+                      </div>
+                      <span className="font-mono text-sm font-semibold text-primary">
+                        {concurso.banca}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -267,9 +272,9 @@ const RankingsPage = () => {
         </TabsContent>
 
         <TabsContent value="recent" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {concursos.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map(concurso => <div key={concurso.id} className="block group cursor-pointer" onClick={(e) => handleRankingClick(e, concurso.id)}>
-                  <Card className="hover:shadow-lg transition-all duration-300 group-hover:-translate-y-0.5">
+                  <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer group-hover:-translate-y-0.5">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-lg line-clamp-2 flex-1">{concurso.titulo}</CardTitle>
@@ -280,16 +285,20 @@ const RankingsPage = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">{concurso.orgao}</Badge>
-                        <Badge variant="outline">{concurso.banca}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground mb-4">
                         Publicado em {concurso.created_at ? new Date(concurso.created_at).toLocaleDateString('pt-BR') : 'Data não informada'}
                       </p>
-                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                        <Trophy className="h-4 w-4" />
-                        Ver Ranking
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                          <Trophy className="h-4 w-4" />
+                          Ver Ranking
+                        </div>
+                        <span className="font-mono text-base font-bold text-primary bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
+                          {concurso.banca}
+                        </span>
                       </div>
                     </CardContent>
                   </Card>

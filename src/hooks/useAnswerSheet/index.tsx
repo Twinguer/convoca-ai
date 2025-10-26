@@ -78,10 +78,29 @@ export const useAnswerSheet = (concurso: Concurso, rankingId: string, selectedBo
   } = useQuery({
     queryKey: ['question-structure', concurso?.id, selectedBookletId],
     queryFn: async () => {
-      if (!concurso?.id || !selectedBookletId) return null;
-      return await getQuestionStructureFromOfficialAnswers(concurso.id, selectedBookletId);
+      if (!concurso?.id) return null;
+      
+      // Se selectedBookletId estiver vazio, tentar usar o primeiro caderno disponível
+      let bookletIdToUse = selectedBookletId;
+      if (!bookletIdToUse) {
+        // Buscar cadernos disponíveis para usar o primeiro
+        const { data: concursoData } = await supabase
+          .from('concursos')
+          .select('exam_booklets')
+          .eq('id', concurso.id)
+          .single();
+        
+        const booklets = concursoData?.exam_booklets || [];
+        if (booklets.length > 0) {
+          bookletIdToUse = booklets[0].id;
+        }
+      }
+      
+      if (!bookletIdToUse) return null;
+      
+      return await getQuestionStructureFromOfficialAnswers(concurso.id, bookletIdToUse);
     },
-    enabled: !!concurso?.id && !!selectedBookletId,
+    enabled: !!concurso?.id,
     staleTime: 300000, // 5 minutes
     retry: 2
   });

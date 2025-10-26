@@ -48,9 +48,6 @@ const ConcursoDetails: React.FC<ConcursoDetailsProps> = ({ concursoId, secureTok
       <div className="flex items-center gap-2 mb-6">
         <Badge variant="outline">{concurso.orgao}</Badge>
         <Badge variant="outline">{concurso.banca}</Badge>
-        <Badge variant={concurso.status === 'Em andamento' ? 'default' : 'secondary'}>
-          {concurso.status}
-        </Badge>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-1">

@@ -30,15 +30,6 @@ const ConcursoCard: React.FC<ConcursoCardProps> = ({
     <div className="concurso-card">
       <div className="flex justify-between items-start mb-4">
         <h3 className="text-lg font-semibold text-foreground">{titulo}</h3>
-        <span className={`text-xs px-2 py-1 rounded-full ${
-          status === "Em andamento" 
-            ? "bg-success/10 text-success" 
-            : status === "Finalizado" 
-              ? "bg-primary/10 text-primary" 
-              : "bg-warning/10 text-warning"
-        }`}>
-          {status}
-        </span>
       </div>
       
       <div className="space-y-2 mb-4">

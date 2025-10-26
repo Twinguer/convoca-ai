@@ -48,8 +48,15 @@ export const getQuestionStructureFromOfficialAnswers = async (
     }
 
     if (!data?.official_answers?.[bookletId]) {
-      console.log('[getQuestionStructureFromOfficialAnswers] Nenhuma resposta oficial encontrada para o caderno:', bookletId);
-      return { totalQuestions: 0, sectionQuestions: {}, questionMatrix: [], hasOfficialAnswers: false };
+      // Se não encontrou o caderno específico, mas há apenas um caderno, usar o primeiro disponível
+      const availableBooklets = Object.keys(data?.official_answers || {});
+      if (availableBooklets.length === 1) {
+        bookletId = availableBooklets[0];
+        console.log('[getQuestionStructureFromOfficialAnswers] Usando único caderno disponível:', bookletId);
+      } else {
+        console.log('[getQuestionStructureFromOfficialAnswers] Nenhuma resposta oficial encontrada para o caderno:', bookletId);
+        return { totalQuestions: 0, sectionQuestions: {}, questionMatrix: [], hasOfficialAnswers: false };
+      }
     }
 
     const bookletData = data.official_answers[bookletId];

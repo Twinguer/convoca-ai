@@ -51,28 +51,28 @@ const CriarRanking = () => {
   const isAdmin = searchParams.get('admin') === 'true';
   const [jobTitles] = useState([{
     id: '1',
-    title: 'AUDITOR'
+    title: 'TCU'
   }, {
     id: '2',
-    title: 'AUDITOR FISCAL'
+    title: 'CGU'
   }, {
     id: '3',
-    title: 'POLICIAL CIVIL'
+    title: 'INSS'
   }, {
     id: '4',
-    title: 'POLÍCIA MILITAR'
+    title: 'CNU'
   }, {
     id: '5',
-    title: 'AGENTE ADMINISTRATIVO'
+    title: 'SENADO FEDERAL'
   }, {
     id: '6',
-    title: 'AUDITOR DE CONTROLE EXTERNO'
+    title: 'CÂMARA DOS DEPUTADOS'
   }, {
     id: '7',
-    title: 'ANALISTA ADMINISTRATIVO'
+    title: 'POLICIA FEDERAL'
   }, {
     id: '8',
-    title: 'TÉCNICO ADMINISTRATIVO'
+    title: 'POLICIA RODOVIARIA FEDERAL'
   }, {
     id: '9',
     title: 'OUTRO'

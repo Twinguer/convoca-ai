@@ -41,14 +41,14 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <FormField control={form.control} name="predefined_job_title" render={({
             field
           }) => <FormItem>
-                  <FormLabel>Cargo <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel>Órgão <span className="text-red-500">*</span></FormLabel>
                   <Select value={field.value} onValueChange={value => {
               field.onChange(value);
               handleJobTitleChange(value);
             }}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um cargo" />
+                        <SelectValue placeholder="Selecione um Órgão" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -63,7 +63,7 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             {isCustomTitle && <FormField control={form.control} name="custom_job_title" render={({
             field
           }) => <FormItem className="mt-2">
-                    <FormLabel>Cargo personalizado <span className="text-red-500">*</span></FormLabel>
+                    <FormLabel>Órgão personalizado <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -88,11 +88,11 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <FormField control={form.control} name="orgao" render={({
           field
         }) => <FormItem>
-                <FormLabel>Órgão <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>Cargo <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                   <Input 
                     {...field} 
-                    placeholder="Ex: MINISTÉRIO DA ECONOMIA" 
+                    placeholder="Digite o Cargo - Especialidade" 
                     maxLength={20}
                     onChange={e => {
               const up = e.target.value.toUpperCase().slice(0, 20);
@@ -186,7 +186,6 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Em andamento">Em andamento</SelectItem>
                     <SelectItem value="Concluído">Concluído</SelectItem>
                     <SelectItem value="Suspenso">Suspenso</SelectItem>
                     <SelectItem value="Cancelado">Cancelado</SelectItem>

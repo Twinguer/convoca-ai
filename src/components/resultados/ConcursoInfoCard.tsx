@@ -39,11 +39,6 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex items-center">
-              <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span className="text-sm font-normal">Banca: {concurso.banca || concurso.custom_banca || 'Não informada'}</span>
-            </div>
-
-            <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
               <span className="text-sm">Data: {formattedDate}</span>
             </div>
@@ -61,8 +56,11 @@ const ConcursoInfoCard: React.FC<ConcursoInfoCardProps> = ({
 
           {/* Creator information */}
           <div className="pt-2 border-t border-border">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>Criado por: {creatorName || (concurso.is_admin_created ? 'Administrador' : 'Usuário')}</span>
+              <span className="font-mono text-sm font-semibold text-primary">
+                {concurso.banca || concurso.custom_banca || 'N/A'}
+              </span>
             </div>
           </div>
         </div>
