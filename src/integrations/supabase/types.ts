@@ -608,7 +608,7 @@ export type Database = {
             foreignKeyName: "fk_user_rankings_user_id"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "public_user_profiles"
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -844,31 +844,96 @@ export type Database = {
       }
     }
     Views: {
+      leaderboard_rankings: {
+        Row: {
+          avatar_url: string | null
+          banca: string | null
+          concurso_id: string | null
+          concurso_title: string | null
+          orgao: string | null
+          position: number | null
+          ranking_key: string | null
+          reservation_type: string | null
+          score: number | null
+          status: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           avatar_url: string | null
+          created_at: string | null
           id: string | null
           name: string | null
-        }
-        Relationships: []
-      }
-      public_user_profiles: {
-        Row: {
-          avatar_url: string | null
-          id: string | null
-          name: string | null
+          updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          created_at?: string | null
           id?: string | null
           name?: string | null
+          updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          created_at?: string | null
           id?: string | null
           name?: string | null
+          updated_at?: string | null
         }
         Relationships: []
+      }
+      public_rankings: {
+        Row: {
+          avatar_url: string | null
+          banca: string | null
+          concurso_id: string | null
+          concurso_title: string | null
+          created_at: string | null
+          last_updated: string | null
+          orgao: string | null
+          ranking_key: string | null
+          reservation_type: string | null
+          score: number | null
+          status: string | null
+          subject_scores_tot: number | null
+          subjective_scores: number | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_user_rankings_user_id"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       v_concurso_statistics: {
         Row: {
@@ -900,7 +965,7 @@ export type Database = {
             foreignKeyName: "fk_user_rankings_user_id"
             columns: ["user_id"]
             isOneToOne: true
-            referencedRelation: "public_user_profiles"
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {

@@ -56,7 +56,8 @@ export const useConsolidatedAnswerKey = (concursoId: string) => {
     }
 
     const bookletData = consolidatedAnswerKey.booklets[bookletId];
-    return Object.entries(bookletData.answers || {}).map(([questionNum, answerData]: [string, any]) => ({
+    const questionsData = (bookletData.answers || (bookletData as any)?.questions || {});
+    return Object.entries(questionsData).map(([questionNum, answerData]: [string, any]) => ({
       question_number: parseInt(questionNum),
       correct_answer: answerData.correct_answer,
       weight: answerData.weight || 1.0,

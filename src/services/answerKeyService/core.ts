@@ -55,7 +55,8 @@ export const getBookletAnswers = async (concursoId: string, bookletId: string) =
       return {};
     }
 
-    const answers = consolidatedData.booklets[bookletId].answers || {};
+    const booklet = consolidatedData.booklets[bookletId] as any;
+    const answers = (booklet?.answers || booklet?.questions || {}) as Record<string, any>;
     console.log('[getBookletAnswers] Found', Object.keys(answers).length, 'answers for booklet:', bookletId);
     return answers;
   } catch (error) {
