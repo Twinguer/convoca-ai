@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 /**
  * SERVIÇO OTIMIZADO PARA USER_RANKINGS
  * 

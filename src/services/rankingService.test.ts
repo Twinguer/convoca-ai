@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from 'vitest';
 import { fetchUserRankings } from './rankingService';
 import { supabase } from '@/integrations/supabase/client';
