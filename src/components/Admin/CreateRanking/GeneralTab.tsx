@@ -227,9 +227,14 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     return true;
   };
 
-  const saveBooklets = async (concursoId: string) => {
-    // validateBooklets já mostra o toast internamente
-    if (!validateBooklets()) {
+  const saveBooklets = async (concursoId: string, bookletsSnapshot: Array<{id?: string, name: string, display_order: number}>) => {
+    // Validar snapshot recebido
+    if (bookletsSnapshot.length === 0) {
+      toast({
+        title: "Erro nos cadernos",
+        description: "Nenhum caderno para salvar. Adicione pelo menos um caderno.",
+        variant: "destructive"
+      });
       return false;
     }
 
@@ -243,7 +248,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     }
 
     try {
-      const currentBooklets = bookletsRef.current;
+      const currentBooklets = bookletsSnapshot;
       
       // Processar cadernos para JSONB
       const processedBooklets = currentBooklets.map((booklet, index) => ({
@@ -283,6 +288,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     // Validar se há cadernos antes de prosseguir
     if (!validateBooklets()) return;
 
+    // Criar snapshot dos cadernos ANTES de qualquer operação assíncrona
+    const bookletsSnapshot = bookletsRef.current.map(b => ({ ...b }));
+
     setIsSavingAll(true);
     
     try {
@@ -310,8 +318,8 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         return;
       }
 
-      // Step 2: Save booklets usando o ID retornado
-      const bookletsSaved = await saveBooklets(concursoIdToUse);
+      // Step 2: Save booklets usando o ID retornado e o snapshot
+      const bookletsSaved = await saveBooklets(concursoIdToUse, bookletsSnapshot);
       if (!bookletsSaved) return;
 
       toast({

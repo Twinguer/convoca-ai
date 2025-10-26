@@ -89,7 +89,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
       setBooklets([]);
       setIsBookletsSaved(false);
       setHasUnsavedChanges(false);
-      onBookletsChange?.([]);
+      // NÃO chamar onBookletsChange([]) para não limpar estado do pai
     }
   }, [concursoId]);
   const loadExistingBooklets = async () => {
@@ -121,7 +121,7 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         setBooklets([]);
         setIsBookletsSaved(false);
         setHasUnsavedChanges(false);
-        onBookletsChange?.([]);
+        // NÃO chamar onBookletsChange([]) para não limpar estado do pai
         onBookletsSaved?.(false);
       }
     } catch (error) {

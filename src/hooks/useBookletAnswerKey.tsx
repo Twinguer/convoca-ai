@@ -38,9 +38,10 @@ export const useBookletAnswerKey = (concursoId: string) => {
     },
     enabled: !!concursoId,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
     retry: 3,
     retryDelay: 1000,
-    staleTime: 30000
+    staleTime: 0
   });
 
   // Selecionar automaticamente o primeiro caderno disponível
