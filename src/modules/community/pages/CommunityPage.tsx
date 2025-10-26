@@ -65,6 +65,11 @@ const CommunityPage = () => {
     setVisibleUsers(prev => prev + 18); // Load 3 more rows
   };
   const handleUserClick = async (userId: string) => {
+    if (!user) {
+      navigate('/auth', { state: { from: '/comunidade' } });
+      return;
+    }
+    
     try {
       const secureUrl = await generateSecureUserUrl(userId, 'profile');
       navigate(secureUrl);
