@@ -440,30 +440,6 @@ export type Database = {
         }
         Relationships: []
       }
-      consolidated_answers_by_concurso_backup: {
-        Row: {
-          concurso_id: string | null
-          consolidated_data: Json | null
-          created_at: string | null
-          id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          concurso_id?: string | null
-          consolidated_data?: Json | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          concurso_id?: string | null
-          consolidated_data?: Json | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       error_logs: {
         Row: {
           created_at: string | null
