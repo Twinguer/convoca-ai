@@ -76,7 +76,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 
   return (
     <div 
-      className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden cursor-pointer" 
+      className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden cursor-pointer hover:-translate-y-0.5" 
       style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}
       onClick={handleCardClick}
     >
