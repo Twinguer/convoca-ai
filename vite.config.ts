@@ -26,23 +26,21 @@ export default defineConfig(({ mode }) => ({
         manualChunks: (id) => {
           // Vendor chunks - bibliotecas principais
           if (id.includes('node_modules')) {
+            // Garantir que React e suas dependências críticas sejam carregadas juntas
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
+            }
+            // Bibliotecas que dependem diretamente do React
+            if (id.includes('@radix-ui') || id.includes('react-hook-form') || 
+                id.includes('@hookform') || id.includes('clsx') || 
+                id.includes('tailwind-merge') || id.includes('lucide-react')) {
+              return 'react-deps';
             }
             if (id.includes('@supabase')) {
               return 'supabase-vendor';
             }
-            if (id.includes('@radix-ui')) {
-              return 'ui-vendor';
-            }
-            if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('zod')) {
-              return 'form-vendor';
-            }
             if (id.includes('@tanstack')) {
               return 'query-vendor';
-            }
-            if (id.includes('clsx') || id.includes('tailwind-merge') || id.includes('lucide-react')) {
-              return 'utils-vendor';
             }
             return 'vendor';
           }
