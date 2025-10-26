@@ -246,8 +246,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
     const selectedBooklet = booklets[selectedBookletId];
     // Debug logs removed for security
     
-    if (!selectedBooklet?.questions) {
-      // Debug logs removed for security
+    if (!selectedBooklet || (!selectedBooklet.questions && !selectedBooklet.answers)) {
       // Debug logs removed for security
       return { 
         success: false, 
@@ -255,7 +254,7 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
       };
     }
 
-    const officialAnswers = selectedBooklet.questions;
+    const officialAnswers = selectedBooklet.answers || selectedBooklet.questions || {};
      // Debug logs removed for security
 
     let totalScore = 0;
