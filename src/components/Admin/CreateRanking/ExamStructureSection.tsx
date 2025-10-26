@@ -351,7 +351,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <label className="text-sm font-medium text-foreground mb-1 block">
                     Nome do Bloco <span className="text-red-500">*</span>
                   </label>
-                  <input className="font-medium text-lg bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={block.name?.slice(0, 20) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Digite nome do bloco (máx. 20)" maxLength={20} />
+                  <input className="font-medium text-lg bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={block.name?.slice(0, 20) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Digite nome do bloco" maxLength={20} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
