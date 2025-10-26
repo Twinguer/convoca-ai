@@ -45,6 +45,11 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     return user ? `timer-${user.id}-${key}` : `timer-guest-${key}`;
   };
 
+  // Helper to build storage keys for a specific user (used on logout cleanup)
+  const getUserStorageKey = (userId: string, key: string) => {
+    return `timer-${userId}-${key}`;
+  };
+
   // Load timer state from localStorage on mount with validation (user-specific)
   const [minutes, setMinutes] = useState(() => {
     const saved = localStorage.getItem(getStorageKey('minutes'));
@@ -95,6 +100,10 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
 
   // Clear timer when user changes (logout/login)
   useEffect(() => {
+    // Track previous user to detect logout
+    const previousUserId = sessionStorage.getItem('previous_user_id');
+    const currentUserId = user?.id || null;
+
     if (user) {
       // User logged in - load their timer state
       const savedMinutes = localStorage.getItem(getStorageKey('minutes'));
@@ -113,14 +122,56 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         const date = new Date(savedSessionStartTime);
         if (!isNaN(date.getTime())) setSessionStartTime(date);
       }
-    } else {
-      // User logged out - clear timer
+      
+      // Always ensure no active timer after login
+      setIsRunning(false);
+      setIsPaused(false);
+      setEndTime(null);
+      setSessionStartTime(null);
+      
+      // Update session storage with current user
+      sessionStorage.setItem('previous_user_id', currentUserId);
+    } else if (previousUserId && !currentUserId) {
+      // User logged out - stop timer and update database
+      // Clear interval if running
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
+      // Update database to mark user as not studying
+      const updateStatus = async () => {
+        try {
+          await supabase
+            .from('users_profiles')
+            .update({
+              is_studying: false,
+              study_started_at: null
+            })
+            .eq('id', previousUserId);
+        } catch (error) {
+          console.error('Error updating studying status on logout:', error);
+        }
+      };
+      updateStatus();
+      
+      // Clear all timer state
       setIsRunning(false);
       setIsPaused(false);
       setMinutes(60);
       setSeconds(0);
       setInitialMinutes(60);
       setSessionStartTime(null);
+      setEndTime(null);
+      
+      // Clear user-specific timer data from localStorage
+      if (previousUserId) {
+        const keys = ['minutes','seconds','isRunning','isPaused','sessionStartTime','endTime','initialMinutes'];
+        keys.forEach((k) => localStorage.removeItem(getUserStorageKey(previousUserId, k)));
+      }
+      
+      // Clear session storage
+      sessionStorage.removeItem('previous_user_id');
     }
   }, [user]);
 

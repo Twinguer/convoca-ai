@@ -110,8 +110,8 @@ export const useBookletAnswerKey = (concursoId: string) => {
       // Fallback: se não encontrou via disciplines, tenta deduzir pelo primeiro caderno em official_answers
       if (!expectedQuestions || expectedQuestions === 0) {
         const firstKey = concurso?.official_answers ? Object.keys(concurso.official_answers)[0] : undefined;
-        if (firstKey && concurso?.official_answers?.[firstKey]?.questions) {
-          expectedQuestions = Object.keys(concurso.official_answers[firstKey].questions).length;
+        if (firstKey && concurso?.official_answers?.[firstKey]?.answers) {
+          expectedQuestions = Object.keys(concurso.official_answers[firstKey].answers).length;
         }
       }
 
@@ -131,7 +131,7 @@ export const useBookletAnswerKey = (concursoId: string) => {
           
           if (concursoData?.official_answers?.[booklet.id]) {
             const bookletData = concursoData.official_answers[booklet.id];
-            answerCount = Object.keys(bookletData.questions || {}).length;
+            answerCount = Object.keys(bookletData.answers || {}).length;
           }
 
           const isComplete = expectedQuestions > 0 ? answerCount >= expectedQuestions : false;
