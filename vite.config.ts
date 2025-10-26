@@ -30,10 +30,13 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
               return 'react-vendor';
             }
-            // Bibliotecas que dependem diretamente do React
+            // TODAS as bibliotecas que podem depender do React
             if (id.includes('@radix-ui') || id.includes('react-hook-form') || 
                 id.includes('@hookform') || id.includes('clsx') || 
-                id.includes('tailwind-merge') || id.includes('lucide-react')) {
+                id.includes('tailwind-merge') || id.includes('lucide-react') ||
+                id.includes('sonner') || id.includes('class-variance-authority') ||
+                id.includes('@radix-ui/react-slot') || id.includes('zod') ||
+                id.includes('react-window') || id.includes('react-window-infinite-loader')) {
               return 'react-deps';
             }
             if (id.includes('@supabase')) {
