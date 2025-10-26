@@ -60,7 +60,7 @@ export const getQuestionStructureFromOfficialAnswers = async (
     }
 
     const bookletData = data.official_answers[bookletId];
-    const questions = bookletData.questions || {};
+    const questions = bookletData.questions || bookletData.answers || {};
     const disciplinesData = data.disciplines || null;
     
     // Normalizar disciplines para array de blocos (suporta JSONB com blocks e array legado)
@@ -245,7 +245,7 @@ export const getNullifiedQuestionsFromOfficialAnswers = async (
     }
 
     const bookletData = data.official_answers[bookletId];
-    const questions = bookletData.questions || {};
+    const questions = bookletData.questions || bookletData.answers || {};
     
     const nullifiedQuestions = Object.entries(questions)
       .filter(([_, answerData]: [string, any]) => answerData.is_nullified)
