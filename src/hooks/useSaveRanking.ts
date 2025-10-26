@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from '@tanstack/react-query';
 import { mapFormDataToDisciplinesStructure } from '@/utils/disciplinesStructure';
+import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
 
 interface SaveRankingOptions {
   formValues: any;
@@ -450,7 +451,6 @@ export const useSaveRanking = () => {
           }
 
           if (participants.length > 0) {
-            const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
             // Rodar em background sem bloquear a UI
             Promise.allSettled(participants.map((uid) => recalculateUserScore(uid, concursoIdToUse!)))
               .then(() => {

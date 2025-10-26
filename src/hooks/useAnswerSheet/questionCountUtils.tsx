@@ -1,5 +1,6 @@
 
 import { Concurso } from '@/types/concursos';
+import { supabase } from '@/integrations/supabase/client';
 
 // Calculate the total number of objective questions in the exam
 export const getTotalQuestions = (concurso: Concurso): number => {
@@ -70,8 +71,6 @@ export const getAnsweredQuestionsCount = (answers: { [key: number]: string }): n
 export const checkMissingOfficialAnswers = async (concursoId: string, bookletId: string): Promise<boolean> => {
   try {
     // Debug logs removed for security
-    
-    const { supabase } = await import('@/integrations/supabase/client');
     
     const { data, error } = await supabase
       .from('concursos')

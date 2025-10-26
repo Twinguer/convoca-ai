@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
 import { UseSaveAnswersProps, SaveAnswersResponse } from './types';
 import { validateSaveAnswers } from './validation';
 import { prepareAnswersData } from './prepareData';
@@ -228,8 +229,6 @@ export const useSaveAnswers = ({
       // Debug logs removed for security
 
       try {
-        // Debug logs removed for security
-        const { recalculateUserScore } = await import('@/integrations/supabase/rankings/rankingMutations');
         // Debug logs removed for security
         
         // Debug logs removed for security
