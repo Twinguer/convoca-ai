@@ -100,14 +100,10 @@ export const UserCard: React.FC<UserCardProps> = ({
           </h3>
         </div>
         
-        <div className="hidden sm:grid grid-cols-3 gap-x-4 text-center border-t border-b divide-x divide-border py-3 mb-3">
+        <div className="hidden sm:grid grid-cols-2 gap-x-4 text-center border-t border-b divide-x divide-border py-3 mb-3">
           <div className="flex flex-col items-center px-2">
             <span className="text-base font-semibold">{userProfile.postCount}</span>
             <span className="text-xs text-muted-foreground leading-[1.1] whitespace-nowrap">Rankings</span>
-          </div>
-          <div className="flex flex-col items-center px-2">
-            <span className="text-base font-semibold">{userProfile.followerCount}</span>
-            <span className="text-xs text-muted-foreground leading-[1.1] whitespace-nowrap">Seguidores</span>
           </div>
           <div className="flex flex-col items-center px-2">
             <span className="text-base font-semibold">{userProfile.approvalCount || 0}</span>
