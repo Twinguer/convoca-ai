@@ -57,18 +57,34 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
   const {
     data: participantCounts = {}
   } = useQuery({
-    queryKey: ['participant-counts', rankings],
+    queryKey: ['participant-counts-v2', rankings],
     queryFn: async () => {
       if (!rankings || rankings.length === 0) return {};
+      
       const counts = {};
+      
+      // Para cada ranking, contar participantes na estrutura consolidated_data
       await Promise.all(rankings.map(async ranking => {
-        const {
-          data
-        } = await supabase.rpc('count_concurso_participants', {
-          concurso_id: ranking.id
-        });
-        counts[ranking.id] = data || 0;
+        const { data: userRankings } = await supabase
+          .from('user_rankings')
+          .select('consolidated_data');
+        
+        let participantCount = 0;
+        if (userRankings) {
+          userRankings.forEach(userRanking => {
+            if (userRanking.consolidated_data?.rankings) {
+              Object.values(userRanking.consolidated_data.rankings).forEach((rankingData: any) => {
+                if (rankingData.concurso_id === ranking.id) {
+                  participantCount++;
+                }
+              });
+            }
+          });
+        }
+        
+        counts[ranking.id] = participantCount;
       }));
+      
       return counts;
     },
     enabled: !!rankings && rankings.length > 0
