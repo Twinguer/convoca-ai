@@ -27,7 +27,8 @@ export const getAnswerKeyForBooklet = async (concursoId: string, bookletId: stri
     }
 
     const bookletData = consolidatedData.booklets[bookletId];
-    const answers = Object.entries(bookletData.answers || {}).map(([questionNum, answerData]: [string, any]) => ({
+    const questionsData = (bookletData.answers || (bookletData as any)?.questions || {});
+    const answers = Object.entries(questionsData).map(([questionNum, answerData]: [string, any]) => ({
       question_number: parseInt(questionNum),
       correct_answer: answerData.correct_answer,
       weight: answerData.weight || 1.0,
