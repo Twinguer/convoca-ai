@@ -331,7 +331,7 @@ export const useSaveRanking = () => {
           has_cota: hasCotaStructure,
           form_config: formValues.form_config || {},
           official_answers: formValues.official_answers || {},
-          exam_booklets: formValues.exam_booklets || [],
+          ...(formValues.exam_booklets && formValues.exam_booklets.length > 0 ? { exam_booklets: formValues.exam_booklets } : {}),
           metadata: formValues.metadata || {}
         };
 
@@ -414,7 +414,7 @@ export const useSaveRanking = () => {
             has_cota: createHasCotaStructure(formValues),
             form_config: formValues.form_config || {},
             official_answers: formValues.official_answers || {},
-            exam_booklets: formValues.exam_booklets || [],
+            ...(formValues.exam_booklets && formValues.exam_booklets.length > 0 ? { exam_booklets: formValues.exam_booklets } : {}),
             metadata: formValues.metadata || {},
             total_participants: 0
           })
