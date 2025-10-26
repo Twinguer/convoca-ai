@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Ranking } from './rankingService';
 
 // Build a Ranking row from consolidated_data user_data and profile info

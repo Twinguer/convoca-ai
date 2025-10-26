@@ -47,6 +47,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const [isSavingAll, setIsSavingAll] = useState(false);
   const { toast } = useToast();
   const bookletsRef = useRef<Array<{id?: string, name: string, display_order: number}>>([]);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const formValues = form.getValues();
@@ -227,54 +228,14 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     return true;
   };
 
-  const saveBooklets = async (concursoId: string) => {
-    // validateBooklets já mostra o toast internamente
-    if (!validateBooklets()) {
-      return false;
-    }
-
-    if (!concursoId) {
-      toast({
-        title: "Erro",
-        description: "ID do concurso não encontrado",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    try {
-      const currentBooklets = bookletsRef.current;
-      
-      // Processar cadernos para JSONB
-      const processedBooklets = currentBooklets.map((booklet, index) => ({
-        id: booklet.id || crypto.randomUUID(),
-        name: booklet.name,
-        display_order: booklet.display_order || index + 1,
-        is_active: true,
-        total_questions: 0
-      }));
-
-      // Atualizar a coluna exam_booklets na tabela concursos
-      const { error: updateError } = await supabase
-        .from('concursos')
-        .update({ exam_booklets: processedBooklets })
-        .eq('id', concursoId);
-
-      if (updateError) throw updateError;
-
-      const savedBooklets = processedBooklets;
-
-      setBooklets(savedBooklets);
-      // Debug logs removed for security
-      return true;
-    } catch (error: any) {
-      toast({
-        title: "Erro ao salvar cadernos",
-        description: error.message || "Não foi possível salvar os cadernos",
-        variant: "destructive"
-      });
-      return false;
-    }
+  const processBooklets = (bookletsSnapshot: Array<{id?: string, name: string, display_order: number}>) => {
+    return bookletsSnapshot.map((booklet, index) => ({
+      id: booklet.id || crypto.randomUUID(),
+      name: booklet.name,
+      display_order: booklet.display_order || index + 1,
+      is_active: true,
+      total_questions: 0
+    }));
   };
 
   const handleFillAnswerKey = async () => {
@@ -283,10 +244,15 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
     // Validar se há cadernos antes de prosseguir
     if (!validateBooklets()) return;
 
+    // Criar snapshot dos cadernos ANTES de qualquer operação assíncrona
+    const bookletsSnapshot = bookletsRef.current.map(b => ({ ...b }));
+    const processedBooklets = processBooklets(bookletsSnapshot);
+
     setIsSavingAll(true);
     
     try {
-      // Step 1: Save ranking and obtain concursoId diretamente
+      // Adicionar os cadernos processados ao formulário ANTES de salvar
+      form.setValue('exam_booklets', processedBooklets, { shouldDirty: true });
       form.setValue('localidades', selectedStates, { shouldDirty: true });
       form.setValue('has_custom_knowledge', true);
       form.setValue('has_basic_knowledge', false);
@@ -294,6 +260,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
       form.setValue('has_specific_knowledge_2', false);
       form.setValue('has_specific_knowledge_3', false);
       
+      // Salvar ranking (com os cadernos incluídos no formValues)
       let concursoIdToUse: string | null = createdConcursoId || null;
       if (onSaveRanking) {
         const id = await onSaveRanking();
@@ -310,16 +277,19 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
         return;
       }
 
-      // Step 2: Save booklets usando o ID retornado
-      const bookletsSaved = await saveBooklets(concursoIdToUse);
-      if (!bookletsSaved) return;
+      // Atualizar estado local dos cadernos
+      setBooklets(processedBooklets);
+      
+      // Invalidar queries para forçar recarregamento
+      queryClient.invalidateQueries({ queryKey: ['exam-booklets', concursoIdToUse] });
+      queryClient.invalidateQueries({ queryKey: ['concurso', concursoIdToUse] });
 
       toast({
         title: "Sucesso!",
         description: "Ranking e cadernos salvos. Preencha agora o gabarito oficial."
       });
 
-      // Step 3: Mudar para a aba de gabarito sem salvar novamente
+      // Mudar para a aba de gabarito
       handleNextTab();
     } catch (error) {
       console.error("Erro ao salvar:", error);

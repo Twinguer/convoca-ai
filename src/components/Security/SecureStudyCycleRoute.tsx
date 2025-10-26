@@ -8,7 +8,7 @@ import { Loader2, Shield, AlertTriangle, BookOpen } from 'lucide-react';
 
 interface SecureStudyCycleRouteProps {
   children: React.ReactNode;
-  action: 'view' | 'edit' | 'session';
+  action: 'view' | 'edit' | 'session' | 'cronograma' | 'timer' | 'estatisticas';
 }
 
 const SecureStudyCycleRoute: React.FC<SecureStudyCycleRouteProps> = ({ children, action }) => {

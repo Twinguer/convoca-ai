@@ -85,15 +85,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
     if (concursoId) {
       loadExistingBooklets();
     } else {
-      // Se não há concursoId, inicializar com um caderno padrão se estiver vazio
-      if (booklets.length === 0) {
-        setBooklets([{
-          name: '',
-          display_order: 1
-        }]);
-      }
+      // Sem concursoId: não criar caderno por padrão; deixar vazio
+      setBooklets([]);
       setIsBookletsSaved(false);
-      setHasUnsavedChanges(booklets.length > 0);
+      setHasUnsavedChanges(false);
+      // NÃO chamar onBookletsChange([]) para não limpar estado do pai
     }
   }, [concursoId]);
   const loadExistingBooklets = async () => {
@@ -121,14 +117,11 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         onBookletsChange?.(sortedData);
         onBookletsSaved?.(true);
       } else {
-        // Se não há cadernos salvos, inicializar com um caderno padrão
-        const defaultBooklet = [{
-          name: '',
-          display_order: 1
-        }];
-        setBooklets(defaultBooklet);
+        // Sem cadernos salvos: manter lista vazia; usuário deve adicionar manualmente
+        setBooklets([]);
         setIsBookletsSaved(false);
-        setHasUnsavedChanges(true);
+        setHasUnsavedChanges(false);
+        // NÃO chamar onBookletsChange([]) para não limpar estado do pai
         onBookletsSaved?.(false);
       }
     } catch (error) {

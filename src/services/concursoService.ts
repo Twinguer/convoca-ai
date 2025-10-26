@@ -237,7 +237,6 @@ export const fetchUserConcursoRankings = async (userId: string) => {
         banca?: string;
         status?: string;
         created_at?: string;
-        status?: string;
       } || {};
       
       return {

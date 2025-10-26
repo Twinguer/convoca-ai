@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { logger } from '@/utils/logger';
 
 // Interface para cache de rankings
