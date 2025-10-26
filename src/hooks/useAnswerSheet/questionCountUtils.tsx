@@ -96,13 +96,14 @@ export const checkMissingOfficialAnswers = async (concursoId: string, bookletId:
     // Debug logs removed for security
     
     // Verificar se o gabarito existe e tem questões
-    if (!bookletData || !bookletData.questions) {
+    const questions = bookletData?.questions || bookletData?.answers || {};
+    if (!bookletData || !questions || Object.keys(questions).length === 0) {
       // Debug logs removed for security
       return true;
     }
 
     // Verificar se há pelo menos uma questão
-    const questionCount = Object.keys(bookletData.questions).length;
+    const questionCount = Object.keys(questions).length;
     if (questionCount === 0) {
       // Debug logs removed for security
       return true;

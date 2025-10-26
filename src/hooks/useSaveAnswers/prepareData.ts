@@ -39,7 +39,8 @@ export const prepareAnswersData = (
   const organizedAnswers: { [bookletId: string]: { [disciplineType: string]: { [questionNumber: string]: string } } } = {};
   
   // Obter o gabarito oficial para mapear section_type
-  const officialAnswers = concurso.official_answers?.[selectedBookletId]?.questions || {};
+  const officialAnswers = concurso.official_answers?.[selectedBookletId]?.answers || 
+                         concurso.official_answers?.[selectedBookletId]?.questions || {};
   // Debug logs removed for security
 
   // Inicializar estrutura do caderno
