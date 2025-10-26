@@ -47,6 +47,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = ({
   const [isSavingAll, setIsSavingAll] = useState(false);
   const { toast } = useToast();
   const bookletsRef = useRef<Array<{id?: string, name: string, display_order: number}>>([]);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const formValues = form.getValues();

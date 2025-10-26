@@ -311,10 +311,14 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
               </div>)}
           </div>}
 
-        <div className="flex justify-start items-center pt-4 border-t">
+        <div className="flex justify-between items-center pt-4 border-t">
           <Button type="button" variant="outline" onClick={addBooklet} disabled={booklets.length >= 10 || isSaving} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Adicionar Caderno
+          </Button>
+
+          <Button type="button" onClick={saveBooklets} disabled={booklets.length === 0 || isSaving} className="flex items-center gap-2">
+            {isSaving ? 'Salvando...' : 'Salvar Cadernos'}
           </Button>
         </div>
 
