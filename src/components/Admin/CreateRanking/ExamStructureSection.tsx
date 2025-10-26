@@ -351,7 +351,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <label className="text-sm font-medium text-foreground mb-1 block">
                     Nome do Bloco <span className="text-red-500">*</span>
                   </label>
-                  <input className="font-medium text-lg bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={block.name?.slice(0, 20) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Digite nome do bloco (máx. 20)" maxLength={20} />
+                  <input className="font-medium text-lg bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={block.name?.slice(0, 20) || ''} onChange={e => handleBlockNameChange(block.id, e.target.value)} placeholder="Digite nome do bloco" maxLength={20} />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveBlock(block.id)} className="text-red-500 hover:text-red-700">
@@ -410,7 +410,7 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                         <label className="text-sm font-medium text-foreground mb-1 block">
                           Sigla da Disciplina <span className="text-red-500">*</span>
                         </label>
-                        <input className="font-medium bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={discipline.name?.slice(0, 5) || ''} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value.slice(0, 5))} placeholder="Digite a sigla (máx. 5)" maxLength={5} />
+                        <input className="font-medium bg-transparent border-b border-border focus:border-primary outline-none w-[70%]" value={discipline.name?.slice(0, 5) || ''} onChange={e => handleDisciplineChange(block.id, discipline.id, 'name', e.target.value.slice(0, 5))} placeholder="Digite a sigla" maxLength={5} />
                       </div>
                       <Button variant="ghost" size="sm" onClick={() => handleRemoveDiscipline(block.id, discipline.id)} className="text-red-500 hover:text-red-700">
                         <Trash2 className="h-4 w-4" />
