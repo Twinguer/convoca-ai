@@ -200,12 +200,12 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
       }
 
       const bookletData = data?.official_answers?.[bookletId];
-      if (!bookletData || !bookletData.questions) {
+      if (!bookletData || !bookletData.answers) {
         // Debug logs removed for security
         return false;
       }
 
-      const questionCount = Object.keys(bookletData.questions).length;
+      const questionCount = Object.keys(bookletData.answers).length;
       if (questionCount === 0) {
         // Debug logs removed for security
         return false;
