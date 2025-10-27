@@ -187,27 +187,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Instagram Banner */}
-      <section className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-center md:justify-between text-white">
-            <div className="mb-4 md:mb-0">
-              <h3 className="text-2xl font-bold">Siga a gente no Instagram</h3>
-              <p className="text-white/90">Dicas exclusivas, novidades e interações com a comunidade</p>
-            </div>
-            <a
-              href="https://instagram.com/nomeia.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center bg-white text-pink-600 font-semibold py-2 px-6 rounded-full hover:bg-pink-100 transition duration-300"
-            >
-              <Instagram className="mr-2 h-5 w-5" />
-              @nomeia.ai
-            </a>
-          </div>
-        </div>
-      </section>
-
       <Footer />
     </div>
   );

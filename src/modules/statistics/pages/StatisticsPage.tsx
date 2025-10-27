@@ -12,7 +12,6 @@ import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import SubjectTimeDistributionChart from '@/components/StudyStats/SubjectTimeDistributionChart';
 import AccuracyEvolutionChart from '@/components/StudyStats/AccuracyEvolutionChart';
 import StudyHeatmapChart from '@/components/StudyStats/StudyHeatmapChart';
-import Footer from '@/components/Footer';
 const StatisticsPage = () => {
   const {
     statistics,
@@ -244,7 +243,6 @@ const StatisticsPage = () => {
 
       {/* Desempenho por Disciplina */}
       {Object.keys(statistics.subjectStats).length > 0}
-      <Footer />
     </div>;
 };
 export default StatisticsPage;

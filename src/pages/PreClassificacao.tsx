@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { useRankingsData } from '@/hooks/useRankingsData';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import Footer from '@/components/Footer';
 
 const PreClassificacao = () => {
   const { user } = useAuth();
@@ -43,7 +42,6 @@ const PreClassificacao = () => {
         )}
       </div>
       <RankingList rankings={rankings} isLoading={isLoading} onRankingClick={handleRankingClick} />
-      <Footer />
     </div>
   );
 };

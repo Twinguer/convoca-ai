@@ -9,6 +9,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Footer from "@/components/Footer";
 const Planos = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -44,17 +45,17 @@ const Planos = () => {
     nome: "Gratuito",
     preco: 0,
     descricao: "Para começar seus estudos",
-    periodo: "sempre",
+    periodo: "Livre",
     popular: false,
-    features: ["Apenas 1 ranking", "Sem acesso a estatísticas", "Apenas 1 ciclo de estudos", "Máximo 1 bloco por ciclo", "Máximo 5 disciplinas por bloco", "Apenas 2 sessão por dia da semana"]
+    features: ["Apenas 1 ranking", "Sem acesso a estatísticas", "Sem ciclo de estudos", "Sem edital verticalizado", "Não pode criar rankings", "Com propagandas"]
   }, {
     id: "pro",
     nome: "Pro",
     preco: 21.9,
     descricao: "Acesso completo",
-    periodo: "mês",
+    periodo: "Mês",
     popular: true,
-    features: ["Rankings ilimitados", "Estatísticas completas", "Ciclos de estudos ilimitados", "Blocos ilimitados", "Disciplinas ilimitadas", "Sessões ilimitadas", "Suporte prioritário", "Novos recursos primeiro"]
+    features: ["5 Rankings", "Estatísticas completas", "Ciclos de estudos", "Editais verticalizados", "Acesso aos perfis da comunidade", "Criação de Rankings", "Suporte prioritário", "Sem propaganda"]
   }];
   const handleSubscribe = async (planoId: string) => {
     if (planoId === "free") {
@@ -176,6 +177,7 @@ const Planos = () => {
 
         <div className="text-center mt-12"></div>
       </div>
+      <Footer />
     </div>;
 };
 export default Planos;

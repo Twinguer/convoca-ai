@@ -11,7 +11,6 @@ import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
-import Footer from '@/components/Footer';
 import { UserStudyService } from '@/services/userStudyService';
 import { useSecureStudyCycleUrls } from '@/services/studyCycleUrlObfuscation';
 import { StudyCycleV2 } from '@/types/userStudy';
@@ -391,8 +390,6 @@ const StudyDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Footer />
     </div>
   );
 };

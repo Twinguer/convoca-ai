@@ -14,7 +14,6 @@ import { CommunityErrorState } from '@/components/community/CommunityErrorState'
 import { CommunityEmptyState } from '@/components/community/CommunityEmptyState';
 import { UserGrid } from '@/components/community/UserGrid';
 import { CommunitySectionHeader } from '@/components/community/CommunitySectionHeader';
-import Footer from '@/components/Footer';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 const CommunityPage = () => {
   const {
@@ -159,7 +158,6 @@ const CommunityPage = () => {
           <CommunityEmptyState />
         )}
       </div>
-      <Footer />
     </div>;
 };
 export default CommunityPage;
