@@ -138,7 +138,7 @@ const Planos = () => {
 
         {/* Plans Section */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
-          {planos.map(plano => <Card key={plano.id} className={`relative ${plano.popular ? "border-primary shadow-lg" : ""}`}>
+          {planos.map(plano => <Card key={plano.id} className={`relative flex flex-col ${plano.popular ? "border-primary shadow-lg" : ""}`}>
               {plano.popular && <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
                   <Star className="w-3 h-3 mr-1" />
                   Recomendado
@@ -154,8 +154,8 @@ const Planos = () => {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                <ul className="space-y-2">
+              <CardContent className="flex flex-col flex-grow">
+                <ul className="space-y-2 flex-grow">
                   {plano.features.map((feature, index) => <li key={index} className="flex items-start text-sm">
                       <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
                       <span>{feature}</span>
