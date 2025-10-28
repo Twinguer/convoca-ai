@@ -311,6 +311,13 @@ const Cronograma = () => {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
+    
+    // Validar horários
+    if (endTime <= startTime) {
+      toast.error('O horário de fim deve ser posterior ao horário de início');
+      return;
+    }
+    
     try {
       // Adicionar sessão ao cronograma usando o hook useStudyCyclesV2
       const success = await addScheduleSession(selectedCycle, selectedDay, {
@@ -825,11 +832,36 @@ const Cronograma = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Horário de Início</label>
-                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full p-2 border rounded-md" />
+                    <input 
+                      type="time" 
+                      value={startTime} 
+                      onChange={e => {
+                        setStartTime(e.target.value);
+                        // Validar se o horário de fim é anterior ao de início
+                        if (e.target.value && endTime && e.target.value >= endTime) {
+                          toast.error('O horário de início deve ser anterior ao horário de fim');
+                        }
+                      }} 
+                      className="w-full p-2 border rounded-md" 
+                      max={endTime}
+                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium">Horário de Fim</label>
-                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full p-2 border rounded-md" />
+                    <input 
+                      type="time" 
+                      value={endTime} 
+                      onChange={e => {
+                        setEndTime(e.target.value);
+                        // Validar se o horário de fim é anterior ao de início
+                        if (startTime && e.target.value && e.target.value <= startTime) {
+                          toast.error('O horário de fim deve ser posterior ao horário de início');
+                          setEndTime(startTime); // Resetar para um valor válido
+                        }
+                      }} 
+                      className="w-full p-2 border rounded-md" 
+                      min={startTime}
+                    />
                   </div>
                 </div>
 
