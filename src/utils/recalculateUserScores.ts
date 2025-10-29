@@ -29,14 +29,12 @@ export const recalculateAllUserScores = async (concursoId: string) => {
     // Executar recálculo para cada usuário
     for (const userRanking of usersInConcurso) {
       try {
-        console.log(`[recalculateAllUserScores] Recalculando para usuário: ${userRanking.user_id}`);
-        
         const result = await recalculateUserScore(userRanking.user_id, concursoId);
         
         if (result.success) {
-          console.log(`[recalculateAllUserScores] ✅ Sucesso para usuário ${userRanking.user_id}`);
+          console.log(`[recalculateAllUserScores] ✅ Recálculo concluído com sucesso`);
         } else {
-          console.error(`[recalculateAllUserScores] ❌ Erro para usuário ${userRanking.user_id}:`, result.message);
+          console.error(`[recalculateAllUserScores] ❌ Erro no recálculo:`, result.message);
         }
       } catch (error) {
         console.error(`[recalculateAllUserScores] ❌ Erro ao recalcular usuário ${userRanking.user_id}:`, error);

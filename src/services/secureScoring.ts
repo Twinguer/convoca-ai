@@ -1,21 +1,37 @@
-// @ts-nocheck
 /**
  * Serviço de Pontuação Seguro
- * Centraliza a lógica de cálculo entre frontend e backend
- * Garante consistência e permite migração gradual
+ * TODOS os cálculos são executados no backend
+ * Frontend apenas chama a Edge Function
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { type ScoringInput, type ScoringOutput } from './scoring';
+
+export type ExamType = 'Alternativas' | 'Certo ou Errado';
+
+export interface ScoringInput {
+  examType: ExamType;
+  wrongAnswerPenalty?: number;
+  questionWeight?: number;
+  disciplineWeight?: number;
+  isCorrect: boolean;
+  isNullified?: boolean;
+  isBlank?: boolean;
+  concursoId?: string;
+}
+
+export interface ScoringOutput {
+  totalDelta: number;
+  disciplineDelta: number;
+  weightedDisciplineDelta: number;
+}
 
 export interface SecureScoringInput extends ScoringInput {
   userId?: string;
-  concursoId?: string;
   context?: string;
 }
 
 export interface SecureScoringOutput extends ScoringOutput {
-  source: 'frontend' | 'backend';
+  source: 'backend';
   timestamp: number;
 }
 

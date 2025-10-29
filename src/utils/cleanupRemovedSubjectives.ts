@@ -22,8 +22,6 @@ export const cleanupRankingSubjectives = async (
   rankingId: string
 ): Promise<CleanupResult> => {
   try {
-    console.log(`[cleanupRankingSubjectives] Limpando subjetivas removidas para ranking ${rankingId}`);
-    
     // Buscar dados do concurso para identificar subjetivas ativas
     const { data: concurso, error: concursoError } = await supabase
       .from('concursos')

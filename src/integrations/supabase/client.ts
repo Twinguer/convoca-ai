@@ -15,3 +15,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// Export from other files to maintain backward compatibility
+export * from './rankings';
+export * from './community';

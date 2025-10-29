@@ -2,7 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { isHierarchicalStructure, getDisciplineWeights, getDisciplineMinimums, getBlockMinimumMaps } from './examStructure';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
-import { scoreObjectiveAnswer, type ExamType } from '@/services/scoring';
+
+// SECURITY: Scoring logic moved to backend - use Edge Functions
+type ExamType = 'Alternativas' | 'Certo ou Errado';
 
 interface RecalculationResponse {
   success: boolean;
@@ -382,24 +384,44 @@ export const recalculateUserScore = async (userId: string, concursoId: string): 
           ? getWrongAnswerPenalty(concurso.disciplines)
           : 0;
         
-        // Log sanitizado - sem exposição de dados sensíveis
-        // Debug logs removed for security
+        // TODO: Migrate this scoring logic to backend Edge Function
+        // TEMPORARY: Inline scoring calculation (should be in backend)
+        let totalDelta = 0;
+        let disciplineDelta = 0;
+        let weightedDisciplineDelta = 0;
         
-        // Usar a função scoreObjectiveAnswer para calcular o delta
-        const scoringResult = scoreObjectiveAnswer({
-          examType: concurso.exam_type as ExamType,
-          wrongAnswerPenalty: wrongAnswerPenalty,
-          questionWeight: questionWeight,
-          disciplineWeight: disciplineWeight,
-          isCorrect: isCorrect,
-          isNullified: isNullified,
-          isBlank: isBlank
-        });
+        if (isNullified) {
+          // Questão anulada: sempre soma o peso
+          totalDelta = questionWeight * disciplineWeight;
+          disciplineDelta = 1;
+          weightedDisciplineDelta = questionWeight * disciplineWeight;
+        } else if (isBlank) {
+          // Em branco: não impacta
+          totalDelta = 0;
+          disciplineDelta = 0;
+          weightedDisciplineDelta = 0;
+        } else if (isCorrect) {
+          // Correta
+          totalDelta = questionWeight * disciplineWeight;
+          disciplineDelta = 1;
+          weightedDisciplineDelta = questionWeight * disciplineWeight;
+        } else {
+          // Errada
+          if (concurso.exam_type === 'Certo ou Errado' && wrongAnswerPenalty > 0) {
+            totalDelta = -wrongAnswerPenalty;
+            disciplineDelta = 0;
+            weightedDisciplineDelta = -wrongAnswerPenalty * disciplineWeight;
+          } else {
+            totalDelta = 0;
+            disciplineDelta = 0;
+            weightedDisciplineDelta = 0;
+          }
+        }
         
         // Aplicar os deltas calculados
-        totalScore += scoringResult.totalDelta;
-        disciplineScores[disciplineType] += scoringResult.disciplineDelta;
-        weightedDisciplineScores[disciplineType] += scoringResult.weightedDisciplineDelta;
+        totalScore += totalDelta;
+        disciplineScores[disciplineType] += disciplineDelta;
+        weightedDisciplineScores[disciplineType] += weightedDisciplineDelta;
         
         // Debug logs removed for security
         
