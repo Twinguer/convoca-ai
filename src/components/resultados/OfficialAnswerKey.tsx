@@ -54,10 +54,10 @@ export const OfficialAnswerKey: React.FC<OfficialAnswerKeyProps> = ({
         if (error) throw error;
 
         if (data?.official_answers) {
-          setOfficialAnswers(data.official_answers);
+          setOfficialAnswers(data.official_answers as any);
           
           // Configurar cadernos disponíveis
-          const booklets = data.exam_booklets || [];
+          const booklets = (data.exam_booklets as any) || [];
           setAvailableBooklets(booklets);
           
           // Usar o caderno do usuário se disponível, senão o primeiro

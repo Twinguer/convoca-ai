@@ -72,8 +72,9 @@ const CreatedRankingsTab: React.FC<CreatedRankingsTabProps> = ({
         let participantCount = 0;
         if (userRankings) {
           userRankings.forEach(userRanking => {
-            if (userRanking.consolidated_data?.rankings) {
-              Object.values(userRanking.consolidated_data.rankings).forEach((rankingData: any) => {
+            const rankings = (userRanking.consolidated_data as any)?.rankings;
+            if (rankings) {
+              Object.values(rankings as Record<string, any>).forEach((rankingData: any) => {
                 if (rankingData.concurso_id === ranking.id) {
                   participantCount++;
                 }
