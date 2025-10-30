@@ -119,8 +119,8 @@ export const useStudyStatistics = () => {
     if (!user || durationMinutes < 20) return; // Só conta sessões > 20min
 
     const now = new Date();
-    // Usar data local ao invés de UTC para evitar problemas de fuso horário
-    const today = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    // Usar apenas a data local sem manipulação de timezone
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const hours = durationMinutes / 60;
 
     // Calcular streak
