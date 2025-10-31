@@ -94,8 +94,10 @@ serve(async (req) => {
   }
 
   try {
-    // Obter header Authorization (seguindo o padrão da função calculate-ranking-score que funciona)
-    const authHeader = req.headers.get('Authorization');
+    // Obter header Authorization (case-insensitive) - verificar múltiplos casos
+    const authHeader = req.headers.get('Authorization') || 
+                       req.headers.get('authorization') ||
+                       req.headers.get('apikey');
     
     // Log para debug - ver quais headers estão chegando
     console.log("[create-mercadopago-preference] Request received:", {
@@ -104,7 +106,10 @@ serve(async (req) => {
       hasAuthHeader: !!authHeader,
       authHeaderLength: authHeader?.length || 0,
       authHeaderPrefix: authHeader ? authHeader.substring(0, 30) + "..." : "none",
-      allHeaders: Array.from(req.headers.keys())
+      allHeaders: Array.from(req.headers.keys()),
+      hasAuthorization: !!req.headers.get('Authorization'),
+      hasauthorization: !!req.headers.get('authorization'),
+      hasApikey: !!req.headers.get('apikey')
     });
     
     if (!authHeader) {
@@ -112,7 +117,7 @@ serve(async (req) => {
       // Listar todos os headers para debug
       const allHeaders: Record<string, string> = {};
       req.headers.forEach((value, key) => {
-        allHeaders[key] = key.toLowerCase().includes('auth') ? '***' : value;
+        allHeaders[key] = key.toLowerCase().includes('auth') || key.toLowerCase() === 'apikey' ? '***' : value;
       });
       console.error("[create-mercadopago-preference] Available headers:", Object.keys(allHeaders));
       
