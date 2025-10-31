@@ -223,12 +223,14 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     if (isRunning && !isPaused) {
       // Initialize end time if not set (e.g., after resume or refresh)
       if (!endTimeRef.current) {
-        endTimeRef.current = Date.now() + (minutes * 60 + seconds) * 1000;
+        const newEnd = Date.now() + (minutes * 60 + seconds) * 1000;
+        endTimeRef.current = newEnd;
+        setEndTime(newEnd);
       }
 
       const tick = () => {
         if (!endTimeRef.current) return;
-        const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+        const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
         const nextMinutes = Math.floor(remaining / 60);
         const nextSeconds = remaining % 60;
         
@@ -268,8 +270,7 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           } else {
             alert('Tempo esgotado! Sessão de estudo finalizada.');
           }
-
-          setMinutes(initialMinutes);
+          setMinutes(0);
           setSeconds(0);
         }
       };
