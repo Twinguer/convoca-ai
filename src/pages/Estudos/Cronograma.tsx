@@ -630,7 +630,7 @@ const Cronograma = () => {
           <CardContent>
             <div className="text-center space-y-2">
               <div className="text-6xl font-bold">
-                {format(currentTime, 'HH:mm:ss')}
+                {format(currentTime, 'HH:mm')}
               </div>
               <div className="text-sm text-muted-foreground">
                 {format(currentTime, 'EEEE, dd/MM/yyyy', {
