@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import { MercadoPagoConfig, Preference } from "npm:mercadopago@^2.0.0";
 
 // SECURITY: Restrict CORS to specific origins only
 const allowedOrigins = [
@@ -211,11 +212,20 @@ serve(async (req) => {
     const pendingUrl = `${baseUrl}/planos?status=pending&plan=${planId}`;
     const failureUrl = `${baseUrl}/planos?status=rejected&plan=${planId}`;
 
-    // Criar preferência de pagamento no Mercado Pago
+    // Inicializar SDK do Mercado Pago
     const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!accessToken) {
       throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
     }
+
+    const client = new MercadoPagoConfig({
+      accessToken: accessToken,
+      options: {
+        timeout: 5000,
+      }
+    });
+
+    const preferenceSDK = new Preference(client);
 
     // Extrair primeiro e último nome do usuário
     const userName = name || user.user_metadata?.name || user.email?.split("@")[0] || "Cliente";
@@ -261,22 +271,15 @@ serve(async (req) => {
       installments: 12 // Máximo de parcelas
     };
 
-    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${accessToken}`
-      },
-      body: JSON.stringify(preferenceData)
-    });
-
-    if (!mpResponse.ok) {
-      const errorData = await mpResponse.json();
-      console.error("Mercado Pago error:", errorData);
-      throw new Error(`Erro ao criar preferência: ${errorData.message || "Erro desconhecido"}`);
+    // Criar preferência usando o SDK do Mercado Pago
+    let preference;
+    try {
+      const preferenceResponse = await preferenceSDK.create({ body: preferenceData });
+      preference = preferenceResponse;
+    } catch (mpError: any) {
+      console.error("Mercado Pago SDK error:", mpError);
+      throw new Error(`Erro ao criar preferência: ${mpError.message || "Erro desconhecido"}`);
     }
-
-    const preference = await mpResponse.json();
 
     // Salvar referência da preferência no banco (para rastreamento)
     const { error: insertError } = await supabase.from("payment_preferences").insert({
