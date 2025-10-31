@@ -3,7 +3,7 @@ import React from 'react';
 const EmailPreview: React.FC = () => {
   // Dados de exemplo para o teste
   const mockData = {
-    confirmationUrl: 'https://nomeiaai.lovable.app/auth/confirm?token=abc123def456',
+    confirmationUrl: 'https://nomeiai.com.br/auth/confirm?token=abc123def456',
     token: 'ABC123DEF456'
   };
 

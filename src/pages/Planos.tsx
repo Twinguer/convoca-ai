@@ -10,6 +10,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Footer from "@/components/Footer";
+import { paymentService } from "@/services/paymentService";
 const Planos = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17,29 +18,60 @@ const Planos = () => {
     subscription,
     isPro,
     isFree,
-    applyVoucher
+    applyVoucher,
+    refetch
   } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [voucherCode, setVoucherCode] = useState("");
   const [applyingVoucher, setApplyingVoucher] = useState(false);
   useEffect(() => {
-    // Check for success/cancel parameters
+    // Check for Mercado Pago payment status
+    const status = searchParams.get("status");
+    const plan = searchParams.get("plan");
+    
+    if (status === "approved" && plan) {
+      toast({
+        title: "Pagamento realizado com sucesso!",
+        description: `Seu plano ${plan} foi ativado. Bem-vindo ao premium!`
+      });
+      // Recarregar assinatura
+      refetch();
+      // Limpar parâmetros da URL
+      navigate("/planos", { replace: true });
+    } else if (status === "pending" && plan) {
+      toast({
+        title: "Pagamento pendente",
+        description: "Estamos processando seu pagamento. Você será notificado quando for aprovado."
+      });
+      navigate("/planos", { replace: true });
+    } else if (status === "rejected" && plan) {
+      toast({
+        title: "Pagamento rejeitado",
+        description: "Não foi possível processar seu pagamento. Tente novamente.",
+        variant: "destructive"
+      });
+      navigate("/planos", { replace: true });
+    }
+    
+    // Suporte legado para parâmetros antigos (Stripe)
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
-    const plan = searchParams.get("plan");
     if (success === "true" && plan) {
       toast({
         title: "Pagamento realizado com sucesso!",
         description: `Seu plano ${plan} foi ativado. Bem-vindo ao premium!`
       });
+      refetch();
+      navigate("/planos", { replace: true });
     } else if (canceled === "true") {
       toast({
         title: "Pagamento cancelado",
         description: "Você pode tentar novamente quando quiser.",
         variant: "destructive"
       });
+      navigate("/planos", { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, navigate, refetch]);
   const planos = [{
     id: "free",
     nome: "Gratuito",
@@ -65,20 +97,38 @@ const Planos = () => {
       });
       return;
     }
+
     setLoadingPlan(planoId);
     try {
-      // For now, redirect to contact or payment page
-      toast({
-        title: "Em breve!",
-        description: "Entre em contato para assinar o plano Pro"
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Autenticação necessária",
+          description: "Por favor, faça login para continuar",
+          variant: "destructive"
+        });
+        navigate("/auth");
+        return;
+      }
 
-      // TODO: Integrate with payment gateway
-    } catch (error) {
+      // Criar preferência de pagamento
+      const preference = await paymentService.createPreference(
+        planoId,
+        session.user.email,
+        session.user.user_metadata?.name
+      );
+
+      // Redirecionar para o checkout do Mercado Pago
+      // Usa sandbox_init_point se estiver em desenvolvimento
+      const checkoutUrl = preference.sandbox_init_point || preference.init_point;
+      window.location.href = checkoutUrl;
+
+    } catch (error: any) {
       console.error("Erro ao processar pagamento:", error);
       toast({
         title: "Erro ao processar pagamento",
-        description: "Tente novamente em alguns instantes.",
+        description: error.message || "Tente novamente em alguns instantes.",
         variant: "destructive"
       });
     } finally {
@@ -96,18 +146,26 @@ const Planos = () => {
     }
     setApplyingVoucher(true);
     try {
-      const result = await applyVoucher(voucherCode);
-      if (result.success) {
+      const result = await applyVoucher(voucherCode) as {
+        success?: boolean;
+        plan?: string;
+        expires_at?: string;
+        error?: string;
+      };
+      
+      if (result?.success) {
         toast({
           title: "Voucher aplicado!",
-          description: `Plano ${result.plan} ativado até ${new Date(result.expires_at).toLocaleDateString()}`
+          description: result.plan && result.expires_at 
+            ? `Plano ${result.plan} ativado até ${new Date(result.expires_at).toLocaleDateString()}`
+            : "Voucher aplicado com sucesso!"
         });
         setVoucherCode("");
         navigate("/");
       } else {
         toast({
           title: "Erro",
-          description: result.error || "Voucher inválido",
+          description: result?.error || "Voucher inválido",
           variant: "destructive"
         });
       }

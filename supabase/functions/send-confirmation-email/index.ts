@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://nomeiaai.lovable.app'
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://nomeiai.com.br'
     const redirectUrl = redirect_to || siteUrl
     const confirmationUrl = `${supabaseUrl}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${redirectUrl}`
 

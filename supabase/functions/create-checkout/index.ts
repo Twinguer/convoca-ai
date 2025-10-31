@@ -3,14 +3,14 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 
 // SECURITY: Restrict CORS to specific origins only
 const allowedOrigins = [
-  "https://nomeiai.lovable.app",
   "https://nomeiai.com.br",
+  "https://www.nomeiai.com.br",
   "http://localhost:3000", // Development only
   "http://localhost:5173"  // Development only
 ];
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "https://nomeiai.lovable.app",
+  "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "https://nomeiai.com.br",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Credentials": "true",
