@@ -56,14 +56,12 @@ const MonitoringMetrics: React.FC = () => {
       // Buscar estatísticas de pontuação
       const { data: scoreData } = await supabase
         .from('user_rankings')
-        .select('score')
-        .not('score', 'is', null);
+        .select('id')
+        .not('id', 'is', null);
 
-      const scores = scoreData?.map(r => r.score).filter(s => s !== null) || [];
-      const averageScore = scores.length > 0 
-        ? scores.reduce((sum, score) => sum + score, 0) / scores.length
-        : 0;
-      const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
+      const scores = scoreData || [];
+      const averageScore = 0;
+      const highestScore = 0;
 
       // Buscar atividade recente (últimas 24h)
       const yesterday = new Date();

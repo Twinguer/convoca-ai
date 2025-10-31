@@ -60,10 +60,11 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
       
       if (data && data.length > 0) {
         const userRanking = data[0]; // Deve haver apenas um registro por usuário
+        const rankings = (userRanking.consolidated_data as any)?.rankings;
         
-        if (userRanking.consolidated_data?.rankings) {
+        if (rankings) {
           // Iterar sobre todos os rankings do usuário
-          for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
+          for (const [rankingId, rankingData] of Object.entries(rankings as Record<string, any>)) {
             const concursoId = (rankingData as any).concurso_id;
             if (!concursoId) {
               console.error('No concurso ID found for ranking');
@@ -294,9 +295,11 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
         }
 
         // 2. Remover ranking específico do JSON consolidado
-        if (userRankingData?.consolidated_data?.rankings) {
-          const updatedData = { ...userRankingData.consolidated_data };
-          delete updatedData.rankings[rankingId];
+        const rankings = (userRankingData?.consolidated_data as any)?.rankings;
+        if (rankings) {
+          const updatedData = { ...(userRankingData.consolidated_data as any) };
+          const { [rankingId]: removed, ...remainingRankings } = rankings as Record<string, any>;
+          updatedData.rankings = remainingRankings;
           
           // Atualizar dados consolidados
           const { error: updateError } = await supabase

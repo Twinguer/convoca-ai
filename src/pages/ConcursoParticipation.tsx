@@ -47,8 +47,6 @@ const ConcursoParticipation = () => {
     queryFn: async () => {
       if (!user || !id) return null;
       
-      console.log('[ConcursoParticipation] Checking participation for user:', user.id, 'concurso:', id);
-      
       const { data, error } = await supabase
         .from('user_rankings')
         .select('consolidated_data')

@@ -388,8 +388,8 @@ const Cronograma = () => {
 
   // Função para verificar se um dia tem sessões estudadas
   const getSessionsForDate = (date: Date) => {
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    const dateString = localDate.toISOString().split('T')[0];
+    // Usar apenas a data local sem manipulação de timezone
+    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const allSessions: any[] = [];
 
     // Verificar se temos dados de estudo
@@ -630,7 +630,7 @@ const Cronograma = () => {
           <CardContent>
             <div className="text-center space-y-2">
               <div className="text-6xl font-bold">
-                {format(currentTime, 'HH:mm:ss')}
+                {format(currentTime, 'HH:mm')}
               </div>
               <div className="text-sm text-muted-foreground">
                 {format(currentTime, 'EEEE, dd/MM/yyyy', {

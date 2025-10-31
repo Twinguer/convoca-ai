@@ -50,8 +50,6 @@ interface ConsolidatedAnswers {
 // Função para buscar as respostas consolidadas (NOVA ESTRUTURA)
 export const fetchUserAnswers = async (rankingId: string, concursoId?: string) => {
   try {
-    console.log('[fetchUserAnswers] Fetching consolidated answers for ranking ID:', rankingId);
-
     // Buscar dados consolidados da nova estrutura unificada
     // Note: rankingId is actually the user_id in the new structure
     const { data, error } = await supabase
@@ -66,15 +64,12 @@ export const fetchUserAnswers = async (rankingId: string, concursoId?: string) =
     }
 
     if (!data?.consolidated_data || data.consolidated_data === '{}') {
-      console.log('[fetchUserAnswers] No consolidated data found');
       return {};
     }
 
     const consolidatedData = data.consolidated_data;
     const selectedBooklet = data.selected_booklet;
     const editCount = data.edit_count || 0;
-
-    console.log('[fetchUserAnswers] Retrieved consolidated data:', consolidatedData);
 
     // Se especificou concurso, buscar apenas dados desse concurso
     let answers: { [key: number]: string } = {};

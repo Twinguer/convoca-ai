@@ -90,11 +90,22 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const endTimeRef = useRef<number | null>(endTime);
   const remainingSecondsRef = useRef<number>(initialMinutes * 60);
+  const isRunningRef = useRef<boolean>(false);
+  const isPausedRef = useRef<boolean>(false);
 
   // Sync ref with state
   useEffect(() => {
     endTimeRef.current = endTime;
   }, [endTime]);
+
+  // Keep running/paused refs in sync to avoid stale closures in event listeners
+  useEffect(() => {
+    isRunningRef.current = isRunning;
+  }, [isRunning]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
   const isStudying = isRunning && !isPaused;
 
@@ -123,11 +134,14 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         if (!isNaN(date.getTime())) setSessionStartTime(date);
       }
       
-      // Always ensure no active timer after login
-      setIsRunning(false);
-      setIsPaused(false);
-      setEndTime(null);
-      setSessionStartTime(null);
+      // Restore end time if exists for this user
+      const savedEndTime = localStorage.getItem(getStorageKey('endTime'));
+      if (savedEndTime) {
+        const parsedEnd = parseInt(savedEndTime);
+        if (!isNaN(parsedEnd)) setEndTime(parsedEnd);
+      } else {
+        setEndTime(null);
+      }
       
       // Update session storage with current user
       sessionStorage.setItem('previous_user_id', currentUserId);
@@ -223,12 +237,14 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
     if (isRunning && !isPaused) {
       // Initialize end time if not set (e.g., after resume or refresh)
       if (!endTimeRef.current) {
-        endTimeRef.current = Date.now() + (minutes * 60 + seconds) * 1000;
+        const newEnd = Date.now() + (minutes * 60 + seconds) * 1000;
+        endTimeRef.current = newEnd;
+        setEndTime(newEnd);
       }
 
       const tick = () => {
         if (!endTimeRef.current) return;
-        const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+        const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
         const nextMinutes = Math.floor(remaining / 60);
         const nextSeconds = remaining % 60;
         
@@ -268,15 +284,32 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
           } else {
             alert('Tempo esgotado! Sessão de estudo finalizada.');
           }
-
-          setMinutes(initialMinutes);
+          setMinutes(0);
           setSeconds(0);
         }
       };
 
       // Run an initial tick immediately
       tick();
-      intervalRef.current = setInterval(tick, 5000); // Reduzido de 1s para 5s
+      intervalRef.current = setInterval(tick, 1000);
+
+      // Add Page Visibility API listener to handle tab switching
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          // Tab became visible again - force recalculation
+          tick();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -291,6 +324,52 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       }
     };
   }, [isRunning, isPaused, initialMinutes]);
+
+  // Ensure time is recalculated immediately when tab becomes visible or window gains focus
+  useEffect(() => {
+    const forceRecalc = () => {
+      if (!isRunningRef.current || isPausedRef.current) return;
+
+      // Restore endTime from storage if missing (e.g., after tab suspension)
+      if (!endTimeRef.current) {
+        const stored = localStorage.getItem(getStorageKey('endTime'));
+        if (stored) {
+          const parsed = parseInt(stored);
+          if (!isNaN(parsed)) {
+            endTimeRef.current = parsed;
+            setEndTime(parsed);
+          }
+        }
+      }
+      if (!endTimeRef.current) return;
+
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setMinutes(Math.floor(remaining / 60));
+      setSeconds(remaining % 60);
+
+      if (remaining <= 0) {
+        // Finalize immediately if time is up
+        setIsRunning(false);
+        setIsPaused(false);
+        setSessionStartTime(null);
+        setEndTime(null);
+        setMinutes(0);
+        setSeconds(0);
+      }
+    };
+
+    const onFocusOrShow = () => forceRecalc();
+
+    window.addEventListener('focus', onFocusOrShow);
+    window.addEventListener('pageshow', onFocusOrShow as any);
+    document.addEventListener('visibilitychange', onFocusOrShow);
+
+    return () => {
+      window.removeEventListener('focus', onFocusOrShow);
+      window.removeEventListener('pageshow', onFocusOrShow as any);
+      document.removeEventListener('visibilitychange', onFocusOrShow);
+    };
+  }, []);
 
   // Request notification permission when timer starts
   useEffect(() => {
