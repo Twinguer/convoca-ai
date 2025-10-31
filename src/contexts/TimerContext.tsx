@@ -278,6 +278,24 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
       // Run an initial tick immediately
       tick();
       intervalRef.current = setInterval(tick, 1000);
+
+      // Add Page Visibility API listener to handle tab switching
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          // Tab became visible again - force recalculation
+          tick();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
