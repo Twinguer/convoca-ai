@@ -134,11 +134,14 @@ export const TimerProvider: React.FC<TimerProviderProps> = ({ children }) => {
         if (!isNaN(date.getTime())) setSessionStartTime(date);
       }
       
-      // Always ensure no active timer after login
-      setIsRunning(false);
-      setIsPaused(false);
-      setEndTime(null);
-      setSessionStartTime(null);
+      // Restore end time if exists for this user
+      const savedEndTime = localStorage.getItem(getStorageKey('endTime'));
+      if (savedEndTime) {
+        const parsedEnd = parseInt(savedEndTime);
+        if (!isNaN(parsedEnd)) setEndTime(parsedEnd);
+      } else {
+        setEndTime(null);
+      }
       
       // Update session storage with current user
       sessionStorage.setItem('previous_user_id', currentUserId);
