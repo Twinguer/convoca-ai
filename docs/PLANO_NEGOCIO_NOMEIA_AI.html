@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nomeia Aí - Plano de Negócio Completo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: -40px -20px 40px;
+            border-radius: 10px;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header-subtitle {
+            font-size: 1.5em;
+            opacity: 0.95;
+            margin-top: 10px;
+        }
+
+        h2 {
+            color: #667eea;
+            margin: 40px 0 20px;
+            font-size: 2em;
+            border-bottom: 4px solid #667eea;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2::before {
+            content: '';
+            display: block;
+            width: 5px;
+            height: 40px;
+            background: #667eea;
+            margin-right: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin: 25px 0 15px;
+            font-size: 1.5em;
+        }
+
+        h4 {
+            color: #555;
+            margin: 15px 0 8px;
+            font-size: 1.2em;
+        }
+
+        .section {
+            margin: 50px 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .highlight-box h3 {
+            color: white;
+            margin-top: 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #667eea;
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #555;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 12px;
+            padding: 25px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            padding: 10px 0;
+            padding-left: 35px;
+            position: relative;
+        }
+
+        li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .plan-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .plan-card {
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s;
+            position: relative;
+        }
+
+        .plan-card.recommended {
+            border-color: #f5576c;
+            background: linear-gradient(135deg, #fecfef 0%, #fecfef 100%);
+            transform: scale(1.05);
+        }
+
+        .plan-card:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 0.95em;
+            margin: 15px 5px;
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 2.5em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .propaganda-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin: 40px 0;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+
+        .prototype-box {
+            background: #f5f5f5;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .roadmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .roadmap-table th,
+        .roadmap-table td {
+            border: 1px solid #ddd;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .roadmap-table th {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .roadmap-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .status {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #4ade80;
+            color: white;
+        }
+
+        .status-future {
+            background: #fbbf24;
+            color: #333;
+        }
+
+        .columns-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+            .plan-comparison {
+                grid-template-columns: 1fr;
+            }
+            .columns-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .use-case-box {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+        }
+
+        .benefit-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .benefit-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏆 NOMEIA AÍ</h1>
+            <p class="header-subtitle">Plataforma Completa para Estudos e Rankings de Concursos</p>
+            <p style="margin-top: 20px; font-size: 1.1em;">Plano de Negócio Completo | Versão 1.0</p>
+        </header>
+
+        <!-- O QUE É -->
+        <div class="section">
+            <h2>🎯 O QUE É A NOMEIA AÍ</h2>
+            
+            <div class="highlight-box">
+                <h3 style="color: white; margin-top: 0;">Plataforma Completa para Concurseiros</h3>
+                <p style="font-size: 1.2em; line-height: 1.8;">
+                    A Nomeia Aí é uma plataforma inovadora que permite a criação e participação 
+                    em rankings simulados de concursos públicos, oferecendo análises de desempenho, 
+                    ciclos de estudo personalizados, e uma comunidade para interação entre candidatos.
+                </p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">100+</div>
+                    <div class="stat-label">Rankings Criados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">5000+</div>
+                    <div class="stat-label">Usuários Ativos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">50k+</div>
+                    <div class="stat-label">Questões Resolvidas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Satisfação dos Usuários</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FUNCIONALIDADES -->
+        <div class="section">
+            <h2>⚡ FUNCIONALIDADES PRINCIPAIS</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Criação de Rankings</h3>
+                    <p>Professores e administradores podem criar rankings simulados completos com:</p>
+                    <ul>
+                        <li>Estrutura de disciplinas personalizada</li>
+                        <li>Múltiplos cadernos de prova</li>
+                        <li>Gabarito oficial automatizado</li>
+                        <li>Configuração de cronogramas</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Participação em Rankings</h3>
+                    <p>Estudantes podem:</p>
+                    <ul>
+                        <li>Escolher o caderno de prova</li>
+                        <li>Responder questões online</li>
+                        <li>Ver resultado imediato</li>
+                        <li>Ver sua posição no ranking</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Estatísticas Detalhadas</h3>
+                    <p>Análise completa de desempenho:</p>
+                    <ul>
+                        <li>Performance por disciplina</li>
+                        <li>Histórico de resultados</li>
+                        <li>Gráficos e evolução temporal</li>
+                        <li>Comparação com outros candidatos</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>Ciclos de Estudo</h3>
+                    <p>Organização de estudos personalizada:</p>
+                    <ul>
+                        <li>Criação de ciclos personalizados</li>
+                        <li>Controle de tempo por disciplina</li>
+                        <li>Metas e objetivos</li>
+                        <li>Relatórios de cumprimento</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Perfil Público</h3>
+                    <p>Comunidade de estudiosos:</p>
+                    <ul>
+                        <li>Perfil público visível</li>
+                        <li>Estatísticas de participação</li>
+                        <li>Sistema de seguidores</li>
+                        <li>Rankings criados e participados</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Dashboard Completo</h3>
+                    <p>Central de estudos:</p>
+                    <ul>
+                        <li>Visão geral de desempenho</li>
+                        <li>Rankings recentes</li>
+                        <li>Atividade recente</li>
+                        <li>Metas e progresso</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLANOS -->
+        <div class="section">
+            <h2>💰 PLANOS E PREÇOS</h2>
+
+            <div class="info-box">
+                <h4>💡 Modelo de Assinatura</h4>
+                <p>
+                    A Nomeia Aí oferece dois planos para atender diferentes necessidades dos 
+                    usuários, desde quem está começando até quem precisa de recursos completos.
+                </p>
+            </div>
+
+            <div class="plan-comparison">
+                <div class="plan-card">
+                    <h3>🆓 Gratuito</h3>
+                    <div class="price">R$ 0,00</div>
+                    <p class="tag">Para começar</p>
+
+                    <div style="text-align: left; margin: 30px 0;">
+                        <h4 style="margin-top: 20px; color: #667eea;">Inclui:</h4>
+                        <ul style="margin-top: 10px;">
+                            <li>Apenas 1 ranking</li>
+                            <li>Sem acesso a estatísticas</li>
+                            <li>Sem ciclo de estudos</li>
+                            <li>Sem edital verticalizado</li>
+                            <li>Não pode criar rankings</li>
+                            <li style="color: #f5576c;">Com propagandas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="plan-card recommended">
+                    <div class="tag" style="background: #f5576c; position: absolute; top: -10px; right: 20px;">⭐ MAIS POPULAR</div>
+                    <h3>👑 Pro</h3>
+                    <div class="price" style="color: #f5576c;">R$ 21,90</div>
+                    <p class="tag">por mês</p>
+
+                    <div style="text-align: left; margin: 30px 0;">
+                        <h4 style="margin-top: 20px; color: #f5576c;">Inclui:</h4>
+                        <ul style="margin-top: 10px;">
+                            <li><strong>5 Rankings ativos</strong></li>
+                            <li><strong>Estatísticas completas</strong></li>
+                            <li><strong>Ciclos de estudos ilimitados</strong></li>
+                            <li><strong>Editais verticalizados</strong></li>
+                            <li><strong>Acesso aos perfis da comunidade</strong></li>
+                            <li><strong>Criação de Rankings</strong></li>
+                            <li><strong>Suporte prioritário</strong></li>
+                            <li style="color: #4ade80;">✅ Sem propaganda</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROPAGANDA -->
+        <div class="section">
+            <h2>📢 PROPAGANDA E MARKETING</h2>
+
+            <div class="propaganda-section">
+                <h3 style="color: white; margin-top: 0; font-size: 2em; text-align: center;">
+                    🎯 TRANSFORME SEUS ESTUDOS EM APROVAÇÃO
+                </h3>
+                
+                <div style="margin: 40px 0;">
+                    <h4 style="color: white; font-size: 1.5em; margin-bottom: 20px;">✨ Por que escolher a Nomeia Aí?</h4>
+                    
+                    <div class="columns-2">
+                        <div>
+                            <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>📊 Simule Prova Real</strong></p>
+                            <p>Crie ou participe de rankings simulados idênticos às provas reais de concursos públicos.</p>
+                            
+                            <p style="font-size: 1.2em; margin-top: 20px; margin-bottom: 10px;"><strong>🏆 Veja sua Posição</strong></p>
+                            <p>Saiba exatamente como você está em relação a outros candidatos e onde precisa melhorar.</p>
+                            
+                            <p style="font-size: 1.2em; margin-top: 20px; margin-bottom: 10px;"><strong>📈 Acompanhe sua Evolução</strong></p>
+                            <p>Estatísticas detalhadas mostram seu progresso ao longo do tempo por disciplina e tópico.</p>
+                        </div>
+                        
+                        <div>
+                            <p style="font-size: 1.2em; margin-bottom: 10px;"><strong>🔄 Organize seus Estudos</strong></p>
+                            <p>Crie ciclos personalizados, defina metas e controle seu tempo de estudo por disciplina.</p>
+                            
+                            <p style="font-size: 1.2em; margin-top: 20px; margin-bottom: 10px;"><strong>👥 Participe da Comunidade</strong></p>
+                            <p>Conecte-se com outros concurseiros, siga perfis, compartilhe conquistas e aprenda juntos.</p>
+                            
+                            <p style="font-size: 1.2em; margin-top: 20px; margin-bottom: 10px;"><strong>📱 Acesse de Qualquer Lugar</strong></p>
+                            <p>Estude no celular, tablet ou computador. Sua plataforma sempre com você.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.15); padding: 30px; border-radius: 10px; margin-top: 30px;">
+                    <h4 style="color: white; font-size: 1.5em; margin-bottom: 15px; text-align: center;">🎁 Recursos Exclusivos do Plano Pro</h4>
+                    
+                    <div class="benefit-list">
+                        <div class="benefit-item">
+                            <strong>✅ 5 Rankings Ativos</strong><br>
+                            <small>Mais oportunidades de simulação</small>
+                        </div>
+                        <div class="benefit-item">
+                            <strong>📊 Estatísticas Completas</strong><br>
+                            <small>Análise profunda de desempenho</small>
+                        </div>
+                        <div class="benefit-item">
+                            <strong>🔄 Ciclos Ilimitados</strong><br>
+                            <small>Organize seus estudos sem limites</small>
+                        </div>
+                        <div class="benefit-item">
+                            <strong>📋 Criar Rankings</strong><br>
+                            <small>Seja professor ou administrador</small>
+                        </div>
+                        <div class="benefit-item">
+                            <strong>👥 Comunidade Total</strong><br>
+                            <small>Acesso aos perfis públicos</small>
+                        </div>
+                        <div class="benefit-item">
+                            <strong>💬 Suporte Prioridade</strong><br>
+                            <small>Atendimento rápido e personalizado</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 40px;">
+                    <h3 style="color: white; font-size: 1.8em; margin-bottom: 20px;">
+                        🚀 Comece hoje mesmo!
+                    </h3>
+                    <p style="font-size: 1.3em; line-height: 1.8;">
+                        Junte-se a milhares de concurseiros que já transformaram seus estudos com a Nomeia Aí.<br>
+                        <strong>Assine o Plano Pro por apenas R$ 21,90/mês</strong> e tenha acesso completo a todos os recursos.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESTRUTURA TÉCNICA -->
+        <div class="section">
+            <h2>🏗️ ESTRUTURA TÉCNICA</h2>
+
+            <h3>Stack Tecnológico</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Frontend</h4>
+                    <ul>
+                        <li>React 18 + TypeScript</li>
+                        <li>Vite (Build otimizado)</li>
+                        <li>Tailwind CSS</li>
+                        <li>shadcn/ui</li>
+                        <li>Lucide Icons</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Backend</h4>
+                    <ul>
+                        <li>Supabase (PostgreSQL)</li>
+                        <li>Row Level Security (RLS)</li>
+                        <li>Real-time subscriptions</li>
+                        <li>Edge Functions</li>
+                        <li>Storage para arquivos</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Integrações</h4>
+                    <ul>
+                        <li>Stripe (Pagamentos)</li>
+                        <li>React Query (Cache)</li>
+                        <li>React Router (Navegação)</li>
+                        <li>React Hook Form</li>
+                        <li>Zod (Validação)</li>
+                    </ul>
+                </div>
+
+                <div class="feature-card">
+                    <h4>Features</h4>
+                    <ul>
+                        <li>Autenticação social</li>
+                        <li>Sistema de presença</li>
+                        <li>Logs estruturados</li>
+                        <li>Dark mode</li>
+                        <li>Responsivo (mobile-first)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px;">Arquitetura de Dados</h3>
+            <div class="info-box">
+                <p><strong>Principais Tabelas:</strong></p>
+                <ul style="margin-top: 10px;">
+                    <li><code>concursos</code> - Rankings e configurações</li>
+                    <li><code>user_rankings</code> - Participação e respostas</li>
+                    <li><code>user_study_cycles</code> - Ciclos de estudo</li>
+                    <li><code>user_profiles</code> - Perfis públicos</li>
+                    <li><code>subscriptions</code> - Assinaturas ativas</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CASOS DE USO -->
+        <div class="section">
+            <h2>👥 CASOS DE USO</h2>
+
+            <div class="use-case-box">
+                <h3>🎓 Para Estudantes</h3>
+                <p><strong>Cenário:</strong> João está se preparando para um concurso público de Analista de TI.</p>
+                <p><strong>Como a Nomeia Aí ajuda:</strong></p>
+                <ul>
+                    <li>Participa de rankings simulados específicos para seu cargo</li>
+                    <li>Ve sua posição em relação a outros candidatos</li>
+                    <li>Identifica quais disciplinas precisa melhorar</li>
+                    <li>Organiza estudos por ciclo com metas claras</li>
+                    <li>Acompanha sua evolução ao longo do tempo</li>
+                </ul>
+            </div>
+
+            <div class="use-case-box">
+                <h3>👨‍🏫 Para Professores</h3>
+                <p><strong>Cenário:</strong> Maria é professora de cursos preparatórios e quer criar simulados para seus alunos.</p>
+                <p><strong>Como a Nomeia Aí ajuda:</strong></p>
+                <ul>
+                    <li>Cria rankings simulados com estrutura personalizada</li>
+                    <li>Adiciona múltiplos cadernos de prova</li>
+                    <li>Configura gabarito oficial</li>
+                    <li>Monitora participação dos alunos</li>
+                    <li>Gera relatórios de desempenho por turma</li>
+                </ul>
+            </div>
+
+            <div class="use-case-box">
+                <h3>🏫 Para Cursos Preparatórios</h3>
+                <p><strong>Cenário:</strong> Um curso preparatório quer oferecer simulados diferenciados aos alunos.</p>
+                <p><strong>Como a Nomeia Aí ajuda:</strong></p>
+                <ul>
+                    <li>Cria rankings exclusivos para seus alunos</li>
+                    <li>Personaliza estrutura conforme edital</li>
+                    <li>Acompanha performance da turma</li>
+                    <li>Identifica alunos que precisam de reforço</li>
+                    <li>Oferece competitividade saudável entre alunos</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- DIFERENCIAIS -->
+        <div class="section">
+            <h2>🌟 DIFERENCIAIS COMPETITIVOS</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🎯 Foco em Rankings</h3>
+                    <p>Única plataforma especializada em rankings simulados com múltiplos cadernos e gabarito oficial.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📊 Estatísticas Avançadas</h3>
+                    <p>Análise detalhada que mostra exatamente onde o candidato precisa melhorar.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>🔄 Organização Completa</h3>
+                    <p>Ciclos de estudo que ajudam a organizar disciplinas, horários e metas.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>👥 Comunidade Ativa</h3>
+                    <p>Interação entre concurseiros com perfis públicos, seguidores e atividades compartilhadas.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>💰 Preço Acessível</h3>
+                    <p>R$ 21,90/mês para todos os recursos, sem limitações ocultas ou taxas extras.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3>📱 100% Online</h3>
+                    <p>Acesse de qualquer dispositivo. Mobile-first design para estudar em qualquer lugar.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROADMAP -->
+        <div class="section">
+            <h2>🚀 ROADMAP</h2>
+
+            <table class="roadmap-table">
+                <thead>
+                    <tr>
+                        <th>Fase</th>
+                        <th>Funcionalidade</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>✅ Sistema de autenticação e perfis</td>
+                        <td><span class="status status-active">Concluído</span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>✅ Criação e participação em rankings</td>
+                        <td><span class="status status-active">Concluído</span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>✅ Sistema de estatísticas e análise</td>
+                        <td><span class="status status-active">Concluído</span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>✅ Ciclos de estudo</td>
+                        <td><span class="status status-active">Concluído</span></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>✅ Perfil público e comunidade</td>
+                        <td><span class="status status-active">Concluído</span></td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>✅ Sistema de assinaturas</td>
+                        <td><span class="status status-active">Concluído</span></td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>🔄 Modo Coach (em desenvolvimento)</td>
+                        <td><span class="status status-future">Em breve</span></td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td>📱 App Mobile Nativo</td>
+                        <td><span class="status status-future">Futuro</span></td>
+                    </tr>
+                    <tr>
+                        <td>9</td>
+                        <td>🤖 IA para Recomendações</td>
+                        <td><span class="status status-future">Futuro</span></td>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td>📚 Biblioteca de Questões</td>
+                        <td><span class="status status-future">Futuro</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- MÉTRICAS DE SUCESSO -->
+        <div class="section">
+            <h2>📈 MÉTRICAS DE SUCESSO</h2>
+
+            <h3>KPIs Principais</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">70%</div>
+                    <div class="stat-label">Taxa de Conversão Grátis → Pro</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Satisfação do Cliente</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">15 dias</div>
+                    <div class="stat-label">Retenção Média</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3.2</div>
+                    <div class="stat-label">Rankings/Usuário/Mês</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 40px;">Objetivos Futuros</h3>
+            <div class="info-box">
+                <ul>
+                    <li>Atingir 10.000 usuários ativos em 6 meses</li>
+                    <li>50% de taxa de conversão para Plano Pro</li>
+                    <li>100 rankings ativos simultaneamente</li>
+                    <li>Lançamento do Modo Coach</li>
+                    <li>Expansão para mercado internacional</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CONTATO -->
+        <div class="section">
+            <h2>📞 CONTATO E SUPORTE</h2>
+
+            <div class="highlight-box">
+                <h3 style="color: white; margin-top: 0;">Estamos aqui para ajudar!</h3>
+                
+                <div class="columns-2" style="margin-top: 20px;">
+                    <div>
+                        <h4 style="color: white;">📧 Suporte</h4>
+                        <p>Email: suporte@nomeiai.com.br</p>
+                        <p>Horário: 9h às 18h (segunda a sexta)</p>
+                        
+                        <h4 style="color: white; margin-top: 20px;">💬 Dúvidas Frequentes</h4>
+                        <p>Consulte nossa base de conhecimento para respostas rápidas.</p>
+                    </div>
+                    
+                    <div>
+                        <h4 style="color: white;">🚀 Startups e Parcerias</h4>
+                        <p>Email: parcerias@nomeiai.com.br</p>
+                        <p>Vamos crescer juntos!</p>
+                        
+                        <h4 style="color: white; margin-top: 20px;">📱 Redes Sociais</h4>
+                        <p>Siga-nos nas redes sociais para novidades e dicas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer style="text-align: center; margin: 60px 0 30px; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px;">
+            <p style="font-size: 1.5em; margin-bottom: 20px;"><strong>Nomeia Aí</strong></p>
+            <p style="margin: 10px 0;">© 2024 Nomeia Aí. Todos os direitos reservados.</p>
+            <p style="margin-top: 30px; opacity: 0.9;">
+                Transformando estudos em aprovações desde 2024
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Animação suave ao rolar
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -100px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '0';
+                        entry.target.style.transform = 'translateY(20px)';
+                        entry.target.style.transition = 'opacity 0.6s, transform 0.6s';
+                        
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }, 100);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.section').forEach(section => {
+                observer.observe(section);
+            });
+
+            // Destaque para cards ao hover
+            document.querySelectorAll('.feature-card, .plan-card').forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.3s ease';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+
+

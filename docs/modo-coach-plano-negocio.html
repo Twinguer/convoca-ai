@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modo Coach - Plano de Negócio | Nomeia Aí</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: -40px -20px 40px;
+            border-radius: 10px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header-subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        h2 {
+            color: #667eea;
+            margin: 30px 0 15px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #764ba2;
+            margin: 25px 0 10px;
+            font-size: 1.4em;
+        }
+
+        h4 {
+            color: #555;
+            margin: 15px 0 8px;
+            font-size: 1.2em;
+        }
+
+        .section {
+            margin: 40px 0;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .model-structure {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .actor-card {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .actor-card h4 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+
+        .price-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .price {
+            font-size: 2em;
+            color: #667eea;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .plan-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .plan-card {
+            background: white;
+            border: 3px solid #764ba2;
+            border-radius: 10px;
+            padding: 25px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .plan-card.recommended {
+            border-color: #f5576c;
+            background: linear-gradient(135deg, #fecfef 0%, #fecfef 100%);
+        }
+
+        .plan-card h3 {
+            color: #764ba2;
+            margin-top: 0;
+        }
+
+        .plan-card.recommended h3 {
+            color: #f5576c;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 10px 5px;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .propaganda-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+
+        .prototype-box {
+            background: #f5f5f5;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+
+        .roadmap-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .roadmap-table th,
+        .roadmap-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .roadmap-table th {
+            background: #667eea;
+            color: white;
+        }
+
+        .roadmap-table tr:nth-child(even) {
+            background: #f5f5f5;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .status-pending {
+            background: #ffd700;
+            color: #333;
+        }
+
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .feature-list {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .button-demo {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 5px;
+            margin: 10px 5px;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+
+        .button-demo:hover {
+            background: #764ba2;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            .model-structure {
+                flex-direction: column;
+            }
+            .plan-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stats-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #555;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 MODO COACH - PLANO DE NEGÓCIO</h1>
+            <p class="header-subtitle">Nomeia Aí | Versão 1.0</p>
+        </header>
+
+        <div class="section">
+            <h2>📊 SUMÁRIO EXECUTIVO</h2>
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                O <strong>Modo Coach</strong> é uma funcionalidade que permite que profissionais de coaching 
+                ofereçam serviços de acompanhamento de estudos para alunos, utilizando toda a infraestrutura 
+                da Nomeia Aí como plataforma intermediária.
+            </p>
+
+            <div class="highlight-box">
+                <h3 style="color: white; margin-top: 0;">💰 MODELO DE NEGÓCIO - Todos Ganham!</h3>
+                <p style="font-size: 1.1em;">Receita da plataforma: <strong>R$ 171,80/aluno-coach/mês</strong></p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💼 MODELO DE NEGÓCIO</h2>
+            
+            <div class="model-structure">
+                <div class="actor-card">
+                    <h4>👨‍🎓 Aluno (Estudante)</h4>
+                    <p><strong>Paga:</strong> R$ 21,90/mês (Plano Pro)</p>
+                    <p>Contrata coach por fora (valor a combinar)</p>
+                    <p>Acessa todas funcionalidades + acompanhamento do coach</p>
+                </div>
+
+                <div class="actor-card">
+                    <h4>🎯 Coach (Profissional)</h4>
+                    <p><strong>Paga:</strong> R$ 149,90/mês (Modo Coach - até 25 alunos)</p>
+                    <p>Cobra do aluno o valor que quiser (fora da plataforma)</p>
+                    <p>Fornece acompanhamento profissional para os alunos vinculados</p>
+                </div>
+
+                <div class="actor-card">
+                    <h4>🏢 Plataforma (Nomeia Aí)</h4>
+                    <p><strong>Recebe:</strong> R$ 21,90 + R$ 149,90 = <strong>R$ 171,80/aluno-coach</strong></p>
+                    <p>Fornece infraestrutura completa</p>
+                    <p>Suporte e desenvolvimento contínuo</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 VALORES E PREÇOS</h2>
+            
+            <h3>Planos para o Coach:</h3>
+
+            <div class="plan-grid">
+                <div class="plan-card">
+                    <h3>Starter</h3>
+                    <div class="price">R$ 49,90/mês</div>
+                    <p><strong>Limite:</strong> 3 alunos</p>
+                    <p><strong>Ideal para:</strong> Coaches iniciantes, teste da plataforma</p>
+                    <ul>
+                        <li>Dashboard básico</li>
+                        <li>Até 3 alunos</li>
+                        <li>Suporte por email</li>
+                    </ul>
+                </div>
+
+                <div class="plan-card recommended">
+                    <span class="tag">⭐ RECOMENDADO</span>
+                    <h3>Professional</h3>
+                    <div class="price">R$ 149,90/mês</div>
+                    <p><strong>Limite:</strong> 25 alunos</p>
+                    <p><strong>Ideal para:</strong> Coaches profissionais estabelecidos</p>
+                    <ul>
+                        <li>Dashboard completo</li>
+                        <li>Até 25 alunos</li>
+                        <li>Analytics avançado</li>
+                        <li>Suporte prioritário</li>
+                    </ul>
+                </div>
+
+                <div class="plan-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">R$ 399,90/mês</div>
+                    <p><strong>Limite:</strong> 100 alunos</p>
+                    <p><strong>Ideal para:</strong> Escolas, cursos preparatórios, grandes coaches</p>
+                    <ul>
+                        <li>Tudo do Professional</li>
+                        <li>Até 100 alunos</li>
+                        <li>API de integração</li>
+                        <li>Gerente de conta dedicado</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Requisitos:</h4>
+            <ul>
+                <li>Aluno deve ter <strong>Plano Pro</strong> (R$ 21,90/mês)</li>
+                <li>Coach deve ter <strong>Modo Coach</strong> ativo</li>
+                <li>Relacionamento ativo entre coach e aluno</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🚀 PROPAGANDA E MARKETING</h2>
+
+            <h3>Para o Coach:</h3>
+            <div class="propaganda-box">
+                <h3 style="color: white; margin-top: 0;">🎯 MONITORE SEUS ALUNOS SEM DEPENDER DE CURSOS PREPARATÓRIOS</h3>
+                <p>O Modo Coach da Nomeia Aí é a sua solução completa para acompanhar e orientar seus alunos de forma profissional.</p>
+
+                <h4 style="color: white; margin-top: 20px;">✨ VOCÊ TERÁ:</h4>
+
+                <div class="feature-list" style="background: rgba(255,255,255,0.1); color: white; border: none;">
+                    <p><strong>📊 Acesso Completo à Área de Estudos dos Alunos</strong><br>
+                    Veja exatamente o que cada aluno está estudando. Acompanhe tempo de estudo por disciplina. Monitore cumprimento de metas.</p>
+
+                    <p><strong>🎯 Crie Ciclos de Estudo Personalizados</strong><br>
+                    Elabore rotinas específicas para cada aluno. Configure horários e disciplinas. Defina prazos e objetivos.</p>
+
+                    <p><strong>📈 Estatísticas e Relatórios Detalhados</strong><br>
+                    Performance por disciplina. Evolução do desempenho ao longo do tempo. Identifique pontos fortes e fracos.</p>
+
+                    <p><strong>🏆 Acompanhe Rankings de Desempenho</strong><br>
+                    Veja como seu aluno se posiciona em relação a outros candidatos. Compare performance em concursos simulados. Identifique áreas que precisam de mais atenção.</p>
+
+                    <p><strong>✅ Defina Metas e Prazos</strong><br>
+                    Estabeleça objetivos específicos por aluno. Configure cronogramas de preparação. Acompanhe cumprimento em tempo real.</p>
+                </div>
+
+                <h4 style="color: white; margin-top: 30px;">💰 Modelo de Negócio Libertador:</h4>
+                <p>Cobra o valor que quiser pelo seu serviço. Pagamento direto entre você e o aluno. Sem taxas sobre seus ganhos. Plano fixo mensal de apenas R$ 149,90.</p>
+
+                <h4 style="color: white; margin-top: 20px;">🎁 SEM PRECISAR DE:</h4>
+                <p>❌ Curso preparatório<br>
+                ❌ Plataforma própria<br>
+                ❌ Estrutura física<br>
+                ❌ Instagram para divulgação<br>
+                ❌ WhatsApp para acompanhamento</p>
+
+                <h4 style="color: white; margin-top: 20px;">📱 PLATAFORMA JÁ PRONTA:</h4>
+                <p>Seus alunos já usam a Nomeia Aí. Sistema robusto e testado. Interface intuitiva. Suporte completo integrado.</p>
+            </div>
+
+            <h3>Para o Aluno com Coach:</h3>
+            <div class="propaganda-box" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333;">
+                <h3 style="color: #333; margin-top: 0;">🎯 TEM UM COACH? APRENDA MELHOR COM ACOMPANHAMENTO PROFISSIONAL</h3>
+                <p>Você já estuda na Nomeia Aí com o Plano Pro. Agora seus estudos podem ser monitorados e orientados por um coach profissional!</p>
+
+                <div class="feature-list" style="background: rgba(255,255,255,0.7); color: #333; border: none;">
+                    <p><strong>✅ Ciclos de Estudo Criados pelo seu Coach</strong><br>
+                    Rotinas personalizadas para sua preparação. Horários otimizados conforme sua disponibilidade. Foco nas disciplinas que você precisa dominar.</p>
+
+                    <p><strong>📊 Acompanhamento Profissional</strong><br>
+                    Seu coach vê em tempo real seu progresso. Receba orientações baseadas em seus dados reais. Feedback constante para melhorar seu desempenho.</p>
+
+                    <p><strong>🏆 Rankings para Medir seu Desempenho</strong><br>
+                    Veja como está sua performance em relação a outros candidatos. Entenda sua posição em concursos simulados. Identifique onde precisa melhorar.</p>
+
+                    <p><strong>🎯 Metas Definidas e Monitoradas</strong><br>
+                    Objetivos claros e alcançáveis. Prazos para concursos importantes. Incentivo para manter a disciplina.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📋 MODO DE USO</h2>
+
+            <h3>Para o Coach:</h3>
+            
+            <h4>1. Cadastro e Ativação</h4>
+            <div class="prototype-box">
+1. Coach cria conta na Nomeia Aí<br>
+2. Assina o Modo Coach (R$ 149,90/mês)<br>
+3. Define quantos alunos pode gerenciar
+            </div>
+
+            <h4>2. Adicionar Aluno</h4>
+            <div class="prototype-box">
+1. Coach solicita email ou ID do aluno<br>
+2. Aluno aceita o convite<br>
+3. Relacionamento estabelecido<br>
+4. Coach ganha acesso à área de estudos
+            </div>
+
+            <h4>3. Criar Ciclo de Estudos</h4>
+            <div class="prototype-box">
+1. Coach acessa dashboard do aluno<br>
+2. Cria ciclo com disciplinas, horários e datas<br>
+3. Aluno recebe notificação<br>
+4. Aluno cumpre os ciclos normalmente<br>
+5. Coach acompanha progresso em tempo real
+            </div>
+
+            <h4>4. Definir Metas</h4>
+            <div class="prototype-box">
+1. Coach identifica necessidade do aluno<br>
+2. Cria meta específica (ex: "50 horas de matemática em 2 semanas")<br>
+3. Sistema monitora progresso<br>
+4. Coach vê quando aluno completa<br>
+5. Pode dar feedback personalizado
+            </div>
+
+            <h4>5. Visualizar Estatísticas</h4>
+            <ul>
+                <li>Coach acessa dashboard específico do aluno</li>
+                <li>Vê gráficos de tempo de estudo</li>
+                <li>Compara desempenho entre disciplinas</li>
+                <li>Identifica padrões de comportamento</li>
+                <li>Recebe alertas de alunos que estão abaixo da média</li>
+            </ul>
+
+            <h4>6. Rankings de Desempenho</h4>
+            <ul>
+                <li>Coach vê posição do aluno em rankings</li>
+                <li>Compara performance do aluno com outros candidatos</li>
+                <li>Identifica onde aluno precisa melhorar</li>
+                <li>Usa dados para criar estratégias personalizadas</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ COMO SERÁ CRIADO</h2>
+
+            <h3>Fase 1: Estrutura de Dados (Semana 1-2)</h3>
+            
+            <h4>Tabelas do Banco de Dados:</h4>
+            <div class="prototype-box">
+-- Assinatura do coach
+CREATE TABLE coach_subscriptions (
+  id UUID PRIMARY KEY,
+  coach_id UUID REFERENCES auth.users(id),
+  plan_type TEXT, -- 'starter', 'professional', 'enterprise'
+  max_students INTEGER,
+  price DECIMAL,
+  status TEXT, -- 'active', 'cancelled', 'suspended'
+  current_students INTEGER DEFAULT 0,
+  created_at TIMESTAMP,
+  expires_at TIMESTAMP
+);
+
+-- Relacionamento coach-aluno
+CREATE TABLE coach_student_relationships (
+  id UUID PRIMARY KEY,
+  coach_id UUID REFERENCES auth.users(id),
+  student_id UUID REFERENCES auth.users(id),
+  status TEXT, -- 'pending', 'active', 'inactive'
+  coach_notes TEXT,
+  created_at TIMESTAMP
+);
+
+-- Tarefas criadas pelo coach
+CREATE TABLE coach_study_tasks (
+  id UUID PRIMARY KEY,
+  relationship_id UUID REFERENCES coach_student_relationships(id),
+  task_type TEXT, -- 'study_cycle', 'goal', 'note'
+  title TEXT,
+  description TEXT,
+  deadline DATE,
+  priority TEXT, -- 'high', 'medium', 'low'
+  completed_at TIMESTAMP,
+  metadata JSONB,
+  created_at TIMESTAMP
+);
+            </div>
+
+            <h3>Fase 2: Interface do Coach (Semana 3-4)</h3>
+            
+            <h4>Arquitetura de Arquivos:</h4>
+            <div class="prototype-box">
+src/
+├── modules/
+│   └── coach/
+│       ├── pages/
+│       │   ├── CoachDashboard.tsx
+│       │   ├── StudentDetails.tsx
+│       │   └── TaskManager.tsx
+│       ├── components/
+│       │   ├── StudentCard.tsx
+│       │   ├── TaskBuilder.tsx
+│       │   └── CoachSidebar.tsx
+│       └── hooks/
+│           ├── useCoachStudents.tsx
+│           └── useCoachPermissions.tsx
+            </div>
+
+            <h3>Fase 3: Integração com Estudos (Semana 5-6)</h3>
+            <p>Modificar <code>StudyDashboard</code> para suportar visualização do coach com permissões especiais.</p>
+
+            <h3>Fase 4: Sistema de Rankings (Semana 7)</h3>
+            <p>Dashboard especial para visualizar posição do aluno em rankings e comparar performance.</p>
+
+            <h3>Fase 5: Sistema de Tarefas e Metas (Semana 8-9)</h3>
+            <p>Criador de tarefas e definidor de metas com notificações para o aluno.</p>
+
+            <h3>Fase 6: Dashboard e Analytics (Semana 10)</h3>
+            <p>Análises avançadas e relatórios para o coach.</p>
+
+            <h3>Fase 7: Assinatura e Checkout (Semana 11)</h3>
+            <p>Página de assinatura com integração Stripe.</p>
+
+            <h3>Fase 8: Testes e Ajustes (Semana 12)</h3>
+            <p>Testes completos e ajustes finais para lançamento.</p>
+        </div>
+
+        <div class="section">
+            <h2>📈 PROTÓTIPO DE INTERFACE</h2>
+
+            <h3>Dashboard do Coach:</h3>
+            <div class="prototype-box">
+┌─────────────────────────────────────────────────────┐
+│  🎯 COACH DASHBOARD                    Alunos: 12/25 │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│  📊 Visão Geral                                    │
+│  ┌──────────┬──────────┬──────────┬──────────┐   │
+│  │ Alunos   │ Tarefas  │ Metas    │ Performance│   │
+│  │ Ativos   │ Pendentes│ Atingidas│ Média     │   │
+│  │    12    │    24    │    8     │   85%    │   │
+│  └──────────┴──────────┴──────────┴──────────┘   │
+│                                                     │
+│  🔔 Atenção Necessária                             │
+│  ┌──────────────────────────────────────────────┐ │
+│  │ 👤 Maria Silva                                │ │
+│  │ ⚠️ Atrasada em 3 ciclos                      │ │
+│  │ ⏰ Última atividade: 2 dias atrás           │ │
+│  │ [Ver Detalhes] [Enviar Nota]                 │ │
+│  └──────────────────────────────────────────────┘ │
+│                                                     │
+│  📋 Meus Alunos                                    │
+│  ┌────────────┬────────────┬────────────┬──────┐  │
+│  │ 👤 Pedro   │ 👤 Ana     │ 👤 Carlos  │ ... │  │
+│  │ 95% ✨     │ 88% ✓      │ 72% ⚠️    │      │  │
+│  │ 12h/50h   │ 20h/60h    │ 15h/40h   │      │  │
+│  └────────────┴────────────┴────────────┴──────┘  │
+└─────────────────────────────────────────────────────┘
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📅 ROADMAP DE IMPLEMENTAÇÃO</h2>
+
+            <table class="roadmap-table">
+                <thead>
+                    <tr>
+                        <th>Fase</th>
+                        <th>Descrição</th>
+                        <th>Prazo</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>Estrutura de banco de dados</td>
+                        <td>Semana 1-2</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>Interface do coach</td>
+                        <td>Semana 3-4</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Integração com estudos</td>
+                        <td>Semana 5-6</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Sistema de rankings</td>
+                        <td>Semana 7</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>Tarefas e metas</td>
+                        <td>Semana 8-9</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>Dashboard analytics</td>
+                        <td>Semana 10</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td>Assinatura (Stripe)</td>
+                        <td>Semana 11</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td>Testes e ajustes</td>
+                        <td>Semana 12</td>
+                        <td><span class="status status-pending">⏳ Pendente</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>Total: 12 semanas (3 meses)</strong></p>
+        </div>
+
+        <div class="section">
+            <h2>💰 RECEITA DA PLATAFORMA</h2>
+
+            <h3>Cenário Conservador:</h3>
+            <div class="stats-box">
+                <div class="stat-card">
+                    <div class="stat-number">10</div>
+                    <div class="stat-label">Coaches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">100</div>
+                    <div class="stat-label">Alunos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">R$ 3.689</div>
+                    <div class="stat-label">Receita/Mês</div>
+                </div>
+            </div>
+            <p>Cada coach com 10 alunos</p>
+
+            <h3>Cenário Realista (6 meses):</h3>
+            <div class="stats-box">
+                <div class="stat-card">
+                    <div class="stat-number">50</div>
+                    <div class="stat-label">Coaches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">750</div>
+                    <div class="stat-label">Alunos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">R$ 22.120</div>
+                    <div class="stat-label">Receita/Mês</div>
+                </div>
+            </div>
+
+            <h3>Cenário Otimista (12 meses):</h3>
+            <div class="stats-box">
+                <div class="stat-card">
+                    <div class="stat-number">200</div>
+                    <div class="stat-label">Coaches</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">4.000</div>
+                    <div class="stat-label">Alunos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">R$ 86.480</div>
+                    <div class="stat-label">Receita/Mês</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✅ VANTAGENS COMPETITIVAS</h2>
+
+            <div class="model-structure">
+                <div class="actor-card">
+                    <h4>Para a Plataforma</h4>
+                    <ul>
+                        <li>Receita duplicada (coach + aluno)</li>
+                        <li>Maior retenção</li>
+                        <li>Network effect</li>
+                        <li>Diferencial competitivo</li>
+                    </ul>
+                </div>
+
+                <div class="actor-card">
+                    <h4>Para o Coach</h4>
+                    <ul>
+                        <li>Mercado externo livre</li>
+                        <li>Sem barreiras de entrada</li>
+                        <li>Ferramentas profissionais</li>
+                        <li>Pode focar em coaching</li>
+                        <li>Escalável (25 alunos)</li>
+                    </ul>
+                </div>
+
+                <div class="actor-card">
+                    <h4>Para o Aluno</h4>
+                    <ul>
+                        <li>Monitoramento profissional</li>
+                        <li>Orientação personalizada</li>
+                        <li>Metas e prazos claros</li>
+                        <li>Ver seu progresso em rankings</li>
+                        <li>Mesma plataforma familiar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚀 PRÓXIMOS PASSOS</h2>
+            <ol style="padding-left: 30px; line-height: 2;">
+                <li><strong>Validar modelo de negócio</strong> com potenciais coaches</li>
+                <li><strong>Criar landing page</strong> para divulgação</li>
+                <li><strong>Desenvolver funcionalidade</strong> conforme roadmap</li>
+                <li><strong>Lançar beta</strong> com coaches selecionados</li>
+                <li><strong>Coletar feedback</strong> e melhorar</li>
+                <li><strong>Lançamento oficial</strong> com marketing</li>
+            </ol>
+        </div>
+
+        <footer style="text-align: center; margin-top: 50px; padding: 30px; background: #f5f5f5; border-radius: 10px;">
+            <p><strong>Documento criado em:</strong> 2024</p>
+            <p><strong>Versão:</strong> 1.0</p>
+            <p><strong>Status:</strong> Proposta Inicial</p>
+            <p style="margin-top: 20px; color: #667eea;">
+                <strong>Nomeia Aí - Modo Coach</strong>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Simples animação ao rolar
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '0';
+                        entry.target.style.transition = 'opacity 0.5s';
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                        }, 100);
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            sections.forEach(section => {
+                section.style.opacity = '0';
+                observer.observe(section);
+            });
+        });
+    </script>
+</body>
+</html>
+
+
