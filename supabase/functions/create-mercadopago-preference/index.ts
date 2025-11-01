@@ -11,7 +11,7 @@ const allowedOrigins = [
   "http://localhost:8080"
 ];
 
-// Função para verificar se é uma origem de desenvolvimento local (localhost ou IP local)
+// Função para verificar se é uma origem de desenvolvimento local (localhost, IP local ou Lovable)
 const isLocalDevelopmentOrigin = (origin: string | null): boolean => {
   if (!origin) return false;
   
@@ -21,9 +21,13 @@ const isLocalDevelopmentOrigin = (origin: string | null): boolean => {
   }
   
   // Permitir qualquer IP local (192.168.x.x, 10.x.x.x, 172.16-31.x.x) com qualquer porta
-  // Padrão: http://[IP]:[PORTA]
   const localIPPattern = /^http:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+):\d+$/;
   if (localIPPattern.test(origin)) {
+    return true;
+  }
+  
+  // Permitir Lovable preview URLs (*.lovable.app)
+  if (origin.includes(".lovable.app")) {
     return true;
   }
   
