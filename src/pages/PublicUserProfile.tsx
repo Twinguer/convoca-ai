@@ -328,6 +328,19 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     };
     checkFollowing();
   }, [user, id]);
+
+  // Verificar se é perfil de outro usuário e se o usuário atual é Free
+  // MOVER PARA ANTES DOS RETORNOS CONDICIONAIS
+  const isOtherUserProfile = user && id && user.id !== id;
+  const toastShownRef = useRef(false);
+
+  useEffect(() => {
+    if (isOtherUserProfile && !isPro && !toastShownRef.current) {
+      toastShownRef.current = true;
+      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
+    }
+  }, [isOtherUserProfile, isPro, navigate]);
+
   const handleFollowToggle = async () => {
     if (!user) {
       toast({
@@ -406,17 +419,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
       </div>;
   }
 
-  // Verificar se é perfil de outro usuário e se o usuário atual é Free
-  const isOtherUserProfile = user && id && user.id !== id;
-  const toastShownRef = useRef(false);
-
-  useEffect(() => {
-    if (isOtherUserProfile && !isPro && !toastShownRef.current) {
-      toastShownRef.current = true;
-      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
-    }
-  }, [isOtherUserProfile, isPro, navigate]);
-
+  // Bloquear Free users de ver perfil de outros usuários
   if (isOtherUserProfile && !isPro) {
     return <LoadingState />;
   }
