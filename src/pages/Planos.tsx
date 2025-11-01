@@ -300,13 +300,17 @@ const Planos = () => {
                             ? `${appliedDiscountVoucher.discountValue}% OFF`
                             : `R$ ${appliedDiscountVoucher.discountValue.toFixed(2)} OFF`}
                         </div>
-                        <div className="text-sm text-muted-foreground">por {plano.periodo}</div>
+                        {plano.periodo !== "Livre" && (
+                          <div className="text-sm text-muted-foreground">por {plano.periodo}</div>
+                        )}
                       </>
                     );
                   })() : (
                     <>
                       <div className="text-3xl font-bold">R$ {plano.preco.toFixed(2).replace(".", ",")}</div>
-                      <div className="text-sm text-muted-foreground">por {plano.periodo}</div>
+                      {plano.periodo !== "Livre" && (
+                        <div className="text-sm text-muted-foreground">por {plano.periodo}</div>
+                      )}
                     </>
                   )}
                 </div>
