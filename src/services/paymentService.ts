@@ -18,69 +18,31 @@ export const paymentService = {
     // Obter sessão atual (com refresh automático se necessário)
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    // Validação de segurança: verificar autenticação antes de prosseguir
     if (sessionError || !session) {
       throw new Error("Usuário não autenticado. Por favor, faça login novamente.");
     }
 
-    // Validação de segurança: verificar se o token está presente
-    if (!session.access_token) {
-      throw new Error("Token de autenticação inválido. Por favor, faça login novamente.");
-    }
-
-    // Usar fetch diretamente para ter controle total sobre os headers
-    // Nota: Esta é uma prática segura desde que validemos a sessão antes
-    const functionUrl = `${SUPABASE_URL}/functions/v1/create-mercadopago-preference`;
-
-    // Garantir que o token tenha o formato correto (Bearer {token})
-    const authToken = session.access_token.startsWith("Bearer ") 
-      ? session.access_token 
-      : `Bearer ${session.access_token}`;
-    
-    const response = await fetch(functionUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": authToken,
-        "apikey": SUPABASE_ANON_KEY,
-        "x-client-info": "nomeiai-web"
-      },
-      body: JSON.stringify({
-        planId, 
+    // Chamar a edge function via supabase.functions.invoke (lida com headers e CORS)
+    const { data, error } = await supabase.functions.invoke('create-mercadopago-preference', {
+      body: {
+        planId,
         email: email || session.user.email,
         name: name || session.user.user_metadata?.name
-      })
+      }
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: errorText || `HTTP ${response.status}` };
-      }
-      
-      // Log de erro detalhado
-      console.error("[paymentService] Error invoking create-mercadopago-preference:", {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData?.error || errorData?.message || "Unknown error",
-        details: errorData?.details
-      });
-      
-      // Melhorar mensagem de erro baseada no status
-      let errorMessage = errorData.details || errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-      
-      if (response.status === 401) {
-        errorMessage = errorData.details || errorData.error || "Erro de autenticação. Por favor, faça login novamente.";
-      }
-      
-      throw new Error(errorMessage);
+    if (error) {
+      // Mensagens amigáveis
+      const message = (error as any)?.context?.details || error.message || 'Erro ao criar preferência de pagamento';
+      throw new Error(message);
     }
 
-    const data = await response.json();
-    return data;
+    // Validação básica da resposta
+    if (!data || (!data.init_point && !data.sandbox_init_point)) {
+      throw new Error('Resposta inválida do servidor de pagamentos.');
+    }
+
+    return data as CreatePreferenceResponse;
   }
 };
 

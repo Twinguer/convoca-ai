@@ -26,8 +26,8 @@ const isLocalDevelopmentOrigin = (origin: string | null): boolean => {
     return true;
   }
   
-  // Permitir Lovable preview URLs (*.lovable.app)
-  if (origin.includes(".lovable.app")) {
+  // Permitir Lovable preview URLs (*.lovable.app | *.lovableproject.com)
+  if (origin.includes(".lovable.app") || origin.includes(".lovableproject.com")) {
     return true;
   }
   
