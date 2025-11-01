@@ -350,6 +350,48 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_preferences: {
+        Row: {
+          amount: number
+          created_at: string
+          external_reference: string
+          id: string
+          mercado_pago_payment_data: Json | null
+          payment_id: string | null
+          plan_id: string
+          preference_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          external_reference: string
+          id?: string
+          mercado_pago_payment_data?: Json | null
+          payment_id?: string | null
+          plan_id: string
+          preference_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          external_reference?: string
+          id?: string
+          mercado_pago_payment_data?: Json | null
+          payment_id?: string | null
+          plan_id?: string
+          preference_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_alerts: {
         Row: {
           alert_type: string
