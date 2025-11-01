@@ -9,6 +9,9 @@ import { Trophy, Users, TrendingUp, Search, Filter, Calendar, Plus, Medal, Star,
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 interface Concurso {
   id: string;
   titulo: string;
@@ -24,6 +27,8 @@ const RankingsPage = () => {
   const {
     user
   } = useAuth();
+  const { isPro } = useSubscription();
+  const { currentRankingCount } = usePlanLimits();
   const navigate = useNavigate();
   const [concursos, setConcursos] = useState<Concurso[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +36,7 @@ const RankingsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('participants');
 
-  const handleRankingClick = (e: React.MouseEvent, concursoId: string) => {
+  const handleRankingClick = async (e: React.MouseEvent, concursoId: string) => {
     e.preventDefault();
     
     if (!user) {
@@ -39,7 +44,57 @@ const RankingsPage = () => {
       return;
     }
 
-    navigate(`/ranking/${concursoId}`);
+    // Se for Pro, sempre permite ver o ranking
+    if (isPro) {
+      navigate(`/ranking/${concursoId}`);
+      return;
+    }
+
+    // Para usuários Free, verificar se participa do ranking
+    try {
+      const { data: userRankingData, error } = await supabase
+        .from('user_rankings')
+        .select('consolidated_data')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Erro ao verificar participação:', error);
+        navigate(`/ranking/${concursoId}`);
+        return;
+      }
+
+      // Verificar se participa deste ranking específico
+      let isParticipating = false;
+      if (userRankingData?.consolidated_data?.rankings) {
+        Object.values(userRankingData.consolidated_data.rankings).forEach((rankingData: any) => {
+          if (rankingData.concurso_id === concursoId) {
+            isParticipating = true;
+          }
+        });
+      }
+
+      if (isParticipating) {
+        // Participa, pode ver o ranking
+        navigate(`/ranking/${concursoId}`);
+      } else {
+        // Não participa, verificar se tem algum ranking
+        const hasAnyRanking = userRankingData?.consolidated_data?.rankings && 
+          Object.keys(userRankingData.consolidated_data.rankings).length > 0;
+
+        if (!hasAnyRanking) {
+          // Não tem nenhum ranking, redireciona para participar
+          navigate(`/ranking/${concursoId}/participate`);
+        } else {
+          // Já tem 1 ranking, mostrar aviso e redirecionar para planos
+          showProRequiredToast(navigate, 'Visualizar Rankings que Você Não Participa');
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao verificar participação:', error);
+      // Em caso de erro, permite acesso (não bloqueia)
+      navigate(`/ranking/${concursoId}`);
+    }
   };
   useEffect(() => {
     loadConcursos();

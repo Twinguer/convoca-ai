@@ -39,6 +39,7 @@ interface PlanConfig {
 interface CreatePreferenceRequest {
   email?: string;
   name?: string;
+  voucherCode?: string;
 }
 
 interface CreatePreferenceResponse {
@@ -110,7 +111,8 @@ function validateRequest(data: any): CreatePreferenceRequest | null {
   
   return {
     email: typeof data.email === "string" ? data.email.trim() : undefined,
-    name: typeof data.name === "string" ? data.name.trim() : undefined
+    name: typeof data.name === "string" ? data.name.trim() : undefined,
+    voucherCode: typeof data.voucherCode === "string" ? data.voucherCode.trim().toUpperCase() : undefined
   };
 }
 
@@ -121,7 +123,9 @@ function validateRequest(data: any): CreatePreferenceRequest | null {
 async function createMercadoPagoPreference(
   plan: PlanConfig,
   user: { id: string; email?: string; name?: string },
-  baseUrl: string
+  baseUrl: string,
+  supabaseClient: any,
+  voucherCode?: string
 ): Promise<any> {
   const accessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
   
@@ -137,6 +141,50 @@ async function createMercadoPagoPreference(
   // Validar preço (deve ser positivo e ter no máximo 2 casas decimais)
   if (plan.price <= 0 || plan.price > 999999.99) {
     throw new Error("Preço do plano inválido");
+  }
+  
+  // Validar e aplicar desconto do voucher (se fornecido)
+  let finalPrice = plan.price;
+  let appliedVoucherCode: string | undefined = undefined;
+  
+  if (voucherCode && voucherCode.trim()) {
+    try {
+      const { data: voucherData, error: voucherError } = await supabaseClient.rpc(
+        'validate_discount_voucher',
+        { voucher_code_param: voucherCode.trim().toUpperCase() }
+      );
+      
+      if (voucherError) {
+        console.error('[create-mp-preference] Erro ao validar voucher:', voucherError);
+        throw new Error("Erro ao validar cupom de desconto");
+      }
+      
+      if (voucherData?.valid) {
+        const { discount_type, discount_value } = voucherData;
+        
+        if (discount_type === 'percentage') {
+          // Desconto percentual: reduzir o valor
+          const discountAmount = (plan.price * parseFloat(discount_value)) / 100;
+          finalPrice = Math.max(0.01, plan.price - discountAmount); // Mínimo R$ 0,01
+          console.log(`[create-mp-preference] Desconto percentual aplicado: ${discount_value}% = R$ ${discountAmount.toFixed(2)}`);
+        } else if (discount_type === 'fixed') {
+          // Desconto fixo: reduzir valor fixo
+          finalPrice = Math.max(0.01, plan.price - parseFloat(discount_value)); // Mínimo R$ 0,01
+          console.log(`[create-mp-preference] Desconto fixo aplicado: R$ ${discount_value}`);
+        }
+        
+        appliedVoucherCode = voucherCode.trim().toUpperCase();
+        console.log(`[create-mp-preference] Preço original: R$ ${plan.price.toFixed(2)}, Preço final: R$ ${finalPrice.toFixed(2)}`);
+      } else {
+        throw new Error(voucherData?.error || "Cupom de desconto inválido ou expirado");
+      }
+    } catch (error: any) {
+      // Se o erro já tem mensagem, re-lançar, senão criar erro genérico
+      if (error instanceof Error && error.message) {
+        throw error;
+      }
+      throw new Error("Erro ao processar cupom de desconto");
+    }
   }
   
   const externalRef = `${user.id}_pro_${Date.now()}`;
@@ -203,7 +251,7 @@ async function createMercadoPagoPreference(
         description: plan.description.substring(0, 256), // Limite do Mercado Pago
         quantity: 1,
         currency_id: "BRL",
-        unit_price: parseFloat(plan.price.toFixed(2)), // Garantir 2 casas decimais
+        unit_price: parseFloat(finalPrice.toFixed(2)), // Preço final com desconto aplicado
         category_id: "services"
       }
     ],
@@ -225,7 +273,8 @@ async function createMercadoPagoPreference(
     installments: 12,
     metadata: {
       user_id: user.id,
-      plan_months: plan.months.toString()
+      plan_months: plan.months.toString(),
+      ...(appliedVoucherCode && { voucher_code: appliedVoucherCode })
     }
   };
   
@@ -438,7 +487,9 @@ serve(async (req: Request): Promise<Response> => {
         email: userEmail,
         name: requestData.name || user.user_metadata?.name || user.user_metadata?.full_name || undefined
       },
-      baseUrl
+      baseUrl,
+      supabase,
+      requestData.voucherCode
     );
     
     // Salvar preferência no banco de dados

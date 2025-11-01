@@ -6,8 +6,10 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Users, Trophy, Star, TrendingUp, UserPlus, MessageSquare, Search, UserCheck, BookOpen, Award, UserCircle, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useCommunityUsers } from '@/hooks/useCommunityUsers';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 import { usePresence } from '@/contexts/PresenceContext';
 import { CommunityLoadingState } from '@/components/community/CommunityLoadingState';
 import { CommunityErrorState } from '@/components/community/CommunityErrorState';
@@ -19,6 +21,7 @@ const CommunityPage = () => {
   const {
     user
   } = useAuth();
+  const { isPro } = useSubscription();
   const navigate = useNavigate();
   const {
     generateSecureUserUrl
@@ -66,6 +69,13 @@ const CommunityPage = () => {
   const handleUserClick = async (userId: string) => {
     if (!user) {
       navigate('/auth', { state: { from: '/comunidade' } });
+      return;
+    }
+
+    // Verificar se é perfil de outro usuário e se o usuário atual é Free
+    const isOtherUserProfile = userId !== user.id;
+    if (isOtherUserProfile && !isPro) {
+      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
       return;
     }
     

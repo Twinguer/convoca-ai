@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,10 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
+import { Trophy, Users, ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
 import { Link } from 'react-router-dom';
+import { LoadingState } from '@/components/resultados/LoadingState';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
@@ -57,6 +60,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
   const {
     user
   } = useAuth();
+  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const navigate = useNavigate();
   const { generateSecureUserUrl } = useSecureUserUrls();
   
@@ -381,9 +385,12 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
       navigate('/comunidade');
     }
   };
-  if (profileLoading) {
+  if (profileLoading || isLoadingSubscription) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-primary rounded-full border-t-transparent"></div>
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-spin" />
+          <p className="text-muted-foreground">Carregando perfil...</p>
+        </div>
       </div>;
   }
   if (!profile) {
@@ -397,6 +404,21 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           </Button>
         </div>
       </div>;
+  }
+
+  // Verificar se é perfil de outro usuário e se o usuário atual é Free
+  const isOtherUserProfile = user && id && user.id !== id;
+  const toastShownRef = useRef(false);
+
+  useEffect(() => {
+    if (isOtherUserProfile && !isPro && !toastShownRef.current) {
+      toastShownRef.current = true;
+      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
+    }
+  }, [isOtherUserProfile, isPro, navigate]);
+
+  if (isOtherUserProfile && !isPro) {
+    return <LoadingState />;
   }
 
   // Processar as aprovações do usuário

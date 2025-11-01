@@ -51,57 +51,63 @@ const Menu = () => {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList className="space-x-1">
               <NavigationMenuItem>
-                <Link to="/">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Home className="mr-2 h-4 w-4" />
-                    Home
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/')}
+                >
+                  <Home className="mr-2 h-4 w-4" />
+                  Home
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/pre-classificacao">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                     <Trophy className="mr-2 h-4 w-4 text-primary" />
-                    Ranking
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/pre-classificacao')}
+                >
+                  <Trophy className="mr-2 h-4 w-4 text-primary" />
+                  Ranking
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/estudos">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Estudar
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/estudos')}
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Estudar
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/estatisticas">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Estatistica
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/estatisticas')}
+                >
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Estatistica
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/comunidade">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Comunidade
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/comunidade')}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Comunidade
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
               <NavigationMenuItem>
-                <Link to="/planos">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Planos
-                  </NavigationMenuLink>
-                </Link>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/planos')}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Planos
+                </NavigationMenuLink>
               </NavigationMenuItem>
               
               {isAdmin() && <NavigationMenuItem>

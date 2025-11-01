@@ -3,16 +3,17 @@ import { toast } from 'sonner';
 
 export const validateSaveAnswers = (
   editCount: number,
-  selectedBookletId?: string
+  selectedBookletId?: string,
+  isPro: boolean = false // Novo parâmetro opcional
 ): { isValid: boolean; errorMessage?: string } => {
   // Debug logs removed for security
   
-  // Verificar se o usuário já atingiu o limite de edições (5)
-  if (editCount >= 5) {
+  // Verificar limite de edições baseado no plano (Free = 5, Pro = ilimitado)
+  if (!isPro && editCount >= 5) {
     console.log('[validateSaveAnswers] Falha: limite de edições atingido');
     return {
       isValid: false,
-      errorMessage: "Você já atingiu o limite de 5 edições permitidas para este cartão de respostas."
+      errorMessage: "O recurso \"Edições Ilimitadas no Cartão de Respostas\" está disponível apenas no plano Pro."
     };
   }
 

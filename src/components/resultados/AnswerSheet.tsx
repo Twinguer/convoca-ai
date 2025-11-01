@@ -20,6 +20,7 @@ import { checkMissingOfficialAnswers } from '@/hooks/useAnswerSheet/questionCoun
 import { getNullifiedQuestionsFromOfficialAnswers } from '@/hooks/useAnswerSheet/officialAnswersUtils';
 import { toast } from 'sonner';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface AnswerSheetProps {
   concurso: Concurso;
@@ -343,9 +344,13 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
     }
   }, [concurso]);
 
-  // Define editsLeft and canEdit variables
-  const editsLeft = userRankingData ? 5 - (userRankingData.edit_count || 0) : 5;
-  const canEdit = editsLeft > 0;
+  // Get subscription info for edit limits
+  const { isPro, maxEditCount } = useSubscription();
+  
+  // Define editsLeft and canEdit variables (com limite dinâmico baseado no plano)
+  const editCount = userRankingData?.edit_count || 0;
+  const editsLeft = isPro ? Infinity : Math.max(0, 5 - editCount);
+  const canEdit = isPro || editCount < 5;
 
   // Fetch nullified questions for the selected booklet
   const {
@@ -706,13 +711,19 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               {getBookletName(selectedBookletIdFromData)}
             </span>
           </div>
-          {userRankingData?.edit_count !== undefined && userRankingData?.edit_count > 0 && (
+          {userRankingData?.edit_count !== undefined && (
             <div className="text-sm font-medium text-primary">
-              Edições disponíveis: {editsLeft} de 5
-              {!canEdit && (
-                <span className="text-destructive ml-2">
-                  (Você atingiu o limite de edições permitidas)
-                </span>
+              {isPro ? (
+                <span>Edições ilimitadas (Plano Pro)</span>
+              ) : (
+                <>
+                  Edições disponíveis: {editsLeft === Infinity ? 'Ilimitadas' : `${editsLeft} de 5`}
+                  {!canEdit && (
+                    <span className="text-destructive ml-2">
+                      (Você atingiu o limite de edições permitidas)
+                    </span>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -858,7 +869,7 @@ export const AnswerSheet: React.FC<AnswerSheetProps> = ({
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
               Salvando respostas...
             </>
-          ) : !canEdit && userRankingData?.edit_count !== undefined ? (
+          ) : !canEdit && !isPro && userRankingData?.edit_count !== undefined ? (
             <>
               <AlertTriangle className="h-5 w-5 mr-2" />
               Limite de edições atingido

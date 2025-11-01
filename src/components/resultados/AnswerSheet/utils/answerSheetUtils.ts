@@ -80,16 +80,24 @@ export const calculateProgress = (answeredQuestions: number, totalQuestions: num
 };
 
 /**
- * Valida se pode editar baseado no contador de edições
+ * Valida se pode editar baseado no contador de edições e plano
+ * @param editCount - Número de edições já feitas
+ * @param isPro - Se o usuário tem plano Pro
+ * @returns true se pode editar
  */
-export const canEdit = (editCount: number = 0): boolean => {
+export const canEdit = (editCount: number = 0, isPro: boolean = false): boolean => {
+  if (isPro) return true; // Pro = ilimitado
   return editCount < ANSWER_SHEET_CONSTANTS.MAX_EDIT_COUNT;
 };
 
 /**
- * Calcula edições restantes
+ * Calcula edições restantes baseado no plano
+ * @param editCount - Número de edições já feitas
+ * @param isPro - Se o usuário tem plano Pro
+ * @returns Número de edições restantes (Infinity para Pro)
  */
-export const getEditsLeft = (editCount: number = 0): number => {
+export const getEditsLeft = (editCount: number = 0, isPro: boolean = false): number => {
+  if (isPro) return Infinity;
   return Math.max(0, ANSWER_SHEET_CONSTANTS.MAX_EDIT_COUNT - editCount);
 };
 

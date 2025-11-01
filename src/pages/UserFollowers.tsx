@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useQuery } from '@tanstack/react-query';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +25,7 @@ interface FollowerUser {
 
 const UserFollowers = () => {
   const { user } = useAuth();
+  const { isPro } = useSubscription();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { generateSecureUserUrl } = useSecureUserUrls();
@@ -171,6 +174,13 @@ const UserFollowers = () => {
 
   // Handle view profile navigation
   const handleViewProfile = async (userId: string) => {
+    // Verificar se é perfil de outro usuário e se o usuário atual é Free
+    const isOtherUserProfile = user && userId !== user.id;
+    if (isOtherUserProfile && !isPro) {
+      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
+      return;
+    }
+
     try {
       const secureUrl = await generateSecureUserUrl(userId, 'profile');
       navigate(secureUrl);

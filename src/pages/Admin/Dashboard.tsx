@@ -7,6 +7,7 @@ import { NotificationManager } from '@/components/Admin/NotificationManager';
 import MonitoringMetrics from '@/components/Admin/MonitoringMetrics';
 import { SubjectiveCleanup } from '@/components/Admin/SubjectiveCleanup';
 import { ScoreFix } from '@/components/Admin/ScoreFix';
+import { VouchersAppliedList } from '@/components/Admin/VouchersAppliedList';
 
 const AdminDashboard: React.FC = () => {
   const [userCount, setUserCount] = useState(0);
@@ -108,6 +109,11 @@ const AdminDashboard: React.FC = () => {
       {/* Correção de Pontuações */}
       <div className="mb-8">
         <ScoreFix />
+      </div>
+
+      {/* Vouchers Aplicados */}
+      <div className="mb-8">
+        <VouchersAppliedList />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2">

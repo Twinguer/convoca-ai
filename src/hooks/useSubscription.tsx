@@ -31,10 +31,28 @@ export const useSubscription = () => {
       return data as Subscription | null;
     },
     enabled: !!user?.id,
+    staleTime: 0, // Sempre buscar dados frescos
+    cacheTime: 0, // Não cachear dados
+    refetchOnWindowFocus: true, // Refetch quando a janela ganha foco
   });
 
-  const isPro = subscription?.plan === 'pro' && subscription?.is_active;
-  const isFree = !subscription || subscription?.plan === 'free' || !subscription?.is_active;
+  // Verificação rigorosa de Pro:
+  // 1. Deve ter subscription registrada (não null)
+  // 2. Deve ter plan='pro' exatamente
+  // 3. Deve estar ativo (is_active=true)
+  // 4. Se tem expires_at, deve estar no futuro (não expirado)
+  // Se qualquer condição falhar, é Free
+  
+  const hasSubscription = !!subscription;
+  const isPlanPro = subscription?.plan === 'pro';
+  const isActive = subscription?.is_active === true;
+  const hasValidExpiry = !subscription?.expires_at || new Date(subscription.expires_at) > new Date();
+  
+  const isPro = hasSubscription && isPlanPro && isActive && hasValidExpiry;
+  const isFree = !isPro; // Se não atender TODAS as condições, é Free
+
+  // Limite de edições baseado no plano
+  const maxEditCount = isPro ? Infinity : 5; // Pro = ilimitado, Free = 5
 
   const applyVoucher = async (code: string) => {
     const { data, error } = await supabase.rpc('apply_voucher', {
@@ -47,12 +65,23 @@ export const useSubscription = () => {
     return data;
   };
 
+  const validateDiscountVoucher = async (code: string) => {
+    const { data, error } = await supabase.rpc('validate_discount_voucher', {
+      voucher_code_param: code.trim().toUpperCase()
+    });
+
+    if (error) throw error;
+    return data;
+  };
+
   return {
     subscription,
     isLoading,
     isPro,
     isFree,
+    maxEditCount, // Novo campo: limite de edições
     refetch,
-    applyVoucher
+    applyVoucher,
+    validateDiscountVoucher
   };
 };

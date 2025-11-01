@@ -2,7 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { useToast } from '@/components/ui/use-toast';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -34,6 +37,8 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
   const {
     user
   } = useAuth();
+  const { isPro } = useSubscription();
+  const { currentRankingCount, maxRankings, isLoading: isLoadingLimits } = usePlanLimits();
   const [isLoading, setIsLoading] = useState(false);
   const [showAnswerSheet, setShowAnswerSheet] = useState(propShowAnswerSheet || true);
   const [showScoreForm, setShowScoreForm] = useState(false);
@@ -289,7 +294,9 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
 
       // Check if user already has this concurso in their consolidated_data
       let isAlreadyParticipating = false;
+      let existingRankingsCount = 0;
       if (userRankingData?.consolidated_data?.rankings) {
+        existingRankingsCount = Object.keys(userRankingData.consolidated_data.rankings).length;
         Object.values(userRankingData.consolidated_data.rankings).forEach((rankingData: any) => {
           if (rankingData.concurso_id === concurso.id) {
             isAlreadyParticipating = true;
@@ -304,6 +311,13 @@ export const ParticipationForm: React.FC<ParticipationFormProps> = ({
           variant: "destructive"
         });
         setIsLoading(false);
+        return;
+      }
+
+      // Verificar limite de rankings para usuários Free
+      if (!isPro && existingRankingsCount >= 1) {
+        setIsLoading(false);
+        showProRequiredToast(navigate, 'Participar de Múltiplos Rankings');
         return;
       }
 

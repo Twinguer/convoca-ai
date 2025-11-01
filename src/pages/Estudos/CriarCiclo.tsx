@@ -10,10 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, X, Edit, BookOpen, Calendar, CheckCircle } from 'lucide-react';
+import { Plus, X, Edit, BookOpen, Calendar, CheckCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyCyclesV2 } from '@/hooks/useStudyCyclesV2';
 import { toast } from 'sonner';
+import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
+import { useSubscription } from '@/hooks/useSubscription';
 interface Discipline {
   id: string;
   name: string;
@@ -43,6 +45,7 @@ interface Block {
 const CriarCiclo = () => {
   const { user } = useAuth();
   const { createCycle } = useStudyCyclesV2();
+  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -159,6 +162,9 @@ const CriarCiclo = () => {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
+
+    // Nota: Verificação de plano Pro já é feita pelo ProFeatureGuard no render
+    // Se chegou aqui, o usuário já é Pro
     
     // Debug: Verificar blocos antes de enviar
     
@@ -198,6 +204,32 @@ const CriarCiclo = () => {
     }
   };
   const daysUntilExam = calculateDaysUntilExam();
+
+  // Mostrar loading enquanto carrega dados da assinatura
+  if (isLoadingSubscription) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center py-8">
+          <div className="text-center">
+            <Loader2 className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-spin" />
+            <p className="text-muted-foreground">Carregando dados da assinatura...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Bloquear acesso para usuários Free
+  if (!isPro) {
+    return (
+      <div className="container mx-auto p-6">
+        <ProFeatureGuard
+          featureName="Criar Ciclo de Estudos"
+        />
+      </div>
+    );
+  }
+
   return <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <div>

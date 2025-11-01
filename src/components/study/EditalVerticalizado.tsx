@@ -3,6 +3,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronRight, ChevronDown, BookOpen } from 'lucide-react';
+import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface Discipline {
   id: string;
@@ -33,6 +35,7 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
   showProgress = true,
   className = ""
 }) => {
+  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const [internalExpandedBlocks, setInternalExpandedBlocks] = useState<Set<string>>(new Set());
   
   // Usar estado externo se fornecido, senão usar interno
@@ -141,6 +144,17 @@ export const EditalVerticalizado: React.FC<EditalVerticalizadoProps> = ({
       </div>
     );
   };
+
+  // Bloquear acesso para usuários Free - DEPOIS de todos os hooks
+  if (!isLoadingSubscription && !isPro) {
+    return (
+      <div className={className}>
+        <ProFeatureGuard
+          featureName="Edital Verticalizado"
+        />
+      </div>
+    );
+  }
 
   return (
     <Card className={`w-full ${className}`}>

@@ -51,6 +51,7 @@ interface MercadoPagoPayment {
   metadata?: {
     user_id?: string;
     plan_months?: string;
+    voucher_code?: string;
   };
 }
 
@@ -337,6 +338,42 @@ serve(async (req: Request): Promise<Response> => {
       try {
         const planMonths = getPlanMonths(planId, payment.metadata);
         await updateUserSubscription(supabase, userId, planMonths);
+        
+        // Se houver voucher_code no metadata, incrementar uso do voucher de desconto
+        if (payment.metadata?.voucher_code) {
+          try {
+            // Buscar voucher atual para obter current_uses
+            const { data: voucherData, error: fetchError } = await supabase
+              .from("vouchers")
+              .select("current_uses")
+              .eq("code", payment.metadata.voucher_code)
+              .eq("voucher_type", "discount")
+              .single();
+            
+            if (fetchError || !voucherData) {
+              console.error(`[mp-webhook] Erro ao buscar voucher ${payment.metadata.voucher_code}:`, fetchError);
+            } else {
+              // Incrementar uso do voucher
+              const { error: voucherError } = await supabase
+                .from("vouchers")
+                .update({ 
+                  current_uses: (voucherData.current_uses || 0) + 1,
+                  updated_at: new Date().toISOString()
+                })
+                .eq("code", payment.metadata.voucher_code)
+                .eq("voucher_type", "discount");
+              
+              if (voucherError) {
+                console.error(`[mp-webhook] Erro ao incrementar uso do voucher ${payment.metadata.voucher_code}:`, voucherError);
+              } else {
+                console.log(`[mp-webhook] Uso do voucher incrementado: ${payment.metadata.voucher_code}`);
+              }
+            }
+          } catch (voucherError) {
+            console.error("[mp-webhook] Erro ao processar voucher:", voucherError);
+            // Não bloquear o processamento se houver erro no voucher
+          }
+        }
         
         console.log(`[mp-webhook] Pagamento aprovado processado: userId=${userId}, months=${planMonths}`);
       } catch (subscriptionError) {

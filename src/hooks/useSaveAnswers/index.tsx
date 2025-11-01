@@ -8,6 +8,9 @@ import { validateSaveAnswers } from './validation';
 import { prepareAnswersData } from './prepareData';
 import { rankingCache } from '@/services/rankingCache';
 import { migrateObjectScores, createInitialObjectScores } from '@/utils/consolidatedDataMapper';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigate } from 'react-router-dom';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 
 export const useSaveAnswers = ({
   rankingId,
@@ -28,6 +31,8 @@ export const useSaveAnswers = ({
 }: UseSaveAnswersProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isPro } = useSubscription();
+  const navigate = useNavigate();
 
   const handleSaveAnswers = async () => {
     try {
@@ -35,9 +40,14 @@ export const useSaveAnswers = ({
       setError(null);
       setSavedSuccess(false);
 
-      // Validar dados de entrada
-      const validation = validateSaveAnswers(editCount, selectedBookletId);
+      // Validar dados de entrada (passando isPro para verificar limite de edições)
+      const validation = validateSaveAnswers(editCount, selectedBookletId, isPro);
       if (!validation.isValid) {
+        // Se o erro for sobre limite de edições, usar toast padronizado
+        if (validation.errorMessage?.includes('plano Pro')) {
+          showProRequiredToast(navigate, 'Edições Ilimitadas no Cartão de Respostas');
+          return;
+        }
         setError(validation.errorMessage!);
         return;
       }

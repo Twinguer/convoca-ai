@@ -15,11 +15,14 @@ import { Switch } from '@/components/ui/switch';
 
 const VouchersManager = () => {
   const [code, setCode] = useState('');
+  const [voucherType, setVoucherType] = useState<'subscription' | 'discount'>('subscription');
   const [plan, setPlan] = useState<'free' | 'pro'>('pro');
   const [durationMonths, setDurationMonths] = useState('1');
   const [maxUses, setMaxUses] = useState('1');
   const [description, setDescription] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
+  const [discountValue, setDiscountValue] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
   const { data: vouchers, isLoading, refetch } = useQuery({
@@ -55,16 +58,56 @@ const VouchersManager = () => {
       return;
     }
 
+    // Validar campos de desconto se for voucher de desconto
+    if (voucherType === 'discount') {
+      if (!discountType || !discountValue) {
+        toast({
+          title: 'Erro',
+          description: 'Para cupom de desconto, tipo e valor são obrigatórios',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const discountVal = parseFloat(discountValue);
+      if (isNaN(discountVal) || discountVal < 0) {
+        toast({
+          title: 'Erro',
+          description: 'Valor do desconto inválido',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (discountType === 'percentage' && (discountVal < 0 || discountVal > 100)) {
+        toast({
+          title: 'Erro',
+          description: 'Desconto percentual deve estar entre 0 e 100',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     setIsCreating(true);
     try {
-      const { error } = await supabase.from('vouchers').insert({
+      const voucherData: any = {
         code,
+        voucher_type: voucherType,
         plan,
         duration_months: parseInt(durationMonths),
         max_uses: parseInt(maxUses),
         description,
         expires_at: expiresAt || null,
-      });
+      };
+
+      // Adicionar campos de desconto apenas se for voucher de desconto
+      if (voucherType === 'discount') {
+        voucherData.discount_type = discountType;
+        voucherData.discount_value = parseFloat(discountValue);
+      }
+
+      const { error } = await supabase.from('vouchers').insert(voucherData);
 
       if (error) throw error;
 
@@ -73,9 +116,12 @@ const VouchersManager = () => {
         description: 'O voucher foi criado com sucesso',
       });
 
+      // Limpar formulário
       setCode('');
       setDescription('');
       setExpiresAt('');
+      setDiscountValue('');
+      setVoucherType('subscription');
       refetch();
     } catch (error: any) {
       toast({
@@ -164,6 +210,25 @@ const VouchersManager = () => {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="voucherType">Tipo de Voucher</Label>
+              <Select value={voucherType} onValueChange={(v: 'subscription' | 'discount') => {
+                setVoucherType(v);
+                if (v === 'subscription') {
+                  setDiscountType('percentage');
+                  setDiscountValue('');
+                }
+              }}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="subscription">Voucher de Assinatura (Grátis)</SelectItem>
+                  <SelectItem value="discount">Cupom de Desconto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="plan">Plano</Label>
               <Select value={plan} onValueChange={(v: 'free' | 'pro') => setPlan(v)}>
                 <SelectTrigger>
@@ -176,16 +241,51 @@ const VouchersManager = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duração (meses)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="1"
-                value={durationMonths}
-                onChange={(e) => setDurationMonths(e.target.value)}
-              />
-            </div>
+            {voucherType === 'discount' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="discountType">Tipo de Desconto</Label>
+                  <Select value={discountType} onValueChange={(v: 'percentage' | 'fixed') => setDiscountType(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">Percentual (%)</SelectItem>
+                      <SelectItem value="fixed">Valor Fixo (R$)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="discountValue">
+                    Valor do Desconto {discountType === 'percentage' ? '(%)' : '(R$)'}
+                  </Label>
+                  <Input
+                    id="discountValue"
+                    type="number"
+                    min="0"
+                    max={discountType === 'percentage' ? '100' : undefined}
+                    step={discountType === 'percentage' ? '1' : '0.01'}
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(e.target.value)}
+                    placeholder={discountType === 'percentage' ? 'Ex: 10' : 'Ex: 5.50'}
+                  />
+                </div>
+              </>
+            )}
+
+            {voucherType === 'subscription' && (
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duração (meses)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  value={durationMonths}
+                  onChange={(e) => setDurationMonths(e.target.value)}
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="maxUses">Máximo de Usos</Label>
@@ -256,8 +356,9 @@ const VouchersManager = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Código</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Plano</TableHead>
-                    <TableHead>Duração</TableHead>
+                    <TableHead>Desconto/Duração</TableHead>
                     <TableHead>Usos</TableHead>
                     <TableHead>Expira em</TableHead>
                     <TableHead>Status</TableHead>
@@ -265,15 +366,28 @@ const VouchersManager = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vouchers.map((voucher) => (
+                  {vouchers.map((voucher: any) => (
                     <TableRow key={voucher.id}>
                       <TableCell className="font-mono">{voucher.code}</TableCell>
+                      <TableCell>
+                        <Badge variant={voucher.voucher_type === 'discount' ? 'default' : 'outline'}>
+                          {voucher.voucher_type === 'discount' ? 'Cupom' : 'Assinatura'}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <Badge variant={voucher.plan === 'pro' ? 'default' : 'secondary'}>
                           {voucher.plan === 'pro' ? 'Pro' : 'Gratuito'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{voucher.duration_months} meses</TableCell>
+                      <TableCell>
+                        {voucher.voucher_type === 'discount' ? (
+                          voucher.discount_type === 'percentage' 
+                            ? `${voucher.discount_value}% OFF`
+                            : `R$ ${parseFloat(voucher.discount_value || 0).toFixed(2)} OFF`
+                        ) : (
+                          `${voucher.duration_months} meses`
+                        )}
+                      </TableCell>
                       <TableCell>
                         {voucher.current_uses} / {voucher.max_uses}
                       </TableCell>

@@ -3,6 +3,7 @@ import { Concurso } from '@/types/concursos';
 import { AnswerSheetValidation } from '../utils/answerSheetTypes';
 import { canEdit, getEditsLeft, getUnansweredQuestions, shouldShowSubjective } from '../utils/answerSheetUtils';
 import { ANSWER_SHEET_CONSTANTS } from '../utils/answerSheetConstants';
+import { useSubscription } from '@/hooks/useSubscription';
 
 /**
  * Hook para gerenciar validações do AnswerSheet
@@ -16,11 +17,13 @@ export const useAnswerSheetValidation = (
   answeredQuestions: number,
   subjectScores: Record<string, number> = {}
 ) => {
+  const { isPro } = useSubscription();
+  
   // Validações calculadas
   const validation = useMemo((): AnswerSheetValidation => {
     const editCount = userRankingData?.edit_count || 0;
-    const editsLeft = getEditsLeft(editCount);
-    const canEditValue = canEdit(editCount);
+    const editsLeft = getEditsLeft(editCount, isPro);
+    const canEditValue = canEdit(editCount, isPro);
     const progressPercentage = totalQuestions ? (answeredQuestions / totalQuestions) * 100 : 0;
     const hasNullifiedQuestions = nullifiedQuestions.size > 0;
 
@@ -32,7 +35,7 @@ export const useAnswerSheetValidation = (
       progressPercentage: Math.round(progressPercentage),
       hasNullifiedQuestions
     };
-  }, [userRankingData?.edit_count, totalQuestions, answeredQuestions, nullifiedQuestions.size]);
+  }, [userRankingData?.edit_count, totalQuestions, answeredQuestions, nullifiedQuestions.size, isPro]);
 
   // Validação de questões não respondidas
   const validateUnansweredQuestions = useMemo(() => {

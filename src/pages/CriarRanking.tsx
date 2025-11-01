@@ -14,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSaveRanking } from '@/hooks/useSaveRanking';
 import { getTotalQuestions } from '@/hooks/useAnswerSheet/questionCountUtils';
 import { useEditUrls } from '@/hooks/useEditUrls';
+import { usePlanLimits } from '@/hooks/usePlanLimits';
+import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 const fetchRankingData = async rankingId => {
   if (!rankingId) return null;
   try {
@@ -39,6 +41,7 @@ const CriarRanking = () => {
   } = useAuth();
   const queryClient = useQueryClient();
   const { validateEditToken } = useEditUrls();
+  const { canCreateRanking, maxRankings, currentRankingCount, isPro, isLoading: isLoadingLimits } = usePlanLimits();
   const [activeTab, setActiveTab] = useState('general-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCustomTitle, setIsCustomTitle] = useState(false);
@@ -507,6 +510,17 @@ const CriarRanking = () => {
             <p>Validando link de edição...</p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Verificar limite de rankings (apenas se não for edição/admin) - DEPOIS de todos os hooks
+  if (!editToken && !isAdmin && !isLoadingLimits && !canCreateRanking) {
+    return (
+      <div className="container mx-auto p-4">
+        <ProFeatureGuard
+          featureName="Criar Ranking"
+        />
       </div>
     );
   }

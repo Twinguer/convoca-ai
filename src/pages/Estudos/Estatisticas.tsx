@@ -13,10 +13,13 @@ import { useToast } from '@/hooks/use-toast';
 import PerformanceChart from '@/components/StudyStats/PerformanceChart';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const Estatisticas = () => {
   const { statistics, isLoading, resetStatistics, getFilteredStats, refreshStatistics } = useStudyStatistics();
   const { toast } = useToast();
+  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const [timeFilter, setTimeFilter] = useState<'day' | 'week' | 'month' | 'custom'>('week');
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
@@ -144,6 +147,17 @@ const Estatisticas = () => {
             <p className="text-muted-foreground">Carregando estatísticas...</p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Bloquear acesso para usuários Free - DEPOIS de todos os hooks
+  if (!isLoadingSubscription && !isPro) {
+    return (
+      <div className="container mx-auto p-6">
+        <ProFeatureGuard
+          featureName="Estatísticas de Estudos"
+        />
       </div>
     );
   }

@@ -6,12 +6,17 @@ import { Users, UserCheck } from 'lucide-react';
 import { UsersList, User } from './UsersList';
 import { getFollowers, getFollowing } from './FollowersService';
 import { useSecureUserUrls } from '@/services/userUrlObfuscation';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { showProRequiredToast } from '@/utils/planRestrictions';
 
 interface FollowersColumnProps {
   userId: string;
 }
 
 export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
+  const { user } = useAuth();
+  const { isPro } = useSubscription();
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +51,13 @@ export const FollowersColumn: React.FC<FollowersColumnProps> = ({ userId }) => {
   }, [userId]);
 
   const handleViewProfile = async (id: string) => {
+    // Verificar se é perfil de outro usuário e se o usuário atual é Free
+    const isOtherUserProfile = user && id !== user.id;
+    if (isOtherUserProfile && !isPro) {
+      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
+      return;
+    }
+
     try {
       const secureUrl = await generateSecureUserUrl(id, 'profile');
       navigate(secureUrl);
