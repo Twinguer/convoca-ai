@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Footer from "@/components/Footer";
 import { paymentService } from "@/services/paymentService";
+
 const Planos = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -25,41 +26,42 @@ const Planos = () => {
   const [voucherCode, setVoucherCode] = useState("");
   const [applyingVoucher, setApplyingVoucher] = useState(false);
   useEffect(() => {
-    // Check for Mercado Pago payment status
+    // Tratar retorno do Mercado Pago
     const status = searchParams.get("status");
     const plan = searchParams.get("plan");
     
     if (status === "approved" && plan) {
       toast({
-        title: "Pagamento realizado com sucesso!",
-        description: `Seu plano ${plan} foi ativado. Bem-vindo ao premium!`
+        title: "Pagamento aprovado!",
+        description: `Seu plano foi ativado com sucesso. Bem-vindo ao premium!`
       });
-      // Recarregar assinatura
       refetch();
-      // Limpar parâmetros da URL
       navigate("/planos", { replace: true });
     } else if (status === "pending" && plan) {
       toast({
         title: "Pagamento pendente",
-        description: "Estamos processando seu pagamento. Você será notificado quando for aprovado."
+        description: "Estamos processando seu pagamento. Você receberá uma confirmação em breve.",
+        variant: "default"
       });
+      refetch();
       navigate("/planos", { replace: true });
     } else if (status === "rejected" && plan) {
       toast({
-        title: "Pagamento rejeitado",
-        description: "Não foi possível processar seu pagamento. Tente novamente.",
+        title: "Pagamento não aprovado",
+        description: "Não foi possível processar seu pagamento. Verifique os dados e tente novamente.",
         variant: "destructive"
       });
       navigate("/planos", { replace: true });
     }
     
-    // Suporte legado para parâmetros antigos (Stripe)
+    // Suporte legado para Stripe (se ainda existir)
     const success = searchParams.get("success");
     const canceled = searchParams.get("canceled");
+    
     if (success === "true" && plan) {
       toast({
         title: "Pagamento realizado com sucesso!",
-        description: `Seu plano ${plan} foi ativado. Bem-vindo ao premium!`
+        description: `Seu plano foi ativado. Bem-vindo ao premium!`
       });
       refetch();
       navigate("/planos", { replace: true });
@@ -120,8 +122,14 @@ const Planos = () => {
       );
 
       // Redirecionar para o checkout do Mercado Pago
-      // Usa sandbox_init_point se estiver em desenvolvimento
+      // Prioriza sandbox_init_point se estiver em desenvolvimento/teste
       const checkoutUrl = preference.sandbox_init_point || preference.init_point;
+      
+      if (!checkoutUrl) {
+        throw new Error("URL de checkout não disponível");
+      }
+
+      // Redirecionar para o Mercado Pago
       window.location.href = checkoutUrl;
 
     } catch (error: any) {

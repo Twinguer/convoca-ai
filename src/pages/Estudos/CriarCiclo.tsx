@@ -188,7 +188,6 @@ const CriarCiclo = () => {
 
       if (newCycle) {
         console.log('✅ Ciclo criado com sucesso:', newCycle);
-        toast.success('Ciclo de estudos criado com sucesso!');
         navigate('/estudos');
       }
     } catch (error) {
@@ -228,15 +227,15 @@ const CriarCiclo = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="cycleName">Nome do Ciclo *</Label>
-                <Input id="cycleName" value={cycleName} onChange={e => setCycleName(e.target.value)} placeholder="Ex: Concurso TJDFT 2024" />
+                <Input id="cycleName" value={cycleName} onChange={e => setCycleName(e.target.value)} placeholder="Ex: Concurso TJDFT 2024" maxLength={30} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="organ">Nome do Órgão *</Label>
-                <Input id="organ" value={organ} onChange={e => setOrgan(e.target.value)} placeholder="Ex: Tribunal de Justiça do DF" />
+                <Input id="organ" value={organ} onChange={e => setOrgan(e.target.value)} placeholder="Ex: Tribunal de Justiça do DF" maxLength={30} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="position">Nome do Cargo *</Label>
-                <Input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="Ex: Analista Judiciário" />
+                <Input id="position" value={position} onChange={e => setPosition(e.target.value)} placeholder="Ex: Analista Judiciário" maxLength={30} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="examDate">Data da Prova *</Label>
@@ -299,6 +298,7 @@ const CriarCiclo = () => {
                   name: e.target.value
                 })} 
                 placeholder="Ex: Art. 5º" 
+                maxLength={30}
               />
             </div>
 
@@ -348,7 +348,7 @@ const BlockCard: React.FC<BlockCardProps> = ({
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             {isEditing ? <div className="flex items-center gap-2">
-                <Input value={nameValue} onChange={e => setNameValue(e.target.value)} className="w-48" />
+                <Input value={nameValue} onChange={e => setNameValue(e.target.value)} className="w-48" maxLength={15} />
                 <Button size="sm" onClick={handleSaveName}>
                   <CheckCircle className="h-4 w-4" />
                 </Button>

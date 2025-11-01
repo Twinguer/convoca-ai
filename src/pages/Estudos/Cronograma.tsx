@@ -343,7 +343,6 @@ const Cronograma = () => {
         setEndTime('09:00');
         setSessionLink('');
         setShowAddModal(false);
-        toast.success('Sessão adicionada ao cronograma!');
       } else {
         toast.error('Erro ao adicionar sessão');
       }
@@ -597,7 +596,6 @@ const Cronograma = () => {
       setCourseName('');
       setCourseProgress('');
       setSessionLink('');
-      toast.success('Sessão de estudo salva com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar sessão de estudo');
     }
@@ -907,7 +905,7 @@ const Cronograma = () => {
 
               <div>
                 <Label htmlFor="courseName">Assunto</Label>
-                <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" />
+                <Input id="courseName" value={courseName} onChange={e => setCourseName(e.target.value)} placeholder="Ex: Curso Completo de Direito Constitucional" maxLength={20} />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
