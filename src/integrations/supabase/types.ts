@@ -1511,6 +1511,10 @@ export type Database = {
           total_records: number
         }[]
       }
+      recalc_concurso_scores_public: {
+        Args: { p_concurso_id: string }
+        Returns: Json
+      }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
         Returns: undefined
@@ -1727,14 +1731,6 @@ export type Database = {
       update_user_ranking: {
         Args: { p_ranking_data: Json; p_ranking_id: string; p_user_id: string }
         Returns: boolean
-      }
-      update_user_ranking_score: {
-        Args: {
-          p_concurso_id: string
-          p_new_consolidated_data: Json
-          p_user_id: string
-        }
-        Returns: undefined
       }
       upsert_study_cycle: {
         Args: { cycle_data: Json; user_uuid: string }

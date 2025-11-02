@@ -210,126 +210,41 @@ export function useResultadosData(concursoId?: string) {
     logger.info('Manual refresh initiated', 'USE_RESULTADOS_DATA', { concursoId: id });
     
     if (!id) {
-      console.error("[useResultadosData] ID do concurso não fornecido");
-      return {
-        success: false,
-        error: "ID do concurso não fornecido"
-      };
+      return { success: false, error: "ID do concurso não fornecido" };
     }
     
-    // 🔒 VERIFICAR LOCK: Evitar recálculo simultâneo
     if (isRecalculating) {
-      logger.warn('Recalculation already in progress', 'USE_RESULTADOS_DATA');
-      return {
-        success: false,
-        error: "Recálculo já em andamento. Aguarde a conclusão."
-      };
+      return { success: false, error: "Recálculo já em andamento. Aguarde a conclusão." };
     }
     
     try {
-      // 🔒 ATIVAR LOCK
       setIsRecalculating(true);
       setRecalculationProgress({ current: 0, total: 0 });
-      
-      // ✅ NOVO: Recalcular scores de todos os participantes ANTES do refetch
-      // usando a função SECURITY DEFINER para permitir atualizações públicas
-      
-      // 1. Buscar todos os participantes do concurso
-      const { data: allUserRankings, error: fetchError } = await supabase
-        .from('user_rankings')
-        .select('user_id, consolidated_data');
-      
-      if (fetchError) {
-        throw new Error(`Erro ao buscar participantes: ${fetchError.message}`);
-      }
-      
-      // Filtrar apenas participantes deste concurso
-      const participants: string[] = [];
-      
-      allUserRankings?.forEach(ur => {
-        const rankings = ur.consolidated_data?.rankings || {};
-        for (const rankingData of Object.values(rankings)) {
-          if ((rankingData as any).concurso_id === id) {
-            participants.push(ur.user_id);
-            break;
-          }
-        }
+
+      // Chama a função SECURITY DEFINER no banco que ignora RLS e recalcula TODOS
+      const { data, error } = await supabase.rpc('recalc_concurso_scores_public', {
+        p_concurso_id: id,
       });
-      
-      // Debug logs removed for security
-      setRecalculationProgress({ current: 0, total: participants.length });
-      
-      // 2. Recalcular cada participante em lotes usando a função SECURITY DEFINER
-      if (participants.length > 0) {
-        const batchSize = 10; // Reduzir para 10 para evitar sobrecarga
-        let processedCount = 0;
-        
-        for (let i = 0; i < participants.length; i += batchSize) {
-          const batch = participants.slice(i, i + batchSize);
-          
-          // Executar lote em paralelo
-          const results = await Promise.allSettled(
-            batch.map(async (userId) => {
-              // Recalcular o score usando a lógica existente
-              const recalcResult = await recalculateUserScore(userId, id);
-              
-              // Buscar os dados atualizados
-              const { data: updatedData } = await supabase
-                .from('user_rankings')
-                .select('consolidated_data')
-                .eq('user_id', userId)
-                .single();
-              
-              if (updatedData?.consolidated_data) {
-                // Usar a função SECURITY DEFINER para atualizar publicamente
-                await supabase.rpc('update_user_ranking_score', {
-                  p_user_id: userId,
-                  p_concurso_id: id,
-                  p_new_consolidated_data: updatedData.consolidated_data
-                });
-              }
-              
-              return recalcResult;
-            })
-          );
-          
-          // Contar sucessos
-          const successful = results.filter(r => r.status === 'fulfilled').length;
-          processedCount += successful;
-          
-          // Atualizar progresso
-          setRecalculationProgress({ current: processedCount, total: participants.length });
-          
-          // Debug logs removed for security
-        }
-        
-        // Debug logs removed for security
+
+      if (error) {
+        logger.error('RPC recalc error', 'USE_RESULTADOS_DATA', error);
+        return { success: false, error: error.message };
       }
-      
-      // 3. AGORA SIM fazer refetch (que buscará scores ATUALIZADOS)
-      // Debug logs removed for security
+
+      // Invalida e refaz as queries públicas
       await Promise.all([
         refetchRankings(),
-        refetchCount()
+        refetchCount(),
       ]);
-      
-      logger.info('Data refreshed successfully', 'USE_RESULTADOS_DATA', {
-        participantsRecalculated: participants.length
-      });
-      
-      return { 
+
+      return {
         success: true,
-        participantsRecalculated: participants.length
+        participantsRecalculated: (data?.updatedCount as number) || undefined,
       };
-      
     } catch (error: any) {
       logger.error('Error refreshing data', 'USE_RESULTADOS_DATA', error);
-      return { 
-        success: false, 
-        error: error.message || String(error) 
-      };
+      return { success: false, error: error.message || String(error) };
     } finally {
-      // 🔒 LIBERAR LOCK (sempre, mesmo em erro)
       setIsRecalculating(false);
       setRecalculationProgress(null);
     }
