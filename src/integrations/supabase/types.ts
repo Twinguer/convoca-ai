@@ -1536,6 +1536,10 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
+      recalculate_concurso_scores: {
+        Args: { p_concurso_id: string }
+        Returns: number
+      }
       recalculate_specific_users_scores: {
         Args: { p_concurso_id: string; p_user_ids: string[] }
         Returns: Json
@@ -1723,6 +1727,14 @@ export type Database = {
       update_user_ranking: {
         Args: { p_ranking_data: Json; p_ranking_id: string; p_user_id: string }
         Returns: boolean
+      }
+      update_user_ranking_score: {
+        Args: {
+          p_concurso_id: string
+          p_new_consolidated_data: Json
+          p_user_id: string
+        }
+        Returns: undefined
       }
       upsert_study_cycle: {
         Args: { cycle_data: Json; user_uuid: string }

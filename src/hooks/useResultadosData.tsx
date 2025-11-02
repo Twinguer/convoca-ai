@@ -232,7 +232,7 @@ export function useResultadosData(concursoId?: string) {
       setRecalculationProgress({ current: 0, total: 0 });
       
       // ✅ NOVO: Recalcular scores de todos os participantes ANTES do refetch
-      // Debug logs removed for security
+      // usando a função SECURITY DEFINER para permitir atualizações públicas
       
       // 1. Buscar todos os participantes do concurso
       const { data: allUserRankings, error: fetchError } = await supabase
@@ -259,9 +259,9 @@ export function useResultadosData(concursoId?: string) {
       // Debug logs removed for security
       setRecalculationProgress({ current: 0, total: participants.length });
       
-      // 2. Recalcular cada participante em lotes
+      // 2. Recalcular cada participante em lotes usando a função SECURITY DEFINER
       if (participants.length > 0) {
-        const batchSize = 50; // Processar 50 por vez
+        const batchSize = 10; // Reduzir para 10 para evitar sobrecarga
         let processedCount = 0;
         
         for (let i = 0; i < participants.length; i += batchSize) {
@@ -269,7 +269,28 @@ export function useResultadosData(concursoId?: string) {
           
           // Executar lote em paralelo
           const results = await Promise.allSettled(
-            batch.map(userId => recalculateUserScore(userId, id))
+            batch.map(async (userId) => {
+              // Recalcular o score usando a lógica existente
+              const recalcResult = await recalculateUserScore(userId, id);
+              
+              // Buscar os dados atualizados
+              const { data: updatedData } = await supabase
+                .from('user_rankings')
+                .select('consolidated_data')
+                .eq('user_id', userId)
+                .single();
+              
+              if (updatedData?.consolidated_data) {
+                // Usar a função SECURITY DEFINER para atualizar publicamente
+                await supabase.rpc('update_user_ranking_score', {
+                  p_user_id: userId,
+                  p_concurso_id: id,
+                  p_new_consolidated_data: updatedData.consolidated_data
+                });
+              }
+              
+              return recalcResult;
+            })
           );
           
           // Contar sucessos
