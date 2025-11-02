@@ -212,30 +212,22 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           }
 
           // Mesma regra de eliminação usada na tabela de rankings
+          // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
           const isBelowMinimum = (ranking: any, concursoData: any) => {
-            // Verificação existente para mínimos por disciplina/bloco
+            // Usar apenas os flags que vêm do backend
             const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
               ranking.belowDisciplineMinimums.length > 0;
             const hasBlockMinimums = ranking.belowBlockMinimums && 
               ranking.belowBlockMinimums.length > 0;
             
-            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
-              ranking.score <= 0;
-            
-            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
-              ranking.score <= 0;
-            
-            
-            return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
-                   isCertoErradoEliminated || isAlternativasEliminated;
+            return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
           };
-          const classified = list.filter((r: any) => !isBelowMinimum(r, rankingData)).sort((a: any, b: any) => b.score - a.score);
+          // ✅ Usar posição que vem do backend (ranking.position)
+          // Não recalcular no frontend
           const rid = userRankingIdByConcurso.get(cid);
-          const idx = classified.findIndex((r: any) => r.id === rid);
-          const isClassified = idx >= 0;
-          const position = isClassified ? idx + 1 : null;
+          const userRanking = list.find((r: any) => r.id === rid);
+          const isClassified = userRanking ? !isBelowMinimum(userRanking, rankingData) : false;
+          const position = userRanking?.position || null;
           
           return {
             cid,

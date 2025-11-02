@@ -87,8 +87,9 @@ export const SecureUserRoute: React.FC<SecureUserRouteProps> = ({
   }
 
   // Passar o userId validado para os componentes filhos
+  // ✅ SEGURANÇA: Não expor userId no HTML (data-user-id removido)
   return (
-    <div data-user-id={userId}>
+    <div>
       {React.cloneElement(children as React.ReactElement, { 
         userId,
         secureToken: token 

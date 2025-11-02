@@ -79,8 +79,9 @@ export const SecureConcursoRoute: React.FC<SecureConcursoRouteProps> = ({
   }
 
   // Passar o concursoId validado para os componentes filhos
+  // ✅ SEGURANÇA: Não expor concursoId no HTML (data-concurso-id removido)
   return (
-    <div data-concurso-id={concursoId}>
+    <div>
       {React.cloneElement(children as React.ReactElement, { 
         concursoId,
         secureToken: token 

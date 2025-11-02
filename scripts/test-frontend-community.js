@@ -1,8 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
+
+// ✅ SEGURANÇA: Carregar chaves de variáveis de ambiente
+config({ path: 'env.convoca-ai' });
 
 // Usar configuração do sistema (convoca-ai - produção)
-const supabaseUrl = 'https://ppsymqrdtjyaguftracc.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwc3ltcXJkdGp5YWd1ZnRyYWNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzEwNzIsImV4cCI6MjA1OTQ0NzA3Mn0.7ijkFzxTGirmC0R958v0Tr7p4TghM9A9J4BLI10OMgs';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://ppsymqrdtjyaguftracc.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseKey) {
+  console.error('❌ ERRO: VITE_SUPABASE_ANON_KEY não configurado!');
+  console.error('   Configure a variável de ambiente ou use o arquivo env.convoca-ai');
+  process.exit(1);
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

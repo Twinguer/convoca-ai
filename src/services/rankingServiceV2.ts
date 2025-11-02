@@ -225,23 +225,11 @@ export const fetchUserRankingsV2 = async (
       const name = user?.name || 'Usuário Anônimo';
       const avatarUrl = user?.avatar_url || null;
 
-      // Verificação de mínimos
-      const belowMinimum = ranking.score <= 0 || 
-        (hasMinimumScoreEnabled && totalMinimumScore > 0 && ranking.score < totalMinimumScore);
-
-      // Verificar mínimos por disciplina
-      const belowDisciplineMinimums: string[] = [];
-      if (disciplinesData) {
-        disciplinesData.forEach(discipline => {
-          if (discipline.minimum_score > 0) {
-            // Aqui você pode implementar lógica específica para verificar mínimos por disciplina
-            // Por enquanto, vamos apenas marcar se o score geral está abaixo do mínimo
-            if (ranking.score < discipline.minimum_score) {
-              belowDisciplineMinimums.push(discipline.discipline_id);
-            }
-          }
-        });
-      }
+      // ✅ Usar apenas dados do backend - sem lógica de cálculo no frontend
+      // Os flags belowMinimum e belowDisciplineMinimums devem vir do backend
+      // Se não vierem, assumir false/vazio para compatibilidade
+      const belowMinimum = ranking.below_minimum || ranking.belowMinimum || false;
+      const belowDisciplineMinimums = ranking.below_discipline_minimums || ranking.belowDisciplineMinimums || [];
     
       return {
         position: offset + index + 1, // Posição global considerando offset

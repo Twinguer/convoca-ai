@@ -4,7 +4,15 @@ import { logError, logWarn } from '@/utils/secureLogger';
 // Serviço para ofuscar URLs da comunidade e controlar acesso
 export class CommunityUrlObfuscationService {
   // SECURITY: Use environment variable for obfuscation key
-  private static readonly OBFUSCATION_KEY = import.meta.env.VITE_COMMUNITY_OBFUSCATION_KEY || 'fallback_community_key_change_in_production';
+  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
+  private static readonly OBFUSCATION_KEY = (() => {
+    const key = import.meta.env.VITE_COMMUNITY_OBFUSCATION_KEY;
+    if (!key) {
+      console.error('[communityUrlObfuscation] ❌ VITE_COMMUNITY_OBFUSCATION_KEY não configurada!');
+      throw new Error('VITE_COMMUNITY_OBFUSCATION_KEY environment variable is required');
+    }
+    return key;
+  })();
   
   // Gerar um token ofuscado para funcionalidades da comunidade
   static async generateCommunityToken(userId: string, action: 'followers' | 'following' | 'profile'): Promise<string> {

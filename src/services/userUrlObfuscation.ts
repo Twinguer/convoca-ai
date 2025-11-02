@@ -4,7 +4,15 @@ import { logError, logWarn } from '@/utils/secureLogger';
 // Serviço para ofuscar URLs de usuários e controlar acesso
 export class UserUrlObfuscationService {
   // SECURITY: Use environment variable for obfuscation key
-  private static readonly OBFUSCATION_KEY = import.meta.env.VITE_OBFUSCATION_KEY || 'fallback_key_change_in_production';
+  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
+  private static readonly OBFUSCATION_KEY = (() => {
+    const key = import.meta.env.VITE_OBFUSCATION_KEY;
+    if (!key) {
+      console.error('[userUrlObfuscation] ❌ VITE_OBFUSCATION_KEY não configurada!');
+      throw new Error('VITE_OBFUSCATION_KEY environment variable is required');
+    }
+    return key;
+  })();
   
   // Gerar um token ofuscado para um usuário
   static async generateUserToken(userId: string): Promise<string> {

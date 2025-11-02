@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
+import { rankingCache } from '@/services/rankingCache';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { logger } from '@/utils/logger';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
@@ -15,6 +17,7 @@ export function useResultadosData(concursoId?: string) {
   const { id: urlId } = useParams() as { id: string };
   const { user } = useAuth();
   const isAuthenticated = !!user;
+  const queryClient = useQueryClient();
   
   // Usar concursoId passado como prop ou do URL
   const id = concursoId || urlId;
@@ -220,26 +223,43 @@ export function useResultadosData(concursoId?: string) {
     try {
       setIsRecalculating(true);
       setRecalculationProgress({ current: 0, total: 0 });
-
-      // Chama a função SECURITY DEFINER no banco que ignora RLS e recalcula TODOS
-      const { data, error } = await supabase.rpc('recalc_concurso_scores_public', {
-        p_concurso_id: id,
-      });
-
-      if (error) {
-        logger.error('RPC recalc error', 'USE_RESULTADOS_DATA', error);
-        return { success: false, error: error.message };
+      
+      // ✅ CORRIGIDO: Usar função PostgreSQL recalculate_all_scores_with_weights
+      // Esta função já está corrigida para funcionar publicamente e atualizar todos os scores
+      logger.info('Calling PostgreSQL batch recalculation function', 'USE_RESULTADOS_DATA');
+      
+      const recalculationResult = await recalculateAllUserScores(id);
+      
+      if (!recalculationResult.success) {
+        throw new Error(recalculationResult.error || 'Erro ao recalcular pontuações');
       }
-
-      // Invalida e refaz as queries públicas
+      
+      logger.info('Batch recalculation completed', 'USE_RESULTADOS_DATA', {
+        updatedCount: recalculationResult.updatedCount
+      });
+      
+      // Limpar cache local para garantir dados frescos
+      rankingCache.clear();
+      
+      // Invalidar todas as queries relacionadas para forçar refetch
+      queryClient.invalidateQueries({ queryKey: ['rankings', id] });
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count', id] });
+      queryClient.invalidateQueries({ queryKey: ['participant-count-v2', id] });
+      
+      // Fazer refetch dos dados atualizados
       await Promise.all([
         refetchRankings(),
         refetchCount(),
       ]);
-
-      return {
+      
+      logger.info('Data refreshed successfully', 'USE_RESULTADOS_DATA', {
+        updatedCount: recalculationResult.updatedCount
+      });
+      
+      return { 
         success: true,
-        participantsRecalculated: (data?.updatedCount as number) || undefined,
+        updatedCount: recalculationResult.updatedCount
       };
     } catch (error: any) {
       logger.error('Error refreshing data', 'USE_RESULTADOS_DATA', error);

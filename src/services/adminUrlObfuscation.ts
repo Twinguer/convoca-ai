@@ -4,7 +4,15 @@ import { logError, logWarn } from '@/utils/secureLogger';
 // Serviço para ofuscar URLs de administração e controlar acesso
 export class AdminUrlObfuscationService {
   // SECURITY: Use environment variable for obfuscation key
-  private static readonly OBFUSCATION_KEY = import.meta.env.VITE_ADMIN_OBFUSCATION_KEY || 'fallback_admin_key_change_in_production';
+  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
+  private static readonly OBFUSCATION_KEY = (() => {
+    const key = import.meta.env.VITE_ADMIN_OBFUSCATION_KEY;
+    if (!key) {
+      console.error('[adminUrlObfuscation] ❌ VITE_ADMIN_OBFUSCATION_KEY não configurada!');
+      throw new Error('VITE_ADMIN_OBFUSCATION_KEY environment variable is required');
+    }
+    return key;
+  })();
   
   // Gerar um token ofuscado para administração
   static async generateAdminToken(adminId: string, resource: 'dashboard' | 'concursos' | 'usuarios' | 'vouchers'): Promise<string> {

@@ -75,24 +75,15 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
               // Usar a versão V3 otimizada
               const list = await fetchUserRankingsV3(concursoId);
 
-              // Mesma regra de eliminação usada na tabela de rankings
+              // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
               const isBelowMinimum = (rankingData: any, concursoData: any) => {
-                // Verificação existente para mínimos por disciplina/bloco
+                // Usar apenas os flags que vêm do backend
                 const hasDisciplineMinimums = rankingData.belowDisciplineMinimums && 
                   rankingData.belowDisciplineMinimums.length > 0;
                 const hasBlockMinimums = rankingData.belowBlockMinimums && 
                   rankingData.belowBlockMinimums.length > 0;
                 
-                // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-                const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
-                  rankingData.score <= 0;
-                
-                // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-                const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
-                  rankingData.score <= 0;
-                
-                return !!rankingData.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
-                       isCertoErradoEliminated || isAlternativasEliminated;
+                return !!rankingData.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
               };
 
               // Buscar dados do concurso para verificar o tipo de exame
@@ -196,32 +187,21 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
             concursoData = { exam_type: 'Alternativas' };
           }
           
+          // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
           const isBelowMinimum = (r: any) => {
-            // Verificação existente para mínimos por disciplina/bloco
+            // Usar apenas os flags que vêm do backend
             const hasDisciplineMinimums = r.belowDisciplineMinimums && 
               r.belowDisciplineMinimums.length > 0;
             const hasBlockMinimums = r.belowBlockMinimums && 
               r.belowBlockMinimums.length > 0;
             
-            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
-              r.score <= 0;
-            
-            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
-              r.score <= 0;
-            
-            return !!r.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
-                   isCertoErradoEliminated || isAlternativasEliminated;
+            return !!r.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
           };
           
-          const classified = communityList
-            .filter((r: any) => !isBelowMinimum(r))
-            .sort((a: any, b: any) => b.score - a.score);
-          // Encontrar posição pelo id do ranking específico
-          const idx = classified.findIndex((r: any) => r.id === ranking.id);
-          const isClassified = idx >= 0;
-          const position = isClassified ? idx + 1 : null;
+          // ✅ Usar posição que vem do backend (ranking.position)
+          // Não recalcular no frontend
+          const isClassified = !isBelowMinimum(ranking);
+          const position = ranking.position || null;
           return { ...ranking, position, isEliminated: !isClassified };
         } catch (e) {
           console.error('Erro ao calcular posição (props):', e);
@@ -237,8 +217,9 @@ const RankingsTab: React.FC<RankingsTabProps> = ({
   const allRankings = userRankings ? (propRankingsWithPositions || userRankings) : rankings;
   const showSkeleton = isLoading && !userRankings;
 
-  // Sort rankings by score (highest first)
-  const sortedRankings = [...(allRankings || [])].sort((a, b) => (typeof b.score === 'number' ? b.score : 0) - (typeof a.score === 'number' ? a.score : 0));
+  // ✅ Rankings devem vir já ordenados do backend
+  // Manter ordem original, apenas aplicar filtro se necessário
+  const sortedRankings = allRankings || [];
 
   // Display only top 2 if not showing all
   const displayRankings = showAllRankings ? sortedRankings : sortedRankings?.slice(0, 2);

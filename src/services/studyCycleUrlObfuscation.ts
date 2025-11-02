@@ -5,7 +5,15 @@ import { UserStudyService } from './userStudyService';
 // Serviço para ofuscar URLs de ciclos de estudo e controlar acesso
 export class StudyCycleUrlObfuscationService {
   // SECURITY: Use environment variable for obfuscation key
-  private static readonly OBFUSCATION_KEY = import.meta.env.VITE_URL_OBFUSCATION_KEY || 'fallback_key_change_in_production';
+  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
+  private static readonly OBFUSCATION_KEY = (() => {
+    const key = import.meta.env.VITE_URL_OBFUSCATION_KEY;
+    if (!key) {
+      console.error('[studyCycleUrlObfuscation] ❌ VITE_URL_OBFUSCATION_KEY não configurada!');
+      throw new Error('VITE_URL_OBFUSCATION_KEY environment variable is required');
+    }
+    return key;
+  })();
   
   
   // Gerar um token ofuscado para um ciclo de estudo

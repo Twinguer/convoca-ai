@@ -4,12 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { recalculateAllUserScores, recalculateSpecificUserScore } from '@/utils/recalculateUserScores';
+import { useAuth } from '@/hooks/useAuth';
 // import { testRecalculate } from '@/utils/testRecalculate'; // Removido - arquivo deletado
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 const RecalculateScores: React.FC = () => {
   const [concursoId, setConcursoId] = useState('44c3e864-9c12-4f41-9d12-40b2a1273b62');
-  const [userId, setUserId] = useState('46f5c46a-43c7-40a0-84ee-2a1616f912a8');
+  // ✅ SEGURANÇA: Removido user ID hardcoded - deve ser obtido do contexto de autenticação
+  const { user } = useAuth();
+  const [userId, setUserId] = useState(user?.id || '');
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [results, setResults] = useState<any[]>([]);
 

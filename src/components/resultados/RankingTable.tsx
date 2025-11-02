@@ -73,75 +73,30 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     }
   }, [concurso]);
 
-  // Helper function to determine if a ranking is below the required minimum
+  // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
   const isBelowMinimum = (ranking: Ranking): boolean => {
-    // Verificação existente para mínimos por disciplina/bloco
+    // Usar apenas os flags que vêm do backend
     const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
       ranking.belowDisciplineMinimums.length > 0;
     const hasBlockMinimums = ranking.belowBlockMinimums && 
       ranking.belowBlockMinimums.length > 0;
     
-    // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-    const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
-      ranking.score <= 0;
-    
-    // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-    const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
-      ranking.score <= 0;
-    
-    
-    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
+    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
   };
 
-  // Calculate quota positions for each ranking, separating classified from eliminated
+  // ✅ Usar apenas dados do backend - posições já devem vir calculadas
+  // Separar apenas para exibição, sem recalcular posições
   const rankingsWithQuotaPositions = React.useMemo(() => {
     if (!rankings) return [];
 
-    // Separate classified from eliminated users
+    // ✅ Os rankings devem vir já ordenados e com posições do backend
+    // Separar apenas classificados de eliminados para exibição visual
     const classifiedRankings = rankings.filter(ranking => !isBelowMinimum(ranking));
     const eliminatedRankings = rankings.filter(ranking => isBelowMinimum(ranking));
 
-    // Sort classified rankings by score (descending)
-    classifiedRankings.sort((a, b) => b.score - a.score);
-    
-    // Sort eliminated rankings by score (descending) but they go to the end
-    eliminatedRankings.sort((a, b) => b.score - a.score);
-
-    // Group classified rankings by reservation type
-    const groupedByQuota: Record<string, Ranking[]> = {};
-    classifiedRankings.forEach(ranking => {
-      if (!groupedByQuota[ranking.reservationType]) {
-        groupedByQuota[ranking.reservationType] = [];
-      }
-      groupedByQuota[ranking.reservationType].push(ranking);
-    });
-
-    // Sort each quota group by score (descending) to calculate correct quota positions
-    Object.keys(groupedByQuota).forEach(quotaType => {
-      groupedByQuota[quotaType].sort((a, b) => b.score - a.score);
-    });
-
-    // Calculate positions for classified users
-    const classifiedWithPositions = classifiedRankings.map((ranking, index) => {
-      const sameQuotaRankings = groupedByQuota[ranking.reservationType] || [];
-      const quotaPosition = sameQuotaRankings.findIndex(r => r.id === ranking.id) + 1;
-      
-      return {
-        ...ranking,
-        position: index + 1, // Override position based on classification
-        quotaPosition: quotaPosition > 0 ? quotaPosition : 0 // Garantir que seja sempre um número válido
-      };
-    });
-
-    // Eliminated users don't get positions, they're marked as eliminated
-    const eliminatedWithoutPositions = eliminatedRankings.map(ranking => ({
-      ...ranking,
-      position: 0, // No position for eliminated users
-      quotaPosition: 0
-    }));
-
-    // Return classified users first, then eliminated users
-    return [...classifiedWithPositions, ...eliminatedWithoutPositions];
+    // ✅ Manter ordem original (já deve vir ordenado do backend)
+    // Retornar classificados primeiro, depois eliminados
+    return [...classifiedRankings, ...eliminatedRankings];
   }, [rankings]);
 
   const getAvailableQuotas = React.useMemo(() => {
@@ -328,24 +283,15 @@ const RankingTableContent: React.FC<{
     return initialScores[rankingId] !== undefined && initialScores[rankingId] !== currentScore && !isRefetching;
   };
 
-  // Function to determine if a ranking is below the required minimum
+  // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
   const isBelowMinimum = (ranking: Ranking): boolean => {
-    // Verificação existente para mínimos por disciplina/bloco
+    // Usar apenas os flags que vêm do backend
     const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
       ranking.belowDisciplineMinimums.length > 0;
     const hasBlockMinimums = ranking.belowBlockMinimums && 
       ranking.belowBlockMinimums.length > 0;
     
-    // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
-    const isCertoErradoEliminated = concurso?.exam_type === 'Certo ou Errado' && 
-      ranking.score <= 0;
-    
-    // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
-    const isAlternativasEliminated = concurso?.exam_type === 'Alternativas' && 
-      ranking.score <= 0;
-    
-    
-    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || isCertoErradoEliminated || isAlternativasEliminated;
+    return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
   };
   
   // Function to calculate the objective total score of the ranking

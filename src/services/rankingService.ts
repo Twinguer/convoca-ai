@@ -177,12 +177,8 @@ export const fetchUserRankings = async (
       }
     }
 
-    // Sort: classificados primeiro por score desc; eliminados ao fim
-    rankingData.sort((a, b) => {
-      if (a.belowMinimum && !b.belowMinimum) return 1;
-      if (!a.belowMinimum && b.belowMinimum) return -1;
-      return (b.score || 0) - (a.score || 0);
-    });
+    // ✅ Rankings devem vir já ordenados do backend com posições calculadas
+    // Não ordenar no frontend - manter ordem original do backend
     const paginatedData = rankingData.slice(offset, offset + limit);
 
     logger.ranking('Query result', `data: ${paginatedData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
