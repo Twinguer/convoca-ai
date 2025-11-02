@@ -86,39 +86,28 @@ export function useResultadosData(concursoId?: string) {
     queryFn: () => fetchUserRankings(id),
     refetchOnWindowFocus: false,
     staleTime: 0, // Sempre buscar dados frescos para garantir atualizações imediatas
+    refetchInterval: 30000, // Refetch automático a cada 30 segundos para garantir atualizações
     enabled: !!id, // HABILITADO - buscar rankings para exibir classificação
   });
   
   // Fetch participant count - for all users (authenticated or not) - NOVA ESTRUTURA
+  // ✅ CORRIGIDO: Usar função RPC que conta corretamente todos os participantes
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count-v2', id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('user_rankings')
-        .select('consolidated_data');
+      // Usar função RPC que conta corretamente usando estrutura JSONB e ignorando RLS
+      const { data, error } = await supabase.rpc('count_concurso_participants', {
+        concurso_id: id
+      });
       
       if (error) {
         logger.error('Error fetching participant count', 'USE_RESULTADOS_DATA', error);
         return 0;
       }
       
-      // Count users who have this concurso in their consolidated_data
-      let count = 0;
-      if (data) {
-        data.forEach(userRanking => {
-          if (userRanking.consolidated_data?.rankings) {
-            Object.values(userRanking.consolidated_data.rankings).forEach((rankingData: any) => {
-              if (rankingData.concurso_id === id) {
-                count++;
-              }
-            });
-          }
-        });
-      }
-      
-      return count;
+      return data || 0;
     },
-    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
+    staleTime: 30000, // 30 segundos para reduzir atualizações
   });
   
   // Verificar se o usuário já está participando deste ranking - NOVA ESTRUTURA
@@ -170,36 +159,23 @@ export function useResultadosData(concursoId?: string) {
     staleTime: 10000,
   });
   
-  // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
+  // Efeito para configurar polling periódico para atualizações
+  // NOTA: Subscription realtime não funciona porque concurso_id está dentro do JSONB
+  // Usamos polling a cada 30 segundos para garantir que usuários vejam atualizações
   useEffect(() => {
     if (!id) return;
 
-    // // Debug logs removed for security
+    // Polling: refetch a cada 30 segundos para garantir atualizações
+    const interval = setInterval(() => {
+      // Limpar cache local para forçar busca de dados frescos
+      rankingCache.clear();
+      refetchRankings();
+      refetchCount();
+    }, 30000); // 30 segundos
 
-    // Configura um canal para escutar atualizações na tabela user_rankings
-    const channel = supabase
-      .channel('rankings-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'user_rankings',
-          filter: `concurso_id=eq.${id}`
-        },
-        (payload) => {
-          // // Debug logs removed for security
-          // Força atualização dos rankings quando houver mudanças
-          refetchRankings();
-          refetchCount();
-        }
-      )
-      .subscribe();
-
-    // Cleanup: remover inscrição quando o componente for desmontado
+    // Cleanup: remover intervalo quando o componente for desmontado
     return () => {
-      // // Debug logs removed for security
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, [id, refetchRankings, refetchCount]);
   

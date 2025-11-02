@@ -192,6 +192,7 @@ export const fetchConcursos = async (filters?: ConcursoFilter): Promise<Concurso
 
 export const getParticipantCount = async (concursoId: string): Promise<number> => {
   try {
+    // ✅ CORRIGIDO: Função atualizada para usar estrutura JSONB corretamente
     const { data, error } = await supabase.rpc('count_concurso_participants', {
       concurso_id: concursoId
     });

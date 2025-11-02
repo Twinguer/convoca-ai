@@ -43,10 +43,10 @@ export function buildRankingFromConsolidated(
     weightedCustomDisciplineScores: Object.fromEntries(
       Object.entries(objectScores).filter(([k]) => k.startsWith('custom_'))
     ),
-    // flags mínimos
-    belowMinimum: !!userData?.belowMinimum,
-    belowDisciplineMinimums: userData?.belowDisciplineMinimums || [],
-    belowBlockMinimums: userData?.belowBlockMinimums || [],
+    // flags mínimos - ler ambos os formatos (camelCase e snake_case) para compatibilidade
+    belowMinimum: !!(userData?.belowMinimum || userData?.below_minimum),
+    belowDisciplineMinimums: userData?.belowDisciplineMinimums || userData?.below_discipline_minimums || [],
+    belowBlockMinimums: userData?.belowBlockMinimums || userData?.below_block_minimums || [],
     // reserva
     reservationType,
     displayReservation: getReservationAbbreviation(reservationType),

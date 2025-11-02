@@ -220,44 +220,46 @@ export const useSaveAnswers = ({
         throw new Error('Ranking não encontrado nos dados consolidados');
       }
 
-      // Salvar no banco
-      const { error: updateError } = await supabase
-        .from('user_rankings')
-        .update({
-          consolidated_data: updatedConsolidatedData
-        })
-        .eq('user_id', user.id);
+      // ✅ NOVO: Usar função RPC que atualiza E recalcula automaticamente
+      const { data: updateResult, error: updateError } = await supabase.rpc('update_consolidated_data_and_recalculate', {
+        p_user_id: user.id,
+        p_ranking_id: rankingId,
+        p_concurso_id: concurso.id,
+        p_updated_data: updatedConsolidatedData
+      });
 
       if (updateError) {
-        console.error('[useSaveAnswers] Erro ao atualizar dados:', updateError);
-        throw new Error('Erro ao salvar respostas');
+        console.error('[useSaveAnswers] Erro ao atualizar dados e recalcular:', updateError);
+        throw new Error('Erro ao salvar respostas e recalcular pontuações');
       }
 
-      // Debug logs removed for security
-      
-      // 🔥 ADICIONAR: Recálculo de pontuações
-      // Debug logs removed for security
+      // ✅ Se a função RPC não funcionou, tentar método manual como fallback
+      if (!updateResult?.success) {
+        // Fallback: fazer UPDATE direto e depois recalcular
+        const { error: directUpdateError } = await supabase
+          .from('user_rankings')
+          .update({
+            consolidated_data: updatedConsolidatedData
+          })
+          .eq('user_id', user.id);
 
-      try {
-        // Debug logs removed for security
-        
-        // Debug logs removed for security
-        
-        const recalculationResult = await recalculateUserScore(user.id, concurso.id);
-        
-        // Debug logs removed for security
-        
-        if (recalculationResult.success) {
-          // Debug logs removed for security
-        } else {
-          console.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
-          // Não falhar silenciosamente - mostrar erro para o usuário
-          throw new Error(`Falha no recálculo de pontuações: ${recalculationResult.message}`);
+        if (directUpdateError) {
+          console.error('[useSaveAnswers] Erro ao atualizar dados (fallback):', directUpdateError);
+          throw new Error('Erro ao salvar respostas');
         }
-      } catch (recalculationError: any) {
-        console.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
-        // Re-throw para interromper o fluxo e mostrar erro
-        throw new Error(`Erro no recálculo de pontuações: ${recalculationError.message}`);
+
+        // Recalcular usando função separada
+        try {
+          const recalculationResult = await recalculateUserScore(user.id, concurso.id);
+          
+          if (!recalculationResult.success) {
+            console.error('[useSaveAnswers] ❌ Erro no recálculo de pontuações:', recalculationResult.message);
+            throw new Error(`Falha no recálculo de pontuações: ${recalculationResult.message}`);
+          }
+        } catch (recalculationError: any) {
+          console.error('[useSaveAnswers] ❌ Erro ao chamar recálculo de pontuações:', recalculationError);
+          throw new Error(`Erro no recálculo de pontuações: ${recalculationError.message}`);
+        }
       }
       
       // Debug logs removed for security

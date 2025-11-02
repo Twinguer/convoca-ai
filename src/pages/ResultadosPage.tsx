@@ -12,13 +12,14 @@ import { useLeaveRanking } from '@/hooks/useLeaveRanking';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, UserPlus, LogIn, UserMinus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useSubscription } from '@/hooks/useSubscription';
+// ✅ REMOVIDO: useSubscription não é mais necessário - verificação no backend
 import { usePlanLimits } from '@/hooks/usePlanLimits';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
 import { rankingCache } from '@/services/rankingCache';
 import { ProFeatureGuard } from '@/components/Subscription/ProFeatureGuard';
 import { toast as sonnerToast } from 'sonner';
+// ✅ REMOVIDO: showProRequiredToast não é mais necessário - rankings são públicos
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,10 +41,8 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
-  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
+  // ✅ REMOVIDO: isPro não é mais necessário - verificação é feita no backend
   const { currentRankingCount } = usePlanLimits();
-  const [canAccessRanking, setCanAccessRanking] = useState<boolean | null>(null);
-  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
   const toastShownRef = useRef(false);
   
   // Usar ID da URL ou prop
@@ -68,58 +67,8 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
     recalculationProgress
   } = useResultadosData(finalRankingId);
 
-  // Verificar acesso para usuários Free
-  useEffect(() => {
-    const checkAccess = async () => {
-      // Se for Pro ou não autenticado, permite acesso
-      if (isPro || !user || isLoadingSubscription) {
-        setCanAccessRanking(true);
-        setIsCheckingAccess(false);
-        return;
-      }
-
-      // Para usuários Free, verificar se participa
-      try {
-        const { data: userRankingData, error } = await supabase
-          .from('user_rankings')
-          .select('consolidated_data')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Erro ao verificar participação:', error);
-          setCanAccessRanking(true); // Em caso de erro, permite acesso
-          setIsCheckingAccess(false);
-          return;
-        }
-
-        // Verificar se participa deste ranking específico
-        let isParticipatingThisRanking = false;
-        if (userRankingData?.consolidated_data?.rankings) {
-          Object.values(userRankingData.consolidated_data.rankings).forEach((rankingData: any) => {
-            if (rankingData.concurso_id === finalRankingId) {
-              isParticipatingThisRanking = true;
-            }
-          });
-        }
-
-        if (isParticipatingThisRanking) {
-          // Participa, pode ver
-          setCanAccessRanking(true);
-        } else {
-          // Não participa, bloquear acesso
-          setCanAccessRanking(false);
-        }
-      } catch (error) {
-        console.error('Erro ao verificar acesso:', error);
-        setCanAccessRanking(true); // Em caso de erro, permite acesso
-      } finally {
-        setIsCheckingAccess(false);
-      }
-    };
-
-    checkAccess();
-  }, [user, isPro, isLoadingSubscription, finalRankingId]);
+  // ✅ Rankings são públicos para visualização
+  // Verificações de subscription serão feitas apenas em funcionalidades premium (ex: criar múltiplos rankings)
   
   // Usar rankings do hook principal
   const paginatedRankings = rankings;
@@ -246,36 +195,14 @@ const ResultadosPage = ({ rankingId, concursoId }: ResultadosPageProps = {}) => 
     });
   };
 
-  // Bloquear acesso para usuários Free que não participam
-  useEffect(() => {
-    if (user && !isPro && canAccessRanking === false && !toastShownRef.current) {
-      const hasAnyRanking = currentRankingCount > 0;
-      
-      if (hasAnyRanking) {
-        toastShownRef.current = true;
-        showProRequiredToast(navigate, 'Visualizar Rankings que Você Não Participa');
-      }
-    }
-  }, [user, isPro, canAccessRanking, currentRankingCount, navigate]);
+  // ✅ REMOVIDO: Não há mais bloqueio de acesso - rankings são públicos
+  // Verificações de subscription serão feitas apenas em funcionalidades premium
 
-  if (isLoading || isCheckingAccess || isLoadingSubscription) {
+  if (isLoading) {
     return <LoadingState />;
   }
 
-  if (user && !isPro && canAccessRanking === false) {
-    const hasAnyRanking = currentRankingCount > 0;
-    
-    if (hasAnyRanking) {
-      return <LoadingState />;
-    } else {
-      // Não tem nenhum ranking, redirecionar para participar
-      sonnerToast.info('Você precisa participar deste ranking para visualizá-lo.', {
-        duration: 3000
-      });
-      navigate(`/ranking/${finalRankingId}/participate`);
-      return <LoadingState />;
-    }
-  }
+  // ✅ REMOVIDO: Não há mais bloqueio de acesso - rankings são públicos para visualização
 
   return <div className="container mx-auto p-2 sm:p-4 my-0 py-[5px] px-0">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">

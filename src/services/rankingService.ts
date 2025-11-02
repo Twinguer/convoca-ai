@@ -71,18 +71,19 @@ export const fetchUserRankings = async (
       return localCachedRankings;
     }
     
-    // Query usando nova estrutura normalizada
-    logger.ranking('Executing ranking query V2', `rankingId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
+    // Query usando função RPC para buscar rankings (acesso público)
+    logger.ranking('Executing ranking query V2 (RPC)', `rankingId: ${concursoId}, offset: ${offset}, limit: ${limit}`);
     
-    // Get all user_rankings and filter by concurso_id in consolidated_data
-    const { data: allUserRankings, error: rankingError } = await supabase
-      .from('user_rankings')
-      .select(`
-        user_id,
-        consolidated_data
-      `);
+    // Usar função RPC que retorna rankings do concurso (acesso público)
+    const { data: allUserRankings, error: rankingError } = await supabase.rpc('get_rankings_for_concurso', {
+      p_concurso_id: concursoId,
+      p_reservation_type: reservationType || null,
+      p_offset: offset,
+      p_limit: limit
+    });
 
     if (rankingError) {
+      logger.error('Error calling get_rankings_for_concurso', 'RANKING_SERVICE', rankingError);
       throw new Error(`Ranking query error: ${rankingError.message}`);
     }
 
@@ -199,30 +200,54 @@ export const fetchUserRankings = async (
       return (a.userId || '').localeCompare(b.userId || '');
     });
     
-    // ✅ Calcular posições por cota (quotaPosition) antes de paginar
-    // Agrupar por tipo de reserva e calcular posições dentro de cada grupo
-    const quotaGroups: { [key: string]: typeof rankingData } = {};
-    rankingData.forEach(ranking => {
-      const quota = ranking.reservationType || 'Ampla Concorrência';
-      if (!quotaGroups[quota]) {
-        quotaGroups[quota] = [];
-      }
-      quotaGroups[quota].push(ranking);
-    });
-    
-    // Calcular quotaPosition para cada grupo (apenas classificados)
-    Object.keys(quotaGroups).forEach(quota => {
-      const quotaRankings = quotaGroups[quota];
-      // Separar classificados de eliminados dentro da cota
-      const quotaClassified = quotaRankings.filter(r => {
-        const eliminated = !!(r.belowMinimum || (r.belowDisciplineMinimums && r.belowDisciplineMinimums.length > 0) || (r.belowBlockMinimums && r.belowBlockMinimums.length > 0));
-        return !eliminated;
+    // ✅ Calcular posições usando função do backend (mais eficiente e consistente)
+    let positionsMap: Record<string, Record<string, { position: number; quotaPosition?: number }>> = {};
+    try {
+      const { data: positionsData, error: positionsError } = await supabase.rpc('calculate_ranking_positions', {
+        p_concurso_id: concursoId
       });
       
-      // Atribuir posições apenas aos classificados (eliminados ficam sem posição na cota)
-      quotaClassified.forEach((ranking, index) => {
-        ranking.quotaPosition = index + 1;
+      if (!positionsError && positionsData) {
+        positionsMap = positionsData;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch positions from backend, falling back to frontend calculation:', err);
+      // Fallback: calcular no frontend se backend falhar
+      const quotaGroups: { [key: string]: typeof rankingData } = {};
+      rankingData.forEach(ranking => {
+        const quota = ranking.reservationType || 'Ampla Concorrência';
+        if (!quotaGroups[quota]) {
+          quotaGroups[quota] = [];
+        }
+        quotaGroups[quota].push(ranking);
       });
+      
+      Object.keys(quotaGroups).forEach(quota => {
+        const quotaRankings = quotaGroups[quota];
+        const quotaClassified = quotaRankings.filter(r => {
+          const eliminated = !!(r.belowMinimum || (r.belowDisciplineMinimums && r.belowDisciplineMinimums.length > 0) || (r.belowBlockMinimums && r.belowBlockMinimums.length > 0));
+          return !eliminated;
+        });
+        
+        quotaClassified.forEach((ranking, index) => {
+          if (!positionsMap[ranking.userId]) {
+            positionsMap[ranking.userId] = {};
+          }
+          if (!positionsMap[ranking.userId][ranking.id]) {
+            positionsMap[ranking.userId][ranking.id] = { position: 0 };
+          }
+          positionsMap[ranking.userId][ranking.id].quotaPosition = index + 1;
+        });
+      });
+    }
+    
+    // Aplicar posições do mapa aos rankings
+    rankingData.forEach((ranking, index) => {
+      const positions = positionsMap[ranking.userId]?.[ranking.id];
+      if (positions) {
+        ranking.quotaPosition = positions.quotaPosition;
+        // position será calculado no pagination abaixo
+      }
     });
     
     const paginatedData = rankingData.slice(offset, offset + limit);
@@ -266,9 +291,9 @@ export const fetchUserRankings = async (
       const belowDisciplineMinimums = ranking.belowDisciplineMinimums || [];
       const belowBlockMinimums = ranking.belowBlockMinimums || [];
     
-      // Calcular posição correta: offset + índice local na página
-      // Como já ordenamos todos os rankings acima, a posição é offset + index + 1
-      const position = offset + index + 1;
+      // ✅ Usar posição do backend se disponível, caso contrário calcular localmente
+      const backendPosition = positionsMap[ranking.userId]?.[ranking.id]?.position;
+      const position = backendPosition ? backendPosition : (offset + index + 1);
     
       return {
         position, // Posição correta após ordenação
