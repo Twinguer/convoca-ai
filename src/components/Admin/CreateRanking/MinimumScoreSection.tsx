@@ -27,12 +27,17 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                     step="0.01" 
                     min="0" 
                     max="999"
+                    maxLength={5}
                     {...field} 
                     value={field.value || 0} 
                     onChange={e => {
                       const value = e.target.value;
-                      if (!isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
                         field.onChange(parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        field.onChange(0);
                       }
                     }} 
                     className="w-full md:w-1/3" 
@@ -58,12 +63,17 @@ export const MinimumScoreSection: React.FC<MinimumScoreSectionProps> = ({ form }
                       step="0.01" 
                       min="0" 
                       max="999"
+                      maxLength={5}
                       {...field} 
                       value={field.value || 0} 
                       onChange={e => {
                         const value = e.target.value;
-                        if (!isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                        // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                        const digitsOnly = value.replace(/[^\d]/g, '');
+                        if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
                           field.onChange(parseFloat(value) || 0);
+                        } else if (value === '' || value === '.') {
+                          field.onChange(0);
                         }
                       }} 
                       className="w-full md:w-1/3" 

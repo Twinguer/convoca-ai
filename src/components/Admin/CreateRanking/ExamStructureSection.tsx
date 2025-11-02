@@ -370,12 +370,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       step="0.01" 
                       min="0" 
                       max="999"
-                      maxLength={3}
+                      maxLength={5}
                       value={block.minimum_score || 0} 
                       onChange={e => {
                         const value = e.target.value;
-                        if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                        // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                        const digitsOnly = value.replace(/[^\d]/g, '');
+                        if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
                           handleBlockMinimumScoreChange(block.id, parseFloat(value) || 0);
+                        } else if (value === '' || value === '.') {
+                          handleBlockMinimumScoreChange(block.id, 0);
                         }
                       }} 
                       className="w-full" 
@@ -388,12 +392,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                       step="0.01" 
                       min="0" 
                       max="999"
-                      maxLength={3}
+                      maxLength={5}
                       value={block.minimum_score_cotas || 0} 
                       onChange={e => {
                         const value = e.target.value;
-                        if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                        // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                        const digitsOnly = value.replace(/[^\d]/g, '');
+                        if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
                           handleBlockMinimumScoreCotasChange(block.id, parseFloat(value) || 0);
+                        } else if (value === '' || value === '.') {
+                          handleBlockMinimumScoreCotasChange(block.id, 0);
                         }
                       }} 
                       className="w-full" 
@@ -482,12 +490,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                           step="0.01" 
                           min="0" 
                           max="999"
-                          maxLength={3}
+                          maxLength={5}
                           value={discipline.minimum_score || 0} 
                           onChange={e => {
                             const value = e.target.value;
-                            if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                            // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                            const digitsOnly = value.replace(/[^\d]/g, '');
+                            if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
                               handleDisciplineChange(block.id, discipline.id, 'minimum_score', parseFloat(value) || 0);
+                            } else if (value === '' || value === '.') {
+                              handleDisciplineChange(block.id, discipline.id, 'minimum_score', 0);
                             }
                           }} 
                         />
@@ -499,12 +511,16 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                           step="0.01" 
                           min="0" 
                           max="999"
-                          maxLength={3}
+                          maxLength={5}
                           value={discipline.minimum_score_cotas || 0} 
                           onChange={e => {
                             const value = e.target.value;
-                            if (value.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) <= 999) {
+                            // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                            const digitsOnly = value.replace(/[^\d]/g, '');
+                            if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
                               handleDisciplineChange(block.id, discipline.id, 'minimum_score_cotas', parseFloat(value) || 0);
+                            } else if (value === '' || value === '.') {
+                              handleDisciplineChange(block.id, discipline.id, 'minimum_score_cotas', 0);
                             }
                           }} 
                         />
@@ -583,24 +599,44 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <FormLabel>Nota Mínima</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 6.0"
                     value={form.watch('discursive_minimum_score') || ''}
-                    onChange={(e) => form.setValue('discursive_minimum_score', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('discursive_minimum_score', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('discursive_minimum_score', 0);
+                      }
+                    }}
                   />
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 5.0"
                     value={form.watch('discursive_minimum_score_cotas') || ''}
-                    onChange={(e) => form.setValue('discursive_minimum_score_cotas', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('discursive_minimum_score_cotas', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('discursive_minimum_score_cotas', 0);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -620,24 +656,44 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <FormLabel>Nota Mínima</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 6.0"
                     value={form.watch('case_study_1_minimum_score') || ''}
-                    onChange={(e) => form.setValue('case_study_1_minimum_score', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('case_study_1_minimum_score', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('case_study_1_minimum_score', 0);
+                      }
+                    }}
                   />
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 5.0"
                     value={form.watch('case_study_1_minimum_score_cotas') || ''}
-                    onChange={(e) => form.setValue('case_study_1_minimum_score_cotas', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('case_study_1_minimum_score_cotas', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('case_study_1_minimum_score_cotas', 0);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -657,24 +713,44 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <FormLabel>Nota Mínima</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 6.0"
                     value={form.watch('case_study_2_minimum_score') || ''}
-                    onChange={(e) => form.setValue('case_study_2_minimum_score', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('case_study_2_minimum_score', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('case_study_2_minimum_score', 0);
+                      }
+                    }}
                   />
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 5.0"
                     value={form.watch('case_study_2_minimum_score_cotas') || ''}
-                    onChange={(e) => form.setValue('case_study_2_minimum_score_cotas', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('case_study_2_minimum_score_cotas', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('case_study_2_minimum_score_cotas', 0);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -694,24 +770,44 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <FormLabel>Nota Mínima</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 6.0"
                     value={form.watch('case_study_3_minimum_score') || ''}
-                    onChange={(e) => form.setValue('case_study_3_minimum_score', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('case_study_3_minimum_score', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('case_study_3_minimum_score', 0);
+                      }
+                    }}
                   />
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 5.0"
                     value={form.watch('case_study_3_minimum_score_cotas') || ''}
-                    onChange={(e) => form.setValue('case_study_3_minimum_score_cotas', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('case_study_3_minimum_score_cotas', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('case_study_3_minimum_score_cotas', 0);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -742,24 +838,44 @@ export const ExamStructureSectionComponent: React.FC<ExamStructureSectionProps> 
                   <FormLabel>Nota Mínima</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 6.0"
                     value={form.watch('other_subjective_minimum_score') || ''}
-                    onChange={(e) => form.setValue('other_subjective_minimum_score', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('other_subjective_minimum_score', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('other_subjective_minimum_score', 0);
+                      }
+                    }}
                   />
                 </div>
                 <div>
                   <FormLabel>Nota Mínima Cotas</FormLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    step="0.01"
                     min="0"
-                    max="10"
+                    max="999"
+                    maxLength={5}
                     placeholder="Ex: 5.0"
                     value={form.watch('other_subjective_minimum_score_cotas') || ''}
-                    onChange={(e) => form.setValue('other_subjective_minimum_score_cotas', Number(e.target.value))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Limitar a 3 dígitos no total (ex: 999, 99.9, 9.99)
+                      const digitsOnly = value.replace(/[^\d]/g, '');
+                      if (digitsOnly.length <= 3 && !isNaN(parseFloat(value)) && parseFloat(value) >= 0 && parseFloat(value) <= 999) {
+                        form.setValue('other_subjective_minimum_score_cotas', parseFloat(value) || 0);
+                      } else if (value === '' || value === '.') {
+                        form.setValue('other_subjective_minimum_score_cotas', 0);
+                      }
+                    }}
                   />
                 </div>
               </div>
