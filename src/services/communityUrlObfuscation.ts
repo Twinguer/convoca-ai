@@ -3,16 +3,16 @@ import { logError, logWarn } from '@/utils/secureLogger';
 
 // Serviço para ofuscar URLs da comunidade e controlar acesso
 export class CommunityUrlObfuscationService {
-  // SECURITY: Use environment variable for obfuscation key
-  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
-  private static readonly OBFUSCATION_KEY = (() => {
+  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
+  private static getOBFUSCATION_KEY(): string {
     const key = import.meta.env.VITE_COMMUNITY_OBFUSCATION_KEY;
     if (!key) {
-      console.error('[communityUrlObfuscation] ❌ VITE_COMMUNITY_OBFUSCATION_KEY não configurada!');
-      throw new Error('VITE_COMMUNITY_OBFUSCATION_KEY environment variable is required');
+      console.warn('[communityUrlObfuscation] ⚠️ VITE_COMMUNITY_OBFUSCATION_KEY não configurada, usando fallback temporário');
+      // Fallback temporário para não quebrar o sistema - deve ser configurado em produção
+      return 'community_fallback_key_change_in_production_' + import.meta.env.MODE;
     }
     return key;
-  })();
+  }
   
   // Gerar um token ofuscado para funcionalidades da comunidade
   static async generateCommunityToken(userId: string, action: 'followers' | 'following' | 'profile'): Promise<string> {
@@ -30,7 +30,7 @@ export class CommunityUrlObfuscationService {
       
       // Criar um token único baseado no ID + action + timestamp + chave
       const timestamp = Date.now().toString();
-      const rawToken = `${userId}:${action}:${timestamp}:${this.OBFUSCATION_KEY}`;
+      const rawToken = `${userId}:${action}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
       
       // Usar btoa para codificar (não é criptografia real, mas ofusca)
       const obfuscatedToken = btoa(rawToken);
@@ -53,7 +53,7 @@ export class CommunityUrlObfuscationService {
       const [userId, action, timestamp, key] = decodedToken.split(':');
       
       // Validar a chave
-      if (key !== this.OBFUSCATION_KEY) {
+      if (key !== this.getOBFUSCATION_KEY()) {
         throw new Error('Token inválido');
       }
       

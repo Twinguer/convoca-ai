@@ -177,8 +177,54 @@ export const fetchUserRankings = async (
       }
     }
 
-    // ✅ Rankings devem vir já ordenados do backend com posições calculadas
-    // Não ordenar no frontend - manter ordem original do backend
+    // ✅ Ordenar rankings: classificados por score decrescente primeiro, depois eliminados por score decrescente
+    // Isso garante que classificados sempre aparecem antes de eliminados, independente do score
+    rankingData.sort((a, b) => {
+      const aScore = Number(a.score || 0);
+      const bScore = Number(b.score || 0);
+      const aEliminated = !!(a.belowMinimum || (a.belowDisciplineMinimums && a.belowDisciplineMinimums.length > 0) || (a.belowBlockMinimums && a.belowBlockMinimums.length > 0));
+      const bEliminated = !!(b.belowMinimum || (b.belowDisciplineMinimums && b.belowDisciplineMinimums.length > 0) || (b.belowBlockMinimums && b.belowBlockMinimums.length > 0));
+      
+      // Se um é eliminado e outro não, eliminado vai para o final
+      if (aEliminated && !bEliminated) return 1;
+      if (!aEliminated && bEliminated) return -1;
+      
+      // Se ambos têm o mesmo status (ambos classificados ou ambos eliminados), ordenar por score decrescente
+      // Em caso de empate, manter ordem original (estável)
+      if (bScore !== aScore) {
+        return bScore - aScore;
+      }
+      
+      // Empate: ordenar por userId para garantir ordem estável
+      return (a.userId || '').localeCompare(b.userId || '');
+    });
+    
+    // ✅ Calcular posições por cota (quotaPosition) antes de paginar
+    // Agrupar por tipo de reserva e calcular posições dentro de cada grupo
+    const quotaGroups: { [key: string]: typeof rankingData } = {};
+    rankingData.forEach(ranking => {
+      const quota = ranking.reservationType || 'Ampla Concorrência';
+      if (!quotaGroups[quota]) {
+        quotaGroups[quota] = [];
+      }
+      quotaGroups[quota].push(ranking);
+    });
+    
+    // Calcular quotaPosition para cada grupo (apenas classificados)
+    Object.keys(quotaGroups).forEach(quota => {
+      const quotaRankings = quotaGroups[quota];
+      // Separar classificados de eliminados dentro da cota
+      const quotaClassified = quotaRankings.filter(r => {
+        const eliminated = !!(r.belowMinimum || (r.belowDisciplineMinimums && r.belowDisciplineMinimums.length > 0) || (r.belowBlockMinimums && r.belowBlockMinimums.length > 0));
+        return !eliminated;
+      });
+      
+      // Atribuir posições apenas aos classificados (eliminados ficam sem posição na cota)
+      quotaClassified.forEach((ranking, index) => {
+        ranking.quotaPosition = index + 1;
+      });
+    });
+    
     const paginatedData = rankingData.slice(offset, offset + limit);
 
     logger.ranking('Query result', `data: ${paginatedData?.length || 0} records, error: ${rankingError?.message || 'none'}`);
@@ -209,6 +255,8 @@ export const fetchUserRankings = async (
     const totalMinimumScore = hasMinimumScoreEnabled ? (subjects.discr_min_score || subjects.case1_min_score || subjects.case2_min_score || subjects.case3_min_score || subjects.other_min_score || 0) : 0;
 
     // Formatar os dados do ranking com posições (nova estrutura normalizada)
+    // Posições devem ser calculadas considerando TODOS os rankings (não apenas paginados)
+    const totalRankings = rankingData.length;
     const formattedRankings = paginatedData.map((ranking, index) => {
       const name = ranking.name || 'Usuário Anônimo';
       const avatarUrl = ranking.avatarUrl || null;
@@ -218,8 +266,12 @@ export const fetchUserRankings = async (
       const belowDisciplineMinimums = ranking.belowDisciplineMinimums || [];
       const belowBlockMinimums = ranking.belowBlockMinimums || [];
     
+      // Calcular posição correta: offset + índice local na página
+      // Como já ordenamos todos os rankings acima, a posição é offset + index + 1
+      const position = offset + index + 1;
+    
       return {
-        position: offset + index + 1, // Calcular posição baseada no índice
+        position, // Posição correta após ordenação
         name: name,
         score: ranking.score || 0,
         userId: ranking.userId,
@@ -246,6 +298,7 @@ export const fetchUserRankings = async (
         // Dados do ranking
         reservationType: ranking.reservationType,
         displayReservation: getReservationAbbreviation(ranking.reservationType),
+        quotaPosition: ranking.quotaPosition || undefined, // Preservar quotaPosition calculado acima
         id: ranking.id,
       };
     });

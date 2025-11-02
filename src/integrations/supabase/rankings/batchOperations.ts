@@ -17,10 +17,11 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       return { success: false, error: 'ID do concurso inválido' };
     }
 
-    // Chamar a função PostgreSQL que já está corrigida
+    // ✅ CORREÇÃO: Usar função wrapper recalc_concurso_scores_public que resolve ambiguidade de tipos
+    // Esta função aceita UUID e chama internamente recalculate_all_scores_with_weights
     console.log('[recalculateAllUserScores] Calling Supabase RPC...');
-    const { data, error } = await supabase.rpc('recalculate_all_scores_with_weights', {
-      p_concurso_id: concursoId as string
+    const { data, error } = await supabase.rpc('recalc_concurso_scores_public', {
+      p_concurso_id: concursoId
     });
 
     console.log('[recalculateAllUserScores] Supabase RPC response recebida');
@@ -37,25 +38,28 @@ export const recalculateAllUserScores = async (concursoId: string): Promise<Batc
       return { success: false, error: 'Nenhum dado retornado da função PostgreSQL' };
     }
 
-    // Verificar se data é um objeto válido
-    if (typeof data !== 'object') {
+    // Verificar se data é um objeto válido (pode ser jsonb ou json)
+    if (!data || typeof data !== 'object') {
       console.error('[recalculateAllUserScores] Invalid data type returned: Database operation failed');
-      return { success: false, error: 'Tipo de dados inválido retornado da função PostgreSQL' };
+      return { success: false, error: 'Nenhum dado retornado da função PostgreSQL' };
     }
 
-    if (!data.success) {
-      console.error('[recalculateAllUserScores] PostgreSQL function returned error: Database operation failed');
-      return { success: false, error: data?.error || 'Erro desconhecido na função PostgreSQL' };
+    // A função recalc_concurso_scores_public retorna um objeto JSON com success e updatedCount
+    const result = data as any;
+    
+    if (result.success === false || !result.success) {
+      console.error('[recalculateAllUserScores] PostgreSQL function returned error:', result.error || 'Erro desconhecido');
+      return { success: false, error: result.error || result.message || 'Erro desconhecido na função PostgreSQL' };
     }
 
     console.log(`[recalculateAllUserScores] Successfully recalculated scores`);
 
     return {
       success: true,
-      updatedCount: data.updatedCount || 0,
+      updatedCount: result.updatedCount || 0,
       details: {
-        executionTimeMs: data.executionTimeMs || 0,
-        message: `Recálculo concluído em ${data.executionTimeMs || 0}ms`
+        executionTimeMs: result.executionTimeMs || 0,
+        message: `Recálculo concluído em ${result.executionTimeMs || 0}ms`
       }
     };
 

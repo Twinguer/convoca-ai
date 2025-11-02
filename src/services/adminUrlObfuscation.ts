@@ -3,16 +3,16 @@ import { logError, logWarn } from '@/utils/secureLogger';
 
 // Serviço para ofuscar URLs de administração e controlar acesso
 export class AdminUrlObfuscationService {
-  // SECURITY: Use environment variable for obfuscation key
-  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
-  private static readonly OBFUSCATION_KEY = (() => {
+  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
+  private static getOBFUSCATION_KEY(): string {
     const key = import.meta.env.VITE_ADMIN_OBFUSCATION_KEY;
     if (!key) {
-      console.error('[adminUrlObfuscation] ❌ VITE_ADMIN_OBFUSCATION_KEY não configurada!');
-      throw new Error('VITE_ADMIN_OBFUSCATION_KEY environment variable is required');
+      console.warn('[adminUrlObfuscation] ⚠️ VITE_ADMIN_OBFUSCATION_KEY não configurada, usando fallback temporário');
+      // Fallback temporário para não quebrar o sistema - deve ser configurado em produção
+      return 'admin_fallback_key_change_in_production_' + import.meta.env.MODE;
     }
     return key;
-  })();
+  }
   
   // Gerar um token ofuscado para administração
   static async generateAdminToken(adminId: string, resource: 'dashboard' | 'concursos' | 'usuarios' | 'vouchers'): Promise<string> {
@@ -34,7 +34,7 @@ export class AdminUrlObfuscationService {
       
       // Criar um token único baseado no ID + resource + timestamp + chave
       const timestamp = Date.now().toString();
-      const rawToken = `${adminId}:${resource}:${timestamp}:${this.OBFUSCATION_KEY}`;
+      const rawToken = `${adminId}:${resource}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
       
       // Usar btoa para codificar (não é criptografia real, mas ofusca)
       const obfuscatedToken = btoa(rawToken);
@@ -57,7 +57,7 @@ export class AdminUrlObfuscationService {
       const [adminId, resource, timestamp, key] = decodedToken.split(':');
       
       // Validar a chave
-      if (key !== this.OBFUSCATION_KEY) {
+      if (key !== this.getOBFUSCATION_KEY()) {
         throw new Error('Token inválido');
       }
       

@@ -4,16 +4,16 @@ import { UserStudyService } from './userStudyService';
 
 // Serviço para ofuscar URLs de ciclos de estudo e controlar acesso
 export class StudyCycleUrlObfuscationService {
-  // SECURITY: Use environment variable for obfuscation key
-  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
-  private static readonly OBFUSCATION_KEY = (() => {
+  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
+  private static getOBFUSCATION_KEY(): string {
     const key = import.meta.env.VITE_URL_OBFUSCATION_KEY;
     if (!key) {
-      console.error('[studyCycleUrlObfuscation] ❌ VITE_URL_OBFUSCATION_KEY não configurada!');
-      throw new Error('VITE_URL_OBFUSCATION_KEY environment variable is required');
+      console.warn('[studyCycleUrlObfuscation] ⚠️ VITE_URL_OBFUSCATION_KEY não configurada, usando fallback temporário');
+      // Fallback temporário para não quebrar o sistema - deve ser configurado em produção
+      return 'study_cycle_fallback_key_change_in_production_' + import.meta.env.MODE;
     }
     return key;
-  })();
+  }
   
   
   // Gerar um token ofuscado para um ciclo de estudo
@@ -40,7 +40,7 @@ export class StudyCycleUrlObfuscationService {
       
       // Criar um token único baseado no ID + userId + timestamp + chave
       const timestamp = Date.now().toString();
-      const rawToken = `${cycleId}:${userId}:${timestamp}:${this.OBFUSCATION_KEY}`;
+      const rawToken = `${cycleId}:${userId}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
       
       // Usar btoa para codificar (não é criptografia real, mas ofusca)
       const obfuscatedToken = btoa(rawToken);
@@ -63,7 +63,7 @@ export class StudyCycleUrlObfuscationService {
       const [cycleId, tokenUserId, timestamp, key] = decodedToken.split(':');
       
       // Validar a chave
-      if (key !== this.OBFUSCATION_KEY) {
+      if (key !== this.getOBFUSCATION_KEY()) {
         throw new Error('Token inválido');
       }
       

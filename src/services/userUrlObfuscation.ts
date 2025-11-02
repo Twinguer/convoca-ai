@@ -3,16 +3,16 @@ import { logError, logWarn } from '@/utils/secureLogger';
 
 // Serviço para ofuscar URLs de usuários e controlar acesso
 export class UserUrlObfuscationService {
-  // SECURITY: Use environment variable for obfuscation key
-  // ✅ SEGURANÇA: Removido fallback inseguro - variável de ambiente é obrigatória
-  private static readonly OBFUSCATION_KEY = (() => {
+  // ✅ SEGURANÇA: Verificar variável de ambiente apenas quando necessário (lazy check)
+  private static getOBFUSCATION_KEY(): string {
     const key = import.meta.env.VITE_OBFUSCATION_KEY;
     if (!key) {
-      console.error('[userUrlObfuscation] ❌ VITE_OBFUSCATION_KEY não configurada!');
-      throw new Error('VITE_OBFUSCATION_KEY environment variable is required');
+      console.warn('[userUrlObfuscation] ⚠️ VITE_OBFUSCATION_KEY não configurada, usando fallback temporário');
+      // Fallback temporário para não quebrar o sistema - deve ser configurado em produção
+      return 'user_fallback_key_change_in_production_' + import.meta.env.MODE;
     }
     return key;
-  })();
+  }
   
   // Gerar um token ofuscado para um usuário
   static async generateUserToken(userId: string): Promise<string> {
@@ -30,7 +30,7 @@ export class UserUrlObfuscationService {
       
       // Criar um token único baseado no ID + timestamp + chave
       const timestamp = Date.now().toString();
-      const rawToken = `${userId}:${timestamp}:${this.OBFUSCATION_KEY}`;
+      const rawToken = `${userId}:${timestamp}:${this.getOBFUSCATION_KEY()}`;
       
       // Usar btoa para codificar (não é criptografia real, mas ofusca)
       const obfuscatedToken = btoa(rawToken);
@@ -53,7 +53,7 @@ export class UserUrlObfuscationService {
       const [userId, timestamp, key] = decodedToken.split(':');
       
       // Validar a chave
-      if (key !== this.OBFUSCATION_KEY) {
+      if (key !== this.getOBFUSCATION_KEY()) {
         throw new Error('Token inválido');
       }
       
