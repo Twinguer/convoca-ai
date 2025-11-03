@@ -31,6 +31,9 @@ export interface CompletedSession {
   questions: number;
   correct_answers: number;
   notes?: string;
+  course_name?: string;
+  session_link?: string;
+  study_type?: string;
 }
 
 export interface WeeklySchedule {
@@ -261,9 +264,11 @@ export const useStudyCyclesV2 = () => {
         questions: completedSession.questions,
         correct_answers: completedSession.correct_answers,
         notes: completedSession.notes,
+        course_name: completedSession.course_name,
+        session_link: completedSession.session_link || session.session_link,
         discipline_name: disciplineName,
         block_name: blockName,
-        study_type: 'manual',
+        study_type: completedSession.study_type || 'manual',
         session_date: localDate,
         start_time: session.start_time,
         end_time: session.end_time,
