@@ -198,8 +198,13 @@ const AppContent = () => {
                           <CriarCiclo />
                         </ProtectedRoute>
                       </>} />
+                     <Route path="/estudos/editar-ciclo/:id" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <EditarCiclo />
+                        </ProtectedRoute>
+                      </>} />
                      {/* Rotas legadas - redirecionar para versão segura */}
-                     <Route path="/estudos/editar-ciclo/:id" element={<Navigate to="/estudos" replace />} />
                      <Route path="/estudos/ciclo/:id" element={<Navigate to="/estudos" replace />} />
                      <Route path="/estudos/sessao/:id" element={<Navigate to="/estudos" replace />} />
                      

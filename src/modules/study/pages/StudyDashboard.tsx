@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings, X } from 'lucide-react';
+import { AlertCircle, BookOpen, Calendar, Clock, Target, TrendingUp, Users, Plus, PlayCircle, Timer, BarChart3, Settings, X, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyStatistics } from '@/hooks/useStudyStatistics';
@@ -253,6 +253,15 @@ const StudyDashboard = () => {
                       }
                     }} className="w-full sm:w-auto">
                       Disciplinas
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => navigate(`/estudos/editar-ciclo/${cycle.id}`)}
+                      className="w-full sm:w-auto"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
                     </Button>
                     <Button 
                       size="sm" 

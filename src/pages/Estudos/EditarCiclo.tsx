@@ -87,54 +87,77 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
           setPosition(cycle.position || '');
           setExamDate(cycle.exam_date);
           
-          // Extrair disciplinas do schedule_data e organizá-las em blocos
-          const blocksMap = new Map<string, Block>();
-          
-          cycle.schedule_data.weekly_schedule.forEach(daySchedule => {
-            daySchedule.sessions.forEach(session => {
-              if (session.block_name && session.discipline_name) {
-                // Se o bloco ainda não existe, criar
-                if (!blocksMap.has(session.block_name)) {
-                  blocksMap.set(session.block_name, {
-                    id: generateId(),
-                    name: session.block_name,
-                    disciplines: []
-                  });
+          // Usar available_blocks se existir, senão extrair do weekly_schedule
+          if (cycle.schedule_data?.available_blocks && cycle.schedule_data.available_blocks.length > 0) {
+            // Converter available_blocks para o formato Block usado no componente
+            const loadedBlocks: Block[] = cycle.schedule_data.available_blocks.map(block => ({
+              id: block.id,
+              name: block.name,
+              disciplines: block.disciplines.map(disc => ({
+                id: disc.id,
+                name: disc.name,
+                status: 'em-andamento' as const,
+                studyTime: 0,
+                questionsResolved: 0,
+                correctAnswers: 0,
+                wrongAnswers: 0,
+                courseProgress: '',
+                studyType: 'pdf' as const,
+                isCompleted: false,
+                notes: ''
+              }))
+            }));
+            setBlocks(loadedBlocks);
+          } else {
+            // Fallback: extrair disciplinas do schedule_data.weekly_schedule
+            const blocksMap = new Map<string, Block>();
+            
+            cycle.schedule_data?.weekly_schedule?.forEach(daySchedule => {
+              daySchedule.sessions?.forEach(session => {
+                if (session.block_name && session.discipline_name) {
+                  // Se o bloco ainda não existe, criar
+                  if (!blocksMap.has(session.block_name)) {
+                    blocksMap.set(session.block_name, {
+                      id: generateId(),
+                      name: session.block_name,
+                      disciplines: []
+                    });
+                  }
+                  
+                  const block = blocksMap.get(session.block_name)!;
+                  
+                  // Verificar se a disciplina já existe no bloco
+                  const existingDiscipline = block.disciplines.find(d => d.name === session.discipline_name);
+                  
+                  if (!existingDiscipline) {
+                    // Adicionar nova disciplina
+                    const discipline: Discipline = {
+                      id: generateId(),
+                      name: session.discipline_name,
+                      status: 'em-andamento',
+                      studyTime: (session.total_stats?.total_duration_minutes || 0) / 60,
+                      questionsResolved: session.total_stats?.total_questions || 0,
+                      correctAnswers: session.total_stats?.total_correct || 0,
+                      wrongAnswers: (session.total_stats?.total_questions || 0) - (session.total_stats?.total_correct || 0),
+                      courseProgress: '',
+                      studyType: 'pdf',
+                      isCompleted: false,
+                      notes: ''
+                    };
+                    block.disciplines.push(discipline);
+                  } else {
+                    // Atualizar stats da disciplina existente
+                    existingDiscipline.studyTime += (session.total_stats?.total_duration_minutes || 0) / 60;
+                    existingDiscipline.questionsResolved += session.total_stats?.total_questions || 0;
+                    existingDiscipline.correctAnswers += session.total_stats?.total_correct || 0;
+                    existingDiscipline.wrongAnswers += (session.total_stats?.total_questions || 0) - (session.total_stats?.total_correct || 0);
+                  }
                 }
-                
-                const block = blocksMap.get(session.block_name)!;
-                
-                // Verificar se a disciplina já existe no bloco
-                const existingDiscipline = block.disciplines.find(d => d.name === session.discipline_name);
-                
-                if (!existingDiscipline) {
-                  // Adicionar nova disciplina
-                  const discipline: Discipline = {
-                    id: generateId(),
-                    name: session.discipline_name,
-                    status: 'em-andamento',
-                    studyTime: (session.total_stats?.total_duration_minutes || 0) / 60,
-                    questionsResolved: session.total_stats?.questions_answered || 0,
-                    correctAnswers: session.total_stats?.questions_correct || 0,
-                    wrongAnswers: session.total_stats?.questions_wrong || 0,
-                    courseProgress: '',
-                    studyType: 'pdf',
-                    isCompleted: false,
-                    notes: ''
-                  };
-                  block.disciplines.push(discipline);
-                } else {
-                  // Atualizar stats da disciplina existente
-                  existingDiscipline.studyTime += (session.total_stats?.total_duration_minutes || 0) / 60;
-                  existingDiscipline.questionsResolved += session.total_stats?.questions_answered || 0;
-                  existingDiscipline.correctAnswers += session.total_stats?.questions_correct || 0;
-                  existingDiscipline.wrongAnswers += session.total_stats?.questions_wrong || 0;
-                }
-              }
+              });
             });
-          });
-          
-          setBlocks(Array.from(blocksMap.values()));
+            
+            setBlocks(Array.from(blocksMap.values()));
+          }
         } else {
           toast.error('Ciclo não encontrado');
           navigate('/estudos');
@@ -245,14 +268,51 @@ const EditarCiclo: React.FC<EditarCicloProps> = ({ cycleId, secureToken }) => {
 
     setLoading(true);
     try {
+      // Buscar ciclo atual para preservar schedule_data existente
+      const userStudyData = await UserStudyService.getUserStudyData(user.id);
+      const currentCycle = userStudyData?.study_cycles.find(c => c.id === id);
+      
+      if (!currentCycle) {
+        toast.error('Ciclo não encontrado');
+        setLoading(false);
+        return;
+      }
+
+      // Converter blocos para o formato available_blocks
+      const availableBlocks = blocks.map(block => ({
+        id: block.id,
+        name: block.name,
+        disciplines: block.disciplines.map(disc => ({
+          id: disc.id,
+          name: disc.name
+        }))
+      }));
+
+      // Criar available_disciplines a partir dos blocos
+      const availableDisciplines = blocks.flatMap(block =>
+        block.disciplines.map(disc => ({
+          id: disc.id,
+          name: disc.name,
+          block_name: block.name
+        }))
+      );
+
+      // Preservar schedule_data existente e atualizar apenas available_blocks e available_disciplines
+      const updatedScheduleData = {
+        ...currentCycle.schedule_data,
+        available_blocks: availableBlocks,
+        available_disciplines: availableDisciplines
+      };
+
       const success = await UserStudyService.updateCycle(user.id, id, {
         cycle_name: cycleName,
         organ,
         position,
         exam_date: examDate,
-        edital_link: '',
-        curso_link: '',
-        video_link: ''
+        edital_link: currentCycle.edital_link || '',
+        curso_link: currentCycle.curso_link || '',
+        video_link: currentCycle.video_link || '',
+        schedule_data: updatedScheduleData
       });
 
       if (success) {
