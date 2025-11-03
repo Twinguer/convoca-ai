@@ -15,7 +15,7 @@ import { UserAvatar } from '@/components/profile/UserAvatar';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { isStudying, minutes, seconds, isRunning } = useTimer();
+  const { isStudying, minutes, seconds, isRunning, isPaused } = useTimer();
   const { theme: darkTheme, setTheme: setDarkTheme } = useDarkTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,7 +78,7 @@ const UserMenu: React.FC = () => {
 
   return (
     <div className="flex items-center gap-2">
-      {isStudying && isRunning && (
+      {(isRunning || isPaused) && (
         <Badge 
           variant="secondary" 
           className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
@@ -86,7 +86,7 @@ const UserMenu: React.FC = () => {
         >
           <Clock className="h-3 w-3" />
           <span className="font-mono text-xs">{formatTime(minutes, seconds)}</span>
-          <span className="text-xs">• Estudando</span>
+          <span className="text-xs">• {isPaused ? 'Pausado' : 'Estudando'}</span>
         </Badge>
       )}
       <DropdownMenu>
