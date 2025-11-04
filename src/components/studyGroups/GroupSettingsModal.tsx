@@ -127,13 +127,18 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
     }
 
     try {
-      // Marcar post como deletado no JSONB
-      const { error } = await supabase.rpc('delete_group_post', {
+      const { data, error } = await supabase.rpc('delete_group_post', {
         p_group_id: group.id,
         p_post_id: postId,
       });
 
       if (error) throw error;
+
+      // Verificar se a função retornou sucesso
+      if (data && !(data as any).success) {
+        const errorMsg = (data as any).error || 'Erro desconhecido ao excluir post';
+        throw new Error(errorMsg);
+      }
 
       toast({
         title: 'Post excluído',
@@ -141,6 +146,7 @@ export const GroupSettingsModal: React.FC<GroupSettingsModalProps> = ({
       });
 
       refetchPosts();
+      queryClient.invalidateQueries({ queryKey: ['group-feed', group.id] });
     } catch (error: any) {
       toast({
         title: 'Erro ao excluir post',
