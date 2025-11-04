@@ -7,8 +7,6 @@ import { useAuth } from '@/hooks/useAuth';
 import type { Ranking } from '@/services/rankingService';
 import { supabase } from '@/integrations/supabase/client';
 import { recalculateAllUserScores } from '@/integrations/supabase/rankings/batchOperations';
-import { rankingCache } from '@/services/rankingCache';
-import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { logger } from '@/utils/logger';
 import { recalculateUserScore } from '@/integrations/supabase/rankings/rankingMutations';
@@ -17,7 +15,6 @@ export function useResultadosData(concursoId?: string) {
   const { id: urlId } = useParams() as { id: string };
   const { user } = useAuth();
   const isAuthenticated = !!user;
-  const queryClient = useQueryClient();
   
   // Usar concursoId passado como prop ou do URL
   const id = concursoId || urlId;
@@ -86,28 +83,48 @@ export function useResultadosData(concursoId?: string) {
     queryFn: () => fetchUserRankings(id),
     refetchOnWindowFocus: false,
     staleTime: 0, // Sempre buscar dados frescos para garantir atualizações imediatas
-    refetchInterval: 30000, // Refetch automático a cada 30 segundos para garantir atualizações
     enabled: !!id, // HABILITADO - buscar rankings para exibir classificação
   });
   
   // Fetch participant count - for all users (authenticated or not) - NOVA ESTRUTURA
-  // ✅ CORRIGIDO: Usar função RPC que conta corretamente todos os participantes
   const { data: participantCount = 0, isLoading: isLoadingCount, refetch: refetchCount } = useQuery({
     queryKey: ['participant-count-v2', id],
     queryFn: async () => {
-      // Usar função RPC que conta corretamente usando estrutura JSONB e ignorando RLS
-      const { data, error } = await supabase.rpc('count_concurso_participants', {
-        concurso_id: id
-      });
+      // Usar função RPC para contar participantes de forma mais eficiente
+      const { data: countData, error: rpcError } = await supabase
+        .rpc('count_concurso_participants', { concurso_id: id });
+      
+      if (!rpcError && countData !== null && countData !== undefined) {
+        return countData as number;
+      }
+      
+      // Fallback: contar manualmente se a função RPC não funcionar
+      const { data, error } = await supabase
+        .from('user_rankings')
+        .select('consolidated_data');
       
       if (error) {
         logger.error('Error fetching participant count', 'USE_RESULTADOS_DATA', error);
         return 0;
       }
       
-      return data || 0;
+      // Count users who have this concurso in their consolidated_data
+      let count = 0;
+      if (data) {
+        data.forEach(userRanking => {
+          if (userRanking.consolidated_data?.rankings) {
+            Object.values(userRanking.consolidated_data.rankings).forEach((rankingData: any) => {
+              if (rankingData.concurso_id === id) {
+                count++;
+              }
+            });
+          }
+        });
+      }
+      
+      return count;
     },
-    staleTime: 30000, // 30 segundos para reduzir atualizações
+    staleTime: 30000, // Aumentado para 30 segundos para reduzir atualizações
   });
   
   // Verificar se o usuário já está participando deste ranking - NOVA ESTRUTURA
@@ -159,23 +176,36 @@ export function useResultadosData(concursoId?: string) {
     staleTime: 10000,
   });
   
-  // Efeito para configurar polling periódico para atualizações
-  // NOTA: Subscription realtime não funciona porque concurso_id está dentro do JSONB
-  // Usamos polling a cada 30 segundos para garantir que usuários vejam atualizações
+  // Efeito para configurar um canal de escuta para atualizações em tempo real da tabela user_rankings
   useEffect(() => {
     if (!id) return;
 
-    // Polling: refetch a cada 30 segundos para garantir atualizações
-    const interval = setInterval(() => {
-      // Limpar cache local para forçar busca de dados frescos
-      rankingCache.clear();
-      refetchRankings();
-      refetchCount();
-    }, 30000); // 30 segundos
+    // // Debug logs removed for security
 
-    // Cleanup: remover intervalo quando o componente for desmontado
+    // Configura um canal para escutar atualizações na tabela user_rankings
+    const channel = supabase
+      .channel('rankings-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'user_rankings',
+          filter: `concurso_id=eq.${id}`
+        },
+        (payload) => {
+          // // Debug logs removed for security
+          // Força atualização dos rankings quando houver mudanças
+          refetchRankings();
+          refetchCount();
+        }
+      )
+      .subscribe();
+
+    // Cleanup: remover inscrição quando o componente for desmontado
     return () => {
-      clearInterval(interval);
+      // // Debug logs removed for security
+      supabase.removeChannel(channel);
     };
   }, [id, refetchRankings, refetchCount]);
   
@@ -189,58 +219,105 @@ export function useResultadosData(concursoId?: string) {
     logger.info('Manual refresh initiated', 'USE_RESULTADOS_DATA', { concursoId: id });
     
     if (!id) {
-      return { success: false, error: "ID do concurso não fornecido" };
+      console.error("[useResultadosData] ID do concurso não fornecido");
+      return {
+        success: false,
+        error: "ID do concurso não fornecido"
+      };
     }
     
+    // 🔒 VERIFICAR LOCK: Evitar recálculo simultâneo
     if (isRecalculating) {
-      return { success: false, error: "Recálculo já em andamento. Aguarde a conclusão." };
+      logger.warn('Recalculation already in progress', 'USE_RESULTADOS_DATA');
+      return {
+        success: false,
+        error: "Recálculo já em andamento. Aguarde a conclusão."
+      };
     }
     
     try {
+      // 🔒 ATIVAR LOCK
       setIsRecalculating(true);
       setRecalculationProgress({ current: 0, total: 0 });
       
-      // ✅ CORRIGIDO: Usar função PostgreSQL recalculate_all_scores_with_weights
-      // Esta função já está corrigida para funcionar publicamente e atualizar todos os scores
-      logger.info('Calling PostgreSQL batch recalculation function', 'USE_RESULTADOS_DATA');
+      // ✅ NOVO: Recalcular scores de todos os participantes ANTES do refetch
+      // Debug logs removed for security
       
-      const recalculationResult = await recalculateAllUserScores(id);
+      // 1. Buscar todos os participantes do concurso
+      const { data: allUserRankings, error: fetchError } = await supabase
+        .from('user_rankings')
+        .select('user_id, consolidated_data');
       
-      if (!recalculationResult.success) {
-        throw new Error(recalculationResult.error || 'Erro ao recalcular pontuações');
+      if (fetchError) {
+        throw new Error(`Erro ao buscar participantes: ${fetchError.message}`);
       }
       
-      logger.info('Batch recalculation completed', 'USE_RESULTADOS_DATA', {
-        updatedCount: recalculationResult.updatedCount
+      // Filtrar apenas participantes deste concurso
+      const participants: string[] = [];
+      
+      allUserRankings?.forEach(ur => {
+        const rankings = ur.consolidated_data?.rankings || {};
+        for (const rankingData of Object.values(rankings)) {
+          if ((rankingData as any).concurso_id === id) {
+            participants.push(ur.user_id);
+            break;
+          }
+        }
       });
       
-      // Limpar cache local para garantir dados frescos
-      rankingCache.clear();
+      // Debug logs removed for security
+      setRecalculationProgress({ current: 0, total: participants.length });
       
-      // Invalidar todas as queries relacionadas para forçar refetch
-      queryClient.invalidateQueries({ queryKey: ['rankings', id] });
-      queryClient.invalidateQueries({ queryKey: ['rankings'] });
-      queryClient.invalidateQueries({ queryKey: ['participant-count', id] });
-      queryClient.invalidateQueries({ queryKey: ['participant-count-v2', id] });
+      // 2. Recalcular cada participante em lotes
+      if (participants.length > 0) {
+        const batchSize = 50; // Processar 50 por vez
+        let processedCount = 0;
+        
+        for (let i = 0; i < participants.length; i += batchSize) {
+          const batch = participants.slice(i, i + batchSize);
+          
+          // Executar lote em paralelo
+          const results = await Promise.allSettled(
+            batch.map(userId => recalculateUserScore(userId, id))
+          );
+          
+          // Contar sucessos
+          const successful = results.filter(r => r.status === 'fulfilled').length;
+          processedCount += successful;
+          
+          // Atualizar progresso
+          setRecalculationProgress({ current: processedCount, total: participants.length });
+          
+          // Debug logs removed for security
+        }
+        
+        // Debug logs removed for security
+      }
       
-      // Fazer refetch dos dados atualizados
+      // 3. AGORA SIM fazer refetch (que buscará scores ATUALIZADOS)
+      // Debug logs removed for security
       await Promise.all([
         refetchRankings(),
-        refetchCount(),
+        refetchCount()
       ]);
       
       logger.info('Data refreshed successfully', 'USE_RESULTADOS_DATA', {
-        updatedCount: recalculationResult.updatedCount
+        participantsRecalculated: participants.length
       });
       
       return { 
         success: true,
-        updatedCount: recalculationResult.updatedCount
+        participantsRecalculated: participants.length
       };
+      
     } catch (error: any) {
       logger.error('Error refreshing data', 'USE_RESULTADOS_DATA', error);
-      return { success: false, error: error.message || String(error) };
+      return { 
+        success: false, 
+        error: error.message || String(error) 
+      };
     } finally {
+      // 🔒 LIBERAR LOCK (sempre, mesmo em erro)
       setIsRecalculating(false);
       setRecalculationProgress(null);
     }
