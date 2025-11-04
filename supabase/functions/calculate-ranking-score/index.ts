@@ -252,65 +252,84 @@ serve(async (req) => {
       },
     };
 
-    // Verificar se já existe um ranking para este usuário neste concurso
-    const { data: existingRanking } = await supabase
+    // Buscar/atualizar consolidated_data no formato atual (sem coluna concurso_id)
+    const { data: userRankingRow, error: urError } = await supabase
       .from('user_rankings')
-      .select('id')
+      .select('user_id, consolidated_data')
       .eq('user_id', userId)
-      .eq('concurso_id', concursoId)
       .maybeSingle();
 
-    if (existingRanking) {
-      // Atualizar ranking existente
+    if (urError && urError.code !== 'PGRST116') {
+      console.error('[calculate-ranking-score] Error fetching user_rankings:', urError);
+      throw urError;
+    }
+
+    // Mesclar consolidated_data.rankings mantendo outros concursos
+    const existingConsolidated: any = userRankingRow?.consolidated_data || {};
+    const rankingsObj: Record<string, any> = { ...(existingConsolidated.rankings || {}) };
+
+    // Remover chaves anteriores deste concurso
+    for (const key of Object.keys(rankingsObj)) {
+      if (key.startsWith(`ranking_${concursoId}_`)) {
+        delete rankingsObj[key];
+      }
+    }
+
+    const rankingKey = `ranking_${concursoId}_${userId}_${Date.now()}`;
+    rankingsObj[rankingKey] = {
+      concurso_id: concursoId,
+      selected_booklet_id: bookletId,
+      reservation_type: reservationType,
+      score: totalScore,
+      subject_scores: subjectScores,
+      block_scores: blockScores,
+      below_minimum: belowMinimum,
+      status,
+      elimination_reasons: eliminationReasons,
+      belowDisciplineMinimums,
+      belowBlockMinimums,
+      subjective_scores: subjectiveScores || {},
+      control_metadata: {
+        last_updated: new Date().toISOString(),
+      },
+    };
+
+    const newConsolidated = {
+      ...(existingConsolidated || {}),
+      rankings: rankingsObj,
+      metadata: {
+        ...(existingConsolidated?.metadata || {}),
+        booklet_id: bookletId,
+        calculation_source: 'edge_function',
+      },
+    };
+
+    if (userRankingRow) {
       const { error: updateError } = await supabase
         .from('user_rankings')
-        .update({
-          score: totalScore,
-          reservation_type: reservationType,
-          selected_booklet_id: bookletId,
-          consolidated_data: consolidatedData,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingRanking.id);
+        .update({ consolidated_data: newConsolidated })
+        .eq('user_id', userId);
 
       if (updateError) {
-        console.error('[calculate-ranking-score] Error updating ranking:', updateError);
+        console.error('[calculate-ranking-score] Error updating ranking (consolidated_data):', updateError);
         throw updateError;
       }
 
-      console.log(`[calculate-ranking-score] Updated ranking ${existingRanking.id}`);
+      console.log(`[calculate-ranking-score] Updated consolidated_data for user ${userId}`);
     } else {
-      // Criar novo ranking
       const { error: insertError } = await supabase
         .from('user_rankings')
         .insert({
           user_id: userId,
-          concurso_id: concursoId,
-          score: totalScore,
-          reservation_type: reservationType,
-          selected_booklet_id: bookletId,
-          consolidated_data: consolidatedData,
+          consolidated_data: newConsolidated,
         });
 
       if (insertError) {
-        console.error('[calculate-ranking-score] Error inserting ranking:', insertError);
+        console.error('[calculate-ranking-score] Error inserting ranking (consolidated_data):', insertError);
         throw insertError;
       }
 
-      console.log(`[calculate-ranking-score] Created new ranking for user ${userId}`);
-    }
-
-    // Atualizar total_participants no concurso
-    const { count } = await supabase
-      .from('user_rankings')
-      .select('*', { count: 'exact', head: true })
-      .eq('concurso_id', concursoId);
-
-    if (count !== null) {
-      await supabase
-        .from('concursos')
-        .update({ total_participants: count })
-        .eq('id', concursoId);
+      console.log(`[calculate-ranking-score] Created consolidated_data row for user ${userId}`);
     }
 
     return new Response(
@@ -318,6 +337,12 @@ serve(async (req) => {
         success: true,
         score: totalScore,
         subject_scores: subjectScores,
+        block_scores: blockScores,
+        below_minimum: belowMinimum,
+        status,
+        elimination_reasons: eliminationReasons,
+        belowDisciplineMinimums,
+        belowBlockMinimums,
         calculation_source: 'edge_function',
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
