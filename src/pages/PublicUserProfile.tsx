@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,15 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Separator } from '@/components/ui/separator';
-import { Trophy, Users, ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
+import { Trophy, Users, ArrowLeft, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubscription } from '@/hooks/useSubscription';
-import { showProRequiredToast } from '@/utils/planRestrictions';
-import { getFollowers, getFollowing } from '@/components/profile/FollowersService';
 import { Link } from 'react-router-dom';
-import { LoadingState } from '@/components/resultados/LoadingState';
+import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
 import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
-import { useSecureUserUrls } from '@/services/userUrlObfuscation';
 import { maskEmail, canViewFullEmail } from '@/utils/emailMasking';
 interface UserProfile {
   id: string;
@@ -28,7 +24,6 @@ interface UserProfile {
   concursos_aprovados: string | null;
   concursos_participando: string | null;
   status_concurseiro: string | null;
-  followerCount?: number;
   postCount?: number;
   profile_text?: string | null;
   estado?: string | null;
@@ -60,18 +55,13 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
   const {
     user
   } = useAuth();
-  const { isPro, isLoading: isLoadingSubscription } = useSubscription();
   const navigate = useNavigate();
-  const { generateSecureUserUrl } = useSecureUserUrls();
   
   // Usar userId passado como prop ou do URL
   const id = userId || urlId;
   const {
     toast
   } = useToast();
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followers, setFollowers] = useState<any[]>([]);
-  const [following, setFollowing] = useState<any[]>([]);
   const {
     data: profile,
     isLoading: profileLoading
@@ -88,15 +78,6 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         if (profileError) throw profileError;
         if (!profileData) throw new Error('User profile not found');
 
-        // Get follower count
-        const {
-          count: followerCount,
-          error: followerError
-        } = await supabase.rpc('count_user_followers', {
-          user_id: id
-        });
-        if (followerError) console.error('Error counting followers:', followerError);
-
         // Get post count (rankings)
         const {
           count: postCount,
@@ -111,10 +92,20 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
         const {
           data: extendedData
         } = await supabase.from('users_profiles').select('*').eq('id', id).maybeSingle();
+        
+        // Check if user is a coach
+        const {
+          data: coachData
+        } = await supabase
+          .from('coach_profiles')
+          .select('id')
+          .eq('coach_id', id)
+          .maybeSingle();
+        
         return {
           ...profileData,
-          followerCount: followerCount || 0,
           postCount: postCount || 0,
+          isCoach: !!coachData,
           // Merge extended data if available
           bio: extendedData?.bio || 'Informações privadas',
           email: extendedData?.email ? maskEmail(extendedData.email) : '',
@@ -128,7 +119,7 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           especialidade: extendedData?.especialidade || null,
           curso_preparatorio: extendedData?.curso_preparatorio || null,
           rotina_estudos: extendedData?.rotina_estudos || null
-        } as UserProfile;
+        } as UserProfile & { isCoach?: boolean };
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
@@ -212,22 +203,30 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           }
 
           // Mesma regra de eliminação usada na tabela de rankings
-          // ✅ Usar apenas dados do backend - sem lógica de eliminação no frontend
           const isBelowMinimum = (ranking: any, concursoData: any) => {
-            // Usar apenas os flags que vêm do backend
+            // Verificação existente para mínimos por disciplina/bloco
             const hasDisciplineMinimums = ranking.belowDisciplineMinimums && 
               ranking.belowDisciplineMinimums.length > 0;
             const hasBlockMinimums = ranking.belowBlockMinimums && 
               ranking.belowBlockMinimums.length > 0;
             
-            return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums;
+            // NOVA LÓGICA: Para provas "Certo ou Errado", eliminar se nota <= 0
+            const isCertoErradoEliminated = concursoData?.exam_type === 'Certo ou Errado' && 
+              ranking.score <= 0;
+            
+            // NOVA LÓGICA: Para provas "Alternativas", eliminar se nota <= 0
+            const isAlternativasEliminated = concursoData?.exam_type === 'Alternativas' && 
+              ranking.score <= 0;
+            
+            
+            return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
+                   isCertoErradoEliminated || isAlternativasEliminated;
           };
-          // ✅ Usar posição que vem do backend (ranking.position)
-          // Não recalcular no frontend
+          const classified = list.filter((r: any) => !isBelowMinimum(r, rankingData)).sort((a: any, b: any) => b.score - a.score);
           const rid = userRankingIdByConcurso.get(cid);
-          const userRanking = list.find((r: any) => r.id === rid);
-          const isClassified = userRanking ? !isBelowMinimum(userRanking, rankingData) : false;
-          const position = userRanking?.position || null;
+          const idx = classified.findIndex((r: any) => r.id === rid);
+          const isClassified = idx >= 0;
+          const position = isClassified ? idx + 1 : null;
           
           return {
             cid,
@@ -284,118 +283,13 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
     enabled: !!id
   });
 
-  // Load followers and following
-  useEffect(() => {
-    const loadFollowersData = async () => {
-      if (!id) return;
-      try {
-        const [followersData, followingData] = await Promise.all([getFollowers(id), getFollowing(id)]);
-        setFollowers(followersData);
-        setFollowing(followingData);
-      } catch (error) {
-        console.error('Error loading followers data:', error);
-      }
-    };
-    if (id) {
-      loadFollowersData();
-    }
-  }, [id]);
-  useEffect(() => {
-    const checkFollowing = async () => {
-      if (user && id && user.id !== id) {
-        try {
-          const {
-            count,
-            error
-          } = await supabase.from('user_followers').select('*', {
-            count: 'exact',
-            head: true
-          }).eq('follower_id', user.id).eq('followed_id', id);
-          if (error) throw error;
-          setIsFollowing(count > 0);
-        } catch (error) {
-          console.error('Error checking following status:', error);
-        }
-      }
-    };
-    checkFollowing();
-  }, [user, id]);
-
-  // Verificar se é perfil de outro usuário e se o usuário atual é Free
-  // MOVER PARA ANTES DOS RETORNOS CONDICIONAIS
-  const isOtherUserProfile = user && id && user.id !== id;
-  const toastShownRef = useRef(false);
-
-  useEffect(() => {
-    if (isOtherUserProfile && !isPro && !toastShownRef.current) {
-      toastShownRef.current = true;
-      showProRequiredToast(navigate, 'Visualizar Perfis de Outros Usuários');
-    }
-  }, [isOtherUserProfile, isPro, navigate]);
-
-  const handleFollowToggle = async () => {
-    if (!user) {
-      toast({
-        title: 'Login necessário',
-        description: 'Faça login para seguir outros usuários.',
-        variant: 'default'
-      });
-      navigate('/auth');
-      return;
-    }
-    if (!id || user.id === id) return;
-    try {
-      if (isFollowing) {
-        const {
-          error
-        } = await supabase.from('user_followers').delete().eq('follower_id', user.id).eq('followed_id', id);
-        if (error) throw error;
-        setIsFollowing(false);
-        toast({
-          title: 'Deixou de seguir',
-          description: `Você deixou de seguir ${profile?.name}.`
-        });
-      } else {
-        const {
-          error
-        } = await supabase.from('user_followers').insert({
-          follower_id: user.id,
-          followed_id: id
-        });
-        if (error) throw error;
-        setIsFollowing(true);
-        toast({
-          title: 'Seguindo',
-          description: `Você está seguindo ${profile?.name}.`
-        });
-      }
-    } catch (error) {
-      console.error('Error updating follow status:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar o status de seguidor.',
-        variant: 'destructive'
-      });
-    }
-  };
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-  const handleViewProfile = async (userId: string) => {
-    try {
-      const secureUrl = await generateSecureUserUrl(userId, 'profile');
-      navigate(secureUrl);
-    } catch (error) {
-      navigate('/comunidade');
-    }
-  };
-  if (profileLoading || isLoadingSubscription) {
+  if (profileLoading) {
     return <div className="container mx-auto p-4 flex justify-center items-center min-h-[60vh]">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-12 w-12 text-muted-foreground mb-4 animate-spin" />
-          <p className="text-muted-foreground">Carregando perfil...</p>
-        </div>
+        <div className="animate-spin h-8 w-8 border-primary rounded-full border-t-transparent"></div>
       </div>;
   }
   if (!profile) {
@@ -409,11 +303,6 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           </Button>
         </div>
       </div>;
-  }
-
-  // Bloquear Free users de ver perfil de outros usuários
-  if (isOtherUserProfile && !isPro) {
-    return <LoadingState />;
   }
 
   // Processar as aprovações do usuário
@@ -443,7 +332,11 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
                   <h2 className="text-xl font-bold mb-2">
                     {profile?.name || 'Usuário'}
                   </h2>
-                  
+                  {profile?.isCoach && (
+                    <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200 mb-2">
+                      Coach
+                    </Badge>
+                  )}
                 </div>
                 
                 <Separator />
@@ -584,93 +477,9 @@ const PublicUserProfile: React.FC<PublicUserProfileProps> = ({ userId, secureTok
           </div>
         </div>
         
-        {/* Coluna Direita - Seguidores */}
+        {/* Coluna Direita - Estatísticas e Grupos */}
         <div className="lg:col-span-3 space-y-4">
-          {/* Seguidores */}
-          <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Seguidores ({followers.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {followers.length > 0 ? <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    {followers.slice(0, 6).map(follower => <div key={follower.id} className="text-center">
-                        <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }} onClick={() => handleViewProfile(follower.id)}>
-                          <AvatarImage src={follower.avatar_url || ''} alt={follower.name} />
-                          <AvatarFallback className="text-xs">
-                            {getInitials(follower.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs text-muted-foreground truncate block">
-                          {follower.name?.split(' ')[0]}
-                        </span>
-                      </div>)}
-                  </div>
-                  {followers.length > 6 && <Button variant="link" size="sm" className="w-full" onClick={async () => {
-                      try {
-                        const secureUrl = await generateSecureUserUrl(id, 'followers');
-                        navigate(secureUrl);
-                      } catch (error) {
-                        console.error('Erro ao gerar URL segura:', error);
-                        navigate('/comunidade');
-                      }
-                    }}>
-                      Ver todas
-                    </Button>}
-                </div> : <p className="text-sm text-muted-foreground text-center">
-                  Nenhum seguidor ainda
-                </p>}
-            </CardContent>
-          </Card>
-          
-          {/* Seguindo */}
-          <Card className="rounded-xl border border-border bg-card text-card-foreground shadow-lg hover:shadow-2xl transition-shadow duration-300 overflow-hidden" style={{ boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.05)' }}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Seguindo ({following.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {following.length > 0 ? <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    {following.slice(0, 6).map(followedUser => <div key={followedUser.id} className="text-center">
-                        <Avatar className="h-12 w-12 mx-auto mb-1 cursor-pointer" style={{ boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)' }} onClick={() => handleViewProfile(followedUser.id)}>
-                          <AvatarImage src={followedUser.avatar_url || ''} alt={followedUser.name} />
-                          <AvatarFallback className="text-xs">
-                            {getInitials(followedUser.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-xs text-muted-foreground truncate block">
-                          {followedUser.name?.split(' ')[0]}
-                        </span>
-                      </div>)}
-                  </div>
-                  {following.length > 6 && <Button variant="link" size="sm" className="w-full" onClick={async () => {
-                      try {
-                        const secureUrl = await generateSecureUserUrl(id, 'following');
-                        navigate(secureUrl);
-                      } catch (error) {
-                        console.error('Erro ao gerar URL segura:', error);
-                        navigate('/comunidade');
-                      }
-                    }}>
-                      Ver todas
-                    </Button>}
-                </div> : <p className="text-sm text-muted-foreground text-center">
-                  Não seguindo ninguém ainda
-                </p>}
-            </CardContent>
-          </Card>
-          
-          {/* Botão de Seguir/Deixar de Seguir */}
-          {user && user.id !== id && <Button onClick={handleFollowToggle} variant={isFollowing ? "outline" : "default"} className="w-full">
-              <UserPlus className="mr-2 h-4 w-4" />
-              {isFollowing ? "Deixar de seguir" : "Seguir"}
-            </Button>}
+          {id && <ProfileStatsColumn userId={id} rankings={rankings} />}
         </div>
       </div>
     </div>;

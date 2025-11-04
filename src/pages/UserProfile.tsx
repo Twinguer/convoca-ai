@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { User, Upload, Check, Loader2, Trophy, Users, Calendar, BookOpen, Pen } from 'lucide-react';
-import { FollowersColumn } from '@/components/profile/FollowersColumn';
+import { ProfileStatsColumn } from '@/components/profile/ProfileStatsColumn';
 import Logo from '@/assets/logo';
 import StatusSelect from '@/components/profile/StatusSelect';
 import ProfileInfoTab from '@/components/profile/ProfileInfoTab';
@@ -23,12 +23,16 @@ import RankingsTab from '@/components/profile/RankingsTab';
 import CreatedRankingsTab from '@/components/profile/CreatedRankingsTab';
 import DeleteProfileButton from '@/components/profile/DeleteProfileButton';
 import CombinedRankingsTab from '@/components/profile/CombinedRankingsTab';
+import { fetchUserRankingsV3 } from '@/services/rankingServiceV3';
 
-interface Follower {
-  id: string;
-  name: string;
-  avatar_url?: string | null;
+interface UserRanking {
+  concursoId: string;
+  concursoTitle: string;
+  position: number | null;
+  score: number;
+  isClassified: boolean;
 }
+
 
 const UserProfile = () => {
   const { user } = useAuth();
@@ -41,7 +45,6 @@ const UserProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [followersCount, setFollowersCount] = useState(0);
   const [statusConcurseiro, setStatusConcurseiro] = useState('Na Ativa');
   const [profileText, setProfileText] = useState('');
   
@@ -111,32 +114,105 @@ const UserProfile = () => {
   });
 
 
+
+  // Verificar se o usuário é coach
   const {
-    data: followerData
+    data: isCoach
   } = useQuery({
-    queryKey: ['user-followers-count', user?.id],
+    queryKey: ['user-is-coach', user?.id],
     queryFn: async () => {
-      if (!user) return 0;
+      if (!user) return false;
       const {
         data,
         error
-      } = await supabase.rpc('count_user_followers', {
-        user_id: user.id
-      });
+      } = await supabase
+        .from('coach_profiles')
+        .select('id')
+        .eq('coach_id', user.id)
+        .maybeSingle();
+      
       if (error) {
-        console.error('Error fetching follower count:', error);
-        return 0;
+        console.error('Error checking coach status:', error);
+        return false;
       }
-      return data || 0;
+      return !!data;
     },
     enabled: !!user
   });
 
-  useEffect(() => {
-    if (followerData !== undefined) {
-      setFollowersCount(followerData);
-    }
-  }, [followerData]);
+  // Buscar rankings do usuário para estatísticas
+  const { data: userRankings = [] } = useQuery({
+    queryKey: ['user-rankings-for-stats', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      try {
+        const { data, error } = await supabase
+          .from('user_rankings')
+          .select('user_id, consolidated_data')
+          .eq('user_id', user.id);
+
+        if (error || !data || data.length === 0) return [];
+
+        const concursoIds: string[] = [];
+        const userRankingIdByConcurso = new Map<string, string>();
+        const userRanking = data[0];
+
+        if (userRanking.consolidated_data?.rankings) {
+          for (const [rankingId, rankingData] of Object.entries(userRanking.consolidated_data.rankings)) {
+            const concursoId = (rankingData as any)?.concurso_id;
+            if (concursoId) {
+              concursoIds.push(concursoId);
+              userRankingIdByConcurso.set(concursoId, rankingId);
+            }
+          }
+        }
+
+        if (concursoIds.length === 0) return [];
+
+        const { data: concursosData } = await supabase
+          .from('concursos')
+          .select('id, titulo, exam_type')
+          .in('id', concursoIds);
+
+        const results = await Promise.all(concursoIds.map(async (cid) => {
+          const list = await fetchUserRankingsV3(cid);
+          const concursoInfo = concursosData?.find(c => c.id === cid);
+          const rankingData = concursoInfo || { exam_type: 'Alternativas' };
+
+          const isBelowMinimum = (ranking: any) => {
+            const hasDisciplineMinimums = ranking.belowDisciplineMinimums?.length > 0;
+            const hasBlockMinimums = ranking.belowBlockMinimums?.length > 0;
+            const isCertoErradoEliminated = rankingData.exam_type === 'Certo ou Errado' && ranking.score <= 0;
+            const isAlternativasEliminated = rankingData.exam_type === 'Alternativas' && ranking.score <= 0;
+            return !!ranking.belowMinimum || hasDisciplineMinimums || hasBlockMinimums || 
+                   isCertoErradoEliminated || isAlternativasEliminated;
+          };
+
+          const classified = list.filter((r: any) => !isBelowMinimum(r)).sort((a: any, b: any) => b.score - a.score);
+          const rid = userRankingIdByConcurso.get(cid);
+          const idx = classified.findIndex((r: any) => r.id === rid);
+          const isClassified = idx >= 0;
+          const position = isClassified ? idx + 1 : null;
+          const score = (userRanking.consolidated_data.rankings[rid as string] as any)?.user_data?.score || 0;
+
+          return {
+            concursoId: cid,
+            concursoTitle: concursoInfo?.titulo || 'Concurso sem título',
+            position,
+            score,
+            isClassified
+          } as UserRanking;
+        }));
+
+        return results;
+      } catch (error) {
+        console.error('Error fetching rankings for stats:', error);
+        return [];
+      }
+    },
+    enabled: !!user?.id
+  });
+
 
 
   useEffect(() => {
@@ -303,6 +379,7 @@ const UserProfile = () => {
                 handleAvatarUpload={handleAvatarUpload}
                 statusConcurseiro={statusConcurseiro}
                 profileText={profileText}
+                isCoach={isCoach || false}
               />
             </CardContent>
           </Card>
@@ -459,7 +536,7 @@ const UserProfile = () => {
         </div>
 
         <div className="md:col-span-3">
-          {user && <FollowersColumn userId={user.id} />}
+          {user && <ProfileStatsColumn userId={user.id} rankings={userRankings} />}
         </div>
       </div>
 

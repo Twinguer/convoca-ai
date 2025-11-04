@@ -350,48 +350,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payment_preferences: {
-        Row: {
-          amount: number
-          created_at: string
-          external_reference: string
-          id: string
-          mercado_pago_payment_data: Json | null
-          payment_id: string | null
-          plan_id: string
-          preference_id: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string
-          external_reference: string
-          id?: string
-          mercado_pago_payment_data?: Json | null
-          payment_id?: string | null
-          plan_id: string
-          preference_id: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          external_reference?: string
-          id?: string
-          mercado_pago_payment_data?: Json | null
-          payment_id?: string | null
-          plan_id?: string
-          preference_id?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       performance_alerts: {
         Row: {
           alert_type: string
@@ -608,27 +566,6 @@ export type Database = {
           ip_address?: string | null
           user_agent?: string | null
           user_id?: string | null
-        }
-        Relationships: []
-      }
-      user_followers: {
-        Row: {
-          created_at: string
-          followed_id: string
-          follower_id: string
-          id: string
-        }
-        Insert: {
-          created_at?: string
-          followed_id: string
-          follower_id: string
-          id?: string
-        }
-        Update: {
-          created_at?: string
-          followed_id?: string
-          follower_id?: string
-          id?: string
         }
         Relationships: []
       }
@@ -1055,10 +992,6 @@ export type Database = {
         Returns: boolean
       }
       apply_voucher: { Args: { voucher_code_param: string }; Returns: Json }
-      calculate_ranking_positions: {
-        Args: { p_concurso_id: string }
-        Returns: Json
-      }
       calculate_secure_score: {
         Args: {
           p_discipline_weight?: number
@@ -1090,15 +1023,17 @@ export type Database = {
         Args: { v_sessions: Json }
         Returns: Json
       }
-      calculate_user_score_realtime: {
-        Args: {
-          p_concurso_id: string
-          p_ranking_id: string
-          p_selected_booklet: string
-          p_user_id: string
-        }
-        Returns: number
-      }
+      calculate_user_score_realtime:
+        | {
+            Args: {
+              p_concurso_id: string
+              p_ranking_id: string
+              p_selected_booklet: string
+              p_user_id: string
+            }
+            Returns: number
+          }
+        | { Args: { p_ranking_id: string }; Returns: number }
       calculate_weighted_scores: {
         Args: { p_concurso_id: string; p_scores: Json; p_user_id?: string }
         Returns: Json
@@ -1157,7 +1092,6 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: number
       }
-      count_user_followers: { Args: { user_id: string }; Returns: number }
       count_user_posts: { Args: { user_id: string }; Returns: number }
       debug_save_user_answers_v3: {
         Args: {
@@ -1225,22 +1159,6 @@ export type Database = {
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
-      }
-      get_followers_list: {
-        Args: { target_user_id: string }
-        Returns: {
-          avatar_url: string
-          id: string
-          name: string
-        }[]
-      }
-      get_following_list: {
-        Args: { target_user_id: string }
-        Returns: {
-          avatar_url: string
-          id: string
-          name: string
-        }[]
       }
       get_jsonb_analysis: {
         Args: never
@@ -1318,18 +1236,6 @@ export type Database = {
           total_score: number
           user_id: string
           user_name: string
-        }[]
-      }
-      get_rankings_for_concurso: {
-        Args: {
-          p_concurso_id: string
-          p_limit?: number
-          p_offset?: number
-          p_reservation_type?: string
-        }
-        Returns: {
-          consolidated_data: Json
-          user_id: string
         }[]
       }
       get_realtime_rankings: {
@@ -1427,7 +1333,6 @@ export type Database = {
         Args: { p_concurso_id: string; p_ranking_id: string }
         Returns: boolean
       }
-      is_user_pro: { Args: { p_user_id: string }; Returns: boolean }
       log_admin_operation: {
         Args: { operation_details?: Json; operation_type: string }
         Returns: undefined
@@ -1526,10 +1431,6 @@ export type Database = {
           total_records: number
         }[]
       }
-      recalc_concurso_scores_public: {
-        Args: { p_concurso_id: string }
-        Returns: Json
-      }
       recalculate_all_scores: {
         Args: { p_concurso_id: string }
         Returns: undefined
@@ -1538,17 +1439,22 @@ export type Database = {
         Args: { p_concurso_id: string }
         Returns: Json
       }
-      recalculate_all_scores_with_weights: {
-        Args: { p_concurso_id: string }
-        Returns: Json
-      }
+      recalculate_all_scores_with_weights:
+        | {
+            Args: { p_concurso_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.recalculate_all_scores_with_weights(p_concurso_id => text), public.recalculate_all_scores_with_weights(p_concurso_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { p_concurso_id: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.recalculate_all_scores_with_weights(p_concurso_id => text), public.recalculate_all_scores_with_weights(p_concurso_id => uuid). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
       recalculate_all_users_scores_realtime: {
         Args: { p_concurso_id: string }
         Returns: Json
-      }
-      recalculate_concurso_scores: {
-        Args: { p_concurso_id: string }
-        Returns: number
       }
       recalculate_specific_users_scores: {
         Args: { p_concurso_id: string; p_user_ids: string[] }
@@ -1666,20 +1572,31 @@ export type Database = {
         }
         Returns: Json
       }
-      save_user_answers_with_booklet: {
-        Args: {
-          p_answers: Json
-          p_booklet_id: string
-          p_case_study_1_score?: number
-          p_case_study_2_score?: number
-          p_case_study_3_score?: number
-          p_concurso_id: string
-          p_current_edit_count?: number
-          p_discursive_score?: number
-          p_ranking_id: string
-        }
-        Returns: Json
-      }
+      save_user_answers_with_booklet:
+        | {
+            Args: {
+              p_answers_data: Json
+              p_concurso_id: string
+              p_reservation_type?: string
+              p_selected_booklet?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_answers: Json
+              p_booklet_id: string
+              p_case_study_1_score?: number
+              p_case_study_2_score?: number
+              p_case_study_3_score?: number
+              p_concurso_id: string
+              p_current_edit_count?: number
+              p_discursive_score?: number
+              p_ranking_id: string
+            }
+            Returns: Json
+          }
       start_continuous_monitoring: { Args: never; Returns: undefined }
       switch_user_booklet: {
         Args: { p_booklet_id: string; p_ranking_id: string }
@@ -1715,15 +1632,6 @@ export type Database = {
         }
         Returns: Json
       }
-      update_consolidated_data_and_recalculate: {
-        Args: {
-          p_concurso_id: string
-          p_ranking_id: string
-          p_updated_data: Json
-          p_user_id: string
-        }
-        Returns: Json
-      }
       update_consolidated_data_with_reorganized_answers: {
         Args: { p_ranking_id: string }
         Returns: Json
@@ -1743,10 +1651,6 @@ export type Database = {
       upsert_user_study_data: {
         Args: { study_data: Json; user_uuid: string }
         Returns: Json
-      }
-      user_participates_in_concurso: {
-        Args: { p_concurso_id: string; p_user_id: string }
-        Returns: boolean
       }
       validate_input_security: {
         Args: { p_input: string; p_max_length?: number }

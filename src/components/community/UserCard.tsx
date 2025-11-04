@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { OnlineIndicator } from '@/components/profile/OnlineIndicator';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -19,6 +20,7 @@ interface UserProfile {
   approvalCount: number;
   status_concurseiro?: string | null;
   is_studying?: boolean;
+  isCoach?: boolean;
 }
 
 interface UserCardProps {
@@ -98,6 +100,11 @@ export const UserCard: React.FC<UserCardProps> = ({
               : 'Usuário'
             }
           </h3>
+          {userProfile.isCoach && (
+            <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200 mt-1">
+              Coach
+            </Badge>
+          )}
         </div>
         
         <div className="hidden sm:grid grid-cols-2 gap-x-4 text-center border-t border-b divide-x divide-border py-3 mb-3">

@@ -43,15 +43,9 @@ export const useCommunityUsers = (searchQuery: string = '') => {
 
         // Log removido por segurança
         
-        // Add follower and rankings counts for each user
+        // Add rankings counts for each user
         const usersWithCounts = await Promise.all(
           profiles.map(async (profile) => {
-            // Use RPC function to count followers
-            const { data: followerCount, error: followerError } = await supabase
-              .rpc('count_user_followers', { user_id: profile.id });
-
-            if (followerError) console.error('Error counting followers:', followerError);
-
             // Count user rankings
             const { count: postCount, error: postError } = await supabase
               .from('user_rankings')
@@ -59,6 +53,13 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               .eq('user_id', profile.id);
 
             if (postError) console.error('Error counting posts:', postError);
+
+            // Check if user is a coach
+            const { data: coachData } = await supabase
+              .from('coach_profiles')
+              .select('id')
+              .eq('coach_id', profile.id)
+              .maybeSingle();
 
             // Generate basic info from available data
             const usernameFromName = profile.name 
@@ -74,7 +75,7 @@ export const useCommunityUsers = (searchQuery: string = '') => {
             return {
               ...profile,
               username: usernameFromName,
-              followerCount: followerCount || 0,
+              followerCount: 0, // Sistema de seguidores removido
               postCount: postCount || 0,
               approvalCount,
               status_concurseiro: profile.status_concurseiro || "Na Ativa",
@@ -89,7 +90,8 @@ export const useCommunityUsers = (searchQuery: string = '') => {
               especialidade: '',
               curso_preparatorio: '',
               rotina_estudos: '',
-              is_studying: profile.is_studying || false
+              is_studying: profile.is_studying || false,
+              isCoach: !!coachData
             };
           })
         );

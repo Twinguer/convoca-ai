@@ -15,7 +15,7 @@ import { UserAvatar } from '@/components/profile/UserAvatar';
 
 const UserMenu: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { isStudying, minutes, seconds, isRunning, isPaused } = useTimer();
+  const { isStudying, minutes, seconds, isRunning } = useTimer();
   const { theme: darkTheme, setTheme: setDarkTheme } = useDarkTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,7 +78,7 @@ const UserMenu: React.FC = () => {
 
   return (
     <div className="flex items-center gap-2">
-      {(isRunning || isPaused) && (
+      {isStudying && isRunning && (
         <Badge 
           variant="secondary" 
           className="flex items-center gap-1 bg-primary/10 text-primary border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
@@ -86,7 +86,7 @@ const UserMenu: React.FC = () => {
         >
           <Clock className="h-3 w-3" />
           <span className="font-mono text-xs">{formatTime(minutes, seconds)}</span>
-          <span className="text-xs">• {isPaused ? 'Pausado' : 'Estudando'}</span>
+          <span className="text-xs">• Estudando</span>
         </Badge>
       )}
       <DropdownMenu>
@@ -111,7 +111,7 @@ const UserMenu: React.FC = () => {
         <DropdownMenuContent align="end" className="w-56">
           <div className="flex flex-col space-y-1 p-2">
             <p className="text-sm font-medium leading-none">{userName}</p>
-            {/* ✅ SEGURANÇA: Email removido da exibição pública - usar apenas internamente */}
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>
           <DropdownMenuSeparator />
           
@@ -126,13 +126,6 @@ const UserMenu: React.FC = () => {
                   </Badge>
                 )}
               </div>
-            </Link>
-          </DropdownMenuItem>
-          
-          <DropdownMenuItem asChild>
-            <Link to="/seguidores" className="flex w-full cursor-pointer items-center">
-              <Users className="mr-2 h-4 w-4" />
-              <span>Meus Seguidores</span>
             </Link>
           </DropdownMenuItem>
           

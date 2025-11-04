@@ -22,7 +22,6 @@ import PublicUserProfile from "./pages/PublicUserProfile";
 import Notifications from "./pages/Notifications";
 import { AuthProvider } from "./hooks/useAuth";
 import { PresenceProvider } from "./contexts/PresenceContext";
-import UserFollowers from "./pages/UserFollowers";
 import { SecureAdminLogin } from "./components/Admin/SecureLogin";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import ListarConcursos from "./pages/Admin/ListarConcursos";
@@ -44,6 +43,7 @@ import SessaoEstudos from "./pages/Estudos/SessaoEstudos";
 import CicloDetalhes from "./pages/Estudos/CicloDetalhes";
 import Planos from "./pages/Planos";
 import CommunityPage from "./modules/community/pages/CommunityPage";
+import { GroupDetailsPage } from "./pages/GroupDetailsPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
 import RankingParticipationWrapper from "./components/resultados/RankingParticipationWrapper";
 import SecureStudyCycleRoute from "./components/Security/SecureStudyCycleRoute";
@@ -114,26 +114,15 @@ const AppContent = () => {
                         <Menu />
                         <PublicUserProfile />
                       </>} />
-                     <Route path="/usuario/followers/:token" element={<>
-                        <Menu />
-                        <SecureUserRoute action="followers">
-                          <UserFollowers />
-                        </SecureUserRoute>
-                      </>} />
-                     <Route path="/usuario/following/:token" element={<>
-                        <Menu />
-                        <SecureUserRoute action="following">
-                          <UserFollowers />
-                        </SecureUserRoute>
-                      </>} />
+                     {/* Rotas de followers removidas - redirecionar para comunidade */}
+                     <Route path="/usuario/followers/:token" element={<Navigate to="/comunidade" replace />} />
+                     <Route path="/usuario/following/:token" element={<Navigate to="/comunidade" replace />} />
                     {/* Rotas legadas - redirecionar para versão segura */}
                     <Route path="/usuario/:id" element={<Navigate to="/comunidade" replace />} />
                     <Route path="/usuario/:id/seguidores" element={<Navigate to="/comunidade" replace />} />
                     <Route path="/usuario/:id/seguindo" element={<Navigate to="/comunidade" replace />} />
-                     <Route path="/seguidores" element={<>
-                         <Menu />
-                         <UserFollowers />
-                       </>} />
+                     {/* Rota de seguidores removida - redirecionar para comunidade */}
+                     <Route path="/seguidores" element={<Navigate to="/comunidade" replace />} />
                      <Route path="/notificacoes" element={<>
                          <Menu />
                          <ProtectedRoute>
@@ -148,6 +137,10 @@ const AppContent = () => {
                           <Menu />
                           <CommunityPage />
                         </>} />
+                    <Route path="/grupos/:groupId" element={<>
+                        <Menu />
+                        <GroupDetailsPage />
+                      </>} />
                     <Route path="/faq" element={<>
                         <Menu />
                         <FAQ />

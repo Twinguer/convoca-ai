@@ -57,3 +57,14 @@ export async function adminOperation(supabaseClient: any, operation: string, par
     return { success: false, data: null, error };
   }
 }
+
+// Get initials from a name (first letters of first two words)
+export function getInitials(name?: string | null): string {
+  if (!name) return 'U';
+  return name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
+}

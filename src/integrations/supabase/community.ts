@@ -64,14 +64,7 @@ export const generateSpecificUsers = async () => {
       });
     });
     
-    // Insert follower relationships into the database
-    if (followerRelationships.length > 0) {
-      const { error: followError } = await supabase
-        .from('user_followers')
-        .insert(followerRelationships);
-        
-      if (followError) throw followError;
-    }
+    // Sistema de seguidores removido - não inserir mais relacionamentos
     
     // Create random ranking entries for each user in various concursos
     const { data: concursos, error: concursosError } = await supabase
@@ -109,7 +102,7 @@ export const generateSpecificUsers = async () => {
       }
     }
     
-    console.log(`Created ${testUsers.length} specific users with mutual follower relationships`);
+    console.log(`Created ${testUsers.length} specific users`);
     return { success: true, message: `Criados ${testUsers.length} usuários específicos` };
     
   } catch (error) {
@@ -167,45 +160,9 @@ export const generateTestUsers = async (count: number = 30) => {
       
     if (insertError) throw insertError;
     
-    // Create follower relationships between users
-    const followerRelationships = [];
+    // Sistema de seguidores removido - não criar mais relacionamentos
     
-    testUsers.forEach(user => {
-      // Each user will follow 1-10 random users
-      const followCount = Math.floor(Math.random() * 10) + 1;
-      
-      for (let i = 0; i < followCount; i++) {
-        // Select a random user to follow (different from self)
-        const randomIndex = Math.floor(Math.random() * testUsers.length);
-        const userToFollow = testUsers[randomIndex];
-        
-        if (user.id !== userToFollow.id) {
-          followerRelationships.push({
-            follower_id: user.id,
-            followed_id: userToFollow.id
-          });
-        }
-      }
-    });
-    
-    // Remove potential duplicates in follower relationships
-    const uniqueRelationships = Array.from(new Set(
-      followerRelationships.map(rel => `${rel.follower_id}-${rel.followed_id}`)
-    )).map(rel => {
-      const [follower_id, followed_id] = rel.split('-');
-      return { follower_id, followed_id };
-    });
-    
-    // Insert follower relationships into the database
-    if (uniqueRelationships.length > 0) {
-      const { error: followError } = await supabase
-        .from('user_followers')
-        .insert(uniqueRelationships);
-        
-      if (followError) throw followError;
-    }
-    
-    console.log(`Created ${testUsers.length} test users with ${uniqueRelationships.length} follower relationships`);
+    console.log(`Created ${testUsers.length} test users`);
     return { success: true, message: `Criados ${testUsers.length} usuários de teste` };
     
   } catch (error) {
