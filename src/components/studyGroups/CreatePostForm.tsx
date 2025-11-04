@@ -32,6 +32,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
   // Limites de tamanho (em bytes)
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB para fotos
   const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10MB para PDFs
+  const MAX_CONTENT_LENGTH = 500; // Limite de caracteres para posts
 
   // Buscar perfil do usuário para mostrar avatar e nome
   const { data: userProfile } = useQuery({
@@ -215,13 +216,26 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({
         </div>
 
         {/* Campo de texto */}
-        <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Metas de estudos de hoje."
-          rows={3}
-          className="resize-none min-h-[80px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-muted/50"
-        />
+        <div className="space-y-1">
+          <Textarea
+            value={content}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (newValue.length <= MAX_CONTENT_LENGTH) {
+                setContent(newValue);
+              }
+            }}
+            placeholder="Metas de estudos de hoje."
+            rows={3}
+            maxLength={MAX_CONTENT_LENGTH}
+            className="resize-none min-h-[80px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-muted/50"
+          />
+          <div className="flex justify-end">
+            <span className={`text-xs ${content.length >= MAX_CONTENT_LENGTH ? 'text-destructive' : 'text-muted-foreground'}`}>
+              {content.length}/{MAX_CONTENT_LENGTH} caracteres
+            </span>
+          </div>
+        </div>
 
         {/* Preview de anexos */}
         {attachments.length > 0 && (

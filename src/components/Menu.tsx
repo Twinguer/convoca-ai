@@ -4,7 +4,7 @@ import { cn } from '../lib/utils';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, FileText, Award, Medal, Users, Menu as MenuIcon, MessageSquare, Trophy, Home, ShieldAlert, BookOpen, CreditCard, TrendingUp, GraduationCap } from 'lucide-react';
 import { Button } from './ui/button';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 import { UserActions } from './Admin/UserActions';
@@ -110,6 +110,16 @@ const Menu = () => {
                 </NavigationMenuLink>
               </NavigationMenuItem>
               
+              <NavigationMenuItem>
+                <NavigationMenuLink 
+                  className={navigationMenuTriggerStyle()}
+                  onClick={() => navigate('/coach/dashboard')}
+                >
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Modo Coach
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              
               {isAdmin() && <NavigationMenuItem>
                 <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -153,6 +163,10 @@ const Menu = () => {
                 <Link to="/planos" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/planos') ? "text-primary" : "text-foreground/70")}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   Planos
+                </Link>
+                <Link to="/coach/dashboard" onClick={handleLinkClick} className={cn("flex items-center text-lg font-semibold", isActive('/coach') ? "text-primary" : "text-foreground/70")}>
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Modo Coach
                 </Link>
                 
                 {isAdmin() && <>

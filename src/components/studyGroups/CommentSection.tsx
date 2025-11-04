@@ -28,6 +28,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const MAX_COMMENT_LENGTH = 500; // Limite de caracteres para comentários
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -110,18 +111,31 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
       {/* Formulário de comentário */}
       {user && (
         <form onSubmit={handleSubmit} className="space-y-2">
-          <Textarea
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Escreva um comentário..."
-            rows={3}
-            className="resize-none"
-          />
+          <div className="space-y-1">
+            <Textarea
+              value={commentText}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                if (newValue.length <= MAX_COMMENT_LENGTH) {
+                  setCommentText(newValue);
+                }
+              }}
+              placeholder="Escreva um comentário..."
+              rows={3}
+              maxLength={MAX_COMMENT_LENGTH}
+              className="resize-none"
+            />
+            <div className="flex justify-end">
+              <span className={`text-xs ${commentText.length >= MAX_COMMENT_LENGTH ? 'text-destructive' : 'text-muted-foreground'}`}>
+                {commentText.length}/{MAX_COMMENT_LENGTH} caracteres
+              </span>
+            </div>
+          </div>
           <div className="flex justify-end">
             <Button
               type="submit"
               size="sm"
-              disabled={!commentText.trim() || isSubmitting}
+              disabled={!commentText.trim() || isSubmitting || commentText.length > MAX_COMMENT_LENGTH}
             >
               <Send className="h-4 w-4 mr-2" />
               {isSubmitting ? 'Enviando...' : 'Comentar'}
@@ -173,7 +187,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             <p className="text-xs font-semibold mb-1 text-muted-foreground">
               {comment.author_name || 'Usuário'}
             </p>
-            <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+            <p className="text-sm whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{comment.content}</p>
           </div>
           <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
         </div>

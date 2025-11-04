@@ -47,6 +47,13 @@ import { GroupDetailsPage } from "./pages/GroupDetailsPage";
 import RankingsPage from "./modules/rankings/pages/RankingsPage";
 import RankingParticipationWrapper from "./components/resultados/RankingParticipationWrapper";
 import SecureStudyCycleRoute from "./components/Security/SecureStudyCycleRoute";
+import CoachDashboard from "./modules/coach/pages/CoachDashboard";
+import InviteStudentPage from "./modules/coach/pages/InviteStudentPage";
+import CoachSubscriptionPage from "./modules/coach/pages/CoachSubscriptionPage";
+import AcceptInvitationPage from "./modules/coach/pages/AcceptInvitationPage";
+import StudentDetailsPage from "./modules/coach/pages/StudentDetailsPage";
+import CreateCycleForStudent from "./modules/coach/pages/CreateCycleForStudent";
+import StudentSchedulePage from "./modules/coach/pages/StudentSchedulePage";
 import { useParams } from 'react-router-dom';
 import { useTokenCleanup } from './hooks/useTokenCleanup';
 // Páginas de teste removidas após migração completa
@@ -258,6 +265,49 @@ const AppContent = () => {
                           <Menu />
                           <Planos />
                         </>} />
+                    {/* Rotas do Coach Mode */}
+                    <Route path="/coach/dashboard" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <CoachDashboard />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/invite" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <InviteStudentPage />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/subscription" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <CoachSubscriptionPage />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/invitations/:invitationId" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <AcceptInvitationPage />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/student/:studentId" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <StudentDetailsPage />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/student/:studentId/create-cycle" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <CreateCycleForStudent />
+                        </ProtectedRoute>
+                      </>} />
+                    <Route path="/coach/student/:studentId/cycle/:cycleId/schedule" element={<>
+                        <Menu />
+                        <ProtectedRoute>
+                          <StudentSchedulePage />
+                        </ProtectedRoute>
+                      </>} />
                     <Route path="/resultado" element={<>
                         <Menu />
                         <Resultado />

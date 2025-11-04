@@ -16,6 +16,7 @@ interface ProfileHeaderProps {
   handleAvatarUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   statusConcurseiro: string;
   profileText?: string;
+  isCoach?: boolean;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -25,7 +26,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   uploading,
   handleAvatarUpload,
   statusConcurseiro,
-  profileText
+  profileText,
+  isCoach
 }) => {
   const { statistics } = useStudyStatistics();
   
@@ -54,14 +56,19 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <h2 className="text-xl font-bold">{name || 'Usuário'}</h2>
         <p className="text-sm text-muted-foreground">{email}</p>
         
-        {statistics.totalHours > 0 && (
-          <div className="mt-2">
+        <div className="flex flex-col items-center gap-2 mt-2">
+          {isCoach && (
+            <Badge className="bg-purple-100 text-purple-800 border-purple-300 hover:bg-purple-200">
+              Coach
+            </Badge>
+          )}
+          {statistics.totalHours > 0 && (
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               <Clock className="h-3 w-3 mr-1" />
               {formatHours(statistics.totalHours)} estudadas
             </Badge>
-          </div>
-        )}
+          )}
+        </div>
         
         <div className="mt-2">
           <Label htmlFor="avatar" className="cursor-pointer text-sm text-blue-600 hover:text-blue-800">

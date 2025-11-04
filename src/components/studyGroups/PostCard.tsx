@@ -74,7 +74,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       </CardHeader>
 
       <CardContent className="pt-0">
-        <p className="text-sm whitespace-pre-wrap mb-4">{post.content}</p>
+        <p className="text-sm whitespace-pre-wrap break-words mb-4" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{post.content}</p>
 
         {/* Anexos */}
         {post.attachments && post.attachments.length > 0 && (
