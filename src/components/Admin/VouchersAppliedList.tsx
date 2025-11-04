@@ -29,13 +29,13 @@ export const VouchersAppliedList: React.FC = () => {
     queryKey: ['vouchers-applied'],
     queryFn: async () => {
       // Consultar a view vouchers_applied_with_users
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('vouchers_applied_with_users')
         .select('*')
         .order('voucher_created_at', { ascending: false });
 
       if (error) throw error;
-      return data as VoucherApplied[];
+      return data as unknown as VoucherApplied[];
     },
   });
 

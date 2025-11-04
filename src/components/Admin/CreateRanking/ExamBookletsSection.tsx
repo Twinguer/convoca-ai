@@ -106,9 +106,9 @@ export const ExamBookletsSection: React.FC<ExamBookletsSectionProps> = ({
         throw error;
       }
       
-      const data = concursoData?.exam_booklets || [];
+      const data = (concursoData?.exam_booklets as any[]) || [];
       // Ordenar por display_order
-      const sortedData = data.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+      const sortedData = (data as any[]).sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
       
       if (sortedData && sortedData.length > 0) {
         setBooklets(sortedData);
