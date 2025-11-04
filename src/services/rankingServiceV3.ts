@@ -223,22 +223,24 @@ export const getAvailableReservationTypesV3 = async (concursoId: string): Promis
   try {
     const { data, error } = await supabase
       .from('user_rankings')
-      .select('reservation_type')
-      .eq('concurso_id', concursoId);
+      .select('consolidated_data');
 
     if (error) {
       logger.error('Error fetching reservation types V3', 'RANKING_SERVICE_V3', error);
       throw error;
     }
 
-    // Extrair tipos únicos
     const types = new Set<string>();
-    types.add('Ampla Concorrência'); // Sempre incluir
+    types.add('Ampla Concorrência');
 
     data?.forEach((item: any) => {
-      if (item.reservation_type) {
-        types.add(item.reservation_type);
-      }
+      const rankings = item.consolidated_data?.rankings || {};
+      Object.values(rankings).forEach((ranking: any) => {
+        if (ranking?.concurso_id === concursoId) {
+          const type = ranking?.user_data?.reservation_type || 'Ampla Concorrência';
+          types.add(type);
+        }
+      });
     });
 
     return Array.from(types);
@@ -255,24 +257,36 @@ export const fetchRankingStatsV3 = async (concursoId: string): Promise<any> => {
   try {
     const { data, error } = await supabase
       .from('user_rankings')
-      .select('score, reservation_type')
-      .eq('concurso_id', concursoId);
+      .select('consolidated_data');
 
     if (error) {
       logger.error('Error fetching stats V3', 'RANKING_SERVICE_V3', error);
       throw error;
     }
 
-    const totalParticipants = data?.length || 0;
-    const avgScore = data?.reduce((sum, item) => sum + (item.score || 0), 0) / totalParticipants || 0;
-    const maxScore = Math.max(...(data?.map(item => item.score || 0) || [0]));
-    const minScore = Math.min(...(data?.map(item => item.score || 0) || [0]));
+    const entries: Array<{ score: number; reservation_type: string }> = [];
 
-    // Contar por tipo de reserva
-    const reservationTypeCount: Record<string, number> = {};
     data?.forEach((item: any) => {
-      const type = item.reservation_type || 'Ampla Concorrência';
-      reservationTypeCount[type] = (reservationTypeCount[type] || 0) + 1;
+      const rankings = item.consolidated_data?.rankings || {};
+      Object.values(rankings).forEach((ranking: any) => {
+        if (ranking?.concurso_id === concursoId) {
+          entries.push({
+            score: Number(ranking?.user_data?.score || 0),
+            reservation_type: ranking?.user_data?.reservation_type || 'Ampla Concorrência'
+          });
+        }
+      });
+    });
+
+    const totalParticipants = entries.length;
+    const scores = entries.map(e => e.score);
+    const avgScore = totalParticipants > 0 ? (scores.reduce((a, b) => a + b, 0) / totalParticipants) : 0;
+    const maxScore = scores.length ? Math.max(...scores) : 0;
+    const minScore = scores.length ? Math.min(...scores) : 0;
+
+    const reservationTypeCount: Record<string, number> = {};
+    entries.forEach(e => {
+      reservationTypeCount[e.reservation_type] = (reservationTypeCount[e.reservation_type] || 0) + 1;
     });
 
     return {

@@ -17,16 +17,14 @@ export const useBookletAnswerKey = (concursoId: string) => {
     queryKey: ['exam-booklets', concursoId],
     queryFn: async () => {
       // Log removido por segurança
-      
       const { data: concursoData, error } = await supabase
         .from('concursos')
         .select('exam_booklets')
         .eq('id', concursoId)
         .single();
-      
-      const data = concursoData?.exam_booklets || [];
+      const data = (concursoData?.exam_booklets as any[]) || [];
       // Ordenar por display_order
-      const sortedData = data.sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
+      const sortedData = (data as any[]).sort((a: any, b: any) => (a.display_order || 0) - (b.display_order || 0));
 
       if (error) {
         console.error('Erro ao buscar cadernos:', error);

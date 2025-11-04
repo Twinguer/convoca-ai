@@ -41,7 +41,7 @@ export const AnswerKeyForm: React.FC<AnswerKeyFormProps> = ({
         error
       } = await supabase.from('concursos').select('*').eq('id', concursoId).single();
       if (error) throw error;
-      return data as Concurso;
+      return data as unknown as Concurso;
     }
   });
   const {

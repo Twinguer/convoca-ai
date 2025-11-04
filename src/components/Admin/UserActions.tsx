@@ -38,7 +38,7 @@ export const UserActions: React.FC<UserActionsProps> = ({
   const handleDeleteFromRanking = async () => {
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .rpc('delete_user_from_ranking', {
           ranking_id_param: rankingId
         });
